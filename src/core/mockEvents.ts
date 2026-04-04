@@ -1,14 +1,18 @@
 import { EventRecord } from "./types";
 
-export const PRACTICE_EVENTS: EventRecord[] = [
+// Fallback mock events for when database is unavailable
+export const FALLBACK_EVENTS: EventRecord[] = [
   {
     id: "event-1",
     title: "The first moon landing",
     description: "A historic leap for humanity.",
     year: 1969,
     location: { lat: 28.5729, lng: -80.649 },
+    locationName: "Kennedy Space Center, Florida, USA",
     region: "North America",
-    imageLabel: "Apollo 11 launch photo"
+    imageUrl: null,
+    thumbUrl: null,
+    hints: []
   },
   {
     id: "event-2",
@@ -16,8 +20,11 @@ export const PRACTICE_EVENTS: EventRecord[] = [
     description: "A defining moment in modern history.",
     year: 1989,
     location: { lat: 52.5163, lng: 13.3777 },
+    locationName: "Berlin, Germany",
     region: "Europe",
-    imageLabel: "Crowd at the wall"
+    imageUrl: null,
+    thumbUrl: null,
+    hints: []
   },
   {
     id: "event-3",
@@ -25,8 +32,11 @@ export const PRACTICE_EVENTS: EventRecord[] = [
     description: "A foundational political event.",
     year: 1776,
     location: { lat: 39.9496, lng: -75.1503 },
+    locationName: "Philadelphia, Pennsylvania, USA",
     region: "North America",
-    imageLabel: "Historic document scene"
+    imageUrl: null,
+    thumbUrl: null,
+    hints: []
   },
   {
     id: "event-4",
@@ -34,8 +44,11 @@ export const PRACTICE_EVENTS: EventRecord[] = [
     description: "The Wright brothers change transportation forever.",
     year: 1903,
     location: { lat: 36.0159, lng: -75.671 },
+    locationName: "Kitty Hawk, North Carolina, USA",
     region: "North America",
-    imageLabel: "Wright Flyer in motion"
+    imageUrl: null,
+    thumbUrl: null,
+    hints: []
   },
   {
     id: "event-5",
@@ -43,7 +56,13 @@ export const PRACTICE_EVENTS: EventRecord[] = [
     description: "A major global trade milestone.",
     year: 1869,
     location: { lat: 30.0444, lng: 32.531 },
+    locationName: "Suez, Egypt",
     region: "Africa",
-    imageLabel: "Canal opening ceremony"
+    imageUrl: null,
+    thumbUrl: null,
+    hints: []
   }
 ];
+
+// For backwards compatibility
+export const PRACTICE_EVENTS = FALLBACK_EVENTS;
