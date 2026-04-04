@@ -1,4 +1,4 @@
-import { evaluateRound, summarizeRounds } from "./rules";
+import { evaluateRound } from "./rules";
 import { MAX_ROUNDS } from "./types";
 import type {
   EventRecord,
@@ -12,33 +12,36 @@ import type {
 
 const DEFAULT_ROUND_TIME_LIMIT_SEC = 30;
 
+function createGameId(): string {
+  return globalThis.crypto.randomUUID();
+}
+
 function emptyGuess(): GuessState {
   return { year: null, location: null };
 }
 
-function emptyState(events: EventRecord[]): GameState {
+function emptyState(events: EventRecord[], gameId: string = createGameId()): GameState {
   return {
+    gameId,
     phase: "INIT",
-    preflightPassed: false,
     preflightIssues: [],
     currentRoundIndex: 0,
     timeRemaining: null,
     events,
     currentGuess: emptyGuess(),
     roundResults: [],
-    lastRoundResult: null,
-    summary: null,
     penalty: { accuracy: 0, xp: 0 },
     pendingSubmission: null,
     pendingRoundResult: null
   };
 }
 
-export function createInitialGameState(events: EventRecord[]): GameState {
-  return emptyState(events);
+export function createInitialGameState(events: EventRecord[], gameId?: string): GameState {
+  return emptyState(events, gameId);
 }
 
 export type GameAction =
+  | { type: "HYDRATE"; state: GameState }
   | { type: "BEGIN_START" }
   | { type: "COMPLETE_PREFLIGHT"; preflight: PreflightResult }
   | { type: "START_ROUND" }
@@ -53,7 +56,11 @@ export type GameAction =
   | { type: "RESTART" };
 
 export function canSubmit(state: GameState): boolean {
-  return state.phase === "ROUND_ACTIVE" && state.currentGuess.year !== null && state.currentGuess.location !== null;
+  return (
+    (state.phase === "ROUND_START" || state.phase === "ROUND_ACTIVE") &&
+    state.currentGuess.year !== null &&
+    state.currentGuess.location !== null
+  );
 }
 
 export function currentEvent(state: GameState): EventRecord | null {
@@ -67,14 +74,28 @@ function buildPendingSubmission(didTimeout: boolean): PendingSubmission {
 function beginRound(state: GameState, roundIndex: number): GameState {
   return {
     ...state,
-    phase: "ROUND_START",
+    phase: "ROUND_ACTIVE",
     currentRoundIndex: roundIndex,
     timeRemaining: DEFAULT_ROUND_TIME_LIMIT_SEC,
     currentGuess: emptyGuess(),
-    lastRoundResult: null,
     pendingSubmission: null,
     pendingRoundResult: null
   };
+}
+
+function normalizeHydratedState(state: GameState): GameState {
+  if (state.phase === "READY") {
+    return beginRound(state, 0);
+  }
+
+  if (state.phase === "ROUND_START") {
+    return {
+      ...state,
+      phase: "ROUND_ACTIVE"
+    };
+  }
+
+  return state;
 }
 
 function lockRound(state: GameState, pendingSubmission: PendingSubmission): GameState {
@@ -112,16 +133,13 @@ function evaluatePendingRound(state: GameState): GameState {
 
 function finishRound(state: GameState, result: RoundResult): GameState {
   const roundResults = [...state.roundResults, result];
-  const isComplete = roundResults.length >= MAX_ROUNDS;
 
   return {
     ...state,
-    phase: isComplete ? "SESSION_COMPLETE" : "ROUND_COMPLETE",
+    phase: "ROUND_COMPLETE",
     currentRoundIndex: state.currentRoundIndex,
     timeRemaining: null,
     roundResults,
-    lastRoundResult: result,
-    summary: isComplete ? summarizeRounds(roundResults) : state.summary,
     currentGuess: state.currentGuess,
     pendingSubmission: null,
     pendingRoundResult: null
@@ -130,18 +148,17 @@ function finishRound(state: GameState, result: RoundResult): GameState {
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
+    case "HYDRATE":
+      return normalizeHydratedState(action.state);
     case "BEGIN_START":
       return {
         ...state,
         phase: "PREFLIGHT_CHECK",
-        preflightPassed: false,
         preflightIssues: [],
         currentRoundIndex: 0,
         timeRemaining: null,
         currentGuess: emptyGuess(),
         roundResults: [],
-        lastRoundResult: null,
-        summary: null,
         penalty: { accuracy: 0, xp: 0 },
         pendingSubmission: null,
         pendingRoundResult: null
@@ -155,35 +172,31 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return {
           ...state,
           phase: "INIT",
-          preflightPassed: false,
           preflightIssues: action.preflight.issues,
           currentRoundIndex: 0,
           timeRemaining: null,
           currentGuess: emptyGuess(),
           roundResults: [],
-          lastRoundResult: null,
-          summary: null,
           penalty: { accuracy: 0, xp: 0 },
           pendingSubmission: null,
           pendingRoundResult: null
         };
       }
 
-      return {
-        ...state,
-        phase: "READY",
-        preflightPassed: true,
-        preflightIssues: action.preflight.issues,
-        currentRoundIndex: 0,
-        timeRemaining: null,
-        currentGuess: emptyGuess(),
-        roundResults: [],
-        lastRoundResult: null,
-        summary: null,
-        penalty: { accuracy: 0, xp: 0 },
-        pendingSubmission: null,
-        pendingRoundResult: null
-      };
+      return beginRound(
+        {
+          ...state,
+          preflightIssues: action.preflight.issues,
+          currentRoundIndex: 0,
+          timeRemaining: null,
+          currentGuess: emptyGuess(),
+          roundResults: [],
+          penalty: { accuracy: 0, xp: 0 },
+          pendingSubmission: null,
+          pendingRoundResult: null
+        },
+        0
+      );
     case "START_ROUND":
       if (state.phase !== "READY") {
         return state;
@@ -198,7 +211,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         phase: "ROUND_ACTIVE"
       };
     case "SET_YEAR":
-      if (state.phase !== "ROUND_ACTIVE") {
+      if (state.phase !== "ROUND_START" && state.phase !== "ROUND_ACTIVE") {
         return state;
       }
       return {
@@ -209,7 +222,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         }
       };
     case "SET_LOCATION":
-      if (state.phase !== "ROUND_ACTIVE") {
+      if (state.phase !== "ROUND_START" && state.phase !== "ROUND_ACTIVE") {
         return state;
       }
       return {
@@ -263,7 +276,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         timeRemaining: Math.max(0, state.timeRemaining - 1)
       };
     case "NEXT_ROUND": {
-      if (state.phase !== "ROUND_COMPLETE" || !state.lastRoundResult) {
+      if (state.phase !== "ROUND_COMPLETE" || state.roundResults.length === 0) {
         return state;
       }
 
@@ -272,8 +285,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return {
           ...state,
           phase: "SESSION_COMPLETE",
-          timeRemaining: null,
-          summary: summarizeRounds(state.roundResults)
+          timeRemaining: null
         };
       }
 

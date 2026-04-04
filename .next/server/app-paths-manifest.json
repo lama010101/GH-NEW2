@@ -1,5 +1,9 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/page": "app/page.js"
+  "/api/events/route": "app/api/events/route.js",
+  "/api/game/route": "app/api/game/route.js",
+  "/game/[gameId]/page": "app/game/[gameId]/page.js",
+  "/api/game/[gameId]/route": "app/api/game/[gameId]/route.js"
 }

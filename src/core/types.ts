@@ -24,14 +24,31 @@ export type LatLng = {
   lng: number;
 };
 
+export type HintType = "where" | "when" | "what";
+
+export type EventHint = {
+  id: string;
+  level: number;
+  type: HintType;
+  text: string;
+  distanceKm: number | null;
+  timeDiffYears: number | null;
+  penaltyBp: number; // Basis points: 1000 = 10%, max 10000 = 100%
+};
+
 export type EventRecord = {
   id: string;
   title: string;
   description: string;
   year: number;
   location: LatLng;
+  locationName: string;
   region: string;
-  imageLabel: string;
+  imageUrl: string | null;
+  thumbUrl: string | null;
+  hints: EventHint[];
+  category?: string;
+  difficulty?: number;
 };
 
 export type GuessState = {
@@ -82,16 +99,14 @@ export type PreflightResult = {
 };
 
 export type GameState = {
+  gameId: string;
   phase: GamePhase;
-  preflightPassed: boolean;
   preflightIssues: string[];
   currentRoundIndex: number;
   timeRemaining: number | null;
   events: EventRecord[];
   currentGuess: GuessState;
   roundResults: RoundResult[];
-  lastRoundResult: RoundResult | null;
-  summary: SessionSummary | null;
   penalty: PenaltyState;
   pendingSubmission: PendingSubmission | null;
   pendingRoundResult: RoundResult | null;

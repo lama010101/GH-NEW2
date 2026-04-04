@@ -1,0 +1,131 @@
+# GUESS-HISTORY — Implementation Progress Tracker
+
+## Current Phase: Phase D — Persistence & Recovery Hardening ⏳
+
+Phase C (Playable Round UX with Real DB Events) completed April 2026.
+
+Phase D progress (April 2026): playable sessions now require DB-backed events with real images and valid coordinates; runtime mock fallback removed; stale saved sessions without real images are reinitialized from fresh DB data.
+
+---
+
+## Phase A — Core Loop Hardening ✅ COMPLETE (April 2026)
+
+| Deliverable | Status | File Location |
+|-------------|--------|---------------|
+| Extract selectors layer | ✅ Done | `src/core/gameSelectors.ts` |
+| Remove redundant derived fields | ✅ Done | `src/core/types.ts` — removed `lastRoundResult`, `summary`, `preflightPassed` |
+| Extract orchestration hooks | ✅ Done | `src/app/game-client-hooks.ts` |
+| Extract screen components | ✅ Done | `src/app/game-client-screens.tsx` |
+| Extract shared UI parts | ✅ Done | `src/app/game-client-parts.tsx` |
+
+**Result:** UI layer refactored from single 500-line component into focused modules:
+- `game-client.tsx` — composition only
+- `game-client-hooks.ts` — side effects (bootstrap, autosave, timer, preflight, resolution)
+- `game-client-screens.tsx` — phase-level screens
+- `game-client-parts.tsx` — shared presentational building blocks
+
+---
+
+## Phase 1 — Foundation ✅ COMPLETE
+- [x] Next.js 14 + React 18 + TypeScript scaffold
+- [x] Reducer-based game engine (`src/core/gameEngine.ts`)
+- [x] Lifecycle phases (INIT → PREFLIGHT → ROUND_START → ROUND_ACTIVE → ROUND_LOCK → ROUND_EVALUATE → ROUND_COMPLETE)
+- [x] Preflight gate with connectivity/storage checks
+- [x] Mock practice events
+- [x] Basic UI entry point (`src/app/game-client.tsx`)
+- [x] Vitest tests for scoring, badges, preflight, timeout
+
+---
+
+## Phase B — Scoring Calibration ✅ COMPLETE (April 2026)
+
+| Deliverable | Status | File Location |
+|-------------|--------|---------------|
+| Extract scoring to pure functions | ✅ Done | `src/core/rules.ts` — `evaluateRound()`, `summarizeRounds()` |
+| Extract constants | ✅ Done | `src/core/types.ts` — `MAX_ROUNDS`, `REPEAT_PROTECTION_BUFFER`, etc. |
+| Calibrate scoring formulas | ✅ Done | Verified accuracy/XP curves against fixtures in `src/core/rules.test.ts` |
+| Test: Perfect guess → 100% accuracy | ✅ Done | `src/core/rules.test.ts` |
+| Test: No guess → 0% accuracy | ✅ Done | `src/core/rules.test.ts` |
+| Test: Hint penalty capped at 1.0 | ✅ Done | `src/core/rules.test.ts` |
+| Test: Accuracy/XP independence | ✅ Done | `src/core/rules.test.ts` |
+| Edge case fixtures (near miss, wrong year/location, max diff) | ✅ Done | `src/core/rules.test.ts` |
+
+**Result:** Scoring formulas validated. Phase B complete.
+
+---
+
+## Phase 3 — Game Loop Core ⏳ PENDING
+- Cinematic screen (5s auto-pan)
+- Guess screen polish (year slider + map interactions)
+- Result screen polish
+- Asset preloading
+- Persistence layer ✅ COMPLETE (`game_sessions` JSONB DB store + API-backed restore/save)
+
+---
+
+## Phase 4 — Hint System ⏳ PENDING
+- HintPanel UI (12 hints, dependency-aware)
+- Penalty preview
+- Real-time deduction display
+
+---
+
+## Phase 5 — Settings & Configuration ⏳ PENDING
+- Timer toggle/duration
+- Auto-pan toggle
+- Year range filter
+- Theme (Light/Dark)
+- Language selectors (UI vs Content)
+
+---
+
+## Phase 6 — Session Summary ⏳ PENDING
+- SummaryScreen with 5-round recap
+- Session persistence ✅ COMPLETE
+- Recovery flow ⏳ PENDING (browser refresh mid-game)
+
+---
+
+## Phase 7 — Mobile Polish ⏳ PENDING
+- 375px–430px viewport testing
+- Touch parity
+- iOS scroll fix
+
+---
+
+## Phase 8 — Hardening & Launch ⏳ PENDING
+- E2E test coverage
+- Preflight failure paths
+- Timer expiry path
+- Lighthouse ≥ 90
+
+---
+
+## Key Spec Constants (from FULL_CORE_GAME_MASTER_SPEC.md)
+
+```
+MAX_ROUNDS = 5
+REPEAT_PROTECTION_BUFFER = 500
+AUTOPAN_DURATION_SEC = 5
+TIMER_MIN_SEC = 5
+TIMER_MAX_SEC = 300
+HINT_TOTAL = 12
+MAX_HINT_PENALTY = 1.0
+```
+
+---
+
+## Hard Constraints (MUST ENFORCE)
+- NO auto-submit (except timer=0)
+- NO auto-advance rounds
+- NO timer pause
+- NO partial submission
+- NO round start without ready assets
+- NO randomness after initialization
+- NO XP Accuracy coupling
+- NO hidden defaults (year slider, marker)
+- NO draggable markers
+
+---
+
+Last updated: 2026-04-04

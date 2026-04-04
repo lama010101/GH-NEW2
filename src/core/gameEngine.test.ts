@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PRACTICE_EVENTS } from "./mockEvents";
 import { calculateBadges, evaluateRound } from "./rules";
 import { canSubmit, createInitialGameState, gameReducer } from "./gameEngine";
+import { selectHasPassedPreflight, selectLatestRoundResult, selectSessionSummary } from "./gameSelectors";
 import { runPreflightCheck } from "./preflight";
 
 function createReadyState() {
@@ -12,10 +13,7 @@ function createReadyState() {
 }
 
 function createActiveRoundState() {
-  let state = createReadyState();
-  state = gameReducer(state, { type: "START_ROUND" });
-  state = gameReducer(state, { type: "END_CINEMATIC" });
-  return state;
+  return createReadyState();
 }
 
 describe("game rules", () => {
@@ -46,11 +44,6 @@ describe("game rules", () => {
   it("moves through round results and completes after five rounds", () => {
     let state = createReadyState();
 
-    expect(state.phase).toBe("READY");
-
-    state = gameReducer(state, { type: "START_ROUND" });
-    expect(state.phase).toBe("ROUND_START");
-    state = gameReducer(state, { type: "END_CINEMATIC" });
     expect(state.phase).toBe("ROUND_ACTIVE");
 
     for (let round = 0; round < 5; round += 1) {
@@ -63,25 +56,24 @@ describe("game rules", () => {
       expect(state.phase).toBe("ROUND_EVALUATE");
       state = gameReducer(state, { type: "COMPLETE_EVALUATION" });
 
+      expect(state.phase).toBe("ROUND_COMPLETE");
+
       if (round < 4) {
-        expect(state.phase).toBe("ROUND_COMPLETE");
         state = gameReducer(state, { type: "NEXT_ROUND" });
-        expect(state.phase).toBe("ROUND_START");
-        state = gameReducer(state, { type: "END_CINEMATIC" });
         expect(state.phase).toBe("ROUND_ACTIVE");
       }
     }
 
+    state = gameReducer(state, { type: "NEXT_ROUND" });
     expect(state.phase).toBe("SESSION_COMPLETE");
     expect(state.roundResults).toHaveLength(5);
-    expect(state.summary?.totalRounds).toBe(5);
+    expect(selectSessionSummary(state)?.totalRounds).toBe(5);
   });
 
   it("auto-submits on timeout even without a full guess", () => {
     let state = createReadyState();
-    state = gameReducer(state, { type: "START_ROUND" });
 
-    expect(state.phase).toBe("ROUND_START");
+    expect(state.phase).toBe("ROUND_ACTIVE");
 
     for (let i = 0; i < 29; i += 1) {
       state = gameReducer(state, { type: "TICK" });
@@ -94,7 +86,7 @@ describe("game rules", () => {
     state = gameReducer(state, { type: "COMPLETE_EVALUATION" });
 
     expect(state.phase).toBe("ROUND_COMPLETE");
-    expect(state.lastRoundResult?.didTimeout).toBe(true);
+    expect(selectLatestRoundResult(state)?.didTimeout).toBe(true);
     expect(state.timeRemaining).toBeNull();
   });
 
@@ -108,7 +100,7 @@ describe("game rules", () => {
 
     expect(checking.phase).toBe("PREFLIGHT_CHECK");
     expect(next.phase).toBe("INIT");
-    expect(next.preflightPassed).toBe(false);
+    expect(selectHasPassedPreflight(next)).toBe(false);
     expect(next.preflightIssues.length).toBeGreaterThan(0);
   });
 });
