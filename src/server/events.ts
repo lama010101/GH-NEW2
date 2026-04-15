@@ -1,4 +1,6 @@
+import { mapEventRowToEventRecord } from "./mappers/eventMapper";
 import { dbPool } from "./db";
+ import type { Pool } from "pg";
 import type { EventRecord, EventHint } from "@/core/types";
 
 export type EventImageRecord = {
@@ -13,6 +15,8 @@ export type EventImageRecord = {
   isPrimary: boolean;
 };
 
+ type DbExecutor = Pick<Pool, "query">;
+
 /**
  * Fetch events with their images and hints, returned as EventRecord format
  */
@@ -22,7 +26,7 @@ export async function fetchEventsWithDetails(options: {
   minYear?: number;
   maxYear?: number;
   regions?: string[];
-} = {}): Promise<EventRecord[]> {
+} = {}, executor: DbExecutor = dbPool): Promise<EventRecord[]> {
   const { limit = 10, excludeIds = [], minYear, maxYear, regions } = options;
 
   let whereClauses: string[] = [
@@ -114,7 +118,7 @@ export async function fetchEventsWithDetails(options: {
 
   params.push(limit);
 
-  const result = await dbPool.query<{
+  const result = await executor.query<{
     id: string;
     title: string;
     description: string | null;
@@ -129,35 +133,13 @@ export async function fetchEventsWithDetails(options: {
     hints: unknown;
   }>(query, params);
 
-  return result.rows.map((row): EventRecord => {
-    const images = (row.images as EventImageRecord[] | null) ?? [];
-    const primaryImage = images.find((img) => img.isPrimary) || images[0] || null;
-    const hintsRaw = (row.hints as EventHint[] | null) ?? [];
-
-    return {
-      id: row.id,
-      title: row.title,
-      description: row.description ?? "",
-      year: row.year,
-      location: {
-        lat: row.location_lat,
-        lng: row.location_lng,
-      },
-      locationName: row.location_name ?? "Unknown location",
-      region: row.region ?? "Unknown",
-      imageUrl: primaryImage?.imageUrl ?? null,
-      thumbUrl: primaryImage?.thumbUrl ?? null,
-      hints: hintsRaw,
-      category: row.category ?? undefined,
-      difficulty: row.difficulty ?? undefined,
-    };
-  });
+  return result.rows.map((row) => mapEventRowToEventRecord(row));
 }
 
 /**
  * Fetch a single event by ID with all details
  */
-export async function fetchEventById(eventId: string): Promise<EventRecord | null> {
+export async function fetchEventById(eventId: string, executor: DbExecutor = dbPool): Promise<EventRecord | null> {
   const query = `
     SELECT
       e.id,
@@ -212,7 +194,7 @@ export async function fetchEventById(eventId: string): Promise<EventRecord | nul
     GROUP BY e.id
   `;
 
-  const result = await dbPool.query<{
+  const result = await executor.query<{
     id: string;
     title: string;
     description: string | null;
@@ -231,28 +213,7 @@ export async function fetchEventById(eventId: string): Promise<EventRecord | nul
     return null;
   }
 
-  const row = result.rows[0];
-  const images = (row.images as EventImageRecord[] | null) ?? [];
-  const primaryImage = images.find((img) => img.isPrimary) || images[0] || null;
-  const hintsRaw = (row.hints as EventHint[] | null) ?? [];
-
-  return {
-    id: row.id,
-    title: row.title,
-    description: row.description ?? "",
-    year: row.year,
-    location: {
-      lat: row.location_lat,
-      lng: row.location_lng
-    },
-    locationName: row.location_name ?? "Unknown location",
-    region: row.region ?? "Unknown",
-    imageUrl: primaryImage?.imageUrl ?? null,
-    thumbUrl: primaryImage?.thumbUrl ?? null,
-    hints: hintsRaw,
-    category: row.category ?? undefined,
-    difficulty: row.difficulty ?? undefined
-  };
+  return mapEventRowToEventRecord(result.rows[0]);
 }
 
 /**

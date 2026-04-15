@@ -6,6 +6,9 @@ export const TIMER_MAX_SEC = 300;
 export const HINT_TOTAL = 12;
 export const MAX_HINT_PENALTY = 1;
 
+export type SessionMode = "practice" | "sync" | "async";
+export type SessionStatus = "LOBBY" | "ROUND_ACTIVE" | "ROUND_COMPLETE" | "SESSION_COMPLETE";
+
 export type GamePhase =
   | "INIT"
   | "PREFLIGHT_CHECK"
@@ -13,11 +16,17 @@ export type GamePhase =
   | "ROUND_START"
   | "ROUND_ACTIVE"
   | "ROUND_LOCK"
-  | "ROUND_EVALUATE"
   | "ROUND_COMPLETE"
   | "SESSION_COMPLETE";
 export type BadgeDimension = "location" | "year" | "combo";
 export type BadgeTier = "gold" | "silver" | "bronze";
+
+export type Location = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+};
 
 export type LatLng = {
   lat: number;
@@ -41,8 +50,7 @@ export type EventRecord = {
   title: string;
   description: string;
   year: number;
-  location: LatLng;
-  locationName: string;
+  location: Location;
   region: string;
   imageUrl: string | null;
   thumbUrl: string | null;
@@ -61,9 +69,6 @@ export type PenaltyState = {
   xp: number;
 };
 
-export type PendingSubmission = {
-  didTimeout: boolean;
-};
 
 export type Badge = {
   dimension: BadgeDimension;
@@ -98,6 +103,31 @@ export type PreflightResult = {
   issues: string[];
 };
 
+export type SessionPlayer = {
+  playerId: string;
+  displayName: string;
+  joinedAt: string;
+  leftAt: string | null;
+  ready: boolean;
+  isHost: boolean;
+};
+
+export type SessionConfig = {
+  mode: SessionMode;
+  roundTimerSec: number;
+  totalRounds: number;
+  yearMin: number;
+  yearMax: number;
+  hostPlayerId: string | null;
+  sessionDeadline: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+};
+
+export type RoundLockMeta = {
+  didTimeout: boolean;
+};
+
 export type GameState = {
   gameId: string;
   phase: GamePhase;
@@ -108,6 +138,55 @@ export type GameState = {
   currentGuess: GuessState;
   roundResults: RoundResult[];
   penalty: PenaltyState;
-  pendingSubmission: PendingSubmission | null;
-  pendingRoundResult: RoundResult | null;
+  roundLockMeta?: RoundLockMeta;
+  sessionConfig?: SessionConfig;
+  sessionPlayers?: SessionPlayer[];
+  viewerPlayerId?: string | null;
+  /**
+   * Integrity hash for detecting state corruption.
+   * Computed from critical fields to detect tampering.
+   */
+  stateIntegrityHash?: string;
+  /**
+   * Flag to explicitly allow loading corrupted state (requires dev acknowledgment).
+   * When true, integrity violations are logged but not thrown.
+   */
+  _allowCorruptedState?: boolean;
+};
+
+export type CompeteSessionSnapshot = {
+  gameId: string;
+  status: SessionStatus;
+  config: SessionConfig;
+  players: SessionPlayer[];
+  currentRoundIndex: number;
+  allPlayersReady: boolean;
+  roundStartsAt: string | null;
+  viewerPlayerId: string | null;
+  timeRemaining?: number | null;
+};
+
+export type CreateCompeteSessionInput = {
+  displayName: string;
+  mode?: Exclude<SessionMode, "practice">;
+  roundTimerSec?: number;
+  totalRounds?: number;
+  yearMin?: number;
+  yearMax?: number;
+};
+
+export type JoinCompeteSessionInput = {
+  gameId: string;
+  displayName: string;
+};
+
+export type SetCompeteReadyInput = {
+  gameId: string;
+  playerId: string;
+  ready: boolean;
+};
+
+export type StartCompeteSessionInput = {
+  gameId: string;
+  playerId: string;
 };

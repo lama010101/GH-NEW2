@@ -14,6 +14,13 @@ import {
 import { PRACTICE_EVENTS } from "./mockEvents";
 import { runPreflightCheck } from "./preflight";
 
+function eventCoordinates(event: (typeof PRACTICE_EVENTS)[number]) {
+  return {
+    lat: event.location.lat,
+    lng: event.location.lng
+  };
+}
+
 function createReadyState() {
   let state = createInitialGameState(PRACTICE_EVENTS, "game-selectors");
   state = gameReducer(state, { type: "BEGIN_START" });
@@ -25,10 +32,12 @@ function completeRound(state = createReadyState()) {
   const event = PRACTICE_EVENTS[state.currentRoundIndex];
 
   state = gameReducer(state, { type: "SET_YEAR", year: event.year });
-  state = gameReducer(state, { type: "SET_LOCATION", location: event.location });
-  state = gameReducer(state, { type: "SUBMIT", didTimeout: false });
+  state = gameReducer(state, { type: "SET_LOCATION", location: eventCoordinates(event) });
+  // Two-step: freeze then evaluate
+  state = gameReducer(state, { type: "SUBMIT_AND_EVALUATE", didTimeout: false });
+  expect(state.phase).toBe("ROUND_LOCK");
   state = gameReducer(state, { type: "EVALUATE_ROUND" });
-  state = gameReducer(state, { type: "COMPLETE_EVALUATION" });
+  expect(state.phase).toBe("ROUND_COMPLETE");
 
   return state;
 }
@@ -70,10 +79,10 @@ describe("game selectors", () => {
         state = gameReducer(state, { type: "NEXT_ROUND" });
       }
       state = gameReducer(state, { type: "SET_YEAR", year: event.year });
-      state = gameReducer(state, { type: "SET_LOCATION", location: event.location });
-      state = gameReducer(state, { type: "SUBMIT", didTimeout: false });
+      state = gameReducer(state, { type: "SET_LOCATION", location: eventCoordinates(event) });
+      // Two-step: freeze then evaluate
+      state = gameReducer(state, { type: "SUBMIT_AND_EVALUATE", didTimeout: false });
       state = gameReducer(state, { type: "EVALUATE_ROUND" });
-      state = gameReducer(state, { type: "COMPLETE_EVALUATION" });
     }
 
     expect(selectIsLastRoundResult(state)).toBe(true);

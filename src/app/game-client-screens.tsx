@@ -1,6 +1,8 @@
 import {
   BadgePills,
   EventRevealCard,
+  formatEventGeoLabel,
+  formatLatLng,
   formatAccuracy,
   GuessLocationCard,
   GuessYearCard,
@@ -15,15 +17,25 @@ import { PersistenceErrorCard } from "@/app/game-client-parts";
 
 export { PersistenceErrorCard, LoadingScreen } from "@/app/game-client-parts";
 
-export function LoadErrorScreen({ message, onRetry }: { message: string; onRetry: () => void }) {
+export function LoadErrorScreen({ message, gameId, onRetry }: { message: string; gameId?: string; onRetry: () => void }) {
   return (
     <main className="app-shell">
       <div className="shell-grid">
         <section className="card" style={{ background: "rgba(239, 68, 68, 0.08)" }}>
           <span className="badge">Load failed</span>
           <h1>Unable to load game session</h1>
-          <p>{message}</p>
-          <div className="row">
+          <p style={{ fontFamily: "monospace", fontSize: "0.875rem", padding: "8px", background: "rgba(0,0,0,0.05)", borderRadius: "4px" }}>
+            {message}
+          </p>
+          {gameId && (
+            <p className="small" style={{ marginTop: "8px" }}>
+              Game ID: <code>{gameId}</code>
+            </p>
+          )}
+          <p className="small" style={{ marginTop: "16px", color: "#666" }}>
+            Check browser console for detailed error logs.
+          </p>
+          <div className="row" style={{ marginTop: "16px" }}>
             <button type="button" className="button" onClick={onRetry}>
               Retry
             </button>
@@ -176,7 +188,7 @@ export function GamePhaseHero({
           </div>
         )}
       </div>
-      <p>Accuracy and XP are computed separately. The game remains client-authoritative in this practice slice.</p>
+      <p>Accuracy and XP are computed separately. Session truth is reconstructed from the server on every authoritative transition.</p>
       <p className="small">
         Game ID: {gameId} · Share path: {sharePath}
       </p>
@@ -207,6 +219,18 @@ export function RoundActiveScreen({
   onSubmit: () => void;
   onRestart: () => void;
 }) {
+  console.log("[MAP_RENDER]", {
+    phase: "ROUND_ACTIVE",
+    guessLocation,
+    guessYear,
+    eventId: activeEvent.id,
+    eventGeo: {
+      lat: activeEvent.location.lat,
+      lng: activeEvent.location.lng,
+      name: activeEvent.location.name
+    },
+    timestamp: Date.now()
+  });
   return (
     <section className="layout">
       <div className="stack">
@@ -227,7 +251,7 @@ export function RoundProcessingScreen({ phase }: { phase: GamePhase }) {
   return (
     <section className="card">
       <span className="badge">Round processing</span>
-      <h2>{phase === "ROUND_LOCK" ? "Locking inputs" : "Evaluating round"}</h2>
+      <h2>Evaluating round</h2>
       <p>All inputs are disabled while the single submission pipeline resolves this round.</p>
     </section>
   );
@@ -243,6 +267,7 @@ export function RoundCompleteScreen({
   onNextRound: () => void;
 }) {
   const { event, guess, yearDiff, distanceKm } = latest;
+  const geoLabel = formatEventGeoLabel(event);
 
   return (
     <section className="card">
@@ -276,13 +301,13 @@ export function RoundCompleteScreen({
           <span>Your Guess</span>
           <strong>{guess.year ?? "?"}</strong>
           <span className="small">
-            📍 {guess.location ? `${guess.location.lat.toFixed(2)}, ${guess.location.lng.toFixed(2)}` : "No location"}
+            📍 {guess.location ? formatLatLng(guess.location) : "No location"}
           </span>
         </div>
         <div className="metric">
           <span>Correct Answer</span>
           <strong>{event.year}</strong>
-          <span className="small">📍 {event.locationName}</span>
+          <span className="small">📍 {geoLabel}</span>
         </div>
       </div>
 

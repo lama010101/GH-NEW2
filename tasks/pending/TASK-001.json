@@ -1,0 +1,8 @@
+{
+  "id": "TASK-001",
+  "target_file": "src/file.ts",
+  "target_function": "myFunction",
+  "problem": "short description",
+  "expected_change": "precise behavior",
+  "invariant": "one invariant"
+}

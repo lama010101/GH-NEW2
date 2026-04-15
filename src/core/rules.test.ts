@@ -8,8 +8,12 @@ const MOON_LANDING_EVENT = {
   title: "Moon Landing",
   description: "Apollo 11 lands on the Moon",
   year: 1969,
-  location: { lat: 0.67408, lng: 23.47297 }, // Mare Tranquillitatis
-  locationName: "Mare Tranquillitatis, Moon",
+  location: {
+    id: "moon-landing",
+    name: "Mare Tranquillitatis, Moon",
+    lat: 0.67408,
+    lng: 23.47297
+  },
   region: "Space",
   imageUrl: null,
   thumbUrl: null,

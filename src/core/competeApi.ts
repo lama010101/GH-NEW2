@@ -1,0 +1,237 @@
+import type {
+  CompeteSessionSnapshot,
+  CreateCompeteSessionInput,
+  JoinCompeteSessionInput,
+  LatLng,
+  SessionConfig,
+  SessionPlayer,
+  SetCompeteReadyInput,
+  StartCompeteSessionInput
+} from "./types";
+
+export type CompeteFetch = typeof fetch;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isIsoDateOrNull(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+function isSessionPlayer(value: unknown): value is SessionPlayer {
+  return (
+    isRecord(value) &&
+    typeof value.playerId === "string" &&
+    typeof value.displayName === "string" &&
+    typeof value.joinedAt === "string" &&
+    isIsoDateOrNull(value.leftAt) &&
+    typeof value.ready === "boolean" &&
+    typeof value.isHost === "boolean"
+  );
+}
+
+function isSessionConfig(value: unknown): value is SessionConfig {
+  return (
+    isRecord(value) &&
+    (value.mode === "practice" || value.mode === "sync" || value.mode === "async") &&
+    typeof value.roundTimerSec === "number" &&
+    Number.isFinite(value.roundTimerSec) &&
+    typeof value.totalRounds === "number" &&
+    Number.isFinite(value.totalRounds) &&
+    typeof value.yearMin === "number" &&
+    Number.isFinite(value.yearMin) &&
+    typeof value.yearMax === "number" &&
+    Number.isFinite(value.yearMax) &&
+    (value.hostPlayerId === null || typeof value.hostPlayerId === "string") &&
+    isIsoDateOrNull(value.sessionDeadline) &&
+    isIsoDateOrNull(value.startedAt) &&
+    isIsoDateOrNull(value.completedAt)
+  );
+}
+
+export function isCompeteSessionSnapshot(value: unknown): value is CompeteSessionSnapshot {
+  return (
+    isRecord(value) &&
+    typeof value.gameId === "string" &&
+    (value.status === "LOBBY" || value.status === "ROUND_ACTIVE" || value.status === "ROUND_COMPLETE" || value.status === "SESSION_COMPLETE") &&
+    isSessionConfig(value.config) &&
+    Array.isArray(value.players) &&
+    value.players.every(isSessionPlayer) &&
+    typeof value.currentRoundIndex === "number" &&
+    Number.isFinite(value.currentRoundIndex) &&
+    typeof value.allPlayersReady === "boolean" &&
+    isIsoDateOrNull(value.roundStartsAt) &&
+    (value.viewerPlayerId === null || typeof value.viewerPlayerId === "string")
+  );
+}
+
+async function parseCompeteSnapshot(response: Response): Promise<CompeteSessionSnapshot> {
+  const parsed = (await response.json().catch(() => null)) as unknown;
+
+  if (!isCompeteSessionSnapshot(parsed)) {
+    throw new Error("Invalid compete session payload");
+  }
+
+  return parsed;
+}
+
+async function extractError(response: Response): Promise<string> {
+  const error = (await response.json().catch(() => ({ error: "Unknown error" }))) as { error?: string };
+  return error.error || `Request failed (${response.status})`;
+}
+
+export async function createCompeteSessionRequest(input: CreateCompeteSessionInput, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot> {
+  const response = await fetchImpl("/api/compete/create", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
+
+  if (!response.ok) {
+    throw new Error(await extractError(response));
+  }
+
+  return parseCompeteSnapshot(response);
+}
+
+export async function loadCompeteSessionRequest(gameId: string, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot | null> {
+  const response = await fetchImpl(`/api/compete/${encodeURIComponent(gameId)}`, {
+    cache: "no-store"
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(await extractError(response));
+  }
+
+  return parseCompeteSnapshot(response);
+}
+
+export async function joinCompeteSessionRequest(input: JoinCompeteSessionInput, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot> {
+  const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/join`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ displayName: input.displayName })
+  });
+
+  if (!response.ok) {
+    throw new Error(await extractError(response));
+  }
+
+  return parseCompeteSnapshot(response);
+}
+
+export async function setCompeteReadyRequest(input: SetCompeteReadyInput, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot> {
+  const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/ready`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ playerId: input.playerId, ready: input.ready })
+  });
+
+  if (!response.ok) {
+    throw new Error(await extractError(response));
+  }
+
+  return parseCompeteSnapshot(response);
+}
+
+export async function startCompeteSessionRequest(input: StartCompeteSessionInput, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot> {
+  const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/start`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ playerId: input.playerId })
+  });
+
+  if (!response.ok) {
+    throw new Error(await extractError(response));
+  }
+
+  return parseCompeteSnapshot(response);
+}
+
+export async function submitGuessRequest(
+  input: {
+    gameId: string;
+    playerId: string;
+    roundIndex: number;
+    yearGuess: number | null;
+    locationGuess: LatLng | null;
+    hintsUsed: string[];
+  },
+  fetchImpl: CompeteFetch = fetch
+): Promise<CompeteSessionSnapshot> {
+  const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/guess`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      playerId: input.playerId,
+      roundIndex: input.roundIndex,
+      yearGuess: input.yearGuess,
+      locationGuess: input.locationGuess,
+      hintsUsed: input.hintsUsed
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(await extractError(response));
+  }
+
+  return parseCompeteSnapshot(response);
+}
+
+export async function advanceRoundRequest(
+  input: {
+    gameId: string;
+    playerId: string;
+    roundIndex: number;
+  },
+  fetchImpl: CompeteFetch = fetch
+): Promise<CompeteSessionSnapshot> {
+  const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/advance`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      playerId: input.playerId,
+      roundIndex: input.roundIndex
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(await extractError(response));
+  }
+
+  return parseCompeteSnapshot(response);
+}
+
+export async function getRoundResultsRequest(
+  gameId: string,
+  roundIndex: number,
+  fetchImpl: CompeteFetch = fetch
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number }>> {
+  const response = await fetchImpl(`/api/compete/${encodeURIComponent(gameId)}/round/${roundIndex}/results`, {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(await extractError(response));
+  }
+
+  const data = (await response.json()) as { results: Array<{ playerId: string; score: number; rank: number; accuracy: number }> };
+  return data.results;
+}

@@ -1,16 +1,7 @@
 "use client";
 
-import { useReducer, useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  useEventsLoader,
-  useGameAutosave,
-  useGameBootstrap,
-  useGameRouteSync,
-  usePreflightPhase,
-  useRoundResolution,
-  useRoundTimer
-} from "@/app/game-client-hooks";
+import { useEffect, useReducer, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   GamePhaseHero,
   InitScreen,
@@ -25,7 +16,15 @@ import {
   RoundResultLockedNotice,
   SessionCompleteScreen
 } from "@/app/game-client-screens";
-import { canSubmit, createInitialGameState, gameReducer } from "@/core/gameEngine";
+import { preloadNextRoundImage } from "@/core/assetPreloader";
+import { gameReducer } from "@/core/gameEngine";
+import { runPreflightCheck } from "@/core/preflight";
+import {
+  commitRound,
+  createSession,
+  loadSession,
+  startRound
+} from "@/core/sessionApi";
 import {
   selectCanProceed,
   selectCurrentEvent,
@@ -37,6 +36,7 @@ import {
   selectSessionSummary,
   selectSharePath
 } from "@/core/gameSelectors";
+import type { GameState } from "@/core/types";
 
 type GameClientProps = {
   routeGameId?: string;
@@ -44,13 +44,194 @@ type GameClientProps = {
 
 export function GameClient({ routeGameId }: GameClientProps) {
   const router = useRouter();
-  const { events, isLoading: isEventsLoading, error: eventsError } = useEventsLoader();
-  const [state, dispatch] = useReducer(
-    gameReducer,
-    events.length > 0 ? createInitialGameState(events) : null,
-    (initState) => initState ?? createInitialGameState([])
-  );
+  const pathname = usePathname();
+  const [state, dispatch] = useReducer(gameReducer, null, () => null as unknown as GameState);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [isPreflighting, setIsPreflighting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [preflightIssues, setPreflightIssues] = useState<string[]>([]);
+  const [bootError, setBootError] = useState<string | null>(null);
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    setIsBootstrapping(true);
+    setBootError(null);
+    setPersistenceError(null);
+
+    const load = routeGameId ? loadSession(routeGameId) : createSession();
+
+    void load
+      .then((nextState) => {
+        if (isCancelled) {
+          return;
+        }
+
+        if (nextState === null) {
+          console.error("[GAME_LOAD_ERROR]", {
+            gameId: routeGameId,
+            error: "Session not found",
+            timestamp: Date.now()
+          });
+          setBootError("Session not found");
+          setIsBootstrapping(false);
+          return;
+        }
+
+        console.log("[GAME_LOAD_SUCCESS]", {
+          gameId: nextState.gameId,
+          phase: nextState.phase,
+          roundIndex: nextState.currentRoundIndex,
+          timestamp: Date.now()
+        });
+
+        dispatch({ type: "HYDRATE", state: nextState });
+        setPreflightIssues([]);
+        setIsBootstrapping(false);
+      })
+      .catch((error: unknown) => {
+        if (isCancelled) {
+          return;
+        }
+
+        const errorMessage = error instanceof Error ? error.message : "Unable to load game session";
+        console.error("[GAME_LOAD_ERROR]", {
+          gameId: routeGameId,
+          error: errorMessage,
+          rawError: error,
+          timestamp: Date.now()
+        });
+        setBootError(errorMessage);
+        setIsBootstrapping(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [routeGameId]);
+
+  useEffect(() => {
+    if (!state) {
+      return;
+    }
+
+    const sharePath = selectSharePath(state);
+    if (pathname === sharePath) {
+      return;
+    }
+
+    router.replace(sharePath);
+  }, [pathname, router, state]);
+
+  useEffect(() => {
+    if (!state) {
+      return;
+    }
+
+    if (state.phase === "ROUND_ACTIVE" || state.phase === "ROUND_START") {
+      preloadNextRoundImage(state.events, state.currentRoundIndex);
+    }
+  }, [state?.phase, state?.currentRoundIndex, state?.events, state]);
+
+  async function resetSession() {
+    setIsProcessing(true);
+    setPersistenceError(null);
+
+    try {
+      const nextState = await createSession();
+      dispatch({ type: "HYDRATE", state: nextState });
+      setPreflightIssues([]);
+      setBootError(null);
+    } catch (error) {
+      setPersistenceError(error instanceof Error ? error.message : "Unable to create a new session");
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
+  async function handleStartRound() {
+    if (!state) {
+      return;
+    }
+
+    setIsPreflighting(true);
+    setPersistenceError(null);
+    const preflight = runPreflightCheck(state.events);
+    setPreflightIssues(preflight.issues);
+
+    if (!preflight.passed) {
+      setIsPreflighting(false);
+      return;
+    }
+
+    try {
+      const nextState = await startRound(state.gameId, state.roundResults.length);
+      dispatch({ type: "HYDRATE", state: nextState });
+    } catch (error) {
+      setPersistenceError(error instanceof Error ? error.message : "Unable to start round");
+    } finally {
+      setIsPreflighting(false);
+    }
+  }
+
+  function handleSubmit() {
+    if (!state) {
+      return;
+    }
+
+    if (state.currentGuess.year === null || state.currentGuess.location === null) {
+      return;
+    }
+
+    setPersistenceError(null);
+
+    dispatch({ type: "SUBMIT_AND_EVALUATE", didTimeout: false });
+
+    void commitRound({
+      gameId: state.gameId,
+      roundIndex: state.currentRoundIndex,
+      yearGuess: state.currentGuess.year,
+      locationGuess: state.currentGuess.location,
+      hintsUsed: []
+    }).catch((error: unknown) => {
+      console.error("[Round] Background commit failed:", error);
+      setPersistenceError(error instanceof Error ? error.message : "Round save failed");
+    });
+  }
+
+  function handleAdvance() {
+    if (!state) {
+      return;
+    }
+
+    if (state.phase !== "ROUND_COMPLETE") {
+      return;
+    }
+
+    const nextRoundIndex = state.currentRoundIndex + 1;
+
+    if (nextRoundIndex >= state.events.length) {
+      dispatch({ type: "NEXT_ROUND" });
+      return;
+    }
+
+    dispatch({ type: "NEXT_ROUND" });
+
+    void startRound(state.gameId, nextRoundIndex).catch((error: unknown) => {
+      console.error("[Round] Background persistence failed:", error);
+      setPersistenceError(error instanceof Error ? error.message : "Round start tracking failed");
+    });
+  }
+
+  if (isBootstrapping) {
+    return <LoadingScreen />;
+  }
+
+  if (bootError || !state) {
+    return <LoadErrorScreen message={bootError ?? "Unable to load game session"} gameId={routeGameId} onRetry={() => router.refresh()} />;
+  }
+
   const activeEvent = selectCurrentEvent(state);
   const hasPassedPreflight = selectHasPassedPreflight(state);
   const isComplete = selectIsSessionComplete(state);
@@ -60,72 +241,21 @@ export function GameClient({ routeGameId }: GameClientProps) {
   const roundProgress = selectRoundProgress(state);
   const sessionSummary = selectSessionSummary(state);
   const sharePath = selectSharePath(state);
-
-  const { isBootstrapping, isHydrated, bootError } = useGameBootstrap({
-    routeGameId,
-    events,
-    isEventsLoading,
-    dispatch,
-    setPersistenceError
-  });
-
-  useGameAutosave({
-    isHydrated,
-    state,
-    setPersistenceError
-  });
-
-  useGameRouteSync({
-    isHydrated,
-    sharePath
-  });
-
-  usePreflightPhase({
-    phase: state.phase,
-    dispatch,
-    events
-  });
-
-  useRoundResolution({
-    phase: state.phase,
-    dispatch
-  });
-
-  useRoundTimer({
-    phase: state.phase,
-    dispatch
-  });
-
-  // Show loading while fetching events
-  if (isEventsLoading) {
-    return <LoadingScreen message="Loading historical events..." />;
-  }
-
-  if (eventsError && events.length === 0) {
-    return <LoadErrorScreen message={eventsError} onRetry={() => router.refresh()} />;
-  }
-
-  if (isBootstrapping) {
-    return <LoadingScreen />;
-  }
-
-  if (bootError) {
-    return <LoadErrorScreen message={bootError} onRetry={() => router.refresh()} />;
-  }
+  const isSubmitDisabled = isProcessing || state.currentGuess.year === null || state.currentGuess.location === null;
 
   if (state.phase === "INIT") {
     return (
       <InitScreen
         gameId={state.gameId}
         sharePath={sharePath}
-        preflightIssues={state.preflightIssues}
+        preflightIssues={preflightIssues}
         persistenceError={persistenceError}
-        onStartPractice={() => dispatch({ type: "BEGIN_START" })}
+        onStartPractice={handleStartRound}
       />
     );
   }
 
-  if (state.phase === "PREFLIGHT_CHECK") {
+  if (isPreflighting) {
     return <PreflightScreen persistenceError={persistenceError} />;
   }
 
@@ -135,8 +265,8 @@ export function GameClient({ routeGameId }: GameClientProps) {
         gameId={state.gameId}
         sharePath={sharePath}
         persistenceError={persistenceError}
-        onStartRound={() => dispatch({ type: "START_ROUND" })}
-        onReset={() => dispatch({ type: "RESTART" })}
+        onStartRound={handleStartRound}
+        onReset={resetSession}
       />
     );
   }
@@ -163,15 +293,15 @@ export function GameClient({ routeGameId }: GameClientProps) {
             guessLocation={state.currentGuess.location}
             hasPassedPreflight={hasPassedPreflight}
             roundsCompleted={state.roundResults.length}
-            isSubmitDisabled={!canSubmit(state)}
+            isSubmitDisabled={isSubmitDisabled}
             onSetLocation={(location) => dispatch({ type: "SET_LOCATION", location })}
             onSetYear={(year) => dispatch({ type: "SET_YEAR", year })}
-            onSubmit={() => dispatch({ type: "SUBMIT", didTimeout: false })}
-            onRestart={() => dispatch({ type: "RESTART" })}
+            onSubmit={handleSubmit}
+            onRestart={resetSession}
           />
         )}
 
-        {(state.phase === "ROUND_LOCK" || state.phase === "ROUND_EVALUATE") && (
+        {isProcessing && (
           <RoundProcessingScreen phase={state.phase} />
         )}
 
@@ -179,7 +309,7 @@ export function GameClient({ routeGameId }: GameClientProps) {
           <RoundCompleteScreen
             latest={latest}
             isLastRoundResult={isLastRoundResult}
-            onNextRound={() => dispatch({ type: "NEXT_ROUND" })}
+            onNextRound={handleAdvance}
           />
         )}
 
@@ -187,7 +317,7 @@ export function GameClient({ routeGameId }: GameClientProps) {
           <SessionCompleteScreen
             sessionSummary={sessionSummary}
             roundResults={state.roundResults}
-            onRestart={() => dispatch({ type: "RESTART" })}
+            onRestart={resetSession}
           />
         )}
 

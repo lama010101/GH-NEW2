@@ -1,334 +1,256 @@
-# FULL CORE_GAME — MASTER SPEC 
+Master Specification: Compete Mode as Core
+Executive Summary
+The Compete (multiplayer) mode is the unified core of the game system; all other modes (Practice, Solo, Tournaments, AI Opponents) are derived cases. This spec uses a server-authoritative architecture: the PartyKit server (Cloudflare Durable Object) manages all game state and logic
+. Each player’s actions are logged in append-only tables, enabling idempotency and deterministic replay
+. Key features include a shared-session data model, per-player commit logs, explicit sync/async timer rules, and robust persistence/reconnection via Postgres. The following sections detail legacy components, UI flow, data schema, timer logic, persistence, protocols, and a roadmap.
 
-For reference.
+1. Legacy Inventory
+PartyKit (Sync): server/lobby.ts – main durable-object code. Manages room state, players list, ready flags, host election (isHost()), and messaging. Incoming Zod-validated messages: join, toggle_ready, start_game, submit_guess, set_settings, kick_player, chat. Outgoing: roster_update, game_start, player_submitted, round_complete, advance_round, state_snapshot. Legacy used host-writer locks, which we will simplify into server logic.
+PartyKit (Async): src/multiplayer/Server.ts – separate server for turn-based games. It persisted to Supabase (room_state) and used RPC messages (PLAYER_MOVE, PLAYER_READY_TOGGLE, START_GAME). We will consolidate into one engine.
+Client Adapter: MultiplayerAdapter.ts – wraps WebSocket, reconnection. React pages: Lobby (CompeteLobbyPage.tsx), Results pages.
+Leaderboard System (legacy) was client-side; we will compute scores server-side.
+Database (Supabase): Key tables (legacy) included sync_room_players, room_rounds, sync_round_scores, round_results, sync_guess_events, session_players, partykit_logs, compete_host_diagnostics. We will create new tables for sessions, session_players, round_commits, round_results, and reuse partykit_logs for auditing. Auth/RLS: only the server (service role) can write; clients can SELECT only their own session/player rows.
+2. Lobby & Room Flow
+(The following paragraphs refer to user-provided UI screenshots.)
+A player creates a room, becoming the host. The lobby UI shows fields like “Round Timer (e.g. 2m 00s)”, number of rounds, and “Year Range (-100 – 2026)”, plus an Invite section (room code HWGONB, shareable link). The host can filter friends list and invite them.
 
-## 0. SYSTEM PURPOSE & GLOBAL PRINCIPLES
+Players join by code/link and enter the lobby. The room lists all players and shows “Waiting for players (0/1 ready)”. Each player toggles Ready; only when all players are ready does the game start. The host then either clicks Start Game or it auto-starts.
 
-### 0.1 Purpose
+Once the game starts, the lobby transitions to the game board. During gameplay, the host has no special authority (all game logic is server-handled). If the host disconnects before start, PartyKit’s transferHost() assigns a new host for configuration tasks.
 
-The core game is based on Practice Mode which is a **deterministic, single-player training environment** designed to evaluate user ability to:
+3. Authoritative State Model
 
-- Identify **WHEN** an event occurred (year)
-- Identify **WHERE** an event occurred (geolocation)
+We split state into Session (shared) and Player (per-player) scopes. All mutations happen on the server.
 
-The system produces **two independent scoring dimensions**:
+**Core Specifications:**
+- Event Stream: `docs/core/EVENT_STREAM_SPEC.md`
+- Phase FSM: `docs/core/PHASE_FSM_SPEC.md`
+- Determinism: `docs/core/DETERMINISM_SPEC.md`
 
-- **Accuracy (%) → Primary KPI** — measures skill, continuous, reducible by hint penalty
-- **XP (points) → Secondary reward system** — measures reward, discrete, reducible by hint penalty
+3.1 Session (Shared) State
+Configuration: (game_id, mode, round_timer_sec, total_rounds, year_min, year_max) stored in sessions.
+Global timers: For sync mode, each round’s startAt timestamp; for async, a long-term session_deadline (now + D days).
+Event sequence: List of event IDs or seeds for each round, fixed at game start.
+3.2 Player (Per-Player) State
+Submissions: Each player’s guess per round is logged in round_commits.
+Results: Score, hints used for that round (calculated by server).
+Each action is an immutable commit: key = (game_id, player_id, round_index).
+3.3 Database Schema (DDL)
+sql
+Copy
+CREATE TABLE sessions (
+  game_id UUID PRIMARY KEY,
+  mode VARCHAR NOT NULL,          -- 'sync' or 'async'
+  round_timer_sec INT NOT NULL,
+  total_rounds INT NOT NULL,
+  year_min INT NOT NULL,
+  year_max INT NOT NULL,
+  session_deadline TIMESTAMP,     -- for async (Expires in days)
+  created_at TIMESTAMP DEFAULT now()
+);
 
-These dimensions are **NOT interchangeable** and must remain **strictly separated** at all system levels (state, engine, UI, persistence). They must never be merged, averaged together globally, or converted into one another.
+CREATE TABLE session_players (
+  game_id UUID,
+  player_id UUID,
+  joined_at TIMESTAMP DEFAULT now(),
+  left_at TIMESTAMP,
+  PRIMARY KEY (game_id, player_id)
+);
 
-### 0.2 Viewport
+CREATE TABLE round_commits (
+  game_id UUID,
+  player_id UUID,
+  round_index INT,
+  submitted_at TIMESTAMP,
+  year_guess INT,
+  location_lat DOUBLE PRECISION,
+  location_lng DOUBLE PRECISION,
+  hints_used INT,
+  score INT,
+  PRIMARY KEY (game_id, player_id, round_index)
+);
 
-The app uses 100% width and height. Responsive layouts are allowed. Scroll behavior is explicitly controlled per screen (see Section 6).
+CREATE TABLE round_results (
+  game_id UUID,
+  round_index INT,
+  player_id UUID,
+  score INT,
+  rank INT,
+  PRIMARY KEY (game_id, round_index, player_id)
+);
+We assume reasonable column types. The composite PK enforces idempotency: duplicate submissions are ignored
+.
 
-### 0.3 Input Modes
+3.4 Data Model Diagram
+has
 
-- Desktop: mouse
-- Mobile: touch
-- Behavior must be **identical** across both devices.
+contains
 
-### 0.4 Interaction Locking
+submits
 
-During transitions or result evaluation → **ALL inputs are disabled**. No state mutation is permitted during these windows.
+aggregates
 
-### 0.5 Color System
+has
 
-- Primary color: **ORANGE** — used for CTA buttons, focus states, and progress indicators.
-- Must be **theme-configurable** (Light / Dark modes).
-- No logic may be tied to the theme.
+SESSIONS
 
-### 0.6 Themes (MANDATORY)
+SESSION_PLAYERS
 
-- LIGHT and DARK modes must both be supported.
-- Primary color is different for each mode
-- Themes affect: background, text, card surfaces, map tile style (if supported).
-- No game logic is coupled to theme state.
+ROUND_COMMITS
 
-### 0.7 Localization (MANDATORY)
+ROUND_RESULTS
 
-- UI language and Content language are **independently** selected by the user.
-- UI text = frontend-controlled strings.
-- Content (event descriptions, metadata) = fetched per language from backend.
-- **NO silent fallback mixing** (e.g., do not silently show English content when French is selected).
 
-### 0.8 Constants
+
+Show code
+4. Round Flow & Timer Rules
+4.1 Sync Mode
+Start Round: Server sends ROUND_START with startAt timestamp and round_timer_sec (short, e.g. 120s). All clients use this for the countdown.
+First-Submission Pressure: On the first submit_guess of a round, server clamps remaining time to 20 seconds, broadcasting the change. Clients’ timers jump to 20s
+.
+Round End: Round ends when timer = 0 or all have submitted.
+Results Screen: A 30-second results countdown begins. Each player sees their result and (partial) leaderboard. Next Round activates when either all players click Next or the 30s timer expires, forcing continuation.
+4.2 Async Mode
+Session Timer: At game start, set session_deadline = now + D days (e.g. D=1–7). This is a long global timer for the entire game; there is no per-round timer.
+Turn Progression: Rounds effectively run as "simultaneous turns": each player independently submits. When one player submits, the server notifies others but does not halt their timers (they have none).
+Results Screen: No countdown. Partial leaderboards build as players finish:
+After the 1st player submits, they see their result (Next disabled).
+After the 2nd submits, the first two see a 2-player leaderboard (Next still disabled).
+After the last submits, all see the full leaderboard and Next becomes enabled for everyone.
+4.3 Examples (Async)
+For a 3-player async game:
+
+Player A submits → UI shows A’s score (Next disabled).
+Player B submits → A & B see scores for A and B (Next disabled).
+Player C submits → A, B, C all see scores for A, B, C; Next now enabled.
+No additional timing constraints are needed beyond the session deadline.
+
+5. Persistence & Resilience
+PartyKit (Durable Object) holds in-memory state: current round index, which players have submitted, active timers. It can hibernate when empty and wake on reconnect
+.
+Database Sync: After each round, the server writes all round_commits to the DB. Optionally write immediately on each submission in async mode. Compute scores server-side and write to round_results. Use transactions to ensure atomicity.
+Reconnection: New or rejoining clients receive a STATE_SNAPSHOT from the server, containing session config and all past commits. They rebuild the UI from this. If the DO hibernated, it will load sessions, session_players, round_commits on wake.
+Idempotency: PKs ensure double submissions do not duplicate. The server should check for existing commits before inserting.
+AllReady
+
+timeOut or allSubmitted
+
+resultsTimer=0 or allNext (Sync) / allSubmitted (Async)
+
+nextRound
+
+finalRound
+
+Lobby
+
+Playing
+
+RoundActive
+
+RoundComplete
+
+Next
+
+GameOver
+
+
+
+Show code
+(State machine showing lobby→game→round→results transitions for both modes.)
+
+6. Message Protocol
+6.1 Client ⇒ Server (Schemas)
+JOIN_ROOM: {type:"JOIN_ROOM", gameId, playerId}
+LEAVE_ROOM: {type:"LEAVE_ROOM", gameId, playerId}
+TOGGLE_READY: {type:"TOGGLE_READY", gameId, playerId, ready}
+START_GAME: {type:"START_GAME", gameId, hostId} (host only)
+SUBMIT_GUESS:
+json
+Copy
+{
+  "type":"SUBMIT_GUESS",
+  "gameId":"...", "playerId":"...", "round":2,
+  "year":1978, "lat":48.85, "lng":2.35, "hintsUsed":1
+}
+CHAT_MESSAGE: {type:"CHAT", playerId, message}
+6.2 Server ⇒ Client
+ROSTER_UPDATE: {type:"ROSTER_UPDATE", players:[{id,name,ready}]}
+GAME_START: {type:"GAME_START", gameId, seed, totalRounds, roundTimer}
+ROUND_START: {type:"ROUND_START", round, startAt, duration}
+PLAYER_SUBMITTED: {type:"PLAYER_SUBMITTED", playerId}
+ROUND_COMPLETE:
+json
+Copy
+{
+  "type":"ROUND_COMPLETE", "round":2,
+  "results":[
+     {"playerId":"alice","score":10,"accuracy":8,"hints":0},
+     {"playerId":"bob","score":7,"accuracy":5,"hints":2}
+  ]
+}
+ADVANCE_ROUND: {type:"ADVANCE_ROUND", nextRound}
+STATE_SNAPSHOT: {type:"STATE_SNAPSHOT", session:{...}, commits:[...], players:[...], currentRound, timerLeft}
+These payloads should be validated with the server-side schemas.
+
+7. Determinism & Randomness
+The simulation must be deterministic
+. Use a fixed seed (shared in GAME_START) for any randomness.
+Avoid any non-deterministic operations (no thread race, no non-locked DB reads). Clients never execute game logic, so server ensures uniform outcomes.
+Floating-point maps (distance) are computed server-side or with identical math to avoid discrepancies.
+8. Security & RLS
+JWT Auth: Require a valid JWT on connect to identify playerId.
+RLS: PartyKit service role can INSERT/UPDATE; players (authenticated role) can SELECT only their own rows in session_players, round_commits, round_results.
+No Client Trust: The server computes all scores and tolerates incorrect/missing inputs from clients (e.g. late submits).
+9. Scalability & Ops
+Durable Object Limits: PartyKit DO storage is limited (128KB)
+, so avoid storing large data in-memory. Use DB for history.
+Global Scale: Each room is one DO; rooms scale independently on Cloudflare’s edge
+. You can host millions of rooms.
+DB Load: Low QPS – only commit writes per round. Use efficient keys and indexes.
+Logging/Monitoring: Log major events to partykit_logs. Monitor error rates, liveness (games stuck vs total).
+10. Migration & Roadmap
+Keep: PartyKit infrastructure, lobby/ready UI, 20s pressure, leaderboards.
+Change: Async mode logic as described, server-authoritative practice mode (no client-only mode). Drop legacy snapshot DB writes.
+Roadmap: 1) Implement new tables and RLS; 2) Refactor server code to commit-based model; 3) Update client for async rules; 4) Test edge cases (disconnects, duplicates); 5) Roll out under flag.
+Appendix A: Sample SQL DDL
+(See section 3.3 above for full DDL.)
+
+Appendix B: Message Types Table
+Message	Direction	Description
+JOIN_ROOM	Client→S	Join session with code
+TOGGLE_READY	Client→S	Mark ready/unready
+START_GAME	Client→S	(Host only) begin the game
+SUBMIT_GUESS	Client→S	Send year/location guess
+GAME_START	Server→C	Send initial game config
+ROUND_START	Server→C	Begin a round (with timer info)
+PLAYER_SUBMITTED	Server→C	Notify that a player submitted
+ROUND_COMPLETE	Server→C	Round results and partial leaderboard
+ADVANCE_ROUND	Server→C	Instruct next round or end game
+STATE_SNAPSHOT	Server→C	Full state for reconnect/late-join
+
+Appendix C: Diagrams
+Session State Machine:
+
+**CANONICAL FSM:** See `docs/core/PHASE_FSM_SPEC.md` Section 3
 
 ```
-MAX_ROUNDS = 5
-REPEAT_PROTECTION_BUFFER = 500  // last N events excluded from selection
-AUTOPAN_DURATION_SEC = 5
-TIMER_MIN_SEC = 5
-TIMER_MAX_SEC = 300
-HINT_TOTAL = 12
-MAX_HINT_PENALTY = 1.0  // = 100%, capped
+SESSION_CREATED  → ROUND_STARTED | SESSION_COMPLETE
+ROUND_STARTED    → GUESS_SUBMITTED | ROUND_COMPLETE
+GUESS_SUBMITTED  → GUESS_SUBMITTED | ROUND_COMPLETE
+ROUND_COMPLETE   → ROUND_STARTED | SESSION_COMPLETE
+SESSION_COMPLETE → (terminal)
 ```
 
-Mapped to:
-- STATE_MODEL: GameState runtime objects
-- STATE_LIFECYCLE: INIT, PREFLIGHT_CHECK, ROUND_START, ROUND_ACTIVE, ROUND_LOCK, ROUND_EVALUATE, ROUND_COMPLETE, SESSION_COMPLETE
-- SYSTEM_RULES: MAX_ROUNDS, FETCH_EVENT(), EVALUATE_ANSWER(answer, event), NOW(), AVERAGE(values), SYSTEM_FUNCTION_CHECK(name), ALL_TRUE(values)
-
----
-
-## 1. SYSTEM ARCHITECTURE
-Gameplay is described at the product level, while execution, state, and functions live in the core docs.
-
-Mapped to:
-- STATE_MODEL: runtime objects only
-- STATE_LIFECYCLE: reusable lifecycle phases
-- SYSTEM_RULES: shared constants and pure functions
-
-## 2. STATE SEGMENTATION
-Player-facing behavior is separated into initialization, per-round play, results, and session summary.
-
-Mapped to:
-- STATE_MODEL: runtime objects only
-- STATE_LIFECYCLE: initialization, round flow, completion
-- SYSTEM_RULES: game-wide constants and pure functions
-
-## 3. GAME CONFIGURATION & SETTINGS
-
-Gameplay settings may change timer visibility, auto-pan, hints, and year filtering, but they do not change the core execution contract.
-
-Mapped to:
-- STATE_MODEL: session, round, player, ui
-- STATE_LIFECYCLE: INIT, PREFLIGHT_CHECK, ROUND_START, ROUND_ACTIVE, ROUND_LOCK, ROUND_EVALUATE, ROUND_COMPLETE, SESSION_COMPLETE
-- SYSTEM_RULES: MAX_ROUNDS, FETCH_EVENT(), EVALUATE_ANSWER(answer, event)
-
----
-
-## 4. GAME INITIALIZATION
-
-### 4.1 Preflight Checks (BLOCKING — Game Cannot Start Until All Pass)
-
-The game cannot start until connectivity, storage, and event availability checks pass.
-
-If any check fails, startup is blocked and the player sees an error.
-
-### 4.2 Event Selection
-
-- Exactly **5 events** selected per game
-- Filters applied:
-  - Year range defined by the game setup
-  - **Repeat protection:** Exclude recently played events
-  - No duplicates within the same game
-
-### 4.3 Asset Preloading
-
-- The game prepares the next playable round asset before the user reaches it.
-- If loading fails, the system retries until the asset becomes available.
-
-### 4.4 State Initialization
-
-After startup checks pass and events are selected, the game begins with deterministic round content already prepared.
-
-Mapped to:
-- STATE_MODEL: session, round, player, ui
-- STATE_LIFECYCLE: INIT, PREFLIGHT_CHECK, READY, ROUND_START
-- SYSTEM_RULES: MAX_ROUNDS, FETCH_EVENT(), NOW()
-
----
-
-## 5. ROUND FLOW
-
-### 5.1 Round Behavior
-
-Each round moves from reveal to input, then submission, evaluation, result display, and manual progression to the next round.
-
-### 5.2 Timer Behavior
-
-- The timer runs through the full round.
-- The timer does not pause or reset mid-round.
-- If the timer expires, the round completes automatically.
-
-### 5.3 Cinematic Behavior
-
-- Each round begins with a cinematic reveal.
-- The reveal supports manual interruption and panning.
-- The reveal does not allow game-state changes.
-
-Mapped to:
-- STATE_MODEL: round, session, ui
-- STATE_LIFECYCLE: ROUND_START, ROUND_ACTIVE, ROUND_LOCK, ROUND_EVALUATE, ROUND_COMPLETE
-- SYSTEM_RULES: NOW(), FETCH_EVENT(), EVALUATE_ANSWER(answer, event)
-
----
-
-## 6. UI & UX SPECIFICATION (FULL DETAIL)
-
-The player experiences a cinematic reveal, a guess input phase, a result display, and a final summary screen.
-
-- The cinematic view is immersive and allows interruption.
-- The guess view supports year selection and location placement.
-- The result view shows the outcome of the round.
-- The final summary view shows the full run.
-
-Mapped to:
-- STATE_MODEL: round, player, ui
-- STATE_LIFECYCLE: ROUND_START, ROUND_ACTIVE, ROUND_LOCK, ROUND_EVALUATE, ROUND_COMPLETE, SESSION_COMPLETE
-- SYSTEM_RULES: EVALUATE_ANSWER(answer, event)
-
----
-
-## 7. INPUT & SUBMISSION RULES
-
-### 7.1 Manual Submission
-
-Manual submission requires both a year choice and a location choice.
-
-### 7.2 Timeout Submission (Timer = 0)
-
-When time runs out, the round still completes and any missing input is treated as absent.
-
-### 7.3 Submission Pipeline (Control Layer — Single Path)
-
-The submission path is single and consistent: the chosen inputs are evaluated once, penalties are applied, and the round result is preserved.
-
-Mapped to:
-- STATE_MODEL: round, player, ui
-- STATE_LIFECYCLE: ROUND_ACTIVE, ROUND_LOCK, ROUND_EVALUATE, ROUND_COMPLETE
-- SYSTEM_RULES: EVALUATE_ANSWER(answer, event), NOW()
-
----
-
-## 8. HINT SYSTEM
-
-### 8.1 Structure
-
-### 8.2 Dependency System
-
-Some hints depend on others and cannot be used until the prerequisite hint has been used.
-
-### 8.3 Penalty Calculation
-
-Hint usage reduces reward and cannot reduce reward below zero.
-
-Mapped to:
-- STATE_MODEL: player, round
-- STATE_LIFECYCLE: ROUND_ACTIVE, ROUND_LOCK, ROUND_EVALUATE, ROUND_COMPLETE
-- SYSTEM_RULES: EVALUATE_ANSWER(answer, event)
-
----
-
-## 9. EVALUATION ENGINE (PURE LOGIC — NO STATE)
-
-Scoring behavior is defined in `SYSTEM_RULES.md`.
-
-The game evaluates the player’s year guess and location guess against the event and converts the result into accuracy and XP.
-
-Mapped to:
-- STATE_MODEL: round, player
-- STATE_LIFECYCLE: ROUND_EVALUATE
-- SYSTEM_RULES: EVALUATE_ANSWER(answer, event), ABS(x), DISTANCE_KM(...)
-
----
-
-## 10. RESULTS AGGREGATION
-
-After the final round, the game shows cumulative rewards and summary accuracy derived from the completed rounds.
-
-Mapped to:
-- STATE_MODEL: session, player
-- STATE_LIFECYCLE: ROUND_COMPLETE, SESSION_COMPLETE
-- SYSTEM_RULES: AVERAGE(values)
-
----
-
-## 11. PERSISTENCE LAYER
-
-Persistence requirements are defined in `DATABASE_SCHEMA.md`.
-
-The game stores round outcomes, session summaries, and repeat-protection history consistently with the core database contract.
-
-### 11.2 Local Storage
-
-Session recovery data may be stored locally so a game can resume after an unexpected close.
-
-### 11.3 Persistence Timing
-
-Round results are saved after each evaluation, and session summaries are saved after completion. Writes remain atomic per round.
-
-### 11.4 Stats Module (Separate)
-
-Analytics may be derived from stored results for reporting purposes.
-
-Mapped to:
-- STATE_MODEL: session, round, player
-- STATE_LIFECYCLE: ROUND_COMPLETE, SESSION_COMPLETE
-- SYSTEM_RULES: AVERAGE(values)
-
----
-
-## 12. HARD CONSTRAINTS (NON-NEGOTIABLE)
-
-### Gameplay Constraints
-
-| Rule | Detail |
-|---|---|
-| NO auto-submit | Except when time runs out |
-| NO auto-advance rounds | User must advance between rounds manually |
-| NO timer pause | The timer continues through the entire round |
-| NO partial submission | Manual submission requires both inputs |
-| NO round start without ready assets | The next round must be ready before it begins |
-| NO randomness after initialization | Behavior remains deterministic after setup |
-
-### UI Constraints
-
-| Rule | Detail |
-|---|---|
-| NO image cropping | Images must fit without cropping. Overflow allowed. |
-| NO hidden defaults | Year slider has no default value. Marker has no default position. |
-| NO implicit inputs | Every input requires explicit user action. |
-| NO draggable markers | Map markers are placed by click/tap only. |
-| NO timers in input UI | Timer display/logic is controlled outside the input surface. |
-
-### System Constraints
-
-| Rule | Detail |
-|---|---|
-| NO state mutation outside core docs | All state changes remain in the core contract. |
-| NO coupling between XP and Accuracy | They are computed independently and never interconverted. |
-| NO parallel scoring systems | One engine, one pipeline, one source of truth. |
-| NO undocumented behavior | Anything not described is invalid. |
-
-Mapped to:
-- STATE_MODEL: all runtime objects
-- STATE_LIFECYCLE: all lifecycle phases
-- SYSTEM_RULES: all functions and constants
-
----
-
-## 13. EXPLICIT NON-FEATURES
-
-The following are deliberately **out of scope** for V8 and must not be implemented:
-
-- Multi-device sync
-- Server-authoritative gameplay (client is authoritative in Practice Mode)
-- Partial/incremental submissions
-- Background evaluation
-- Dynamic difficulty adjustment
-- Pausing the game
-- Skipping rounds without submitting
-
-Mapped to:
-- STATE_MODEL: runtime objects only
-- STATE_LIFECYCLE: no extra phases
-- SYSTEM_RULES: no additional functions
-
----
-
-## 14. SCALABILITY HOOKS
-
-The system is designed to support future modes **without modifying** the core execution contract:
-
-- **Multiplayer mode** — same core rules, different product packaging
-- **Level Up mode** — alternate settings and progression pacing
-- **Daily challenges** — same loop, date-based variation
-
-No current implementation work is required for these hooks; the architecture must simply not foreclose them.
-
-Mapped to:
-- STATE_MODEL: runtime objects only
-- STATE_LIFECYCLE: reusable lifecycle phases
-- SYSTEM_RULES: shared constants and pure functions
+ER Model: (see section 3.4 mermaid above)
+
+Appendix D: QA Test Cases
+Sync Pressure Test: Two players, start timer 120s. First submit should set remaining to 20s.
+Sync Results Advance: Ensure 30s countdown allows auto-advance.
+Async Flow: Three players submit sequentially; verify partial/complete leaderboards and Next enablement.
+Disconnection: Player disconnects mid-game and reconnects; state snapshot re-syncs correctly.
+Host Migration: Host disconnects before start; a new host is assigned and can start.
+Duplicate Messages: Resend the same SUBMIT_GUESS; DB remains consistent (single record).
+Sources: PartyKit architecture (Durable Objects, hibernation)
+; authoritative server practices
+; deterministic simulation
+.

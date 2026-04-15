@@ -1,0 +1,4 @@
+SAFE
+Writers:
+- src/file.ts
+Count: 1

@@ -1,5 +1,5 @@
 import { summarizeRounds } from "./rules";
-import { buildGamePath } from "./gamePersistence";
+import { buildGamePath } from "./sessionApi";
 import { MAX_ROUNDS } from "./types";
 import type { EventRecord, GameState, RoundResult, SessionSummary } from "./types";
 
@@ -40,8 +40,7 @@ export function selectRoundProgress(state: GameState): number {
   const inFlightRound =
     state.phase === "ROUND_START" ||
     state.phase === "ROUND_ACTIVE" ||
-    state.phase === "ROUND_LOCK" ||
-    state.phase === "ROUND_EVALUATE"
+    state.phase === "ROUND_LOCK"
       ? 1
       : 0;
 
