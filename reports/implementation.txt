@@ -1,0 +1,4 @@
+grep -n "function myFunction" src/file.ts:42
+
+Change myFunction to return early if input is null.
+@src/file.ts:42-45

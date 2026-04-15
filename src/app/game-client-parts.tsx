@@ -1,17 +1,27 @@
 import type { Badge, EventRecord, LatLng } from "@/core/types";
+import { GameMap } from "@/components/GameMap";
 
 type MetricItem = {
   label: string;
   value: string | number;
 };
 
-function latLngToPosition(location: LatLng) {
-  const left = ((location.lng + 180) / 360) * 100;
-  const top = ((90 - location.lat) / 180) * 100;
-  return {
-    left: `${Math.min(100, Math.max(0, left))}%`,
-    top: `${Math.min(100, Math.max(0, top))}%`
-  };
+export function formatLatLng(location: LatLng) {
+  return `${location.lat.toFixed(2)}, ${location.lng.toFixed(2)}`;
+}
+
+export function getEventCoordinates(event: EventRecord): LatLng {
+  const { lat, lng } = event.location;
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    throw new Error("[GEO_HARD_FAIL] Invalid geo coordinates from API - location.lat or location.lng is not finite");
+  }
+
+  return { lat, lng };
+}
+
+export function formatEventGeoLabel(event: EventRecord) {
+  return event.location.name;
 }
 
 export function formatAccuracy(value: number) {
@@ -52,6 +62,8 @@ export function EventRevealCard({
   revealLabel: string;
   disablePointerEvents?: boolean;
 }) {
+  const geoLabel = formatEventGeoLabel(activeEvent);
+
   return (
     <article className="card">
       <div className="row" style={{ justifyContent: "space-between" }}>
@@ -59,7 +71,7 @@ export function EventRevealCard({
           <h2>{activeEvent.title}</h2>
           <p>{activeEvent.description}</p>
           <p className="small" style={{ marginTop: 8 }}>
-            📍 {activeEvent.locationName} · {activeEvent.region}
+            📍 {geoLabel} · {activeEvent.region}
           </p>
         </div>
         <span className="badge">{activeEvent.region}</span>
@@ -113,26 +125,29 @@ export function GuessLocationCard({
   guessLocation: LatLng | null;
   onSetLocation: (location: LatLng) => void;
 }) {
+  console.log("[GUESS_LOCATION_CARD_RENDER]", {
+    guessLocation,
+    timestamp: Date.now()
+  });
+
   return (
     <article className="card">
       <h3>Guess location</h3>
       <p>Click the map to place a marker. Re-clicking moves the marker.</p>
       <div
-        className="map-grid"
-        onClick={(event) => {
-          const rect = event.currentTarget.getBoundingClientRect();
-          const x = event.clientX - rect.left;
-          const y = event.clientY - rect.top;
-          const lat = 90 - (y / rect.height) * 180;
-          const lng = -180 + (x / rect.width) * 360;
-          onSetLocation({ lat, lng });
+        style={{
+          width: "100%",
+          aspectRatio: "16 / 10",
+          borderRadius: "20px",
+          overflow: "hidden",
+          border: "1px solid var(--border)"
         }}
       >
-        {guessLocation && <div className="map-marker" style={latLngToPosition(guessLocation)} />}
+        <GameMap guessLocation={guessLocation} onSetLocation={onSetLocation} />
       </div>
       <div className="row" style={{ marginTop: 12 }}>
         <span className="small">
-          {guessLocation ? `${guessLocation.lat.toFixed(2)}, ${guessLocation.lng.toFixed(2)}` : "No location selected"}
+          {guessLocation ? formatLatLng(guessLocation) : "No location selected"}
         </span>
       </div>
     </article>
@@ -235,7 +250,7 @@ export function LoadingScreen({ message = "Loading game session..." }: { message
         <section className="card">
           <span className="badge">Loading</span>
           <h1>{message}</h1>
-          <p>Restoring the authoritative GameState snapshot from the database.</p>
+          <p>Reconstructing the authoritative session projection from durable server data.</p>
         </section>
       </div>
     </main>

@@ -216,19 +216,8 @@ export function useRoundResolution({
   dispatch: GameDispatch;
 }) {
   useEffect(() => {
-    if (phase !== "ROUND_LOCK") {
-      return;
-    }
-
-    dispatch({ type: "EVALUATE_ROUND" });
-  }, [dispatch, phase]);
-
-  useEffect(() => {
-    if (phase !== "ROUND_EVALUATE") {
-      return;
-    }
-
-    dispatch({ type: "COMPLETE_EVALUATION" });
+    void phase;
+    void dispatch;
   }, [dispatch, phase]);
 }
 

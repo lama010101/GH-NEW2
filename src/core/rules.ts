@@ -21,6 +21,16 @@ export function haversineDistanceKm(a: LatLng, b: LatLng): number {
   return 2 * radius * Math.asin(Math.min(1, Math.sqrt(haversine)));
 }
 
+function getEventCoordinates(event: EventRecord): LatLng {
+  const { lat, lng } = event.location;
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    throw new Error("[GEO_HARD_FAIL] Invalid geo coordinates from API - location.lat or location.lng is not finite");
+  }
+
+  return { lat, lng };
+}
+
 export function calculateLocationAccuracy(distanceKm: number): number {
   return Math.round(clamp(100 - (distanceKm / MAX_DISTANCE_KM) * 100, 0, 100));
 }
@@ -60,9 +70,10 @@ export function evaluateRound(event: EventRecord, guess: GuessState, roundIndex:
     year: guess.year,
     location: guess.location
   };
+  const eventCoordinates = getEventCoordinates(event);
 
   const yearDiff = fallbackGuess.year === null ? MAX_YEAR_DIFF : fallbackGuess.year - event.year;
-  const distanceKm = fallbackGuess.location === null ? MAX_DISTANCE_KM : haversineDistanceKm(fallbackGuess.location, event.location);
+  const distanceKm = fallbackGuess.location === null ? MAX_DISTANCE_KM : haversineDistanceKm(fallbackGuess.location, eventCoordinates);
 
   const yearAccuracy = calculateYearAccuracy(yearDiff);
   const locationAccuracy = calculateLocationAccuracy(distanceKm);

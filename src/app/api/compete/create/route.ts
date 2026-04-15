@@ -1,0 +1,30 @@
+import { NextResponse } from "next/server";
+import type { CreateCompeteSessionInput } from "@/core/types";
+import { createCompeteSession } from "@/server/sessionCore";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json().catch(() => ({}))) as Partial<CreateCompeteSessionInput>;
+
+    if (typeof body.displayName !== "string") {
+      return NextResponse.json({ error: "displayName is required" }, { status: 400 });
+    }
+
+    const snapshot = await createCompeteSession({
+      displayName: body.displayName,
+      mode: body.mode,
+      roundTimerSec: body.roundTimerSec,
+      totalRounds: body.totalRounds,
+      yearMin: body.yearMin,
+      yearMax: body.yearMax
+    });
+
+    return NextResponse.json(snapshot);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to create compete session";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}

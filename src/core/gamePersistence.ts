@@ -1,5 +1,6 @@
 import { createInitialGameState } from "./gameEngine";
-import type { Badge, EventRecord, GameState, GuessState, LatLng, PendingSubmission, RoundResult } from "./types";
+import { checkStateIntegrity } from "./stateIntegrity";
+import type { Badge, EventRecord, GameState, GuessState, LatLng, RoundLockMeta, RoundResult } from "./types";
 
 export type PersistenceFetch = typeof fetch;
 
@@ -15,6 +16,20 @@ function isLatLng(value: unknown): value is LatLng {
   return isRecord(value) && typeof value.lat === "number" && Number.isFinite(value.lat) && typeof value.lng === "number" && Number.isFinite(value.lng);
 }
 
+function isLocation(value: unknown): value is Location {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.id === "string" &&
+    typeof value.name === "string" &&
+    typeof value.lat === "number" && Number.isFinite(value.lat) &&
+    typeof value.lng === "number" && Number.isFinite(value.lng)
+  );
+}
+
+function isRoundLockMeta(value: unknown): value is RoundLockMeta {
+  return isRecord(value) && typeof value.didTimeout === "boolean";
+}
+
 function isEventRecord(value: unknown): value is EventRecord {
   return (
     isRecord(value) &&
@@ -23,8 +38,7 @@ function isEventRecord(value: unknown): value is EventRecord {
     typeof value.description === "string" &&
     typeof value.year === "number" &&
     Number.isFinite(value.year) &&
-    isLatLng(value.location) &&
-    typeof value.locationName === "string" &&
+    isLocation(value.location) &&
     typeof value.region === "string" &&
     (value.imageUrl === null || isNonEmptyString(value.imageUrl)) &&
     (value.thumbUrl === null || isNonEmptyString(value.thumbUrl)) &&
@@ -41,10 +55,6 @@ function isGuessState(value: unknown): value is GuessState {
   const location = value.location;
 
   return (year === null || (typeof year === "number" && Number.isFinite(year))) && (location === null || isLatLng(location));
-}
-
-function isPendingSubmission(value: unknown): value is PendingSubmission {
-  return isRecord(value) && typeof value.didTimeout === "boolean";
 }
 
 function isBadge(value: unknown): value is Badge {
@@ -95,7 +105,6 @@ export function isPersistedGameState(value: unknown): value is GameState {
       value.phase === "ROUND_START" ||
       value.phase === "ROUND_ACTIVE" ||
       value.phase === "ROUND_LOCK" ||
-      value.phase === "ROUND_EVALUATE" ||
       value.phase === "ROUND_COMPLETE" ||
       value.phase === "SESSION_COMPLETE") &&
     Array.isArray(value.preflightIssues) &&
@@ -113,8 +122,7 @@ export function isPersistedGameState(value: unknown): value is GameState {
     Number.isFinite(value.penalty.accuracy) &&
     typeof value.penalty.xp === "number" &&
     Number.isFinite(value.penalty.xp) &&
-    (value.pendingSubmission === null || isPendingSubmission(value.pendingSubmission)) &&
-    (value.pendingRoundResult === null || isRoundResult(value.pendingRoundResult))
+    (value.roundLockMeta === undefined || isRoundLockMeta(value.roundLockMeta))
   );
 }
 
@@ -176,7 +184,24 @@ export async function bootGameState({
   if (requestedGameId) {
     const persistedState = await loadGameState(requestedGameId, fetchImpl);
     if (persistedState && persistedState.events.every(hasPlayableImage) && persistedState.roundResults.every((round) => hasPlayableImage(round.event))) {
-      return persistedState;
+      // Validate state integrity using Result-based functional flow
+      // No exceptions, explicit error types, audit trail preserved
+      const integrityResult = checkStateIntegrity(persistedState);
+
+      if (integrityResult.ok) {
+        return persistedState;
+      }
+
+      // Log audit trail for rejected state
+      console.error("[BOOT_STATE_REJECTED] Persisted state failed integrity check:", {
+        gameId: persistedState.gameId,
+        phase: persistedState.phase,
+        auditLog: integrityResult.error.auditLog,
+        errors: integrityResult.error.errors.map(e => e.type),
+        timestamp: Date.now()
+      });
+
+      // Fall through to create new state (corrupted state rejected)
     }
   }
 
