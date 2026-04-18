@@ -171,7 +171,7 @@ async function cleanupTestData(): Promise<void> {
     }
 
     for (const gameId of testEntities.sessions) {
-      await client.query("DELETE FROM session_events WHERE game_id = $1", [gameId]);
+      await client.query("DELETE FROM round_events WHERE game_id = $1", [gameId]);
       await client.query("DELETE FROM session_players WHERE game_id = $1", [gameId]);
       await client.query("DELETE FROM round_timing WHERE game_id = $1", [gameId]);
       await client.query("DELETE FROM round_events WHERE game_id = $1", [gameId]);
@@ -211,9 +211,9 @@ async function createTestSession(
     await client.query("BEGIN");
 
     await client.query(
-      `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [gameId, mode, 120, 5, 1500, 2026]
+      `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [gameId, mode, 120, 5, 1500, 2026, BigInt(12345)]
     );
 
     await client.query(

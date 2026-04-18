@@ -9,7 +9,6 @@ import {
   type DbExecutor,
   PRACTICE_PLAYER_ID,
   PRACTICE_PLAYER_NAME,
-  SESSION_VERSION,
   getTransactionClient,
   loadSessionPlayerRows,
   loadSessionRow,
@@ -68,9 +67,9 @@ async function loadSessionEventRows(gameId: string, client?: DbExecutor): Promis
   const executor = client ?? dbPool;
   const result = await executor.query<SessionEventRow>(
     `
-      SELECT round_index, event_id
-      FROM session_events
-      WHERE game_id = $1
+      SELECT round_index, (payload->>'eventId')::text as event_id
+      FROM round_events
+      WHERE game_id = $1 AND event_type = 'ROUND_STARTED'
       ORDER BY round_index ASC
     `,
     [gameId]
@@ -301,10 +300,6 @@ export async function loadPracticeSessionState(gameId: string): Promise<GameStat
     loadSessionPlayerRows(gameId)
   ]);
 
-  if (session.version !== 1 && session.version !== SESSION_VERSION) {
-    throw new Error(`Unsupported session version ${session.version}`);
-  }
-
   const sessionPlayers = playerRows.map(mapSessionPlayerRowToPlayer);
 
   return buildProjectedState({
@@ -327,6 +322,7 @@ export async function createPracticeSession(): Promise<GameState> {
   }
 
   const gameId = randomUUID();
+  const seed = BigInt(Date.now()) ^ BigInt(Math.floor(Math.random() * 0xFFFFFFFF));
   const client = await getTransactionClient();
 
   try {
@@ -336,32 +332,31 @@ export async function createPracticeSession(): Promise<GameState> {
       `
         INSERT INTO sessions (
           game_id,
-          version,
           mode,
           round_timer_sec,
           total_rounds,
           year_min,
           year_max,
-          host_player_id,
-          created_at
+          created_at,
+          seed
         )
-        VALUES ($1, $2, 'practice', $3, $4, $5, $6, $7, now())
+        VALUES ($1, 'practice', $2, $3, $4, $5, now(), $6)
       `,
-      [gameId, SESSION_VERSION, ROUND_DURATION_SEC, MAX_ROUNDS, -100, 2026, PRACTICE_PLAYER_ID]
+      [gameId, ROUND_DURATION_SEC, MAX_ROUNDS, -100, 2026, seed]
     );
 
     await client.query(
       `
-        INSERT INTO session_players (game_id, player_id, display_name, joined_at, ready, is_host)
-        VALUES ($1, $2, $3, now(), true, true)
+        INSERT INTO session_players (game_id, player_id, joined_at)
+        VALUES ($1, $2, now())
       `,
-      [gameId, PRACTICE_PLAYER_ID, PRACTICE_PLAYER_NAME]
+      [gameId, PRACTICE_PLAYER_ID]
     );
 
     for (let roundIndex = 0; roundIndex < events.length; roundIndex += 1) {
       await client.query(
-        "INSERT INTO session_events (game_id, round_index, event_id) VALUES ($1, $2, $3)",
-        [gameId, roundIndex, events[roundIndex].id]
+        "INSERT INTO round_events (game_id, round_index, event_type, payload) VALUES ($1, $2, 'ROUND_STARTED', $3::jsonb)",
+        [gameId, roundIndex, JSON.stringify({ eventId: events[roundIndex].id })]
       );
     }
 

@@ -162,6 +162,7 @@ export type CompeteSessionSnapshot = {
   currentRoundIndex: number;
   allPlayersReady: boolean;
   roundStartsAt: string | null;
+  roundEndsAt: string | null;
   viewerPlayerId: string | null;
   timeRemaining?: number | null;
 };

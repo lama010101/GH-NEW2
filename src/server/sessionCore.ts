@@ -6,7 +6,7 @@
 // round_results written after all players commit (Section 6 — DB-authoritative scoring).
 // submitGuess and advanceRound are PartyKit-only (single mutation authority).
 
-import { randomUUID } from "crypto";
+import { randomUUID, randomBytes } from "crypto";
 import type { Pool } from "pg";
 import {
   CompeteSessionSnapshot,
@@ -37,7 +37,6 @@ import { appendEvent } from "@/server/eventStore";
 
 export const PRACTICE_PLAYER_ID = "00000000-0000-0000-0000-000000000000";
 export const PRACTICE_PLAYER_NAME = "Practice Player";
-export const SESSION_VERSION = 1;
 
 export const PRESSURE_CLAMP_SECONDS = 20;
 export const RESULTS_COUNTDOWN_SECONDS = 30;
@@ -56,7 +55,7 @@ export type SessionRow = {
   year_max: number;
   session_deadline: Date | null;
   created_at: Date;
-  version?: number;
+  seed: bigint;
 };
 
 // Exactly matches public.session_players columns (spec DDL, Section 3.3)
@@ -178,9 +177,7 @@ export const REQUIRED_MULTIPLAYER_TABLES = [
   "session_players",
   "round_commits",
   "round_results",
-  "round_events",
-  "round_timing",
-  "session_events"
+  "round_events"
 ] as const;
 
 export async function verifySchemaIntegrity(executor: DbExecutor = dbPool): Promise<void> {
@@ -249,7 +246,8 @@ export async function loadSessionRow(gameId: string, executor: DbExecutor = dbPo
         year_min,
         year_max,
         session_deadline,
-        created_at
+        created_at,
+        seed
       FROM sessions
       WHERE game_id = $1
       LIMIT 1
@@ -337,12 +335,15 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   }));
   const activePlayers = players.filter((p) => p.leftAt === null);
 
-  // STEP 4: Get round start time from ROUND_STARTED event (event payload, not round_timing)
+  // STEP 4: Get round start time and end time from ROUND_STARTED event (event payload, not round_timing)
   const roundStartedEvent = gameState.events
     .filter(e => e.eventType === "ROUND_STARTED" && e.roundIndex === currentRound)
     .pop();
   const roundStartsAt = roundStartedEvent
     ? (roundStartedEvent.payload?.startedAt as string) ?? null
+    : null;
+  const roundEndsAt = roundStartedEvent
+    ? (roundStartedEvent.payload?.phaseEndsAt as string) ?? null
     : null;
 
   // STEP 5: Build snapshot from reconstructed state
@@ -364,6 +365,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     currentRoundIndex: currentRound,
     allPlayersReady: activePlayers.length > 0,
     roundStartsAt,
+    roundEndsAt,
     viewerPlayerId: viewerPlayerId ?? null,
     timeRemaining: null
   };
@@ -427,6 +429,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
 
   const gameId = randomUUID();
   const hostPlayerId = randomUUID();
+  const seed = BigInt("0x" + randomBytes(8).toString("hex")) & BigInt("0x7FFFFFFFFFFFFFFF");
   const client = await getTransactionClient();
 
   try {
@@ -434,9 +437,9 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
 
     verifyLog("INSERT", "sessions", "OK", `game_id=${gameId} — executing`);
     await client.query(
-      `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax]
+      `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, seed]
     );
     // Cross-connection verification will happen AFTER commit
 
@@ -447,14 +450,13 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
       [gameId, hostPlayerId]
     );
 
-    for (let roundIndex = 0; roundIndex < events.length; roundIndex += 1) {
-      await client.query(
-        `INSERT INTO session_events (game_id, round_index, event_id) VALUES ($1, $2, $3)`,
-        [gameId, roundIndex, events[roundIndex].id]
-      );
-    }
-
-    await appendEvent(client, gameId, "SESSION_CREATED", { mode, totalRounds, hostPlayerId }, null);
+    await appendEvent(client, gameId, "SESSION_CREATED", {
+      mode,
+      totalRounds,
+      hostPlayerId,
+      seed: seed.toString(),
+      eventIds: events.map(e => e.id)
+    }, null);
 
     await client.query("COMMIT");
     verifyLog("COMMIT", "sessions+session_players", "OK", `game_id=${gameId}`);
@@ -592,14 +594,28 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
       throw new Error("At least 2 players required to start");
     }
 
-    await client.query(
-      `INSERT INTO round_timing (game_id, round_index, started_at)
-       VALUES ($1, 0, now())
-       ON CONFLICT (game_id, round_index) DO NOTHING`,
+    const sessionCreatedEventForStart = await client.query<{ payload: { eventIds: string[] } }>(
+      `SELECT payload FROM round_events
+       WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+       ORDER BY id ASC LIMIT 1`,
       [gameId]
     );
-
-    await appendEvent(client, gameId, "ROUND_STARTED", { roundIndex: 0 }, 0);
+    if (sessionCreatedEventForStart.rows.length === 0) {
+      throw new Error("Session event not found");
+    }
+    const startEventIds = sessionCreatedEventForStart.rows[0].payload?.eventIds;
+    if (!Array.isArray(startEventIds) || startEventIds.length === 0) {
+      throw new Error("Event ID not found for round 0");
+    }
+    const startNow = new Date();
+    const startStartedAt = startNow.toISOString();
+    const startPhaseEndsAt = new Date(startNow.getTime() + session.round_timer_sec * 1000).toISOString();
+    await appendEvent(client, gameId, "ROUND_STARTED", {
+      roundIndex: 0,
+      eventId: startEventIds[0],
+      startedAt: startStartedAt,
+      phaseEndsAt: startPhaseEndsAt
+    }, 0);
 
     await client.query("COMMIT");
   } catch (error) {
@@ -700,16 +716,20 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       return snapshot;
     }
 
-    const eventResult = await client.query<{ event_id: string }>(
-      `SELECT event_id FROM session_events WHERE game_id = $1 AND round_index = $2`,
-      [gameId, roundIndex]
+    const sessionCreatedEvent = await client.query<{ payload: { eventIds: string[] } }>(
+      `SELECT payload FROM round_events
+       WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+       ORDER BY id ASC LIMIT 1`,
+      [gameId]
     );
-
-    if (eventResult.rows.length === 0) {
-      throw new Error("Event not found for this round");
+    if (sessionCreatedEvent.rows.length === 0) {
+      throw new Error("Session event not found");
     }
-
-    event = await fetchEventById(eventResult.rows[0].event_id, client);
+    const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
+    if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) {
+      throw new Error("Event ID not found for round index");
+    }
+    event = await fetchEventById(eventIds[roundIndex]);
     if (!event) throw new Error("Could not load event");
 
     const result = evaluateRound(
@@ -861,13 +881,28 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     const nextRoundIndex = roundIndex + 1;
 
     if (nextRoundIndex < session.total_rounds) {
-      await client.query(
-        `INSERT INTO round_timing (game_id, round_index, started_at)
-         VALUES ($1, $2, now())
-         ON CONFLICT (game_id, round_index) DO NOTHING`,
-        [gameId, nextRoundIndex]
+      const sessionCreatedEventForAdvance = await client.query<{ payload: { eventIds: string[] } }>(
+        `SELECT payload FROM round_events
+         WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+         ORDER BY id ASC LIMIT 1`,
+        [gameId]
       );
-      await appendEvent(client, gameId, "ROUND_STARTED", { roundIndex: nextRoundIndex }, nextRoundIndex);
+      if (sessionCreatedEventForAdvance.rows.length === 0) {
+        throw new Error("Session event not found");
+      }
+      const advanceEventIds = sessionCreatedEventForAdvance.rows[0].payload?.eventIds;
+      if (!Array.isArray(advanceEventIds) || nextRoundIndex >= advanceEventIds.length) {
+        throw new Error(`Event ID not found for round ${nextRoundIndex}`);
+      }
+      const advanceNow = new Date();
+      const advanceStartedAt = advanceNow.toISOString();
+      const advancePhaseEndsAt = new Date(advanceNow.getTime() + session.round_timer_sec * 1000).toISOString();
+      await appendEvent(client, gameId, "ROUND_STARTED", {
+        roundIndex: nextRoundIndex,
+        eventId: advanceEventIds[nextRoundIndex],
+        startedAt: advanceStartedAt,
+        phaseEndsAt: advancePhaseEndsAt
+      }, nextRoundIndex);
     } else {
       await appendEvent(client, gameId, "SESSION_COMPLETE", { totalRounds: session.total_rounds }, roundIndex);
     }
@@ -949,14 +984,19 @@ async function computeAndWriteRoundResults(
     const row = commits.rows[i];
 
     // Fetch the event to compute replay fields
-    const eventResult = await executor.query<{ event_id: string }>(
-      `SELECT event_id FROM session_events WHERE game_id = $1 AND round_index = $2`,
-      [gameId, roundIndex]
+    const sessionCreatedEvent = await executor.query<{ payload: { eventIds: string[] } }>(
+      `SELECT payload FROM round_events
+       WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+       ORDER BY id ASC LIMIT 1`,
+      [gameId]
     );
 
-    if (eventResult.rows.length === 0) continue;
+    if (sessionCreatedEvent.rows.length === 0) continue;
 
-    const event = await fetchEventById(eventResult.rows[0].event_id, executor);
+    const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
+    if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) continue;
+
+    const event = await fetchEventById(eventIds[roundIndex], executor);
     if (!event) continue;
 
     // Build guess state for recomputation

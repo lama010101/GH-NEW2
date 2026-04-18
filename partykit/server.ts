@@ -3,6 +3,8 @@ import {
   submitGuess,
   advanceRound,
   getRoundResults,
+  setCompetePlayerReady,
+  startCompeteSession,
   type SubmitGuessInput
 } from "../src/server/sessionCore";
 
@@ -21,7 +23,7 @@ export type ServerMessage =
 export type ClientMessage =
   | { type: "ROSTER_UPDATE"; players: Array<{ id: string; name: string; ready: boolean; isHost: boolean }> }
   | { type: "GAME_START"; gameId: string; seed: string; totalRounds: number; roundTimerSec: number }
-  | { type: "ROUND_START"; round: number; startAt: string; durationSec: number; eventId: string }
+  | { type: "ROUND_START"; round: number; startAt: string; phaseEndsAt: string; durationSec: number; eventId: string }
   | { type: "PLAYER_SUBMITTED"; playerId: string; round: number }
   | { type: "ROUND_COMPLETE"; round: number; results: Array<{ playerId: string; score: number; accuracy: number; hints: number }> }
   | { type: "ADVANCE_ROUND"; nextRound: number | null }
@@ -43,6 +45,8 @@ interface Connection {
 export default class GameServer {
   private timerInterval: NodeJS.Timeout | null = null;
   private lastBroadcastTimeRemaining: number | null = null;
+  private phaseEndsAt: string | null = null;
+  private displayNames: Map<string, string> = new Map();
 
   constructor(readonly room: Room) {}
 
@@ -53,6 +57,12 @@ export default class GameServer {
     const snapshot = await loadCompeteSessionSnapshot(gameId);
 
     if (snapshot) {
+      // Populate displayNames from snapshot players
+      for (const player of snapshot.players) {
+        const name = player.displayName || player.playerId.slice(0, 8);
+        this.displayNames.set(player.playerId, name);
+      }
+
       const msg: ClientMessage = {
         type: "STATE_SNAPSHOT",
         session: snapshot.config,
@@ -74,23 +84,24 @@ export default class GameServer {
       return; // Already running
     }
 
-    this.timerInterval = setInterval(async () => {
-      const gameId = this.room.id;
-      const snapshot = await loadCompeteSessionSnapshot(gameId);
-
-      const timeRemaining = snapshot?.timeRemaining ?? null;
-      if (snapshot?.status === "ROUND_ACTIVE" && timeRemaining !== null) {
-        // Only broadcast if time changed
-        if (timeRemaining !== this.lastBroadcastTimeRemaining) {
-          this.lastBroadcastTimeRemaining = timeRemaining;
-          const timerMsg: ClientMessage = {
-            type: "TIMER_TICK",
-            timeRemaining
-          };
-          this.room.broadcast(JSON.stringify(timerMsg));
-        }
-      } else {
-        // Stop timer if round not active or no time remaining
+    this.timerInterval = setInterval(() => {
+      if (!this.phaseEndsAt) {
+        this.stopTimerBroadcast();
+        return;
+      }
+      const timeRemaining = Math.max(
+        0,
+        Math.round((new Date(this.phaseEndsAt).getTime() - Date.now()) / 1000)
+      );
+      if (timeRemaining !== this.lastBroadcastTimeRemaining) {
+        this.lastBroadcastTimeRemaining = timeRemaining;
+        const timerMsg: ClientMessage = {
+          type: "TIMER_TICK",
+          timeRemaining
+        };
+        this.room.broadcast(JSON.stringify(timerMsg));
+      }
+      if (timeRemaining === 0) {
         this.stopTimerBroadcast();
       }
     }, TIMER_TICK_INTERVAL_MS);
@@ -171,10 +182,12 @@ export default class GameServer {
           this.room.broadcast(JSON.stringify(advanceMsg));
 
           if (snapshot.status !== "SESSION_COMPLETE") {
+            this.phaseEndsAt = snapshot.roundEndsAt ?? null;
             const roundStartMsg: ClientMessage = {
               type: "ROUND_START",
               round: snapshot.currentRoundIndex,
-              startAt: new Date().toISOString(),
+              startAt: snapshot.roundStartsAt ?? new Date().toISOString(),
+              phaseEndsAt: snapshot.roundEndsAt ?? "",
               durationSec: snapshot.config.roundTimerSec,
               eventId: ""
             };
@@ -187,6 +200,86 @@ export default class GameServer {
             this.stopTimerBroadcast();
           }
 
+          break;
+        }
+
+        case "JOIN_ROOM": {
+          // Store displayName in memory cache
+          this.displayNames.set(data.playerId, data.displayName);
+
+          const snapshot = await loadCompeteSessionSnapshot(gameId, data.playerId);
+
+          // Build roster with display names
+          const players = snapshot?.players.map(p => ({
+            id: p.playerId,
+            name: this.displayNames.get(p.playerId) || p.playerId.slice(0, 8),
+            ready: true,
+            isHost: false
+          })) ?? [];
+
+          const rosterMsg: ClientMessage = {
+            type: "ROSTER_UPDATE",
+            players
+          };
+          this.room.broadcast(JSON.stringify(rosterMsg));
+          break;
+        }
+
+        case "TOGGLE_READY": {
+          await setCompetePlayerReady({
+            gameId,
+            playerId: data.playerId,
+            ready: data.ready
+          });
+
+          const snapshot = await loadCompeteSessionSnapshot(gameId, data.playerId);
+
+          // Build roster with display names
+          const players = snapshot?.players.map(p => ({
+            id: p.playerId,
+            name: this.displayNames.get(p.playerId) || p.playerId.slice(0, 8),
+            ready: true,
+            isHost: false
+          })) ?? [];
+
+          const rosterMsg: ClientMessage = {
+            type: "ROSTER_UPDATE",
+            players
+          };
+          this.room.broadcast(JSON.stringify(rosterMsg));
+          break;
+        }
+
+        case "START_GAME": {
+          const snapshot = await startCompeteSession({
+            gameId,
+            playerId: data.playerId
+          });
+
+          // Broadcast GAME_START
+          const gameStartMsg: ClientMessage = {
+            type: "GAME_START",
+            gameId,
+            seed: (snapshot.config as { seed?: string }).seed ?? "",
+            totalRounds: snapshot.config.totalRounds,
+            roundTimerSec: snapshot.config.roundTimerSec
+          };
+          this.room.broadcast(JSON.stringify(gameStartMsg));
+
+          // Immediately broadcast ROUND_START for round 0
+          const roundStartMsg: ClientMessage = {
+            type: "ROUND_START",
+            round: 0,
+            startAt: snapshot.roundStartsAt ?? new Date().toISOString(),
+            phaseEndsAt: snapshot.roundEndsAt ?? "",
+            durationSec: snapshot.config.roundTimerSec,
+            eventId: ""
+          };
+          this.room.broadcast(JSON.stringify(roundStartMsg));
+
+          // Set phase ends at and start timer
+          this.phaseEndsAt = snapshot.roundEndsAt ?? null;
+          this.startTimerBroadcast();
           break;
         }
 
