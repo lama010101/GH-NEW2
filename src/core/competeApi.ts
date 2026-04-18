@@ -171,7 +171,7 @@ export async function submitGuessRequest(
     hintsUsed: string[];
   },
   fetchImpl: CompeteFetch = fetch
-): Promise<CompeteSessionSnapshot> {
+): Promise<{ success: true }> {
   const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/guess`, {
     method: "POST",
     headers: {
@@ -190,7 +190,7 @@ export async function submitGuessRequest(
     throw new Error(await extractError(response));
   }
 
-  return parseCompeteSnapshot(response);
+  return { success: true };
 }
 
 export async function advanceRoundRequest(
@@ -200,7 +200,7 @@ export async function advanceRoundRequest(
     roundIndex: number;
   },
   fetchImpl: CompeteFetch = fetch
-): Promise<CompeteSessionSnapshot> {
+): Promise<{ success: true }> {
   const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/advance`, {
     method: "POST",
     headers: {
@@ -216,7 +216,7 @@ export async function advanceRoundRequest(
     throw new Error(await extractError(response));
   }
 
-  return parseCompeteSnapshot(response);
+  return { success: true };
 }
 
 export async function getRoundResultsRequest(

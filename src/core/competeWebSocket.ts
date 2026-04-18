@@ -7,6 +7,9 @@ export type WebSocketMessage =
   | { type: "PRESSURE_APPLIED"; remainingSec: number }
   | { type: "TIMER_TICK"; timeRemaining: number | null }
   | { type: "STATE_SNAPSHOT"; session: unknown; players: unknown[]; currentRound: number; timerLeft: number | null }
+  | { type: "ROSTER_UPDATE"; players: Array<{ id: string; name: string; ready: boolean; isHost: boolean }> }
+  | { type: "GAME_START"; gameId: string; seed: number; totalRounds: number; roundTimer: number }
+  | { type: "ROUND_START"; round: number; startAt: string; duration: number; eventId: string }
   | { type: "ERROR"; message: string };
 
 export type CompeteWebSocketCallbacks = {
@@ -16,6 +19,9 @@ export type CompeteWebSocketCallbacks = {
   onPressureApplied?: (remainingSec: number) => void;
   onTimerTick?: (timeRemaining: number | null) => void;
   onStateSnapshot?: (snapshot: CompeteSessionSnapshot) => void;
+  onRosterUpdate?: (players: Array<{ id: string; name: string; ready: boolean; isHost: boolean }>) => void;
+  onGameStart?: (data: { gameId: string; seed: number; totalRounds: number; roundTimer: number }) => void;
+  onRoundStart?: (data: { round: number; startAt: string; duration: number; eventId: string }) => void;
   onError?: (message: string) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
@@ -106,6 +112,25 @@ export class CompeteWebSocket {
           this.callbacks.onStateSnapshot?.(data as unknown as CompeteSessionSnapshot);
         }
         break;
+      case "ROSTER_UPDATE":
+        this.callbacks.onRosterUpdate?.(data.players);
+        break;
+      case "GAME_START":
+        this.callbacks.onGameStart?.({
+          gameId: data.gameId,
+          seed: data.seed,
+          totalRounds: data.totalRounds,
+          roundTimer: data.roundTimer
+        });
+        break;
+      case "ROUND_START":
+        this.callbacks.onRoundStart?.({
+          round: data.round,
+          startAt: data.startAt,
+          duration: data.duration,
+          eventId: data.eventId
+        });
+        break;
       case "ERROR":
         this.callbacks.onError?.(data.message);
         break;
@@ -171,6 +196,32 @@ export class CompeteWebSocket {
       type: "ADVANCE_ROUND",
       playerId: this.playerId,
       roundIndex
+    });
+  }
+
+  joinRoom(displayName: string): void {
+    this.send({
+      type: "JOIN_ROOM",
+      gameId: this.gameId,
+      playerId: this.playerId,
+      displayName
+    });
+  }
+
+  toggleReady(ready: boolean): void {
+    this.send({
+      type: "TOGGLE_READY",
+      gameId: this.gameId,
+      playerId: this.playerId,
+      ready
+    });
+  }
+
+  startGame(): void {
+    this.send({
+      type: "START_GAME",
+      gameId: this.gameId,
+      playerId: this.playerId
     });
   }
 }

@@ -14,9 +14,9 @@ import { randomUUID } from "crypto";
 async function createTestSession(client: DbTransactionClient): Promise<string> {
   const gameId = randomUUID();
   await client.query(
-    `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-     VALUES ($1, 'sync', 120, 3, 1800, 2024)`,
-    [gameId]
+    `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+     VALUES ($1, 'sync', 120, 3, 1800, 2024, $2)`,
+    [gameId, BigInt(12345)]
   );
   return gameId;
 }
@@ -40,9 +40,9 @@ describe("CORE-FIX-002: Zero-Corruption Event Pipeline", () => {
 
           // Create session first
           await client.query(
-            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-             VALUES ($1, 'sync', 120, 3, 1800, 2024)`,
-            [gameId]
+            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+             VALUES ($1, 'sync', 120, 3, 1800, 2024, $2)`,
+            [gameId, BigInt(12345)]
           );
 
           // Valid: SESSION_CREATED
@@ -84,9 +84,9 @@ describe("CORE-FIX-002: Zero-Corruption Event Pipeline", () => {
 
           // Create session
           await client.query(
-            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-             VALUES ($1, 'sync', 120, 3, 1800, 2024)`,
-            [gameId]
+            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+             VALUES ($1, 'sync', 120, 3, 1800, 2024, $2)`,
+            [gameId, BigInt(12345)]
           );
 
           // Valid: SESSION_CREATED → ROUND_STARTED → ROUND_COMPLETE → SESSION_COMPLETE
@@ -169,9 +169,9 @@ describe("CORE-FIX-002: Zero-Corruption Event Pipeline", () => {
 
           // Create session
           await client.query(
-            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-             VALUES ($1, 'sync', 120, 3, 1800, 2024)`,
-            [gameId]
+            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+             VALUES ($1, 'sync', 120, 3, 1800, 2024, $2)`,
+            [gameId, BigInt(12345)]
           );
 
           // Valid: SESSION_CREATED → ROUND_STARTED (round 0)
@@ -213,9 +213,9 @@ describe("CORE-FIX-002: Zero-Corruption Event Pipeline", () => {
 
           // Create session
           await client.query(
-            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-             VALUES ($1, 'sync', 120, 3, 1800, 2024)`,
-            [gameId]
+            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+             VALUES ($1, 'sync', 120, 3, 1800, 2024, $2)`,
+            [gameId, BigInt(12345)]
           );
 
           // Valid: SESSION_CREATED → ROUND_STARTED (round 0)
@@ -255,9 +255,9 @@ describe("CORE-FIX-002: Zero-Corruption Event Pipeline", () => {
 
           // Create session
           await client.query(
-            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-             VALUES ($1, 'sync', 120, 3, 1800, 2024)`,
-            [gameId]
+            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+             VALUES ($1, 'sync', 120, 3, 1800, 2024, $2)`,
+            [gameId, BigInt(12345)]
           );
 
           // Valid full lifecycle
@@ -294,9 +294,9 @@ describe("CORE-FIX-002: Zero-Corruption Event Pipeline", () => {
 
           // Create session
           await client.query(
-            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-             VALUES ($1, 'sync', 120, 3, 1800, 2024)`,
-            [gameId]
+            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+             VALUES ($1, 'sync', 120, 3, 1800, 2024, $2)`,
+            [gameId, BigInt(12345)]
           );
 
           // Valid: SESSION_CREATED
@@ -347,9 +347,9 @@ describe("CORE-FIX-002: Zero-Corruption Event Pipeline", () => {
 
           // Create session
           await client.query(
-            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max)
-             VALUES ($1, 'sync', 120, 3, 1800, 2024)`,
-            [gameId]
+            `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
+             VALUES ($1, 'sync', 120, 3, 1800, 2024, $2)`,
+            [gameId, BigInt(12345)]
           );
 
           // Valid: SESSION_CREATED → ROUND_STARTED

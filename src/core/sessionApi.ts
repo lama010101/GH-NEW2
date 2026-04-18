@@ -182,23 +182,58 @@ async function extractError(response: Response): Promise<string> {
   return error.error || `Request failed (${response.status})`;
 }
 
+function adaptCompeteSnapshot(raw: unknown): GameState {
+  if (
+    typeof raw !== "object" ||
+    raw === null ||
+    typeof (raw as Record<string, unknown>).gameId !== "string" ||
+    typeof (raw as Record<string, unknown>).status !== "string"
+  ) {
+    throw new Error("Invalid compete session payload");
+  }
+
+  const snap = raw as Record<string, unknown>;
+
+  const statusToPhase: Record<string, string> = {
+    "LOBBY": "READY",
+    "ROUND_ACTIVE": "ROUND_ACTIVE",
+    "ROUND_COMPLETE": "ROUND_COMPLETE",
+    "SESSION_COMPLETE": "SESSION_COMPLETE"
+  };
+
+  const phase = statusToPhase[snap.status as string] ?? "READY";
+
+  return {
+    gameId: snap.gameId as string,
+    phase,
+    events: [],
+    currentRoundIndex: typeof snap.currentRoundIndex === "number" ? snap.currentRoundIndex : 0,
+    currentGuess: { year: null, location: null },
+    roundResults: [],
+    penalty: { accuracy: 0, xp: 0 },
+    timerSeconds: null,
+    roundStartedAt: snap.roundStartsAt as string ?? null,
+    isHost: false
+  } as unknown as GameState;
+}
+
 export async function createSession(fetchImpl: SessionFetch = fetch): Promise<GameState> {
-  const response = await fetchImpl("/api/session/create", {
+  const response = await fetchImpl("/api/compete/create", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    }
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ displayName: "Player" })
   });
 
   if (!response.ok) {
     throw new Error(await extractError(response));
   }
 
-  return parseSessionProjection(response);
+  const raw = await response.json().catch(() => null);
+  return adaptCompeteSnapshot(raw);
 }
 
 export async function loadSession(gameId: string, fetchImpl: SessionFetch = fetch): Promise<GameState | null> {
-  const response = await fetchImpl(`/api/session/${encodeURIComponent(gameId)}`, {
+  const response = await fetchImpl(`/api/compete/${encodeURIComponent(gameId)}`, {
     cache: "no-store"
   });
 
@@ -210,7 +245,8 @@ export async function loadSession(gameId: string, fetchImpl: SessionFetch = fetc
     throw new Error(await extractError(response));
   }
 
-  return parseSessionProjection(response);
+  const raw = await response.json().catch(() => null);
+  return adaptCompeteSnapshot(raw);
 }
 
 export async function startRound(gameId: string, roundIndex: number, fetchImpl: SessionFetch = fetch): Promise<GameState> {

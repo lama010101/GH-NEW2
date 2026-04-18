@@ -1,24 +1,13 @@
 import { mapEventRowToEventRecord } from "./mappers/eventMapper";
 import { dbPool } from "./db";
- import type { Pool } from "pg";
-import type { EventRecord, EventHint } from "@/core/types";
+import type { Pool } from "pg";
+import type { EventRecord } from "@/core/types";
 
-export type EventImageRecord = {
-  id: string;
-  eventId: string;
-  imageUrl: string;
-  thumbUrl: string | null;
-  altText: string | null;
-  source: string;
-  width: number | null;
-  height: number | null;
-  isPrimary: boolean;
-};
-
- type DbExecutor = Pick<Pool, "query">;
+type DbExecutor = Pick<Pool, "query">;
 
 /**
- * Fetch events with their images and hints, returned as EventRecord format
+ * Fetch events with their locations and images.
+ * Returns EventRecord format for game consumption.
  */
 export async function fetchEventsWithDetails(options: {
   limit?: number;
@@ -30,10 +19,9 @@ export async function fetchEventsWithDetails(options: {
   const { limit = 10, excludeIds = [], minYear, maxYear, regions } = options;
 
   let whereClauses: string[] = [
-    "e.year IS NOT NULL",
-    "e.location_lat IS NOT NULL",
-    "e.location_lng IS NOT NULL",
-    "EXISTS (SELECT 1 FROM event_images ei_required WHERE ei_required.event_id = e.id AND ei_required.image_url IS NOT NULL)",
+    "e.status = 'validated'",
+    "l.latitude IS NOT NULL",
+    "l.longitude IS NOT NULL"
   ];
   const params: (string | number | string[])[] = [];
   let paramIndex = 1;
@@ -45,19 +33,19 @@ export async function fetchEventsWithDetails(options: {
   }
 
   if (minYear !== undefined) {
-    whereClauses.push(`e.year >= $${paramIndex}`);
+    whereClauses.push(`e.event_year >= $${paramIndex}`);
     params.push(minYear);
     paramIndex++;
   }
 
   if (maxYear !== undefined) {
-    whereClauses.push(`e.year <= $${paramIndex}`);
+    whereClauses.push(`e.event_year <= $${paramIndex}`);
     params.push(maxYear);
     paramIndex++;
   }
 
   if (regions && regions.length > 0) {
-    whereClauses.push(`e.region = ANY($${paramIndex}::text[])`);
+    whereClauses.push(`l.continent = ANY($${paramIndex}::text[])`);
     params.push(regions);
     paramIndex++;
   }
@@ -69,49 +57,27 @@ export async function fetchEventsWithDetails(options: {
       e.id,
       e.title,
       e.description,
-      e.year,
-      e.location_lat,
-      e.location_lng,
-      e.location_name,
-      e.region,
+      e.event_year,
+      l.latitude,
+      l.longitude,
+      l.display_name,
+      l.country as region,
       e.category,
-      e.difficulty,
       COALESCE(
         jsonb_agg(
-          DISTINCT jsonb_build_object(
-            'id', ei.id,
-            'eventId', ei.event_id,
-            'imageUrl', ei.image_url,
-            'thumbUrl', ei.thumb_url,
-            'altText', ei.alt_text,
-            'source', ei.source,
-            'width', ei.width,
-            'height', ei.height,
-            'isPrimary', ei.is_primary
-          )
-        ) FILTER (WHERE ei.id IS NOT NULL),
+          jsonb_build_object(
+            'imageUrl', i.url,
+            'thumbUrl', i.url,
+            'isPrimary', true
+          ) ORDER BY i.display_order, i.created_at
+        ) FILTER (WHERE i.id IS NOT NULL),
         '[]'::jsonb
-      ) as images,
-      COALESCE(
-        jsonb_agg(
-          DISTINCT jsonb_build_object(
-            'id', h.id,
-            'eventId', h.event_id,
-            'level', h.level,
-            'type', h.type,
-            'text', h.text,
-            'distanceKm', h.distance_km,
-            'timeDiffYears', h.time_diff_years,
-            'penaltyBp', h.penalty_bp
-          )
-        ) FILTER (WHERE h.id IS NOT NULL),
-        '[]'::jsonb
-      ) as hints
+      ) as images
     FROM events e
-    LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.image_url IS NOT NULL
-    LEFT JOIN hints h ON h.event_id = e.id
+    JOIN locations l ON l.event_id = e.id
+    LEFT JOIN images i ON i.event_id = e.id
     WHERE ${whereClause}
-    GROUP BY e.id
+    GROUP BY e.id, e.title, e.description, e.event_year, l.latitude, l.longitude, l.display_name, l.country
     ORDER BY RANDOM()
     LIMIT $${paramIndex}
   `;
@@ -122,98 +88,92 @@ export async function fetchEventsWithDetails(options: {
     id: string;
     title: string;
     description: string | null;
-    year: number;
-    location_lat: number;
-    location_lng: number;
-    location_name: string | null;
+    event_year: number;
+    latitude: number;
+    longitude: number;
+    display_name: string | null;
     region: string | null;
     category: string | null;
-    difficulty: number | null;
     images: unknown;
-    hints: unknown;
   }>(query, params);
 
   return result.rows.map((row) => mapEventRowToEventRecord(row));
 }
 
 /**
- * Fetch a single event by ID with all details
+ * Fetch a single event by ID with all details including hints
  */
 export async function fetchEventById(eventId: string, executor: DbExecutor = dbPool): Promise<EventRecord | null> {
-  const query = `
+  // Main event query with location and images
+  const eventQuery = `
     SELECT
       e.id,
       e.title,
       e.description,
-      e.year,
-      e.location_lat,
-      e.location_lng,
-      e.location_name,
-      e.region,
+      e.event_year,
+      l.latitude,
+      l.longitude,
+      l.display_name,
+      l.country as region,
       e.category,
-      e.difficulty,
       COALESCE(
         jsonb_agg(
-          DISTINCT jsonb_build_object(
-            'id', ei.id,
-            'eventId', ei.event_id,
-            'imageUrl', ei.image_url,
-            'thumbUrl', ei.thumb_url,
-            'altText', ei.alt_text,
-            'source', ei.source,
-            'width', ei.width,
-            'height', ei.height,
-            'isPrimary', ei.is_primary
-          )
-        ) FILTER (WHERE ei.id IS NOT NULL),
+          jsonb_build_object(
+            'imageUrl', i.url,
+            'thumbUrl', i.url,
+            'isPrimary', true
+          ) ORDER BY i.display_order, i.created_at
+        ) FILTER (WHERE i.id IS NOT NULL),
         '[]'::jsonb
-      ) as images,
-      COALESCE(
-        jsonb_agg(
-          DISTINCT jsonb_build_object(
-            'id', h.id,
-            'eventId', h.event_id,
-            'level', h.level,
-            'type', h.type,
-            'text', h.text,
-            'distanceKm', h.distance_km,
-            'timeDiffYears', h.time_diff_years,
-            'penaltyBp', h.penalty_bp
-          )
-        ) FILTER (WHERE h.id IS NOT NULL),
-        '[]'::jsonb
-      ) as hints
+      ) as images
     FROM events e
-    LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.image_url IS NOT NULL
-    LEFT JOIN hints h ON h.event_id = e.id
+    JOIN locations l ON l.event_id = e.id
+    LEFT JOIN images i ON i.event_id = e.id
     WHERE e.id = $1
-      AND e.year IS NOT NULL
-      AND e.location_lat IS NOT NULL
-      AND e.location_lng IS NOT NULL
-      AND EXISTS (SELECT 1 FROM event_images ei_required WHERE ei_required.event_id = e.id AND ei_required.image_url IS NOT NULL)
-    GROUP BY e.id
+      AND e.status = 'validated'
+      AND l.latitude IS NOT NULL
+      AND l.longitude IS NOT NULL
+    GROUP BY e.id, e.title, e.description, e.event_year, l.latitude, l.longitude, l.display_name, l.country
   `;
 
-  const result = await executor.query<{
+  const eventResult = await executor.query<{
     id: string;
     title: string;
     description: string | null;
-    year: number;
-    location_lat: number;
-    location_lng: number;
-    location_name: string | null;
+    event_year: number;
+    latitude: number;
+    longitude: number;
+    display_name: string | null;
     region: string | null;
     category: string | null;
-    difficulty: number | null;
     images: unknown;
-    hints: unknown;
-  }>(query, [eventId]);
+  }>(eventQuery, [eventId]);
 
-  if (result.rows.length === 0) {
+  if (eventResult.rows.length === 0) {
     return null;
   }
 
-  return mapEventRowToEventRecord(result.rows[0]);
+  // Separate query for hints ordered by tier, type
+  const hintsQuery = `
+    SELECT
+      jsonb_agg(
+        jsonb_build_object(
+          'tier', tier,
+          'type', type,
+          'content', content,
+          'metadata', metadata
+        ) ORDER BY tier, type
+      ) as hints
+    FROM hints
+    WHERE event_id = $1
+  `;
+
+  const hintsResult = await executor.query<{ hints: unknown }>(hintsQuery, [eventId]);
+
+  const row = eventResult.rows[0];
+  const hints = hintsResult.rows[0]?.hints ?? '[]';
+
+  return mapEventRowToEventRecord({ ...row, hints });
 }
 
 /**
@@ -238,17 +198,17 @@ export async function fetchRandomEventsForSession(
 }
 
 /**
- * Get available regions for filtering
+ * Get available regions (continents) for filtering
  */
 export async function fetchAvailableRegions(): Promise<string[]> {
-  const result = await dbPool.query<{ region: string }>(`
-    SELECT DISTINCT region
-    FROM events
-    WHERE region IS NOT NULL
-    ORDER BY region
+  const result = await dbPool.query<{ continent: string }>(`
+    SELECT DISTINCT continent
+    FROM locations
+    WHERE continent IS NOT NULL
+    ORDER BY continent
   `);
 
-  return result.rows.map((row) => row.region);
+  return result.rows.map((row) => row.continent);
 }
 
 /**
@@ -256,9 +216,9 @@ export async function fetchAvailableRegions(): Promise<string[]> {
  */
 export async function fetchYearRange(): Promise<{ min: number; max: number }> {
   const result = await dbPool.query<{ min_year: number | null; max_year: number | null }>(`
-    SELECT MIN(year) as min_year, MAX(year) as max_year
+    SELECT MIN(event_year) as min_year, MAX(event_year) as max_year
     FROM events
-    WHERE year IS NOT NULL
+    WHERE event_year IS NOT NULL
   `);
 
   return {

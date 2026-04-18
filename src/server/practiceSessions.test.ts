@@ -82,17 +82,14 @@ function createStoredRoundResult(row: {
 function createSessionRow() {
   return {
     game_id: "game-1",
-    version: 2,
     mode: "practice",
     round_timer_sec: 30,
     total_rounds: REAL_EVENTS.length,
     year_min: -100,
     year_max: 2026,
-    host_player_id: PRACTICE_PLAYER_ID,
     session_deadline: null,
-    started_at: null,
-    completed_at: null,
-    created_at: new Date("2026-04-04T11:55:00.000Z")
+    created_at: new Date("2026-04-04T11:55:00.000Z"),
+    seed: BigInt(12345)
   };
 }
 

@@ -11,31 +11,30 @@ type EventImageRecord = {
 
 /**
  * Database row type for event queries
- * Uses actual DB column names (location_*)
+ * Uses actual DB column names from events + locations join (new schema)
  */
 type EventDbRow = {
   id: string;
   title: string;
   description: string | null;
-  year: number;
-  location_lat: number;
-  location_lng: number;
-  location_name: string | null;
+  event_year: number;
+  latitude: number;
+  longitude: number;
+  display_name: string | null;
   region: string | null;
   category: string | null;
-  difficulty: number | null;
   images: unknown;
-  hints: unknown;
+  hints?: unknown;
 };
 
 /**
  * Maps a database event row to the API EventRecord format.
  * 
- * This is the SINGLE source of truth for transforming DB location_* columns
- * to API geo_* fields. All event queries must use this mapper.
+ * This is the SINGLE source of truth for transforming DB columns
+ * from prompts + locations join to API EventRecord format.
  * 
- * DB layer: location_lat, location_lng, location_name
- * API layer: geo_latitude, geo_longitude, geo_display_name
+ * DB layer: latitude, longitude, display_name (from locations table)
+ * API layer: location.lat, location.lng, location.name
  */
 export function mapEventRowToEventRecord(row: EventDbRow): EventRecord {
   const images = (row.images as EventImageRecord[] | null) ?? [];
@@ -46,19 +45,18 @@ export function mapEventRowToEventRecord(row: EventDbRow): EventRecord {
     id: row.id,
     title: row.title,
     description: row.description ?? "",
-    year: row.year,
+    year: row.event_year,
     // Backend is the single source of truth for geo data
     location: {
       id: row.id, // Event ID serves as location identifier
-      name: row.location_name ?? "Unknown location",
-      lat: row.location_lat,
-      lng: row.location_lng
+      name: row.display_name ?? "Unknown location",
+      lat: row.latitude,
+      lng: row.longitude
     },
     region: row.region ?? "Unknown",
     imageUrl: primaryImage?.imageUrl ?? null,
     thumbUrl: primaryImage?.thumbUrl ?? null,
     hints: hintsRaw,
-    category: row.category ?? undefined,
-    difficulty: row.difficulty ?? undefined,
+    category: row.category ?? undefined
   };
 }

@@ -72,7 +72,6 @@ export type SessionState = {
   yearMax: number;
   sessionDeadline: string | null;
   createdAt: string;
-  currentPhase: string | null;
 };
 
 /** Fully reconstructed game state — deterministic from DB only */
@@ -107,7 +106,6 @@ async function loadSession(
     year_max: number;
     session_deadline: Date | null;
     created_at: Date;
-    current_phase: string | null;
   }>(
     `SELECT 
       game_id,
@@ -118,7 +116,7 @@ async function loadSession(
       year_max,
       session_deadline,
       created_at,
-      current_phase
+      seed
     FROM sessions
     WHERE game_id = $1
     LIMIT 1`,
@@ -138,8 +136,7 @@ async function loadSession(
     yearMin: row.year_min,
     yearMax: row.year_max,
     sessionDeadline: row.session_deadline?.toISOString() ?? null,
-    createdAt: row.created_at.toISOString(),
-    currentPhase: row.current_phase
+    createdAt: row.created_at.toISOString()
   };
 }
 
@@ -433,12 +430,12 @@ export async function getGameState(
   ]);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // STEP 3: Derive current round from FULL event stream; phase from sessions table
+  // STEP 3: Derive current round and phase from FULL event stream
   // ───────────────────────────────────────────────────────────────────────────
   // Uses deterministic event stream processor — validates ordering,
   // round continuity, and phase sequence correctness
-  const { currentRound } = deriveStateFromEventStream(events);
-  const phase = session.currentPhase;
+  const { currentRound, currentPhase } = deriveStateFromEventStream(events);
+  const phase = currentPhase;
 
   // ───────────────────────────────────────────────────────────────────────────
   // STEP 5: Assemble rounds from events, commits, and results
