@@ -6,6 +6,7 @@ import { EventRecord, LatLng } from "@/core/types";
 declare global {
   var __guessHistoryDbPool__: Pool | undefined;
   var __dbConnectionVerified__: boolean | undefined;
+  var __dbConnectionError__: string | undefined;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -55,11 +56,13 @@ function enforceDbConnection(): Pool {
       console.log(`[DB][ENFORCEMENT] ✅ Connected to ${row.db_name}`);
       console.log(`[DB][ENFORCEMENT] PostgreSQL ${row.version.split(" ")[0]}`);
       globalThis.__dbConnectionVerified__ = true;
+      globalThis.__dbConnectionError__ = undefined;
     })
     .catch((err) => {
       console.error("[FATAL][DB] Immediate connection test FAILED:", err.message);
-      console.error("[FATAL][DB] System HALTING — no DB = no operation");
-      process.exit(1);
+      console.error("[FATAL][DB] DB verification failed — requests will fail fast until connectivity is restored");
+      globalThis.__dbConnectionVerified__ = false;
+      globalThis.__dbConnectionError__ = err instanceof Error ? err.message : "Unknown DB connection verification failure";
     });
 
   return pool;
@@ -73,9 +76,14 @@ if (process.env.NODE_ENV !== "production") {
 
 // ANTI-FAKE GUARD: Runtime check that DB was actually hit
 export function assertDbConnectionVerified(): void {
-  if (!globalThis.__dbConnectionVerified__) {
-    throw new Error("[VERIFY][FATAL] DB connection was never verified. Possible fake execution path.");
+  if (globalThis.__dbConnectionVerified__) {
+    return;
   }
+
+  const suffix = globalThis.__dbConnectionError__
+    ? ` Last error: ${globalThis.__dbConnectionError__}`
+    : "";
+  throw new Error(`[VERIFY][FATAL] DB connection was never verified.${suffix}`);
 }
 
 // Type aliases matching sessionCore.ts pattern
