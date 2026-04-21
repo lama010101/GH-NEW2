@@ -92,8 +92,14 @@ export default function CompeteGamePage() {
 
     const ws = new CompeteWebSocket(gameId, playerId, {
       onConnect: () => {
-        // Signal intent to join (PartyKit → API → DB → broadcast STATE_UPDATE)
-        ws.joinRoom(displayNameRef.current);
+        // Signal intent to join (PartyKit → API → DB → broadcast STATE_UPDATE).
+        // Fallback to a short id-derived name when the page is opened via
+        // a direct URL (no sessionStorage displayName). Server /join validates
+        // non-empty displayName — so we must never send "".
+        const fallbackName = displayNameRef.current.trim().length > 0
+          ? displayNameRef.current
+          : `Player-${playerId.slice(0, 6)}`;
+        ws.joinRoom(fallbackName);
       },
       onStateUpdate: (rawSnapshot) => {
         // DO-authoritative: apply snapshot directly from WS.

@@ -112,6 +112,19 @@ export default class GameServer {
   // Connection registry — Maps connection.id → playerId for routing.
   private connections: Map<string, string> = new Map();
 
+  // Active-connection count per playerId. Prevents /leave calls while the
+  // player still has another live WS (StrictMode remount, tab A→B, etc.).
+  private playerConnectionCounts: Map<string, number> = new Map();
+
+  // Debounced /leave timers keyed by playerId. Cancelled on reconnect.
+  private leaveTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+
+  // Grace period before marking a player as left. Must be long enough to
+  // absorb React StrictMode double-mount, HMR reloads, tab refreshes, and
+  // normal network blips — but short enough that real disconnects flush
+  // out of the active roster within a round.
+  private static readonly LEAVE_GRACE_MS = 5_000;
+
   // Runtime state — derived, rebuildable from DB at any time.
   // This is the DO's authoritative view. DB remains canonical truth.
   // INVARIANT: if snapshotLoaded=true, snapshot is a valid RuntimeState.
@@ -264,13 +277,43 @@ export default class GameServer {
     const playerId = this.connections.get(connection.id);
     this.connections.delete(connection.id);
 
-    if (playerId) {
-      const gameId = this.room.id;
+    if (!playerId) return;
+
+    // Decrement active-connection count for this player.
+    const prev = this.playerConnectionCounts.get(playerId) ?? 0;
+    const next = Math.max(0, prev - 1);
+    if (next === 0) {
+      this.playerConnectionCounts.delete(playerId);
+    } else {
+      this.playerConnectionCounts.set(playerId, next);
+    }
+
+    // If the player still has at least one live WS (StrictMode remount,
+    // multi-tab, rapid reconnect), do NOT mark them as left — they are
+    // still present. This eliminates the race where /leave fires for an
+    // old socket after /join has already re-activated the player.
+    if (next > 0) {
+      console.log(`[PartyKit] onClose ignored — ${next} live connections remain for player ${playerId.slice(0, 8)}`);
+      return;
+    }
+
+    // No live connections — schedule /leave after a grace period. A brief
+    // disconnect (network blip, reload) will cancel this timer when the
+    // player's new connection registers via JOIN_ROOM.
+    const gameId = this.room.id;
+    const existing = this.leaveTimers.get(playerId);
+    if (existing) clearTimeout(existing);
+
+    const timer = setTimeout(async () => {
+      this.leaveTimers.delete(playerId);
+      // Final check: if the player reconnected during the grace period,
+      // skip /leave entirely.
+      if ((this.playerConnectionCounts.get(playerId) ?? 0) > 0) {
+        console.log(`[PartyKit] Leave cancelled — player ${playerId.slice(0, 8)} reconnected during grace`);
+        return;
+      }
       try {
         // /leave mutates MEMBERSHIP ONLY (left_at, is_host reassignment).
-        // It returns { ok: true } not a snapshot, so we must reload.
-        // This is a READ (not a post-write re-fetch) — acceptable because
-        // /leave does NOT mutate gameplay state.
         // LOCKED RULE: /leave must NEVER evolve into gameplay mutation.
         await apiFetch(`/api/compete/${encodeURIComponent(gameId)}/leave`, {
           method: "POST",
@@ -280,10 +323,11 @@ export default class GameServer {
         this.broadcastStateUpdate();
       } catch (err) {
         console.error("[PartyKit] Failed to persist disconnect:", err instanceof Error ? err.message : err);
-        // Still try to broadcast current state even if leave failed
         this.broadcastStateUpdate();
       }
-    }
+    }, GameServer.LEAVE_GRACE_MS);
+
+    this.leaveTimers.set(playerId, timer);
   }
 
   async onMessage(message: string, sender: Connection): Promise<void> {
@@ -298,8 +342,22 @@ export default class GameServer {
     const gameId = this.room.id;
 
     // Register connection → playerId mapping for routing purposes only.
+    // First time we see this connection, bump the player's live-connection
+    // count and cancel any pending debounced /leave — the player is back.
     if ("playerId" in data && typeof data.playerId === "string") {
-      this.connections.set(sender.id, data.playerId);
+      const playerId = data.playerId;
+      const alreadyMapped = this.connections.get(sender.id) === playerId;
+      if (!alreadyMapped) {
+        this.connections.set(sender.id, playerId);
+        const prev = this.playerConnectionCounts.get(playerId) ?? 0;
+        this.playerConnectionCounts.set(playerId, prev + 1);
+        const pendingLeave = this.leaveTimers.get(playerId);
+        if (pendingLeave) {
+          clearTimeout(pendingLeave);
+          this.leaveTimers.delete(playerId);
+          console.log(`[PartyKit] Cancelled pending /leave for player ${playerId.slice(0, 8)} (reconnected)`);
+        }
+      }
     }
 
     try {
