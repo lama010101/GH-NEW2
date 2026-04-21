@@ -27,7 +27,8 @@ function isSessionPlayer(value: unknown): value is SessionPlayer {
     typeof value.joinedAt === "string" &&
     isIsoDateOrNull(value.leftAt) &&
     typeof value.ready === "boolean" &&
-    typeof value.isHost === "boolean"
+    typeof value.isHost === "boolean" &&
+    typeof value.hasSubmitted === "boolean"
   );
 }
 
@@ -51,19 +52,49 @@ function isSessionConfig(value: unknown): value is SessionConfig {
 }
 
 export function isCompeteSessionSnapshot(value: unknown): value is CompeteSessionSnapshot {
-  return (
-    isRecord(value) &&
-    typeof value.gameId === "string" &&
-    (value.status === "LOBBY" || value.status === "ROUND_ACTIVE" || value.status === "ROUND_COMPLETE" || value.status === "SESSION_COMPLETE") &&
-    isSessionConfig(value.config) &&
-    Array.isArray(value.players) &&
-    value.players.every(isSessionPlayer) &&
-    typeof value.currentRoundIndex === "number" &&
-    Number.isFinite(value.currentRoundIndex) &&
-    typeof value.allPlayersReady === "boolean" &&
-    isIsoDateOrNull(value.roundStartsAt) &&
-    (value.viewerPlayerId === null || typeof value.viewerPlayerId === "string")
-  );
+  if (!isRecord(value)) {
+    console.error("[isCompeteSessionSnapshot] Not a record:", value);
+    return false;
+  }
+  if (typeof value.gameId !== "string") {
+    console.error("[isCompeteSessionSnapshot] Invalid gameId:", value.gameId);
+    return false;
+  }
+  if (!["LOBBY", "ROUND_ACTIVE", "ROUND_COMPLETE", "SESSION_COMPLETE"].includes(value.status as string)) {
+    console.error("[isCompeteSessionSnapshot] Invalid status:", value.status);
+    return false;
+  }
+  if (!isSessionConfig(value.config)) {
+    console.error("[isCompeteSessionSnapshot] Invalid config");
+    return false;
+  }
+  if (!Array.isArray(value.players)) {
+    console.error("[isCompeteSessionSnapshot] Players not an array:", value.players);
+    return false;
+  }
+  for (let i = 0; i < value.players.length; i++) {
+    if (!isSessionPlayer(value.players[i])) {
+      console.error(`[isCompeteSessionSnapshot] Invalid player at index ${i}:`, value.players[i]);
+      return false;
+    }
+  }
+  if (typeof value.currentRoundIndex !== "number" || !Number.isFinite(value.currentRoundIndex)) {
+    console.error("[isCompeteSessionSnapshot] Invalid currentRoundIndex:", value.currentRoundIndex);
+    return false;
+  }
+  if (typeof value.allPlayersReady !== "boolean") {
+    console.error("[isCompeteSessionSnapshot] Invalid allPlayersReady:", value.allPlayersReady);
+    return false;
+  }
+  if (!isIsoDateOrNull(value.roundStartsAt)) {
+    console.error("[isCompeteSessionSnapshot] Invalid roundStartsAt:", value.roundStartsAt);
+    return false;
+  }
+  if (!(value.viewerPlayerId === null || typeof value.viewerPlayerId === "string")) {
+    console.error("[isCompeteSessionSnapshot] Invalid viewerPlayerId:", value.viewerPlayerId);
+    return false;
+  }
+  return true;
 }
 
 async function parseCompeteSnapshot(response: Response): Promise<CompeteSessionSnapshot> {
@@ -87,7 +118,7 @@ export async function createCompeteSessionRequest(input: CreateCompeteSessionInp
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(input)
+    body: JSON.stringify({ displayName: input.displayName, playerId: input.playerId, mode: input.mode, roundTimerSec: input.roundTimerSec, totalRounds: input.totalRounds, yearMin: input.yearMin, yearMax: input.yearMax })
   });
 
   if (!response.ok) {
@@ -97,8 +128,9 @@ export async function createCompeteSessionRequest(input: CreateCompeteSessionInp
   return parseCompeteSnapshot(response);
 }
 
-export async function loadCompeteSessionRequest(gameId: string, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot | null> {
-  const response = await fetchImpl(`/api/compete/${encodeURIComponent(gameId)}`, {
+export async function loadCompeteSessionRequest(gameId: string, playerId?: string, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot | null> {
+  const query = playerId ? `?playerId=${encodeURIComponent(playerId)}` : "";
+  const response = await fetchImpl(`/api/compete/${encodeURIComponent(gameId)}${query}`, {
     cache: "no-store"
   });
 
@@ -119,7 +151,7 @@ export async function joinCompeteSessionRequest(input: JoinCompeteSessionInput, 
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ displayName: input.displayName })
+    body: JSON.stringify({ displayName: input.displayName, playerId: input.playerId })
   });
 
   if (!response.ok) {

@@ -6,20 +6,21 @@ import {
   createCompeteSessionRequest,
   joinCompeteSessionRequest
 } from "@/core/competeApi";
+import { useIdentity } from "@/hooks/useIdentity";
 
 type Mode = "create" | "join";
 
 export default function CompeteEntryPage() {
   const router = useRouter();
+  const { playerId, isReady, isLoading: identityLoading, error: identityError } = useIdentity();
   const [mode, setMode] = useState<Mode>("create");
   const [displayName, setDisplayName] = useState("");
   const [gameId, setGameId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const persistAndRedirect = (targetGameId: string, playerId: string, name: string) => {
+  const redirectWithIdentity = (targetGameId: string, name: string) => {
     try {
-      sessionStorage.setItem(`compete_player_id_${targetGameId}`, playerId);
       sessionStorage.setItem(`compete_display_name_${targetGameId}`, name);
     } catch {
       // ignore storage errors
@@ -29,6 +30,10 @@ export default function CompeteEntryPage() {
 
   const handleCreate = async () => {
     setError(null);
+    if (!playerId) {
+      setError("Identity not ready — please wait");
+      return;
+    }
     if (!displayName.trim()) {
       setError("Display name is required");
       return;
@@ -38,12 +43,10 @@ export default function CompeteEntryPage() {
       const snapshot = await createCompeteSessionRequest({
         displayName: displayName.trim(),
         mode: "sync",
-        totalRounds: 5
+        totalRounds: 5,
+        playerId
       });
-      if (!snapshot.viewerPlayerId) {
-        throw new Error("Server did not return a viewer player id");
-      }
-      persistAndRedirect(snapshot.gameId, snapshot.viewerPlayerId, displayName.trim());
+      redirectWithIdentity(snapshot.gameId, displayName.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create game");
       setLoading(false);
@@ -52,6 +55,10 @@ export default function CompeteEntryPage() {
 
   const handleJoin = async () => {
     setError(null);
+    if (!playerId) {
+      setError("Identity not ready — please wait");
+      return;
+    }
     if (!gameId.trim() || !displayName.trim()) {
       setError("Game ID and display name are required");
       return;
@@ -60,17 +67,17 @@ export default function CompeteEntryPage() {
     try {
       const snapshot = await joinCompeteSessionRequest({
         gameId: gameId.trim(),
-        displayName: displayName.trim()
+        displayName: displayName.trim(),
+        playerId
       });
-      if (!snapshot.viewerPlayerId) {
-        throw new Error("Server did not return a viewer player id");
-      }
-      persistAndRedirect(snapshot.gameId, snapshot.viewerPlayerId, displayName.trim());
+      redirectWithIdentity(snapshot.gameId, displayName.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to join game");
       setLoading(false);
     }
   };
+
+  const blocked = identityLoading || !isReady;
 
   return (
     <main className="app-shell">
@@ -82,6 +89,11 @@ export default function CompeteEntryPage() {
         </section>
 
         <section className="card stack">
+          {identityLoading ? (
+            <p className="small">Establishing identity…</p>
+          ) : identityError ? (
+            <p style={{ color: "#ff6b6b", margin: 0 }}>Identity error: {identityError}</p>
+          ) : null}
           <div className="row">
             <button
               type="button"
@@ -90,7 +102,7 @@ export default function CompeteEntryPage() {
                 setMode("create");
                 setError(null);
               }}
-              disabled={loading}
+              disabled={blocked || loading}
             >
               Create
             </button>
@@ -101,7 +113,7 @@ export default function CompeteEntryPage() {
                 setMode("join");
                 setError(null);
               }}
-              disabled={loading}
+              disabled={blocked || loading}
             >
               Join
             </button>
@@ -117,7 +129,7 @@ export default function CompeteEntryPage() {
                   type="text"
                   value={displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
-                  disabled={loading}
+                  disabled={blocked || loading}
                   placeholder="Your name"
                 />
               </div>
@@ -125,7 +137,7 @@ export default function CompeteEntryPage() {
                 type="button"
                 className="button"
                 onClick={handleCreate}
-                disabled={loading}
+                disabled={blocked || loading}
               >
                 {loading ? "Creating…" : "Create Game"}
               </button>
@@ -140,7 +152,7 @@ export default function CompeteEntryPage() {
                   type="text"
                   value={gameId}
                   onChange={(event) => setGameId(event.target.value)}
-                  disabled={loading}
+                  disabled={blocked || loading}
                   placeholder="game-id"
                 />
               </div>
@@ -152,7 +164,7 @@ export default function CompeteEntryPage() {
                   type="text"
                   value={displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
-                  disabled={loading}
+                  disabled={blocked || loading}
                   placeholder="Your name"
                 />
               </div>
@@ -160,7 +172,7 @@ export default function CompeteEntryPage() {
                 type="button"
                 className="button"
                 onClick={handleJoin}
-                disabled={loading}
+                disabled={blocked || loading}
               >
                 {loading ? "Joining…" : "Join Game"}
               </button>

@@ -11,6 +11,7 @@
 
 import { VALID_PHASE_TRANSITIONS } from "./getGameState";
 import type { DbTransactionClient } from "./sessionCore";
+import { isTransitionCause, CAUSE_CARRYING_EVENTS } from "@/core/transitionCause";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -23,6 +24,9 @@ export type EventType =
   | "ROUND_COMPLETE"
   | "SESSION_COMPLETE"
   | "PRESSURE_APPLIED";
+
+// NOTE: TransitionCause domain contract lives in @/core/transitionCause
+// (shared module for Next.js + PartyKit). Import directly from there.
 
 export type LastEventInfo = {
   id: number;
@@ -196,7 +200,21 @@ export async function appendEvent(
   // STEP 3: Round consistency validation
   assertRoundConsistency(lastEvent?.roundIndex ?? null, roundIndex, eventType);
 
-  // STEP 4: Insert the validated event
+  // STEP 4: Cause validation — write-time invariant
+  // If this event type requires a cause, payload.cause MUST be a valid TransitionCause.
+  // This is the DB-level integrity enforcement: no event with an invalid cause
+  // can be written to round_events, regardless of entry path.
+  if (CAUSE_CARRYING_EVENTS.includes(eventType)) {
+    if (!isTransitionCause(payload.cause)) {
+      throw new Error(
+        `INVALID_CAUSE: ${eventType} requires payload.cause to be a valid TransitionCause, ` +
+        `got: ${JSON.stringify(payload.cause)}. ` +
+        `Valid values: player, timeout, internal`
+      );
+    }
+  }
+
+  // STEP 5: Insert the validated event
   await insertEvent(client, gameId, roundIndex, eventType, payload);
 }
 

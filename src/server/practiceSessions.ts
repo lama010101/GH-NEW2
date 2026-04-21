@@ -300,7 +300,16 @@ export async function loadPracticeSessionState(gameId: string): Promise<GameStat
     loadSessionPlayerRows(gameId)
   ]);
 
-  const sessionPlayers = playerRows.map(mapSessionPlayerRowToPlayer);
+  // Practice is single-player; the "current round" is commits.length
+  // (i.e. the next unplayed round). hasSubmitted is derived per player
+  // per round_commits — never hardcoded.
+  const practiceCurrentRoundIndex = commits.length;
+  const sessionPlayers = playerRows.map((row) => {
+    const hasSubmitted = commits.some(
+      (c) => c.player_id === row.player_id && c.round_index === practiceCurrentRoundIndex
+    );
+    return mapSessionPlayerRowToPlayer(row, hasSubmitted);
+  });
 
   return buildProjectedState({
     gameId: session.game_id,

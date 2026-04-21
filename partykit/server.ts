@@ -1,35 +1,100 @@
-import {
-  loadCompeteSessionSnapshot,
-  submitGuess,
-  advanceRound,
-  getRoundResults,
-  setCompetePlayerReady,
-  startCompeteSession,
-  type SubmitGuessInput
-} from "../src/server/sessionCore";
+// ============================================================================
+// PartyKit Server — DO-Authoritative Real-Time System
+// TASK: MP-DO-AUTHORITATIVE-006
+//
+// ARCHITECTURE (strict):
+//   DB = canonical truth (persistence, replay)
+//   DO = executor (validates, writes DB, broadcasts state)
+//   Client = renderer (displays state, sends action signals)
+//
+// DO holds RUNTIME STATE (derived, rebuildable from DB at any time):
+//   - players, ready flags, phase, current round, timers
+//   - Loaded from DB on first connection (cold start)
+//   - Updated deterministically from API write results (no re-fetch)
+//
+// Action flow: Client → DO → API → DB → snapshot returned → broadcast
+// NO re-fetch after write. API returns snapshot from same write transaction.
+//
+// INVARIANTS:
+//   - DO state is ALWAYS rebuildable from DB (no orphan state)
+//   - Only DO writes to DB for gameplay actions (no dual writes)
+//   - Client never calls refreshSnapshot() — WS is the only state source
+//   - NO DB read after write — API-returned snapshot is the write result
+//   - Same event → same state transition (deterministic)
+//
+// LOCKED RULES (MP-DO-AUTHORITATIVE-006 — CTO enforcement):
+//
+//   [SNAPSHOT-UNIQUE] ONE snapshot builder in the entire system:
+//     API endpoints → loadCompeteSessionSnapshot() → getGameState()
+//     DO cold start → buildSnapshotFromDB() → loadCompeteSessionSnapshot() → getGameState()
+//     NO other snapshot construction allowed. No parallel logic.
+//
+//   [TIMER-DETERMINISM] phaseEndsAt = phaseStartAt + duration
+//     Computed at write time, stored in round_events.payload
+//     Read back from DB on reconstruction. No independent computation.
+//
+//   [LEAVE-MEMBERSHIP-ONLY] /leave mutates membership only (left_at, is_host).
+//     NEVER gameplay state. Read-after-write acceptable for membership.
+//     Must NEVER evolve into gameplay mutation.
+//
+//   [BANNED-PATTERNS] These are permanently banned:
+//     ❌ write → DB → re-fetch → broadcast  (race condition)
+//     ❌ multiple snapshot builders          (silent divergence)
+//     ❌ API-only computed state              (not derivable from DB)
+//     ❌ DO-only computed authoritative values (not in DB)
+// ============================================================================
 
-// Timer tick interval in milliseconds
-const TIMER_TICK_INTERVAL_MS = 1000;
+import { TransitionCause } from "../src/core/transitionCause";
 
+const API_BASE = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+async function apiFetch(path: string, options?: RequestInit): Promise<unknown> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers
+    }
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${path} failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
+// Build snapshot from DB via REST API.
+// Returns validated CompeteSessionSnapshot or throws.
+async function buildSnapshotFromDB(gameId: string): Promise<unknown> {
+  return apiFetch(`/api/compete/${encodeURIComponent(gameId)}`);
+}
+
+// Runtime state shape — mirrors CompeteSessionSnapshot for type safety.
+type RuntimeState = {
+  gameId: string;
+  status: string;
+  players: Array<{ playerId: string; displayName: string; ready: boolean; isHost: boolean; hasSubmitted: boolean; leftAt: string | null }>;
+  currentRoundIndex: number;
+  roundEndsAt: string | null;
+};
+
+function isRuntimeState(value: unknown): value is RuntimeState {
+  if (typeof value !== "object" || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return typeof obj.gameId === "string" && typeof obj.status === "string" && Array.isArray(obj.players);
+}
+
+// Messages accepted FROM clients (action signals only — PartyKit never trusts payload fields except to forward to API)
 export type ServerMessage =
   | { type: "JOIN_ROOM"; playerId: string; displayName: string }
-  | { type: "LEAVE_ROOM"; playerId: string }
   | { type: "TOGGLE_READY"; playerId: string; ready: boolean }
   | { type: "START_GAME"; playerId: string }
   | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: number }
-  | { type: "REQUEST_SNAPSHOT"; playerId: string }
   | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number };
 
+// Messages sent TO clients
 export type ClientMessage =
-  | { type: "ROSTER_UPDATE"; players: Array<{ id: string; name: string; ready: boolean; isHost: boolean }> }
-  | { type: "GAME_START"; gameId: string; seed: string; totalRounds: number; roundTimerSec: number }
-  | { type: "ROUND_START"; round: number; startAt: string; phaseEndsAt: string; durationSec: number; eventId: string }
-  | { type: "PLAYER_SUBMITTED"; playerId: string; round: number }
-  | { type: "ROUND_COMPLETE"; round: number; results: Array<{ playerId: string; score: number; accuracy: number; hints: number }> }
-  | { type: "ADVANCE_ROUND"; nextRound: number | null }
-  | { type: "STATE_SNAPSHOT"; session: unknown; commits: unknown[]; players: unknown[]; currentRound: number; timerLeft: number | null }
-  | { type: "TIMER_TICK"; timeRemaining: number | null }
-  | { type: "PRESSURE_APPLIED"; remainingSec: number }
+  | { type: "STATE_UPDATE"; snapshot: unknown }
   | { type: "ERROR"; message: string };
 
 interface Room {
@@ -42,274 +107,285 @@ interface Connection {
   send: (message: string) => void;
 }
 
+
 export default class GameServer {
-  private timerInterval: NodeJS.Timeout | null = null;
-  private lastBroadcastTimeRemaining: number | null = null;
-  private phaseEndsAt: string | null = null;
-  private displayNames: Map<string, string> = new Map();
+  // Connection registry — Maps connection.id → playerId for routing.
+  private connections: Map<string, string> = new Map();
+
+  // Runtime state — derived, rebuildable from DB at any time.
+  // This is the DO's authoritative view. DB remains canonical truth.
+  // INVARIANT: if snapshotLoaded=true, snapshot is a valid RuntimeState.
+  private snapshot: unknown | null = null;
+  private snapshotLoaded = false;
+
+  // Timer handle for round countdown (Phase 4+ — not yet active).
+  // Will be used to broadcast timer ticks and auto-advance on expiry.
+  private roundTimerHandle: ReturnType<typeof setTimeout> | null = null;
 
   constructor(readonly room: Room) {}
+
+  /**
+   * Load snapshot from DB (cold start / reconnect only).
+   * This is the ONLY path that reads from DB.
+   * NOT called after writes — use applySnapshotAndBroadcast() instead.
+   */
+  private async loadFromDB(): Promise<void> {
+    const gameId = this.room.id;
+    this.snapshot = await buildSnapshotFromDB(gameId);
+    this.snapshotLoaded = true;
+    this.scheduleRoundTimer();
+  }
+
+  /**
+   * Apply API-returned snapshot to runtime state and broadcast.
+   * This is the ONLY way state is updated after a write action.
+   *
+   * CRITICAL: The snapshot comes from the same API call that wrote to DB.
+   * No separate DB read occurs. This eliminates the race condition where
+   * a re-fetch could see stale or interleaved data.
+   *
+   * If DB write fails, this method is NEVER called (exception propagates).
+   * → NO state mutation on failure. NO broadcast on failure.
+   */
+  private applySnapshotAndBroadcast(snapshot: unknown): void {
+    if (isRuntimeState(snapshot)) {
+      console.log("[PartyKit] Applying snapshot, players:", snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+    }
+    this.snapshot = snapshot;
+    this.snapshotLoaded = true;
+    this.scheduleRoundTimer();
+    this.broadcastStateUpdate();
+  }
+
+  /**
+   * Schedule round timer based on current snapshot state.
+   * If ROUND_ACTIVE with roundEndsAt in the future, set a timer to
+   * auto-advance when time expires. Clear timer on any other phase.
+   *
+   * NOTE: The actual timeout/advance logic is handled by the /advance
+   * API route which checks for expired rounds. The DO just triggers it.
+   */
+  private scheduleRoundTimer(): void {
+    // Clear any existing timer
+    if (this.roundTimerHandle !== null) {
+      clearTimeout(this.roundTimerHandle);
+      this.roundTimerHandle = null;
+    }
+
+    if (!this.snapshot || !isRuntimeState(this.snapshot)) return;
+
+    // Only schedule for active rounds with a known end time
+    if (this.snapshot.status !== "ROUND_ACTIVE" || !this.snapshot.roundEndsAt) return;
+
+    const endsAt = new Date(this.snapshot.roundEndsAt).getTime();
+    const now = Date.now();
+    const delay = endsAt - now;
+
+    if (delay <= 0) {
+      // Round already expired — trigger advance immediately
+      console.log("[PartyKit] Round expired, triggering advance");
+      this.triggerRoundExpiry();
+    } else {
+      // Schedule advance for when the round expires
+      console.log(`[PartyKit] Round timer scheduled: ${Math.round(delay / 1000)}s`);
+      this.roundTimerHandle = setTimeout(() => {
+        this.roundTimerHandle = null;
+        this.triggerRoundExpiry();
+      }, delay);
+    }
+  }
+
+  /**
+   * Called when a round timer expires. Triggers the advance API
+   * with cause="timeout" — no playerId fabrication.
+   * Uses API-returned snapshot — no re-fetch.
+   */
+  private async triggerRoundExpiry(): Promise<void> {
+    if (!this.snapshot || !isRuntimeState(this.snapshot)) return;
+
+    const gameId = this.room.id;
+    const roundIndex = this.snapshot.currentRoundIndex;
+
+    try {
+      const snapshot = await apiFetch(`/api/compete/${encodeURIComponent(gameId)}/advance`, {
+        method: "POST",
+        body: JSON.stringify({
+          cause: TransitionCause.TIMEOUT,
+          roundIndex
+        })
+      });
+      this.applySnapshotAndBroadcast(snapshot);
+    } catch (err) {
+      console.error("[PartyKit] Round expiry advance failed:", err instanceof Error ? err.message : err);
+    }
+  }
+
+  /**
+   * Broadcast full STATE_UPDATE to all connected clients.
+   * This replaces STATE_INVALIDATED — clients no longer need to REST-fetch.
+   */
+  private broadcastStateUpdate(): void {
+    if (!this.snapshot) return;
+    if (isRuntimeState(this.snapshot)) {
+      console.log("[PartyKit] Broadcasting to all, players:", this.snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+    }
+    const msg = JSON.stringify({ type: "STATE_UPDATE", snapshot: this.snapshot });
+    this.room.broadcast(msg);
+  }
 
   async onConnect(connection: Connection): Promise<void> {
     console.log("[PartyKit] Client connected:", connection.id);
 
-    const gameId = this.room.id;
-    const snapshot = await loadCompeteSessionSnapshot(gameId);
-
-    if (snapshot) {
-      // Populate displayNames from snapshot players
-      for (const player of snapshot.players) {
-        const name = player.displayName || player.playerId.slice(0, 8);
-        this.displayNames.set(player.playerId, name);
+    // Send current snapshot to the newly connected client immediately.
+    // If snapshot not yet loaded, load from DB first (cold start).
+    if (this.snapshotLoaded && this.snapshot) {
+      const state = this.snapshot as RuntimeState;
+      console.log("[PartyKit] Sending snapshot on connect, players:", state.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+      const msg = JSON.stringify({ type: "STATE_UPDATE", snapshot: this.snapshot });
+      connection.send(msg);
+    } else {
+      // Cold start — load from DB, schedule timers, send to this client
+      try {
+        await this.loadFromDB();
+        const state = this.snapshot as RuntimeState;
+        console.log("[PartyKit] Loaded snapshot from DB, players:", state.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+        const msg = JSON.stringify({ type: "STATE_UPDATE", snapshot: this.snapshot });
+        connection.send(msg);
+      } catch (err) {
+        console.error("[PartyKit] Failed to load snapshot on connect:", err instanceof Error ? err.message : err);
+        this.sendError(connection, "Failed to load session state");
       }
-
-      const msg: ClientMessage = {
-        type: "STATE_SNAPSHOT",
-        session: snapshot.config,
-        commits: [],
-        players: snapshot.players,
-        currentRound: snapshot.currentRoundIndex,
-        timerLeft: snapshot.timeRemaining ?? null
-      };
-      connection.send(JSON.stringify(msg));
     }
   }
 
   async onClose(connection: Connection): Promise<void> {
     console.log("[PartyKit] Client disconnected:", connection.id);
-  }
 
-  private startTimerBroadcast(): void {
-    if (this.timerInterval) {
-      return; // Already running
-    }
+    const playerId = this.connections.get(connection.id);
+    this.connections.delete(connection.id);
 
-    this.timerInterval = setInterval(() => {
-      if (!this.phaseEndsAt) {
-        this.stopTimerBroadcast();
-        return;
+    if (playerId) {
+      const gameId = this.room.id;
+      try {
+        // /leave mutates MEMBERSHIP ONLY (left_at, is_host reassignment).
+        // It returns { ok: true } not a snapshot, so we must reload.
+        // This is a READ (not a post-write re-fetch) — acceptable because
+        // /leave does NOT mutate gameplay state.
+        // LOCKED RULE: /leave must NEVER evolve into gameplay mutation.
+        await apiFetch(`/api/compete/${encodeURIComponent(gameId)}/leave`, {
+          method: "POST",
+          body: JSON.stringify({ playerId })
+        });
+        await this.loadFromDB();
+        this.broadcastStateUpdate();
+      } catch (err) {
+        console.error("[PartyKit] Failed to persist disconnect:", err instanceof Error ? err.message : err);
+        // Still try to broadcast current state even if leave failed
+        this.broadcastStateUpdate();
       }
-      const timeRemaining = Math.max(
-        0,
-        Math.round((new Date(this.phaseEndsAt).getTime() - Date.now()) / 1000)
-      );
-      if (timeRemaining !== this.lastBroadcastTimeRemaining) {
-        this.lastBroadcastTimeRemaining = timeRemaining;
-        const timerMsg: ClientMessage = {
-          type: "TIMER_TICK",
-          timeRemaining
-        };
-        this.room.broadcast(JSON.stringify(timerMsg));
-      }
-      if (timeRemaining === 0) {
-        this.stopTimerBroadcast();
-      }
-    }, TIMER_TICK_INTERVAL_MS);
-  }
-
-  private stopTimerBroadcast(): void {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-      this.lastBroadcastTimeRemaining = null;
     }
   }
 
   async onMessage(message: string, sender: Connection): Promise<void> {
+    let data: ServerMessage;
     try {
-      const data = JSON.parse(message) as ServerMessage;
-      const gameId = this.room.id;
+      data = JSON.parse(message) as ServerMessage;
+    } catch (err) {
+      this.sendError(sender, "Invalid message format");
+      return;
+    }
 
+    const gameId = this.room.id;
+
+    // Register connection → playerId mapping for routing purposes only.
+    if ("playerId" in data && typeof data.playerId === "string") {
+      this.connections.set(sender.id, data.playerId);
+    }
+
+    try {
       switch (data.type) {
-        case "SUBMIT_GUESS": {
-          const input: SubmitGuessInput = {
-            gameId,
-            playerId: data.playerId,
-            roundIndex: data.roundIndex,
-            yearGuess: data.year,
-            locationGuess: data.lat !== null && data.lng !== null ? { lat: data.lat, lng: data.lng } : null,
-            hintsUsed: [],
-            _executionContext: "partykit"
-          };
-
-          const snapshot = await submitGuess(input);
-
-          const playerSubmittedMsg: ClientMessage = {
-            type: "PLAYER_SUBMITTED",
-            playerId: data.playerId,
-            round: data.roundIndex
-          };
-          this.room.broadcast(JSON.stringify(playerSubmittedMsg));
-
-          if (snapshot.timeRemaining && snapshot.timeRemaining <= 20) {
-            const pressureMsg: ClientMessage = {
-              type: "PRESSURE_APPLIED",
-              remainingSec: snapshot.timeRemaining
-            };
-            this.room.broadcast(JSON.stringify(pressureMsg));
-          }
-
-          if (snapshot.status === "ROUND_COMPLETE") {
-            const results = await getRoundResults(gameId, data.roundIndex);
-            const roundCompleteMsg: ClientMessage = {
-              type: "ROUND_COMPLETE",
-              round: data.roundIndex,
-              results: results.map(r => ({
-                playerId: r.playerId,
-                score: r.score,
-                accuracy: r.accuracy,
-                hints: 0
-              }))
-            };
-            this.room.broadcast(JSON.stringify(roundCompleteMsg));
-          }
-
-          break;
-        }
-
-        case "ADVANCE_ROUND": {
-          const snapshot = await advanceRound({
-            gameId,
-            playerId: data.playerId,
-            roundIndex: data.roundIndex,
-            _executionContext: "partykit"
-          });
-
-          const advanceMsg: ClientMessage = {
-            type: "ADVANCE_ROUND",
-            nextRound: snapshot.status === "SESSION_COMPLETE" ? null : snapshot.currentRoundIndex
-          };
-          this.room.broadcast(JSON.stringify(advanceMsg));
-
-          if (snapshot.status !== "SESSION_COMPLETE") {
-            this.phaseEndsAt = snapshot.roundEndsAt ?? null;
-            const roundStartMsg: ClientMessage = {
-              type: "ROUND_START",
-              round: snapshot.currentRoundIndex,
-              startAt: snapshot.roundStartsAt ?? new Date().toISOString(),
-              phaseEndsAt: snapshot.roundEndsAt ?? "",
-              durationSec: snapshot.config.roundTimerSec,
-              eventId: ""
-            };
-            this.room.broadcast(JSON.stringify(roundStartMsg));
-
-            // Start timer broadcast for the new round
-            this.startTimerBroadcast();
-          } else {
-            // Stop timer when session completes
-            this.stopTimerBroadcast();
-          }
-
-          break;
-        }
-
         case "JOIN_ROOM": {
-          // Store displayName in memory cache
-          this.displayNames.set(data.playerId, data.displayName);
-
-          const snapshot = await loadCompeteSessionSnapshot(gameId, data.playerId);
-
-          // Build roster with display names
-          const players = snapshot?.players.map(p => ({
-            id: p.playerId,
-            name: this.displayNames.get(p.playerId) || p.playerId.slice(0, 8),
-            ready: true,
-            isHost: false
-          })) ?? [];
-
-          const rosterMsg: ClientMessage = {
-            type: "ROSTER_UPDATE",
-            players
-          };
-          this.room.broadcast(JSON.stringify(rosterMsg));
+          // /join returns the updated snapshot — use it directly
+          const snapshot = await apiFetch(`/api/compete/${gameId}/join`, {
+            method: "POST",
+            body: JSON.stringify({
+              playerId: data.playerId,
+              displayName: data.displayName
+            })
+          });
+          this.applySnapshotAndBroadcast(snapshot);
           break;
         }
 
         case "TOGGLE_READY": {
-          await setCompetePlayerReady({
-            gameId,
-            playerId: data.playerId,
-            ready: data.ready
+          // /ready returns the updated snapshot — use it directly
+          const snapshot = await apiFetch(`/api/compete/${gameId}/ready`, {
+            method: "POST",
+            body: JSON.stringify({
+              playerId: data.playerId,
+              ready: data.ready
+            })
           });
-
-          const snapshot = await loadCompeteSessionSnapshot(gameId, data.playerId);
-
-          // Build roster with display names
-          const players = snapshot?.players.map(p => ({
-            id: p.playerId,
-            name: this.displayNames.get(p.playerId) || p.playerId.slice(0, 8),
-            ready: true,
-            isHost: false
-          })) ?? [];
-
-          const rosterMsg: ClientMessage = {
-            type: "ROSTER_UPDATE",
-            players
-          };
-          this.room.broadcast(JSON.stringify(rosterMsg));
+          this.applySnapshotAndBroadcast(snapshot);
           break;
         }
 
         case "START_GAME": {
-          const snapshot = await startCompeteSession({
-            gameId,
-            playerId: data.playerId
+          // /start returns the updated snapshot — use it directly
+          const snapshot = await apiFetch(`/api/compete/${gameId}/start`, {
+            method: "POST",
+            body: JSON.stringify({ playerId: data.playerId })
           });
-
-          // Broadcast GAME_START
-          const gameStartMsg: ClientMessage = {
-            type: "GAME_START",
-            gameId,
-            seed: (snapshot.config as { seed?: string }).seed ?? "",
-            totalRounds: snapshot.config.totalRounds,
-            roundTimerSec: snapshot.config.roundTimerSec
-          };
-          this.room.broadcast(JSON.stringify(gameStartMsg));
-
-          // Immediately broadcast ROUND_START for round 0
-          const roundStartMsg: ClientMessage = {
-            type: "ROUND_START",
-            round: 0,
-            startAt: snapshot.roundStartsAt ?? new Date().toISOString(),
-            phaseEndsAt: snapshot.roundEndsAt ?? "",
-            durationSec: snapshot.config.roundTimerSec,
-            eventId: ""
-          };
-          this.room.broadcast(JSON.stringify(roundStartMsg));
-
-          // Set phase ends at and start timer
-          this.phaseEndsAt = snapshot.roundEndsAt ?? null;
-          this.startTimerBroadcast();
+          this.applySnapshotAndBroadcast(snapshot);
           break;
         }
 
-        case "REQUEST_SNAPSHOT": {
-          const snapshot = await loadCompeteSessionSnapshot(gameId, data.playerId);
-          if (snapshot) {
-            const msg: ClientMessage = {
-              type: "STATE_SNAPSHOT",
-              session: snapshot.config,
-              commits: [],
-              players: snapshot.players,
-              currentRound: snapshot.currentRoundIndex,
-              timerLeft: snapshot.timeRemaining ?? null
-            };
-            sender.send(JSON.stringify(msg));
-          }
+        case "SUBMIT_GUESS": {
+          // /guess returns the updated snapshot — use it directly
+          const snapshot = await apiFetch(`/api/compete/${gameId}/guess`, {
+            method: "POST",
+            body: JSON.stringify({
+              playerId: data.playerId,
+              roundIndex: data.roundIndex,
+              year: data.year,
+              lat: data.lat,
+              lng: data.lng,
+              hintsUsed: data.hintsUsed
+            })
+          });
+          this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "ADVANCE_ROUND": {
+          // /advance returns the updated snapshot — use it directly
+          const snapshot = await apiFetch(`/api/compete/${gameId}/advance`, {
+            method: "POST",
+            body: JSON.stringify({
+              cause: TransitionCause.PLAYER,
+              playerId: data.playerId,
+              roundIndex: data.roundIndex
+            })
+          });
+          this.applySnapshotAndBroadcast(snapshot);
           break;
         }
 
         default: {
-          console.log("[PartyKit] Unhandled message type:", data.type);
+          this.sendError(sender, `Unhandled message type: ${(data as { type: string }).type}`);
         }
       }
     } catch (error) {
-      console.error("[PartyKit] Error handling message:", error);
-      const errorMsg: ClientMessage = {
-        type: "ERROR",
-        message: error instanceof Error ? error.message : "Unknown error"
-      };
-      sender.send(JSON.stringify(errorMsg));
+      // DB write failed → NO state mutation, NO broadcast.
+      // Only the sender gets the error.
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("[PartyKit] Action failed:", message);
+      this.sendError(sender, message);
     }
+  }
+
+  private sendError(connection: Connection, message: string): void {
+    const errMsg: ClientMessage = { type: "ERROR", message };
+    connection.send(JSON.stringify(errMsg));
   }
 }

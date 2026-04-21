@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { startCompeteSession } from "@/server/sessionCore";
+import { TransitionCause } from "@/core/transitionCause";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,8 @@ export async function POST(
 
     const snapshot = await startCompeteSession({
       gameId,
-      playerId: body.playerId
+      playerId: body.playerId,
+      cause: TransitionCause.PLAYER
     });
 
     return NextResponse.json(snapshot);

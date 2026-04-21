@@ -16,7 +16,10 @@ export async function GET(
     }
 
     const viewerPlayerIdHeader = _request.headers.get("x-viewer-player-id");
-    const snapshot = await loadCompeteSessionSnapshot(gameId, viewerPlayerIdHeader);
+    const url = new URL(_request.url);
+    const viewerPlayerIdQuery = url.searchParams.get("playerId");
+    const viewerPlayerId = viewerPlayerIdQuery || viewerPlayerIdHeader;
+    const snapshot = await loadCompeteSessionSnapshot(gameId, viewerPlayerId);
 
     if (!snapshot) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });

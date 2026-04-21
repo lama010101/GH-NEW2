@@ -2,8 +2,7 @@
   "name": "guess-history-party",
   "main": "partykit/server.ts",
   "compatibilityDate": "2024-04-01",
-  "serve": {
-    "path": "public",
-    "build": "dist"
+  "parties": {
+    "lobby": "partykit/server.ts"
   }
 }

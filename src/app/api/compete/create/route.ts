@@ -13,8 +13,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "displayName is required" }, { status: 400 });
     }
 
+    if (typeof body.playerId !== "string" || body.playerId.length === 0) {
+      return NextResponse.json({ error: "playerId is required" }, { status: 400 });
+    }
+
     const snapshot = await createCompeteSession({
       displayName: body.displayName,
+      playerId: body.playerId,
       mode: body.mode,
       roundTimerSec: body.roundTimerSec,
       totalRounds: body.totalRounds,

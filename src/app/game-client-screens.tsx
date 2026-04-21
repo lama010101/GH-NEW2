@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   BadgePills,
   EventRevealCard,
@@ -76,6 +77,9 @@ export function InitScreen({
             <button type="button" className="button" onClick={onStartPractice}>
               Start Practice
             </button>
+            <Link href="/compete" className="button">
+              Compete
+            </Link>
             <span className="small">No auto-advance. No hidden defaults. One path through the round.</span>
           </div>
           {preflightIssues.length > 0 && (
