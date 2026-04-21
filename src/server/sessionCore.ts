@@ -540,14 +540,43 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
 
   const playerId = input.playerId;
   verifyLog("INSERT", "session_players", "OK", `joining player_id=${playerId} game_id=${gameId} — executing`);
-  // Joining players are NOT ready and NOT host. Both default to false via DDL,
-  // but we pass them explicitly for clarity. ON CONFLICT preserves existing
-  // ready/is_host state on rejoin (no implicit reset).
+  // Rejoin-aware upsert:
+  //   - Fresh join: inserts with left_at=NULL, ready=false, is_host=false.
+  //   - Rejoin (row exists): clears left_at (player was transiently disconnected)
+  //     and refreshes display_name only if a non-empty one was supplied.
+  //   - ready / is_host are preserved across rejoin (no implicit reset).
+  // This is the counterpart to /leave, which only sets left_at=now().
+  // Without clearing left_at here, a single WS close (StrictMode remount, HMR,
+  // tab refresh, transient network blip) permanently kicks the player out.
   await dbPool.query(
-    `INSERT INTO session_players (game_id, player_id, display_name, joined_at, ready, is_host)
-     VALUES ($1, $2, $3, now(), false, false)
-     ON CONFLICT (game_id, player_id) DO NOTHING`,
+    `INSERT INTO session_players (game_id, player_id, display_name, joined_at, left_at, ready, is_host)
+     VALUES ($1, $2, $3, now(), NULL, false, false)
+     ON CONFLICT (game_id, player_id) DO UPDATE
+       SET left_at = NULL,
+           display_name = CASE
+             WHEN EXCLUDED.display_name <> '' THEN EXCLUDED.display_name
+             ELSE session_players.display_name
+           END`,
     [gameId, playerId, input.displayName]
+  );
+
+  // Host self-heal: if the rejoining player is still marked is_host but host
+  // was concurrently reassigned away, we leave the current host alone (the
+  // partial unique index `uq_session_players_one_host_per_game` guarantees at
+  // most one host). If there is NO active host at all (e.g. original host was
+  // alone and disconnected), promote this rejoining player to host so the
+  // lobby remains startable. This is idempotent and never violates the index.
+  await dbPool.query(
+    `UPDATE session_players
+     SET is_host = true
+     WHERE game_id = $1
+       AND player_id = $2
+       AND left_at IS NULL
+       AND NOT EXISTS (
+         SELECT 1 FROM session_players
+         WHERE game_id = $1 AND is_host = true AND left_at IS NULL
+       )`,
+    [gameId, playerId]
   );
 
   // ─────────────────────────────────────────────────────────────────────────────
