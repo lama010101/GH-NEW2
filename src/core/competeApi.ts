@@ -265,6 +265,7 @@ export async function advanceRoundRequest(
     headers,
     body: JSON.stringify({
       playerId: input.playerId,
+      cause: "player",
       roundIndex: input.roundIndex
     })
   });

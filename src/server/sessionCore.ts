@@ -962,6 +962,40 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
       throw new Error("Practice sessions use the dedicated practice flow");
     }
 
+    const lastEventResult = await client.query<{ event_type: string; round_index: number | null }>(
+      `SELECT event_type, round_index
+       FROM round_events
+       WHERE game_id = $1
+       ORDER BY id DESC
+       LIMIT 1`,
+      [gameId]
+    );
+
+    if (lastEventResult.rows.length === 0) {
+      throw new Error("Session event stream is empty");
+    }
+
+    const lastEvent = lastEventResult.rows[0];
+    if (lastEvent.event_type !== "ROUND_COMPLETE") {
+      throw new Error(`Cannot advance round from phase '${lastEvent.event_type}'`);
+    }
+    if (lastEvent.round_index !== roundIndex) {
+      throw new Error(`roundIndex mismatch: expected ${lastEvent.round_index}, received ${roundIndex}`);
+    }
+
+    if (cause === TransitionCause.PLAYER) {
+      const playerRows = await loadSessionPlayerRows(gameId, client);
+      const activePlayers = playerRows.filter((p) => p.left_at === null);
+      const host = activePlayers.find((p) => p.is_host);
+
+      if (!host) {
+        throw new Error("Session has no host");
+      }
+      if (host.player_id !== playerId) {
+        throw new Error("Only the host can advance the round");
+      }
+    }
+
     const nextRoundIndex = roundIndex + 1;
 
     if (nextRoundIndex < session.total_rounds) {

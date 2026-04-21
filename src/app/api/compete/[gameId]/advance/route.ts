@@ -49,13 +49,6 @@ export async function POST(
       );
     }
 
-    if (cause !== TransitionCause.PLAYER && body.playerId !== undefined) {
-      return NextResponse.json(
-        { error: `playerId must not be provided when cause is '${cause}'` },
-        { status: 400 }
-      );
-    }
-
     if (typeof body.roundIndex !== "number" || !Number.isInteger(body.roundIndex)) {
       return NextResponse.json({ error: "roundIndex is required" }, { status: 400 });
     }
