@@ -1,31 +1,5 @@
 import { NextResponse } from "next/server";
-
-const PARTY_KIT_HOST = process.env.PARTY_KIT_HOST || "localhost:1999";
-
-async function forwardToPartyKit(
-  gameId: string,
-  message: { type: string; [key: string]: unknown }
-): Promise<unknown> {
-  const url = `http://${PARTY_KIT_HOST}/party/${gameId}`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-PartyKit-Message": JSON.stringify(message)
-    },
-    body: JSON.stringify(message)
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || `PartyKit request failed: ${response.status}`);
-  }
-
-  // PartyKit broadcasts don't return individual responses
-  // Return a success indicator - client should use WebSocket for state updates
-  return { forwarded: true, type: message.type };
-}
+import { submitGuess, getRoundResults } from "@/server/sessionCore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,11 +11,12 @@ export async function POST(
   try {
     const gameId = params.gameId.trim();
     const body = (await request.json().catch(() => ({}))) as {
-      playerId?: unknown;
-      roundIndex?: unknown;
-      yearGuess?: unknown;
-      locationGuess?: unknown;
-      hintsUsed?: unknown;
+      playerId?: string;
+      roundIndex?: number;
+      year?: number | null;
+      lat?: number | null;
+      lng?: number | null;
+      hintsUsed?: number;
     };
 
     if (gameId.length === 0) {
@@ -56,37 +31,26 @@ export async function POST(
       return NextResponse.json({ error: "roundIndex is required" }, { status: 400 });
     }
 
-    if (body.yearGuess !== null && body.yearGuess !== undefined && typeof body.yearGuess !== "number") {
-      return NextResponse.json({ error: "yearGuess must be null or a number" }, { status: 400 });
-    }
-
-    if (
-      body.locationGuess !== null &&
-      body.locationGuess !== undefined &&
-      (
-        typeof body.locationGuess !== "object" ||
-        typeof (body.locationGuess as { lat?: unknown }).lat !== "number" ||
-        typeof (body.locationGuess as { lng?: unknown }).lng !== "number"
-      )
-    ) {
-      return NextResponse.json({ error: "locationGuess must be null or a lat/lng pair" }, { status: 400 });
-    }
-
-    if (!Array.isArray(body.hintsUsed)) {
-      return NextResponse.json({ error: "hintsUsed must be an array" }, { status: 400 });
-    }
-
-    await forwardToPartyKit(gameId, {
-      type: "SUBMIT_GUESS",
+    const snapshot = await submitGuess({
+      gameId,
       playerId: body.playerId,
       roundIndex: body.roundIndex,
-      year: (body.yearGuess ?? null) as number | null,
-      lat: (body.locationGuess as { lat?: number } | null)?.lat ?? null,
-      lng: (body.locationGuess as { lng?: number } | null)?.lng ?? null,
-      hintsUsed: (body.hintsUsed as string[]).length
+      yearGuess: body.year ?? null,
+      locationGuess:
+        body.lat != null && body.lng != null
+          ? { lat: body.lat, lng: body.lng }
+          : null,
+      hintsUsed: [],
+      _executionContext: "api"
     });
 
-    return NextResponse.json({ success: true, forwarded: true });
+    // Get results if round is complete
+    let results = null;
+    if (snapshot.status === "ROUND_COMPLETE") {
+      results = await getRoundResults(gameId, body.roundIndex);
+    }
+
+    return NextResponse.json({ ...snapshot, results });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to submit guess";
     const status = message === "Session not found" ? 404 : 400;

@@ -1,15 +1,33 @@
 "use client";
 
+// ============================================================================
+// Compete Game Page — DO-Authoritative Client Renderer
+// TASK: MP-DO-AUTHORITATIVE-001
+//
+// Architecture (strict):
+//   DB = canonical truth (persistence, replay)
+//   DO = executor (validates, writes DB, broadcasts state)
+//   Client = renderer (displays state, sends action signals)
+//
+// Rules:
+//   - ALL displayed state originates from DO via STATE_UPDATE (WS)
+//   - STATE_INVALIDATED is legacy fallback → triggers REST re-fetch
+//   - NO client-driven REST refreshSnapshot() for normal flow
+//   - NO fabricated timestamps, ready flags, or roster entries
+//   - Timer display is derived locally from snapshot.roundEndsAt (UI-only,
+//     not state that influences gameplay authority)
+// ============================================================================
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  loadCompeteSessionRequest,
-  setCompeteReadyRequest,
-  startCompeteSessionRequest
+  getRoundResultsRequest,
+  isCompeteSessionSnapshot
 } from "@/core/competeApi";
 import { CompeteWebSocket } from "@/core/competeWebSocket";
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
+import { useIdentity } from "@/hooks/useIdentity";
 
 type RoundResult = {
   playerId: string;
@@ -30,8 +48,14 @@ function playerLabel(players: SessionPlayer[], playerId: string): string {
   return shortId(playerId);
 }
 
+function computeTimeRemaining(roundEndsAt: string | null): number | null {
+  if (!roundEndsAt) return null;
+  const endMs = new Date(roundEndsAt).getTime();
+  if (Number.isNaN(endMs)) return null;
+  return Math.max(0, Math.round((endMs - Date.now()) / 1000));
+}
+
 export default function CompeteGamePage() {
-  const router = useRouter();
   const params = useParams<{ gameId: string }>();
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
@@ -41,166 +65,188 @@ export default function CompeteGamePage() {
   const [guessYear, setGuessYear] = useState<number | null>(null);
   const [guessLat, setGuessLat] = useState<number | null>(null);
   const [guessLng, setGuessLng] = useState<number | null>(null);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const { playerId, isReady, isLoading: identityLoading, error: identityError } = useIdentity();
   const wsRef = useRef<CompeteWebSocket | null>(null);
-  const playerIdRef = useRef<string | null>(null);
   const displayNameRef = useRef<string>("");
 
-  // Bootstrap: check storage and redirect if missing
+  // Read display name from sessionStorage (cosmetic only — identity is Supabase)
   useEffect(() => {
     if (!gameId) return;
-    let storedPlayerId: string | null = null;
-    let storedName = "";
     try {
-      storedPlayerId = sessionStorage.getItem(`compete_player_id_${gameId}`);
-      storedName = sessionStorage.getItem(`compete_display_name_${gameId}`) || "";
+      displayNameRef.current = sessionStorage.getItem(`compete_display_name_${gameId}`) || "";
     } catch {
-      storedPlayerId = null;
+      // ignore
     }
-    if (!storedPlayerId) {
-      router.replace("/compete");
-      return;
-    }
-    playerIdRef.current = storedPlayerId;
-    displayNameRef.current = storedName;
-  }, [gameId, router]);
+  }, [gameId]);
 
-  // Connect WebSocket
+  // No REST fallback — WS is the ONLY state source.
+  // If WS fails, the onError callback surfaces the error to the user.
+
+  // Connect WebSocket — BLOCKED until Supabase identity is ready.
+  // DO delivers authoritative state via STATE_UPDATE.
   useEffect(() => {
-    if (!gameId) return;
-    const playerId = playerIdRef.current;
-    if (!playerId) return;
+    if (!gameId || !playerId || !isReady) return;
 
     const ws = new CompeteWebSocket(gameId, playerId, {
       onConnect: () => {
-        ws.send({
-          type: "JOIN_ROOM",
-          playerId,
-          displayName: displayNameRef.current
-        });
+        // Signal intent to join (PartyKit → API → DB → broadcast STATE_UPDATE)
+        ws.joinRoom(displayNameRef.current);
       },
-      onStateSnapshot: (snap) => {
-        setSnapshot(snap);
-      },
-      onTimerTick: (remaining) => {
-        setTimeRemaining(remaining);
-      },
-      onRoundComplete: (_round, results) => {
-        const ranked = [...results]
-          .sort((a, b) => b.score - a.score)
-          .map((r, index) => ({
-            playerId: r.playerId,
-            score: r.score,
-            accuracy: r.accuracy,
-            rank: index + 1
-          }));
-        setRoundResults(ranked);
-        setSubmitted(false);
-      },
-      onAdvanceRound: () => {
-        setGuessYear(null);
-        setGuessLat(null);
-        setGuessLng(null);
-        setSubmitted(false);
-        setRoundResults(null);
+      onStateUpdate: (rawSnapshot) => {
+        // DO-authoritative: apply snapshot directly from WS.
+        // Validate before accepting — never trust unvalidated payloads.
+        if (isCompeteSessionSnapshot(rawSnapshot)) {
+          console.log("[CompeteGamePage] State update received, players:", rawSnapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+          setSnapshot(rawSnapshot);
+          setBusy(false); // Action completed — clear busy flag
+        } else {
+          console.error("[CompeteGamePage] Invalid STATE_UPDATE payload from DO:", rawSnapshot);
+          setError("Received invalid state from server");
+          setBusy(false);
+        }
       },
       onError: (message) => {
         setError(message);
+        setBusy(false); // Action failed — clear busy flag
       }
     });
 
     wsRef.current = ws;
     ws.connect();
 
-    // Initial snapshot via REST to avoid depending solely on WS
-    loadCompeteSessionRequest(gameId)
-      .then((snap) => {
-        if (snap) setSnapshot(snap);
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : "Failed to load session");
-      });
+    // DO sends STATE_UPDATE on connect — no REST fetch needed.
 
     return () => {
       ws.disconnect();
       wsRef.current = null;
     };
-  }, [gameId]);
+  }, [gameId, playerId, isReady]);
 
-  const refreshSnapshot = useCallback(async () => {
-    try {
-      const snap = await loadCompeteSessionRequest(gameId);
-      if (snap) setSnapshot(snap);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh session");
+  // Local UI-only timer derived from snapshot.roundEndsAt.
+  // This is a DISPLAY computation, not authoritative state.
+  useEffect(() => {
+    if (!snapshot || snapshot.status !== "ROUND_ACTIVE") {
+      setTimeRemaining(null);
+      return;
     }
-  }, [gameId]);
+    const tick = () => setTimeRemaining(computeTimeRemaining(snapshot.roundEndsAt));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [snapshot]);
 
-  const handleReady = useCallback(async () => {
-    if (!playerIdRef.current) return;
+  // When the snapshot enters ROUND_COMPLETE or SESSION_COMPLETE,
+  // fetch round results from the DB. Clear on any other phase.
+  useEffect(() => {
+    if (!snapshot) {
+      setRoundResults(null);
+      return;
+    }
+    if (snapshot.status === "ROUND_COMPLETE" || snapshot.status === "SESSION_COMPLETE") {
+      let cancelled = false;
+      getRoundResultsRequest(gameId, snapshot.currentRoundIndex)
+        .then((results) => {
+          if (cancelled) return;
+          const ranked = [...results].sort((a, b) => a.rank - b.rank);
+          setRoundResults(ranked);
+        })
+        .catch(() => {
+          if (!cancelled) setRoundResults(null);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+    setRoundResults(null);
+  }, [snapshot, gameId]);
+
+  // Reset guess inputs whenever the active round changes.
+  useEffect(() => {
+    if (!snapshot) return;
+    setGuessYear(null);
+    setGuessLat(null);
+    setGuessLng(null);
+  }, [snapshot?.currentRoundIndex, snapshot?.status]);
+
+  const viewer = useMemo(() => {
+    if (!snapshot || !playerId) return null;
+    return snapshot.players.find((p) => p.playerId === playerId) ?? null;
+  }, [snapshot, playerId]);
+
+  // Authoritative: derived from snapshot.players[].hasSubmitted (DB → snapshot).
+  const hasSubmitted = viewer?.hasSubmitted ?? false;
+
+  const handleReady = useCallback(() => {
+    if (!playerId || !wsRef.current) return;
     setBusy(true);
     setError(null);
-    try {
-      await setCompeteReadyRequest({
-        gameId,
-        playerId: playerIdRef.current,
-        ready: true
-      });
-      await refreshSnapshot();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to mark ready");
-    } finally {
-      setBusy(false);
-    }
-  }, [gameId, refreshSnapshot]);
+    // Client → DO → DB: send action signal via WS
+    wsRef.current.toggleReady(true);
+    // DO will broadcast STATE_UPDATE or ERROR via WS callbacks
+    // busy flag cleared when STATE_UPDATE arrives (snapshot changes)
+  }, [playerId]);
 
-  const handleStart = useCallback(async () => {
-    if (!playerIdRef.current) return;
+  const handleStart = useCallback(() => {
+    if (!playerId || !wsRef.current) return;
     setBusy(true);
     setError(null);
-    try {
-      const snap = await startCompeteSessionRequest({
-        gameId,
-        playerId: playerIdRef.current
-      });
-      setSnapshot(snap);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start game");
-    } finally {
-      setBusy(false);
-    }
-  }, [gameId]);
+    // Client → DO → DB: send action signal via WS
+    wsRef.current.startGame();
+  }, [playerId]);
 
   const handleSubmitGuess = useCallback(() => {
-    if (!snapshot || !wsRef.current) return;
+    if (!snapshot || !playerId || !wsRef.current) return;
     if (guessYear === null || guessLat === null || guessLng === null) return;
-    if (submitted) return;
+    setBusy(true);
     setError(null);
+    // Client → DO → DB: send action signal via WS
     wsRef.current.submitGuess(
       snapshot.currentRoundIndex,
       guessYear,
       guessLat,
       guessLng
     );
-    setSubmitted(true);
-  }, [snapshot, guessYear, guessLat, guessLng, submitted]);
+  }, [snapshot, playerId, guessYear, guessLat, guessLng]);
 
   const handleAdvanceRound = useCallback(() => {
-    if (!snapshot || !wsRef.current) return;
+    if (!snapshot || !playerId || !wsRef.current) return;
+    setBusy(true);
     setError(null);
+    // Client → DO → DB: send action signal via WS
     wsRef.current.advanceRound(snapshot.currentRoundIndex);
-  }, [snapshot]);
+  }, [snapshot, playerId]);
 
-  const viewer = useMemo(() => {
-    if (!snapshot || !playerIdRef.current) return null;
-    return snapshot.players.find((p) => p.playerId === playerIdRef.current) ?? null;
-  }, [snapshot]);
+  if (!gameId) return null;
 
-  if (!gameId) {
-    return null;
+  if (identityLoading) {
+    return (
+      <main className="app-shell">
+        <div className="shell-grid">
+          <section className="hero">
+            <span className="badge">Compete</span>
+            <h1>Establishing identity…</h1>
+            <p className="small">Game ID: {gameId}</p>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  if (identityError) {
+    return (
+      <main className="app-shell">
+        <div className="shell-grid">
+          <section className="hero">
+            <span className="badge">Compete</span>
+            <h1>Identity error</h1>
+            <p style={{ color: "#ff6b6b", margin: 0 }}>{identityError}</p>
+          </section>
+        </div>
+      </main>
+    );
   }
 
   if (!snapshot) {
@@ -222,9 +268,7 @@ export default function CompeteGamePage() {
     );
   }
 
-  const renderError = error ? (
-    <p style={{ color: "#ff6b6b", margin: 0 }}>{error}</p>
-  ) : null;
+  const renderError = error ? <p style={{ color: "#ff6b6b", margin: 0 }}>{error}</p> : null;
 
   return (
     <main className="app-shell">
@@ -266,12 +310,7 @@ export default function CompeteGamePage() {
               >
                 {viewer?.ready ? "Ready ✓" : "Ready"}
               </button>
-              <button
-                type="button"
-                className="button"
-                onClick={handleStart}
-                disabled={busy}
-              >
+              <button type="button" className="button" onClick={handleStart} disabled={busy}>
                 Start Game
               </button>
             </div>
@@ -290,8 +329,12 @@ export default function CompeteGamePage() {
                 </strong>
               </div>
               <div className="metric">
-                <span className="small">Players</span>
-                <strong>{snapshot.players.length}</strong>
+                <span className="small">Submitted</span>
+                <strong>
+                  {snapshot.players.filter((p) => p.hasSubmitted && p.leftAt === null).length}
+                  {" / "}
+                  {snapshot.players.filter((p) => p.leftAt === null).length}
+                </strong>
               </div>
             </div>
             <div className="stack">
@@ -306,7 +349,7 @@ export default function CompeteGamePage() {
                     const v = e.target.value;
                     setGuessYear(v === "" ? null : Number(v));
                   }}
-                  disabled={submitted}
+                  disabled={busy || hasSubmitted}
                 />
               </div>
               <div className="field">
@@ -321,7 +364,7 @@ export default function CompeteGamePage() {
                     const v = e.target.value;
                     setGuessLat(v === "" ? null : Number(v));
                   }}
-                  disabled={submitted}
+                  disabled={busy || hasSubmitted}
                 />
               </div>
               <div className="field">
@@ -336,7 +379,7 @@ export default function CompeteGamePage() {
                     const v = e.target.value;
                     setGuessLng(v === "" ? null : Number(v));
                   }}
-                  disabled={submitted}
+                  disabled={busy || hasSubmitted}
                 />
               </div>
               <button
@@ -344,13 +387,14 @@ export default function CompeteGamePage() {
                 className="button"
                 onClick={handleSubmitGuess}
                 disabled={
-                  submitted ||
+                  busy ||
+                  hasSubmitted ||
                   guessYear === null ||
                   guessLat === null ||
                   guessLng === null
                 }
               >
-                {submitted ? "Submitted" : "Submit Guess"}
+                {busy ? "Submitting…" : "Submit Guess"}
               </button>
             </div>
             {renderError}
@@ -384,8 +428,13 @@ export default function CompeteGamePage() {
             ) : (
               <p className="small">Waiting for results…</p>
             )}
-            <button type="button" className="button" onClick={handleAdvanceRound}>
-              Next Round
+            <button
+              type="button"
+              className="button"
+              onClick={handleAdvanceRound}
+              disabled={busy}
+            >
+              {busy ? "Advancing…" : "Next Round"}
             </button>
             {renderError}
           </section>

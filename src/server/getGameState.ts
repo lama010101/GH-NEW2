@@ -29,8 +29,11 @@ type DbExecutor = Pick<Pool, "query">;
 /** Player state reconstructed from session_players */
 export type PlayerState = {
   playerId: string;
+  displayName: string;
   joinedAt: string;
   leftAt: string | null;
+  ready: boolean;
+  isHost: boolean;
 };
 
 /** Single submission reconstructed from round_commits */
@@ -152,13 +155,19 @@ async function loadPlayers(
 ): Promise<PlayerState[]> {
   const result = await executor.query<{
     player_id: string;
+    display_name: string;
     joined_at: Date;
     left_at: Date | null;
+    ready: boolean;
+    is_host: boolean;
   }>(
     `SELECT 
       player_id,
+      display_name,
       joined_at,
-      left_at
+      left_at,
+      ready,
+      is_host
     FROM session_players
     WHERE game_id = $1
     ORDER BY joined_at ASC, player_id ASC`,
@@ -167,8 +176,11 @@ async function loadPlayers(
 
   return result.rows.map(row => ({
     playerId: row.player_id,
+    displayName: row.display_name ?? "",
     joinedAt: row.joined_at.toISOString(),
-    leftAt: row.left_at?.toISOString() ?? null
+    leftAt: row.left_at?.toISOString() ?? null,
+    ready: row.ready,
+    isHost: row.is_host
   }));
 }
 

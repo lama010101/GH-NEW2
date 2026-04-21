@@ -34,6 +34,7 @@ import {
 import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
 import { getGameState, deriveStateFromEventStream } from "@/server/getGameState";
 import { appendEvent } from "@/server/eventStore";
+import { TransitionCause } from "@/core/transitionCause";
 
 export const PRACTICE_PLAYER_ID = "00000000-0000-0000-0000-000000000000";
 export const PRACTICE_PLAYER_NAME = "Practice Player";
@@ -59,11 +60,15 @@ export type SessionRow = {
 };
 
 // Exactly matches public.session_players columns (spec DDL, Section 3.3)
+// Updated by MP-STATE-COMPLETION-004 to include ready + is_host (migration 022).
 export type SessionPlayerRow = {
   game_id: string;
   player_id: string;
+  display_name: string;
   joined_at: Date | null;
   left_at: Date | null;
+  ready: boolean;
+  is_host: boolean;
 };
 
 // NOTE: round_timing table exists but is NOT used for phase derivation.
@@ -220,14 +225,26 @@ export function mapSessionRowToConfig(row: SessionRow): SessionConfig {
   };
 }
 
-export function mapSessionPlayerRowToPlayer(row: SessionPlayerRow): SessionPlayer {
+/**
+ * Map a session_players row to a SessionPlayer.
+ *
+ * `hasSubmitted` is a per-round derivation (does a row exist in round_commits
+ * for (game_id, player_id, currentRoundIndex)?) and therefore CANNOT be
+ * inferred from session_players alone. The caller must pass it explicitly
+ * so we never fabricate this field.
+ */
+export function mapSessionPlayerRowToPlayer(row: SessionPlayerRow, hasSubmitted: boolean): SessionPlayer {
+  if (row.joined_at === null) {
+    throw new Error(`[DB_INTEGRITY] session_players.joined_at is NULL for player_id=${row.player_id} game_id=${row.game_id}`);
+  }
   return {
     playerId: row.player_id,
-    displayName: row.player_id.slice(0, 8),
-    joinedAt: row.joined_at ? row.joined_at.toISOString() : new Date().toISOString(),
+    displayName: row.display_name || row.player_id.slice(0, 8),
+    joinedAt: row.joined_at.toISOString(),
     leftAt: toIsoString(row.left_at),
-    ready: true,
-    isHost: false
+    ready: row.ready,
+    isHost: row.is_host,
+    hasSubmitted
   };
 }
 
@@ -261,7 +278,7 @@ export async function loadSessionRow(gameId: string, executor: DbExecutor = dbPo
 export async function loadSessionPlayerRows(gameId: string, executor: DbExecutor = dbPool): Promise<SessionPlayerRow[]> {
   const result = await executor.query<SessionPlayerRow>(
     `
-      SELECT game_id, player_id, joined_at, left_at
+      SELECT game_id, player_id, display_name, joined_at, left_at, ready, is_host
       FROM session_players
       WHERE game_id = $1
       ORDER BY joined_at ASC, player_id ASC
@@ -324,16 +341,23 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   const { currentRound, currentPhase: phaseEventType } = deriveStateFromEventStream(gameState.events);
   const status = eventTypeToSessionStatus(phaseEventType);
 
-  // STEP 3: Map players from canonical state
-  const players = gameState.players.map((p) => ({
+  // STEP 3: Map players from canonical state.
+  // `hasSubmitted` derives from round_commits for the current round.
+  const currentRoundSubmissions = gameState.rounds.find(r => r.roundIndex === currentRound)?.submissions ?? [];
+  const submittedPlayerIds = new Set(currentRoundSubmissions.map(s => s.playerId));
+  const players: SessionPlayer[] = gameState.players.map((p) => ({
     playerId: p.playerId,
-    displayName: p.playerId.slice(0, 8),
+    displayName: p.displayName || p.playerId.slice(0, 8),
     joinedAt: p.joinedAt,
     leftAt: p.leftAt,
-    ready: true,
-    isHost: false
+    ready: p.ready,
+    isHost: p.isHost,
+    hasSubmitted: submittedPlayerIds.has(p.playerId)
   }));
   const activePlayers = players.filter((p) => p.leftAt === null);
+
+  // Host identity surfaces via SessionConfig.hostPlayerId (derived from DB column).
+  const hostPlayer = players.find((p) => p.isHost && p.leftAt === null) ?? null;
 
   // STEP 4: Get round start time and end time from ROUND_STARTED event (event payload, not round_timing)
   const roundStartedEvent = gameState.events
@@ -356,14 +380,16 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
       totalRounds: gameState.session.totalRounds,
       yearMin: gameState.session.yearMin,
       yearMax: gameState.session.yearMax,
-      hostPlayerId: null,
+      hostPlayerId: hostPlayer ? hostPlayer.playerId : null,
       sessionDeadline: gameState.session.sessionDeadline,
       startedAt: null,
       completedAt: null
     },
     players,
     currentRoundIndex: currentRound,
-    allPlayersReady: activePlayers.length > 0,
+    // True iff ≥2 active players AND every active player is ready.
+    // Derived; never stored.
+    allPlayersReady: activePlayers.length >= 2 && activePlayers.every((p) => p.ready),
     roundStartsAt,
     roundEndsAt,
     viewerPlayerId: viewerPlayerId ?? null,
@@ -428,7 +454,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   }
 
   const gameId = randomUUID();
-  const hostPlayerId = randomUUID();
+  const hostPlayerId = input.playerId;
   const seed = BigInt("0x" + randomBytes(8).toString("hex")) & BigInt("0x7FFFFFFFFFFFFFFF");
   const client = await getTransactionClient();
 
@@ -444,10 +470,11 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     // Cross-connection verification will happen AFTER commit
 
     verifyLog("INSERT", "session_players", "OK", `host player_id=${hostPlayerId} — executing`);
+    // Host row: is_host=true, ready=false (host must still opt in).
     await client.query(
-      `INSERT INTO session_players (game_id, player_id, joined_at)
-       VALUES ($1, $2, now())`,
-      [gameId, hostPlayerId]
+      `INSERT INTO session_players (game_id, player_id, display_name, joined_at, ready, is_host)
+       VALUES ($1, $2, $3, now(), false, true)`,
+      [gameId, hostPlayerId, input.displayName]
     );
 
     await appendEvent(client, gameId, "SESSION_CREATED", {
@@ -494,7 +521,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   return snapshot;
 }
 
-export async function joinCompeteSession(input: { gameId: string; displayName: string }): Promise<CompeteSessionSnapshot> {
+export async function joinCompeteSession(input: { gameId: string; displayName: string; playerId: string }): Promise<CompeteSessionSnapshot> {
   const gameId = input.gameId.trim();
   assertValidDisplayName(input.displayName);
 
@@ -511,11 +538,16 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
     throw new Error("Practice sessions cannot be joined");
   }
 
-  const playerId = randomUUID();
+  const playerId = input.playerId;
   verifyLog("INSERT", "session_players", "OK", `joining player_id=${playerId} game_id=${gameId} — executing`);
+  // Joining players are NOT ready and NOT host. Both default to false via DDL,
+  // but we pass them explicitly for clarity. ON CONFLICT preserves existing
+  // ready/is_host state on rejoin (no implicit reset).
   await dbPool.query(
-    `INSERT INTO session_players (game_id, player_id, joined_at) VALUES ($1, $2, now())`,
-    [gameId, playerId]
+    `INSERT INTO session_players (game_id, player_id, display_name, joined_at, ready, is_host)
+     VALUES ($1, $2, $3, now(), false, false)
+     ON CONFLICT (game_id, player_id) DO NOTHING`,
+    [gameId, playerId, input.displayName]
   );
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -553,9 +585,13 @@ export async function setCompetePlayerReady(input: SetCompeteReadyInput): Promis
     throw new Error("playerId is required");
   }
 
+  // Atomic UPDATE — ready state lives in DB, never in memory.
   const result = await dbPool.query<{ player_id: string }>(
-    `SELECT player_id FROM session_players WHERE game_id = $1 AND player_id = $2 LIMIT 1`,
-    [gameId, playerId]
+    `UPDATE session_players
+     SET ready = $3
+     WHERE game_id = $1 AND player_id = $2
+     RETURNING player_id`,
+    [gameId, playerId, input.ready]
   );
 
   if (result.rows.length === 0) {
@@ -573,6 +609,7 @@ export async function setCompetePlayerReady(input: SetCompeteReadyInput): Promis
 export async function startCompeteSession(input: StartCompeteSessionInput): Promise<CompeteSessionSnapshot> {
   const gameId = input.gameId.trim();
   const playerId = input.playerId.trim();
+  const cause = input.cause;
   const client = await getTransactionClient();
 
   try {
@@ -592,6 +629,23 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
 
     if (activePlayers.length < 2) {
       throw new Error("At least 2 players required to start");
+    }
+
+    // Only the host may start the game. Host identity is DB-authoritative
+    // (session_players.is_host), set at session creation and enforced by
+    // the uq_session_players_one_host_per_game partial unique index.
+    const host = activePlayers.find((p) => p.is_host);
+    if (!host) {
+      throw new Error("Session has no host");
+    }
+    if (host.player_id !== playerId) {
+      throw new Error("Only the host can start the game");
+    }
+
+    // All active players must be ready. No fallback defaults.
+    const notReady = activePlayers.filter((p) => !p.ready);
+    if (notReady.length > 0) {
+      throw new Error(`Not all players are ready (${notReady.length} pending)`);
     }
 
     const sessionCreatedEventForStart = await client.query<{ payload: { eventIds: string[] } }>(
@@ -614,7 +668,8 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
       roundIndex: 0,
       eventId: startEventIds[0],
       startedAt: startStartedAt,
-      phaseEndsAt: startPhaseEndsAt
+      phaseEndsAt: startPhaseEndsAt,
+      cause
     }, 0);
 
     await client.query("COMMIT");
@@ -643,14 +698,14 @@ export type SubmitGuessInput = {
   _executionContext?: "partykit" | "api";
 };
 
-function assertPartyKitExecution(input: { _executionContext?: string }): void {
-  if (input._executionContext !== "partykit") {
-    throw new Error("Direct mutation not allowed - use PartyKit WebSocket for state mutations");
+function assertValidExecutionContext(input: { _executionContext?: string }): void {
+  if (input._executionContext !== "partykit" && input._executionContext !== "api") {
+    throw new Error("Direct mutation not allowed - use PartyKit WebSocket or API routes for state mutations");
   }
 }
 
 export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessionSnapshot> {
-  assertPartyKitExecution(input);
+  assertValidExecutionContext(input);
   const { gameId, playerId, roundIndex, yearGuess, locationGuess, hintsUsed } = input;
 
   if (!Number.isInteger(roundIndex) || roundIndex < 0 || roundIndex >= MAX_ROUNDS) {
@@ -673,8 +728,6 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   }
 
   const client = await getTransactionClient();
-  let commitCount = 0;
-  let activePlayerCount = 0;
   let shouldVerifyRoundResults = false;
   let event: Awaited<ReturnType<typeof fetchEventById>> = null;
 
@@ -766,15 +819,23 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 
     const playerRows = await loadSessionPlayerRows(gameId, client);
     const activePlayers = playerRows.filter((p) => p.left_at === null);
-    activePlayerCount = activePlayers.length;
-    commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
 
-    if (commitCount >= activePlayers.length && activePlayers.length > 0) {
-      verifyLog("INSERT", "round_results", "OK", `round=${roundIndex} all ${commitCount} commits in — computing`);
-      await computeAndWriteRoundResults(gameId, roundIndex, client);
-      shouldVerifyRoundResults = true;
-      verifyLog("INSERT", "round_results", "OK", `${commitCount} rows written for round=${roundIndex}`);
-      await appendEvent(client, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
+    // MP-ACTIVE-PLAYERS-001: Completion is submission-based, not count-based.
+    // Only active players (left_at IS NULL) participate.
+    // If no active players remain, do nothing (no phantom round completion).
+    if (activePlayers.length === 0) {
+      // no-op: all players disconnected
+    } else {
+      const commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
+      const allActiveSubmitted = commitCount >= activePlayers.length;
+
+      if (allActiveSubmitted) {
+        verifyLog("INSERT", "round_results", "OK", `round=${roundIndex} all ${activePlayers.length} active players submitted — computing`);
+        await computeAndWriteRoundResults(gameId, roundIndex, client);
+        shouldVerifyRoundResults = true;
+        verifyLog("INSERT", "round_results", "OK", `${commitCount} rows written for round=${roundIndex}`);
+        await appendEvent(client, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
+      }
     }
 
     await client.query("COMMIT");
@@ -829,12 +890,16 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   );
 
   // 4. ROUND RESULTS VERIFICATION (if computed)
-  if (shouldVerifyRoundResults && activePlayerCount > 0 && event) {
+  if (shouldVerifyRoundResults && event) {
     // Write-set verification for round_results
+    // Count must equal current active players at verification time (may differ
+    // from transaction time if disconnects occurred between commit and verify).
+    const verifyPlayerRows = await loadSessionPlayerRows(gameId);
+    const verifyActivePlayers = verifyPlayerRows.filter((p) => p.left_at === null);
     await verifyWriteSet(
       "submitGuess-results",
       [
-        { table: "round_results", count: activePlayerCount, where: { game_id: gameId, round_index: roundIndex } }
+        { table: "round_results", count: verifyActivePlayers.length || 1, where: { game_id: gameId, round_index: roundIndex } }
       ],
       commitToken
     );
@@ -857,14 +922,33 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 
 export type AdvanceRoundInput = {
   gameId: string;
-  playerId: string;
+  cause: TransitionCause;  // Authoritative domain type — from @/core/transitionCause (shared Next.js + PartyKit)
+  playerId?: string;        // Required when cause=PLAYER, MUST NOT be present for TIMEOUT|INTERNAL
   roundIndex: number;
   _executionContext?: "partykit" | "api";
 };
 
 export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSessionSnapshot> {
-  assertPartyKitExecution(input);
-  const { gameId, playerId, roundIndex } = input;
+  assertValidExecutionContext(input);
+  const { gameId, cause, roundIndex } = input;
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // CAUSE VALIDATION — No inference, no defaults, no fabrication
+  // TransitionCause is the shared domain contract (@/core/transitionCause)
+  // ═════════════════════════════════════════════════════════════════════════════
+  if (cause === TransitionCause.PLAYER) {
+    if (!input.playerId || typeof input.playerId !== "string" || input.playerId.length === 0) {
+      throw new Error(`playerId is required when cause is '${TransitionCause.PLAYER}'`);
+    }
+  } else if (cause === TransitionCause.TIMEOUT || cause === TransitionCause.INTERNAL) {
+    if (input.playerId !== undefined && input.playerId !== null) {
+      throw new Error(`playerId must not be provided when cause is '${cause}'`);
+    }
+  } else {
+    throw new Error(`Invalid cause: '${cause as string}'. Must be one of: ${Object.values(TransitionCause).join(", ")}`);
+  }
+
+  const playerId = cause === TransitionCause.PLAYER ? input.playerId! : undefined;
 
   const client = await getTransactionClient();
 
@@ -901,10 +985,16 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
         roundIndex: nextRoundIndex,
         eventId: advanceEventIds[nextRoundIndex],
         startedAt: advanceStartedAt,
-        phaseEndsAt: advancePhaseEndsAt
+        phaseEndsAt: advancePhaseEndsAt,
+        cause,
+        ...(playerId ? { playerId } : {})
       }, nextRoundIndex);
     } else {
-      await appendEvent(client, gameId, "SESSION_COMPLETE", { totalRounds: session.total_rounds }, roundIndex);
+      await appendEvent(client, gameId, "SESSION_COMPLETE", {
+        totalRounds: session.total_rounds,
+        cause,
+        ...(playerId ? { playerId } : {})
+      }, roundIndex);
     }
 
     await client.query("COMMIT");
@@ -915,7 +1005,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     client.release();
   }
 
-  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId ?? undefined);
   if (!snapshot) throw new Error("Session not found");
   return snapshot;
 }
@@ -924,8 +1014,8 @@ export async function getRoundResults(
   gameId: string,
   roundIndex: number
 ): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number }>> {
-  const result = await dbPool.query<{ player_id: string; score: number | null; rank: number | null }>(
-    `SELECT player_id, score, rank FROM round_results
+  const result = await dbPool.query<{ player_id: string; score: number | null; rank: number | null; location_score: number | null; time_score: number | null }>(
+    `SELECT player_id, score, rank, location_score, time_score FROM round_results
      WHERE game_id = $1 AND round_index = $2
      ORDER BY rank ASC`,
     [gameId, roundIndex]
@@ -935,7 +1025,7 @@ export async function getRoundResults(
     playerId: row.player_id,
     score: row.score ?? 0,
     rank: row.rank ?? 0,
-    accuracy: 0
+    accuracy: Math.round(((row.location_score ?? 0) + (row.time_score ?? 0)) / 2)
   }));
 }
 

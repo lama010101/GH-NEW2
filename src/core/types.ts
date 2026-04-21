@@ -1,3 +1,5 @@
+import type { TransitionCause } from "./transitionCause";
+
 export const MAX_ROUNDS = 5;
 export const REPEAT_PROTECTION_BUFFER = 500;
 export const AUTOPAN_DURATION_SEC = 5;
@@ -110,6 +112,11 @@ export type SessionPlayer = {
   leftAt: string | null;
   ready: boolean;
   isHost: boolean;
+  /**
+   * Derived per snapshot: true iff a row exists in round_commits for
+   * (game_id, player_id, currentRoundIndex). NOT stored in session_players.
+   */
+  hasSubmitted: boolean;
 };
 
 export type SessionConfig = {
@@ -169,6 +176,7 @@ export type CompeteSessionSnapshot = {
 
 export type CreateCompeteSessionInput = {
   displayName: string;
+  playerId: string;
   mode?: Exclude<SessionMode, "practice">;
   roundTimerSec?: number;
   totalRounds?: number;
@@ -179,6 +187,7 @@ export type CreateCompeteSessionInput = {
 export type JoinCompeteSessionInput = {
   gameId: string;
   displayName: string;
+  playerId: string;
 };
 
 export type SetCompeteReadyInput = {
@@ -190,4 +199,5 @@ export type SetCompeteReadyInput = {
 export type StartCompeteSessionInput = {
   gameId: string;
   playerId: string;
+  cause: TransitionCause;
 };

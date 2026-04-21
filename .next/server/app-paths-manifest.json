@@ -1,6 +1,11 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/game/[gameId]/page": "app/game/[gameId]/page.js",
+  "/page": "app/page.js",
+  "/compete/page": "app/compete/page.js",
+  "/api/compete/[gameId]/leave/route": "app/api/compete/[gameId]/leave/route.js",
+  "/compete/[gameId]/page": "app/compete/[gameId]/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/api/compete/[gameId]/route": "app/api/compete/[gameId]/route.js"
+  "/api/compete/[gameId]/join/route": "app/api/compete/[gameId]/join/route.js",
+  "/api/compete/[gameId]/route": "app/api/compete/[gameId]/route.js",
+  "/api/compete/create/route": "app/api/compete/create/route.js"
 }

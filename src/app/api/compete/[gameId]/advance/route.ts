@@ -1,29 +1,6 @@
 import { NextResponse } from "next/server";
-
-const PARTY_KIT_HOST = process.env.PARTY_KIT_HOST || "localhost:1999";
-
-async function forwardToPartyKit(
-  gameId: string,
-  message: { type: string; [key: string]: unknown }
-): Promise<unknown> {
-  const url = `http://${PARTY_KIT_HOST}/party/${gameId}`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-PartyKit-Message": JSON.stringify(message)
-    },
-    body: JSON.stringify(message)
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || `PartyKit request failed: ${response.status}`);
-  }
-
-  return { forwarded: true, type: message.type };
-}
+import { advanceRound } from "@/server/sessionCore";
+import { TransitionCause, isTransitionCause, ALL_TRANSITION_CAUSES } from "@/core/transitionCause";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,29 +12,50 @@ export async function POST(
   try {
     const gameId = params.gameId.trim();
     const body = (await request.json().catch(() => ({}))) as {
-      playerId?: unknown;
-      roundIndex?: unknown;
+      cause?: string;
+      playerId?: string;
+      roundIndex?: number;
     };
 
     if (gameId.length === 0) {
       return NextResponse.json({ error: "gameId is required" }, { status: 400 });
     }
 
-    if (typeof body.playerId !== "string") {
-      return NextResponse.json({ error: "playerId is required" }, { status: 400 });
+    if (!isTransitionCause(body.cause)) {
+      return NextResponse.json(
+        { error: `cause must be one of: ${ALL_TRANSITION_CAUSES.join(", ")}` },
+        { status: 400 }
+      );
+    }
+    const cause = body.cause;
+
+    if (cause === TransitionCause.PLAYER && typeof body.playerId !== "string") {
+      return NextResponse.json(
+        { error: `playerId is required when cause is '${TransitionCause.PLAYER}'` },
+        { status: 400 }
+      );
+    }
+
+    if (cause !== TransitionCause.PLAYER && body.playerId !== undefined) {
+      return NextResponse.json(
+        { error: `playerId must not be provided when cause is '${cause}'` },
+        { status: 400 }
+      );
     }
 
     if (typeof body.roundIndex !== "number" || !Number.isInteger(body.roundIndex)) {
       return NextResponse.json({ error: "roundIndex is required" }, { status: 400 });
     }
 
-    await forwardToPartyKit(gameId, {
-      type: "ADVANCE_ROUND",
-      playerId: body.playerId,
-      roundIndex: body.roundIndex
+    const snapshot = await advanceRound({
+      gameId,
+      cause,
+      playerId: cause === TransitionCause.PLAYER ? body.playerId : undefined,
+      roundIndex: body.roundIndex,
+      _executionContext: "api"
     });
 
-    return NextResponse.json({ success: true, forwarded: true });
+    return NextResponse.json(snapshot);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to advance round";
     const status = message === "Session not found" ? 404 : 400;

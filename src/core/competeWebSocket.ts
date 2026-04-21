@@ -1,27 +1,19 @@
-import type { CompeteSessionSnapshot } from "./types";
+// ============================================================================
+// CompeteWebSocket — DO-Authoritative Client Transport
+// TASK: MP-DO-AUTHORITATIVE-001
+//
+// PartyKit is the DO-authoritative executor. This client:
+//   - Sends action signals (join/ready/start/guess/advance)
+//   - Receives STATE_UPDATE (full snapshot from DO) and ERROR
+//   - WS is the ONLY state source — no REST fallback
+// ============================================================================
 
 export type WebSocketMessage =
-  | { type: "PLAYER_SUBMITTED"; playerId: string; round: number }
-  | { type: "ROUND_COMPLETE"; round: number; results: Array<{ playerId: string; score: number; accuracy: number; hints: number }> }
-  | { type: "ADVANCE_ROUND"; nextRound: number | null }
-  | { type: "PRESSURE_APPLIED"; remainingSec: number }
-  | { type: "TIMER_TICK"; timeRemaining: number | null }
-  | { type: "STATE_SNAPSHOT"; session: unknown; players: unknown[]; currentRound: number; timerLeft: number | null }
-  | { type: "ROSTER_UPDATE"; players: Array<{ id: string; name: string; ready: boolean; isHost: boolean }> }
-  | { type: "GAME_START"; gameId: string; seed: number; totalRounds: number; roundTimer: number }
-  | { type: "ROUND_START"; round: number; startAt: string; duration: number; eventId: string }
+  | { type: "STATE_UPDATE"; snapshot: unknown }
   | { type: "ERROR"; message: string };
 
 export type CompeteWebSocketCallbacks = {
-  onPlayerSubmitted?: (playerId: string, round: number) => void;
-  onRoundComplete?: (round: number, results: Array<{ playerId: string; score: number; accuracy: number; hints: number }>) => void;
-  onAdvanceRound?: (nextRound: number | null) => void;
-  onPressureApplied?: (remainingSec: number) => void;
-  onTimerTick?: (timeRemaining: number | null) => void;
-  onStateSnapshot?: (snapshot: CompeteSessionSnapshot) => void;
-  onRosterUpdate?: (players: Array<{ id: string; name: string; ready: boolean; isHost: boolean }>) => void;
-  onGameStart?: (data: { gameId: string; seed: number; totalRounds: number; roundTimer: number }) => void;
-  onRoundStart?: (data: { round: number; startAt: string; duration: number; eventId: string }) => void;
+  onStateUpdate?: (snapshot: unknown) => void;
   onError?: (message: string) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
@@ -48,18 +40,26 @@ export class CompeteWebSocket {
   }
 
   connect(): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      return;
+    if (this.ws) {
+      const state = this.ws.readyState;
+      if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) {
+        return;
+      }
+      this.ws.close();
+      this.ws = null;
     }
 
-    const url = `wss://${this.partyKitHost}/party/${this.gameId}`;
+    const isLocalhost =
+      this.partyKitHost.includes("localhost") || this.partyKitHost.includes("127.0.0.1");
+    const protocol = isLocalhost ? "ws" : "wss";
+    const url = `${protocol}://${this.partyKitHost}/parties/lobby/${this.gameId}`;
+    console.log("[CompeteWebSocket] Connecting to:", url);
     this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
       console.log("[CompeteWebSocket] Connected");
       this.reconnectAttempts = 0;
       this.callbacks.onConnect?.();
-      this.requestSnapshot();
     };
 
     this.ws.onmessage = (event) => {
@@ -77,13 +77,13 @@ export class CompeteWebSocket {
       this.attemptReconnect();
     };
 
-    this.ws.onerror = (error) => {
-      console.error("[CompeteWebSocket] Error:", error);
+    this.ws.onerror = () => {
       this.callbacks.onError?.("WebSocket error");
     };
   }
 
   disconnect(): void {
+    this.reconnectAttempts = this.maxReconnectAttempts; // prevent auto-reconnect
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -92,59 +92,13 @@ export class CompeteWebSocket {
 
   private handleMessage(data: WebSocketMessage): void {
     switch (data.type) {
-      case "PLAYER_SUBMITTED":
-        this.callbacks.onPlayerSubmitted?.(data.playerId, data.round);
-        break;
-      case "ROUND_COMPLETE":
-        this.callbacks.onRoundComplete?.(data.round, data.results);
-        break;
-      case "ADVANCE_ROUND":
-        this.callbacks.onAdvanceRound?.(data.nextRound);
-        break;
-      case "PRESSURE_APPLIED":
-        this.callbacks.onPressureApplied?.(data.remainingSec);
-        break;
-      case "TIMER_TICK":
-        this.callbacks.onTimerTick?.(data.timeRemaining);
-        break;
-      case "STATE_SNAPSHOT":
-        if (this.isValidSnapshot(data)) {
-          this.callbacks.onStateSnapshot?.(data as unknown as CompeteSessionSnapshot);
-        }
-        break;
-      case "ROSTER_UPDATE":
-        this.callbacks.onRosterUpdate?.(data.players);
-        break;
-      case "GAME_START":
-        this.callbacks.onGameStart?.({
-          gameId: data.gameId,
-          seed: data.seed,
-          totalRounds: data.totalRounds,
-          roundTimer: data.roundTimer
-        });
-        break;
-      case "ROUND_START":
-        this.callbacks.onRoundStart?.({
-          round: data.round,
-          startAt: data.startAt,
-          duration: data.duration,
-          eventId: data.eventId
-        });
+      case "STATE_UPDATE":
+        this.callbacks.onStateUpdate?.(data.snapshot);
         break;
       case "ERROR":
         this.callbacks.onError?.(data.message);
         break;
     }
-  }
-
-  private isValidSnapshot(data: unknown): data is Record<string, unknown> {
-    return (
-      typeof data === "object" &&
-      data !== null &&
-      "session" in data &&
-      "players" in data &&
-      "currentRound" in data
-    );
   }
 
   private attemptReconnect(): void {
@@ -153,18 +107,12 @@ export class CompeteWebSocket {
       this.callbacks.onError?.("Failed to reconnect after multiple attempts");
       return;
     }
-
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-
-    console.log(`[CompeteWebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
-
-    setTimeout(() => {
-      this.connect();
-    }, delay);
+    setTimeout(() => this.connect(), delay);
   }
 
-  send(message: unknown): void {
+  private send(message: unknown): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     } else {
@@ -172,14 +120,29 @@ export class CompeteWebSocket {
     }
   }
 
-  requestSnapshot(): void {
-    this.send({
-      type: "REQUEST_SNAPSHOT",
-      playerId: this.playerId
-    });
+  // ─────────────────────────────────────────────────────────────────────
+  // Action signals. PartyKit will translate these into API calls.
+  // Each triggers a DB write + STATE_INVALIDATED broadcast on success.
+  // ─────────────────────────────────────────────────────────────────────
+
+  joinRoom(displayName: string): void {
+    this.send({ type: "JOIN_ROOM", playerId: this.playerId, displayName });
   }
 
-  submitGuess(roundIndex: number, year: number | null, lat: number | null, lng: number | null): void {
+  toggleReady(ready: boolean): void {
+    this.send({ type: "TOGGLE_READY", playerId: this.playerId, ready });
+  }
+
+  startGame(): void {
+    this.send({ type: "START_GAME", playerId: this.playerId });
+  }
+
+  submitGuess(
+    roundIndex: number,
+    year: number | null,
+    lat: number | null,
+    lng: number | null
+  ): void {
     this.send({
       type: "SUBMIT_GUESS",
       playerId: this.playerId,
@@ -192,36 +155,6 @@ export class CompeteWebSocket {
   }
 
   advanceRound(roundIndex: number): void {
-    this.send({
-      type: "ADVANCE_ROUND",
-      playerId: this.playerId,
-      roundIndex
-    });
-  }
-
-  joinRoom(displayName: string): void {
-    this.send({
-      type: "JOIN_ROOM",
-      gameId: this.gameId,
-      playerId: this.playerId,
-      displayName
-    });
-  }
-
-  toggleReady(ready: boolean): void {
-    this.send({
-      type: "TOGGLE_READY",
-      gameId: this.gameId,
-      playerId: this.playerId,
-      ready
-    });
-  }
-
-  startGame(): void {
-    this.send({
-      type: "START_GAME",
-      gameId: this.gameId,
-      playerId: this.playerId
-    });
+    this.send({ type: "ADVANCE_ROUND", playerId: this.playerId, roundIndex });
   }
 }
