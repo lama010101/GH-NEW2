@@ -4,22 +4,10 @@
 // These tests MUST fail before the fix and pass after.
 // Tests validate that the event pipeline rejects invalid event sequences.
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { dbPool } from "./db";
+import { describe, it, expect } from "vitest";
 import { getTransactionClient, type DbTransactionClient } from "./sessionCore";
 import { appendEvent } from "./eventStore";
 import { randomUUID } from "crypto";
-
-// Test helpers
-async function createTestSession(client: DbTransactionClient): Promise<string> {
-  const gameId = randomUUID();
-  await client.query(
-    `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
-     VALUES ($1, 'sync', 120, 3, 1800, 2024, $2)`,
-    [gameId, BigInt(12345)]
-  );
-  return gameId;
-}
 
 async function cleanupTestSession(client: DbTransactionClient, gameId: string): Promise<void> {
   await client.query(`DELETE FROM round_events WHERE game_id = $1`, [gameId]);

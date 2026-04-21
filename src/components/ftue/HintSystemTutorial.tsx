@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lightbulb, AlertTriangle, Coins, X, ChevronRight, Lock } from "lucide-react";
+import { Lightbulb, AlertTriangle, X, ChevronRight, Lock } from "lucide-react";
 import { useFTUEFeature } from "@/hooks/useFTUE";
 
 interface HintSystemTutorialProps {
@@ -143,7 +143,7 @@ export function HintSystemTutorial({ onComplete }: HintSystemTutorialProps) {
             </div>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            Example: Buy "Remote Landmark" to unlock "Precise Distance"
+            Example: Buy &quot;Remote Landmark&quot; to unlock &quot;Precise Distance&quot;
           </p>
         </div>
       ),

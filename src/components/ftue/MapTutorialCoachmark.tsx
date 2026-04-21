@@ -20,11 +20,10 @@ import { MapPin, MousePointer, X, Navigation } from "lucide-react";
 import { useFTUEFeature } from "@/hooks/useFTUE";
 
 interface MapTutorialCoachmarkProps {
-  targetRef?: React.RefObject<HTMLElement>;
   onComplete?: () => void;
 }
 
-export function MapTutorialCoachmark({ targetRef, onComplete }: MapTutorialCoachmarkProps) {
+export function MapTutorialCoachmark({ onComplete }: MapTutorialCoachmarkProps) {
   const { shouldShow, markSeen } = useFTUEFeature("hasSeenMapTutorial");
   const [isVisible, setIsVisible] = useState(false);
 

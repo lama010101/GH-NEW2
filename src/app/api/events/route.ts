@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchRandomEventsForSession, fetchAvailableRegions, fetchYearRange } from "@/server/events";
+import { fetchRandomEventsForSession } from "@/server/events";
 import { MAX_ROUNDS } from "@/core/types";
 
 export const runtime = "nodejs";

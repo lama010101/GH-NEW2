@@ -24,7 +24,6 @@ import {
   dbPool,
   generateVerificationToken,
   verifyWriteCrossConnection,
-  verifyDeterministicReplay,
   // Zero-Trust v2.0 imports
   verifyRowIntegrity,
   verifyWriteSet,
@@ -157,24 +156,6 @@ function verifyLog(operation: string, state: string, result: "OK" | "FAIL", deta
   } else {
     console.log(`[${ts}] ${msg}`);
   }
-}
-
-async function verifyWritten(
-  executor: DbExecutor,
-  table: string,
-  whereClause: string,
-  params: unknown[],
-  operation: string
-): Promise<void> {
-  const result = await executor.query(
-    `SELECT 1 FROM ${table} WHERE ${whereClause} LIMIT 1`,
-    params
-  );
-  if (result.rows.length === 0) {
-    verifyLog(operation, table, "FAIL", `read-back found 0 rows — write did not persist`);
-    throw new Error(`[VERIFY FAIL] ${operation}: expected row in ${table} not found after write`);
-  }
-  verifyLog(operation, table, "OK");
 }
 
 export const REQUIRED_MULTIPLAYER_TABLES = [

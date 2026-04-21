@@ -24,17 +24,12 @@ import {
   clearVerificationLogs,
   getVerificationLogs,
   getPerformanceMetrics,
-  VerificationLogEntry,
   // MP-CORE-LOOP-005 hard enforcement imports
   assertDbConnectionVerified,
   acquireConnectionA,
   acquireConnectionB,
   verifyTransactionIsolation,
-  emitExecutionProofV2,
-  getExecutionProofsV2,
-  clearExecutionProofsV2,
-  ExecutionProofV2,
-  IsolationProof
+  emitExecutionProofV2
 } from "@/server/db";
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -851,7 +846,7 @@ describe("MP-CORE-LOOP-004: Real DB Execution Proof Harness", () => {
         testName,
         wrongToken
       );
-    } catch (error) {
+    } catch {
       mismatchDetected = true;
     }
 
@@ -979,10 +974,10 @@ describe("MP-CORE-LOOP-004: Real DB Execution Proof Harness", () => {
     const guess1: LatLng = { lat: 40.7128, lng: -74.006 }; // NYC (exact)
     const guess2: LatLng = { lat: 41.8781, lng: -87.6298 }; // Chicago (different)
 
-    const { commitToken: token1, score: score1 } = await createTestRoundCommit(
+    const { score: score1 } = await createTestRoundCommit(
       gameId, player1Id, 0, 1776, guess1
     );
-    const { commitToken: token2, score: score2 } = await createTestRoundCommit(
+    const { score: score2 } = await createTestRoundCommit(
       gameId, player2Id, 0, 1780, guess2
     );
 
@@ -1138,11 +1133,8 @@ describe("MP-CORE-LOOP-004: Cross-Connection Verification Proof", () => {
 
     // Get connection A
     const connA = await getNewPoolConnection();
-    const connAId = Math.random().toString(36).slice(2);
-
     // Get connection B (MUST be different instance)
     const connB = await getNewPoolConnection();
-    const connBId = Math.random().toString(36).slice(2);
 
     expect(connA).not.toBe(connB);
 

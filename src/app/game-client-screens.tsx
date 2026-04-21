@@ -7,7 +7,6 @@ import {
   formatAccuracy,
   GuessLocationCard,
   GuessYearCard,
-  LoadingScreen,
   MetricsGrid,
   RoundActionsCard,
   RoundStatusCard
@@ -251,12 +250,13 @@ export function RoundActiveScreen({
   );
 }
 
-export function RoundProcessingScreen({ phase }: { phase: GamePhase }) {
+export function RoundProcessingScreen(_props: { phase: GamePhase }) {
   return (
     <section className="card">
       <span className="badge">Round processing</span>
       <h2>Evaluating round</h2>
       <p>All inputs are disabled while the single submission pipeline resolves this round.</p>
+      <p className="small">Current phase: {_props.phase}</p>
     </section>
   );
 }

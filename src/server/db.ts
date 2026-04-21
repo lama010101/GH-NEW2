@@ -3,11 +3,13 @@ import { randomUUID } from "crypto";
 import { evaluateRound } from "@/core/rules";
 import { EventRecord, LatLng } from "@/core/types";
 
+/* eslint-disable no-var */
 declare global {
   var __guessHistoryDbPool__: Pool | undefined;
   var __dbConnectionVerified__: boolean | undefined;
   var __dbConnectionError__: string | undefined;
 }
+/* eslint-enable no-var */
 
 // ═════════════════════════════════════════════════════════════════════════════
 // SECTION 0: HARD DB CONNECTION ENFORCEMENT (MP-CORE-LOOP-005)

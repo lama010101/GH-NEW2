@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, MapPin, Calendar, Minus, X, Star, Target } from "lucide-react";
+import { Trophy, MapPin, Calendar, Minus, X, Target } from "lucide-react";
 import { useFTUEFeature } from "@/hooks/useFTUE";
 
 interface ScoringExplainerProps {

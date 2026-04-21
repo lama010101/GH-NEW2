@@ -18,7 +18,7 @@ export async function fetchEventsWithDetails(options: {
 } = {}, executor: DbExecutor = dbPool): Promise<EventRecord[]> {
   const { limit = 10, excludeIds = [], minYear, maxYear, regions } = options;
 
-  let whereClauses: string[] = [
+  const whereClauses: string[] = [
     "e.status = 'validated'",
     "l.latitude IS NOT NULL",
     "l.longitude IS NOT NULL"
