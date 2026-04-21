@@ -14,6 +14,7 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Maximize2, Minimize2, MoveHorizontal, X, Play, Hand } from "lucide-react";
 import { useFTUEFeature } from "@/hooks/useFTUE";

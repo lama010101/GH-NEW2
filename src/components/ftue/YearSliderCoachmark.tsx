@@ -14,6 +14,7 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, GripHorizontal, SlidersHorizontal, X, ArrowLeftRight } from "lucide-react";
 import { useFTUEFeature } from "@/hooks/useFTUE";

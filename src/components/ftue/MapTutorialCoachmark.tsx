@@ -14,6 +14,7 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, MousePointer, X, Navigation } from "lucide-react";
 import { useFTUEFeature } from "@/hooks/useFTUE";

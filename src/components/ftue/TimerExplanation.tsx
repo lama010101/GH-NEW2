@@ -14,6 +14,7 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Timer, X, AlertCircle, Zap } from "lucide-react";
 import { useFTUEFeature } from "@/hooks/useFTUE";

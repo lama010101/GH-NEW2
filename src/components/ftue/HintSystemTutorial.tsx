@@ -14,6 +14,7 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lightbulb, AlertTriangle, Coins, X, ChevronRight, Lock } from "lucide-react";
 import { useFTUEFeature } from "@/hooks/useFTUE";
@@ -225,7 +226,7 @@ export function HintSystemTutorial({ onComplete }: HintSystemTutorialProps) {
               {/* Navigation */}
               <div className="flex items-center justify-between mt-6">
                 <button
-                  onClick={() => setCurrentStep((prev) => Math.max(0, prev - 1))}
+                  onClick={() => setCurrentStep((prev: number) => Math.max(0, prev - 1))}
                   disabled={currentStep === 0}
                   className={`px-4 py-2 text-sm font-medium transition-colors ${
                     currentStep === 0
@@ -238,7 +239,7 @@ export function HintSystemTutorial({ onComplete }: HintSystemTutorialProps) {
 
                 {currentStep < steps.length - 1 ? (
                   <motion.button
-                    onClick={() => setCurrentStep((prev) => prev + 1)}
+                    onClick={() => setCurrentStep((prev: number) => prev + 1)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="flex items-center gap-2 px-6 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-semibold text-sm transition-colors"
