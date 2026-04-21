@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { advanceRound } from "@/server/sessionCore";
 import { TransitionCause, isTransitionCause, ALL_TRANSITION_CAUSES } from "@/core/transitionCause";
+import { requireAuthenticatedPlayer } from "@/server/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,6 +11,11 @@ export async function POST(
   { params }: { params: { gameId: string } }
 ) {
   try {
+    const auth = await requireAuthenticatedPlayer(request);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const gameId = params.gameId.trim();
     const body = (await request.json().catch(() => ({}))) as {
       cause?: string;
@@ -29,6 +35,13 @@ export async function POST(
     }
     const cause = body.cause;
 
+    if (cause !== TransitionCause.PLAYER) {
+      return NextResponse.json(
+        { error: `Only '${TransitionCause.PLAYER}' transitions are allowed through this API route` },
+        { status: 403 }
+      );
+    }
+
     if (cause === TransitionCause.PLAYER && typeof body.playerId !== "string") {
       return NextResponse.json(
         { error: `playerId is required when cause is '${TransitionCause.PLAYER}'` },
@@ -47,10 +60,14 @@ export async function POST(
       return NextResponse.json({ error: "roundIndex is required" }, { status: 400 });
     }
 
+    if (body.playerId !== auth.playerId) {
+      return NextResponse.json({ error: "playerId does not match authenticated user" }, { status: 403 });
+    }
+
     const snapshot = await advanceRound({
       gameId,
       cause,
-      playerId: cause === TransitionCause.PLAYER ? body.playerId : undefined,
+      playerId: auth.playerId,
       roundIndex: body.roundIndex,
       _executionContext: "api"
     });

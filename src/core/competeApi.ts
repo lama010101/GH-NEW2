@@ -11,6 +11,25 @@ import type {
 
 export type CompeteFetch = typeof fetch;
 
+async function getAuthHeaders(base: Record<string, string> = {}): Promise<Record<string, string>> {
+  if (typeof window === "undefined") {
+    return base;
+  }
+
+  try {
+    const { supabaseBrowser } = await import("./supabaseBrowser");
+    const { data } = await supabaseBrowser.auth.getSession();
+    const accessToken = data.session?.access_token;
+    if (accessToken) {
+      return { ...base, Authorization: `Bearer ${accessToken}` };
+    }
+  } catch {
+    // Let server return explicit auth errors if identity bootstrap is unavailable.
+  }
+
+  return base;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -113,11 +132,12 @@ async function extractError(response: Response): Promise<string> {
 }
 
 export async function createCompeteSessionRequest(input: CreateCompeteSessionInput, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot> {
+  const headers = await getAuthHeaders({
+    "Content-Type": "application/json"
+  });
   const response = await fetchImpl("/api/compete/create", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers,
     body: JSON.stringify({ displayName: input.displayName, playerId: input.playerId, mode: input.mode, roundTimerSec: input.roundTimerSec, totalRounds: input.totalRounds, yearMin: input.yearMin, yearMax: input.yearMax })
   });
 
@@ -146,11 +166,12 @@ export async function loadCompeteSessionRequest(gameId: string, playerId?: strin
 }
 
 export async function joinCompeteSessionRequest(input: JoinCompeteSessionInput, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot> {
+  const headers = await getAuthHeaders({
+    "Content-Type": "application/json"
+  });
   const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/join`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers,
     body: JSON.stringify({ displayName: input.displayName, playerId: input.playerId })
   });
 
@@ -162,11 +183,12 @@ export async function joinCompeteSessionRequest(input: JoinCompeteSessionInput, 
 }
 
 export async function setCompeteReadyRequest(input: SetCompeteReadyInput, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot> {
+  const headers = await getAuthHeaders({
+    "Content-Type": "application/json"
+  });
   const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/ready`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers,
     body: JSON.stringify({ playerId: input.playerId, ready: input.ready })
   });
 
@@ -178,11 +200,12 @@ export async function setCompeteReadyRequest(input: SetCompeteReadyInput, fetchI
 }
 
 export async function startCompeteSessionRequest(input: StartCompeteSessionInput, fetchImpl: CompeteFetch = fetch): Promise<CompeteSessionSnapshot> {
+  const headers = await getAuthHeaders({
+    "Content-Type": "application/json"
+  });
   const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/start`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers,
     body: JSON.stringify({ playerId: input.playerId })
   });
 
@@ -204,11 +227,12 @@ export async function submitGuessRequest(
   },
   fetchImpl: CompeteFetch = fetch
 ): Promise<{ success: true }> {
+  const headers = await getAuthHeaders({
+    "Content-Type": "application/json"
+  });
   const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/guess`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers,
     body: JSON.stringify({
       playerId: input.playerId,
       roundIndex: input.roundIndex,
@@ -233,11 +257,12 @@ export async function advanceRoundRequest(
   },
   fetchImpl: CompeteFetch = fetch
 ): Promise<{ success: true }> {
+  const headers = await getAuthHeaders({
+    "Content-Type": "application/json"
+  });
   const response = await fetchImpl(`/api/compete/${encodeURIComponent(input.gameId)}/advance`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers,
     body: JSON.stringify({
       playerId: input.playerId,
       roundIndex: input.roundIndex
