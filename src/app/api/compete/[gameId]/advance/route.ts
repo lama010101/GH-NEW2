@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { advanceRound } from "@/server/sessionCore";
+import { advanceRound, loadCompeteSessionSnapshot } from "@/server/sessionCore";
 import { TransitionCause, isTransitionCause, ALL_TRANSITION_CAUSES } from "@/core/transitionCause";
 
 export const runtime = "nodejs";
@@ -9,9 +9,11 @@ export async function POST(
   request: Request,
   { params }: { params: { gameId: string } }
 ) {
+  let gameId = "";
+  let body: { cause?: string; playerId?: string; roundIndex?: number } = {};
   try {
-    const gameId = params.gameId.trim();
-    const body = (await request.json().catch(() => ({}))) as {
+    gameId = params.gameId.trim();
+    body = (await request.json().catch(() => ({}))) as {
       cause?: string;
       playerId?: string;
       roundIndex?: number;
@@ -58,7 +60,15 @@ export async function POST(
     return NextResponse.json(snapshot);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to advance round";
-    const status = message === "Session not found" ? 404 : 400;
+    // Idempotency: if another request already advanced the round (unique constraint
+    // violation on ROUND_STARTED), treat as success and return current snapshot.
+    if (message.includes("duplicate key") || message.includes("unique constraint") || message.includes("idx_round_events_unique_round_started")) {
+      const currentSnapshot = await loadCompeteSessionSnapshot(gameId, body.playerId ?? undefined);
+      if (currentSnapshot) {
+        return NextResponse.json(currentSnapshot);
+      }
+    }
+    const status = message.includes("Session not found") ? 404 : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }

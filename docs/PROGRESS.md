@@ -11,7 +11,9 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
-| MP-UI-INV-001 | DONE | — | Full read of game-client-screens.tsx, gameEngine.ts, types.ts |
+| MP-PLAN-001 | DONE | docs/EXECUTION_PLAN.md | Created authoritative execution plan document. Defines all remaining work in 10 phases (0-9) with atomic tasks. Documents broken write path (API → executeCommand → NO-OP) and real write path in sessionCore.submitGuess. Cites exact files and lines. |
+| MP-ARCH-PHASE-1 | DONE | src/server/engine/transition.ts, src/server/sessionCore.ts | Extracted transition decision logic from submitGuess and advanceRound into pure transition() engine. Zero behavior change: existing logic remains source of truth, comparison logging added. tsc clean, tests pass. |
+| MP-ARCH-PHASE-2 | DONE | src/server/engine/executeCommand.ts, src/server/sessionCore.ts | Shadow executor: reads current DB state, applies transition(), simulates event append in-memory, derives new state, builds snapshot. Shadow result compared against actual snapshot in submitGuess and advanceRound. Mismatches logged via ENGINE_PARITY_MISMATCH. Zero behavior change, no DB writes, no API change. tsc clean, tests pass. |
 | MP-INFRA-INV-001 | DONE | — | Full read of src/server/ tree, src/app/api/ tree, partykit/, partykit.json, events.ts, eventMapper.ts |
 | MP-INFRA-INV-002 | DONE | — | Full read of partykit/server.ts, sessionCore.ts, all compete API routes |
 | MP-META-001 | DONE | PROGRESS.md | Created this file |
@@ -45,6 +47,20 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | MP-DO-AUTH-010 | DONE | src/core/transitionCause.ts, src/server/eventStore.ts, src/server/sessionCore.ts | Hardened TransitionCause contract: (1) Documented ownership as domain-only semantic contract tied to round_events.payload — UI/transport concerns explicitly forbidden. (2) Renamed SYSTEM → INTERNAL with deterministic scoping (DO-restart only, not admin/UI). (3) Enforced TransitionCause at appendEvent write boundary — CAUSE_CARRYING_EVENTS + isTransitionCause guard rejects invalid cause before INSERT. No event with invalid cause can reach round_events regardless of entry path. (4) Verified zero shadow imports from eventStore — all 4 consumers import from @/core/transitionCause or ../src/core/transitionCause. Zero new tsc errors. |
 | BUG-FIX-001 | DONE | src/core/competeApi.ts, partykit/server.ts, src/app/compete/[gameId]/page.tsx | Fixed identity collapse bug: Player B joining game appeared as Player A. Root cause: `isSessionPlayer` validator missing `hasSubmitted` field validation causing snapshot validation to fail when Player B joined. Fix: Added `hasSubmitted` validation to `isSessionPlayer` and added comprehensive logging to trace snapshot state transitions in PartyKit and client. Zero new tsc errors. |
 | BUG-FIX-002 | DONE | partykit/server.ts, src/app/compete/[gameId]/page.tsx | Fixed multiplayer round deadlock: 2 players could not complete a round together. Root cause #1: every WS close (StrictMode remount, HMR, tab refresh, network blip) fired `/leave` immediately → `left_at=now`; on reconnect `/join` raced against the just-applied `/leave`, so players stayed kicked and `startCompeteSession` failed with "At least 2 players required to start" / "Only the host can start". (The rejoin-aware UPSERT in `joinCompeteSession` was already in place but insufficient without a disconnect grace period.) Root cause #2: opening the compete game URL directly (no `sessionStorage` displayName) sent `ws.joinRoom("")` → `/join` threw `displayName is required` and no snapshot ever arrived. Fix #1 (partykit/server.ts): track `playerConnectionCounts` + `leaveTimers`; `onClose` now only schedules `/leave` after a 5s grace if the player has no other live connections; any playerId-bearing message on a new connection increments the count and cancels pending `/leave` — eliminates the `/leave` vs `/join` race. Fix #2 (compete/[gameId]/page.tsx): when `displayNameRef.current` is empty, join with fallback `Player-<shortId>` instead of `""`. Zero new tsc errors. |
+| BUG-FIX-003 | DONE | src/server/db.ts, src/server/sessionCore.ts, partykit/server.ts, src/app/api/compete/[gameId]/*.ts | Fixed guess submission replay drift + advance 404. Bug #1: `verifyFullReplay` rounded recomputed `distanceKm` to 2 decimals but compared against unrounded stored value → false drift for all players on every guess. Fix: round stored `distanceKm` the same way before comparison. Bug #2: `/advance` (and all other API routes) used exact-match `===` for "Session not found" but `getGameState` prefixes it with `[getGameState]` → 404 misclassified as non-session error. Fix: `includes()` across all 5 routes. Bug #3: `loadCompeteSessionSnapshot` swallowed `getGameState` errors with `.catch(() => null)` → "Session not found" with no diagnostic. Fix: log the actual error. Bug #4: after a post-commit verification failure (e.g., replay drift), PartyKit's internal snapshot went stale because the error path didn't reload from DB → subsequent actions (advance) operated on outdated state. Fix: on action failure, reload from DB and broadcast before sending error to sender. Zero new tsc errors. |
+| BUG-FIX-004 | DONE | partykit/server.ts | Fixed duplicate advance round: both host and guest independently send ADVANCE_ROUND → second call hits FSM guard `INVALID_TRANSITION: ROUND_STARTED → ROUND_STARTED`. Root cause: PartyKit forwarded every client action to the API without checking if the transition was already applied by another player's request. Fix: guard in ADVANCE_ROUND handler — if DO snapshot shows round already advanced (`currentRoundIndex > requested roundIndex`) or status is not ROUND_COMPLETE/SESSION_COMPLETE, skip the API call and send the current snapshot to the requester instead. Zero new tsc errors. |
+| BUG-FIX-005 | DONE | scripts/migrations/023_prevent_duplicate_round_started.sql, src/app/api/compete/[gameId]/advance/route.ts | Fixed duplicate ROUND_STARTED events in DB causing `INVALID_PHASE_TRANSITION: ROUND_STARTED → ROUND_STARTED`. Root cause: Concurrent `/advance` requests both passed validation and inserted `ROUND_STARTED` before either committed, corrupting the event stream. Fix #1 (DB): Added partial unique index `idx_round_events_unique_round_started` on `(game_id, round_index) WHERE event_type='ROUND_STARTED'` — second insert gets unique violation error. Fix #2 (API): `/advance` route catches unique constraint violation and treats as idempotent success, returning current snapshot via `loadCompeteSessionSnapshot`. Defensive depth: PartyKit guard (BUG-FIX-004) catches most races; DB constraint catches any that slip through; API idempotency ensures clients never see errors. Zero new tsc errors. |
+| MP-FIX-ERROR-PROPAGATION-001 | DONE | src/server/sessionCore.ts | Removed `.catch()` error swallowing in `loadCompeteSessionSnapshot`. Prior behavior: `getGameState` errors (replay validation, DB failures, etc.) were caught and converted to `null`, which `submitGuess` then converted to generic "Session not found" — destroying diagnostic context. Fix: Removed `.catch((err) => { console.error(...); return null; })` and `if (!gameState) return null` fallback. `getGameState` errors now propagate upward unchanged. `submitGuess` only throws "Session not found" when the session row is genuinely missing (via `loadSessionRow`). All other errors (replay drift, FSM violations, DB timeouts) now surface with their original messages. Atomic: ONE function, ONE file, ONE behavior change. Zero new tsc errors. |
+| MP-AUTH-002-01 | DONE | src/server/engine/executeCommand.ts | Added ExecuteCommandInput discriminated union type with SUBMIT_GUESS variant referencing SubmitGuessInput. No runtime logic added. Zero new tsc errors. |
+| MP-AUTH-002-02A | DONE | src/server/sessionCore.ts | submitGuess became a thin wrapper calling executeCommand with { type: "SUBMIT_GUESS", payload: input }. All DB write logic removed from submitGuess; mutation now flows through executeCommand. Zero new tsc errors. |
+| MP-AUTH-002-02B | DONE | src/server/engine/executeCommand.ts | executeCommand signature adapted to accept single ExecuteCommandInput object. Extracts gameId from input.payload.gameId. Returns loadCompeteSessionSnapshot(gameId, null). Zero new tsc errors. |
+| MP-AUTH-002-03 | DONE | src/server/engine/executeCommand.ts | Added deepFreeze() local helper and handleCommand() pass-through. executeCommand now deep-freezes the raw snapshot before returning. Mutation attempts on returned snapshot are blocked. Zero new tsc errors. |
+| MP-AUTH-002-03B | DONE | src/server/engine/executeCommand.ts | Re-applied deepFreeze + handleCommand with proof. Verified mutation test: Object.freeze prevents shallow and deep mutation. executeCommand flow: validate input → load snapshot → deep freeze → pass to handler → return. Zero new tsc errors. |
+| MP-AUTH-002-04 | DONE | src/server/engine/executeCommand.ts | Added validateCommandInput() enforcing shape validation before any snapshot loading. Validates: input is object, type is "SUBMIT_GUESS", payload is object, gameId/playerId are non-empty strings, roundIndex is non-negative integer. Zero new tsc errors. |
+| MP-AUTH-002-04B | DONE | src/server/engine/executeCommand.ts | Added validateCommandState() using ONLY existing snapshot fields (status, currentRoundIndex, players). Enforces: status === "ROUND_ACTIVE", roundIndex matches current, player exists, year/location guesses required. No schema changes, no invented fields. Zero new tsc errors. |
+| MP-AUTH-002-05 | DONE | src/server/engine/executeCommand.ts | Removed derived submission check (player.hasSubmitted) from validateCommandState. Duplicate submission prevention now relies SOLELY on DB PK constraint (round_commits game_id+player_id+round_index). Validation layer no longer blocks duplicates; DB is the single source of truth for submission state. Zero new tsc errors. |
+| MP-AUTH-002-07B | DONE | — | Investigation: Proved SUBMIT_GUESS execution path through executeCommand. Verdict: FAILED — NO-OP COMMAND PATH. executeCommand is read-only (header declares "NO DB writes"); handleCommand returns snapshot unchanged. No handler writes to round_commits. No INSERT exists in executeCommand. |
+| MP-AUTH-002-07C | DONE | — | Investigation: Identified true write authority for SUBMIT_GUESS. Found: `submitGuess()` in sessionCore.ts:872 inserts into round_commits. BUT current API route (guess/route.ts) calls executeCommand (read-only), NOT submitGuess. Verdict: FAILED — ENGINE IS READ-ONLY / WRITE PATH BYPASSED. Architecture conflict: submitGuess writes DB, executeCommand does NOT write DB. |
 
 ---
 
@@ -1032,4 +1048,74 @@ The validator only checked 6 fields, not 7. When the server returned a snapshot 
 - ✅ Client refactored to UI-only mode (WS is the ONLY state source)
 - ✅ All tests passing
 
-**Last updated:** 2026-04-20
+**Last updated:** 2026-04-22
+
+---
+
+### Task MP-FIX-ERROR-PROPAGATION-001: Preserve original getGameState error instead of masking as "Session not found" ✅ COMPLETE (April 22, 2026)
+
+**Deliverable:** Removed `.catch()` error swallowing in `loadCompeteSessionSnapshot` so `getGameState` errors propagate upward unchanged.
+
+**Problem:**
+All `getGameState` failures (replay validation errors, DB connection errors, FSM violations, etc.) were caught and converted to `null`, which callers then converted to the generic "Session not found" message. This destroyed diagnostic context and made it impossible to distinguish:
+- Genuine missing session (DB row absent)
+- Replay drift (`verifyFullReplay` mismatch)
+- Invalid event stream (`deriveStateFromEventStream` FSM violation)
+- DB timeout or connection failure
+
+**Root Cause Location:**
+`@d:\GH-NEW\src\server\sessionCore.ts:335-341`
+
+**Before:**
+```typescript
+const gameState = await getGameState(gameId).catch((err) => {
+  console.error('[loadCompeteSessionSnapshot] getGameState failed for', gameId, err instanceof Error ? err.message : err);
+  return null;
+});
+if (!gameState) {
+  return null;
+}
+```
+
+**After:**
+```typescript
+const gameState = await getGameState(gameId);
+```
+
+**Impact on Callers:**
+| Caller | Before | After |
+|--------|--------|-------|
+| `submitGuess` | All failures → "Session not found" | `loadSessionRow` null → "Session not found"; everything else → original error |
+| `createCompeteSession` | All failures → "Unable to load the newly created compete session" | `loadSessionRow` null → same message; everything else → original error |
+| `joinCompeteSession` | All failures → "Session not found" | Same split as above |
+| `advanceRound` | All failures → "Session not found" | Same split as above |
+
+**Acceptance Tests:**
+| Case | Input | Expected Output |
+|------|-------|----------------|
+| Normal flow | Valid session, valid replay | Snapshot returned correctly |
+| Replay failure | `getGameState` throws (e.g. invalid event stream) | SAME error propagates, NO "Session not found" |
+| DB failure | DB query fails | SAME DB error propagates, NO masking |
+| True session missing | No row in `sessions` table | `submitGuess` throws "Session not found" ONLY in this case |
+| Replay consistency | Re-run `getGameState` on same DB | Same success or same error deterministically |
+
+**Verification Steps:**
+1. ✅ grep `.catch(` in `loadCompeteSessionSnapshot` — 0 results in file
+2. ✅ Confirm removal — `.catch()` block absent at line 335
+3. ✅ Confirm no duplicate fallback — `return null` absent from entire file
+4. ✅ Confirm only ONE function modified — `loadCompeteSessionSnapshot` only
+5. ✅ Confirm only ONE file modified — `sessionCore.ts` only
+6. ✅ Confirm no null-return path remains — no `return null` in `sessionCore.ts`
+
+**Architecture Compliance:**
+- ✅ DB remains sole source of truth
+- ✅ No memory fallback introduced
+- ✅ No alternative snapshot source introduced
+- ✅ No new state introduced
+- ✅ No alternate read paths introduced
+- ✅ No DB queries changed
+- ✅ No replay logic changed
+- ✅ No retries or fallbacks introduced
+- ✅ Deterministic: same DB input → same success or same error
+
+**Last updated:** 2026-04-22

@@ -1036,7 +1036,7 @@ export async function verifyFullReplay(
       // Compare all fields
       const comparisons: Array<[string, unknown, unknown]> = [
         ["score", playerResult.stored.score, playerResult.recomputed.score],
-        ["distanceKm", playerResult.stored.distanceKm, Math.round(playerResult.recomputed.distanceKm * 100) / 100],
+        ["distanceKm", typeof playerResult.stored.distanceKm === "number" ? Math.round(playerResult.stored.distanceKm * 100) / 100 : playerResult.stored.distanceKm, Math.round(playerResult.recomputed.distanceKm * 100) / 100],
         ["yearDiff", playerResult.stored.yearDiff, playerResult.recomputed.yearDiff],
         ["locationScore", playerResult.stored.locationScore, playerResult.recomputed.locationScore],
         ["timeScore", playerResult.stored.timeScore, playerResult.recomputed.timeScore]

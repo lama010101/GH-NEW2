@@ -35,6 +35,27 @@ import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
 import { getGameState, deriveStateFromEventStream } from "@/server/getGameState";
 import { appendEvent } from "@/server/eventStore";
 import { TransitionCause } from "@/core/transitionCause";
+import { transition } from "@/server/engine/transition";
+import type { TransitionEvent } from "@/server/engine/transition";
+
+// ═════════════════════════════════════════════════════════════════════════════
+// TRANSITION ENGINE VALIDATION (MP-ARCH-PHASE-1)
+// Compares existing logic events with centralized transition() output.
+// Does NOT drive logic — purely diagnostic.
+// ═════════════════════════════════════════════════════════════════════════════
+function compareTransitionEvents(
+  operation: string,
+  existing: TransitionEvent[],
+  expected: TransitionEvent[]
+): void {
+  if (JSON.stringify(existing) !== JSON.stringify(expected)) {
+    console.error(
+      `[TRANSITION MISMATCH] ${operation}\n` +
+      `  existing:  ${JSON.stringify(existing)}\n` +
+      `  expected:  ${JSON.stringify(expected)}`
+    );
+  }
+}
 
 export const PRACTICE_PLAYER_ID = "00000000-0000-0000-0000-000000000000";
 export const PRACTICE_PLAYER_NAME = "Practice Player";
@@ -332,10 +353,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   // ═════════════════════════════════════════════════════════════════════════════
 
   // STEP 1: Load canonical state from DB via getGameState (pure reconstruction)
-  const gameState = await getGameState(gameId).catch(() => null);
-  if (!gameState) {
-    return null;
-  }
+  const gameState = await getGameState(gameId);
 
   // STEP 2: Derive phase from event stream (ONLY valid method per spec)
   const { currentRound, currentPhase: phaseEventType } = deriveStateFromEventStream(gameState.events);
@@ -760,6 +778,9 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   let shouldVerifyRoundResults = false;
   let event: Awaited<ReturnType<typeof fetchEventById>> = null;
 
+  // Track events emitted by existing logic for transition-engine comparison
+  const existingEvents: TransitionEvent[] = [];
+
   // Generate verification token for this operation
   const commitToken = generateVerificationToken();
 
@@ -793,6 +814,28 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 
     if (existingCommit.rows.length > 0) {
       await client.query("COMMIT");
+
+      // Transition-engine validation: duplicate submission emits zero events
+      const transitionResult = transition(
+        { totalRounds: session.total_rounds, activePlayerCount: 0 },
+        {
+          type: "SUBMIT_GUESS",
+          context: {
+            gameId,
+            playerId,
+            roundIndex,
+            yearGuess,
+            locationGuess,
+            hintsUsed,
+            hasExistingCommit: true,
+            score: 0,
+            commitToken: "",
+            currentRoundCommitCountBefore: 0
+          }
+        }
+      );
+      compareTransitionEvents("submitGuess-existingCommit", existingEvents, transitionResult.events);
+
       const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
       if (!snapshot) throw new Error("Session not found");
       return snapshot;
@@ -845,6 +888,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     );
 
     await appendEvent(client, gameId, "GUESS_SUBMITTED", { playerId, yearGuess, score, verificationToken: commitToken }, roundIndex);
+    existingEvents.push({ type: "GUESS_SUBMITTED", payload: { playerId, yearGuess, score, verificationToken: commitToken }, roundIndex });
 
     const playerRows = await loadSessionPlayerRows(gameId, client);
     const activePlayers = playerRows.filter((p) => p.left_at === null);
@@ -852,10 +896,11 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     // MP-ACTIVE-PLAYERS-001: Completion is submission-based, not count-based.
     // Only active players (left_at IS NULL) participate.
     // If no active players remain, do nothing (no phantom round completion).
+    let commitCount = 0;
     if (activePlayers.length === 0) {
       // no-op: all players disconnected
     } else {
-      const commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
+      commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
       const allActiveSubmitted = commitCount >= activePlayers.length;
 
       if (allActiveSubmitted) {
@@ -864,8 +909,30 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         shouldVerifyRoundResults = true;
         verifyLog("INSERT", "round_results", "OK", `${commitCount} rows written for round=${roundIndex}`);
         await appendEvent(client, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
+        existingEvents.push({ type: "ROUND_COMPLETE", payload: { commitCount }, roundIndex });
       }
     }
+
+    // Transition-engine validation: compare existing logic with centralized engine
+    const transitionResult = transition(
+      { totalRounds: session.total_rounds, activePlayerCount: activePlayers.length },
+      {
+        type: "SUBMIT_GUESS",
+        context: {
+          gameId,
+          playerId,
+          roundIndex,
+          yearGuess,
+          locationGuess,
+          hintsUsed,
+          hasExistingCommit: false,
+          score,
+          commitToken,
+          currentRoundCommitCountBefore: commitCount >= 1 ? commitCount - 1 : 0
+        }
+      }
+    );
+    compareTransitionEvents("submitGuess", existingEvents, transitionResult.events);
 
     await client.query("COMMIT");
   } catch (error) {
@@ -946,6 +1013,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
   if (!snapshot) throw new Error("Session not found");
+
   return snapshot;
 }
 
@@ -981,6 +1049,9 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 
   const client = await getTransactionClient();
 
+  // Track events emitted by existing logic for transition-engine comparison
+  const existingEvents: TransitionEvent[] = [];
+
   try {
     await client.query("BEGIN");
 
@@ -992,6 +1063,9 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     }
 
     const nextRoundIndex = roundIndex + 1;
+    let advanceEventIds: string[] | undefined;
+    let advanceStartedAt = "";
+    let advancePhaseEndsAt = "";
 
     if (nextRoundIndex < session.total_rounds) {
       const sessionCreatedEventForAdvance = await client.query<{ payload: { eventIds: string[] } }>(
@@ -1003,28 +1077,52 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
       if (sessionCreatedEventForAdvance.rows.length === 0) {
         throw new Error("Session event not found");
       }
-      const advanceEventIds = sessionCreatedEventForAdvance.rows[0].payload?.eventIds;
+      advanceEventIds = sessionCreatedEventForAdvance.rows[0].payload?.eventIds;
       if (!Array.isArray(advanceEventIds) || nextRoundIndex >= advanceEventIds.length) {
         throw new Error(`Event ID not found for round ${nextRoundIndex}`);
       }
       const advanceNow = new Date();
-      const advanceStartedAt = advanceNow.toISOString();
-      const advancePhaseEndsAt = new Date(advanceNow.getTime() + session.round_timer_sec * 1000).toISOString();
-      await appendEvent(client, gameId, "ROUND_STARTED", {
+      advanceStartedAt = advanceNow.toISOString();
+      advancePhaseEndsAt = new Date(advanceNow.getTime() + session.round_timer_sec * 1000).toISOString();
+      const roundStartedPayload = {
         roundIndex: nextRoundIndex,
         eventId: advanceEventIds[nextRoundIndex],
         startedAt: advanceStartedAt,
         phaseEndsAt: advancePhaseEndsAt,
         cause,
         ...(playerId ? { playerId } : {})
-      }, nextRoundIndex);
+      };
+      await appendEvent(client, gameId, "ROUND_STARTED", roundStartedPayload, nextRoundIndex);
+      existingEvents.push({ type: "ROUND_STARTED", payload: roundStartedPayload, roundIndex: nextRoundIndex });
     } else {
-      await appendEvent(client, gameId, "SESSION_COMPLETE", {
+      const sessionCompletePayload = {
         totalRounds: session.total_rounds,
         cause,
         ...(playerId ? { playerId } : {})
-      }, roundIndex);
+      };
+      await appendEvent(client, gameId, "SESSION_COMPLETE", sessionCompletePayload, roundIndex);
+      existingEvents.push({ type: "SESSION_COMPLETE", payload: sessionCompletePayload, roundIndex });
     }
+
+    // Transition-engine validation: compare existing logic with centralized engine
+    const transitionResult = transition(
+      { totalRounds: session.total_rounds, activePlayerCount: 0 },
+      {
+        type: "ADVANCE_ROUND",
+        context: {
+          gameId,
+          cause,
+          playerId,
+          roundIndex,
+          nextRoundEventId: nextRoundIndex < session.total_rounds
+            ? advanceEventIds?.[nextRoundIndex] ?? null
+            : null,
+          startedAt: advanceStartedAt ?? "",
+          phaseEndsAt: advancePhaseEndsAt ?? ""
+        }
+      }
+    );
+    compareTransitionEvents("advanceRound", existingEvents, transitionResult.events);
 
     await client.query("COMMIT");
   } catch (error) {
@@ -1036,6 +1134,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId ?? undefined);
   if (!snapshot) throw new Error("Session not found");
+
   return snapshot;
 }
 

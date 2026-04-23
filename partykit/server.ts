@@ -416,7 +416,15 @@ export default class GameServer {
         }
 
         case "ADVANCE_ROUND": {
-          // /advance returns the updated snapshot — use it directly
+          // Guard: if the round was already advanced by another player,
+          // skip the API call (would hit INVALID_TRANSITION: ROUND_STARTED → ROUND_STARTED)
+          // and just send the current snapshot to the requester.
+          if (isRuntimeState(this.snapshot) &&
+              (this.snapshot.currentRoundIndex > data.roundIndex ||
+               (this.snapshot.status !== "ROUND_COMPLETE" && this.snapshot.status !== "SESSION_COMPLETE"))) {
+            sender.send(JSON.stringify({ type: "STATE_UPDATE", snapshot: this.snapshot }));
+            break;
+          }
           const snapshot = await apiFetch(`/api/compete/${gameId}/advance`, {
             method: "POST",
             body: JSON.stringify({
@@ -434,10 +442,16 @@ export default class GameServer {
         }
       }
     } catch (error) {
-      // DB write failed → NO state mutation, NO broadcast.
-      // Only the sender gets the error.
+      // DB write may have partially succeeded (e.g., post-commit verification
+      // failure). Reload from DB to keep DO state consistent with committed data.
       const message = error instanceof Error ? error.message : "Unknown error";
       console.error("[PartyKit] Action failed:", message);
+      try {
+        await this.loadFromDB();
+        this.broadcastStateUpdate();
+      } catch (reloadErr) {
+        console.error("[PartyKit] Post-failure reload also failed:", reloadErr instanceof Error ? reloadErr.message : reloadErr);
+      }
       this.sendError(sender, message);
     }
   }
