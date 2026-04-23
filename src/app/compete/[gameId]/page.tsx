@@ -281,12 +281,26 @@ export default function CompeteGamePage() {
       <div className="shell-grid">
         <section className="hero">
           <span className="badge">Compete · {snapshot.status}</span>
-          <h1>
-            Round {Math.min(snapshot.currentRoundIndex + 1, snapshot.config.totalRounds)} of{" "}
-            {snapshot.config.totalRounds}
-          </h1>
+          {snapshot.status !== "LOBBY" ? (
+            <h1>
+              Round {Math.min(snapshot.currentRoundIndex + 1, snapshot.config.totalRounds)} of{" "}
+              {snapshot.config.totalRounds}
+            </h1>
+          ) : (
+            <h1>Lobby</h1>
+          )}
           <p className="small">
             Game ID: <code>{snapshot.gameId}</code>
+            {viewer?.isHost ? (
+              <button
+                type="button"
+                className="button secondary"
+                style={{ marginLeft: 8, padding: "2px 8px", fontSize: "0.8em" }}
+                onClick={() => { navigator.clipboard.writeText(snapshot.gameId); }}
+              >
+                Copy
+              </button>
+            ) : null}
             {viewer ? <> · You: {viewer.displayName || shortId(viewer.playerId)}</> : null}
           </p>
         </section>
@@ -316,9 +330,13 @@ export default function CompeteGamePage() {
               >
                 {viewer?.ready ? "Ready ✓" : "Ready"}
               </button>
-              <button type="button" className="button" onClick={handleStart} disabled={busy}>
-                Start Game
-              </button>
+              {viewer?.isHost ? (
+                <button type="button" className="button" onClick={handleStart} disabled={busy || !snapshot.allPlayersReady}>
+                  Start Game
+                </button>
+              ) : (
+                <span className="small">Waiting for host to start…</span>
+              )}
             </div>
             {renderError}
           </section>

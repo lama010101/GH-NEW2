@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { submitGuess, getRoundResults } from "@/server/sessionCore";
+import { executeCommand } from "@/server/engine/executeCommand";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,17 +32,20 @@ export async function POST(
       return NextResponse.json({ error: "roundIndex is required" }, { status: 400 });
     }
 
-    const snapshot = await submitGuess({
-      gameId,
-      playerId: body.playerId,
-      roundIndex: body.roundIndex,
-      yearGuess: body.year ?? null,
-      locationGuess:
-        body.lat != null && body.lng != null
-          ? { lat: body.lat, lng: body.lng }
-          : null,
-      hintsUsed: [],
-      _executionContext: "api"
+    const snapshot = await executeCommand({
+      type: "SUBMIT_GUESS",
+      payload: {
+        gameId,
+        playerId: body.playerId,
+        roundIndex: body.roundIndex,
+        yearGuess: body.year ?? null,
+        locationGuess:
+          body.lat != null && body.lng != null
+            ? { lat: body.lat, lng: body.lng }
+            : null,
+        hintsUsed: [],
+        _executionContext: "api"
+      }
     });
 
     // Get results if round is complete
@@ -53,7 +57,7 @@ export async function POST(
     return NextResponse.json({ ...snapshot, results });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to submit guess";
-    const status = message === "Session not found" ? 404 : 400;
+    const status = message.includes("Session not found") ? 404 : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }
