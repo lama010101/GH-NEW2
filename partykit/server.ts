@@ -135,6 +135,10 @@ export default class GameServer {
   // Will be used to broadcast timer ticks and auto-advance on expiry.
   private roundTimerHandle: ReturnType<typeof setTimeout> | null = null;
 
+  // In-flight lock for ADVANCE_ROUND to prevent race condition when
+  // multiple players click "Next Round" simultaneously.
+  private advanceInFlight = false;
+
   constructor(readonly room: Room) {}
 
   /**
@@ -214,7 +218,9 @@ export default class GameServer {
    * Uses API-returned snapshot — no re-fetch.
    */
   private async triggerRoundExpiry(): Promise<void> {
-    if (!this.snapshot || !isRuntimeState(this.snapshot)) return;
+    if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_ACTIVE") {
+      return;
+    }
 
     const gameId = this.room.id;
     const roundIndex = this.snapshot.currentRoundIndex;
@@ -416,24 +422,35 @@ export default class GameServer {
         }
 
         case "ADVANCE_ROUND": {
+          // In-flight lock: if an advance API call is already in progress,
+          // drop this request and send current snapshot to requester.
+          if (this.advanceInFlight) {
+            sender.send(JSON.stringify({ type: "STATE_UPDATE", snapshot: this.snapshot }));
+            break;
+          }
           // Guard: if the round was already advanced by another player,
           // skip the API call (would hit INVALID_TRANSITION: ROUND_STARTED → ROUND_STARTED)
           // and just send the current snapshot to the requester.
           if (isRuntimeState(this.snapshot) &&
               (this.snapshot.currentRoundIndex > data.roundIndex ||
-               (this.snapshot.status !== "ROUND_COMPLETE" && this.snapshot.status !== "SESSION_COMPLETE"))) {
+               this.snapshot.status !== "ROUND_COMPLETE")) {
             sender.send(JSON.stringify({ type: "STATE_UPDATE", snapshot: this.snapshot }));
             break;
           }
-          const snapshot = await apiFetch(`/api/compete/${gameId}/advance`, {
-            method: "POST",
-            body: JSON.stringify({
-              cause: TransitionCause.PLAYER,
-              playerId: data.playerId,
-              roundIndex: data.roundIndex
-            })
-          });
-          this.applySnapshotAndBroadcast(snapshot);
+          this.advanceInFlight = true;
+          try {
+            const snapshot = await apiFetch(`/api/compete/${gameId}/advance`, {
+              method: "POST",
+              body: JSON.stringify({
+                cause: TransitionCause.PLAYER,
+                playerId: data.playerId,
+                roundIndex: data.roundIndex
+              })
+            });
+            this.applySnapshotAndBroadcast(snapshot);
+          } finally {
+            this.advanceInFlight = false;
+          }
           break;
         }
 

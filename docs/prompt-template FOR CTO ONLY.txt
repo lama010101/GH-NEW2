@@ -1,0 +1,369 @@
+
+# ✅ FINAL TEMPLATE (deterministic, no-interpretation, enforceable)
+
+````text
+PROJECT: Guess-History
+TASK ID: <TASK_ID>
+TITLE: <TITLE>
+
+---
+
+## DOCUMENT AUTHORITY BLOCK (MANDATORY)
+
+Binding documents:
+- docs/GUESS_HISTORY_MASTER_SPEC.md
+- docs/DATABASE_SCHEMA_STATE.md
+- docs/EXECUTION_PLAN.md
+
+System rules:
+- DB (round_events) = SINGLE source of truth
+- Snapshot = DERIVED ONLY (never authoritative)
+- System must be deterministic (rebuild from DB only)
+- NO hidden coupling
+- NO dual authority
+
+If ANY cannot be proven with code:
+→ BLOCKED: ARCHITECTURE NOT VERIFIED
+
+---
+
+## 1. MODE
+
+<INVESTIGATION | IMPLEMENTATION>
+
+### RULES
+
+If INVESTIGATION:
+- NO code changes
+- NO fixes
+- ONLY evidence
+- NO interpretation
+
+If IMPLEMENTATION:
+- ONE file only
+- ONE function only
+- ONE behavior only
+- NO refactor
+- NO optimization
+- NO extra changes
+
+Violation:
+→ FAIL
+
+---
+
+## 1.1 NO-INTERPRETATION EXECUTION MODE (MANDATORY)
+
+ZERO-DECISION TASK
+
+You are NOT allowed to:
+- choose behavior
+- interpret intent
+- modify logic beyond instructions
+- replace instructions with "equivalent" logic
+
+You MUST:
+- copy logic EXACTLY as provided
+- preserve condition order EXACTLY
+- preserve transaction semantics EXACTLY
+- preserve return behavior EXACTLY
+
+If ANY instruction is unclear:
+→ BLOCKED: INSTRUCTION NOT DETERMINISTIC
+
+Any deviation:
+→ FAIL
+
+---
+
+## 1.2 EXACT BEHAVIOR CONTRACT (MANDATORY)
+
+The provided logic must be implemented EXACTLY.
+
+FORBIDDEN:
+- COMMIT → ROLLBACK substitution
+- return → throw substitution
+- condition reordering
+- condition merging
+- logic simplification
+
+Even if “better”:
+→ DO NOT CHANGE
+
+Deviation:
+→ FAIL
+
+---
+
+## 1.3 FORBIDDEN SUBSTITUTIONS (ENFORCED)
+
+The following MUST appear EXACTLY in AFTER code:
+
+- "COMMIT"
+- "return snapshot"
+- condition order unchanged
+
+Validation will grep for exact strings.
+
+Missing:
+→ FAIL
+
+---
+
+## 2. SCOPE (MANDATORY)
+
+File: <exact path>
+Function: <exact function name>
+Behavior: <single behavior change>
+
+If scope expands:
+→ FAIL
+
+---
+
+## 2.1 DIFF-LOCK MODE (MANDATORY)
+
+You are ONLY allowed to modify the EXACT lines specified in the PATCH.
+
+STRICT RULES:
+
+- You may NOT modify any line outside the patch
+- You may NOT reformat surrounding code
+- You may NOT move code
+- You may NOT add helper variables
+- You may NOT rename variables
+- You may NOT touch imports
+- You may NOT change whitespace outside patch
+
+You MUST:
+- apply the diff EXACTLY as written
+- preserve ALL surrounding code unchanged
+
+If the patch is ambiguous or cannot be applied cleanly:
+→ BLOCKED: PATCH NOT APPLICABLE
+
+Any modification outside patch:
+→ FAIL
+
+--------------
+
+## 3. SOURCE OF TRUTH (MANDATORY)
+
+Define explicitly:
+
+State:
+Source of truth:
+Write authority:
+Read path:
+
+Missing ANY:
+→ FAIL
+
+---
+
+## 4. PRECONDITION (MANDATORY)
+
+You MUST prove with code:
+
+- structure
+- state ownership
+- lifecycle authority
+- API boundaries
+
+Format:
+
+FILE:
+FUNCTION:
+LINES:
+CODE:
+
+If not proven:
+→ BLOCKED: ARCHITECTURE NOT VERIFIED
+
+---
+
+## 5. BEFORE
+
+<exact code>
+
+---
+
+## 6. AFTER
+
+<exact code>
+
+---
+
+## 7. PATCH (MANDATORY)
+
+<non-empty diff>
+
+Empty or partial:
+→ FAIL
+
+---
+
+## 8. VALIDATION (MANDATORY)
+
+### 8.1 Single Source of Truth
+
+Command:
+grep -rn "<relevant>" <path>
+
+Expected:
+- explanation
+- proof no alternative authority exists
+
+---
+
+### 8.2 No Duplicate Logic
+
+Command:
+grep -rn "<pattern>" <path>
+
+Expected:
+- EXACTLY one match
+
+---
+
+### 8.3 Determinism
+
+You MUST prove:
+
+- no memory dependence
+- no timing dependence
+- state rebuildable from DB only
+
+If not proven:
+→ FAIL
+
+---
+
+### 8.4 Behavior Proof (MANDATORY)
+
+```ts
+try {
+  (snapshot as any).test = 1;
+  console.log("MUTATION SUCCEEDED");
+} catch {
+  console.log("MUTATION BLOCKED");
+}
+````
+
+Expected result MUST be explicitly stated.
+
+---
+
+### 8.5 Scope Compliance
+
+Prove:
+
+* one file modified
+* one function modified
+* no unrelated changes
+
+Command example:
+grep -rn "<function_name>" src/
+
+---
+
+### 8.6 Forbidden Substitution Check
+
+Command:
+grep -n "COMMIT" <file>
+grep -n "return snapshot" <file>
+
+Expected:
+
+* both present EXACTLY
+
+---
+
+## 9. FAILURE CONDITIONS
+
+If ANY occurs → FAIL:
+
+* multiple files modified
+* multiple functions modified
+* missing patch
+* vague validation
+* assumptions
+* missing code proof
+* forbidden substitutions detected
+* instruction deviation
+
+---
+
+## 10. OUTPUT FORMAT (STRICT)
+
+You MUST output EXACTLY:
+
+BEFORE: <code>
+
+AFTER: <code>
+
+PATCH: <diff>
+
+VALIDATION:
+<commands + results + explanation>
+
+---
+
+## 11. OUTPUT TERMINATION REQUIREMENT (MANDATORY)
+
+Your response MUST end with EXACTLY:
+
+Task Reference: <TASK_ID>
+
+Example:
+Task Reference: MP-FSM-FIX-002-D
+
+If missing or incorrect:
+→ FAIL
+
+---
+
+## FINAL INSTRUCTION
+
+Do not ask questions.
+Do not interpret.
+Execute exactly as specified.
+
+```
+
+---
+
+# Why this version is better
+
+### 1. Removes ambiguity
+No narrative, no explanations inside template → coder cannot drift.
+
+### 2. Enforces behavior at multiple layers
+- logic
+- syntax
+- validation
+- grep enforcement
+
+### 3. Closes your exact failure case
+The previous mistake (`ROLLBACK + throw`) is now impossible without failing validation.
+
+### 4. Keeps atomicity intact
+Still one file / one function / one behavior.
+
+---
+
+# Important reality check
+
+This template will:
+
+✔ eliminate careless mistakes  
+✔ eliminate interpretation drift  
+✔ reduce loop iterations  
+
+It will NOT:
+
+❌ fix bad architecture  
+❌ fix wrong assumptions  
+❌ replace investigation when needed  
+
+---
