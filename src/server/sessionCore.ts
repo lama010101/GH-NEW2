@@ -33,7 +33,7 @@ import {
 } from "@/server/db";
 import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
 import { getGameState, deriveStateFromEventStream } from "@/server/getGameState";
-import { appendEvent } from "@/server/eventStore";
+import { appendEvent, loadLastEventWithLock } from "@/server/eventStore";
 import { TransitionCause } from "@/core/transitionCause";
 import { transition } from "@/server/engine/transition";
 import type { TransitionEvent } from "@/server/engine/transition";
@@ -1017,6 +1017,39 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   return snapshot;
 }
 
+async function insertMissingCommits(
+  client: DbTransactionClient,
+  gameId: string,
+  roundIndex: number
+): Promise<void> {
+  // Load all players in this session
+  const playersResult = await client.query<{ player_id: string }>(
+    `SELECT player_id FROM session_players WHERE game_id = $1 AND left_at IS NULL`,
+    [gameId]
+  );
+
+  // Load all players who already have a commit for this round
+  const commitsResult = await client.query<{ player_id: string }>(
+    `SELECT player_id FROM round_commits WHERE game_id = $1 AND round_index = $2`,
+    [gameId, roundIndex]
+  );
+
+  const submitted = new Set(commitsResult.rows.map((r) => r.player_id));
+
+  // Insert zero-score commit for each player who has not submitted
+  for (const row of playersResult.rows) {
+    if (!submitted.has(row.player_id)) {
+      await client.query(
+        `INSERT INTO round_commits
+           (game_id, player_id, round_index, submitted_at, year_guess, location_lat, location_lng, hints_used, score)
+         VALUES ($1, $2, $3, now(), NULL, NULL, NULL, 0, 0)
+         ON CONFLICT (game_id, player_id, round_index) DO NOTHING`,
+        [gameId, row.player_id, roundIndex]
+      );
+    }
+  }
+}
+
 export type AdvanceRoundInput = {
   gameId: string;
   cause: TransitionCause;  // Authoritative domain type — from @/core/transitionCause (shared Next.js + PartyKit)
@@ -1047,6 +1080,16 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 
   const playerId = cause === TransitionCause.PLAYER ? input.playerId! : undefined;
 
+  // ═════════════════════════════════════════════════════════════════════════════
+  // SESSION_COMPLETE IDEMPOTENT CHECK — Pure read path, no transaction
+  // If session is already complete, return snapshot directly without any DB writes.
+  // ═════════════════════════════════════════════════════════════════════════════
+  const preflightSnapshot = await loadCompeteSessionSnapshot(gameId, playerId ?? undefined);
+  if (!preflightSnapshot) throw new Error("Session not found");
+  if (preflightSnapshot.status === "SESSION_COMPLETE") {
+    return preflightSnapshot;
+  }
+
   const client = await getTransactionClient();
 
   // Track events emitted by existing logic for transition-engine comparison
@@ -1054,6 +1097,30 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 
   try {
     await client.query("BEGIN");
+
+    // ═════════════════════════════════════════════════════════════════════════════
+    // TIMEOUT HANDLING — Insert zero-score commits for players who haven't submitted
+    // ═════════════════════════════════════════════════════════════════════════════
+    if (cause === TransitionCause.TIMEOUT) {
+      await insertMissingCommits(client, gameId, roundIndex);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════
+    // LOCK-BASED PHASE VALIDATION — Load last event with FOR UPDATE to serialize
+    // concurrent writes and validate phase before any DB mutation.
+    // ═════════════════════════════════════════════════════════════════════════════
+    const lastEvent = await loadLastEventWithLock(client, gameId);
+    const currentPhase = lastEvent?.eventType ?? null;
+
+    if (currentPhase === "SESSION_COMPLETE") {
+      await client.query("ROLLBACK");
+      throw new Error("SESSION_COMPLETE");
+    }
+
+    if (currentPhase !== "ROUND_COMPLETE") {
+      await client.query("ROLLBACK");
+      throw new Error("INVALID_ADVANCE_SOURCE_PHASE");
+    }
 
     const session = await loadSessionRow(gameId, client);
     if (!session) throw new Error("Session not found");

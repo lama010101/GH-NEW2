@@ -42,7 +42,7 @@ export type LastEventInfo = {
  * Load the last event for a game with FOR UPDATE lock.
  * MUST be called inside an open transaction.
  */
-async function loadLastEventWithLock(
+export async function loadLastEventWithLock(
   client: DbTransactionClient,
   gameId: string
 ): Promise<LastEventInfo> {
