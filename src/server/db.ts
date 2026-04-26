@@ -46,9 +46,12 @@ function enforceDbConnection(): Pool {
     ssl: {
       rejectUnauthorized: false
     },
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 10000,
-    allowExitOnIdle: true
+    max: 3,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 60000,
+    allowExitOnIdle: false,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000
   });
 
   // IMMEDIATE connection test — no lazy loading
