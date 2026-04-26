@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, type PoolConfig } from "pg";
 import { randomUUID } from "crypto";
 import { evaluateRound } from "@/core/rules";
 import { EventRecord, LatLng } from "@/core/types";
@@ -52,7 +52,7 @@ function enforceDbConnection(): Pool {
     allowExitOnIdle: false,
     keepAlive: true,
     keepAliveInitialDelayMillis: 10000
-  });
+  } as PoolConfig);
 
   // IMMEDIATE connection test — no lazy loading
   pool.query<{ db_alive: number; db_name: string; version: string }>(
@@ -73,11 +73,26 @@ function enforceDbConnection(): Pool {
   return pool;
 }
 
-export const dbPool: Pool = globalThis.__guessHistoryDbPool__ ?? enforceDbConnection();
+let _dbPoolInstance: Pool | undefined;
 
-if (process.env.NODE_ENV !== "production") {
-  globalThis.__guessHistoryDbPool__ = dbPool;
+export function getDbPool(): Pool {
+  if (_dbPoolInstance) return _dbPoolInstance;
+  if (globalThis.__guessHistoryDbPool__) {
+    _dbPoolInstance = globalThis.__guessHistoryDbPool__;
+    return _dbPoolInstance;
+  }
+  _dbPoolInstance = enforceDbConnection();
+  globalThis.__guessHistoryDbPool__ = _dbPoolInstance;
+  return _dbPoolInstance;
 }
+
+// Backward-compatible export so existing callers compile without change.
+// This is a getter property, not a top-level evaluated const.
+export const dbPool: Pool = new Proxy({} as Pool, {
+  get(_target, prop) {
+    return (getDbPool() as unknown as Record<string | symbol, unknown>)[prop];
+  }
+});
 
 // ANTI-FAKE GUARD: Runtime check that DB was actually hit
 export function assertDbConnectionVerified(): void {
@@ -109,7 +124,7 @@ export type ConnectionHandle = {
  * Returns connection with backend PID for proof logging.
  */
 export async function acquireConnectionA(): Promise<ConnectionHandle> {
-  const client = await (dbPool as unknown as TransactionCapablePool).connect();
+  const client = await (getDbPool() as unknown as TransactionCapablePool).connect();
   const pidResult = await client.query<{ pid: number }>("SELECT pg_backend_pid() AS pid");
   const backendPid = pidResult.rows[0].pid;
   const connectionId = `A-${backendPid}-${Date.now()}`;
@@ -128,7 +143,7 @@ export async function acquireConnectionA(): Promise<ConnectionHandle> {
  * MUST return different backend PID than Connection A.
  */
 export async function acquireConnectionB(): Promise<ConnectionHandle> {
-  const client = await (dbPool as unknown as TransactionCapablePool).connect();
+  const client = await (getDbPool() as unknown as TransactionCapablePool).connect();
   const pidResult = await client.query<{ pid: number }>("SELECT pg_backend_pid() AS pid");
   const backendPid = pidResult.rows[0].pid;
   const connectionId = `B-${backendPid}-${Date.now()}`;
