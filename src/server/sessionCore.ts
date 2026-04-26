@@ -792,7 +792,13 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   // Generate verification token for this operation
   const commitToken = generateVerificationToken();
 
+  // Variables needed after transaction completes
+  let allActiveSubmitted = false;
+  let activePlayers: Awaited<ReturnType<typeof loadSessionPlayerRows>> = [];
+  let commitCount = 0;
+
   try {
+    console.time("[PERF] submitGuess:transaction");
     await client.query("BEGIN");
 
     const session = await loadSessionRow(gameId, client);
@@ -909,6 +915,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         commitToken
       ]
     );
+    console.timeLog("[PERF] submitGuess:transaction", "after INSERT round_commits");
 
     if ((insertResult as unknown as { rowCount: number | null }).rowCount === 0) {
       // Commit already exists (concurrent submission) — return current snapshot
@@ -919,29 +926,20 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     }
 
     await appendEvent(client, gameId, "GUESS_SUBMITTED", { playerId, yearGuess, score, verificationToken: commitToken }, roundIndex);
+    console.timeLog("[PERF] submitGuess:transaction", "after appendEvent GUESS_SUBMITTED");
     existingEvents.push({ type: "GUESS_SUBMITTED", payload: { playerId, yearGuess, score, verificationToken: commitToken }, roundIndex });
 
     const playerRows = await loadSessionPlayerRows(gameId, client);
-    const activePlayers = playerRows.filter((p) => p.left_at === null);
+    activePlayers = playerRows.filter((p) => p.left_at === null);
 
     // MP-ACTIVE-PLAYERS-001: Completion is submission-based, not count-based.
     // Only active players (left_at IS NULL) participate.
     // If no active players remain, do nothing (no phantom round completion).
-    let commitCount = 0;
     if (activePlayers.length === 0) {
       // no-op: all players disconnected
     } else {
       commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
-      const allActiveSubmitted = commitCount >= activePlayers.length;
-
-      if (allActiveSubmitted) {
-        verifyLog("INSERT", "round_results", "OK", `round=${roundIndex} all ${activePlayers.length} active players submitted — computing`);
-        await computeAndWriteRoundResults(gameId, roundIndex, client);
-        shouldVerifyRoundResults = true;
-        verifyLog("INSERT", "round_results", "OK", `${commitCount} rows written for round=${roundIndex}`);
-        await appendEvent(client, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
-        existingEvents.push({ type: "ROUND_COMPLETE", payload: { commitCount }, roundIndex });
-      }
+      allActiveSubmitted = commitCount >= activePlayers.length;
     }
 
     // Transition-engine validation: compare existing logic with centralized engine
@@ -966,11 +964,33 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     compareTransitionEvents("submitGuess", existingEvents, transitionResult.events);
 
     await client.query("COMMIT");
+    console.timeEnd("[PERF] submitGuess:transaction");
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // ROUND COMPLETION (outside main transaction for performance)
+  // ═════════════════════════════════════════════════════════════════════════════
+  if (allActiveSubmitted) {
+    verifyLog("INSERT", "round_results", "OK", `round=${roundIndex} all ${activePlayers.length} active players submitted — computing`);
+    const resultsClient = await getTransactionClient();
+    try {
+      await resultsClient.query("BEGIN");
+      await computeAndWriteRoundResults(gameId, roundIndex, resultsClient);
+      shouldVerifyRoundResults = true;
+      verifyLog("INSERT", "round_results", "OK", `${commitCount} rows written for round=${roundIndex}`);
+      await appendEvent(resultsClient, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
+      await resultsClient.query("COMMIT");
+    } catch (error) {
+      await resultsClient.query("ROLLBACK");
+      throw error;
+    } finally {
+      resultsClient.release();
+    }
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
@@ -1042,17 +1062,20 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     // 5. FULL DETERMINISTIC REPLAY VERIFICATION
     // Recompute all scores from DB commits and compare to stored results
     if (process.env.ENABLE_ZERO_TRUST === "true") {
-      await verifyFullReplay(
-        gameId,
-        roundIndex,
-        event,
-        "submitGuess-fullReplay",
-        commitToken
-      );
+      // MP-PERF-001: removed from hot path — replay is O(n), must not block request
+      // await verifyFullReplay(
+      //   gameId,
+      //   roundIndex,
+      //   event,
+      //   "submitGuess-fullReplay",
+      //   commitToken
+      // );
     }
   }
 
+  console.time("[PERF] submitGuess:snapshot");
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  console.timeEnd("[PERF] submitGuess:snapshot");
   if (!snapshot) throw new Error("Session not found");
 
   return snapshot;

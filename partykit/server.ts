@@ -253,7 +253,7 @@ export default class GameServer {
         const start = Date.now();
         const check = () => {
           if (this.submitInFlight === 0) return resolve(true);
-          if (Date.now() - start > 5000) return resolve(false);
+          if (Date.now() - start > 15000) return resolve(false);
           setTimeout(check, 50);
         };
         check();

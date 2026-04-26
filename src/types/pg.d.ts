@@ -12,6 +12,9 @@ declare module "pg" {
     ssl?: {
       rejectUnauthorized?: boolean;
     };
+    connectionTimeoutMillis?: number;
+    idleTimeoutMillis?: number;
+    allowExitOnIdle?: boolean;
   }
 
   export class Pool {

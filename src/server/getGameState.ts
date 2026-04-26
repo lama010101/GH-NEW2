@@ -417,45 +417,170 @@ export async function getGameState(
   sessionId: string
 ): Promise<ReconstructedGameState> {
   // ───────────────────────────────────────────────────────────────────────────
-  // STEP 1: Load session (fail-fast if not found)
+  // SINGLE CTE QUERY — Load all state in one DB round-trip
   // ───────────────────────────────────────────────────────────────────────────
-  const session = await loadSession(sessionId, dbPool);
-  if (!session) {
+  const result = await dbPool.query<{
+    session: unknown;
+    players: unknown;
+    commits: unknown;
+    results: unknown;
+    events: unknown;
+  }>(
+    `WITH
+      session_data AS (
+        SELECT game_id, mode, round_timer_sec, total_rounds, year_min, year_max,
+               session_deadline, created_at, seed
+        FROM sessions
+        WHERE game_id = $1
+      ),
+      players_data AS (
+        SELECT player_id, display_name, joined_at, left_at, ready, is_host
+        FROM session_players
+        WHERE game_id = $1
+        ORDER BY joined_at ASC, player_id ASC
+      ),
+      commits_data AS (
+        SELECT round_index, player_id, submitted_at, year_guess,
+               location_lat, location_lng, hints_used, score
+        FROM round_commits
+        WHERE game_id = $1
+        ORDER BY round_index ASC, submitted_at ASC, player_id ASC
+      ),
+      results_data AS (
+        SELECT round_index, player_id, score, rank,
+               distance_km, year_diff, location_score, time_score
+        FROM round_results
+        WHERE game_id = $1
+        ORDER BY round_index ASC, rank ASC, player_id ASC
+      ),
+      events_data AS (
+        SELECT id, round_index, event_type, payload, created_at
+        FROM round_events
+        WHERE game_id = $1
+        ORDER BY created_at ASC, id ASC
+      )
+    SELECT
+      (SELECT row_to_json(s) FROM session_data s) AS session,
+      (SELECT json_agg(p ORDER BY p.joined_at ASC, p.player_id ASC) FROM players_data p) AS players,
+      (SELECT json_agg(c ORDER BY c.round_index ASC, c.submitted_at ASC, c.player_id ASC) FROM commits_data c) AS commits,
+      (SELECT json_agg(r ORDER BY r.round_index ASC, r.rank ASC, r.player_id ASC) FROM results_data r) AS results,
+      (SELECT json_agg(e ORDER BY e.created_at ASC, e.id ASC) FROM events_data e) AS events`,
+    [sessionId]
+  );
+
+  if (result.rows.length === 0 || !result.rows[0].session) {
     throw new Error(`[getGameState] Session not found: ${sessionId}`);
   }
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // STEP 2: Parallel load of all state sources (all independent reads)
-  // ───────────────────────────────────────────────────────────────────────────
-  const [
-    players,
-    commitsByRound,
-    resultsByRound,
-    events,
-    eventRounds
-  ] = await Promise.all([
-    loadPlayers(sessionId, dbPool),
-    loadRoundCommits(sessionId, dbPool),
-    loadRoundResults(sessionId, dbPool),
-    loadRoundEvents(sessionId, dbPool),
-    loadEventRounds(sessionId, dbPool)
-  ]);
+  const row = result.rows[0];
+  const sessionJson = row.session as Record<string, unknown>;
+  const playersJson = (row.players as Record<string, unknown>[]) ?? [];
+  const commitsJson = (row.commits as Record<string, unknown>[]) ?? [];
+  const resultsJson = (row.results as Record<string, unknown>[]) ?? [];
+  const eventsJson = (row.events as Record<string, unknown>[]) ?? [];
 
   // ───────────────────────────────────────────────────────────────────────────
-  // STEP 3: Derive current round and phase from FULL event stream
+  // PARSE SESSION
   // ───────────────────────────────────────────────────────────────────────────
-  // Uses deterministic event stream processor — validates ordering,
-  // round continuity, and phase sequence correctness
+  const session: SessionState = {
+    gameId: sessionJson.game_id as string,
+    mode: sessionJson.mode as "practice" | "sync" | "async",
+    roundTimerSec: sessionJson.round_timer_sec as number,
+    totalRounds: sessionJson.total_rounds as number,
+    yearMin: sessionJson.year_min as number,
+    yearMax: sessionJson.year_max as number,
+    sessionDeadline: sessionJson.session_deadline ? new Date(sessionJson.session_deadline as string).toISOString() : null,
+    createdAt: new Date(sessionJson.created_at as string).toISOString()
+  };
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // PARSE PLAYERS
+  // ───────────────────────────────────────────────────────────────────────────
+  const players: PlayerState[] = playersJson.map(p => ({
+    playerId: p.player_id as string,
+    displayName: (p.display_name as string) ?? "",
+    joinedAt: new Date(p.joined_at as string).toISOString(),
+    leftAt: p.left_at ? new Date(p.left_at as string).toISOString() : null,
+    ready: p.ready as boolean,
+    isHost: p.is_host as boolean
+  }));
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // PARSE COMMITS INTO MAP
+  // ───────────────────────────────────────────────────────────────────────────
+  const commitsByRound = new Map<number, SubmissionState[]>();
+  for (const c of commitsJson) {
+    const submission: SubmissionState = {
+      playerId: c.player_id as string,
+      submittedAt: new Date(c.submitted_at as string).toISOString(),
+      yearGuess: c.year_guess as number | null,
+      locationLat: c.location_lat as number | null,
+      locationLng: c.location_lng as number | null,
+      hintsUsed: (c.hints_used as number) ?? 0,
+      score: c.score as number | null
+    };
+    const roundIndex = c.round_index as number;
+    if (!commitsByRound.has(roundIndex)) {
+      commitsByRound.set(roundIndex, []);
+    }
+    commitsByRound.get(roundIndex)!.push(submission);
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // PARSE RESULTS INTO MAP
+  // ───────────────────────────────────────────────────────────────────────────
+  const resultsByRound = new Map<number, ResultState[]>();
+  for (const r of resultsJson) {
+    const resultState: ResultState = {
+      playerId: r.player_id as string,
+      score: r.score as number,
+      rank: r.rank as number,
+      distanceKm: r.distance_km as number | null,
+      yearDiff: r.year_diff as number | null,
+      locationScore: r.location_score as number | null,
+      timeScore: r.time_score as number | null
+    };
+    const roundIndex = r.round_index as number;
+    if (!resultsByRound.has(roundIndex)) {
+      resultsByRound.set(roundIndex, []);
+    }
+    resultsByRound.get(roundIndex)!.push(resultState);
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // PARSE EVENTS
+  // ───────────────────────────────────────────────────────────────────────────
+  const events: RoundEvent[] = eventsJson.map(e => ({
+    id: e.id as number,
+    roundIndex: e.round_index as number | null,
+    eventType: e.event_type as string,
+    payload: e.payload as Record<string, unknown>,
+    createdAt: new Date(e.created_at as string).toISOString()
+  }));
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // DERIVE EVENT ROUNDS FROM EVENTS (replaces loadEventRounds query)
+  // ───────────────────────────────────────────────────────────────────────────
+  const eventRounds = new Set<number>();
+  for (const e of events) {
+    if (e.roundIndex !== null) {
+      eventRounds.add(e.roundIndex);
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // DERIVE CURRENT ROUND AND PHASE FROM FULL EVENT STREAM
+  // ───────────────────────────────────────────────────────────────────────────
   const { currentRound, currentPhase } = deriveStateFromEventStream(events);
   const phase = currentPhase;
 
   // ───────────────────────────────────────────────────────────────────────────
-  // STEP 5: Assemble rounds from events, commits, and results
+  // ASSEMBLE ROUNDS FROM EVENTS, COMMITS, AND RESULTS
   // ───────────────────────────────────────────────────────────────────────────
   const rounds = assembleRounds(eventRounds, commitsByRound, resultsByRound);
 
   // ───────────────────────────────────────────────────────────────────────────
-  // STEP 6: Return fully reconstructed state
+  // RETURN FULLY RECONSTRUCTED STATE
   // ───────────────────────────────────────────────────────────────────────────
   return {
     session,
