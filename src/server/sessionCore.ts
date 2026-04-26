@@ -779,7 +779,6 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 
   try {
     console.time("[PERF] submitGuess:transaction");
-    console.time(`[TX_TOTAL] ${gameId}`);
     await client.query("BEGIN");
 
     const session = await loadSessionRow(gameId, client);
@@ -791,37 +790,56 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       throw new Error("Use practice session endpoints for practice mode");
     }
 
-    // Check round has started via round_events (canonical source) instead of round_timing
-    const roundStartedEvent = await client.query(
-      `SELECT 1 FROM round_events
-       WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_STARTED'
-       LIMIT 1`,
-      [gameId, roundIndex]
+    // Consolidated guard queries — single CTE to check round start, round complete, existing commit, and fetch session event IDs
+    const guardResult = await client.query<{
+      round_started: boolean;
+      round_complete: boolean;
+      has_existing_commit: boolean;
+      session_event_ids: string[] | null;
+    }>(
+      `WITH
+        round_started AS (
+          SELECT 1 FROM round_events
+          WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_STARTED'
+          LIMIT 1
+        ),
+        round_complete AS (
+          SELECT 1 FROM round_events
+          WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_COMPLETE'
+          LIMIT 1
+        ),
+        existing_commit AS (
+          SELECT 1 FROM round_commits
+          WHERE game_id = $1 AND player_id = $3 AND round_index = $2
+          LIMIT 1
+        ),
+        session_created AS (
+          SELECT payload FROM round_events
+          WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+          ORDER BY id ASC LIMIT 1
+        )
+      SELECT
+        EXISTS(SELECT 1 FROM round_started)     AS round_started,
+        EXISTS(SELECT 1 FROM round_complete)    AS round_complete,
+        EXISTS(SELECT 1 FROM existing_commit)   AS has_existing_commit,
+        (SELECT payload->'eventIds' FROM session_created)::jsonb AS session_event_ids`,
+      [gameId, roundIndex, playerId]
     );
-    if (roundStartedEvent.rows.length === 0) {
+
+    const guard = guardResult.rows[0];
+
+    if (!guard.round_started) {
       throw new Error("Round has not started");
     }
 
-    // Guard: reject submission if round is already complete
-    const roundCompleteEvent = await client.query(
-      `SELECT 1 FROM round_events
-       WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_COMPLETE'
-       LIMIT 1`,
-      [gameId, roundIndex]
-    );
-    if (roundCompleteEvent.rows.length > 0) {
+    if (guard.round_complete) {
       await client.query("COMMIT");
       const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
       if (!snapshot) throw new Error("Session not found");
       return snapshot;
     }
 
-    const existingCommit = await client.query(
-      `SELECT 1 FROM round_commits WHERE game_id = $1 AND player_id = $2 AND round_index = $3 LIMIT 1`,
-      [gameId, playerId, roundIndex]
-    );
-
-    if (existingCommit.rows.length > 0) {
+    if (guard.has_existing_commit) {
       await client.query("COMMIT");
 
       // Transition-engine validation: duplicate submission emits zero events
@@ -850,16 +868,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       return snapshot;
     }
 
-    const sessionCreatedEvent = await client.query<{ payload: { eventIds: string[] } }>(
-      `SELECT payload FROM round_events
-       WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
-       ORDER BY id ASC LIMIT 1`,
-      [gameId]
-    );
-    if (sessionCreatedEvent.rows.length === 0) {
-      throw new Error("Session event not found");
-    }
-    const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
+    const eventIds = guard.session_event_ids;
     if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) {
       throw new Error("Event ID not found for round index");
     }
@@ -945,7 +954,6 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     compareTransitionEvents("submitGuess", existingEvents, transitionResult.events);
 
     await client.query("COMMIT");
-    console.timeEnd(`[TX_TOTAL] ${gameId}`);
     console.timeEnd("[PERF] submitGuess:transaction");
   } catch (error) {
     await client.query("ROLLBACK");

@@ -1,4 +1,10 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/page": "app/page.js"
+  "/api/compete/[gameId]/round/[roundIndex]/results/route": "app/api/compete/[gameId]/round/[roundIndex]/results/route.js",
+  "/compete/page": "app/compete/page.js",
+  "/page": "app/page.js",
+  "/compete/[gameId]/page": "app/compete/[gameId]/page.js",
+  "/api/compete/[gameId]/complete/route": "app/api/compete/[gameId]/complete/route.js",
+  "/api/compete/[gameId]/guess/route": "app/api/compete/[gameId]/guess/route.js",
+  "/api/compete/[gameId]/start/route": "app/api/compete/[gameId]/start/route.js",
+  "/api/compete/[gameId]/advance/route": "app/api/compete/[gameId]/advance/route.js"
 }
