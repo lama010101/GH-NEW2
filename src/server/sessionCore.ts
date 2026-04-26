@@ -24,12 +24,10 @@ import {
   dbPool,
   generateVerificationToken,
   verifyWriteCrossConnection,
-  verifyDeterministicReplay,
   // Zero-Trust v2.0 imports
   verifyRowIntegrity,
   verifyWriteSet,
-  verifyUniquenessInvariant,
-  verifyFullReplay
+  verifyUniquenessInvariant
 } from "@/server/db";
 import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
 import { getGameState, deriveStateFromEventStream } from "@/server/getGameState";
@@ -178,24 +176,6 @@ function verifyLog(operation: string, state: string, result: "OK" | "FAIL", deta
   } else {
     console.log(`[${ts}] ${msg}`);
   }
-}
-
-async function verifyWritten(
-  executor: DbExecutor,
-  table: string,
-  whereClause: string,
-  params: unknown[],
-  operation: string
-): Promise<void> {
-  const result = await executor.query(
-    `SELECT 1 FROM ${table} WHERE ${whereClause} LIMIT 1`,
-    params
-  );
-  if (result.rows.length === 0) {
-    verifyLog(operation, table, "FAIL", `read-back found 0 rows — write did not persist`);
-    throw new Error(`[VERIFY FAIL] ${operation}: expected row in ${table} not found after write`);
-  }
-  verifyLog(operation, table, "OK");
 }
 
 export const REQUIRED_MULTIPLAYER_TABLES = [
@@ -799,6 +779,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 
   try {
     console.time("[PERF] submitGuess:transaction");
+    console.time(`[TX_TOTAL] ${gameId}`);
     await client.query("BEGIN");
 
     const session = await loadSessionRow(gameId, client);
@@ -964,6 +945,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     compareTransitionEvents("submitGuess", existingEvents, transitionResult.events);
 
     await client.query("COMMIT");
+    console.timeEnd(`[TX_TOTAL] ${gameId}`);
     console.timeEnd("[PERF] submitGuess:transaction");
   } catch (error) {
     await client.query("ROLLBACK");

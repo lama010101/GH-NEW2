@@ -209,8 +209,8 @@ describe("game rules", () => {
     // Corrupt state: manually add a roundResult while in ROUND_LOCK
     const corruptedState = {
       ...state,
-      roundResults: [{ /* mock result */ } as any]
-    };
+      roundResults: [{ /* mock result */ }]
+    } as GameState;
 
     expect(() => gameReducer(corruptedState, { type: "EVALUATE_ROUND" })).toThrow();
   });

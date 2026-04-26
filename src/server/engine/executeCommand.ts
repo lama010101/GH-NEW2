@@ -20,6 +20,7 @@ function deepFreeze<T>(obj: T): T {
   Object.freeze(obj);
 
   for (const key of Object.keys(obj)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const value = (obj as any)[key];
     if (value && typeof value === "object" && !Object.isFrozen(value)) {
       deepFreeze(value);
@@ -31,8 +32,9 @@ function deepFreeze<T>(obj: T): T {
 
 function handleCommand(
   snapshot: CompeteSessionSnapshot,
-  input: ExecuteCommandInput
+  _input: ExecuteCommandInput
 ): CompeteSessionSnapshot {
+  void _input;
   return snapshot;
 }
 
@@ -77,7 +79,7 @@ function validateCommandInput(input: ExecuteCommandInput): void {
     throw new Error("Invalid command input: expected object");
   }
   if (input.type !== "SUBMIT_GUESS") {
-    throw new Error(`Invalid command type: ${(input as any).type}`);
+    throw new Error(`Invalid command type: ${input.type}`);
   }
   if (!input.payload || typeof input.payload !== "object") {
     throw new Error("Invalid command payload: expected object");
@@ -88,8 +90,15 @@ function validateCommandInput(input: ExecuteCommandInput): void {
   if (typeof input.payload.playerId !== "string" || input.payload.playerId.length === 0) {
     throw new Error("Invalid command payload: playerId must be a non-empty string");
   }
-  if (!Number.isInteger(input.payload.roundIndex) || input.payload.roundIndex < 0) {
-    throw new Error("Invalid command payload: roundIndex must be a non-negative integer");
+  if (typeof input.payload.yearGuess !== "number") {
+    throw new Error("Invalid command payload: yearGuess must be a number");
+  }
+  if (!input.payload.locationGuess || typeof input.payload.locationGuess !== "object") {
+    throw new Error("Invalid command payload: locationGuess must be an object");
+  }
+  const location = input.payload.locationGuess as { lat: unknown; lng: unknown };
+  if (typeof location.lat !== "number" || typeof location.lng !== "number") {
+    throw new Error("Invalid command payload: locationGuess must have lat and lng as numbers");
   }
 }
 

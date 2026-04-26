@@ -4,13 +4,13 @@
 // These tests MUST fail before the fix and pass after.
 // Tests validate that the event pipeline rejects invalid event sequences.
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { dbPool } from "./db";
+import { describe, it, expect } from "vitest";
 import { getTransactionClient, type DbTransactionClient } from "./sessionCore";
 import { appendEvent } from "./eventStore";
 import { randomUUID } from "crypto";
 
 // Test helpers
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function createTestSession(client: DbTransactionClient): Promise<string> {
   const gameId = randomUUID();
   await client.query(

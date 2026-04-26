@@ -4,7 +4,9 @@ import { evaluateRound } from "@/core/rules";
 import { EventRecord, LatLng } from "@/core/types";
 
 declare global {
+  // eslint-disable-next-line no-var
   var __guessHistoryDbPool__: Pool | undefined;
+  // eslint-disable-next-line no-var
   var __dbConnectionVerified__: boolean | undefined;
 }
 
