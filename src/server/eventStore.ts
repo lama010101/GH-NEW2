@@ -159,6 +159,7 @@ async function insertEvent(
     `
     INSERT INTO round_events (game_id, round_index, event_type, payload)
     VALUES ($1, $2, $3, $4::jsonb)
+    ON CONFLICT DO NOTHING
     `,
     [gameId, roundIndex, eventType, JSON.stringify(payload)]
   );

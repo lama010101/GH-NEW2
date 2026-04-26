@@ -52,7 +52,28 @@ export async function fetchEventsWithDetails(options: {
 
   const whereClause = whereClauses.join(" AND ");
 
-  const query = `
+  // PHASE 1: Select random IDs only (cheap query)
+  const phase1Query = `
+    SELECT e.id
+    FROM events e
+    JOIN locations l ON l.event_id = e.id
+    WHERE ${whereClause}
+    ORDER BY RANDOM()
+    LIMIT $${paramIndex}
+  `;
+
+  params.push(limit);
+
+  const phase1Result = await executor.query<{ id: string }>(phase1Query, params);
+
+  if (phase1Result.rows.length === 0) {
+    return [];
+  }
+
+  const selectedIds = phase1Result.rows.map(row => row.id);
+
+  // PHASE 2: Fetch full details only for selected IDs (indexed lookup)
+  const phase2Query = `
     SELECT
       e.id,
       e.title,
@@ -76,13 +97,10 @@ export async function fetchEventsWithDetails(options: {
     FROM events e
     JOIN locations l ON l.event_id = e.id
     LEFT JOIN images i ON i.event_id = e.id
-    WHERE ${whereClause}
+    WHERE e.id = ANY($1::uuid[])
     GROUP BY e.id, e.title, e.description, e.event_year, l.latitude, l.longitude, l.display_name, l.country
-    ORDER BY RANDOM()
-    LIMIT $${paramIndex}
+    ORDER BY e.id
   `;
-
-  params.push(limit);
 
   const result = await executor.query<{
     id: string;
@@ -95,7 +113,7 @@ export async function fetchEventsWithDetails(options: {
     region: string | null;
     category: string | null;
     images: unknown;
-  }>(query, params);
+  }>(phase2Query, [selectedIds]);
 
   return result.rows.map((row) => mapEventRowToEventRecord(row));
 }

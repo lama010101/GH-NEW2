@@ -51,6 +51,7 @@ const API_BASE = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 async function apiFetch(path: string, options?: RequestInit): Promise<unknown> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
+    signal: AbortSignal.timeout(30_000),
     headers: {
       "Content-Type": "application/json",
       ...options?.headers
@@ -139,6 +140,20 @@ export default class GameServer {
   // multiple players click "Next Round" simultaneously.
   private advanceInFlight = false;
 
+  // In-flight counter for SUBMIT_GUESS to prevent race with triggerRoundExpiry.
+  // When triggerRoundExpiry fires, we wait for all in-flight submissions to complete
+  // before calling /complete to ensure real commits are written before insertMissingCommits.
+  private submitInFlight = 0;
+
+  // Per-player in-flight submission tracking to deduplicate concurrent SUBMIT_GUESS
+  // messages for the same player+round before the first API call returns.
+  private submitInFlightPlayers = new Set<string>();
+
+  // In-flight lock for triggerRoundExpiry to prevent concurrent expiry handling.
+  // Prevents duplicate ROUND_STARTED → ROUND_STARTED transitions when scheduleRoundTimer
+  // fires while expiry is already in progress or when a new round's timer is already expired.
+  private completeInFlight = false;
+
   constructor(readonly room: Room) {}
 
   /**
@@ -148,7 +163,9 @@ export default class GameServer {
    */
   private async loadFromDB(): Promise<void> {
     const gameId = this.room.id;
+    console.time("[PERF] loadFromDB:apiFetch");
     this.snapshot = await buildSnapshotFromDB(gameId);
+    console.timeEnd("[PERF] loadFromDB:apiFetch");
     this.snapshotLoaded = true;
     this.scheduleRoundTimer();
   }
@@ -213,29 +230,73 @@ export default class GameServer {
   }
 
   /**
-   * Called when a round timer expires. Triggers the advance API
-   * with cause="timeout" — no playerId fabrication.
-   * Uses API-returned snapshot — no re-fetch.
+   * Called when a round timer expires. First completes the round (scores + ROUND_COMPLETE),
+   * waits 5 seconds for clients to display results, then advances to next round.
+   * Uses API-returned snapshots — no re-fetch.
    */
   private async triggerRoundExpiry(): Promise<void> {
     if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_ACTIVE") {
       return;
     }
 
+    if (this.completeInFlight) {
+      return;
+    }
+    this.completeInFlight = true;
+
     const gameId = this.room.id;
     const roundIndex = this.snapshot.currentRoundIndex;
 
-    try {
-      const snapshot = await apiFetch(`/api/compete/${encodeURIComponent(gameId)}/advance`, {
-        method: "POST",
-        body: JSON.stringify({
-          cause: TransitionCause.TIMEOUT,
-          roundIndex
-        })
+    // Wait for any in-flight submissions to complete before closing the round
+    if (this.submitInFlight > 0) {
+      const waited = await new Promise<boolean>((resolve) => {
+        const start = Date.now();
+        const check = () => {
+          if (this.submitInFlight === 0) return resolve(true);
+          if (Date.now() - start > 5000) return resolve(false);
+          setTimeout(check, 50);
+        };
+        check();
       });
-      this.applySnapshotAndBroadcast(snapshot);
-    } catch (err) {
-      console.error("[PartyKit] Round expiry advance failed:", err instanceof Error ? err.message : err);
+      if (!waited) {
+        console.warn("[PartyKit] Timed out waiting for in-flight submissions — proceeding with round expiry");
+      }
+    }
+
+    try {
+      // Step 1: Complete the round (score + ROUND_COMPLETE event)
+      try {
+        const completeSnapshot = await apiFetch(`/api/compete/${encodeURIComponent(gameId)}/complete`, {
+          method: "POST",
+          body: JSON.stringify({ roundIndex })
+        });
+        this.applySnapshotAndBroadcast(completeSnapshot);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes("409") && !msg.includes("ALREADY_COMPLETE")) {
+          console.error("[PartyKit] Round complete failed:", msg);
+          return;
+        }
+      }
+
+      // Step 2: Wait 5 seconds so clients can display the results screen
+      await new Promise<void>((resolve) => setTimeout(resolve, 5000));
+
+      // Step 3: Advance to next round (or SESSION_COMPLETE)
+      try {
+        const advanceSnapshot = await apiFetch(`/api/compete/${encodeURIComponent(gameId)}/advance`, {
+          method: "POST",
+          body: JSON.stringify({
+            cause: TransitionCause.TIMEOUT,
+            roundIndex
+          })
+        });
+        this.applySnapshotAndBroadcast(advanceSnapshot);
+      } catch (err) {
+        console.error("[PartyKit] Round advance after expiry failed:", err instanceof Error ? err.message : err);
+      }
+    } finally {
+      this.completeInFlight = false;
     }
   }
 
@@ -405,19 +466,29 @@ export default class GameServer {
         }
 
         case "SUBMIT_GUESS": {
-          // /guess returns the updated snapshot — use it directly
-          const snapshot = await apiFetch(`/api/compete/${gameId}/guess`, {
-            method: "POST",
-            body: JSON.stringify({
-              playerId: data.playerId,
-              roundIndex: data.roundIndex,
-              year: data.year,
-              lat: data.lat,
-              lng: data.lng,
-              hintsUsed: data.hintsUsed
-            })
-          });
-          this.applySnapshotAndBroadcast(snapshot);
+          const submitKey = `${data.playerId}:${data.roundIndex}`;
+          if (this.submitInFlightPlayers.has(submitKey)) {
+            break; // Duplicate in-flight submission — discard silently
+          }
+          this.submitInFlightPlayers.add(submitKey);
+          this.submitInFlight++;
+          try {
+            const snapshot = await apiFetch(`/api/compete/${gameId}/guess`, {
+              method: "POST",
+              body: JSON.stringify({
+                playerId: data.playerId,
+                roundIndex: data.roundIndex,
+                year: data.year,
+                lat: data.lat,
+                lng: data.lng,
+                hintsUsed: data.hintsUsed
+              })
+            });
+            this.applySnapshotAndBroadcast(snapshot);
+          } finally {
+            this.submitInFlightPlayers.delete(submitKey);
+            this.submitInFlight--;
+          }
           break;
         }
 
@@ -459,16 +530,9 @@ export default class GameServer {
         }
       }
     } catch (error) {
-      // DB write may have partially succeeded (e.g., post-commit verification
-      // failure). Reload from DB to keep DO state consistent with committed data.
       const message = error instanceof Error ? error.message : "Unknown error";
       console.error("[PartyKit] Action failed:", message);
-      try {
-        await this.loadFromDB();
-        this.broadcastStateUpdate();
-      } catch (reloadErr) {
-        console.error("[PartyKit] Post-failure reload also failed:", reloadErr instanceof Error ? reloadErr.message : reloadErr);
-      }
+      this.broadcastStateUpdate();
       this.sendError(sender, message);
     }
   }
