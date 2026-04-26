@@ -14,6 +14,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, XCircle, MapPin, Calendar, ArrowRight, X, RotateCcw, Home, Share2 } from "lucide-react";
 import { useFTUEFeature } from "@/hooks/useFTUE";

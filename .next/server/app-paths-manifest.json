@@ -1,8 +1,4 @@
 {
-  "/page": "app/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/compete/page": "app/compete/page.js",
-  "/compete/[gameId]/page": "app/compete/[gameId]/page.js",
-  "/api/compete/[gameId]/join/route": "app/api/compete/[gameId]/join/route.js",
-  "/api/compete/[gameId]/round/[roundIndex]/results/route": "app/api/compete/[gameId]/round/[roundIndex]/results/route.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js"
 }

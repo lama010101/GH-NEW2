@@ -7,7 +7,6 @@ import {
   formatAccuracy,
   GuessLocationCard,
   GuessYearCard,
-  LoadingScreen,
   MetricsGrid,
   RoundActionsCard,
   RoundStatusCard
@@ -252,6 +251,7 @@ export function RoundActiveScreen({
 }
 
 export function RoundProcessingScreen({ phase }: { phase: GamePhase }) {
+  void phase;
   return (
     <section className="card">
       <span className="badge">Round processing</span>

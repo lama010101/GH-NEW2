@@ -8,7 +8,6 @@ import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
 import {
   type DbExecutor,
   PRACTICE_PLAYER_ID,
-  PRACTICE_PLAYER_NAME,
   getTransactionClient,
   loadSessionPlayerRows,
   loadSessionRow,

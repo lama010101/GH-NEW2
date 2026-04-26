@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { joinCompeteSession, loadCompeteSessionSnapshot } from "@/server/sessionCore";
+import { joinCompeteSession } from "@/server/sessionCore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

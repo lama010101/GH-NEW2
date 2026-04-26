@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateRound, calculateYearAccuracy, calculateLocationAccuracy } from "./rules";
-import { MAX_HINT_PENALTY } from "./types";
+import { evaluateRound } from "./rules";
 
 // Test fixtures based on PRACTICE_EVENTS[0] (Moon Landing)
 const MOON_LANDING_EVENT = {

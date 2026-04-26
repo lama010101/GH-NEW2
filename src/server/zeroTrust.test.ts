@@ -10,7 +10,7 @@
  *   E. Token Mismatch — Query with wrong token, verify detection
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   verifyRowIntegrity,
   verifyWriteSet,
@@ -22,7 +22,7 @@ import {
   generateVerificationToken,
   dbPool
 } from "@/server/db";
-import { evaluateRound, haversineDistanceKm } from "@/core/rules";
+import { evaluateRound } from "@/core/rules";
 import { EventRecord } from "@/core/types";
 
 // Test utilities
