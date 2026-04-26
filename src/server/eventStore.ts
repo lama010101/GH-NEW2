@@ -193,9 +193,7 @@ export async function appendEvent(
   roundIndex: number | null
 ): Promise<void> {
   // STEP 1: Lock and load last event (ensures serialization)
-  console.time(`[LOCK_WAIT] ${gameId}`);
   const lastEvent = await loadLastEventWithLock(client, gameId);
-  console.timeEnd(`[LOCK_WAIT] ${gameId}`);
 
   // STEP 2: FSM validation at write time
   assertValidTransition(lastEvent?.eventType ?? null, eventType);
@@ -218,9 +216,7 @@ export async function appendEvent(
   }
 
   // STEP 5: Insert the validated event
-  console.time(`[EVENT_INSERT] ${gameId}`);
   await insertEvent(client, gameId, roundIndex, eventType, payload);
-  console.timeEnd(`[EVENT_INSERT] ${gameId}`);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
