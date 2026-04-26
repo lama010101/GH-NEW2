@@ -74,6 +74,12 @@ export default function CompeteGamePage() {
   const wsRef = useRef<CompeteWebSocket | null>(null);
   const displayNameRef = useRef<string>("");
 
+  // Auto-submit on timer expiry using current input values.
+  // Refs are necessary because useEffect closures cannot safely read state that changes frequently.
+  const guessYearRef = useRef<number | null>(null);
+  const guessLatRef = useRef<number | null>(null);
+  const guessLngRef = useRef<number | null>(null);
+
   // Read display name from sessionStorage (cosmetic only — identity is Supabase)
   useEffect(() => {
     if (!gameId) return;
@@ -83,6 +89,11 @@ export default function CompeteGamePage() {
       // ignore
     }
   }, [gameId]);
+
+  // Sync refs with state to avoid stale closure issues in auto-submit effect.
+  useEffect(() => { guessYearRef.current = guessYear; }, [guessYear]);
+  useEffect(() => { guessLatRef.current = guessLat; }, [guessLat]);
+  useEffect(() => { guessLngRef.current = guessLng; }, [guessLng]);
 
   // No REST fallback — WS is the ONLY state source.
   // If WS fails, the onError callback surfaces the error to the user.
@@ -157,6 +168,27 @@ export default function CompeteGamePage() {
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [snapshot]);
+
+  // Auto-submit on timer expiry using current input values.
+  // Fires once when timeRemaining hits 0 and player has not already submitted.
+  useEffect(() => {
+    if (timeRemaining !== 0) return;
+    if (!snapshot || snapshot.status !== "ROUND_ACTIVE") return;
+    if (localSubmitted) return;
+    if (!wsRef.current || !playerId) return;
+
+    const currentRoundIndex = snapshot.currentRoundIndex;
+
+    // Auto-submit with whatever values the player has entered (null is valid)
+    setLocalSubmitted(true);
+    setBusy(true);
+    wsRef.current.submitGuess(
+      currentRoundIndex,
+      guessYearRef.current,
+      guessLatRef.current,
+      guessLngRef.current
+    );
+  }, [timeRemaining, snapshot, localSubmitted, playerId]);
 
   // When the snapshot enters ROUND_COMPLETE or SESSION_COMPLETE,
   // fetch round results from the DB. Clear on any other phase.
