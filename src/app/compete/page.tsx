@@ -16,6 +16,7 @@ export default function CompeteEntryPage() {
   const [mode, setMode] = useState<Mode>("create");
   const [displayName, setDisplayName] = useState("");
   const [gameId, setGameId] = useState("");
+  const [roundTimerSec, setRoundTimerSec] = useState<number>(120);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +45,7 @@ export default function CompeteEntryPage() {
         displayName: displayName.trim(),
         mode: "sync",
         totalRounds: 5,
+        roundTimerSec,
         playerId
       });
       redirectWithIdentity(snapshot.gameId, displayName.trim());
@@ -132,6 +134,28 @@ export default function CompeteEntryPage() {
                   disabled={blocked || loading}
                   placeholder="Your name"
                 />
+              </div>
+              <div className="field">
+                <label htmlFor="timer-slider">
+                  Round Timer: {roundTimerSec >= 60
+                    ? `${Math.floor(roundTimerSec / 60)}m ${roundTimerSec % 60 > 0 ? `${roundTimerSec % 60}s` : ""}`.trim()
+                    : `${roundTimerSec}s`}
+                </label>
+                <input
+                  id="timer-slider"
+                  type="range"
+                  min={5}
+                  max={300}
+                  step={5}
+                  value={roundTimerSec}
+                  onChange={(e) => setRoundTimerSec(Number(e.target.value))}
+                  disabled={blocked || loading}
+                  style={{ width: "100%" }}
+                />
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--color-text-secondary)" }}>
+                  <span>5s</span>
+                  <span>5m</span>
+                </div>
               </div>
               <button
                 type="button"

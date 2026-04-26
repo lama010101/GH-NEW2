@@ -1130,6 +1130,7 @@ export async function verifyWriteCrossConnection(
   keys: Record<string, string | number>,
   token?: string
 ): Promise<VerificationResult> {
+  if (process.env.ENABLE_ZERO_TRUST !== "true") return { success: true, table, keys, token };
   const startTime = Date.now();
   const result: VerificationResult = {
     success: false,

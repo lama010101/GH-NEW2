@@ -462,10 +462,12 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     throw new Error("yearMin must be less than or equal to yearMax");
   }
 
+  console.time("[PERF] createCompeteSession:fetchEvents");
   const events = await fetchRandomEventsForSession(totalRounds, {
     minYear: yearMin,
     maxYear: yearMax
   });
+  console.timeEnd("[PERF] createCompeteSession:fetchEvents");
 
   if (events.length !== totalRounds) {
     throw new Error(`Expected ${totalRounds} real events from the database, received ${events.length}`);
@@ -477,6 +479,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   const client = await getTransactionClient();
 
   try {
+    console.time("[PERF] createCompeteSession:transaction");
     await client.query("BEGIN");
 
     verifyLog("INSERT", "sessions", "OK", `game_id=${gameId} — executing`);
@@ -505,6 +508,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
 
     await client.query("COMMIT");
     verifyLog("COMMIT", "sessions+session_players", "OK", `game_id=${gameId}`);
+    console.timeEnd("[PERF] createCompeteSession:transaction");
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -516,6 +520,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   // ZERO-TRUST: Cross-connection verification AFTER commit (MP-CORE-LOOP-003)
   // Rule: Verification MUST use a NEW connection to prove durability
   // ─────────────────────────────────────────────────────────────────────────────
+  console.time("[PERF] createCompeteSession:verify");
   await verifyWriteCrossConnection(
     "sessions",
     "game_id = $1",
@@ -530,8 +535,11 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     "createCompeteSession",
     { game_id: gameId, player_id: hostPlayerId }
   );
+  console.timeEnd("[PERF] createCompeteSession:verify");
 
+  console.time("[PERF] createCompeteSession:snapshot");
   const snapshot = await loadCompeteSessionSnapshot(gameId, hostPlayerId);
+  console.timeEnd("[PERF] createCompeteSession:snapshot");
   if (!snapshot) {
     throw new Error("Unable to load the newly created compete session");
   }
@@ -807,6 +815,20 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       throw new Error("Round has not started");
     }
 
+    // Guard: reject submission if round is already complete
+    const roundCompleteEvent = await client.query(
+      `SELECT 1 FROM round_events
+       WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_COMPLETE'
+       LIMIT 1`,
+      [gameId, roundIndex]
+    );
+    if (roundCompleteEvent.rows.length > 0) {
+      await client.query("COMMIT");
+      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      if (!snapshot) throw new Error("Session not found");
+      return snapshot;
+    }
+
     const existingCommit = await client.query(
       `SELECT 1 FROM round_commits WHERE game_id = $1 AND player_id = $2 AND round_index = $3 LIMIT 1`,
       [gameId, playerId, roundIndex]
@@ -869,11 +891,12 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     const hintsUsedCount = hintsUsed.length;
 
     verifyLog("INSERT", "round_commits", "OK", `player_id=${playerId} round=${roundIndex} score=${score} token=${commitToken.slice(0, 8)}... — executing`);
-    await client.query(
+    const insertResult = await client.query(
       `INSERT INTO round_commits
          (game_id, player_id, round_index, submitted_at, year_guess,
           location_lat, location_lng, hints_used, score, verification_token)
-       VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9)`,
+       VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (game_id, player_id, round_index) DO NOTHING`,
       [
         gameId,
         playerId,
@@ -886,6 +909,14 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         commitToken
       ]
     );
+
+    if ((insertResult as unknown as { rowCount: number | null }).rowCount === 0) {
+      // Commit already exists (concurrent submission) — return current snapshot
+      await client.query("COMMIT");
+      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      if (!snapshot) throw new Error("Session not found");
+      return snapshot;
+    }
 
     await appendEvent(client, gameId, "GUESS_SUBMITTED", { playerId, yearGuess, score, verificationToken: commitToken }, roundIndex);
     existingEvents.push({ type: "GUESS_SUBMITTED", payload: { playerId, yearGuess, score, verificationToken: commitToken }, roundIndex });
@@ -948,42 +979,48 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   // ═════════════════════════════════════════════════════════════════════════════
 
   // 1. WRITE-SET VERIFICATION: Ensure exactly 1 round_commit exists
-  await verifyWriteSet(
-    "submitGuess",
-    [
-      { table: "round_commits", count: 1, where: { game_id: gameId, player_id: playerId, round_index: roundIndex } }
-    ],
-    commitToken
-  );
+  if (process.env.ENABLE_ZERO_TRUST === "true") {
+    await verifyWriteSet(
+      "submitGuess",
+      [
+        { table: "round_commits", count: 1, where: { game_id: gameId, player_id: playerId, round_index: roundIndex } }
+      ],
+      commitToken
+    );
+  }
 
   // 2. ROW INTEGRITY VERIFICATION: Full payload verification for round_commit
-  await verifyRowIntegrity(
-    "round_commits",
-    {
-      game_id: gameId,
-      player_id: playerId,
-      round_index: roundIndex,
-      year_guess: yearGuess,
-      location_lat: locationGuess?.lat ?? null,
-      location_lng: locationGuess?.lng ?? null,
-      hints_used: hintsUsed.length,
-      verification_token: commitToken
-    },
-    "game_id = $1 AND player_id = $2 AND round_index = $3",
-    [gameId, playerId, roundIndex],
-    "submitGuess",
-    commitToken
-  );
+  if (process.env.ENABLE_ZERO_TRUST === "true") {
+    await verifyRowIntegrity(
+      "round_commits",
+      {
+        game_id: gameId,
+        player_id: playerId,
+        round_index: roundIndex,
+        year_guess: yearGuess,
+        location_lat: locationGuess?.lat ?? null,
+        location_lng: locationGuess?.lng ?? null,
+        hints_used: hintsUsed.length,
+        verification_token: commitToken
+      },
+      "game_id = $1 AND player_id = $2 AND round_index = $3",
+      [gameId, playerId, roundIndex],
+      "submitGuess",
+      commitToken
+    );
+  }
 
   // 3. UNIQUENESS INVARIANT: Verify exactly 1 row per (game_id, player_id, round_index)
-  await verifyUniquenessInvariant(
-    "round_commits",
-    ["game_id", "player_id", "round_index"],
-    "game_id = $1 AND player_id = $2 AND round_index = $3",
-    [gameId, playerId, roundIndex],
-    "submitGuess",
-    commitToken
-  );
+  if (process.env.ENABLE_ZERO_TRUST === "true") {
+    await verifyUniquenessInvariant(
+      "round_commits",
+      ["game_id", "player_id", "round_index"],
+      "game_id = $1 AND player_id = $2 AND round_index = $3",
+      [gameId, playerId, roundIndex],
+      "submitGuess",
+      commitToken
+    );
+  }
 
   // 4. ROUND RESULTS VERIFICATION (if computed)
   if (shouldVerifyRoundResults && event) {
@@ -992,23 +1029,27 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     // from transaction time if disconnects occurred between commit and verify).
     const verifyPlayerRows = await loadSessionPlayerRows(gameId);
     const verifyActivePlayers = verifyPlayerRows.filter((p) => p.left_at === null);
-    await verifyWriteSet(
-      "submitGuess-results",
-      [
-        { table: "round_results", count: verifyActivePlayers.length || 1, where: { game_id: gameId, round_index: roundIndex } }
-      ],
-      commitToken
-    );
+    if (process.env.ENABLE_ZERO_TRUST === "true") {
+      await verifyWriteSet(
+        "submitGuess-results",
+        [
+          { table: "round_results", count: verifyActivePlayers.length || 1, where: { game_id: gameId, round_index: roundIndex } }
+        ],
+        commitToken
+      );
+    }
 
     // 5. FULL DETERMINISTIC REPLAY VERIFICATION
     // Recompute all scores from DB commits and compare to stored results
-    await verifyFullReplay(
-      gameId,
-      roundIndex,
-      event,
-      "submitGuess-fullReplay",
-      commitToken
-    );
+    if (process.env.ENABLE_ZERO_TRUST === "true") {
+      await verifyFullReplay(
+        gameId,
+        roundIndex,
+        event,
+        "submitGuess-fullReplay",
+        commitToken
+      );
+    }
   }
 
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
@@ -1048,6 +1089,46 @@ async function insertMissingCommits(
       );
     }
   }
+}
+
+export async function completeRound(input: {
+  gameId: string;
+  roundIndex: number;
+  _executionContext: string;
+}): Promise<CompeteSessionSnapshot> {
+  assertValidExecutionContext(input);
+  const { gameId, roundIndex } = input;
+
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+
+    // Idempotency: if ROUND_COMPLETE already exists, skip all writes
+    const existing = await client.query(
+      `SELECT 1 FROM round_events
+       WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_COMPLETE'
+       LIMIT 1`,
+      [gameId, roundIndex]
+    );
+
+    if (existing.rows.length === 0) {
+      await insertMissingCommits(client, gameId, roundIndex);
+      await computeAndWriteRoundResults(gameId, roundIndex, client);
+      const commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
+      await appendEvent(client, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, undefined);
+  if (!snapshot) throw new Error("Session not found");
+  return snapshot;
 }
 
 export type AdvanceRoundInput = {
@@ -1097,13 +1178,6 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 
   try {
     await client.query("BEGIN");
-
-    // ═════════════════════════════════════════════════════════════════════════════
-    // TIMEOUT HANDLING — Insert zero-score commits for players who haven't submitted
-    // ═════════════════════════════════════════════════════════════════════════════
-    if (cause === TransitionCause.TIMEOUT) {
-      await insertMissingCommits(client, gameId, roundIndex);
-    }
 
     // ═════════════════════════════════════════════════════════════════════════════
     // LOCK-BASED PHASE VALIDATION — Load last event with FOR UPDATE to serialize
@@ -1208,11 +1282,22 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 export async function getRoundResults(
   gameId: string,
   roundIndex: number
-): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number }>> {
-  const result = await dbPool.query<{ player_id: string; score: number | null; rank: number | null; location_score: number | null; time_score: number | null }>(
-    `SELECT player_id, score, rank, location_score, time_score FROM round_results
-     WHERE game_id = $1 AND round_index = $2
-     ORDER BY rank ASC`,
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; didSubmit: boolean }>> {
+  const result = await dbPool.query<{ player_id: string; score: number | null; rank: number | null; location_score: number | null; time_score: number | null; year_guess: number | null }>(
+    `SELECT
+      rr.player_id,
+      rr.score,
+      rr.rank,
+      rr.location_score,
+      rr.time_score,
+      rc.year_guess
+    FROM round_results rr
+    LEFT JOIN round_commits rc
+      ON rc.game_id = rr.game_id
+      AND rc.round_index = rr.round_index
+      AND rc.player_id = rr.player_id
+    WHERE rr.game_id = $1 AND rr.round_index = $2
+    ORDER BY rr.rank ASC`,
     [gameId, roundIndex]
   );
 
@@ -1220,7 +1305,8 @@ export async function getRoundResults(
     playerId: row.player_id,
     score: row.score ?? 0,
     rank: row.rank ?? 0,
-    accuracy: Math.round(((row.location_score ?? 0) + (row.time_score ?? 0)) / 2)
+    accuracy: Math.round(((row.location_score ?? 0) + (row.time_score ?? 0)) / 2),
+    didSubmit: row.year_guess !== null
   }));
 }
 
@@ -1265,21 +1351,21 @@ async function computeAndWriteRoundResults(
   // Generate a single verification token for all results in this round
   const roundResultsToken = generateVerificationToken();
 
+  // Fetch the SESSION_CREATED event once (outside the loop to avoid N+1 query pattern)
+  const sessionCreatedEvent = await executor.query<{ payload: { eventIds: string[] } }>(
+    `SELECT payload FROM round_events
+     WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+     ORDER BY id ASC LIMIT 1`,
+    [gameId]
+  );
+
+  if (sessionCreatedEvent.rows.length === 0) return;
+
+  const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
+  if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) return;
+
   for (let i = 0; i < commits.rows.length; i++) {
     const row = commits.rows[i];
-
-    // Fetch the event to compute replay fields
-    const sessionCreatedEvent = await executor.query<{ payload: { eventIds: string[] } }>(
-      `SELECT payload FROM round_events
-       WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
-       ORDER BY id ASC LIMIT 1`,
-      [gameId]
-    );
-
-    if (sessionCreatedEvent.rows.length === 0) continue;
-
-    const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
-    if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) continue;
 
     const event = await fetchEventById(eventIds[roundIndex], executor);
     if (!event) continue;

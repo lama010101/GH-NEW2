@@ -34,6 +34,7 @@ type RoundResult = {
   score: number;
   rank: number;
   accuracy: number;
+  didSubmit: boolean;
 };
 
 function shortId(id: string): string {
@@ -67,6 +68,7 @@ export default function CompeteGamePage() {
   const [guessLng, setGuessLng] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [localSubmitted, setLocalSubmitted] = useState(false);
 
   const { playerId, isReady, isLoading: identityLoading, error: identityError } = useIdentity();
   const wsRef = useRef<CompeteWebSocket | null>(null);
@@ -107,6 +109,18 @@ export default function CompeteGamePage() {
         if (isCompeteSessionSnapshot(rawSnapshot)) {
           console.log("[CompeteGamePage] State update received, players:", rawSnapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
           setSnapshot(rawSnapshot);
+
+          // If the snapshot includes pre-fetched results (from /complete route), apply them directly
+          if (
+            isCompeteSessionSnapshot(rawSnapshot) &&
+            (rawSnapshot.status === "ROUND_COMPLETE" || rawSnapshot.status === "SESSION_COMPLETE") &&
+            Array.isArray((rawSnapshot as unknown as { results?: unknown }).results)
+          ) {
+            const results = (rawSnapshot as unknown as { results: RoundResult[] }).results;
+            const ranked = [...results].sort((a, b) => a.rank - b.rank);
+            setRoundResults(ranked);
+          }
+
           setBusy(false); // Action completed — clear busy flag
         } else {
           console.error("[CompeteGamePage] Invalid STATE_UPDATE payload from DO:", rawSnapshot);
@@ -157,7 +171,7 @@ export default function CompeteGamePage() {
         .then((results) => {
           if (cancelled) return;
           const ranked = [...results].sort((a, b) => a.rank - b.rank);
-          setRoundResults(ranked);
+          setRoundResults(ranked as RoundResult[]);
         })
         .catch(() => {
           if (!cancelled) setRoundResults(null);
@@ -175,6 +189,7 @@ export default function CompeteGamePage() {
     setGuessYear(null);
     setGuessLat(null);
     setGuessLng(null);
+    setLocalSubmitted(false);
   }, [snapshot?.currentRoundIndex, snapshot?.status]);
 
   const viewer = useMemo(() => {
@@ -206,6 +221,8 @@ export default function CompeteGamePage() {
   const handleSubmitGuess = useCallback(() => {
     if (!snapshot || !playerId || !wsRef.current) return;
     if (guessYear === null || guessLat === null || guessLng === null) return;
+    if (localSubmitted) return;       // synchronous guard — no re-render needed
+    setLocalSubmitted(true);
     setBusy(true);
     setError(null);
     // Client → DO → DB: send action signal via WS
@@ -215,7 +232,7 @@ export default function CompeteGamePage() {
       guessLat,
       guessLng
     );
-  }, [snapshot, playerId, guessYear, guessLat, guessLng]);
+  }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted]);
 
   const handleAdvanceRound = useCallback(() => {
     if (!snapshot || !playerId || !wsRef.current) return;
@@ -321,6 +338,14 @@ export default function CompeteGamePage() {
                 ))
               )}
             </div>
+            <p style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
+              Round timer:{" "}
+              <strong>
+                {snapshot.config.roundTimerSec >= 60
+                  ? `${Math.floor(snapshot.config.roundTimerSec / 60)}m${snapshot.config.roundTimerSec % 60 > 0 ? ` ${snapshot.config.roundTimerSec % 60}s` : ""}` 
+                  : `${snapshot.config.roundTimerSec}s`}
+              </strong>
+            </p>
             <div className="row">
               <button
                 type="button"
@@ -345,13 +370,13 @@ export default function CompeteGamePage() {
         {snapshot.status === "ROUND_ACTIVE" ? (
           <section className="card stack">
             <h2>Round {snapshot.currentRoundIndex + 1}</h2>
+            <p>
+              Time remaining: <strong>{timeRemaining === null ? "—" : `${Math.max(0, Math.floor(timeRemaining))}s`}</strong>
+              <span style={{ fontSize: 12, color: "var(--color-text-secondary)", marginLeft: 6 }}>
+                / {snapshot.config.roundTimerSec}s
+              </span>
+            </p>
             <div className="row">
-              <div className="metric">
-                <span className="small">Time remaining</span>
-                <strong>
-                  {timeRemaining === null ? "—" : `${Math.max(0, Math.floor(timeRemaining))}s`}
-                </strong>
-              </div>
               <div className="metric">
                 <span className="small">Submitted</span>
                 <strong>
@@ -413,6 +438,7 @@ export default function CompeteGamePage() {
                 disabled={
                   busy ||
                   hasSubmitted ||
+                  localSubmitted ||
                   guessYear === null ||
                   guessLat === null ||
                   guessLng === null
@@ -442,9 +468,25 @@ export default function CompeteGamePage() {
                     <tr key={r.playerId}>
                       <td style={{ padding: "6px 0" }}>
                         {playerLabel(snapshot.players, r.playerId)}
+                        {!r.didSubmit && (
+                          <span style={{
+                            marginLeft: 8,
+                            fontSize: 11,
+                            color: "var(--color-text-secondary)",
+                            background: "var(--color-background-secondary)",
+                            borderRadius: 4,
+                            padding: "1px 6px"
+                          }}>
+                            No guess
+                          </span>
+                        )}
                       </td>
-                      <td style={{ textAlign: "right", padding: "6px 0" }}>{r.score}</td>
-                      <td style={{ textAlign: "right", padding: "6px 0" }}>{r.rank}</td>
+                      <td style={{ textAlign: "right", padding: "6px 0" }}>
+                        {r.didSubmit ? r.score : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "6px 0" }}>
+                        {r.didSubmit ? r.rank : "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -481,9 +523,25 @@ export default function CompeteGamePage() {
                     <tr key={r.playerId}>
                       <td style={{ padding: "6px 0" }}>
                         {playerLabel(snapshot.players, r.playerId)}
+                        {!r.didSubmit && (
+                          <span style={{
+                            marginLeft: 8,
+                            fontSize: 11,
+                            color: "var(--color-text-secondary)",
+                            background: "var(--color-background-secondary)",
+                            borderRadius: 4,
+                            padding: "1px 6px"
+                          }}>
+                            No guess
+                          </span>
+                        )}
                       </td>
-                      <td style={{ textAlign: "right", padding: "6px 0" }}>{r.score}</td>
-                      <td style={{ textAlign: "right", padding: "6px 0" }}>{r.rank}</td>
+                      <td style={{ textAlign: "right", padding: "6px 0" }}>
+                        {r.didSubmit ? r.score : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "6px 0" }}>
+                        {r.didSubmit ? r.rank : "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
