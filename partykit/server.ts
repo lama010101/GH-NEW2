@@ -113,29 +113,31 @@ async function buildSnapshotFromDB(
   supabaseKey: string,
   gameId: string
 ): Promise<unknown> {
-  // Load session
-  const sessions = await supabaseFrom(supabaseUrl, supabaseKey, "sessions", "GET", {
-    query: `game_id=eq.${encodeURIComponent(gameId)}&limit=1`
-  }) as Array<Record<string, unknown>>;
+  // Load all data in parallel
+  const [sessions, players, events, commits] = await Promise.all([
+    supabaseFrom(supabaseUrl, supabaseKey, "sessions", "GET", {
+      query: `game_id=eq.${encodeURIComponent(gameId)}&limit=1`
+    }),
+    supabaseFrom(supabaseUrl, supabaseKey, "session_players", "GET", {
+      query: `game_id=eq.${encodeURIComponent(gameId)}&order=joined_at.asc,player_id.asc`
+    }),
+    supabaseFrom(supabaseUrl, supabaseKey, "round_events", "GET", {
+      query: `game_id=eq.${encodeURIComponent(gameId)}&order=created_at.asc,id.asc`
+    }),
+    supabaseFrom(supabaseUrl, supabaseKey, "round_commits", "GET", {
+      query: `game_id=eq.${encodeURIComponent(gameId)}&order=round_index.asc,submitted_at.asc,player_id.asc`
+    })
+  ]) as [
+    Array<Record<string, unknown>>,
+    Array<Record<string, unknown>>,
+    Array<Record<string, unknown>>,
+    Array<Record<string, unknown>>
+  ];
+
   if (!sessions || sessions.length === 0) {
     throw new Error(`Session not found: ${gameId}`);
   }
   const session = sessions[0];
-
-  // Load players
-  const players = await supabaseFrom(supabaseUrl, supabaseKey, "session_players", "GET", {
-    query: `game_id=eq.${encodeURIComponent(gameId)}&order=joined_at.asc,player_id.asc`
-  }) as Array<Record<string, unknown>>;
-
-  // Load round_events (phase authority)
-  const events = await supabaseFrom(supabaseUrl, supabaseKey, "round_events", "GET", {
-    query: `game_id=eq.${encodeURIComponent(gameId)}&order=created_at.asc,id.asc`
-  }) as Array<Record<string, unknown>>;
-
-  // Load round_commits for current round
-  const commits = await supabaseFrom(supabaseUrl, supabaseKey, "round_commits", "GET", {
-    query: `game_id=eq.${encodeURIComponent(gameId)}&order=round_index.asc,submitted_at.asc,player_id.asc`
-  }) as Array<Record<string, unknown>>;
 
   // Derive phase from events (mirrors deriveStateFromEventStream logic)
   const lastEvent = events.length > 0 ? events[events.length - 1] : null;
@@ -488,8 +490,8 @@ export default class GameServer {
         }
       }
 
-      // Step 2: Wait 5 seconds so clients can display the results screen
-      await new Promise<void>((resolve) => setTimeout(resolve, 5000));
+      // Step 2: Wait 15 seconds so clients can display the results screen
+      await new Promise<void>((resolve) => setTimeout(resolve, 15000));
 
       // Step 3: Advance to next round (or SESSION_COMPLETE) — cause=TIMEOUT
       try {
@@ -792,6 +794,55 @@ export default class GameServer {
                 payload: { playerId: data.playerId, yearGuess: data.year }
               }
             });
+
+            // Check if all active players have now submitted
+            const [allPlayersRows, allCommitsRows] = await Promise.all([
+              supabaseFrom(sbUrl, sbKey, "session_players", "GET", {
+                query: `game_id=eq.${encodeURIComponent(gameId)}&left_at=is.null`
+              }),
+              supabaseFrom(sbUrl, sbKey, "round_commits", "GET", {
+                query: `game_id=eq.${encodeURIComponent(gameId)}&round_index=eq.${data.roundIndex}`
+              })
+            ]) as [Array<Record<string, unknown>>, Array<Record<string, unknown>>];
+
+            const allSubmitted = allPlayersRows.length > 0 &&
+              allCommitsRows.length >= allPlayersRows.length;
+
+            if (allSubmitted) {
+              const existingComplete = await supabaseFrom(sbUrl, sbKey, "round_events", "GET", {
+                query: `game_id=eq.${encodeURIComponent(gameId)}&round_index=eq.${data.roundIndex}&event_type=eq.ROUND_COMPLETE&limit=1`
+              }) as Array<Record<string, unknown>>;
+
+              if (existingComplete.length === 0) {
+                // Write round_results ranked by score descending
+                const commitsByScore = [...allCommitsRows].sort(
+                  (a, b) => ((b.score as number) ?? 0) - ((a.score as number) ?? 0)
+                );
+                for (let i = 0; i < commitsByScore.length; i++) {
+                  const commit = commitsByScore[i];
+                  await supabaseFrom(sbUrl, sbKey, "round_results", "POST", {
+                    prefer: "resolution=ignore-duplicates",
+                    body: {
+                      game_id: gameId,
+                      round_index: data.roundIndex,
+                      player_id: commit.player_id,
+                      score: commit.score ?? 0,
+                      rank: i + 1
+                    }
+                  });
+                }
+                // Append ROUND_COMPLETE event
+                await supabaseFrom(sbUrl, sbKey, "round_events", "POST", {
+                  body: {
+                    game_id: gameId,
+                    round_index: data.roundIndex,
+                    event_type: "ROUND_COMPLETE",
+                    payload: { commitCount: allCommitsRows.length }
+                  }
+                });
+              }
+            }
+
             const snapshot = await buildSnapshotFromDB(sbUrl, sbKey, gameId);
             this.applySnapshotAndBroadcast(snapshot);
           } finally {
