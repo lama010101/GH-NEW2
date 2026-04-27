@@ -54,6 +54,7 @@ async function apiFetch(path: string, options?: RequestInit): Promise<unknown> {
     signal: AbortSignal.timeout(30_000),
     headers: {
       "Content-Type": "application/json",
+      "x-partykit-secret": process.env.PARTYKIT_SECRET || "",
       ...options?.headers
     }
   });
