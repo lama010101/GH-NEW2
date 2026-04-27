@@ -222,7 +222,7 @@ export default function CompeteGamePage() {
     setGuessLat(null);
     setGuessLng(null);
     setLocalSubmitted(false);
-  }, [snapshot?.currentRoundIndex, snapshot?.status]);
+  }, [snapshot?.currentRoundIndex]);
 
   const viewer = useMemo(() => {
     if (!snapshot || !playerId) return null;
