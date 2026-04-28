@@ -4,5 +4,8 @@
   "compatibilityDate": "2024-04-01",
   "parties": {
     "lobby": "partykit/server.ts"
+  },
+  "vars": {
+    "NEXTJS_BASE_URL": "http://localhost:3000"
   }
 }

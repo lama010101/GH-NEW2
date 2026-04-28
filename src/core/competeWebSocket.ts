@@ -95,9 +95,26 @@ export class CompeteWebSocket {
       case "STATE_UPDATE":
         this.callbacks.onStateUpdate?.(data.snapshot);
         break;
-      case "ERROR":
-        this.callbacks.onError?.(data.message);
+      case "ERROR": {
+        const msg = data.message ?? "";
+        const isRecoverable =
+          msg.toLowerCase().includes("session") ||
+          msg.toLowerCase().includes("failed to load") ||
+          msg.toLowerCase().includes("snapshot");
+        if (isRecoverable) {
+          console.warn("[CompeteWebSocket] Recoverable server error, retrying:", msg);
+          setTimeout(() => {
+            if (this.ws) {
+              this.ws.close();
+              this.ws = null;
+            }
+            this.attemptReconnect();
+          }, 2000);
+        } else {
+          this.callbacks.onError?.(msg);
+        }
         break;
+      }
     }
   }
 
