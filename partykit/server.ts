@@ -67,7 +67,7 @@ export type ServerMessage =
   | { type: "TOGGLE_READY"; playerId: string; ready: boolean }
   | { type: "START_GAME"; playerId: string }
   | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: number }
-  | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number };
+  | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number; cause?: string };
 
 // Messages sent TO clients
 export type ClientMessage =

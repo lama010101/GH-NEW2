@@ -1,0 +1,1 @@
+"use strict";exports.id=215,exports.ids=[215],exports.modules={4215:(e,t,r)=>{r.r(t),r.d(t,{GameClient:()=>s});let s=(0,r(8570).createProxy)(String.raw`D:\GH-NEW\src\app\game-client.tsx#GameClient`)}};
