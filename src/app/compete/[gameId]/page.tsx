@@ -22,7 +22,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  getRoundResultsRequest,
   isCompeteSessionSnapshot
 } from "@/core/competeApi";
 import { CompeteWebSocket } from "@/core/competeWebSocket";
@@ -134,8 +133,7 @@ export default function CompeteGamePage() {
 
           setBusy(false); // Action completed — clear busy flag
         } else {
-          console.error("[CompeteGamePage] Invalid STATE_UPDATE payload from DO:", rawSnapshot);
-          setError("Received invalid state from server");
+          console.warn("[CompeteGamePage] Invalid STATE_UPDATE payload — ignoring, waiting for next update:", rawSnapshot);
           setBusy(false);
         }
       },
@@ -190,31 +188,6 @@ export default function CompeteGamePage() {
     );
   }, [timeRemaining, snapshot, localSubmitted, playerId]);
 
-  // When the snapshot enters ROUND_COMPLETE or SESSION_COMPLETE,
-  // fetch round results from the DB. Clear on any other phase.
-  useEffect(() => {
-    if (!snapshot) {
-      setRoundResults(null);
-      return;
-    }
-    if (snapshot.status === "ROUND_COMPLETE" || snapshot.status === "SESSION_COMPLETE") {
-      let cancelled = false;
-      getRoundResultsRequest(gameId, snapshot.currentRoundIndex)
-        .then((results) => {
-          if (cancelled) return;
-          const ranked = [...results].sort((a, b) => a.rank - b.rank);
-          setRoundResults(ranked as RoundResult[]);
-        })
-        .catch(() => {
-          if (!cancelled) setRoundResults(null);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
-    setRoundResults(null);
-  }, [snapshot, gameId]);
-
   // Reset guess inputs whenever the active round changes.
   useEffect(() => {
     if (!snapshot) return;
@@ -222,6 +195,7 @@ export default function CompeteGamePage() {
     setGuessLat(null);
     setGuessLng(null);
     setLocalSubmitted(false);
+    setRoundResults(null);
   }, [snapshot?.currentRoundIndex]);
 
   const viewer = useMemo(() => {
@@ -272,6 +246,7 @@ export default function CompeteGamePage() {
     setError(null);
     // Client → DO → DB: send action signal via WS
     wsRef.current.advanceRound(snapshot.currentRoundIndex);
+    setTimeout(() => setBusy(false), 5000);
   }, [snapshot, playerId]);
 
   if (!gameId) return null;

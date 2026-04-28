@@ -26,7 +26,7 @@
 //
 //   [SNAPSHOT-UNIQUE] ONE snapshot builder in the entire system:
 //     API endpoints → loadCompeteSessionSnapshot() → getGameState()
-//     DO cold start → buildSnapshotFromDB() → loadCompeteSessionSnapshot() → getGameState()
+//     DO cold start → GET /api/compete/:gameId → loadCompeteSessionSnapshot() → getGameState()
 //     NO other snapshot construction allowed. No parallel logic.
 //
 //   [TIMER-DETERMINISM] phaseEndsAt = phaseStartAt + duration
@@ -45,174 +45,6 @@
 // ============================================================================
 
 import { TransitionCause } from "../src/core/transitionCause";
-
-function supabaseHeaders(supabaseKey: string): Record<string, string> {
-  return {
-    apikey: supabaseKey,
-    Authorization: `Bearer ${supabaseKey}`,
-    "Content-Type": "application/json",
-    Prefer: "return=representation"
-  };
-}
-
-async function supabaseFrom(
-  supabaseUrl: string,
-  supabaseKey: string,
-  table: string,
-  method: "GET" | "POST" | "PATCH" | "DELETE",
-  options: {
-    query?: string;
-    body?: unknown;
-    prefer?: string;
-  } = {}
-): Promise<unknown> {
-  const url = `${supabaseUrl}/rest/v1/${table}${options.query ? `?${options.query}` : ""}`;
-  const headers: Record<string, string> = {
-    ...supabaseHeaders(supabaseKey),
-    ...(options.prefer ? { Prefer: options.prefer } : {})
-  };
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    signal: AbortSignal.timeout(10_000)
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Supabase ${method} ${table} failed: ${res.status} ${text}`);
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
-async function supabaseRpc(
-  supabaseUrl: string,
-  supabaseKey: string,
-  fnName: string,
-  params: unknown
-): Promise<unknown> {
-  const url = `${supabaseUrl}/rest/v1/rpc/${fnName}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: supabaseHeaders(supabaseKey),
-    body: JSON.stringify(params),
-    signal: AbortSignal.timeout(10_000)
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Supabase RPC ${fnName} failed: ${res.status} ${text}`);
-  }
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
-}
-
-// Build snapshot directly from Supabase REST (no Vercel/Next.js loopback).
-// Returns a shape compatible with CompeteSessionSnapshot consumers.
-async function buildSnapshotFromDB(
-  supabaseUrl: string,
-  supabaseKey: string,
-  gameId: string
-): Promise<unknown> {
-  // Load all data in parallel
-  const [sessions, players, events, commits] = await Promise.all([
-    supabaseFrom(supabaseUrl, supabaseKey, "sessions", "GET", {
-      query: `game_id=eq.${encodeURIComponent(gameId)}&limit=1`
-    }),
-    supabaseFrom(supabaseUrl, supabaseKey, "session_players", "GET", {
-      query: `game_id=eq.${encodeURIComponent(gameId)}&order=joined_at.asc,player_id.asc`
-    }),
-    supabaseFrom(supabaseUrl, supabaseKey, "round_events", "GET", {
-      query: `game_id=eq.${encodeURIComponent(gameId)}&order=created_at.asc,id.asc`
-    }),
-    supabaseFrom(supabaseUrl, supabaseKey, "round_commits", "GET", {
-      query: `game_id=eq.${encodeURIComponent(gameId)}&order=round_index.asc,submitted_at.asc,player_id.asc`
-    })
-  ]) as [
-    Array<Record<string, unknown>>,
-    Array<Record<string, unknown>>,
-    Array<Record<string, unknown>>,
-    Array<Record<string, unknown>>
-  ];
-
-  if (!sessions || sessions.length === 0) {
-    throw new Error(`Session not found: ${gameId}`);
-  }
-  const session = sessions[0];
-
-  // Derive phase from events (mirrors deriveStateFromEventStream logic)
-  const lastEvent = events.length > 0 ? events[events.length - 1] : null;
-  const lastEventType = lastEvent ? (lastEvent.event_type as string) : null;
-  const currentRoundIndex = (() => {
-    for (let i = events.length - 1; i >= 0; i--) {
-      const e = events[i];
-      if (e.event_type === "ROUND_STARTED" || e.event_type === "ROUND_COMPLETE" || e.event_type === "GUESS_SUBMITTED") {
-        return (e.round_index as number) ?? 0;
-      }
-    }
-    return 0;
-  })();
-
-  let status = "LOBBY";
-  switch (lastEventType) {
-    case "SESSION_CREATED": status = "LOBBY"; break;
-    case "ROUND_STARTED":
-    case "GUESS_SUBMITTED": status = "ROUND_ACTIVE"; break;
-    case "ROUND_COMPLETE": status = "ROUND_COMPLETE"; break;
-    case "SESSION_COMPLETE": status = "SESSION_COMPLETE"; break;
-    default: status = "LOBBY";
-  }
-
-  // Find ROUND_STARTED event for current round to get timer info
-  const roundStartedEvent = events
-    .filter(e => e.event_type === "ROUND_STARTED" && e.round_index === currentRoundIndex)
-    .pop();
-  const payload = roundStartedEvent ? (roundStartedEvent.payload as Record<string, unknown>) : null;
-  const roundEndsAt = payload ? (payload.phaseEndsAt as string) ?? null : null;
-  const roundStartsAt = payload ? (payload.startedAt as string) ?? null : null;
-
-  // Build players array
-  const submittedPlayerIds = new Set(
-    commits
-      .filter(c => c.round_index === currentRoundIndex)
-      .map(c => c.player_id as string)
-  );
-
-  const activePlayersList = players.filter(p => !p.left_at);
-  const hostPlayer = players.find(p => p.is_host && !p.left_at);
-
-  const mappedPlayers = players.map(p => ({
-    playerId: p.player_id,
-    displayName: (p.display_name as string) || (p.player_id as string).slice(0, 8),
-    joinedAt: p.joined_at,
-    leftAt: p.left_at ?? null,
-    ready: p.ready ?? false,
-    isHost: p.is_host ?? false,
-    hasSubmitted: submittedPlayerIds.has(p.player_id as string)
-  }));
-
-  return {
-    gameId,
-    status,
-    config: {
-      mode: session.mode,
-      roundTimerSec: session.round_timer_sec,
-      totalRounds: session.total_rounds,
-      yearMin: session.year_min,
-      yearMax: session.year_max,
-      hostPlayerId: hostPlayer ? hostPlayer.player_id : null,
-      sessionDeadline: session.session_deadline ?? null,
-      startedAt: null,
-      completedAt: null
-    },
-    players: mappedPlayers,
-    currentRoundIndex,
-    allPlayersReady: activePlayersList.length >= 2 && activePlayersList.every(p => p.ready),
-    roundStartsAt,
-    roundEndsAt,
-    viewerPlayerId: null,
-    timeRemaining: null
-  };
-}
 
 // Runtime state shape — mirrors CompeteSessionSnapshot for type safety.
 type RuntimeState = {
@@ -311,6 +143,13 @@ export default class GameServer {
     return { url, key };
   }
 
+  private getNextJsBaseUrl(): string {
+    const env = this.room.env as Record<string, string | undefined>;
+    const url = env.NEXTJS_BASE_URL;
+    if (!url) throw new Error("NEXTJS_BASE_URL env var is not set");
+    return url.replace(/\/$/, "");
+  }
+
   /**
    * Load snapshot from DB (cold start / reconnect only).
    * This is the ONLY path that reads from DB.
@@ -319,8 +158,14 @@ export default class GameServer {
   private async loadFromDB(): Promise<void> {
     const gameId = this.room.id;
     console.time("[PERF] loadFromDB:apiFetch");
-    const { url, key } = this.getSupabaseEnv();
-    this.snapshot = await buildSnapshotFromDB(url, key, gameId);
+    const baseUrl = this.getNextJsBaseUrl();
+    const snapUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}`;
+    const snapRes = await fetch(snapUrl);
+    if (!snapRes.ok) {
+      const text = await snapRes.text();
+      throw new Error(`[loadFromDB] snapshot API error ${snapRes.status}: ${text}`);
+    }
+    this.snapshot = await snapRes.json();
     console.timeEnd("[PERF] loadFromDB:apiFetch");
     this.snapshotLoaded = true;
     this.scheduleRoundTimer();
@@ -422,65 +267,18 @@ export default class GameServer {
     try {
       // Step 1: Complete the round (score + ROUND_COMPLETE event)
       try {
-        const { url: sbUrl, key: sbKey } = this.getSupabaseEnv();
-        // Insert missing commits for players who did not submit (score = 0)
-        const allPlayers = await supabaseFrom(sbUrl, sbKey, "session_players", "GET", {
-          query: `game_id=eq.${encodeURIComponent(gameId)}&left_at=is.null`
-        }) as Array<Record<string, unknown>>;
-        const existingCommits = await supabaseFrom(sbUrl, sbKey, "round_commits", "GET", {
-          query: `game_id=eq.${encodeURIComponent(gameId)}&round_index=eq.${roundIndex}`
-        }) as Array<Record<string, unknown>>;
-        const submitted = new Set(existingCommits.map(c => c.player_id as string));
-        for (const player of allPlayers) {
-          if (!submitted.has(player.player_id as string)) {
-            await supabaseFrom(sbUrl, sbKey, "round_commits", "POST", {
-              prefer: "resolution=ignore-duplicates",
-              body: {
-                game_id: gameId,
-                player_id: player.player_id,
-                round_index: roundIndex,
-                submitted_at: new Date().toISOString(),
-                year_guess: null,
-                location_lat: null,
-                location_lng: null,
-                hints_used: 0,
-                score: 0
-              }
-            });
-          }
+        const baseUrl = this.getNextJsBaseUrl();
+        const completeUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/complete`;
+        const completeRes = await fetch(completeUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roundIndex })
+        });
+        if (!completeRes.ok) {
+          const text = await completeRes.text();
+          throw new Error(`[triggerRoundExpiry] complete API error ${completeRes.status}: ${text}`);
         }
-        // Write round_results for all commits
-        const allCommits = await supabaseFrom(sbUrl, sbKey, "round_commits", "GET", {
-          query: `game_id=eq.${encodeURIComponent(gameId)}&round_index=eq.${roundIndex}&order=score.desc`
-        }) as Array<Record<string, unknown>>;
-        for (let i = 0; i < allCommits.length; i++) {
-          const commit = allCommits[i];
-          await supabaseFrom(sbUrl, sbKey, "round_results", "POST", {
-            prefer: "resolution=ignore-duplicates",
-            body: {
-              game_id: gameId,
-              round_index: roundIndex,
-              player_id: commit.player_id,
-              score: commit.score ?? 0,
-              rank: i + 1
-            }
-          });
-        }
-        // Append ROUND_COMPLETE event (idempotent check first)
-        const existingComplete = await supabaseFrom(sbUrl, sbKey, "round_events", "GET", {
-          query: `game_id=eq.${encodeURIComponent(gameId)}&round_index=eq.${roundIndex}&event_type=eq.ROUND_COMPLETE&limit=1`
-        }) as Array<Record<string, unknown>>;
-        if (existingComplete.length === 0) {
-          await supabaseFrom(sbUrl, sbKey, "round_events", "POST", {
-            body: {
-              game_id: gameId,
-              round_index: roundIndex,
-              event_type: "ROUND_COMPLETE",
-              payload: { commitCount: allCommits.length }
-            }
-          });
-        }
-        const completeSnapshot = await buildSnapshotFromDB(sbUrl, sbKey, gameId);
+        const completeSnapshot = await completeRes.json();
         this.applySnapshotAndBroadcast(completeSnapshot);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -495,48 +293,18 @@ export default class GameServer {
 
       // Step 3: Advance to next round (or SESSION_COMPLETE) — cause=TIMEOUT
       try {
-        const { url: sbUrl, key: sbKey } = this.getSupabaseEnv();
-        const sessionsAdv = await supabaseFrom(sbUrl, sbKey, "sessions", "GET", {
-          query: `game_id=eq.${encodeURIComponent(gameId)}&limit=1`
-        }) as Array<Record<string, unknown>>;
-        if (!sessionsAdv || sessionsAdv.length === 0) throw new Error("Session not found");
-        const sessAdv = sessionsAdv[0];
-        const nextRoundIndex = roundIndex + 1;
-
-        const sessEventsAdv = await supabaseFrom(sbUrl, sbKey, "round_events", "GET", {
-          query: `game_id=eq.${encodeURIComponent(gameId)}&event_type=eq.SESSION_CREATED&order=id.asc&limit=1`
-        }) as Array<Record<string, unknown>>;
-        if (!sessEventsAdv || sessEventsAdv.length === 0) throw new Error("Session event not found");
-        const advEventIds = (sessEventsAdv[0].payload as Record<string, unknown>)?.eventIds as string[];
-
-        if (nextRoundIndex < (sessAdv.total_rounds as number)) {
-          const now = new Date();
-          const phaseEndsAt = new Date(now.getTime() + (sessAdv.round_timer_sec as number) * 1000).toISOString();
-          await supabaseFrom(sbUrl, sbKey, "round_events", "POST", {
-            body: {
-              game_id: gameId,
-              round_index: nextRoundIndex,
-              event_type: "ROUND_STARTED",
-              payload: {
-                roundIndex: nextRoundIndex,
-                eventId: advEventIds[nextRoundIndex],
-                startedAt: now.toISOString(),
-                phaseEndsAt,
-                cause: TransitionCause.TIMEOUT
-              }
-            }
-          });
-        } else {
-          await supabaseFrom(sbUrl, sbKey, "round_events", "POST", {
-            body: {
-              game_id: gameId,
-              round_index: roundIndex,
-              event_type: "SESSION_COMPLETE",
-              payload: { totalRounds: sessAdv.total_rounds, cause: TransitionCause.TIMEOUT }
-            }
-          });
+        const baseUrl = this.getNextJsBaseUrl();
+        const advanceUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/advance`;
+        const advanceRes = await fetch(advanceUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cause: "timeout", roundIndex })
+        });
+        if (!advanceRes.ok) {
+          const text = await advanceRes.text();
+          throw new Error(`[triggerRoundExpiry] advance API error ${advanceRes.status}: ${text}`);
         }
-        const advanceSnapshot = await buildSnapshotFromDB(sbUrl, sbKey, gameId);
+        const advanceSnapshot = await advanceRes.json();
         this.applySnapshotAndBroadcast(advanceSnapshot);
       } catch (err) {
         console.error("[PartyKit] Round advance after expiry failed:", err instanceof Error ? err.message : err);
@@ -628,13 +396,24 @@ export default class GameServer {
       try {
         // /leave mutates MEMBERSHIP ONLY (left_at).
         // LOCKED RULE: /leave must NEVER evolve into gameplay mutation.
-        const { url: sbUrl, key: sbKey } = this.getSupabaseEnv();
-        await supabaseFrom(sbUrl, sbKey, "session_players", "PATCH", {
-          query: `game_id=eq.${encodeURIComponent(gameId)}&player_id=eq.${encodeURIComponent(playerId)}`,
-          body: { left_at: new Date().toISOString() }
+        const baseUrl = this.getNextJsBaseUrl();
+        const leaveUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/leave`;
+        const leaveRes = await fetch(leaveUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ playerId })
         });
-        await this.loadFromDB();
-        this.broadcastStateUpdate();
+        if (!leaveRes.ok) {
+          const text = await leaveRes.text();
+          console.error(`[onClose] leave API error ${leaveRes.status}: ${text}`);
+        }
+        // Reload and broadcast updated snapshot
+        const snapUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}`;
+        const snapRes = await fetch(snapUrl);
+        if (snapRes.ok) {
+          const snapshot = await snapRes.json();
+          this.applySnapshotAndBroadcast(snapshot);
+        }
       } catch (err) {
         console.error("[PartyKit] Failed to persist disconnect:", err instanceof Error ? err.message : err);
         this.broadcastStateUpdate();
@@ -677,92 +456,65 @@ export default class GameServer {
     try {
       switch (data.type) {
         case "JOIN_ROOM": {
-          const { url: sbUrl, key: sbKey } = this.getSupabaseEnv();
-          // Upsert player into session_players
-          await supabaseFrom(sbUrl, sbKey, "session_players", "POST", {
-            query: `on_conflict=game_id,player_id`,
-            prefer: "resolution=merge-duplicates",
-            body: {
-              game_id: gameId,
-              player_id: data.playerId,
-              display_name: data.displayName,
-              joined_at: new Date().toISOString(),
-              left_at: null,
-              ready: false,
-              is_host: false
-            }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/join`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              displayName: data.displayName
+            })
           });
-          // Host self-heal: if no active host exists, promote this player
-          const joinActivePlayers = await supabaseFrom(sbUrl, sbKey, "session_players", "GET", {
-            query: `game_id=eq.${encodeURIComponent(gameId)}&left_at=is.null`
-          }) as Array<Record<string, unknown>>;
-          const hasHost = joinActivePlayers.some(p => p.is_host);
-          if (!hasHost) {
-            await supabaseFrom(sbUrl, sbKey, "session_players", "PATCH", {
-              query: `game_id=eq.${encodeURIComponent(gameId)}&player_id=eq.${encodeURIComponent(data.playerId)}`,
-              body: { is_host: true }
-            });
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[JOIN_ROOM] API error ${response.status}: ${text}`);
+            break;
           }
-          const snapshot = await buildSnapshotFromDB(sbUrl, sbKey, gameId);
+          const snapshot = await response.json();
           this.applySnapshotAndBroadcast(snapshot);
           break;
         }
 
         case "TOGGLE_READY": {
-          const { url: sbUrl, key: sbKey } = this.getSupabaseEnv();
-          await supabaseFrom(sbUrl, sbKey, "session_players", "PATCH", {
-            query: `game_id=eq.${encodeURIComponent(gameId)}&player_id=eq.${encodeURIComponent(data.playerId)}`,
-            body: { ready: data.ready }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/ready`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              ready: data.ready
+            })
           });
-          const snapshot = await buildSnapshotFromDB(sbUrl, sbKey, gameId);
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[TOGGLE_READY] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
           this.applySnapshotAndBroadcast(snapshot);
           break;
         }
 
         case "START_GAME": {
-          const { url: sbUrl, key: sbKey } = this.getSupabaseEnv();
-          // Validate host and all-ready via snapshot
-          const preStart = await buildSnapshotFromDB(sbUrl, sbKey, gameId) as Record<string, unknown>;
-          const preStartPlayers = preStart.players as Array<Record<string, unknown>>;
-          const activePre = preStartPlayers.filter(p => !p.leftAt);
-          if (activePre.length < 2) throw new Error("At least 2 players required to start");
-          const host = activePre.find(p => p.isHost);
-          if (!host) throw new Error("Session has no host");
-          if (host.playerId !== data.playerId) throw new Error("Only the host can start the game");
-          if (!activePre.every(p => p.ready)) throw new Error("Not all players are ready");
-
-          // Load SESSION_CREATED event to get eventIds
-          const sessionEvents = await supabaseFrom(sbUrl, sbKey, "round_events", "GET", {
-            query: `game_id=eq.${encodeURIComponent(gameId)}&event_type=eq.SESSION_CREATED&order=id.asc&limit=1`
-          }) as Array<Record<string, unknown>>;
-          if (!sessionEvents || sessionEvents.length === 0) throw new Error("Session event not found");
-          const eventIds = (sessionEvents[0].payload as Record<string, unknown>)?.eventIds as string[];
-          if (!Array.isArray(eventIds) || eventIds.length === 0) throw new Error("Event IDs not found");
-
-          const now = new Date();
-          const config = preStart.config as Record<string, unknown>;
-          const phaseEndsAt = new Date(now.getTime() + (config.roundTimerSec as number) * 1000).toISOString();
-          await supabaseFrom(sbUrl, sbKey, "round_events", "POST", {
-            body: {
-              game_id: gameId,
-              round_index: 0,
-              event_type: "ROUND_STARTED",
-              payload: {
-                roundIndex: 0,
-                eventId: eventIds[0],
-                startedAt: now.toISOString(),
-                phaseEndsAt,
-                cause: TransitionCause.PLAYER
-              }
-            }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/start`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              playerId: data.playerId
+            })
           });
-          const snapshot = await buildSnapshotFromDB(sbUrl, sbKey, gameId);
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[START_GAME] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
           this.applySnapshotAndBroadcast(snapshot);
           break;
         }
 
         case "SUBMIT_GUESS": {
-          const { url: sbUrl, key: sbKey } = this.getSupabaseEnv();
           const submitKey = `${data.playerId}:${data.roundIndex}`;
           if (this.submitInFlightPlayers.has(submitKey)) {
             break; // Duplicate in-flight submission — discard silently
@@ -770,80 +522,24 @@ export default class GameServer {
           this.submitInFlightPlayers.add(submitKey);
           this.submitInFlight++;
           try {
-            // Insert commit (idempotent via ON CONFLICT DO NOTHING)
-            await supabaseFrom(sbUrl, sbKey, "round_commits", "POST", {
-              prefer: "resolution=ignore-duplicates",
-              body: {
-                game_id: gameId,
-                player_id: data.playerId,
-                round_index: data.roundIndex,
-                submitted_at: new Date().toISOString(),
-                year_guess: data.year,
-                location_lat: data.lat,
-                location_lng: data.lng,
-                hints_used: data.hintsUsed ?? 0,
-                score: 0
-              }
-            });
-            // Append GUESS_SUBMITTED event
-            await supabaseFrom(sbUrl, sbKey, "round_events", "POST", {
-              body: {
-                game_id: gameId,
-                round_index: data.roundIndex,
-                event_type: "GUESS_SUBMITTED",
-                payload: { playerId: data.playerId, yearGuess: data.year }
-              }
-            });
-
-            // Check if all active players have now submitted
-            const [allPlayersRows, allCommitsRows] = await Promise.all([
-              supabaseFrom(sbUrl, sbKey, "session_players", "GET", {
-                query: `game_id=eq.${encodeURIComponent(gameId)}&left_at=is.null`
-              }),
-              supabaseFrom(sbUrl, sbKey, "round_commits", "GET", {
-                query: `game_id=eq.${encodeURIComponent(gameId)}&round_index=eq.${data.roundIndex}`
+            const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/guess`;
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                playerId: data.playerId,
+                roundIndex: data.roundIndex,
+                year: data.year ?? null,
+                lat: data.lat ?? null,
+                lng: data.lng ?? null
               })
-            ]) as [Array<Record<string, unknown>>, Array<Record<string, unknown>>];
-
-            const allSubmitted = allPlayersRows.length > 0 &&
-              allCommitsRows.length >= allPlayersRows.length;
-
-            if (allSubmitted) {
-              const existingComplete = await supabaseFrom(sbUrl, sbKey, "round_events", "GET", {
-                query: `game_id=eq.${encodeURIComponent(gameId)}&round_index=eq.${data.roundIndex}&event_type=eq.ROUND_COMPLETE&limit=1`
-              }) as Array<Record<string, unknown>>;
-
-              if (existingComplete.length === 0) {
-                // Write round_results ranked by score descending
-                const commitsByScore = [...allCommitsRows].sort(
-                  (a, b) => ((b.score as number) ?? 0) - ((a.score as number) ?? 0)
-                );
-                for (let i = 0; i < commitsByScore.length; i++) {
-                  const commit = commitsByScore[i];
-                  await supabaseFrom(sbUrl, sbKey, "round_results", "POST", {
-                    prefer: "resolution=ignore-duplicates",
-                    body: {
-                      game_id: gameId,
-                      round_index: data.roundIndex,
-                      player_id: commit.player_id,
-                      score: commit.score ?? 0,
-                      rank: i + 1
-                    }
-                  });
-                }
-                // Append ROUND_COMPLETE event
-                await supabaseFrom(sbUrl, sbKey, "round_events", "POST", {
-                  body: {
-                    game_id: gameId,
-                    round_index: data.roundIndex,
-                    event_type: "ROUND_COMPLETE",
-                    payload: { commitCount: allCommitsRows.length }
-                  }
-                });
-              }
+            });
+            if (!response.ok) {
+              const body = await response.text();
+              console.error(`[SUBMIT_GUESS] API error ${response.status}: ${body}`);
+              break;
             }
-
-            const snapshot = await buildSnapshotFromDB(sbUrl, sbKey, gameId);
+            const snapshot = await response.json();
             this.applySnapshotAndBroadcast(snapshot);
           } finally {
             this.submitInFlightPlayers.delete(submitKey);
@@ -870,50 +566,22 @@ export default class GameServer {
           }
           this.advanceInFlight = true;
           try {
-            const { url: sbUrl, key: sbKey } = this.getSupabaseEnv();
-            // Load session to get totalRounds and roundTimerSec
-            const sessions = await supabaseFrom(sbUrl, sbKey, "sessions", "GET", {
-              query: `game_id=eq.${encodeURIComponent(gameId)}&limit=1`
-            }) as Array<Record<string, unknown>>;
-            if (!sessions || sessions.length === 0) throw new Error("Session not found");
-            const sess = sessions[0];
-            const nextRoundIndex = data.roundIndex + 1;
-
-            // Load SESSION_CREATED event for eventIds
-            const sessEvents = await supabaseFrom(sbUrl, sbKey, "round_events", "GET", {
-              query: `game_id=eq.${encodeURIComponent(gameId)}&event_type=eq.SESSION_CREATED&order=id.asc&limit=1`
-            }) as Array<Record<string, unknown>>;
-            if (!sessEvents || sessEvents.length === 0) throw new Error("Session event not found");
-            const advEventIds = (sessEvents[0].payload as Record<string, unknown>)?.eventIds as string[];
-
-            if (nextRoundIndex < (sess.total_rounds as number)) {
-              const now = new Date();
-              const phaseEndsAt = new Date(now.getTime() + (sess.round_timer_sec as number) * 1000).toISOString();
-              await supabaseFrom(sbUrl, sbKey, "round_events", "POST", {
-                body: {
-                  game_id: gameId,
-                  round_index: nextRoundIndex,
-                  event_type: "ROUND_STARTED",
-                  payload: {
-                    roundIndex: nextRoundIndex,
-                    eventId: advEventIds[nextRoundIndex],
-                    startedAt: now.toISOString(),
-                    phaseEndsAt,
-                    cause: TransitionCause.PLAYER
-                  }
-                }
-              });
-            } else {
-              await supabaseFrom(sbUrl, sbKey, "round_events", "POST", {
-                body: {
-                  game_id: gameId,
-                  round_index: data.roundIndex,
-                  event_type: "SESSION_COMPLETE",
-                  payload: { totalRounds: sess.total_rounds, cause: TransitionCause.PLAYER }
-                }
-              });
+            const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/advance`;
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                cause: data.cause ?? "player",
+                playerId: data.playerId,
+                roundIndex: data.roundIndex
+              })
+            });
+            if (!response.ok) {
+              const text = await response.text();
+              console.error(`[ADVANCE_ROUND] API error ${response.status}: ${text}`);
+              break;
             }
-            const snapshot = await buildSnapshotFromDB(sbUrl, sbKey, gameId);
+            const snapshot = await response.json();
             this.applySnapshotAndBroadcast(snapshot);
           } finally {
             this.advanceInFlight = false;
