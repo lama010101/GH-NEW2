@@ -1,0 +1,421 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #1a1a1a;
+  --card: #333;
+  --card2: #2a2a2a;
+  --border: rgba(255,255,255,0.12);
+  --border2: rgba(255,255,255,0.18);
+  --blue: #3b82f6;
+  --blue-bright: #60a5fa;
+  --blue-dim: rgba(59,130,246,0.18);
+  --blue-glow: rgba(59,130,246,0.35);
+  --amber: #f0c060;
+  --amber-dim: rgba(240,192,96,0.15);
+  --text: #f0f0f0;
+  --muted: #999;
+  --faint: #444;
+}
+body { font-family: var(--font-sans, system-ui, sans-serif); background: var(--bg); color: var(--text); }
+
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; border-bottom:0.5px solid var(--border); background:#222; }
+.logo { font-size:12px; font-weight:500; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; }
+.xp-pill { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.07); border:0.5px solid var(--border2); border-radius:20px; padding:5px 14px; font-size:12px; }
+.xp-pill .acc { color:#ddd; font-weight:500; }
+.xp-pill .div { color:#555; }
+.xp-pill .xp { color:var(--amber); font-weight:500; }
+
+.layout { display:grid; grid-template-columns:1fr 320px; gap:20px; max-width:980px; margin:0 auto; padding:24px 20px; }
+.card { background:var(--card); border:0.5px solid var(--border2); border-radius:14px; padding:20px 22px; }
+.sec-label { font-size:10px; font-weight:500; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:11px; }
+
+/* PAGE TITLE */
+.page-title { font-size:20px; font-weight:500; color:var(--text); margin-bottom:3px; }
+.page-sub { font-size:13px; color:var(--muted); margin-bottom:20px; line-height:1.5; }
+
+/* CODE */
+.code-block { display:flex; align-items:center; justify-content:space-between; background:var(--card2); border:0.5px solid var(--border2); border-radius:10px; padding:14px 16px; margin-bottom:20px; }
+.code-inner .lbl { font-size:10px; color:var(--muted); letter-spacing:0.07em; text-transform:uppercase; margin-bottom:4px; }
+.code-inner .val { font-size:26px; font-weight:500; letter-spacing:0.22em; color:var(--blue-bright); font-family:var(--font-mono,monospace); }
+.copy-btn { display:flex; align-items:center; gap:7px; background:var(--blue-dim); border:1px solid var(--blue-glow); border-radius:8px; color:var(--blue-bright); font-size:13px; font-weight:500; padding:9px 16px; cursor:pointer; font-family:inherit; transition:background 0.15s; white-space:nowrap; }
+.copy-btn:hover { background:rgba(59,130,246,0.28); }
+.copy-btn.done { background:var(--blue); color:#fff; border-color:var(--blue); }
+.copy-icon { width:15px; height:15px; flex-shrink:0; }
+
+/* MODE */
+.mode-toggle { display:flex; gap:6px; margin-bottom:20px; }
+.mode-btn { flex:1; padding:8px 0; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit; border:1px solid var(--border2); background:rgba(255,255,255,0.04); color:var(--muted); transition:all 0.15s; }
+.mode-btn.active { background:var(--blue-dim); border-color:var(--blue-glow); color:var(--blue-bright); }
+
+/* SLIDERS */
+.settings-grid { display:flex; flex-direction:column; gap:20px; }
+.setting-item { display:flex; flex-direction:column; gap:10px; }
+.setting-header { display:flex; justify-content:space-between; align-items:baseline; }
+.setting-name { font-size:13px; color:var(--muted); }
+.setting-value { font-size:14px; font-weight:500; color:var(--text); }
+
+.slider-wrap { position:relative; height:20px; display:flex; align-items:center; }
+.slider-track-bg { position:absolute; left:0; right:0; height:5px; background:#555; border-radius:3px; }
+.slider-track-fill { position:absolute; height:5px; border-radius:3px; pointer-events:none; }
+.slider-single { width:100%; position:absolute; height:5px; opacity:0; cursor:pointer; z-index:3; margin:0; -webkit-appearance:none; appearance:none; }
+.slider-single::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; cursor:pointer; }
+.slider-single::-moz-range-thumb { width:18px; height:18px; border-radius:50%; cursor:pointer; border:none; }
+
+/* Dual range */
+.dual-wrap { position:relative; height:24px; display:flex; align-items:center; margin-top:4px; }
+.dual-track-bg { position:absolute; left:0; right:0; height:5px; background:#555; border-radius:3px; }
+.dual-track-fill { position:absolute; height:5px; border-radius:3px; pointer-events:none; background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.dual-input { position:absolute; width:100%; height:5px; opacity:0; cursor:pointer; z-index:3; margin:0; -webkit-appearance:none; appearance:none; pointer-events:none; }
+.dual-input::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; cursor:pointer; pointer-events:all; }
+.dual-input::-moz-range-thumb { width:20px; height:20px; border-radius:50%; cursor:pointer; pointer-events:all; border:none; }
+.dual-thumb { position:absolute; width:20px; height:20px; border-radius:50%; border:2px solid #fff; transform:translateX(-50%); pointer-events:none; z-index:4; }
+
+/* HOST CONTROLS */
+.host-card { background:var(--card); border:0.5px solid var(--border2); border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:12px; }
+.autostart-row { display:flex; align-items:center; justify-content:space-between; background:var(--card2); border:0.5px solid var(--border2); border-radius:10px; padding:12px 14px; }
+.autostart-lbl { font-size:13px; color:var(--text); font-weight:500; }
+.autostart-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+.toggle-wrap { position:relative; width:40px; height:22px; flex-shrink:0; }
+.toggle-wrap input { opacity:0; width:0; height:0; position:absolute; }
+.toggle-track { position:absolute; inset:0; background:#555; border-radius:11px; cursor:pointer; transition:background 0.2s; }
+.toggle-track:before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform 0.2s; }
+.toggle-wrap input:checked + .toggle-track { background:var(--blue); }
+.toggle-wrap input:checked + .toggle-track:before { transform:translateX(18px); }
+.start-btn { width:100%; padding:13px; border-radius:10px; font-size:15px; font-weight:500; font-family:inherit; border:none; transition:all 0.2s; }
+.start-btn.off { background:rgba(255,255,255,0.07); color:#555; cursor:not-allowed; }
+.start-btn.on { background:var(--blue); color:#fff; cursor:pointer; }
+.start-btn.on:hover { background:#2563eb; }
+.start-btn.go { background:#1d4ed8; color:#fff; cursor:pointer; }
+
+/* ROSTER */
+.roster-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.roster-pill { font-size:11px; color:var(--muted); background:rgba(255,255,255,0.06); border:0.5px solid var(--border2); border-radius:20px; padding:3px 10px; }
+.player-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:0.5px solid rgba(255,255,255,0.07); }
+.player-item:last-child { border-bottom:none; }
+.avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; flex-shrink:0; }
+.pname { font-size:13px; font-weight:500; color:var(--text); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.host-tag { font-size:10px; color:var(--amber); background:var(--amber-dim); border:0.5px solid rgba(240,192,96,0.3); border-radius:4px; padding:1px 6px; }
+.you-tag { font-size:10px; color:var(--muted); }
+.pinfo { flex:1; min-width:0; }
+.pstatus { font-size:11px; margin-top:1px; }
+.pstatus.r { color:#4ade80; }
+.pstatus.n { color:#666; }
+.ri { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ri.r { background:rgba(74,222,128,0.15); border:1.5px solid #4ade80; }
+.ri.n { background:rgba(255,255,255,0.04); border:1.5px solid #444; }
+.remove-btn { background:none; border:none; cursor:pointer; padding:4px 6px; border-radius:5px; color:#555; font-size:13px; display:flex; align-items:center; transition:all 0.15s; }
+.remove-btn:hover { color:#f87171; background:rgba(248,113,113,0.12); }
+.empty-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:0.5px solid rgba(255,255,255,0.05); opacity:0.3; }
+.empty-item:last-child { border-bottom:none; }
+.empty-av { width:34px; height:34px; border-radius:50%; border:1px dashed #444; display:flex; align-items:center; justify-content:center; }
+.empty-name { font-size:12px; color:#555; font-style:italic; }
+
+.status-line { font-size:12px; color:var(--muted); text-align:center; padding:10px 0 4px; }
+.status-line .hi { color:var(--blue-bright); font-weight:500; }
+.status-line .all { color:#4ade80; font-weight:500; }
+
+/* MY READY BTN */
+.ready-btn { width:100%; padding:13px; border-radius:10px; font-size:15px; font-weight:500; font-family:inherit; cursor:pointer; transition:all 0.2s; border:2px solid; }
+.ready-btn.notready { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.2); color:#ccc; }
+.ready-btn.notready:hover { background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.3); color:#fff; }
+.ready-btn.isready { background:rgba(74,222,128,0.14); border-color:#4ade80; color:#4ade80; }
+
+.feed { margin-top:10px; padding-top:10px; border-top:0.5px solid rgba(255,255,255,0.07); display:flex; flex-direction:column; gap:3px; }
+.feed-item { font-size:11px; color:#666; }
+.feed-item .j { color:var(--blue-bright); }
+.feed-item .rd { color:#4ade80; }
+.feed-item .rm { color:#f87171; }
+</style>
+
+<div style="background:var(--bg);min-height:640px;">
+  <div class="topbar">
+    <span class="logo">Guess-History</span>
+    <div class="xp-pill"><span class="acc">63 %</span><span class="div">|</span><span class="xp">12 480 XP</span></div>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:18px;">
+
+      <div class="card">
+        <div class="page-title">Compete — Lobby</div>
+        <div class="page-sub">Share the room code. Configure the game below. Everyone must ready up before the game can start.</div>
+
+        <div class="sec-label">Room code</div>
+        <div class="code-block">
+          <div class="code-inner">
+            <div class="lbl">Share this code</div>
+            <div class="val">HWGONB</div>
+          </div>
+          <button class="copy-btn" id="copy-btn" onclick="doCopy()">
+            <svg class="copy-icon" viewBox="0 0 16 16" fill="none">
+              <rect x="5" y="5" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            Copy
+          </button>
+        </div>
+
+        <div class="sec-label">Mode</div>
+        <div class="mode-toggle">
+          <button class="mode-btn active" onclick="setMode('Rush',this)">Rush</button>
+          <button class="mode-btn" onclick="setMode('Relax',this)">Relax</button>
+        </div>
+
+        <div class="sec-label">Settings</div>
+        <div class="settings-grid">
+
+          <div class="setting-item" id="timer-setting">
+            <div class="setting-header">
+              <span class="setting-name">Round timer</span>
+              <span class="setting-value" id="timer-val">2 min</span>
+            </div>
+            <div class="slider-wrap">
+              <div class="slider-track-bg"></div>
+              <div class="slider-track-fill" id="timer-fill" style="background:linear-gradient(90deg,#3b82f6,#60a5fa);left:0;"></div>
+              <input type="range" class="slider-single" id="timer-sl" min="0" max="9" value="7" step="1" oninput="updateTimer()">
+            </div>
+          </div>
+
+          <div class="setting-item" id="deadline-setting" style="display:none;">
+            <div class="setting-header">
+              <span class="setting-name">Session deadline</span>
+              <span class="setting-value" id="deadline-val">3 days</span>
+            </div>
+            <div class="slider-wrap">
+              <div class="slider-track-bg"></div>
+              <div class="slider-track-fill" id="deadline-fill" style="background:linear-gradient(90deg,#a855f7,#c084fc);left:0;"></div>
+              <input type="range" class="slider-single" id="deadline-sl" min="1" max="7" value="3" step="1" oninput="updateDeadline()">
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-header">
+              <span class="setting-name">Year range</span>
+              <span class="setting-value" id="year-display">1 – 2025</span>
+            </div>
+            <div class="dual-wrap" id="dual-wrap">
+              <div class="dual-track-bg"></div>
+              <div class="dual-track-fill" id="dual-fill"></div>
+              <input type="range" class="dual-input" id="yr-lo" min="1" max="2015" value="1" step="5">
+              <input type="range" class="dual-input" id="yr-hi" min="10" max="2025" value="2025" step="5">
+              <div class="dual-thumb" id="th-lo" style="background:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,0.4);"></div>
+              <div class="dual-thumb" id="th-hi" style="background:var(--blue-bright);box-shadow:0 0 0 3px rgba(96,165,250,0.4);"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="host-card">
+        <div class="sec-label">Host controls</div>
+        <div class="autostart-row">
+          <div>
+            <div class="autostart-lbl">Auto-start</div>
+            <div class="autostart-sub">Game starts automatically when all players are ready</div>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="autostart-chk" onchange="onAutoStart()">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <button class="start-btn off" id="start-btn" onclick="doStart()">Waiting for all players...</button>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card">
+        <div class="roster-header">
+          <div class="sec-label" style="margin-bottom:0;">Players</div>
+          <span class="roster-pill" id="roster-pill">0 / 3 ready</span>
+        </div>
+        <div id="player-list"></div>
+        <div id="empty-slots"></div>
+        <div class="feed" id="feed">
+          <div class="feed-item"><span class="j">MarcoA</span> joined the room</div>
+          <div class="feed-item"><span class="j">StratosT</span> joined the room</div>
+        </div>
+        <div class="status-line" id="status-line">Waiting for <span class="hi">3</span> player(s) to ready up</div>
+      </div>
+
+      <button class="ready-btn notready" id="my-ready-btn" onclick="toggleReady()">Ready?</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const timerSteps = ['10s','15s','20s','30s','45s','1 min','1 min 30','2 min','3 min','5 min'];
+let autoStartOn = false;
+let players = [
+  { name:'Lolo', init:'LO', ready:false, isHost:true, isYou:true, bg:'rgba(59,130,246,0.22)', tc:'#93c5fd' },
+  { name:'MarcoA', init:'MA', ready:false, isHost:false, isYou:false, bg:'rgba(74,222,128,0.15)', tc:'#86efac' },
+  { name:'StratosT', init:'ST', ready:false, isHost:false, isYou:false, bg:'rgba(251,146,60,0.18)', tc:'#fdba74' },
+];
+
+function render() {
+  const list = document.getElementById('player-list');
+  list.innerHTML = '';
+  players.forEach((p, i) => {
+    const ri = p.ready ? 'r' : 'n';
+    const check = p.ready
+      ? `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polyline points="2,6.5 5.5,10 11,3" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      : `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><line x1="4" y1="4" x2="9" y2="9" stroke="#555" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="4" x2="4" y2="9" stroke="#555" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+    const badges = (p.isHost ? `<span class="host-tag">HOST</span>` : '') + (p.isYou ? `<span class="you-tag">you</span>` : '');
+    const removeBtn = !p.isYou
+      ? `<button class="remove-btn" onclick="removePlayer(${i})" title="Remove player">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M5 2h4M2 4h10M9 4v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+        </button>` : '';
+    list.innerHTML += `<div class="player-item">
+      <div class="ri ${ri}">${check}</div>
+      <div class="avatar" style="background:${p.bg};color:${p.tc};">${p.init}</div>
+      <div class="pinfo">
+        <div class="pname">${p.name} ${badges}</div>
+        <div class="pstatus ${ri}">${p.ready ? 'Ready!' : 'Not ready'}</div>
+      </div>
+      ${removeBtn}
+    </div>`;
+  });
+
+  const emptyDiv = document.getElementById('empty-slots');
+  emptyDiv.innerHTML = '';
+  const empties = Math.min(3, Math.max(0, 5 - players.length));
+  for (let i = 0; i < empties; i++) {
+    emptyDiv.innerHTML += `<div class="empty-item">
+      <div class="ri n"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><line x1="4" y1="4" x2="9" y2="9" stroke="#444" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="4" x2="4" y2="9" stroke="#444" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="empty-av"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="3.5" r="2.2" stroke="#444" stroke-width="0.9"/><path d="M1 11c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="#444" stroke-width="0.9"/></svg></div>
+      <div class="empty-name">Waiting for player...</div>
+    </div>`;
+  }
+
+  const readyN = players.filter(p => p.ready).length;
+  const total = players.length;
+  const unready = total - readyN;
+  document.getElementById('roster-pill').textContent = `${readyN} / ${total} ready`;
+
+  const sl = document.getElementById('status-line');
+  const sb = document.getElementById('start-btn');
+  const allReady = readyN === total && total >= 2;
+
+  if (allReady) {
+    sl.innerHTML = `<span class="all">All players ready!</span>`;
+    sb.className = 'start-btn on';
+    sb.textContent = 'Start Game';
+    if (autoStartOn) { sb.textContent = 'Auto-starting...'; setTimeout(() => doStart(true), 800); }
+  } else {
+    sl.innerHTML = `Waiting for <span class="hi">${unready}</span> player(s) to ready up`;
+    sb.className = 'start-btn off';
+    sb.textContent = 'Waiting for all players...';
+  }
+
+  const me = players.find(p => p.isYou);
+  const rb = document.getElementById('my-ready-btn');
+  rb.className = 'ready-btn ' + (me.ready ? 'isready' : 'notready');
+  rb.textContent = me.ready ? 'Ready!' : 'Ready?';
+}
+
+function toggleReady() {
+  const me = players.find(p => p.isYou);
+  me.ready = !me.ready;
+  addFeed('You', me.ready ? 'rd' : 'j', me.ready ? 'are ready' : 'unreadied');
+  render();
+}
+
+function removePlayer(i) {
+  addFeed(players[i].name, 'rm', 'was removed by host');
+  players.splice(i, 1);
+  render();
+}
+
+function addFeed(name, cls, action) {
+  const feed = document.getElementById('feed');
+  const d = document.createElement('div');
+  d.className = 'feed-item';
+  d.innerHTML = `<span class="${cls}">${name}</span> ${action}`;
+  feed.appendChild(d);
+  while (feed.children.length > 5) feed.removeChild(feed.firstChild);
+}
+
+function setMode(mode, el) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('timer-setting').style.display = mode === 'Rush' ? 'flex' : 'none';
+  document.getElementById('deadline-setting').style.display = mode === 'Relax' ? 'flex' : 'none';
+}
+
+function updateTimer() {
+  const v = parseInt(document.getElementById('timer-sl').value);
+  document.getElementById('timer-val').textContent = timerSteps[v];
+  const pct = (v / 9) * 100;
+  document.getElementById('timer-fill').style.width = pct + '%';
+}
+
+function updateDeadline() {
+  const v = parseInt(document.getElementById('deadline-sl').value);
+  document.getElementById('deadline-val').textContent = v + (v === 1 ? ' day' : ' days');
+  const pct = ((v - 1) / 6) * 100;
+  document.getElementById('deadline-fill').style.width = pct + '%';
+}
+
+// DUAL SLIDER
+const MIN_YEAR = 1, MAX_YEAR = 2025;
+function updateDual() {
+  const lo = parseInt(document.getElementById('yr-lo').value);
+  const hi = parseInt(document.getElementById('yr-hi').value);
+  const safeHi = Math.max(lo + 50, hi);
+  if (hi < lo + 50) document.getElementById('yr-hi').value = lo + 50;
+
+  const range = MAX_YEAR - MIN_YEAR;
+  const leftPct = ((lo - MIN_YEAR) / range) * 100;
+  const rightPct = ((safeHi - MIN_YEAR) / range) * 100;
+
+  const wrap = document.getElementById('dual-wrap');
+  const w = wrap.offsetWidth || 260;
+  document.getElementById('th-lo').style.left = (leftPct / 100 * w) + 'px';
+  document.getElementById('th-hi').style.left = (rightPct / 100 * w) + 'px';
+  document.getElementById('dual-fill').style.left = leftPct + '%';
+  document.getElementById('dual-fill').style.width = (rightPct - leftPct) + '%';
+
+  const loStr = lo <= 0 ? (Math.abs(lo) + ' BC') : lo;
+  document.getElementById('year-display').textContent = loStr + ' – ' + safeHi;
+}
+
+document.getElementById('yr-lo').addEventListener('input', updateDual);
+document.getElementById('yr-hi').addEventListener('input', updateDual);
+
+function onAutoStart() {
+  autoStartOn = document.getElementById('autostart-chk').checked;
+}
+
+function doCopy() {
+  const btn = document.getElementById('copy-btn');
+  btn.innerHTML = `<svg class="copy-icon" viewBox="0 0 16 16" fill="none"><polyline points="2,8 6,12 14,4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Copied!`;
+  btn.classList.add('done');
+  setTimeout(() => {
+    btn.innerHTML = `<svg class="copy-icon" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Copy`;
+    btn.classList.remove('done');
+  }, 1500);
+}
+
+let started = false;
+function doStart(auto) {
+  if (started) return;
+  const sb = document.getElementById('start-btn');
+  if (!sb.classList.contains('on') && !auto) return;
+  started = true;
+  sb.className = 'start-btn go';
+  sb.textContent = 'Starting game...';
+  setTimeout(() => { sb.textContent = '→ Entering game...'; }, 900);
+}
+
+setTimeout(() => { players[1].ready = true; addFeed('MarcoA', 'rd', 'is ready'); render(); }, 3000);
+setTimeout(() => { players[2].ready = true; addFeed('StratosT', 'rd', 'is ready'); render(); }, 5500);
+
+render();
+updateTimer();
+updateDeadline();
+setTimeout(updateDual, 50);
+</script>

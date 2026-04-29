@@ -109,6 +109,7 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | MP-PLAN-1.2c | Rewire onClose /leave + delete dead code | partykit/server.ts | DONE | April 28, 2026 | supabaseFrom and buildSnapshotFromDB deleted, onClose delegates to API |
 | MP-PLAN-7.1 | Fix DB connection pool exhaustion | src/server/db.ts | DONE | April 28, 2026 | pool max raised to 10, min 2, zero-trust gated behind ENABLE_ZERO_TRUST |
 | MP-PLAN-8.2 | Auto-retry on reconnect error | competeWebSocket.ts, page.tsx | DONE | April 28, 2026 | Recoverable server errors trigger reconnect; invalid snapshots silently ignored |
+| MP-PROD-SMOKE-INV-001 | DONE | â€” | Production architecture audit: apiFetch/buildSnapshotFromDB/supabaseFrom deleted; all PartyKit handlers delegate to API routes via fetch() + getNextJsBaseUrl(); env vars read via this.room.env; src/middleware.ts absent; 5 April 28 entries modified partykit/server.ts. |
 
 ---
 
@@ -1167,3 +1168,22 @@ const gameState = await getGameState(gameId);
 - âœ… Deterministic: same DB input â†’ same success or same error
 
 **Last updated:** 2026-04-22
+| MP-UI-LANDING-002 | DONE | src/app/page.tsx, src/components/landing/Navbar.tsx, src/components/landing/HeroSection.tsx, src/components/landing/AuthModal.tsx, src/components/landing/StickyCTA.tsx | Rebuild landing page — carousel hero, navbar, auth modal, sticky CTA. Pure React + inline styles, no UI libs. Supabase auth wired via supabaseBrowser. |
+| MP-INV-RESULTS-001 | DONE | — | SUBMIT_GUESS broadcasts guess snapshot only; ROUND_COMPLETE written by sessionCore but /guess route conditionally appends esults. Deadlock likely from missing esults in broadcast or client validation rejecting snapshot. |
+| MP-FIX-SNAPSHOT-VALIDATOR-001 | DONE | — | isCompeteSessionSnapshot now accepts optional results field; STATE_UPDATE with results no longer discarded by client |
+| MP-INV-SUBMIT-FLOW-001 | DONE | — | Diagnostic script executed; full output captured |
+| MP-INV-SUBMIT-FLOW-001 | DONE | — | Diagnostic script executed; full output captured |
+| MP-INV-ROUND-RESULTS-001 | DONE | — | round_results table and getRoundResults output inspected for game b0d7327c |
+| MP-INV-SCORE-WRITE-001 | COMPLETE | — | Scoring computed by evaluateRound in computeAndWriteRoundResults; PartyKit calls /guess API, no direct sessionCore calls |
+| MP-INV-SCORE-WRITE-002 | COMPLETE | — | computeAndWriteRoundResults called by completeRound (line 1129) and submitGuess when allActiveSubmitted (line 973); round_commits has valid guess data with year_guess and location_lat/lng |
+| MP-INV-SCORE-WRITE-003 | COMPLETE | — | Client sends {type, playerId, roundIndex, year, lat, lng, hintsUsed} via WebSocket; PartyKit forwards {playerId, roundIndex, year, lat, lng} to /guess API; API maps year?yearGuess, lat/lng?locationGuess object for submitGuess |
+| MP-INV-SCORE-WRITE-004 | COMPLETE | — | evaluateRound returns RoundResult type with roundXp as score field; haversineDistanceKm does NOT validate lat/lng ranges - invalid coords like lat:1968 produce mathematically valid but geographically nonsensical distances without throwing |
+| MP-INV-SCORE-WRITE-005 | COMPLETE | — | calculateLocationAccuracy returns 0 when distanceKm >= 20000 (clamped), small positive for 15000km (e.g. 25); calculateYearAccuracy returns 98 for yearDiff=3 (very high accuracy) |
+| MP-INV-SCORE-WRITE-006 | COMPLETE | — | All 5 events have valid non-null event_year fields (289, 1775, 1510, 903, 1638) - no null year data |
+| MP-INV-SCORE-WRITE-007 | COMPLETE | — | event_year (DB column) is mapped to year (EventRecord field) in mapEventRowToEventRecord at line 48 |
+| MP-INV-SCORE-WRITE-008 | COMPLETE | — | ROUND_COMPLETE events exist for both rounds (created at 07:15:06 and 07:15:48); round_results rows have score: 0 but location_score, time_score, distance_km, year_diff are ALL NULL - scoring fields were not written |
+| MP-INV-SCORE-WRITE-009 | COMPLETE | — | insertMissingCommits inserts into round_commits NOT round_results; only INSERT INTO round_results is in computeAndWriteRoundResults (line 1405); no other path creates stub round_results rows |
+| MP-DEBUG-SCORE-001 | IN PROGRESS | awaiting live test run | Diagnostic logging added to computeAndWriteRoundResults with [SCORE-DEBUG] prefix at all critical steps |
+| MP-INV-SESSION-PAYLOAD-001 | COMPLETE | — | Invalid compete session payload thrown by adaptCompeteSnapshot (sessionApi.ts:192) when gameId/status missing, and parseCompeteSnapshot (competeApi.ts:108) when isCompeteSessionSnapshot fails; loadCompeteSessionSnapshot has new REPLAY_MISMATCH validation (lines 411-424) |
+| MP-INV-SESSION-PAYLOAD-002 | COMPLETE | — | isCompeteSessionSnapshot checks for results field (line 97) but CompeteSessionSnapshot type does NOT include results field; this type mismatch causes Invalid compete session payload error |
+| MP-FIX-SNAPSHOT-GUARD-001 | COMPLETE | — | Fixed isCompeteSessionSnapshot to allow undefined results field (line 97) by adding value.results !== undefined check |

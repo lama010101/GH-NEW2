@@ -94,6 +94,10 @@ export function isCompeteSessionSnapshot(value: unknown): value is CompeteSessio
     console.error("[isCompeteSessionSnapshot] Invalid viewerPlayerId:", value.viewerPlayerId);
     return false;
   }
+  if (value.results !== undefined && !(value.results === null || Array.isArray(value.results))) {
+    console.error("[isCompeteSessionSnapshot] Invalid results:", value.results);
+    return false;
+  }
   return true;
 }
 

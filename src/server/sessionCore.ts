@@ -1347,6 +1347,7 @@ async function computeAndWriteRoundResults(
   roundIndex: number,
   executor: DbTransactionClient
 ): Promise<void> {
+  console.log(`[SCORE-DEBUG] computeAndWriteRoundResults called: gameId=${gameId} roundIndex=${roundIndex}`);
   const commits = await executor.query<{
     player_id: string;
     score: number | null;
@@ -1360,6 +1361,7 @@ async function computeAndWriteRoundResults(
      ORDER BY score DESC NULLS LAST`,
     [gameId, roundIndex]
   );
+  console.log(`[SCORE-DEBUG] commits loaded: ${commits.rows.length} rows`);
 
   // Generate a single verification token for all results in this round
   const roundResultsToken = generateVerificationToken();
@@ -1371,16 +1373,19 @@ async function computeAndWriteRoundResults(
      ORDER BY id ASC LIMIT 1`,
     [gameId]
   );
+  console.log(`[SCORE-DEBUG] SESSION_CREATED event found: ${sessionCreatedEvent.rows.length > 0}`);
 
   if (sessionCreatedEvent.rows.length === 0) return;
 
   const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
   if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) return;
+  console.log(`[SCORE-DEBUG] eventId for round ${roundIndex}: ${eventIds[roundIndex]}`);
 
   for (let i = 0; i < commits.rows.length; i++) {
     const row = commits.rows[i];
 
     const event = await fetchEventById(eventIds[roundIndex], executor);
+    console.log(`[SCORE-DEBUG] fetchEventById result for player ${row.player_id}: ${event ? `year=${event.year} lat=${event.location?.lat} lng=${event.location?.lng}` : 'NULL'}`);
     if (!event) continue;
 
     // Build guess state for recomputation
@@ -1399,9 +1404,10 @@ async function computeAndWriteRoundResults(
       false,
       { accuracy: 0, xp: 0 }
     );
+    console.log(`[SCORE-DEBUG] evaluateRound result: distanceKm=${evaluation.distanceKm} yearDiff=${evaluation.yearDiff} locationAccuracy=${evaluation.locationAccuracy} yearAccuracy=${evaluation.yearAccuracy} roundXp=${evaluation.roundXp}`);
 
     // Insert with all replay fields and verification token
-    await executor.query(
+    const insertResult = await executor.query(
       `INSERT INTO round_results
          (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -1419,5 +1425,6 @@ async function computeAndWriteRoundResults(
         roundResultsToken
       ]
     );
+    console.log(`[SCORE-DEBUG] INSERT round_results rowCount=${(insertResult as any).rowCount} player=${row.player_id}`);
   }
 }

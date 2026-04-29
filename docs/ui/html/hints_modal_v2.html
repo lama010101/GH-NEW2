@@ -1,0 +1,692 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  :root {
+    --orange: #fb923c;
+    --orange-dim: rgba(251,146,60,0.13);
+    --orange-border: rgba(251,146,60,0.35);
+    --purple: #c084fc;
+    --purple-dim: rgba(192,132,252,0.13);
+    --purple-border: rgba(192,132,252,0.35);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.12);
+    --surface: #1a1816;
+    --surface2: #232120;
+    --surface3: #2c2a28;
+    --border: rgba(255,255,255,0.08);
+    --border-md: rgba(255,255,255,0.13);
+    --text-muted: rgba(255,255,255,0.38);
+    --text-dim: rgba(255,255,255,0.62);
+    --text: #f0ebe2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .backdrop {
+    min-height: 780px;
+    background: rgba(0,0,0,0.72);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px 12px 40px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 500px;
+    background: var(--surface);
+    border-radius: 18px;
+    border: 0.5px solid var(--border-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  .modal-header {
+    padding: 16px 18px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.3px;
+  }
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface3);
+    border: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 13px; color: var(--text-muted);
+  }
+
+  /* TAB ROW */
+  .tab-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 14px 18px 0;
+  }
+  .tab-btn {
+    padding: 10px 0;
+    border-radius: 10px;
+    border: 0.5px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tab-btn.active-when {
+    border-color: var(--orange-border);
+    background: var(--orange-dim);
+  }
+  .tab-btn.active-where {
+    border-color: var(--purple-border);
+    background: var(--purple-dim);
+  }
+  .tab-accent {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 10px 10px 0 0;
+  }
+  .tab-icon { font-size: 15px; }
+  .tab-label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .tab-sub { font-size: 10px; color: var(--text-muted); }
+  .tab-badge {
+    position: absolute;
+    top: 6px; right: 8px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    font-size: 9px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* PENALTY STRIP — two columns */
+  .penalty-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 18px 0;
+  }
+  .pen-col {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .pen-col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .pen-col-label {
+    font-size: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .pen-vals { display: flex; gap: 10px; }
+  .pen-item { }
+  .pen-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    line-height: 1;
+  }
+  .pen-num.zero { color: var(--text-muted); }
+  .pen-sub { font-size: 9px; color: var(--text-muted); margin-top: 1px; font-family: 'Syne', sans-serif; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .pen-track { height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+  .pen-fill { height: 100%; border-radius: 2px; transition: width 0.25s ease; }
+
+  /* HINTS PANEL */
+  .hints-panel {
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .hints-panel::-webkit-scrollbar { width: 3px; }
+  .hints-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .group-label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    color: var(--text-muted);
+    padding: 8px 2px 4px;
+  }
+  .group-label:first-child { padding-top: 2px; }
+
+  .hint-card {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .hint-card:hover:not(.locked):not(.purchased) {
+    border-color: var(--border-md);
+    background: var(--surface3);
+  }
+  .hint-card.purchased-when { border-color: rgba(251,146,60,0.28); background: rgba(251,146,60,0.05); cursor: default; }
+  .hint-card.purchased-where { border-color: rgba(192,132,252,0.28); background: rgba(192,132,252,0.05); cursor: default; }
+  .hint-card.locked { opacity: 0.42; cursor: not-allowed; }
+
+  .purchased-bar {
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    border-radius: 10px 0 0 10px;
+  }
+
+  .hint-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    border: 0.5px solid var(--border);
+  }
+  .hint-body { flex: 1; min-width: 0; }
+  .hint-name {
+    font-size: 13px; font-weight: 500;
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 2px;
+  }
+  .hint-name-text { flex: 1; }
+  .hint-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+  .hint-desc.revealed { color: var(--text-dim); font-style: italic; }
+
+  .hint-footer { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+
+  .cost-pill {
+    display: flex; align-items: center; gap: 4px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    border: 0.5px solid;
+    letter-spacing: 0.3px;
+  }
+  .dep-note { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; }
+
+  .reveal-btn {
+    margin-left: auto;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: 0.5px solid;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .reveal-btn-when { border-color: var(--orange-border); background: var(--orange-dim); color: var(--orange); }
+  .reveal-btn-when:hover { background: rgba(251,146,60,0.22); }
+  .reveal-btn-where { border-color: var(--purple-border); background: var(--purple-dim); color: var(--purple); }
+  .reveal-btn-where:hover { background: rgba(192,132,252,0.22); }
+
+  .check-icon {
+    width: 14px; height: 14px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; color: #fff; flex-shrink: 0;
+  }
+  .purchased-tag {
+    font-size: 10px; font-family: 'Syne', sans-serif; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-left: auto; flex-shrink: 0;
+  }
+
+  /* TOTAL PENALTY FOOTER */
+  .modal-footer {
+    padding: 11px 18px;
+    border-top: 0.5px solid var(--border);
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .total-penalty {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+  }
+  .total-label { font-size: 11px; color: var(--text-muted); }
+  .total-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--red);
+  }
+  .total-num.zero { color: var(--text-muted); }
+  .total-xp { font-size: 11px; color: var(--text-muted); }
+  .done-btn {
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    background: var(--surface3);
+    color: var(--text-dim);
+    border: 0.5px solid var(--border-md);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+</style>
+
+<div class="backdrop">
+  <div class="modal">
+
+    <div class="modal-header">
+      <div class="modal-title">Hints</div>
+      <div class="modal-close">✕</div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-row">
+      <div class="tab-btn active-when" id="tab-when" onclick="switchTab('when')">
+        <div class="tab-accent" style="background:var(--orange);"></div>
+        <span class="tab-icon">📅</span>
+        <span class="tab-label" style="color:var(--orange);">When</span>
+        <span class="tab-sub" id="when-sub">Year clues</span>
+        <div class="tab-badge" id="when-badge" style="background:var(--orange-dim);color:var(--orange);border:0.5px solid var(--orange-border);display:none;">0</div>
+      </div>
+      <div class="tab-btn" id="tab-where" onclick="switchTab('where')">
+        <div class="tab-accent" style="background:transparent;" id="where-accent"></div>
+        <span class="tab-icon">📍</span>
+        <span class="tab-label" id="where-label" style="color:var(--text-dim);">Where</span>
+        <span class="tab-sub" id="where-sub">Location clues</span>
+        <div class="tab-badge" id="where-badge" style="background:var(--purple-dim);color:var(--purple);border:0.5px solid var(--purple-border);display:none;">0</div>
+      </div>
+    </div>
+
+    <!-- PER-AXIS PENALTY STRIP -->
+    <div class="penalty-strip">
+      <div class="pen-col">
+        <div class="pen-col-header">
+          <div class="pen-col-label" style="color:var(--orange);">📅 When penalty</div>
+          <div class="pen-vals">
+            <div class="pen-item">
+              <div class="pen-num zero" id="when-acc">0%</div>
+              <div class="pen-sub">accuracy</div>
+            </div>
+            <div class="pen-item">
+              <div class="pen-num zero" id="when-xp">0 XP</div>
+              <div class="pen-sub">XP</div>
+            </div>
+          </div>
+        </div>
+        <div class="pen-track"><div class="pen-fill" id="when-fill" style="width:0%;background:var(--orange);"></div></div>
+      </div>
+      <div class="pen-col">
+        <div class="pen-col-header">
+          <div class="pen-col-label" style="color:var(--purple);">📍 Where penalty</div>
+          <div class="pen-vals">
+            <div class="pen-item">
+              <div class="pen-num zero" id="where-acc">0%</div>
+              <div class="pen-sub">accuracy</div>
+            </div>
+            <div class="pen-item">
+              <div class="pen-num zero" id="where-xp">0 XP</div>
+              <div class="pen-sub">XP</div>
+            </div>
+          </div>
+        </div>
+        <div class="pen-track"><div class="pen-fill" id="where-fill" style="width:0%;background:var(--purple);"></div></div>
+      </div>
+    </div>
+
+    <!-- HINT LIST -->
+    <div class="hints-panel" id="hints-panel"></div>
+
+    <!-- FOOTER -->
+    <div class="modal-footer">
+      <div class="total-penalty">
+        <span class="total-label">Total penalty:</span>
+        <span class="total-num zero" id="total-acc">0%</span>
+        <span class="total-xp" id="total-xp"></span>
+      </div>
+      <div class="done-btn">Done</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const WHEN_HINTS = [
+  {
+    id:'w1', tier:1, icon:'🕰️', name:'Era clue',
+    desc:'The broad historical era of this event.',
+    revealed:'This event belongs to the 20th century.',
+    dep: null
+  },
+  {
+    id:'w2', tier:2, icon:'🗓️', name:'Decade clue',
+    desc:'The decade in which this event occurred.',
+    revealed:'This event occurred in the 1960s.',
+    dep: 'w1'
+  },
+  {
+    id:'w3', tier:3, icon:'📆', name:'Approximate year',
+    desc:'The year within a 5-year window.',
+    revealed:'This event occurred between 1965 and 1970.',
+    dep: 'w2'
+  },
+  {
+    id:'w4', tier:4, icon:'📌', name:'Narrow year range',
+    desc:'Pinned to within 2 years.',
+    revealed:'This event occurred in 1968 or 1969.',
+    dep: 'w3'
+  },
+  {
+    id:'w5', tier:5, icon:'🎯', name:'Exact year',
+    desc:'The precise year of this event. Maximum penalty.',
+    revealed:'This event occurred in 1969.',
+    dep: 'w4'
+  },
+];
+
+const WHERE_HINTS = [
+  {
+    id:'l1', tier:1, icon:'🌍', name:'Continent clue',
+    desc:'The broad continent where this event took place.',
+    revealed:'This event took place in Europe.',
+    dep: null
+  },
+  {
+    id:'l2', tier:2, icon:'🗺️', name:'Region clue',
+    desc:'A more specific region within the continent.',
+    revealed:'This event took place in Western Europe.',
+    dep: 'l1'
+  },
+  {
+    id:'l3', tier:2, icon:'🏔️', name:'Remote landmark',
+    desc:'A notable landmark within 500 km of the event.',
+    revealed:'The event was near the Alps.',
+    dep: null
+  },
+  {
+    id:'l4', tier:3, icon:'📏', name:'Distance to landmark',
+    desc:'Approximate distance from the event to the landmark.',
+    revealed:'The event occurred roughly 120 km from the Alps.',
+    dep: 'l3'
+  },
+  {
+    id:'l5', tier:3, icon:'🏳️', name:'Country clue',
+    desc:'The country where this event took place.',
+    revealed:'This event took place in France.',
+    dep: 'l2'
+  },
+  {
+    id:'l6', tier:4, icon:'🏙️', name:'City clue',
+    desc:'The city or settlement most closely associated with this event.',
+    revealed:'This event took place in Paris, France.',
+    dep: 'l5'
+  },
+  {
+    id:'l7', tier:5, icon:'📍', name:'Exact location',
+    desc:'The precise coordinates. Maximum penalty.',
+    revealed:'Palais des Sports, Paris (48.8396°N, 2.3220°E).',
+    dep: 'l6'
+  },
+];
+
+const TIER_ACC = {1:10, 2:20, 3:30, 4:40, 5:50};
+const TIER_XP  = {1:20, 2:40, 3:60, 4:80, 5:100};
+
+const TIER_COLORS = {
+  1: { bg:'rgba(134,239,172,0.1)', border:'rgba(134,239,172,0.3)', text:'#86efac' },
+  2: { bg:'rgba(103,232,249,0.1)', border:'rgba(103,232,249,0.3)', text:'#67e8f9' },
+  3: { bg:'rgba(253,230,138,0.1)', border:'rgba(253,230,138,0.3)', text:'#fde68a' },
+  4: { bg:'rgba(251,146,60,0.1)',  border:'rgba(251,146,60,0.35)', text:'#fb923c' },
+  5: { bg:'rgba(248,113,113,0.1)', border:'rgba(248,113,113,0.3)', text:'#f87171' },
+};
+
+const purchased = new Set();
+let activeTab = 'when';
+
+function getHints(tab) { return tab === 'when' ? WHEN_HINTS : WHERE_HINTS; }
+function isOwned(id) { return purchased.has(id); }
+function depOk(hint) { return !hint.dep || purchased.has(hint.dep); }
+
+function penalty(tab) {
+  let acc = 0, xp = 0;
+  getHints(tab).forEach(h => {
+    if (isOwned(h.id)) { acc += TIER_ACC[h.tier]; xp += TIER_XP[h.tier]; }
+  });
+  return { acc: Math.min(acc, 100), xp };
+}
+
+function totalPenalty() {
+  let acc = 0, xp = 0;
+  [...WHEN_HINTS, ...WHERE_HINTS].forEach(h => {
+    if (isOwned(h.id)) { acc += TIER_ACC[h.tier]; xp += TIER_XP[h.tier]; }
+  });
+  return { acc: Math.min(acc, 100), xp };
+}
+
+function countOwned(tab) { return getHints(tab).filter(h => isOwned(h.id)).length; }
+
+function updatePenalties() {
+  const w  = penalty('when');
+  const l  = penalty('where');
+  const tot = totalPenalty();
+
+  const set = (id, val, zero) => {
+    const el = document.getElementById(id);
+    el.textContent = val;
+    el.className = 'pen-num' + (zero ? ' zero' : '');
+  };
+
+  set('when-acc', (w.acc ? '-' : '') + w.acc + '%', w.acc === 0);
+  set('when-xp',  (w.xp  ? '-' : '') + w.xp  + ' XP', w.xp === 0);
+  set('where-acc',(l.acc ? '-' : '') + l.acc + '%', l.acc === 0);
+  set('where-xp', (l.xp  ? '-' : '') + l.xp  + ' XP', l.xp === 0);
+
+  document.getElementById('when-fill').style.width  = w.acc + '%';
+  document.getElementById('where-fill').style.width = l.acc + '%';
+
+  const tEl = document.getElementById('total-acc');
+  tEl.textContent = (tot.acc ? '-' : '') + tot.acc + '%';
+  tEl.className = 'total-num' + (tot.acc === 0 ? ' zero' : '');
+  document.getElementById('total-xp').textContent = tot.xp ? '/ −' + tot.xp + ' XP' : '';
+
+  ['when','where'].forEach(tab => {
+    const c = countOwned(tab);
+    const badge = document.getElementById(tab + '-badge');
+    if (c > 0) { badge.textContent = c; badge.style.display = 'flex'; }
+    else badge.style.display = 'none';
+  });
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  const wBtn = document.getElementById('tab-when');
+  const lBtn = document.getElementById('tab-where');
+
+  wBtn.className = 'tab-btn' + (tab === 'when' ? ' active-when' : '');
+  lBtn.className = 'tab-btn' + (tab === 'where' ? ' active-where' : '');
+
+  document.getElementById('when-label') && null;
+  const whenLabel = wBtn.querySelector('.tab-label');
+  const whereLabel = lBtn.querySelector('.tab-label');
+  const whereAccent = document.getElementById('where-accent');
+  const whenAccent = wBtn.querySelector('.tab-accent');
+
+  if (tab === 'when') {
+    whenLabel.style.color = 'var(--orange)';
+    whereLabel.style.color = 'var(--text-dim)';
+    whenAccent.style.background = 'var(--orange)';
+    whereAccent.style.background = 'transparent';
+  } else {
+    whereLabel.style.color = 'var(--purple)';
+    whenLabel.style.color = 'var(--text-dim)';
+    whereAccent.style.background = 'var(--purple)';
+    whenAccent.style.background = 'transparent';
+  }
+
+  renderHints();
+}
+
+function renderHints() {
+  const panel = document.getElementById('hints-panel');
+  panel.innerHTML = '';
+  const hints = getHints(activeTab);
+  const isWhen = activeTab === 'when';
+  const accentColor = isWhen ? 'var(--orange)' : 'var(--purple)';
+  const purchasedClass = isWhen ? 'purchased-when' : 'purchased-where';
+  const btnClass = isWhen ? 'reveal-btn-when' : 'reveal-btn-where';
+
+  let lastGroup = null;
+  const TIER_GROUP = {1:'Vague', 2:'Moderate', 3:'Strong', 4:'Near-definitive', 5:'Definitive'};
+
+  hints.forEach(hint => {
+    const group = TIER_GROUP[hint.tier];
+    if (group !== lastGroup) {
+      lastGroup = group;
+      const gl = document.createElement('div');
+      gl.className = 'group-label';
+      gl.textContent = 'Tier ' + hint.tier + ' — ' + group;
+      panel.appendChild(gl);
+    }
+
+    const owned = isOwned(hint.id);
+    const locked = !depOk(hint);
+    const tc = TIER_COLORS[hint.tier];
+
+    const card = document.createElement('div');
+    card.className = 'hint-card' + (owned ? ' ' + purchasedClass : '') + (locked ? ' locked' : '');
+
+    if (owned) {
+      const bar = document.createElement('div');
+      bar.className = 'purchased-bar';
+      bar.style.background = accentColor;
+      card.appendChild(bar);
+    }
+
+    const iconEl = document.createElement('div');
+    iconEl.className = 'hint-icon';
+    iconEl.style.cssText = `background:${tc.bg};border-color:${tc.border};`;
+    iconEl.textContent = hint.icon;
+    card.appendChild(iconEl);
+
+    const body = document.createElement('div');
+    body.className = 'hint-body';
+
+    const nameRow = document.createElement('div');
+    nameRow.className = 'hint-name';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'hint-name-text';
+    nameSpan.textContent = hint.name;
+    nameRow.appendChild(nameSpan);
+    if (owned) {
+      const chk = document.createElement('div');
+      chk.className = 'check-icon';
+      chk.style.background = accentColor;
+      chk.textContent = '✓';
+      nameRow.appendChild(chk);
+    }
+    body.appendChild(nameRow);
+
+    const desc = document.createElement('div');
+    desc.className = 'hint-desc' + (owned ? ' revealed' : '');
+    desc.textContent = owned ? hint.revealed : hint.desc;
+    body.appendChild(desc);
+
+    const footer = document.createElement('div');
+    footer.className = 'hint-footer';
+
+    const pill = document.createElement('div');
+    pill.className = 'cost-pill';
+    pill.style.cssText = `background:${tc.bg};border-color:${tc.border};color:${tc.text};`;
+    pill.innerHTML = 'T' + hint.tier + ' &nbsp;−' + TIER_ACC[hint.tier] + '% &nbsp;−' + TIER_XP[hint.tier] + ' XP';
+    footer.appendChild(pill);
+
+    if (locked && hint.dep) {
+      const depHint = [...WHEN_HINTS, ...WHERE_HINTS].find(x => x.id === hint.dep);
+      const dep = document.createElement('div');
+      dep.className = 'dep-note';
+      dep.innerHTML = '🔒 <span>Requires ' + depHint.name + '</span>';
+      footer.appendChild(dep);
+    }
+
+    if (!owned && !locked) {
+      const btn = document.createElement('div');
+      btn.className = 'reveal-btn ' + btnClass;
+      btn.textContent = 'Reveal';
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        purchased.add(hint.id);
+        renderHints();
+        updatePenalties();
+      });
+      footer.appendChild(btn);
+    }
+
+    if (owned) {
+      const tag = document.createElement('div');
+      tag.className = 'purchased-tag';
+      tag.style.color = accentColor;
+      tag.textContent = 'Revealed';
+      footer.appendChild(tag);
+    }
+
+    body.appendChild(footer);
+    card.appendChild(body);
+
+    if (!owned && !locked) {
+      card.addEventListener('click', () => {
+        purchased.add(hint.id);
+        renderHints();
+        updatePenalties();
+      });
+    }
+
+    panel.appendChild(card);
+  });
+}
+
+renderHints();
+updatePenalties();
+</script>

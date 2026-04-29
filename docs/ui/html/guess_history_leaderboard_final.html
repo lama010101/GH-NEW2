@@ -1,0 +1,197 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.lb { padding: 1rem 0; font-family: var(--font-sans); }
+
+/* HOME PILL */
+.home-pill {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.09); border: 0.5px solid rgba(255,255,255,0.18);
+  border-radius: 20px; padding: 5px 14px; margin-bottom: 1.25rem;
+}
+.pill-acc { font-size: 13px; font-weight: 500; color: #fff; }
+.pill-div { font-size: 13px; color: rgba(255,255,255,0.3); }
+.pill-xp  { font-size: 13px; font-weight: 500; color: #f0c060; }
+.pill-wrap { background: #1a1a2e; border-radius: 12px; padding: 10px 14px; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 12px; }
+.pill-label { font-size: 11px; color: rgba(255,255,255,0.45); letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* TABS */
+.tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
+.tab {
+  padding: 6px 18px; border-radius: var(--border-radius-md);
+  border: 0.5px solid var(--color-border-secondary);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  background: transparent; color: var(--color-text-secondary); transition: all 0.15s;
+}
+.tab:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+.tab.active { background: var(--color-background-primary); color: var(--color-text-primary); border-color: var(--color-border-primary); }
+
+/* TOGGLE */
+.toggle-row { display: flex; gap: 4px; margin-bottom: 1rem; background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 3px; width: fit-content; }
+.tog {
+  padding: 5px 16px; border-radius: 6px; font-size: 12px; font-weight: 500;
+  cursor: pointer; border: none; background: transparent;
+  color: var(--color-text-secondary); transition: all 0.15s;
+}
+.tog.active { background: var(--color-background-primary); color: var(--color-text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+
+/* DATE ROW */
+.date-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+.date-row label { font-size: 12px; color: var(--color-text-secondary); }
+.date-row input { font-size: 12px; padding: 4px 8px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); color: var(--color-text-primary); background: var(--color-background-primary); }
+
+/* PANES */
+.pane { display: none; } .pane.active { display: block; }
+.subpane { display: none; } .subpane.active { display: block; }
+
+/* PODIUM */
+.top3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.podium { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px 10px 12px; text-align: center; }
+.podium.p1 { border-color: #EF9F27; }
+.medal { font-size: 11px; font-weight: 500; letter-spacing: 0.4px; margin-bottom: 6px; color: var(--color-text-tertiary); }
+.podium.p1 .medal { color: #854F0B; } .podium.p2 .medal { color: #5F5E5A; } .podium.p3 .medal { color: #534AB7; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; margin: 0 auto 7px; }
+.av-a{background:#FAEEDA;color:#633806;} .av-b{background:#D3D1C7;color:#2C2C2A;}
+.av-c{background:#EEEDFE;color:#26215C;} .av-d{background:#E1F5EE;color:#04342C;}
+.av-e{background:#FAECE7;color:#4A1B0C;} .av-f{background:#E6F1FB;color:#042C53;}
+.av-g{background:#FBEAF0;color:#4B1528;} .av-h{background:#EAF3DE;color:#173404;}
+.pname { font-size: 12px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pval  { font-size: 19px; font-weight: 600; color: var(--color-text-primary); line-height: 1.2; }
+.psub  { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+
+/* TABLE */
+.table-wrap { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+thead th { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.6px; padding: 9px 12px; border-bottom: 0.5px solid var(--color-border-tertiary); text-align: left; }
+tbody tr { border-bottom: 0.5px solid var(--color-border-tertiary); transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--color-background-secondary); }
+tbody td { font-size: 13px; padding: 9px 12px; color: var(--color-text-primary); vertical-align: middle; }
+.rn { font-weight: 500; color: var(--color-text-secondary); font-size: 13px; }
+.rn.r1{color:#854F0B;} .rn.r2{color:#5F5E5A;} .rn.r3{color:#534AB7;}
+.pcell { display: flex; align-items: center; gap: 8px; }
+.mav { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; flex-shrink: 0; }
+.bar-wrap { display: flex; align-items: center; gap: 7px; }
+.bar-bg { flex: 1; height: 4px; background: var(--color-border-tertiary); border-radius: 2px; overflow: hidden; min-width: 40px; }
+.bar-fill { height: 100%; border-radius: 2px; background: #185FA5; }
+.bar-val { font-size: 13px; font-weight: 500; min-width: 34px; text-align: right; }
+.dim { font-size: 12px; color: var(--color-text-secondary); }
+.you-row { background: #E6F1FB !important; }
+.you-row td { color: #042C53 !important; }
+.you-row .rn, .you-row .bar-val { color: #042C53 !important; }
+.you-sep td { font-size: 11px; color: var(--color-text-tertiary); text-align: center; padding: 5px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); }
+.note { font-size: 11px; color: var(--color-text-tertiary); margin-top: 8px; padding: 6px 10px; border-left: 2px solid var(--color-border-secondary); }
+</style>
+
+<div class="lb">
+
+  <!-- HOME PAGE IDENTITY PILL -->
+  <div class="pill-wrap">
+    <div class="pill-label">Your stats</div>
+    <div class="home-pill">
+      <span class="pill-acc">74 %</span>
+      <span class="pill-div">|</span>
+      <span class="pill-xp">59 325 XP</span>
+    </div>
+    <div class="pill-label" style="font-size:10px;color:var(--color-text-tertiary)">Daily · Level Up · Compete only — Practice excluded</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('daily')">Daily</button>
+    <button class="tab" onclick="switchTab('levelup')">Level Up</button>
+  </div>
+
+  <!-- DAILY PANE -->
+  <div id="pane-daily" class="pane active">
+    <div class="toggle-row">
+      <button class="tog active" onclick="switchSub('today')">Today</button>
+      <button class="tog" onclick="switchSub('alltime')">All-time</button>
+    </div>
+
+    <!-- TODAY -->
+    <div id="sub-today" class="subpane active">
+      <div class="date-row">
+        <label>Challenge date</label>
+        <input type="date" value="2026-04-28" />
+      </div>
+      <div class="top3">
+        <div class="podium p2"><div class="medal">2nd place</div><div class="avatar av-b">MK</div><div class="pname">M. Kowalski</div><div class="pval">93%</div><div class="psub">1,860 XP</div></div>
+        <div class="podium p1"><div class="medal">1st place</div><div class="avatar av-a">SL</div><div class="pname">S. Laurent</div><div class="pval">99%</div><div class="psub">1,980 XP</div></div>
+        <div class="podium p3"><div class="medal">3rd place</div><div class="avatar av-c">AT</div><div class="pname">A. Tanaka</div><div class="pval">90%</div><div class="psub">1,800 XP</div></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th style="width:38px">#</th><th>Player</th><th style="width:145px">Accuracy</th><th style="width:82px">XP today</th><th style="width:80px">Time</th></tr></thead>
+        <tbody>
+          <tr><td><span class="rn r1">1</span></td><td><div class="pcell"><div class="mav av-a">SL</div>S. Laurent</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:99%"></div></div><span class="bar-val">99%</span></div></td><td class="dim">1,980</td><td class="dim">09:14</td></tr>
+          <tr><td><span class="rn r2">2</span></td><td><div class="pcell"><div class="mav av-b">MK</div>M. Kowalski</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:93%"></div></div><span class="bar-val">93%</span></div></td><td class="dim">1,860</td><td class="dim">11:32</td></tr>
+          <tr><td><span class="rn r3">3</span></td><td><div class="pcell"><div class="mav av-c">AT</div>A. Tanaka</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:90%"></div></div><span class="bar-val">90%</span></div></td><td class="dim">1,800</td><td class="dim">08:55</td></tr>
+          <tr><td><span class="rn">4</span></td><td><div class="pcell"><div class="mav av-d">RB</div>R. Benali</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:88%"></div></div><span class="bar-val">88%</span></div></td><td class="dim">1,760</td><td class="dim">14:07</td></tr>
+          <tr><td><span class="rn">5</span></td><td><div class="pcell"><div class="mav av-e">JM</div>J. Moreau</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:85%"></div></div><span class="bar-val">85%</span></div></td><td class="dim">1,700</td><td class="dim">16:41</td></tr>
+          <tr><td><span class="rn">6</span></td><td><div class="pcell"><div class="mav av-f">PN</div>P. Nguyen</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:82%"></div></div><span class="bar-val">82%</span></div></td><td class="dim">1,640</td><td class="dim">12:19</td></tr>
+          <tr class="you-sep"><td colspan="5">· · ·</td></tr>
+          <tr class="you-row"><td><span class="rn">142</span></td><td><div class="pcell"><div class="mav av-g">ME</div>You</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:61%"></div></div><span class="bar-val">61%</span></div></td><td>1,220</td><td>17:03</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">1,847 players completed today's challenge. Accuracy % is primary, XP is tiebreaker. Resets 00:00 UTC.</p>
+    </div>
+
+    <!-- ALL-TIME -->
+    <div id="sub-alltime" class="subpane">
+      <div class="top3">
+        <div class="podium p2"><div class="medal">2nd place</div><div class="avatar av-d">RB</div><div class="pname">R. Benali</div><div class="pval">91%</div><div class="psub">312,400 XP · 412 games</div></div>
+        <div class="podium p1"><div class="medal">1st place</div><div class="avatar av-a">SL</div><div class="pname">S. Laurent</div><div class="pval">96%</div><div class="psub">489,600 XP · 510 games</div></div>
+        <div class="podium p3"><div class="medal">3rd place</div><div class="avatar av-h">OW</div><div class="pname">O. Wierzbicki</div><div class="pval">89%</div><div class="psub">198,200 XP · 224 games</div></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th style="width:38px">#</th><th>Player</th><th style="width:145px">Avg accuracy</th><th style="width:82px">Total XP</th><th style="width:80px">Games</th></tr></thead>
+        <tbody>
+          <tr><td><span class="rn r1">1</span></td><td><div class="pcell"><div class="mav av-a">SL</div>S. Laurent</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:96%"></div></div><span class="bar-val">96%</span></div></td><td class="dim">489,600</td><td class="dim">510</td></tr>
+          <tr><td><span class="rn r2">2</span></td><td><div class="pcell"><div class="mav av-d">RB</div>R. Benali</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:91%"></div></div><span class="bar-val">91%</span></div></td><td class="dim">312,400</td><td class="dim">412</td></tr>
+          <tr><td><span class="rn r3">3</span></td><td><div class="pcell"><div class="mav av-h">OW</div>O. Wierzbicki</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:89%"></div></div><span class="bar-val">89%</span></div></td><td class="dim">198,200</td><td class="dim">224</td></tr>
+          <tr><td><span class="rn">4</span></td><td><div class="pcell"><div class="mav av-b">MK</div>M. Kowalski</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:87%"></div></div><span class="bar-val">87%</span></div></td><td class="dim">156,600</td><td class="dim">189</td></tr>
+          <tr><td><span class="rn">5</span></td><td><div class="pcell"><div class="mav av-e">JM</div>J. Moreau</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:84%"></div></div><span class="bar-val">84%</span></div></td><td class="dim">109,200</td><td class="dim">137</td></tr>
+          <tr><td><span class="rn">6</span></td><td><div class="pcell"><div class="mav av-f">PN</div>P. Nguyen</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">80%</span></div></td><td class="dim">88,000</td><td class="dim">110</td></tr>
+          <tr class="you-sep"><td colspan="5">· · ·</td></tr>
+          <tr class="you-row"><td><span class="rn">203</span></td><td><div class="pcell"><div class="mav av-g">ME</div>You</div></td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:61%"></div></div><span class="bar-val">61%</span></div></td><td>14,640</td><td>12</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Avg accuracy % primary, total XP tiebreaker. Never resets.</p>
+    </div>
+  </div>
+
+  <!-- LEVEL UP PANE -->
+  <div id="pane-levelup" class="pane">
+    <div class="top3">
+      <div class="podium p2"><div class="medal">2nd place</div><div class="avatar av-c">YC</div><div class="pname">Y. Chen</div><div class="pval">Lv 94</div><div class="psub">81% at level</div></div>
+      <div class="podium p1"><div class="medal">1st place</div><div class="avatar av-a">HV</div><div class="pname">H. Volkov</div><div class="pval">Lv 100</div><div class="psub">96% at level</div></div>
+      <div class="podium p3"><div class="medal">3rd place</div><div class="avatar av-e">ZA</div><div class="pname">Z. Abdi</div><div class="pval">Lv 88</div><div class="psub">79% at level</div></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th style="width:38px">#</th><th>Player</th><th style="width:70px">Level</th><th style="width:155px">Accuracy at level</th><th style="width:80px">Total XP</th></tr></thead>
+      <tbody>
+        <tr><td><span class="rn r1">1</span></td><td><div class="pcell"><div class="mav av-a">HV</div>H. Volkov</div></td><td>100</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:96%"></div></div><span class="bar-val">96%</span></div></td><td class="dim">184,200</td></tr>
+        <tr><td><span class="rn r2">2</span></td><td><div class="pcell"><div class="mav av-c">YC</div>Y. Chen</div></td><td>94</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:81%"></div></div><span class="bar-val">81%</span></div></td><td class="dim">152,440</td></tr>
+        <tr><td><span class="rn r3">3</span></td><td><div class="pcell"><div class="mav av-e">ZA</div>Z. Abdi</div></td><td>88</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:79%"></div></div><span class="bar-val">79%</span></div></td><td class="dim">138,810</td></tr>
+        <tr><td><span class="rn">4</span></td><td><div class="pcell"><div class="mav av-d">OB</div>O. Bjornsen</div></td><td>71</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:74%"></div></div><span class="bar-val">74%</span></div></td><td class="dim">98,320</td></tr>
+        <tr><td><span class="rn">5</span></td><td><div class="pcell"><div class="mav av-b">FS</div>F. Silva</div></td><td>65</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:70%"></div></div><span class="bar-val">70%</span></div></td><td class="dim">87,650</td></tr>
+        <tr><td><span class="rn">6</span></td><td><div class="pcell"><div class="mav av-f">IM</div>I. Makhmudov</div></td><td>58</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:66%"></div></div><span class="bar-val">66%</span></div></td><td class="dim">71,900</td></tr>
+        <tr class="you-sep"><td colspan="5">· · ·</td></tr>
+        <tr class="you-row"><td><span class="rn">38</span></td><td><div class="pcell"><div class="mav av-g">ME</div>You</div></td><td>12</td><td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:58%"></div></div><span class="bar-val">58%</span></div></td><td>9,840</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Ranked by level reached, tiebreaker: accuracy at that level. Never resets.</p>
+  </div>
+
+</div>
+
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['daily','levelup'][i] === id));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'pane-'+id));
+}
+function switchSub(id) {
+  document.querySelectorAll('.tog').forEach((t,i) => t.classList.toggle('active', ['today','alltime'][i] === id));
+  document.querySelectorAll('.subpane').forEach(p => p.classList.toggle('active', p.id === 'sub-'+id));
+}
+</script>

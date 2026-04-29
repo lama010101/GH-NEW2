@@ -1,0 +1,882 @@
+﻿Γùç injecting env (0) from .env.local // tip: Γîÿ suppress logs { quiet: true }
+=== DIAGNOSTIC SCRIPT: submitGuess execution trace ===
+
+[DB] Using dbPool from src/server/db.ts
+
+--- STEP C: Most recent session ---
+[DB][ENFORCEMENT] Γ£à Connected to postgres
+[DB][ENFORCEMENT] PostgreSQL PostgreSQL
+Session: {
+  "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+  "mode": "sync",
+  "round_timer_sec": 40,
+  "total_rounds": 5,
+  "year_min": -100,
+  "year_max": 2026,
+  "session_deadline": null,
+  "created_at": "2026-04-28T07:13:43.247Z"
+}
+game_id: b0d7327c-92ab-4d97-88a9-635659e63dd4
+
+--- STEP D: Session players ---
+Players: [
+  {
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "display_name": "Kiki",
+    "left_at": "2026-04-28T07:52:58.256Z",
+    "ready": false,
+    "is_host": false
+  },
+  {
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "display_name": "Player-718d15",
+    "left_at": null,
+    "ready": false,
+    "is_host": true
+  }
+]
+Active players (left_at IS NULL): 1
+Using player_id: 718d158f-afd6-4784-bfc6-f7ba395f294c
+
+--- STEP E: Round events ---
+Round events: [
+  {
+    "id": "1117",
+    "round_index": null,
+    "event_type": "SESSION_CREATED",
+    "payload": {
+      "mode": "sync",
+      "seed": "2405314473564831554",
+      "eventIds": [
+        "1ec18005-ae6b-422b-9c25-5a887100cb3e",
+        "ba54f5fa-21b9-4fa5-8909-80f9a4c58b6f",
+        "c4266c1c-19d4-4eea-9ebb-53b0e8329dee",
+        "f0aa6b18-503f-4175-92cc-68b3c39928e4",
+        "f6d71b46-343c-47bc-a3bb-00f806726e63"
+      ],
+      "totalRounds": 5,
+      "hostPlayerId": "718d158f-afd6-4784-bfc6-f7ba395f294c"
+    },
+    "created_at": "2026-04-28T07:13:43.247Z"
+  },
+  {
+    "id": "1118",
+    "round_index": 0,
+    "event_type": "ROUND_STARTED",
+    "payload": {
+      "cause": "player",
+      "eventId": "1ec18005-ae6b-422b-9c25-5a887100cb3e",
+      "startedAt": "2026-04-28T14:14:46.832Z",
+      "roundIndex": 0,
+      "phaseEndsAt": "2026-04-28T14:15:26.832Z"
+    },
+    "created_at": "2026-04-28T07:14:46.970Z"
+  },
+  {
+    "id": "1119",
+    "round_index": 0,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "yearGuess": 1986
+    },
+    "created_at": "2026-04-28T07:14:55.630Z"
+  },
+  {
+    "id": "1120",
+    "round_index": 0,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "yearGuess": 1986
+    },
+    "created_at": "2026-04-28T07:15:04.858Z"
+  },
+  {
+    "id": "1121",
+    "round_index": 0,
+    "event_type": "ROUND_COMPLETE",
+    "payload": {
+      "commitCount": 2
+    },
+    "created_at": "2026-04-28T07:15:06.205Z"
+  },
+  {
+    "id": "1123",
+    "round_index": 1,
+    "event_type": "ROUND_STARTED",
+    "payload": {
+      "cause": "player",
+      "eventId": "ba54f5fa-21b9-4fa5-8909-80f9a4c58b6f",
+      "startedAt": "2026-04-28T14:15:18.700Z",
+      "roundIndex": 1,
+      "phaseEndsAt": "2026-04-28T14:15:58.700Z"
+    },
+    "created_at": "2026-04-28T07:15:18.819Z"
+  },
+  {
+    "id": "1125",
+    "round_index": 1,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "yearGuess": 100
+    },
+    "created_at": "2026-04-28T07:15:35.549Z"
+  },
+  {
+    "id": "1126",
+    "round_index": 1,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "yearGuess": 1989
+    },
+    "created_at": "2026-04-28T07:15:47.580Z"
+  },
+  {
+    "id": "1127",
+    "round_index": 1,
+    "event_type": "ROUND_COMPLETE",
+    "payload": {
+      "commitCount": 2
+    },
+    "created_at": "2026-04-28T07:15:48.867Z"
+  }
+]
+Total events: 9
+
+--- STEP F: Round commits ---
+Round commits: [
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "round_index": 0,
+    "submitted_at": "2026-04-28T07:14:55.237Z",
+    "year_guess": 1986,
+    "location_lat": 15,
+    "location_lng": 55,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "round_index": 0,
+    "submitted_at": "2026-04-28T07:15:04.473Z",
+    "year_guess": 1986,
+    "location_lat": 2,
+    "location_lng": 23,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "round_index": 1,
+    "submitted_at": "2026-04-28T07:15:35.186Z",
+    "year_guess": 100,
+    "location_lat": 1968,
+    "location_lng": 45,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "round_index": 1,
+    "submitted_at": "2026-04-28T07:15:47.201Z",
+    "year_guess": 1989,
+    "location_lat": 200,
+    "location_lng": 100,
+    "hints_used": 0,
+    "score": 0
+  }
+]
+Total commits: 4
+
+--- STEP G: Calling submitGuess() ---
+Parameters:
+  gameId: b0d7327c-92ab-4d97-88a9-635659e63dd4
+  playerId: 718d158f-afd6-4784-bfc6-f7ba395f294c
+  roundIndex: 0
+  yearGuess: 1900
+  locationGuess: { lat: 48.8566, lng: 2.3522 }
+  hintsUsed: []
+  _executionContext: "api"
+
+[REPLAY_VALIDATION][PASS] gameId=b0d7327c-92ab-4d97-88a9-635659e63dd4 phase=ROUND_COMPLETE round=1 commits=2
+--- STEP H: Returned snapshot ---
+{
+  "gameId": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+  "status": "ROUND_COMPLETE",
+  "config": {
+    "mode": "sync",
+    "roundTimerSec": 40,
+    "totalRounds": 5,
+    "yearMin": -100,
+    "yearMax": 2026,
+    "hostPlayerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "sessionDeadline": null,
+    "startedAt": null,
+    "completedAt": null
+  },
+  "players": [
+    {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "displayName": "Kiki",
+      "joinedAt": "2026-04-28T07:42:49.804Z",
+      "leftAt": "2026-04-28T07:52:58.256Z",
+      "ready": false,
+      "isHost": false,
+      "hasSubmitted": true
+    },
+    {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "displayName": "Player-718d15",
+      "joinedAt": "2026-04-28T19:53:41.540Z",
+      "leftAt": null,
+      "ready": false,
+      "isHost": true,
+      "hasSubmitted": true
+    }
+  ],
+  "currentRoundIndex": 1,
+  "allPlayersReady": false,
+  "roundStartsAt": "2026-04-28T14:15:18.700Z",
+  "roundEndsAt": "2026-04-28T14:15:58.700Z",
+  "viewerPlayerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+  "timeRemaining": null
+}
+
+Snapshot status: ROUND_COMPLETE
+
+--- STEP I: Post-call DB state ---
+Round commits after: [
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "round_index": 0,
+    "submitted_at": "2026-04-28T07:14:55.237Z",
+    "year_guess": 1986,
+    "location_lat": 15,
+    "location_lng": 55,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "round_index": 0,
+    "submitted_at": "2026-04-28T07:15:04.473Z",
+    "year_guess": 1986,
+    "location_lat": 2,
+    "location_lng": 23,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "round_index": 1,
+    "submitted_at": "2026-04-28T07:15:35.186Z",
+    "year_guess": 100,
+    "location_lat": 1968,
+    "location_lng": 45,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "round_index": 1,
+    "submitted_at": "2026-04-28T07:15:47.201Z",
+    "year_guess": 1989,
+    "location_lat": 200,
+    "location_lng": 100,
+    "hints_used": 0,
+    "score": 0
+  }
+]
+Total commits after: 4
+
+Round events after: [
+  {
+    "id": "1117",
+    "round_index": null,
+    "event_type": "SESSION_CREATED",
+    "payload": {
+      "mode": "sync",
+      "seed": "2405314473564831554",
+      "eventIds": [
+        "1ec18005-ae6b-422b-9c25-5a887100cb3e",
+        "ba54f5fa-21b9-4fa5-8909-80f9a4c58b6f",
+        "c4266c1c-19d4-4eea-9ebb-53b0e8329dee",
+        "f0aa6b18-503f-4175-92cc-68b3c39928e4",
+        "f6d71b46-343c-47bc-a3bb-00f806726e63"
+      ],
+      "totalRounds": 5,
+      "hostPlayerId": "718d158f-afd6-4784-bfc6-f7ba395f294c"
+    },
+    "created_at": "2026-04-28T07:13:43.247Z"
+  },
+  {
+    "id": "1118",
+    "round_index": 0,
+    "event_type": "ROUND_STARTED",
+    "payload": {
+      "cause": "player",
+      "eventId": "1ec18005-ae6b-422b-9c25-5a887100cb3e",
+      "startedAt": "2026-04-28T14:14:46.832Z",
+      "roundIndex": 0,
+      "phaseEndsAt": "2026-04-28T14:15:26.832Z"
+    },
+    "created_at": "2026-04-28T07:14:46.970Z"
+  },
+  {
+    "id": "1119",
+    "round_index": 0,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "yearGuess": 1986
+    },
+    "created_at": "2026-04-28T07:14:55.630Z"
+  },
+  {
+    "id": "1120",
+    "round_index": 0,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "yearGuess": 1986
+    },
+    "created_at": "2026-04-28T07:15:04.858Z"
+  },
+  {
+    "id": "1121",
+    "round_index": 0,
+    "event_type": "ROUND_COMPLETE",
+    "payload": {
+      "commitCount": 2
+    },
+    "created_at": "2026-04-28T07:15:06.205Z"
+  },
+  {
+    "id": "1123",
+    "round_index": 1,
+    "event_type": "ROUND_STARTED",
+    "payload": {
+      "cause": "player",
+      "eventId": "ba54f5fa-21b9-4fa5-8909-80f9a4c58b6f",
+      "startedAt": "2026-04-28T14:15:18.700Z",
+      "roundIndex": 1,
+      "phaseEndsAt": "2026-04-28T14:15:58.700Z"
+    },
+    "created_at": "2026-04-28T07:15:18.819Z"
+  },
+  {
+    "id": "1125",
+    "round_index": 1,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "yearGuess": 100
+    },
+    "created_at": "2026-04-28T07:15:35.549Z"
+  },
+  {
+    "id": "1126",
+    "round_index": 1,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "yearGuess": 1989
+    },
+    "created_at": "2026-04-28T07:15:47.580Z"
+  },
+  {
+    "id": "1127",
+    "round_index": 1,
+    "event_type": "ROUND_COMPLETE",
+    "payload": {
+      "commitCount": 2
+    },
+    "created_at": "2026-04-28T07:15:48.867Z"
+  }
+]
+Total events after: 9
+
+=== DIAGNOSTIC COMPLETE ===
+node.exe : node:events:486
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node:events:486:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: Connection terminated unexpectedly
+    at Connection.<anonymous> (D:\GH-NEW\node_modules\pg\lib\client.js:180:73)
+    at Object.onceWrapper (node:events:622:28)
+    at Connection.emit (node:events:508:28)
+    at Socket.<anonymous> (D:\GH-NEW\node_modules\pg\lib\connection.js:61:12)
+    at Socket.emit (node:events:520:35)
+    at TCP.<anonymous> (node:net:346:12)
+Emitted 'error' event on BoundPool instance at:
+    at Client.idleListener (D:\GH-NEW\node_modules\pg-pool\index.js:62:10)
+    at Client.emit (node:events:508:28)
+    at Client._handleErrorEvent (D:\GH-NEW\node_modules\pg\lib\client.js:393:10)
+    at Connection.<anonymous> (D:\GH-NEW\node_modules\pg\lib\client.js:198:16)
+    at Object.onceWrapper (node:events:622:28)
+    at Connection.emit (node:events:508:28)
+    at Socket.<anonymous> (D:\GH-NEW\node_modules\pg\lib\connection.js:61:12)
+    at Socket.emit (node:events:520:35)
+    at TCP.<anonymous> (node:net:346:12) {
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres.gzvixlvkwjsrtmtybtkf',
+      database: 'postgres',
+      port: 6543,
+      host: 'aws-1-us-east-2.pooler.supabase.com',
+      binary: false,
+      options: undefined,
+      ssl: { rejectUnauthorized: false },
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 5,
+      keepalives: 1,
+      keepalives_idle: 10
+    },
+    user: 'postgres.gzvixlvkwjsrtmtybtkf',
+    database: 'postgres',
+    port: 6543,
+    host: 'aws-1-us-east-2.pooler.supabase.com',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides {
+      _types: {
+        getTypeParser: [Function: getTypeParser],
+        setTypeParser: [Function: setTypeParser],
+        arrayParser: { create: [Function: create] },
+        builtins: {
+          BOOL: 16,
+          BYTEA: 17,
+          CHAR: 18,
+          INT8: 20,
+          INT2: 21,
+          INT4: 23,
+          REGPROC: 24,
+          TEXT: 25,
+          OID: 26,
+          TID: 27,
+          XID: 28,
+          CID: 29,
+          JSON: 114,
+          XML: 142,
+          PG_NODE_TREE: 194,
+          SMGR: 210,
+          PATH: 602,
+          POLYGON: 604,
+          CIDR: 650,
+          FLOAT4: 700,
+          FLOAT8: 701,
+          ABSTIME: 702,
+          RELTIME: 703,
+          TINTERVAL: 704,
+          CIRCLE: 718,
+          MACADDR8: 774,
+          MONEY: 790,
+          MACADDR: 829,
+          INET: 869,
+          ACLITEM: 1033,
+          BPCHAR: 1042,
+          VARCHAR: 1043,
+          DATE: 1082,
+          TIME: 1083,
+          TIMESTAMP: 1114,
+          TIMESTAMPTZ: 1184,
+          INTERVAL: 1186,
+          TIMETZ: 1266,
+          BIT: 1560,
+          VARBIT: 1562,
+          NUMERIC: 1700,
+          REFCURSOR: 1790,
+          REGPROCEDURE: 2202,
+          REGOPER: 2203,
+          REGOPERATOR: 2204,
+          REGCLASS: 2205,
+          REGTYPE: 2206,
+          UUID: 2950,
+          TXID_SNAPSHOT: 2970,
+          PG_LSN: 3220,
+          PG_NDISTINCT: 3361,
+          PG_DEPENDENCIES: 3402,
+          TSVECTOR: 3614,
+          TSQUERY: 3615,
+          GTSVECTOR: 3642,
+          REGCONFIG: 3734,
+          REGDICTIONARY: 3769,
+          JSONB: 3802,
+          REGNAMESPACE: 4089,
+          REGROLE: 4096
+        }
+      },
+      text: {},
+      binary: {}
+    },
+    _ending: true,
+    _ended: true,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype] {
+        newListener: [Function (anonymous)],
+        connect: [Function (anonymous)],
+        sslconnect: [Function (anonymous)],
+        authenticationCleartextPassword: [Function: bound _handleAuthCleartextPassword],
+        authenticationMD5Password: [Function: bound _handleAuthMD5Password],
+        authenticationSASL: [Function: bound _handleAuthSASL],
+        authenticationSASLContinue: [Function: bound _handleAuthSASLContinue] AsyncFunction,
+        authenticationSASLFinal: [Function: bound _handleAuthSASLFinal],
+        backendKeyData: [Function: bound _handleBackendKeyData],
+        error: [Function: bound _handleErrorEvent],
+        errorMessage: [Function: bound _handleErrorMessage],
+        readyForQuery: [Function: bound _handleReadyForQuery],
+        notice: [Function: bound _handleNotice],
+        rowDescription: [Function: bound _handleRowDescription],
+        dataRow: [Function: bound _handleDataRow],
+        portalSuspended: [Function: bound _handlePortalSuspended],
+        emptyQuery: [Function: bound _handleEmptyQuery],
+        commandComplete: [Function: bound _handleCommandComplete],
+        parseComplete: [Function: bound _handleParseComplete],
+        copyInResponse: [Function: bound _handleCopyInResponse],
+        copyData: [Function: bound _handleCopyData],
+        notification: [Function: bound _handleNotification],
+        end: [Function: bound onceWrapper] {
+          listener: [Function (anonymous)]
+        }
+      },
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: <ref *1> TLSSocket {
+        _tlsOptions: {
+          allowHalfOpen: undefined,
+          pipe: false,
+          secureContext: SecureContext { context: SecureContext {} },
+          isServer: false,
+          requestCert: true,
+          rejectUnauthorized: false,
+          session: undefined,
+          ALPNProtocols: undefined,
+          requestOCSP: undefined,
+          enableTrace: undefined,
+          pskCallback: undefined,
+          highWaterMark: undefined,
+          onread: undefined,
+          signal: undefined
+        },
+        _secureEstablished: true,
+        _securePending: false,
+        _newSessionPending: false,
+        _controlReleased: true,
+        secureConnecting: false,
+        _SNICallback: null,
+        servername: 'aws-1-us-east-2.pooler.supabase.com',
+        alpnProtocol: false,
+        authorized: false,
+        authorizationError: 'SELF_SIGNED_CERT_IN_CHAIN',
+        encrypted: true,
+        _events: [Object: null prototype] {
+          close: [Function: onSocketCloseDestroySSL],
+          end: [ [Function: onReadableStreamEnd], [Function (anonymous)] ],
+          error: [Function: reportStreamError],
+          newListener: [ [Function: keylogNewListener], [Function: newListener] ],
+          secure: [Function: onConnectSecure],
+          data: [Function (anonymous)]
+        },
+        _eventsCount: 6,
+        connecting: false,
+        _hadError: false,
+        _parent: Socket {
+          connecting: false,
+          _hadError: false,
+          _parent: null,
+          _host: 'aws-1-us-east-2.pooler.supabase.com',
+          _closeAfterHandlingError: false,
+          _events: {
+            close: [Array],
+            error: [Array],
+            prefinish: undefined,
+            finish: undefined,
+            drain: undefined,
+            data: undefined,
+            end: [Function: onReadableStreamEnd],
+            readable: undefined,
+            connect: [Function]
+          },
+          _readableState: ReadableState {
+            highWaterMark: 16384,
+            buffer: [],
+            bufferIndex: 0,
+            length: 0,
+            pipes: [],
+            awaitDrainWriters: null,
+            Symbol(kState): 60303732
+          },
+          _writableState: WritableState {
+            highWaterMark: 16384,
+            length: 0,
+            corked: 0,
+            onwrite: [Function: bound onwrite],
+            writelen: 0,
+            bufferedIndex: 0,
+            pendingcb: 0,
+            Symbol(kState): 17564020,
+            Symbol(kBufferedValue): null,
+            Symbol(kWriteCbValue): null
+          },
+          allowHalfOpen: false,
+          _maxListeners: undefined,
+          _eventsCount: 4,
+          _sockname: null,
+          _pendingData: null,
+          _pendingEncoding: '',
+          server: null,
+          _server: null,
+          autoSelectFamilyAttemptedAddresses: [
+            '3.131.201.192:6543',
+            '13.58.13.125:6543',
+            '3.148.140.216:6543'
+          ],
+          Symbol(async_id_symbol): 49,
+          Symbol(kHandle): null,
+          Symbol(lastWriteQueueSize): 0,
+          Symbol(timeout): null,
+          Symbol(kBuffer): null,
+          Symbol(kBufferCb): null,
+          Symbol(kBufferGen): null,
+          Symbol(shapeMode): true,
+          Symbol(kCapture): false,
+          Symbol(kSetNoDelay): true,
+          Symbol(kSetKeepAlive): true,
+          Symbol(kSetKeepAliveInitialDelay): 10,
+          Symbol(kBytesRead): 24905,
+          Symbol(kBytesWritten): 3906
+        },
+        _host: null,
+        _closeAfterHandlingError: false,
+        _readableState: ReadableState {
+          highWaterMark: 16384,
+          buffer: [],
+          bufferIndex: 0,
+          length: 0,
+          pipes: [],
+          awaitDrainWriters: null,
+          Symbol(kState): 194521590,
+          Symbol(kErroredValue): Error: read ECONNRESET
+              at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+            errno: -4077,
+            code: 'ECONNRESET',
+            syscall: 'read'
+          }
+        },
+        _writableState: WritableState {
+          highWaterMark: 16384,
+          length: 0,
+          corked: 0,
+          onwrite: [Function: bound onwrite],
+          writelen: 0,
+          bufferedIndex: 0,
+          pendingcb: 0,
+          Symbol(kState): 17564150,
+          Symbol(kBufferedValue): null,
+          Symbol(kWriteCbValue): null,
+          Symbol(kErroredValue): Error: read ECONNRESET
+              at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20) {
+            errno: -4077,
+            code: 'ECONNRESET',
+            syscall: 'read'
+          }
+        },
+        allowHalfOpen: false,
+        _maxListeners: undefined,
+        _sockname: null,
+        _pendingData: null,
+        _pendingEncoding: '',
+        server: undefined,
+        _server: null,
+        ssl: null,
+        _requestCert: true,
+        _rejectUnauthorized: false,
+        Symbol(alpncallback): null,
+        Symbol(res): TLSWrap {
+          _parent: TCP {
+            reading: [Getter/Setter],
+            onconnection: null,
+            Symbol(owner_symbol): [Socket],
+            Symbol(handle_onclose): [Function (anonymous)]
+          },
+          _parentWrap: Socket {
+            connecting: false,
+            _hadError: false,
+            _parent: null,
+            _host: 'aws-1-us-east-2.pooler.supabase.com',
+            _closeAfterHandlingError: false,
+            _events: [Object],
+            _readableState: [ReadableState],
+            _writableState: [WritableState],
+            allowHalfOpen: false,
+            _maxListeners: undefined,
+            _eventsCount: 4,
+            _sockname: null,
+            _pendingData: null,
+            _pendingEncoding: '',
+            server: null,
+            _server: null,
+            autoSelectFamilyAttemptedAddresses: [Array],
+            Symbol(async_id_symbol): 49,
+            Symbol(kHandle): null,
+            Symbol(lastWriteQueueSize): 0,
+            Symbol(timeout): null,
+            Symbol(kBuffer): null,
+            Symbol(kBufferCb): null,
+            Symbol(kBufferGen): null,
+            Symbol(shapeMode): true,
+            Symbol(kCapture): false,
+            Symbol(kSetNoDelay): true,
+            Symbol(kSetKeepAlive): true,
+            Symbol(kSetKeepAliveInitialDelay): 10,
+            Symbol(kBytesRead): 24905,
+            Symbol(kBytesWritten): 3906
+          },
+          _secureContext: SecureContext { context: SecureContext {} },
+          reading: true,
+          onkeylog: [Function: onkeylog],
+          onhandshakestart: [Function: noop],
+          onhandshakedone: [Function (anonymous)],
+          onocspresponse: [Function: onocspresponse],
+          onnewsession: [Function: onnewsessionclient],
+          onerror: [Function: onerror],
+          Symbol(owner_symbol): [Circular *1]
+        },
+        Symbol(verified): true,
+        Symbol(pendingSession): null,
+        Symbol(async_id_symbol): 56,
+        Symbol(kHandle): null,
+        Symbol(lastWriteQueueSize): 0,
+        Symbol(timeout): null,
+        Symbol(kBuffer): null,
+        Symbol(kBufferCb): null,
+        Symbol(kBufferGen): null,
+        Symbol(shapeMode): true,
+        Symbol(kCapture): false,
+        Symbol(kSetNoDelay): false,
+        Symbol(kSetKeepAlive): false,
+        Symbol(kSetKeepAliveInitialDelay): 0,
+        Symbol(kBytesRead): 14651,
+        Symbol(kBytesWritten): 2096,
+        Symbol(connect-options): {
+          rejectUnauthorized: false,
+          ciphers: 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-
+GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES12
+8-GCM-SHA256:ECDHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES256-SHA384:ECDHE-R
+SA-AES256-SHA256:DHE-RSA-AES256-SHA256:HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA',
+          checkServerIdentity: [Function: checkServerIdentity],
+          minDHSize: 1024,
+          socket: Socket {
+            connecting: false,
+            _hadError: false,
+            _parent: null,
+            _host: 'aws-1-us-east-2.pooler.supabase.com',
+            _closeAfterHandlingError: false,
+            _events: [Object],
+            _readableState: [ReadableState],
+            _writableState: [WritableState],
+            allowHalfOpen: false,
+            _maxListeners: undefined,
+            _eventsCount: 4,
+            _sockname: null,
+            _pendingData: null,
+            _pendingEncoding: '',
+            server: null,
+            _server: null,
+            autoSelectFamilyAttemptedAddresses: [Array],
+            Symbol(async_id_symbol): 49,
+            Symbol(kHandle): null,
+            Symbol(lastWriteQueueSize): 0,
+            Symbol(timeout): null,
+            Symbol(kBuffer): null,
+            Symbol(kBufferCb): null,
+            Symbol(kBufferGen): null,
+            Symbol(shapeMode): true,
+            Symbol(kCapture): false,
+            Symbol(kSetNoDelay): true,
+            Symbol(kSetKeepAlive): true,
+            Symbol(kSetKeepAliveInitialDelay): 10,
+            Symbol(kBytesRead): 24905,
+            Symbol(kBytesWritten): 3906
+          },
+          servername: 'aws-1-us-east-2.pooler.supabase.com',
+          singleUse: true
+        }
+      },
+      _keepAlive: true,
+      _keepAliveInitialDelayMillis: 10000,
+      parsedStatements: {},
+      ssl: { rejectUnauthorized: false },
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      Symbol(shapeMode): false,
+      Symbol(kCapture): false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 1329057696,
+    secretKey: 667053673,
+    ssl: { rejectUnauthorized: false },
+    _connectionTimeoutMillis: 5000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 2195,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      Symbol(refed): false,
+      Symbol(kHasPrimitive): false,
+      Symbol(asyncId): 24,
+      Symbol(triggerId): 0,
+      Symbol(kAsyncContextFrame): undefined
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 2,
+    Symbol(shapeMode): false,
+    Symbol(kCapture): false
+  }
+}
+
+Node.js v24.13.1
