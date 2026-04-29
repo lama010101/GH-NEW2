@@ -1,0 +1,411 @@
+Gùç injecting env (0) from .env.local // tip: Gùê encrypted .env [www.dotenvx.com]
+=== DIAGNOSTIC SCRIPT: submitGuess execution trace ===
+
+[DB] Using dbPool from src/server/db.ts
+
+--- STEP C: Most recent session ---
+Session: {
+  "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+  "mode": "sync",
+  "round_timer_sec": 40,
+  "total_rounds": 5,
+  "year_min": -100,
+  "year_max": 2026,
+  "session_deadline": null,
+  "created_at": "2026-04-28T07:13:43.247Z"
+}
+game_id: b0d7327c-92ab-4d97-88a9-635659e63dd4
+
+--- STEP D: Session players ---
+Players: [
+  {
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "display_name": "Kiki",
+    "left_at": "2026-04-28T07:52:58.256Z",
+    "ready": false,
+    "is_host": false
+  },
+  {
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "display_name": "Player-718d15",
+    "left_at": null,
+    "ready": false,
+    "is_host": true
+  }
+]
+Active players (left_at IS NULL): 1
+Using player_id: 718d158f-afd6-4784-bfc6-f7ba395f294c
+
+--- STEP E: Round events ---
+[DB][ENFORCEMENT] G£à Connected to postgres
+[DB][ENFORCEMENT] PostgreSQL PostgreSQL
+Round events: [
+  {
+    "id": "1117",
+    "round_index": null,
+    "event_type": "SESSION_CREATED",
+    "payload": {
+      "mode": "sync",
+      "seed": "2405314473564831554",
+      "eventIds": [
+        "1ec18005-ae6b-422b-9c25-5a887100cb3e",
+        "ba54f5fa-21b9-4fa5-8909-80f9a4c58b6f",
+        "c4266c1c-19d4-4eea-9ebb-53b0e8329dee",
+        "f0aa6b18-503f-4175-92cc-68b3c39928e4",
+        "f6d71b46-343c-47bc-a3bb-00f806726e63"
+      ],
+      "totalRounds": 5,
+      "hostPlayerId": "718d158f-afd6-4784-bfc6-f7ba395f294c"
+    },
+    "created_at": "2026-04-28T07:13:43.247Z"
+  },
+  {
+    "id": "1118",
+    "round_index": 0,
+    "event_type": "ROUND_STARTED",
+    "payload": {
+      "cause": "player",
+      "eventId": "1ec18005-ae6b-422b-9c25-5a887100cb3e",
+      "startedAt": "2026-04-28T14:14:46.832Z",
+      "roundIndex": 0,
+      "phaseEndsAt": "2026-04-28T14:15:26.832Z"
+    },
+    "created_at": "2026-04-28T07:14:46.970Z"
+  },
+  {
+    "id": "1119",
+    "round_index": 0,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "yearGuess": 1986
+    },
+    "created_at": "2026-04-28T07:14:55.630Z"
+  },
+  {
+    "id": "1120",
+    "round_index": 0,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "yearGuess": 1986
+    },
+    "created_at": "2026-04-28T07:15:04.858Z"
+  },
+  {
+    "id": "1121",
+    "round_index": 0,
+    "event_type": "ROUND_COMPLETE",
+    "payload": {
+      "commitCount": 2
+    },
+    "created_at": "2026-04-28T07:15:06.205Z"
+  },
+  {
+    "id": "1123",
+    "round_index": 1,
+    "event_type": "ROUND_STARTED",
+    "payload": {
+      "cause": "player",
+      "eventId": "ba54f5fa-21b9-4fa5-8909-80f9a4c58b6f",
+      "startedAt": "2026-04-28T14:15:18.700Z",
+      "roundIndex": 1,
+      "phaseEndsAt": "2026-04-28T14:15:58.700Z"
+    },
+    "created_at": "2026-04-28T07:15:18.819Z"
+  },
+  {
+    "id": "1125",
+    "round_index": 1,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "yearGuess": 100
+    },
+    "created_at": "2026-04-28T07:15:35.549Z"
+  },
+  {
+    "id": "1126",
+    "round_index": 1,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "yearGuess": 1989
+    },
+    "created_at": "2026-04-28T07:15:47.580Z"
+  },
+  {
+    "id": "1127",
+    "round_index": 1,
+    "event_type": "ROUND_COMPLETE",
+    "payload": {
+      "commitCount": 2
+    },
+    "created_at": "2026-04-28T07:15:48.867Z"
+  }
+]
+Total events: 9
+
+--- STEP F: Round commits ---
+Round commits: [
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "round_index": 0,
+    "submitted_at": "2026-04-28T07:14:55.237Z",
+    "year_guess": 1986,
+    "location_lat": 15,
+    "location_lng": 55,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "round_index": 0,
+    "submitted_at": "2026-04-28T07:15:04.473Z",
+    "year_guess": 1986,
+    "location_lat": 2,
+    "location_lng": 23,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "round_index": 1,
+    "submitted_at": "2026-04-28T07:15:35.186Z",
+    "year_guess": 100,
+    "location_lat": 1968,
+    "location_lng": 45,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "round_index": 1,
+    "submitted_at": "2026-04-28T07:15:47.201Z",
+    "year_guess": 1989,
+    "location_lat": 200,
+    "location_lng": 100,
+    "hints_used": 0,
+    "score": 0
+  }
+]
+Total commits: 4
+
+--- STEP G: Calling submitGuess() ---
+Parameters:
+  gameId: b0d7327c-92ab-4d97-88a9-635659e63dd4
+  playerId: 718d158f-afd6-4784-bfc6-f7ba395f294c
+  roundIndex: 0
+  yearGuess: 1900
+  locationGuess: { lat: 48.8566, lng: 2.3522 }
+  hintsUsed: []
+  _executionContext: "api"
+
+[REPLAY_VALIDATION][PASS] gameId=b0d7327c-92ab-4d97-88a9-635659e63dd4 phase=ROUND_COMPLETE round=1 commits=2
+--- STEP H: Returned snapshot ---
+{
+  "gameId": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+  "status": "ROUND_COMPLETE",
+  "config": {
+    "mode": "sync",
+    "roundTimerSec": 40,
+    "totalRounds": 5,
+    "yearMin": -100,
+    "yearMax": 2026,
+    "hostPlayerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "sessionDeadline": null,
+    "startedAt": null,
+    "completedAt": null
+  },
+  "players": [
+    {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "displayName": "Kiki",
+      "joinedAt": "2026-04-28T07:42:49.804Z",
+      "leftAt": "2026-04-28T07:52:58.256Z",
+      "ready": false,
+      "isHost": false,
+      "hasSubmitted": true
+    },
+    {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "displayName": "Player-718d15",
+      "joinedAt": "2026-04-28T19:53:41.540Z",
+      "leftAt": null,
+      "ready": false,
+      "isHost": true,
+      "hasSubmitted": true
+    }
+  ],
+  "currentRoundIndex": 1,
+  "allPlayersReady": false,
+  "roundStartsAt": "2026-04-28T14:15:18.700Z",
+  "roundEndsAt": "2026-04-28T14:15:58.700Z",
+  "viewerPlayerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+  "timeRemaining": null
+}
+
+Snapshot status: ROUND_COMPLETE
+
+--- STEP I: Post-call DB state ---
+Round commits after: [
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "round_index": 0,
+    "submitted_at": "2026-04-28T07:14:55.237Z",
+    "year_guess": 1986,
+    "location_lat": 15,
+    "location_lng": 55,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "round_index": 0,
+    "submitted_at": "2026-04-28T07:15:04.473Z",
+    "year_guess": 1986,
+    "location_lat": 2,
+    "location_lng": 23,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+    "round_index": 1,
+    "submitted_at": "2026-04-28T07:15:35.186Z",
+    "year_guess": 100,
+    "location_lat": 1968,
+    "location_lng": 45,
+    "hints_used": 0,
+    "score": 0
+  },
+  {
+    "game_id": "b0d7327c-92ab-4d97-88a9-635659e63dd4",
+    "player_id": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+    "round_index": 1,
+    "submitted_at": "2026-04-28T07:15:47.201Z",
+    "year_guess": 1989,
+    "location_lat": 200,
+    "location_lng": 100,
+    "hints_used": 0,
+    "score": 0
+  }
+]
+Total commits after: 4
+
+Round events after: [
+  {
+    "id": "1117",
+    "round_index": null,
+    "event_type": "SESSION_CREATED",
+    "payload": {
+      "mode": "sync",
+      "seed": "2405314473564831554",
+      "eventIds": [
+        "1ec18005-ae6b-422b-9c25-5a887100cb3e",
+        "ba54f5fa-21b9-4fa5-8909-80f9a4c58b6f",
+        "c4266c1c-19d4-4eea-9ebb-53b0e8329dee",
+        "f0aa6b18-503f-4175-92cc-68b3c39928e4",
+        "f6d71b46-343c-47bc-a3bb-00f806726e63"
+      ],
+      "totalRounds": 5,
+      "hostPlayerId": "718d158f-afd6-4784-bfc6-f7ba395f294c"
+    },
+    "created_at": "2026-04-28T07:13:43.247Z"
+  },
+  {
+    "id": "1118",
+    "round_index": 0,
+    "event_type": "ROUND_STARTED",
+    "payload": {
+      "cause": "player",
+      "eventId": "1ec18005-ae6b-422b-9c25-5a887100cb3e",
+      "startedAt": "2026-04-28T14:14:46.832Z",
+      "roundIndex": 0,
+      "phaseEndsAt": "2026-04-28T14:15:26.832Z"
+    },
+    "created_at": "2026-04-28T07:14:46.970Z"
+  },
+  {
+    "id": "1119",
+    "round_index": 0,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "yearGuess": 1986
+    },
+    "created_at": "2026-04-28T07:14:55.630Z"
+  },
+  {
+    "id": "1120",
+    "round_index": 0,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "yearGuess": 1986
+    },
+    "created_at": "2026-04-28T07:15:04.858Z"
+  },
+  {
+    "id": "1121",
+    "round_index": 0,
+    "event_type": "ROUND_COMPLETE",
+    "payload": {
+      "commitCount": 2
+    },
+    "created_at": "2026-04-28T07:15:06.205Z"
+  },
+  {
+    "id": "1123",
+    "round_index": 1,
+    "event_type": "ROUND_STARTED",
+    "payload": {
+      "cause": "player",
+      "eventId": "ba54f5fa-21b9-4fa5-8909-80f9a4c58b6f",
+      "startedAt": "2026-04-28T14:15:18.700Z",
+      "roundIndex": 1,
+      "phaseEndsAt": "2026-04-28T14:15:58.700Z"
+    },
+    "created_at": "2026-04-28T07:15:18.819Z"
+  },
+  {
+    "id": "1125",
+    "round_index": 1,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "abb30ee1-b978-4a81-92d4-e04d53282c6f",
+      "yearGuess": 100
+    },
+    "created_at": "2026-04-28T07:15:35.549Z"
+  },
+  {
+    "id": "1126",
+    "round_index": 1,
+    "event_type": "GUESS_SUBMITTED",
+    "payload": {
+      "playerId": "718d158f-afd6-4784-bfc6-f7ba395f294c",
+      "yearGuess": 1989
+    },
+    "created_at": "2026-04-28T07:15:47.580Z"
+  },
+  {
+    "id": "1127",
+    "round_index": 1,
+    "event_type": "ROUND_COMPLETE",
+    "payload": {
+      "commitCount": 2
+    },
+    "created_at": "2026-04-28T07:15:48.867Z"
+  }
+]
+Total events after: 9
+
+=== DIAGNOSTIC COMPLETE ===
+
