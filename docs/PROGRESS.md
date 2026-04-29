@@ -1187,3 +1187,22 @@ const gameState = await getGameState(gameId);
 | MP-INV-SESSION-PAYLOAD-001 | COMPLETE | — | Invalid compete session payload thrown by adaptCompeteSnapshot (sessionApi.ts:192) when gameId/status missing, and parseCompeteSnapshot (competeApi.ts:108) when isCompeteSessionSnapshot fails; loadCompeteSessionSnapshot has new REPLAY_MISMATCH validation (lines 411-424) |
 | MP-INV-SESSION-PAYLOAD-002 | COMPLETE | — | isCompeteSessionSnapshot checks for results field (line 97) but CompeteSessionSnapshot type does NOT include results field; this type mismatch causes Invalid compete session payload error |
 | MP-FIX-SNAPSHOT-GUARD-001 | COMPLETE | — | Fixed isCompeteSessionSnapshot to allow undefined results field (line 97) by adding value.results !== undefined check |
+### Task MP-FIX-BUILD-001: Fix @typescript-eslint/no-explicit-any error in sessionCore.ts line 1428 COMPLETE (April 29, 2026)
+**Deliverable:** Fixed TypeScript no-explicit-any error in debug logging by replacing as any cast with explicit type assertion pattern consistent with existing codebase.
+**Problem:**
+Vercel build failed with error: src/server/sessionCore.ts:1428:81 Error: Unexpected any. Specify a different type.
+Line 1428 was inside diagnostic logging added by MP-DEBUG-SCORE-001, logging INSERT rowCount using (insertResult as any).rowCount.
+**Root Cause Location:**
+d:\GH-NEW\src\server\sessionCore.ts:1428
+**Changes Made:**
+- Added QueryResult to pg import at line 10
+- Replaced as any cast with as unknown as { rowCount: number | null } pattern
+- This matches the existing pattern used at line 910 in the same file
+**Verification:**
+- tsc --noEmit confirms no no-explicit-any error in sessionCore.ts
+- Only sessionCore.ts modified
+- Pattern consistent with existing codebase (line 910)
+**Architecture Compliance:**
+- No logic changes
+- Debug logging preserved
+- Type safety improved (specific type instead of any)

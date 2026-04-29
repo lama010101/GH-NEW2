@@ -7,7 +7,7 @@
 // submitGuess and advanceRound are PartyKit-only (single mutation authority).
 
 import { randomUUID, randomBytes } from "crypto";
-import type { Pool } from "pg";
+import type { Pool, QueryResult } from "pg";
 import {
   CompeteSessionSnapshot,
   CreateCompeteSessionInput,
@@ -1425,6 +1425,6 @@ async function computeAndWriteRoundResults(
         roundResultsToken
       ]
     );
-    console.log(`[SCORE-DEBUG] INSERT round_results rowCount=${(insertResult as any).rowCount} player=${row.player_id}`);
+    console.log(`[SCORE-DEBUG] INSERT round_results rowCount=${(insertResult as unknown as { rowCount: number | null }).rowCount} player=${row.player_id}`);
   }
 }
