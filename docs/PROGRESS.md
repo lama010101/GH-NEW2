@@ -1206,3 +1206,21 @@ d:\GH-NEW\src\server\sessionCore.ts:1428
 - No logic changes
 - Debug logging preserved
 - Type safety improved (specific type instead of any)
+### Task MP-FIX-BUILD-002: Remove unused QueryResult import from sessionCore.ts COMPLETE (April 29, 2026)
+**Deliverable:** Removed unused QueryResult import from pg import on line 10.
+**Problem:**
+Vercel build failed with error: src/server/sessionCore.ts:10:21 Error: 'QueryResult' is defined but never used.
+QueryResult was added in MP-FIX-BUILD-001 but the final solution used inline type assertion instead, making the import unused.
+**Root Cause Location:**
+d:\GH-NEW\src\server\sessionCore.ts:10
+**Before:**
+import type { Pool, QueryResult } from "pg";
+**After:**
+import type { Pool } from "pg";
+**Verification:**
+- tsc --noEmit confirms zero errors in src/server/sessionCore.ts
+- Only sessionCore.ts modified
+- No functional changes (debug logging still works with inline type assertion)
+**Architecture Compliance:**
+- No logic changes
+- No functional changes

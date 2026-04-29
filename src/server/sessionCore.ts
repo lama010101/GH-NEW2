@@ -7,7 +7,7 @@
 // submitGuess and advanceRound are PartyKit-only (single mutation authority).
 
 import { randomUUID, randomBytes } from "crypto";
-import type { Pool, QueryResult } from "pg";
+import type { Pool } from "pg";
 import {
   CompeteSessionSnapshot,
   CreateCompeteSessionInput,
