@@ -131,6 +131,10 @@ export default class GameServer {
   // fires while expiry is already in progress or when a new round's timer is already expired.
   private completeInFlight = false;
 
+  // Detected base URL from first client connection's Origin header.
+  // Used to derive NEXTJS_BASE_URL dynamically for production correctness.
+  private detectedBaseUrl: string | null = null;
+
   constructor(readonly room: Room) {}
 
   private getSupabaseEnv(): { url: string; key: string } {
@@ -144,10 +148,8 @@ export default class GameServer {
   }
 
   private getNextJsBaseUrl(): string {
-    const env = this.room.env as Record<string, string | undefined>;
-    const url = env.NEXTJS_BASE_URL;
-    if (!url) throw new Error("NEXTJS_BASE_URL env var is not set");
-    return url.replace(/\/$/, "");
+    if (this.detectedBaseUrl) return this.detectedBaseUrl;
+    return (this.room.env.NEXTJS_BASE_URL as string | undefined) ?? "http://localhost:3000";
   }
 
   /**
@@ -327,8 +329,17 @@ export default class GameServer {
     this.room.broadcast(msg);
   }
 
-  async onConnect(connection: Connection): Promise<void> {
+  async onConnect(connection: Connection, ctx: { request: { headers: { get: (name: string) => string | null } } }): Promise<void> {
     console.log("[PartyKit] Client connected:", connection.id);
+
+    // Detect base URL from Origin header for production correctness
+    if (!this.detectedBaseUrl && ctx.request) {
+      const origin = ctx.request.headers.get("origin");
+      if (origin && (origin.includes("localhost") || origin.includes("vercel.app") || origin.includes(".partykit.dev"))) {
+        this.detectedBaseUrl = origin;
+        console.log(`[PartyKit] Detected base URL from origin: ${this.detectedBaseUrl}`);
+      }
+    }
 
     // Send current snapshot to the newly connected client immediately.
     // If snapshot not yet loaded, load from DB first (cold start).

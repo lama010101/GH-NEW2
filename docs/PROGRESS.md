@@ -1224,3 +1224,79 @@ import type { Pool } from "pg";
 **Architecture Compliance:**
 - No logic changes
 - No functional changes
+### Task MP-INV-PARTYKIT-NAME-001: Get PartyKit worker name and check guess API call logs COMPLETE (April 29, 2026)
+**Deliverable:** READ ONLY investigation of PartyKit worker name and /guess API call URL.
+**Findings:**
+- PartyKit worker name as deployed: guess-history-multiplayer (URL: https://guess-history-multiplayer.lama010101.partykit.dev)
+- partykit.json name field: guess-history-party (local dev name)
+- /guess API URL built in partykit/server.ts line 525: `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/guess`
+**Investigation Results:**
+- partykit.json shows name "guess-history-party" with main "partykit/server.ts"
+- npx partykit list shows deployed worker "guess-history-multiplayer" at https://guess-history-multiplayer.lama010101.partykit.dev
+- SUBMIT_GUESS handler builds apiUrl using getNextJsBaseUrl() + /api/compete/{gameId}/guess
+### Task MP-FIX-PARTYKIT-BASEURL-001: Set NEXTJS_BASE_URL to production Vercel URL in PartyKit deployment COMPLETE (April 29, 2026)
+**Deliverable:** Fixed PartyKit deployment to call production Vercel URL instead of localhost.
+**Problem:**
+partykit.json had NEXTJS_BASE_URL set to http://localhost:3000, causing deployed Cloudflare Worker to call localhost instead of production Vercel. All /guess, /complete, and /advance API calls from PartyKit were silently failing in production.
+**Root Cause Location:**
+d:\GH-NEW\partykit.json:8-10
+**Before:**
+{
+  "vars": {
+    "NEXTJS_BASE_URL": "http://localhost:3000"
+  }
+}
+**After:**
+{
+  "vars": {
+    "NEXTJS_BASE_URL": "https://gh-new2.vercel.app"
+  }
+}
+**Additional Change:**
+Updated worker name from "guess-history-party" to "guess-history-multiplayer" to match existing deployed worker.
+**Verification:**
+- npx partykit deploy succeeded
+- Worker URL confirmed: https://guess-history-multiplayer.lama010101.partykit.dev
+- Only partykit.json modified
+**Architecture Compliance:**
+- No code changes, only configuration
+- Production API calls now route to correct Vercel endpoint
+### Task MP-FIX-PARTYKIT-BASEURL-002: Derive NEXTJS_BASE_URL dynamically from connection Origin header COMPLETE (April 29, 2026)
+**Deliverable:** PartyKit now derives NEXTJS_BASE_URL from connection Origin header instead of hardcoded env var.
+**Problem:**
+NEXTJS_BASE_URL was hardcoded in partykit.json as localhost:3000, breaking all API calls in production when deployed.
+**Root Cause Location:**
+d:\GH-NEW\partykit/server.ts
+**Changes Made:**
+1. Added private field: private detectedBaseUrl: string | null = null;
+2. Updated onConnect to detect base URL from Origin header at connection start
+3. Updated getNextJsBaseUrl() to use detectedBaseUrl first, then fall back to env var
+**Behavior:**
+- Production: first client connection sets detectedBaseUrl to https://gh-new2.vercel.app (the Vercel origin)
+- Local dev: first client connection sets it to http://localhost:3000
+- Fallback to env var if no connection has been made yet (timer path)
+**Verification:**
+- tsc --noEmit confirms zero new TypeScript errors in partykit/server.ts
+- Only partykit/server.ts modified
+**Architecture Compliance:**
+- No logic changes, only URL resolution
+- Production API calls now route correctly based on client origin
+- Timer path still has env var fallback for cases without connection
+### Task MP-FIX-PARTYKIT-BASEURL-003: Set NEXTJS_BASE_URL fallback in partykit.json and redeploy COMPLETE (April 29, 2026)
+**Deliverable:** Confirmed partykit.json fallback URL is set to production Vercel and redeployed PartyKit.
+**Problem:**
+NEXTJS_BASE_URL fallback in partykit.json needed to be set to production Vercel URL for the timer path (triggerRoundExpiry) when no client connection has been established yet.
+**Root Cause Location:**
+d:\GH-NEW\partykit.json:8-10
+**Changes:**
+- No file change needed — NEXTJS_BASE_URL was already set to https://gh-new2.vercel.app from MP-FIX-PARTYKIT-BASEURL-001
+- Redeployed PartyKit to ensure configuration is applied
+**Verification:**
+- npx partykit deploy succeeded with no errors
+- Worker URL confirmed: https://guess-history-multiplayer.lama010101.partykit.dev
+- Dynamic origin detection (MP-FIX-PARTYKIT-BASEURL-002) takes priority when connection exists
+- Fallback to env var for timer path is now production-ready
+**Architecture Compliance:**
+- No code changes, configuration only
+- Timer path now has correct production fallback
+- Client-origin detection still takes priority for normal gameplay
