@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"app\\\\compete\\\\[gameId]\\\\page.tsx -> @/components/GameMap\":{\"id\":\"app\\\\compete\\\\[gameId]\\\\page.tsx -> @/components/GameMap\",\"files\":[\"static/css/_app-pages-browser_src_components_GameMap_tsx.css\",\"static/chunks/_app-pages-browser_src_components_GameMap_tsx.js\"]}}"
