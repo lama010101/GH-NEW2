@@ -16,6 +16,7 @@ import {
   deriveStateFromEventStream,
   type RoundEvent
 } from "./eventStream";
+import type { RoundEventContent } from "@/core/types";
 
 // Re-export for backwards compatibility
 export { VALID_PHASE_TRANSITIONS, deriveStateFromEventStream, type RoundEvent };
@@ -85,6 +86,7 @@ export type ReconstructedGameState = {
   phase: string | null;
   rounds: RoundState[];
   events: RoundEvent[];
+  roundEventContent: RoundEventContent[];
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -345,21 +347,78 @@ export async function getGameState(
   const { currentRound, currentPhase } = deriveStateFromEventStream(events);
   const phase = currentPhase;
 
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
   // ASSEMBLE ROUNDS FROM EVENTS, COMMITS, AND RESULTS
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
   const rounds = assembleRounds(eventRounds, commitsByRound, resultsByRound);
 
-  // ───────────────────────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════════════════
+  // POPULATE EVENT CONTENT FOR ROUNDS (MP-FIX-EVENT-DATA-001)
+  // ═════════════════════════════════════════════════════════════════════════════
+  // Extract ordered eventIds from SESSION_CREATED event
+  const sessionCreatedEvent = events.find(e => e.eventType === "SESSION_CREATED");
+  const eventIds: string[] = (
+    (sessionCreatedEvent?.payload as Record<string, unknown>)?.eventIds as string[]
+  ) ?? [];
+
+  let roundEventContent: RoundEventContent[] = [];
+
+  if (eventIds.length > 0) {
+    const eventResult = await dbPool.query<{
+      event_id: string;
+      title: string;
+      event_year: number;
+      latitude: number | null;
+      longitude: number | null;
+      display_name: string | null;
+      image_url: string | null;
+    }>(
+      `SELECT
+        e.id AS event_id,
+        e.title,
+        e.event_year,
+        l.latitude,
+        l.longitude,
+        l.display_name,
+        (
+          SELECT i.url
+          FROM images i
+          WHERE i.event_id = e.id
+          ORDER BY i.display_order ASC NULLS LAST
+          LIMIT 1
+        ) AS image_url
+      FROM events e
+      LEFT JOIN locations l ON l.event_id = e.id
+      WHERE e.id = ANY($1::uuid[])`,
+      [eventIds]
+    );
+
+    const eventMap = new Map(eventResult.rows.map(row => [row.event_id, row]));
+    roundEventContent = eventIds.map(id => {
+      const ev = eventMap.get(id);
+      return {
+        eventId: id,
+        title: ev?.title ?? '',
+        year: ev?.event_year ?? 0,
+        latitude: ev?.latitude ?? 0,
+        longitude: ev?.longitude ?? 0,
+        locationName: ev?.display_name ?? null,
+        imageUrl: ev?.image_url ?? null,
+      };
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // RETURN FULLY RECONSTRUCTED STATE
-  // ───────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
   return {
     session,
     players,
     currentRound,
     phase,
     rounds,
-    events
+    events,
+    roundEventContent
   };
 }
 

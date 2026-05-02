@@ -46,9 +46,9 @@ function enforceDbConnection(): Pool {
     ssl: {
       rejectUnauthorized: false
     },
-    max: 10,
+    max: 20,
     min: 2,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 15000,
     idleTimeoutMillis: 30000,
     allowExitOnIdle: false,
     keepAlive: true,
