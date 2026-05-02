@@ -21,12 +21,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   isCompeteSessionSnapshot
 } from "@/core/competeApi";
 import { CompeteWebSocket } from "@/core/competeWebSocket";
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import { useIdentity } from "@/hooks/useIdentity";
+
+const GameMap = dynamic(
+  () => import("@/components/GameMap").then((m) => m.GameMap),
+  { ssr: false }
+);
 
 type RoundResult = {
   playerId: string;
@@ -205,6 +211,16 @@ export default function CompeteGamePage() {
 
   // Authoritative: derived from snapshot.players[].hasSubmitted (DB → snapshot).
   const hasSubmitted = viewer?.hasSubmitted ?? false;
+
+  // Derived location for map component
+  const guessLocation = guessLat !== null && guessLng !== null
+    ? { lat: guessLat, lng: guessLng }
+    : null;
+
+  const handleSetLocation = useCallback((location: { lat: number; lng: number }) => {
+    setGuessLat(location.lat);
+    setGuessLng(location.lng);
+  }, []);
 
   const handleReady = useCallback(() => {
     if (!playerId || !wsRef.current) return;
@@ -433,34 +449,10 @@ export default function CompeteGamePage() {
                   disabled={busy || hasSubmitted}
                 />
               </div>
-              <div className="field">
-                <label htmlFor="guess-lat">Latitude</label>
-                <input
-                  id="guess-lat"
-                  className="input"
-                  type="number"
-                  step="any"
-                  value={guessLat ?? ""}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setGuessLat(v === "" ? null : Number(v));
-                  }}
-                  disabled={busy || hasSubmitted}
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="guess-lng">Longitude</label>
-                <input
-                  id="guess-lng"
-                  className="input"
-                  type="number"
-                  step="any"
-                  value={guessLng ?? ""}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setGuessLng(v === "" ? null : Number(v));
-                  }}
-                  disabled={busy || hasSubmitted}
+              <div style={{ width: "100%", height: "320px", borderRadius: "20px", overflow: "hidden" }}>
+                <GameMap
+                  guessLocation={guessLocation}
+                  onSetLocation={handleSetLocation}
                 />
               </div>
               <button
@@ -472,8 +464,7 @@ export default function CompeteGamePage() {
                   hasSubmitted ||
                   localSubmitted ||
                   guessYear === null ||
-                  guessLat === null ||
-                  guessLng === null
+                  guessLocation === null
                 }
               >
                 {busy ? "Submitting…" : "Submit Guess"}
