@@ -7,6 +7,9 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 ## Log
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-UI-BUILD-002 | COMPLETE | src/components/StaticResultMap.tsx, src/app/compete/[gameId]/page.tsx | WHERE map + event description added to Compete Mode results |
+| MP-UI-BUILD-001 | COMPLETE | src/app/compete/[gameId]/page.tsx | Year slider + input combo added to Compete Mode GUESS_PHASE |
+| MP-UI-INV-002 | COMPLETE | — | Round results WHERE map + event description investigation done |
 | MP-FIX-IMG-003 | DONE | src/server/getGameState.ts | Fixed eventIds source to use SESSION_CREATED payload instead of ROUND_STARTED events; ensures all 5 event IDs are available from game creation, fixing null imageUrl on game/result screens |
 | MP-FIX-DBPOOL-001 | DONE | src/server/db.ts | Increased connectionTimeoutMillis 5000→15000, max pool 10→20; fixes concurrent /guess timeout when 2 players submit simultaneously |
 | MP-MIGRATE-IMAGES-006 | DONE | scripts/migrateImages.ts | Replaced migration script to UPDATE DB2 image URLs from expired Runware to valid Firebase URLs from DB1; 1,244 rows targeted |

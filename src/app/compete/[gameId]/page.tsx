@@ -34,6 +34,11 @@ const GameMap = dynamic(
   { ssr: false }
 );
 
+const StaticResultMap = dynamic(
+  () => import("@/components/StaticResultMap").then((m) => m.StaticResultMap),
+  { ssr: false }
+);
+
 type RoundResult = {
   playerId: string;
   score: number;
@@ -59,6 +64,16 @@ function computeTimeRemaining(roundEndsAt: string | null): number | null {
   const endMs = new Date(roundEndsAt).getTime();
   if (Number.isNaN(endMs)) return null;
   return Math.max(0, Math.round((endMs - Date.now()) / 1000));
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+            Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 export default function CompeteGamePage() {
@@ -441,12 +456,32 @@ export default function CompeteGamePage() {
                   id="guess-year"
                   className="input"
                   type="number"
+                  placeholder={guessYear === null ? "— not set —" : undefined}
                   value={guessYear ?? ""}
                   onChange={(e) => {
                     const v = e.target.value;
-                    setGuessYear(v === "" ? null : Number(v));
+                    if (v === "") {
+                      setGuessYear(null);
+                    } else {
+                      const num = Number(v);
+                      if (!Number.isNaN(num)) {
+                        setGuessYear(num);
+                      }
+                    }
                   }}
                   disabled={busy || hasSubmitted}
+                />
+                <input
+                  type="range"
+                  min={-3000}
+                  max={new Date().getFullYear()}
+                  // TODO: wire min/max from session config when available
+                  value={guessYear ?? Math.floor((-3000 + new Date().getFullYear()) / 2)}
+                  onChange={(e) => {
+                    setGuessYear(Number(e.target.value));
+                  }}
+                  disabled={busy || hasSubmitted}
+                  style={{ width: "100%" }}
                 />
               </div>
               <div style={{ width: "100%", height: "320px", borderRadius: "20px", overflow: "hidden" }}>
@@ -529,6 +564,44 @@ export default function CompeteGamePage() {
                       Location: {roundData.latitude.toFixed(4)}, {roundData.longitude.toFixed(4)}
                     </p>
                   ) : null}
+                  {/* TODO MP-UI-BUILD-002: event description not in snapshot — needs API route update */}
+                </div>
+              );
+            })()}
+            {/* WHERE map card */}
+            {(() => {
+              const roundData = snapshot.rounds[snapshot.currentRoundIndex];
+              if (!roundData) return null;
+              const hasGuess = guessLat !== null && guessLng !== null;
+              const distanceKm = hasGuess
+                ? haversineKm(guessLat!, guessLng!, roundData.latitude, roundData.longitude)
+                : null;
+              return (
+                <div style={{ marginBottom: 16 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                      fontSize: 13,
+                    }}
+                  >
+                    <span>
+                      {hasGuess && distanceKm !== null
+                        ? `🌍 ${Math.round(distanceKm)} km away`
+                        : "🌍 No location guess"}
+                    </span>
+                    <span style={{ color: "#FF6B2B" }}>
+                      Correct: {roundData.locationName ?? `${roundData.latitude.toFixed(2)}, ${roundData.longitude.toFixed(2)}`}
+                    </span>
+                  </div>
+                  <StaticResultMap
+                    correctLat={roundData.latitude}
+                    correctLng={roundData.longitude}
+                    guessLat={guessLat}
+                    guessLng={guessLng}
+                  />
                 </div>
               );
             })()}
