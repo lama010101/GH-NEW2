@@ -1,17 +1,19 @@
-# GUESS-HISTORY — Implementation Progress
+﻿# GUESS-HISTORY — Implementation Progress
 
 ## Format
 Each entry: Task ID | Status | Files Changed | Notes
-
 Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
-
 ---
-
 ## Log
-
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-FIX-IMG-003 | DONE | src/server/getGameState.ts | Fixed eventIds source to use SESSION_CREATED payload instead of ROUND_STARTED events; ensures all 5 event IDs are available from game creation, fixing null imageUrl on game/result screens |
+| MP-FIX-DBPOOL-001 | DONE | src/server/db.ts | Increased connectionTimeoutMillis 5000→15000, max pool 10→20; fixes concurrent /guess timeout when 2 players submit simultaneously |
+| MP-MIGRATE-IMAGES-006 | DONE | scripts/migrateImages.ts | Replaced migration script to UPDATE DB2 image URLs from expired Runware to valid Firebase URLs from DB1; 1,244 rows targeted |
+| MP-FIX-PERF-002b | DONE | src/server/getGameState.ts | Fixed roundEventContent query to use proper SQL JOIN via dbPool.query() instead of PostgREST-style nested select syntax; createCompeteSession returns 200 |
+| MP-FIX-PERF-001 | DONE | src/server/getGameState.ts | Fixed critical perf regression: replaced fetchEventsWithDetails({ limit:1000 }) with targeted PostgreSQL query fetching only the specific eventIds needed via dbPool; removed O(1000) DB fetch from every API call |
 | MP-PLAN-001 | DONE | docs/EXECUTION_PLAN.md | Created authoritative execution plan document. Defines all remaining work in 10 phases (0-9) with atomic tasks. Documents broken write path (API → executeCommand → NO-OP) and real write path in sessionCore.submitGuess. Cites exact files and lines. |
+| MP-FIX-GAME-SCREEN-001 | DONE | src/app/compete/[gameId]/page.tsx | Added historical image and event title to ROUND_ACTIVE game screen; uses snapshot.rounds[currentRoundIndex].imageUrl with null placeholder fallback |
 | MP-ARCH-PHASE-1 | DONE | src/server/engine/transition.ts, src/server/sessionCore.ts | Extracted transition decision logic from submitGuess and advanceRound into pure transition() engine. Zero behavior change: existing logic remains source of truth, comparison logging added. tsc clean, tests pass. |
 | MP-ARCH-PHASE-2 | DONE | src/server/engine/executeCommand.ts, src/server/sessionCore.ts | Shadow executor: reads current DB state, applies transition(), simulates event append in-memory, derives new state, builds snapshot. Shadow result compared against actual snapshot in submitGuess and advanceRound. Mismatches logged via ENGINE_PARITY_MISMATCH. Zero behavior change, no DB writes, no API change. tsc clean, tests pass. |
 | MP-INFRA-INV-001 | DONE | — | Full read of src/server/ tree, src/app/api/ tree, partykit/, partykit.json, events.ts, eventMapper.ts |
@@ -110,38 +112,24 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | MP-PLAN-7.1 | Fix DB connection pool exhaustion | src/server/db.ts | DONE | April 28, 2026 | pool max raised to 10, min 2, zero-trust gated behind ENABLE_ZERO_TRUST |
 | MP-PLAN-8.2 | Auto-retry on reconnect error | competeWebSocket.ts, page.tsx | DONE | April 28, 2026 | Recoverable server errors trigger reconnect; invalid snapshots silently ignored |
 | MP-PROD-SMOKE-INV-001 | DONE | — | Production architecture audit: apiFetch/buildSnapshotFromDB/supabaseFrom deleted; all PartyKit handlers delegate to API routes via fetch() + getNextJsBaseUrl(); env vars read via this.room.env; src/middleware.ts absent; 5 April 28 entries modified partykit/server.ts. |
-
----
-
 ## Detailed Task Descriptions
-
 ### Task MP-UI-HOME-001: Home Page Landing with Compete Button ✅ COMPLETE (April 19, 2026)
-
 **Deliverable:** Home page (`/`) now displays a landing page with a "Compete" button instead of auto-starting a game.
-
 **Files Changed:**
 - `src/app/page.tsx` — Replaced dynamic GameClient import with landing page component
-
 **Changes:**
 - Removed immediate game start on home page load
 - Added landing page with title "Guess History" and subtitle
 - Added Compete button linking to `/compete`
-
----
-
 ### Task CORE-VALID-001: Golden Path (In-Memory, Zero Dependency) ✅ COMPLETE (April 8, 2026)
-
 **Deliverable:** Fully deterministic single-player game loop using an in-memory event store — **NO database, NO Supabase, NO network.**
-
 **Purpose:** Prove the architecture works independently of infrastructure. If this fails, the architecture is still wrong.
-
 **Files Created:**
 | File | Purpose |
 |------|---------|
 | `src/server/eventStream.ts` | Pure event stream processing — `VALID_PHASE_TRANSITIONS`, `deriveStateFromEventStream`, `RoundEvent` type |
 | `src/server/inMemoryEventStore.ts` | In-memory event store with FSM + round validation |
 | `scripts/testGameFlow.ts` | Golden path test script |
-
 **Non-Negotiable Rules Verified:**
 - ✅ NO `db.ts` imports
 - ✅ NO Supabase usage
@@ -150,12 +138,9 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 - ✅ Reuses `deriveStateFromEventStream` from `eventStream.ts`
 - ✅ FSM transitions enforced in-memory
 - ✅ Round consistency validated
-
 **Golden Path Lifecycle (Passes):**
 ```
 SESSION_CREATED → ROUND_STARTED(0) → GUESS_SUBMITTED(0) → ROUND_COMPLETE(0) → SESSION_COMPLETE
-```
-
 **Failure Modes (Correctly Throw):**
 | Test | Error |
 |------|-------|
@@ -163,52 +148,35 @@ SESSION_CREATED → ROUND_STARTED(0) → GUESS_SUBMITTED(0) → ROUND_COMPLETE(0
 | Invalid transition | `INVALID_TRANSITION` |
 | Wrong round index | `INVALID_ROUND_INCREMENT` |
 | Double ROUND_STARTED | `INVALID_TRANSITION` |
-
 **Run Command:**
 ```bash
 npm run test:golden
-```
-
 **Final Guarantee:**
 > You have proven the game loop works independently of infrastructure.
-
 Only now is the architecture validated.
-
----
-
 ### Task CORE-VALID-003: Enforce Deterministic Round Authority (Target Source Lock) ✅ COMPLETE (April 8, 2026)
-
 **Deliverable:** Single-source target authority enforcement with fail-fast invariant validation
-
 **Purpose:** Ensure `RoundState.target` is strictly derived from ONE event type (ROUND_STARTED) with deterministic replay guarantees.
-
 **File Modified:** `src/server/eventStream.ts`
-
 **Invariants Enforced:**
-
 | Invariant | Rule | Error Code |
 |-----------|------|------------|
 | **Single Source** | target set ONLY when processing ROUND_STARTED | `INVALID_TARGET` |
 | **Immutable** | target CANNOT be modified after initialization | N/A (no assignment path) |
 | **No Fallback** | No default target, no external injection | `TARGET_NOT_INITIALIZED` |
 | **Single Writer** | Duplicate ROUND_STARTED for same round rejected | `ROUND_ALREADY_INITIALIZED` |
-
 **Error Conditions:**
-
 | Condition | Error Thrown | Description |
 |-----------|--------------|-------------|
 | Missing ROUND_STARTED before GUESS_SUBMITTED | `TARGET_NOT_INITIALIZED` | Round state accessed before initialization |
 | Duplicate ROUND_STARTED for same round | `ROUND_ALREADY_INITIALIZED` | Defense-in-depth (FSM catches first) |
 | Invalid target type in payload | `INVALID_TARGET` | Target must be a number |
-
 **Implementation Highlights:**
 - `RoundStartedPayload` strictly typed with `{ target: number }`
 - `RoundState.target` documented as SINGLE SOURCE ONLY
 - Defense-in-depth checks in `deriveFullStateFromEventStream()`
 - Explicit comments marking CORE-VALID-003 compliance
-
 **Test File:** `scripts/validateCoreValid003.ts`
-
 **Test Results:**
 - ✅ Valid ROUND_STARTED with target
 - ✅ Invalid target type rejected
@@ -216,30 +184,20 @@ Only now is the architecture validated.
 - ✅ Missing ROUND_START detected (FSM catches first)
 - ✅ Deterministic replay verified
 - ✅ No fallback/default target allowed
-
 **Memory Updated:** `docs/memory/backend_architecture.md` — Added "Round Authority Rule" section
-
 **Compliance Verified:**
 - ✅ Target set ONLY by ROUND_STARTED
 - ✅ No reassignment of target possible
 - ✅ No mutation outside ROUND_STARTED handler
 - ✅ Deterministic replay produces identical RoundState
 - ✅ All error codes throw as specified
-
----
-
 ### Task MP-CORE-LOOP-005: Hard Enforcement of Real DB Execution + Deterministic DB Reconstruction ✅ COMPLETE (April 2026)
-
 **Deliverables:**
 1. Hard DB connection enforcement with transaction isolation proof
 2. **`getGameState()` — Deterministic DB Reconstruction Layer**
-
 **Test File:** `src/server/zeroTrust.execution.test.ts`
-
 **New Implementation:** `src/server/getGameState.ts` — Canonical read model for game state
-
 **DB Reconstruction Features:**
-
 | Feature | Implementation | Rule Applied |
 |---------|---------------|--------------|
 | Pure DB reads | `loadSession()`, `loadPlayers()`, `loadRoundCommits()`, `loadRoundResults()`, `loadRoundEvents()` | DB = source of truth |
@@ -247,9 +205,7 @@ Only now is the architecture validated.
 | Deterministic ordering | `ORDER BY` on ALL queries | Same DB → identical output |
 | Fail-fast | Throws explicit error if session not found | No silent failures |
 | No mutations | Read-only function (no side effects) | Pure reconstruction |
-
 **Hard Enforcement Features:**
-
 | Feature | Implementation | Location |
 |---------|---------------|----------|
 | Module-load DB enforcement | `enforceDbConnection()` throws if env missing | `db.ts:27` |
@@ -258,9 +214,7 @@ Only now is the architecture validated.
 | Connection A/B with PIDs | `acquireConnectionA/B()` with `pg_backend_pid()` | `db.ts:101` |
 | Transaction isolation proof | `verifyTransactionIsolation()` | `db.ts:227` |
 | Execution proof v2 | `emitExecutionProofV2()` with PIDs, xid | `db.ts:169` |
-
 **New Test Scenarios (9 Total):**
-
 | # | Test | Expected | Verification |
 |---|---|----------|--------------|
 | 1 | BASELINE | PASS | Full lifecycle |
@@ -272,13 +226,11 @@ Only now is the architecture validated.
 | 7 | DETERMINISTIC REPLAY | PASS | Exact match |
 | 8 | **TRANSACTION ISOLATION** | **PASS** | **Uncommitted not visible to B** |
 | 9 | **HARD ENFORCEMENT** | **PASS** | **DB required at load** |
-
 **DB Connection (HARD ENFORCED):**
 - Connection Method: `SUPABASE_DB_CONNECTION` env var
 - Module-load validation: `enforceDbConnection()` throws if missing
 - Runtime guard: `assertDbConnectionVerified()` prevents fake paths
 - Process exit: `process.exit(1)` if DB unreachable
-
 **Anti-Fake Enforcement (STRICTLY FORBIDDEN):**
 - Returning hardcoded success
 - Bypassing verification functions
@@ -288,9 +240,7 @@ Only now is the architecture validated.
 - Using in-memory values for verification
 - Simulated or synthetic test data
 - Env-based bypass logic
-
 **Execution Proof v2 Format:**
-```
 [DB_EXECUTION_PROOF_v2]
 test: <name>
 table: <table>
@@ -307,24 +257,16 @@ transaction_id: <xid>
 commit_timestamp: <db_timestamp>
 row_count_verified: <count>
 isolation_proven: TRUE | FALSE
-```
-
 **Transaction Isolation Proof:**
 ```typescript
 verifyTransactionIsolation(gameId, operation) → IsolationProof
-```
-
 Steps:
 1. Connection A: BEGIN, INSERT (no COMMIT)
 2. Connection B: SELECT → MUST return 0 rows (isolation)
 3. Connection A: COMMIT
 4. Connection B: SELECT → MUST return 1 row (durability)
-
 **Running the Harness:**
-```bash
 npm run test zeroTrust.execution
-```
-
 **Test Harness Output:**
 - Real DB writes confirmed with backend PIDs
 - Cross-connection proven (different PIDs)
@@ -333,13 +275,10 @@ npm run test zeroTrust.execution
 - All failures trigger deterministically
 - Replay validated with exact match
 - Execution proofs v2 emitted with all fields
-
 **Memory Files Updated:**
 - `docs/memory/backend_architecture.md` → v5 with hard enforcement
 - `docs/memory/operational_rules.md` → DB mandatory at runtime
 - `docs/memory/project_overview.md` → System maturity v5
-
-**Compliance Verified:**
 - ✅ System CRASHES at module load if DB not connected
 - ✅ `assertDbConnectionVerified()` prevents fake paths
 - ✅ `acquireConnectionA/B()` return different backend PIDs
@@ -348,22 +287,15 @@ npm run test zeroTrust.execution
 - ✅ 9 test scenarios all passing
 - ✅ No env fallback logic exists
 - ✅ No mock code paths exist
-
----
-
 ### Task CORE-FIX-002: Zero-Corruption Event Pipeline ✅ COMPLETE (April 2026)
-
 **Objective:** Eliminate all possible corruption vectors in the event system by enforcing **write-time validation, serialization, and DB-level constraints**.
-
 **Non-Negotiable Rules Enforced:**
 1. `round_events` is the **single source of truth**
 2. All events MUST pass FSM transition validation + Round consistency validation + Concurrency safety
 3. Validation MUST occur **at write time**, not read time
 4. DB must enforce correctness independently of application logic
 5. Any violation MUST throw and abort the transaction
-
 **Implementation:**
-
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | `appendEvent()` | `src/server/eventStore.ts` | **ONLY** way to write to round_events |
@@ -372,18 +304,14 @@ npm run test zeroTrust.execution
 | `assertRoundConsistency()` | `src/server/eventStore.ts` | Round increment validation at write time |
 | `FOR UPDATE` lock | `loadLastEventWithLock()` | Concurrent write serialization |
 | `trg_validate_event` | Migration 017 | DB-level FSM enforcement trigger |
-
 **Call Sites Migrated:**
 - `createCompeteSession()` → `appendEvent(client, gameId, "SESSION_CREATED", ...)`
 - `startCompeteSession()` → `appendEvent(client, gameId, "ROUND_STARTED", ...)`
 - `submitGuess()` → `appendEvent(client, gameId, "GUESS_SUBMITTED", ...)` + `appendEvent(client, gameId, "ROUND_COMPLETE", ...)`
 - `advanceRound()` → `appendEvent(client, gameId, "ROUND_STARTED", ...)` + `appendEvent(client, gameId, "SESSION_COMPLETE", ...)`
-
 **Migration:**
 - `scripts/migrations/017_event_validation_trigger.sql` — DB trigger enforcing FSM independently
-
 **Test Suite:** `src/server/eventStore.test.ts`
-
 | Test | Description | Expected |
 |------|-------------|----------|
 | Invalid transition | `ROUND_STARTED → SESSION_COMPLETE` | Throws INVALID_TRANSITION |
@@ -394,8 +322,6 @@ npm run test zeroTrust.execution
 | Valid lifecycle | Full session flow | Passes without error |
 | Multi-round | 3-round session | Passes without error |
 | Multiple guesses | 3 GUESS_SUBMITTED in same round | Passes without error |
-
-**Compliance Verified:**
 - ✅ No direct inserts into round_events exist (except via appendEvent)
 - ✅ FSM enforced at write time (application level)
 - ✅ Round consistency enforced at write time
@@ -403,15 +329,9 @@ npm run test zeroTrust.execution
 - ✅ DB trigger rejects invalid transitions independently
 - ✅ Replay never encounters invalid transitions
 - ✅ Invalid event sequences are **unrepresentable**
-
----
-
 ### Task MP-ZERO-TRUST-001: Full Zero-Trust Enforcement v2.0 ✅ COMPLETE (April 2026)
-
 **Deliverable:** TRUE zero-trust verification layer with full state integrity guarantee
-
 **Authority:** ZERO-TRUST ENFORCEMENT PROMPT v2 — FULL STATE INTEGRITY GUARANTEE
-
 **A write is valid ONLY IF:**
 1. It is committed
 2. It is visible across connections
@@ -420,15 +340,12 @@ npm run test zeroTrust.execution
 5. No extra or duplicate rows exist
 6. System state can be deterministically recomputed from DB
 7. Recomputed results EXACTLY match stored results
-
 **Implementation:** `src/server/db.ts` + `src/server/sessionCore.ts` + `src/server/zeroTrust.test.ts`
-
 **New Migrations:**
 | Migration | Purpose |
 |-----------|---------|
 | `015_zero_trust_verification_tokens.sql` | Add verification_token columns to round_commits, round_results, round_events |
 | `016_extend_round_results_replay.sql` | Add distance_km, year_diff, location_score, time_score to round_results |
-
 **Zero-Trust v2.0 Functions Added:**
 | Function | Location | Purpose |
 |----------|----------|---------|
@@ -439,12 +356,10 @@ npm run test zeroTrust.execution
 | `generateVerificationToken()` | `db.ts` | Cryptographic UUID tokens per operation |
 | `getVerificationLogs()` | `db.ts` | Forensic audit trail retrieval |
 | `getPerformanceMetrics()` | `db.ts` | Latency and connection usage tracking |
-
 **Forensic Logging:**
 - Every verification logged with timestamp, operation, table, token, expected/actual, diffs
 - Log format: `[VERIFY][PASS|FAIL] <operation> <table> token=<token> — <latency>ms`
 - Full payload snapshots on failure with field-level diffs
-
 **Test Suite (5 Mandatory Tests):**
 | Test | Description | Status |
 |------|-------------|--------|
@@ -453,24 +368,18 @@ npm run test zeroTrust.execution
 | Test C — Duplicate Row | Insert duplicate commit, verify FAIL | ✅ |
 | Test D — Replay Drift | Modify scoring logic, verify FAIL | ✅ |
 | Test E — Token Mismatch | Query with wrong token, verify FAIL | ✅ |
-
 **Modified Write Paths (Full Zero-Trust Verified):**
 | Function | Table(s) | Verification Applied |
 |----------|----------|---------------------|
 | `submitGuess` | `round_commits` | verifyWriteSet + verifyRowIntegrity + verifyUniquenessInvariant |
 | `submitGuess` | `round_results` | verifyWriteSet + verifyFullReplay (if round complete) |
-
 **Performance Metrics Tracked:**
-```typescript
 {
   avg_verification_time_ms: number,
   max_verification_time_ms: number,
   connections_used_per_op: number,
   total_verifications: number
 }
-```
-
-**Compliance Verified:**
 - ✅ Deep equality comparison (strict, no coercion, null-safe)
 - ✅ Write-set verification with exact counts
 - ✅ Verification tokens persisted in ALL written rows
@@ -480,30 +389,14 @@ npm run test zeroTrust.execution
 - ✅ Forensic logging with full payload snapshots
 - ✅ Performance metrics tracking
 - ✅ All 5 mandatory tests implemented and passing
-
----
-
 ### Task MP-CORE-LOOP-004: Real DB Execution Proof Harness — Supabase-Enforced, Anti-Fake, Deterministic Replay Validation ✅ COMPLETE (April 2026)
-
 **Deliverable:** Zero-Trust execution proof test harness using REAL Supabase database
-
-**Test File:** `src/server/zeroTrust.execution.test.ts`
-
 **DB Connection (REAL ONLY):**
 - Connection Method: `SUPABASE_DB_CONNECTION` env var with direct `pg.Pool`
 - DB Target: Real Supabase PostgreSQL (NO mocks, NO SQLite, NO in-memory)
 - New Connection: `getNewPoolConnection()` for cross-connection verification
-
-**Anti-Fake Enforcement (STRICTLY FORBIDDEN):**
-- Returning hardcoded success
-- Bypassing verification functions
 - Mocking `verifyWriteCrossConnection` / `verifyRowIntegrity`
-- Generating fake verification tokens
-- Skipping DB reads after write
-- Using in-memory values for verification
-
 **7 Required Test Scenarios:**
-
 | # | Test | Expected | Description |
 |---|------|----------|-------------|
 | 1 | BASELINE | PASS | Create session, players, commits, results — all verification functions pass |
@@ -513,27 +406,15 @@ npm run test zeroTrust.execution
 | 5 | TOKEN MISMATCH | FAIL | Incorrect verification token detected |
 | 6 | REPLAY DRIFT | FAIL | Modified scoring inputs trigger `verifyFullReplay` failure |
 | 7 | DETERMINISTIC REPLAY | PASS | Fetch commits from DB, recompute, exact match with stored results |
-
 **Execution Proof Format (UNFORGEABLE):**
-```
 [DB_EXECUTION_PROOF]
-test: <name>
-table: <table>
-primary_key: <value>
 operation: INSERT | UPDATE | VERIFY | CORRUPT | REPLAY
 verification_token: <uuid_from_db>
-cross_connection: TRUE
-result: PASS | FAIL
-timestamp: <db_timestamp>
-db_source: supabase
-```
-
 **Proof Requirements (MANDATORY):**
 1. Token MUST originate from DB (verification_token column), not manually generated
 2. Timestamp MUST come from DB (NOW() or created_at)
 3. Cross-connection MUST use NEW DB connection
 4. All validation reads MUST come from DB, not memory
-
 **Verification Functions Used:**
 | Function | Purpose |
 |----------|---------|
@@ -542,49 +423,26 @@ db_source: supabase
 | `verifyUniquenessInvariant()` | Exactly 1 row per PK |
 | `verifyFullReplay()` | Recompute all scores from DB |
 | `verifyWriteCrossConnection()` | Basic existence check |
-
-**Running the Harness:**
-```bash
-npm run test zeroTrust.execution
-```
-
-**Test Harness Output:**
 - Real DB writes confirmed
-- Corruption applied and detected
-- All failures trigger deterministically
-- Replay validated with exact match
 - Execution proofs present for all operations
-
-**Memory Files Updated:**
 - `docs/memory/backend_architecture.md` → v4 with "Execution Proof Layer" section
 - `docs/memory/operational_rules.md` → Real DB enforcement + proof requirements
 - `docs/memory/project_overview.md` → System maturity update
-
-**Compliance Verified:**
 - ✅ Real Supabase DB used (no mocks/fakes)
 - ✅ All corruption scenarios FAIL deterministically
 - ✅ Deterministic replay matches EXACTLY
 - ✅ Cross-connection verification proven
 - ✅ DB_EXECUTION_PROOF blocks present
 - ✅ No fake logic exists in test harness
-
----
-
 ### Task MP-CORE-LOOP-003: Zero-Trust Runtime Enforcement — Cross-Connection DB Verification ✅ COMPLETE (April 2026)
-
 **Deliverable:** Cross-connection verification layer for all critical DB writes
-
 **Implementation:** `src/server/db.ts` + `src/server/sessionCore.ts`
-
 **Functions Added:**
-| Function | Location | Purpose |
-|----------|----------|---------|
 | `generateVerificationToken()` | `db.ts` | Cryptographically unique UUID tokens |
 | `verifyWriteCrossConnection()` | `db.ts` | Opens NEW pool connection, verifies row exists |
 | `verifyMigrationIntegrity()` | `db.ts` | Compares expected vs applied migrations |
 | `assertMigrationIntegrity()` | `db.ts` | Hard-throws on migration mismatch |
 | `verifyDeterministicReplay()` | `db.ts` | Loads commits, verifies runtime state reproducibility |
-
 **Modified Write Paths (Cross-Connection Verified):**
 | Function | Table | Verification Timing |
 |----------|-------|---------------------|
@@ -594,37 +452,26 @@ npm run test zeroTrust.execution
 | `submitGuess` | `round_commits` | AFTER COMMIT |
 | `submitGuess` | `round_results` | AFTER COMMIT + count assertion |
 | `submitGuess` | — | `verifyDeterministicReplay` after round complete |
-
 **Log Output Format:**
-```
 [VERIFY][CROSS_CONN][PASS] <operation> <table> — <elapsed>ms token=<token>
 [VERIFY][CROSS_CONN][FAIL] <operation>: Row not found in <table> after <elapsed>ms
 [VERIFY][MIGRATION][PASS] All <count> migrations applied
 [VERIFY][REPLAY][PASS] game_id=<id> round=<n> commits=<n>
-```
-
-**Compliance Verified:**
 - ✅ Cross-connection verification opens NEW pool connection (not same transaction)
 - ✅ Verification happens AFTER COMMIT (proves durability)
 - ✅ Migration integrity check queries `supabase_migrations.schema_migrations`
 - ✅ Deterministic replay loads commits from DB, verifies count matches runtime
 - ✅ All failures throw immediately with full context (table, keys, token)
 - ✅ No silent success paths — every write verified or system crashes
-
 **Rules Applied:**
 - "No DB write = no state change" → Cross-connection verification enforces this
 - "DB as source of truth" → New connection proves visibility to other connections
 - "Deterministic replay" → `verifyDeterministicReplay` validates reconstructability
 - "Migration integrity" → `assertMigrationIntegrity` is startup gate
-
 **Memory Updated:**
 - `docs/memory/backend_architecture.md` — Added "Zero-Trust Verification Layer" section
 - `docs/memory/operational_rules.md` — Documented MP-CORE-LOOP-003 functions and flow
-
----
-
 ### Task MP-DB-001 through MP-DB-006: Database Schema Tasks ✅ COMPLETE (April 2026)
-
 **MP-DB-001:** Migration `008_add_sessions_seed.sql` — Added `seed` column to `sessions` table
 - ✅ `game_id` is PK (UUID)
 - ✅ `mode` (VARCHAR)
@@ -635,30 +482,20 @@ npm run test zeroTrust.execution
 - ✅ `host_player_id` (UUID)
 - ✅ `session_deadline` (TIMESTAMPTZ)
 - ✅ `created_at` (TIMESTAMPTZ)
-
 **MP-DB-002:** `session_players` table with composite PK `(game_id, player_id)`
 - ✅ Pre-existing from migration 006
 - ✅ `joined_at`, `left_at`, `ready`, `display_name`, `is_host`
-
 **MP-DB-003:** `round_commits` idempotent structure
 - ✅ PK = `(game_id, player_id, round_index)`
 - ✅ Duplicate submissions impossible
-
 **MP-DB-004:** Migration `009_create_round_results.sql` — Recreated `round_results` table
 - ✅ PK = `(game_id, round_index, player_id)`
 - ✅ `score`, `rank`, `accuracy_score`, `created_at`
-
 **MP-DB-006:** Migration `011_enable_rls_server_only.sql` — RLS policies
 - ✅ RLS enabled on all multiplayer tables
 - ✅ Service role (PartyKit) → full access
 - ✅ Authenticated role → SELECT own rows only
-
----
-
 ### Task GH-SEC-001: Deterministic Replay Validation & Cheat-Resistant Session Architecture ✅ COMPLETE (April 2026)
-
-**Deliverables:**
-
 | Component | Status | File Location |
 |-----------|--------|---------------|
 | Canonical DB schema (sessions, session_events, round_timing, round_commits) | ✅ Done | `scripts/migrations/005_create_canonical_practice_sessions.sql` |
@@ -670,7 +507,6 @@ npm run test zeroTrust.execution
 | Timeout materialization tests | ✅ Done | `src/server/practiceSessions.test.ts` |
 | Idempotent commit tests | ✅ Done | `src/server/practiceSessions.test.ts` |
 | Payload hardening tests | ✅ Done | `src/server/practiceSessions.test.ts` |
-
 **Security Guarantees Established:**
 - **Client = UI only** — No GameState submission accepted
 - **Server = authority** — All evaluation, timing, and persistence decisions made server-side
@@ -679,32 +515,21 @@ npm run test zeroTrust.execution
 - **Idempotency** — Duplicate commits return existing result without side effects
 - **Session binding** — Round commits verified against canonical `session_events` mapping
 - **Deterministic reconstruction** — Session state rebuilt exclusively from `sessions + session_events + round_timing + round_commits`
-
----
-
 ### Task MP-CORE-LOOP: Compete Core Foundation ✅ COMPLETE (April 2026)
-
-**Deliverables:**
 - Migration `006_compete_mode_core.sql` — Compete schema (sessions, session_players, round_commits, round_results)
 - Shared server core `src/server/sessionCore.ts` — Unified session metadata, creation/join/readiness/start flows
 - Refactored `src/server/practiceSessions.ts` — Practice on unified core
 - Compete API surface `src/app/api/compete/*`
 - Typed client helpers `src/core/competeApi.ts`
 - PartyKit WebSocket infrastructure `partykit/server.ts`, `src/core/competeWebSocket.ts`
-
 **Completed Sync Mode server engine:**
 - 20s pressure mechanic (`PRESSURE_CLAMP_SECONDS`)
 - Round lifecycle with `pressure_applied_at` and `ends_at`
 - `submitGuess()` with idempotent commits
 - `advanceRound()` for round/session transitions
 - `getRoundResults()` for ranked leaderboard
-
----
-
 ## Phase H — First-Time User Experience (FTUE) ✅ COMPLETE (April 2026)
-
 ### 8 FTUE Features Implemented
-
 | # | Feature | Component | Description |
 |---|---------|-----------|-------------|
 | 1 | **Welcome Modal** | `WelcomeModal.tsx` | 4-slide onboarding introducing game mechanics, dual challenges, hints, and scoring |
@@ -715,9 +540,6 @@ npm run test zeroTrust.execution
 | 6 | **Scoring Guide** | `ScoringExplainer.tsx` | Animated breakdown of location + year scoring with penalty calculations |
 | 7 | **Cinematic Mode** | `CinematicPhaseTip.tsx` | Auto-pan feature explanation with fullscreen controls and manual interrupt |
 | 8 | **Results Walkthrough** | `ResultsWalkthrough.tsx` | 3-step guide covering round results, map visualization, and final summary |
-
-**Files Created:**
-```
 src/
 ├── hooks/
 │   └── useFTUE.ts                    # Feature flag system
@@ -734,63 +556,38 @@ src/
         ├── ScoringExplainer.tsx      # Feature 6: Scoring
         ├── CinematicPhaseTip.tsx     # Feature 7: Cinematic
         └── ResultsWalkthrough.tsx    # Feature 8: Results
-```
-
----
-
 ## Phase G — Single Mutation Authority (PartyKit as Sole Authority) ✅ COMPLETE (April 2026)
-
 **Objective Achieved:**
 Refactored from fragile hybrid (API + PartyKit dual paths) to deterministic real-time architecture with PartyKit as the ONLY mutation authority.
-
 **Changes Implemented:**
-
 **STEP 1 — Enforce Single Mutation Entry:**
 - Modified `/api/compete/[gameId]/guess/route.ts` → forwards to PartyKit
 - Modified `/api/compete/[gameId]/advance/route.ts` → forwards to PartyKit
 - API routes now act only as transport bridges
-
 **STEP 2 — Lock Critical Sections (Pressure Logic):**
 - Added `loadRoundTimingWithLock()` with `SELECT ... FOR UPDATE`
 - `submitGuess()` acquires row lock before checking `pressure_applied_at`
 - Race condition eliminated
-
 **STEP 3 — Fix Timer Authority:**
 - `loadCompeteSessionSnapshot()` computes `timeRemaining` server-side
 - Timer is server-authoritative
-
 **STEP 4 — Server-Time-Based Timer Broadcast:**
 - Added `TIMER_TICK` message type
 - Timer broadcasts every 1s during active rounds
-
 **STEP 5 — Remove Unused round_results Table:**
 - Migration `007_drop_round_results.sql`
-
 **STEP 6 — Prevent Dual Execution Paths:**
 - Added `_executionContext?: "partykit" | "api"` to inputs
 - Added `assertPartyKitExecution()` guard
 - Mutations throw if called without `_executionContext: "partykit"`
-
----
-
 ## Phase F — Compete Core Foundation ✅ COMPLETE (April 2026)
-
 See Task MP-CORE-LOOP above for full details.
-
----
-
 ## Phase D — Persistence & Recovery Hardening ✅ COMPLETE (April 2026)
-
 - DB-backed events with real images and valid coordinates
 - Runtime mock fallback removed
 - Stale persisted sessions without real images reinitialized from fresh DB data
-
 **Note:** Legacy `game_sessions` JSONB snapshot table remains physically but is no longer used.
-
----
-
 ## Phase A — Core Loop Hardening ✅ COMPLETE (April 2026)
-
 | Deliverable | Status | File Location |
 |-------------|--------|---------------|
 | Extract selectors layer | ✅ Done | `src/core/gameSelectors.ts` |
@@ -798,9 +595,6 @@ See Task MP-CORE-LOOP above for full details.
 | Extract orchestration hooks | ✅ Done | `src/app/game-client-hooks.ts` |
 | Extract screen components | ✅ Done | `src/app/game-client-screens.tsx` |
 | Extract shared UI parts | ✅ Done | `src/app/game-client-parts.tsx` |
-
----
-
 ## Phase 1 — Foundation ✅ COMPLETE
 - ✅ Next.js 14 + React 18 + TypeScript scaffold
 - ✅ Reducer-based game engine (`src/core/gameEngine.ts`)
@@ -809,59 +603,39 @@ See Task MP-CORE-LOOP above for full details.
 - ✅ Mock practice events
 - ✅ Basic UI entry point
 - ✅ Vitest tests
-
----
-
 ## Phase B — Scoring Calibration ✅ COMPLETE (April 2026)
-
-| Deliverable | Status | File Location |
-|-------------|--------|---------------|
 | Extract scoring to pure functions | ✅ Done | `src/core/rules.ts` |
 | Extract constants | ✅ Done | `src/core/types.ts` |
 | Calibrate scoring formulas | ✅ Done | `src/core/rules.test.ts` |
-
----
-
 ## Pending Phases
-
 ### Phase 3 — Game Loop Core ⏳ PENDING
 - Cinematic screen (5s auto-pan)
 - Guess screen polish
 - Result screen polish
 - Asset preloading
-
 ### Phase 4 — Hint System ⏳ PENDING
 - HintPanel UI (12 hints, dependency-aware)
 - Penalty preview
 - Real-time deduction display
-
 ### Phase 5 — Settings & Configuration ⏳ PENDING
 - Timer toggle/duration
 - Auto-pan toggle
 - Year range filter
 - Theme (Light/Dark)
 - Language selectors
-
 ### Phase 6 — Session Summary ⏳ PENDING
 - SummaryScreen with 5-round recap
 - Recovery flow (browser refresh mid-game)
-
 ### Phase 7 — Mobile Polish ⏳ PENDING
 - 375px–430px viewport testing
 - Touch parity
 - iOS scroll fix
-
 ### Phase 8 — Hardening & Launch ⏳ PENDING
 - E2E test coverage
 - Preflight failure paths
 - Timer expiry path
 - Lighthouse ≥ 90
-
----
-
 ## Key Spec Constants
-
-```
 MAX_ROUNDS = 5
 REPEAT_PROTECTION_BUFFER = 500
 AUTOPAN_DURATION_SEC = 5
@@ -869,12 +643,7 @@ TIMER_MIN_SEC = 5
 TIMER_MAX_SEC = 300
 HINT_TOTAL = 12
 MAX_HINT_PENALTY = 1.0
-```
-
----
-
 ## Hard Constraints (MUST ENFORCE)
-
 - NO auto-submit (except timer=0)
 - NO auto-advance rounds
 - NO timer pause
@@ -884,43 +653,23 @@ MAX_HINT_PENALTY = 1.0
 - NO XP Accuracy coupling
 - NO hidden defaults (year slider, marker)
 - NO draggable markers
-
----
-
 ## SERVER-AUTHORITATIVE MINIMAL GAME LOOP ✅ COMPLETE (April 9, 2026)
-
-**Files Created:**
-| File | Purpose |
-|------|---------|
 | `src/server/minimalGameLoop.ts` | Server-authoritative game loop with direct mutation |
 | `scripts/runSinglePlayerServerLoop.ts` | Single-player full game test |
 | `scripts/runMultiPlayerServerLoop.ts` | Multi-player full game test |
-
 **Architecture:**
 - ✅ Single global `gameState` — server in-memory is SOLE source of truth
 - ✅ Single `dispatch()` entry point for ALL mutations
 - ✅ Synchronous state mutation (no async, no timers)
 - ✅ Event log is NON-AUTHORITATIVE
-
 **Run Commands:**
-```bash
 npx tsx scripts/runSinglePlayerServerLoop.ts
 npx tsx scripts/runMultiPlayerServerLoop.ts
-```
-
----
-
 ### Task MP-DO-AUTHORITATIVE-006: Eliminate Snapshot Re-fetch Race ✅ COMPLETE (April 20, 2026)
-
 **Deliverable:** DO runtime state updated deterministically from API-returned snapshots — no separate DB read after write.
-
 **Problem:** After a DB write, the DO would `await DB write` → `await fetch snapshot (new request)` → `broadcast`. This created a race window where a re-fetch could see stale or interleaved data.
-
 **Solution:** API endpoints return the `CompeteSessionSnapshot` directly from the same write transaction. The DO uses this snapshot directly via `applySnapshotAndBroadcast()`.
-
-**Files Changed:**
 - `partykit/server.ts` — All changes
-
 **Key Changes:**
 | Change | Before | After |
 |--------|--------|-------|
@@ -930,28 +679,18 @@ npx tsx scripts/runMultiPlayerServerLoop.ts
 | `triggerRoundExpiry` | `{ timeout: true }` (would 400) | `{ cause: "timeout", roundIndex }` from runtime state |
 | `/leave` disconnect | `loadAndBroadcast()` | `loadFromDB()` + `broadcastStateUpdate()` (membership-only read) |
 | DB write failure | State could be inconsistent | NO state mutation, NO broadcast |
-
 **Locked Architecture Rules (CTO enforcement):**
 - [SNAPSHOT-UNIQUE] ONE snapshot builder: `loadCompeteSessionSnapshot()` → `getGameState()`
 - [TIMER-DETERMINISM] `phaseEndsAt = phaseStartAt + duration`, stored in `round_events.payload`
 - [LEAVE-MEMBERSHIP-ONLY] `/leave` mutates membership only, never gameplay
 - [BANNED-PATTERNS] ❌ write→DB→re-fetch→broadcast ❌ multiple snapshot builders ❌ API-only computed state ❌ DO-only computed authoritative values
-
----
-
 ### Task MP-DO-AUTH-007: Introduce Explicit Transition Cause in /advance ✅ COMPLETE (April 20, 2026)
-
 **Deliverable:** Round transitions now carry an explicit `cause` field — no playerId fabrication for timeouts.
-
 **Problem:** All `/advance` calls required a `playerId`, forcing the DO to fabricate a fake playerId for timeout-triggered advances. Replay from DB could not distinguish player-initiated vs timeout-initiated transitions.
-
 **Solution:** `AdvanceRoundInput` now requires `cause: "player" | "timeout"`. `cause="player"` requires `playerId`. `cause="timeout"` forbids it. Cause is written to `round_events.payload`.
-
-**Files Changed:**
 - `src/server/sessionCore.ts` — `AdvanceRoundInput` type + cause validation + payload writes
 - `src/app/api/compete/[gameId]/advance/route.ts` — Route validates cause rules
 - `partykit/server.ts` — `triggerRoundExpiry` sends `cause:"timeout"`, `ADVANCE_ROUND` sends `cause:"player"`
-
 **Acceptance Tests:**
 | Case | Input | Expected |
 |------|-------|----------|
@@ -959,41 +698,23 @@ npx tsx scripts/runMultiPlayerServerLoop.ts
 | Timeout advance | `{ cause: "timeout", roundIndex: 2 }` | payload.cause="timeout", NO playerId |
 | Invalid input | `{ cause: "timeout", playerId: "A" }` | 400, no DB write |
 | Replay consistency | Rebuild from round_events | Correct cause preserved per transition |
-
----
-
 ### Task MP-DO-AUTH-008: Normalize TransitionCause as Domain State ✅ COMPLETE (April 20, 2026)
-
 **Deliverable:** `TransitionCause` promoted from inline API parameter to authoritative domain type in `eventStore.ts`.
-
 **Problem:** `cause` was defined as inline string literals scattered across 3 files. The binary enum `"player" | "timeout"` would break when system-initiated transitions (admin, recovery, DO-restart) are needed. No single source of truth for valid cause values.
-
 **Solution:** `TransitionCause` defined as authoritative domain type in `eventStore.ts` (same module as `EventType`). Full enum: `"player" | "timeout" | "system"`. Imported by all consumers. Part of replay determinism.
-
-**Files Changed:**
 - `src/server/eventStore.ts` — `TransitionCause` type definition with authority comments
 - `src/server/sessionCore.ts` — Imports `TransitionCause`, uses in `AdvanceRoundInput` + validation
 - `src/app/api/compete/[gameId]/advance/route.ts` — Imports `TransitionCause`, validates against domain enum
-
 **PartyKit note:** At task 008, `partykit/server.ts` still used inline literals `"timeout"` and `"player"` — this was superseded by MP-DO-AUTH-009.
-
----
-
 ### Task MP-DO-AUTH-009: Unify TransitionCause Across Next.js + PartyKit ✅ COMPLETE (April 20, 2026)
-
 **Deliverable:** Single TransitionCause contract shared across all bundler boundaries — no string duplication anywhere in the system.
-
 **Problem:** After MP-DO-AUTH-008, the domain type lived in `eventStore.ts` (Next.js-only, imports server modules). PartyKit runs in a separate bundler context and could not import from there, so it used inline string literals. This created a silent-drift risk: if the enum expanded (e.g. adding `"admin"`), PartyKit would fall out of sync with no compile-time protection.
-
 **Solution:** Extract `TransitionCause` to a zero-dependency shared module at `src/core/transitionCause.ts`. Both Next.js (via `@/core/transitionCause` alias) and PartyKit (via relative path `../src/core/transitionCause`) import the same authoritative definition.
-
-**Files Changed:**
 - `src/core/transitionCause.ts` — NEW: zero-dependency shared module with `const` object, type, runtime guard, and value list
 - `src/server/eventStore.ts` — Removed type definition, added pointer comment
 - `src/server/sessionCore.ts` — Imports `TransitionCause` from shared; uses `TransitionCause.PLAYER` / `.TIMEOUT` / `.SYSTEM` constants in validation
 - `src/app/api/compete/[gameId]/advance/route.ts` — Imports `TransitionCause` + `isTransitionCause` + `ALL_TRANSITION_CAUSES`; runtime guard replaces manual string comparison
 - `partykit/server.ts` — Imports `TransitionCause` via relative path; replaces inline `"timeout"` / `"player"` with domain constants
-
 **Architecture Benefits:**
 | Dimension | Before | After |
 |-----------|--------|-------|
@@ -1002,43 +723,32 @@ npx tsx scripts/runMultiPlayerServerLoop.ts
 | Replay determinism | ✅ correct | ✅ correct |
 | Cross-boundary consistency | ❌ inline literals in PartyKit | ✅ compile-time enforced |
 | Future scalability | ⚠️ manual sync required | ✅ single edit propagates |
-
 **Verification:** `npx partykit dev` starts successfully — PartyKit's esbuild bundler resolves the relative import and includes the shared module in the bundle. Zero new tsc errors.
-
----
-
 ### Task MP-DO-AUTH-010: Harden TransitionCause Contract ✅ COMPLETE (April 20, 2026)
-
 **Deliverable:** TransitionCause is now a fully locked domain contract — ownership documented, semantics unambiguous, write-time enforced, zero shadow entry points.
-
 **Four fixes applied:**
-
 #### Fix 1: Ownership documentation
 The shared module now explicitly states:
 - **Owner**: Event system (`round_events.payload`)
 - **Scope**: Domain layer ONLY — not API, not UI, not transport
 - **Rule**: Adding a value requires (1) deterministic semantics, (2) replay test
 - **Forbidden**: UI/transport concerns (`UI_CLICK`, `ADMIN_FORCE`, etc.)
-
 #### Fix 2: SYSTEM → INTERNAL rename
 `SYSTEM` was vague — could mean admin, recovery, migration, anything. Renamed to `INTERNAL` with strict scoping:
 - **Meaning**: DO-restart or recovery initiated (no playerId, no admin)
 - **Determinism**: Only emitted by DO on cold-start recovery, never by human
 - **NOT for**: Admin actions, manual overrides, UI triggers
 - Each value now has explicit replay determinism documentation
-
 #### Fix 3: Write-time enforcement at appendEvent
 The `appendEvent` function (the ONLY write path to `round_events`) now validates:
 - If `eventType ∈ CAUSE_CARRYING_EVENTS` (`ROUND_STARTED`, `SESSION_COMPLETE`)
 - Then `payload.cause` MUST pass `isTransitionCause()` guard
 - Otherwise: throw `INVALID_CAUSE` — transaction rolls back, no row written
-
 This means:
 - Direct SQL bypass → caught by appendEvent
 - Legacy `logRoundEvent` → caught by appendEvent (it delegates)
 - API route with bad cause → caught by appendEvent (defense in depth)
 - No event with `{ cause: "banana" }` can ever reach `round_events`
-
 #### Fix 4: Zero shadow imports verified
 Comprehensive import audit — all 4 consumers:
 | File | Import Path |
@@ -1047,15 +757,9 @@ Comprehensive import audit — all 4 consumers:
 | `src/server/eventStore.ts` | `@/core/transitionCause` (isTransitionCause, CAUSE_CARRYING_EVENTS) |
 | `src/app/api/compete/[gameId]/advance/route.ts` | `@/core/transitionCause` |
 | `partykit/server.ts` | `../src/core/transitionCause` |
-
 Zero imports from `eventStore`. Zero dual entry points.
-
----
-
 ### Task BUG-FIX-001: Identity Collapse on Join — Player B appears as Player A ✅ COMPLETE (April 21, 2026)
-
 **Symptom:** Player A creates a game → Player B joins → Player B sees themselves as Player A (host) in the lobby.
-
 **Root Cause:** The `isSessionPlayer` runtime validator in `src/core/competeApi.ts` was missing the `hasSubmitted` field validation. The `SessionPlayer` type (from `src/core/types.ts`) requires:
 ```ts
 playerId: string;
@@ -1065,12 +769,9 @@ leftAt: string | null;
 ready: boolean;
 isHost: boolean;
 hasSubmitted: boolean;  // ← Missing from validator!
-```
-
 The validator only checked 6 fields, not 7. When the server returned a snapshot with `hasSubmitted: false` for Player B, the validation could fail or behave unpredictably, causing the client to either:
 - Reject the valid snapshot and keep stale state (showing only Player A)
 - Have runtime type mismatch where `hasSubmitted` was `undefined` instead of `boolean`
-
 **Fix:**
 1. Added `hasSubmitted` validation to `isSessionPlayer` (line 31)
 2. Added detailed per-field error logging to `isCompeteSessionSnapshot` to diagnose future validation failures
@@ -1079,15 +780,9 @@ The validator only checked 6 fields, not 7. When the server returned a snapshot 
    - `applySnapshotAndBroadcast` — when applying API-returned snapshot
    - `broadcastStateUpdate` — when broadcasting to all clients
 4. Added state update logging to compete page `onStateUpdate` handler
-
 **Validation:** Zero new TypeScript errors. The validator now correctly checks all 7 required SessionPlayer fields.
-
----
-
 ## Summary: System Status
-
 **All migrations executed successfully.** The canonical session architecture is now live:
-
 - ✅ DB tables: `sessions`, `session_players`, `round_commits`, `round_results`, `round_events`
 - ✅ DO-authoritative architecture: DB=truth, DO=executor, Client=renderer
 - ✅ No snapshot re-fetch after write — API-returned snapshot used directly
@@ -1096,50 +791,31 @@ The validator only checked 6 fields, not 7. When the server returned a snapshot 
 - ✅ Legacy snapshot endpoints disabled (410)
 - ✅ Client refactored to UI-only mode (WS is the ONLY state source)
 - ✅ All tests passing
-
 **Last updated:** 2026-04-22
-
----
-
 ### Task MP-FIX-ERROR-PROPAGATION-001: Preserve original getGameState error instead of masking as "Session not found" ✅ COMPLETE (April 22, 2026)
-
 **Deliverable:** Removed `.catch()` error swallowing in `loadCompeteSessionSnapshot` so `getGameState` errors propagate upward unchanged.
-
 **Problem:**
 All `getGameState` failures (replay validation errors, DB connection errors, FSM violations, etc.) were caught and converted to `null`, which callers then converted to the generic "Session not found" message. This destroyed diagnostic context and made it impossible to distinguish:
 - Genuine missing session (DB row absent)
 - Replay drift (`verifyFullReplay` mismatch)
 - Invalid event stream (`deriveStateFromEventStream` FSM violation)
 - DB timeout or connection failure
-
 **Root Cause Location:**
 `@d:\GH-NEW\src\server\sessionCore.ts:335-341`
-
 **Before:**
-```typescript
 const gameState = await getGameState(gameId).catch((err) => {
   console.error('[loadCompeteSessionSnapshot] getGameState failed for', gameId, err instanceof Error ? err.message : err);
   return null;
 });
 if (!gameState) {
-  return null;
-}
-```
-
 **After:**
-```typescript
 const gameState = await getGameState(gameId);
-```
-
 **Impact on Callers:**
 | Caller | Before | After |
-|--------|--------|-------|
 | `submitGuess` | All failures → "Session not found" | `loadSessionRow` null → "Session not found"; everything else → original error |
 | `createCompeteSession` | All failures → "Unable to load the newly created compete session" | `loadSessionRow` null → same message; everything else → original error |
 | `joinCompeteSession` | All failures → "Session not found" | Same split as above |
 | `advanceRound` | All failures → "Session not found" | Same split as above |
-
-**Acceptance Tests:**
 | Case | Input | Expected Output |
 |------|-------|----------------|
 | Normal flow | Valid session, valid replay | Snapshot returned correctly |
@@ -1147,7 +823,6 @@ const gameState = await getGameState(gameId);
 | DB failure | DB query fails | SAME DB error propagates, NO masking |
 | True session missing | No row in `sessions` table | `submitGuess` throws "Session not found" ONLY in this case |
 | Replay consistency | Re-run `getGameState` on same DB | Same success or same error deterministically |
-
 **Verification Steps:**
 1. ✅ grep `.catch(` in `loadCompeteSessionSnapshot` — 0 results in file
 2. ✅ Confirm removal — `.catch()` block absent at line 335
@@ -1155,7 +830,6 @@ const gameState = await getGameState(gameId);
 4. ✅ Confirm only ONE function modified — `loadCompeteSessionSnapshot` only
 5. ✅ Confirm only ONE file modified — `sessionCore.ts` only
 6. ✅ Confirm no null-return path remains — no `return null` in `sessionCore.ts`
-
 **Architecture Compliance:**
 - ✅ DB remains sole source of truth
 - ✅ No memory fallback introduced
@@ -1166,33 +840,30 @@ const gameState = await getGameState(gameId);
 - ✅ No replay logic changed
 - ✅ No retries or fallbacks introduced
 - ✅ Deterministic: same DB input → same success or same error
-
-**Last updated:** 2026-04-22
-| MP-UI-LANDING-002 | DONE | src/app/page.tsx, src/components/landing/Navbar.tsx, src/components/landing/HeroSection.tsx, src/components/landing/AuthModal.tsx, src/components/landing/StickyCTA.tsx | Rebuild landing page � carousel hero, navbar, auth modal, sticky CTA. Pure React + inline styles, no UI libs. Supabase auth wired via supabaseBrowser. |
-| MP-INV-RESULTS-001 | DONE | � | SUBMIT_GUESS broadcasts guess snapshot only; ROUND_COMPLETE written by sessionCore but /guess route conditionally appends esults. Deadlock likely from missing esults in broadcast or client validation rejecting snapshot. |
-| MP-FIX-SNAPSHOT-VALIDATOR-001 | DONE | � | isCompeteSessionSnapshot now accepts optional results field; STATE_UPDATE with results no longer discarded by client |
-| MP-INV-SUBMIT-FLOW-001 | DONE | � | Diagnostic script executed; full output captured |
-| MP-INV-SUBMIT-FLOW-001 | DONE | � | Diagnostic script executed; full output captured |
-| MP-INV-ROUND-RESULTS-001 | DONE | � | round_results table and getRoundResults output inspected for game b0d7327c |
-| MP-INV-SCORE-WRITE-001 | COMPLETE | � | Scoring computed by evaluateRound in computeAndWriteRoundResults; PartyKit calls /guess API, no direct sessionCore calls |
-| MP-INV-SCORE-WRITE-002 | COMPLETE | � | computeAndWriteRoundResults called by completeRound (line 1129) and submitGuess when allActiveSubmitted (line 973); round_commits has valid guess data with year_guess and location_lat/lng |
-| MP-INV-SCORE-WRITE-003 | COMPLETE | � | Client sends {type, playerId, roundIndex, year, lat, lng, hintsUsed} via WebSocket; PartyKit forwards {playerId, roundIndex, year, lat, lng} to /guess API; API maps year?yearGuess, lat/lng?locationGuess object for submitGuess |
-| MP-INV-SCORE-WRITE-004 | COMPLETE | � | evaluateRound returns RoundResult type with roundXp as score field; haversineDistanceKm does NOT validate lat/lng ranges - invalid coords like lat:1968 produce mathematically valid but geographically nonsensical distances without throwing |
-| MP-INV-SCORE-WRITE-005 | COMPLETE | � | calculateLocationAccuracy returns 0 when distanceKm >= 20000 (clamped), small positive for 15000km (e.g. 25); calculateYearAccuracy returns 98 for yearDiff=3 (very high accuracy) |
-| MP-INV-SCORE-WRITE-006 | COMPLETE | � | All 5 events have valid non-null event_year fields (289, 1775, 1510, 903, 1638) - no null year data |
-| MP-INV-SCORE-WRITE-007 | COMPLETE | � | event_year (DB column) is mapped to year (EventRecord field) in mapEventRowToEventRecord at line 48 |
-| MP-INV-SCORE-WRITE-008 | COMPLETE | � | ROUND_COMPLETE events exist for both rounds (created at 07:15:06 and 07:15:48); round_results rows have score: 0 but location_score, time_score, distance_km, year_diff are ALL NULL - scoring fields were not written |
-| MP-INV-SCORE-WRITE-009 | COMPLETE | � | insertMissingCommits inserts into round_commits NOT round_results; only INSERT INTO round_results is in computeAndWriteRoundResults (line 1405); no other path creates stub round_results rows |
+| MP-UI-LANDING-002 | DONE | src/app/page.tsx, src/components/landing/Navbar.tsx, src/components/landing/HeroSection.tsx, src/components/landing/AuthModal.tsx, src/components/landing/StickyCTA.tsx | Rebuild landing page � carousel hero, navbar, auth modal, sticky CTA. Pure React + inline styles, no UI libs. Supabase auth wired via supabaseBrowser. |
+| MP-INV-RESULTS-001 | DONE | � | SUBMIT_GUESS broadcasts guess snapshot only; ROUND_COMPLETE written by sessionCore but /guess route conditionally appends 
+esults. Deadlock likely from missing 
+esults in broadcast or client validation rejecting snapshot. |
+| MP-FIX-SNAPSHOT-VALIDATOR-001 | DONE | � | isCompeteSessionSnapshot now accepts optional results field; STATE_UPDATE with results no longer discarded by client |
+| MP-INV-SUBMIT-FLOW-001 | DONE | � | Diagnostic script executed; full output captured |
+| MP-INV-ROUND-RESULTS-001 | DONE | � | round_results table and getRoundResults output inspected for game b0d7327c |
+| MP-INV-SCORE-WRITE-001 | COMPLETE | � | Scoring computed by evaluateRound in computeAndWriteRoundResults; PartyKit calls /guess API, no direct sessionCore calls |
+| MP-INV-SCORE-WRITE-002 | COMPLETE | � | computeAndWriteRoundResults called by completeRound (line 1129) and submitGuess when allActiveSubmitted (line 973); round_commits has valid guess data with year_guess and location_lat/lng |
+| MP-INV-SCORE-WRITE-003 | COMPLETE | � | Client sends {type, playerId, roundIndex, year, lat, lng, hintsUsed} via WebSocket; PartyKit forwards {playerId, roundIndex, year, lat, lng} to /guess API; API maps year?yearGuess, lat/lng?locationGuess object for submitGuess |
+| MP-INV-SCORE-WRITE-004 | COMPLETE | � | evaluateRound returns RoundResult type with roundXp as score field; haversineDistanceKm does NOT validate lat/lng ranges - invalid coords like lat:1968 produce mathematically valid but geographically nonsensical distances without throwing |
+| MP-INV-SCORE-WRITE-005 | COMPLETE | � | calculateLocationAccuracy returns 0 when distanceKm >= 20000 (clamped), small positive for 15000km (e.g. 25); calculateYearAccuracy returns 98 for yearDiff=3 (very high accuracy) |
+| MP-INV-SCORE-WRITE-006 | COMPLETE | � | All 5 events have valid non-null event_year fields (289, 1775, 1510, 903, 1638) - no null year data |
+| MP-INV-SCORE-WRITE-007 | COMPLETE | � | event_year (DB column) is mapped to year (EventRecord field) in mapEventRowToEventRecord at line 48 |
+| MP-INV-SCORE-WRITE-008 | COMPLETE | � | ROUND_COMPLETE events exist for both rounds (created at 07:15:06 and 07:15:48); round_results rows have score: 0 but location_score, time_score, distance_km, year_diff are ALL NULL - scoring fields were not written |
+| MP-INV-SCORE-WRITE-009 | COMPLETE | � | insertMissingCommits inserts into round_commits NOT round_results; only INSERT INTO round_results is in computeAndWriteRoundResults (line 1405); no other path creates stub round_results rows |
 | MP-DEBUG-SCORE-001 | IN PROGRESS | awaiting live test run | Diagnostic logging added to computeAndWriteRoundResults with [SCORE-DEBUG] prefix at all critical steps |
-| MP-INV-SESSION-PAYLOAD-001 | COMPLETE | � | Invalid compete session payload thrown by adaptCompeteSnapshot (sessionApi.ts:192) when gameId/status missing, and parseCompeteSnapshot (competeApi.ts:108) when isCompeteSessionSnapshot fails; loadCompeteSessionSnapshot has new REPLAY_MISMATCH validation (lines 411-424) |
-| MP-INV-SESSION-PAYLOAD-002 | COMPLETE | � | isCompeteSessionSnapshot checks for results field (line 97) but CompeteSessionSnapshot type does NOT include results field; this type mismatch causes Invalid compete session payload error |
-| MP-FIX-SNAPSHOT-GUARD-001 | COMPLETE | � | Fixed isCompeteSessionSnapshot to allow undefined results field (line 97) by adding value.results !== undefined check |
+| MP-INV-SESSION-PAYLOAD-001 | COMPLETE | � | Invalid compete session payload thrown by adaptCompeteSnapshot (sessionApi.ts:192) when gameId/status missing, and parseCompeteSnapshot (competeApi.ts:108) when isCompeteSessionSnapshot fails; loadCompeteSessionSnapshot has new REPLAY_MISMATCH validation (lines 411-424) |
+| MP-INV-SESSION-PAYLOAD-002 | COMPLETE | � | isCompeteSessionSnapshot checks for results field (line 97) but CompeteSessionSnapshot type does NOT include results field; this type mismatch causes Invalid compete session payload error |
+| MP-FIX-SNAPSHOT-GUARD-001 | COMPLETE | � | Fixed isCompeteSessionSnapshot to allow undefined results field (line 97) by adding value.results !== undefined check |
 ### Task MP-FIX-BUILD-001: Fix @typescript-eslint/no-explicit-any error in sessionCore.ts line 1428 COMPLETE (April 29, 2026)
 **Deliverable:** Fixed TypeScript no-explicit-any error in debug logging by replacing as any cast with explicit type assertion pattern consistent with existing codebase.
-**Problem:**
 Vercel build failed with error: src/server/sessionCore.ts:1428:81 Error: Unexpected any. Specify a different type.
 Line 1428 was inside diagnostic logging added by MP-DEBUG-SCORE-001, logging INSERT rowCount using (insertResult as any).rowCount.
-**Root Cause Location:**
 d:\GH-NEW\src\server\sessionCore.ts:1428
 **Changes Made:**
 - Added QueryResult to pg import at line 10
@@ -1202,27 +873,18 @@ d:\GH-NEW\src\server\sessionCore.ts:1428
 - tsc --noEmit confirms no no-explicit-any error in sessionCore.ts
 - Only sessionCore.ts modified
 - Pattern consistent with existing codebase (line 910)
-**Architecture Compliance:**
 - No logic changes
 - Debug logging preserved
 - Type safety improved (specific type instead of any)
 ### Task MP-FIX-BUILD-002: Remove unused QueryResult import from sessionCore.ts COMPLETE (April 29, 2026)
 **Deliverable:** Removed unused QueryResult import from pg import on line 10.
-**Problem:**
 Vercel build failed with error: src/server/sessionCore.ts:10:21 Error: 'QueryResult' is defined but never used.
 QueryResult was added in MP-FIX-BUILD-001 but the final solution used inline type assertion instead, making the import unused.
-**Root Cause Location:**
 d:\GH-NEW\src\server\sessionCore.ts:10
-**Before:**
 import type { Pool, QueryResult } from "pg";
-**After:**
 import type { Pool } from "pg";
-**Verification:**
 - tsc --noEmit confirms zero errors in src/server/sessionCore.ts
-- Only sessionCore.ts modified
 - No functional changes (debug logging still works with inline type assertion)
-**Architecture Compliance:**
-- No logic changes
 - No functional changes
 ### Task MP-INV-PARTYKIT-NAME-001: Get PartyKit worker name and check guess API call logs COMPLETE (April 29, 2026)
 **Deliverable:** READ ONLY investigation of PartyKit worker name and /guess API call URL.
@@ -1236,38 +898,23 @@ import type { Pool } from "pg";
 - SUBMIT_GUESS handler builds apiUrl using getNextJsBaseUrl() + /api/compete/{gameId}/guess
 ### Task MP-FIX-PARTYKIT-BASEURL-001: Set NEXTJS_BASE_URL to production Vercel URL in PartyKit deployment COMPLETE (April 29, 2026)
 **Deliverable:** Fixed PartyKit deployment to call production Vercel URL instead of localhost.
-**Problem:**
 partykit.json had NEXTJS_BASE_URL set to http://localhost:3000, causing deployed Cloudflare Worker to call localhost instead of production Vercel. All /guess, /complete, and /advance API calls from PartyKit were silently failing in production.
-**Root Cause Location:**
 d:\GH-NEW\partykit.json:8-10
-**Before:**
-{
   "vars": {
     "NEXTJS_BASE_URL": "http://localhost:3000"
   }
-}
-**After:**
-{
-  "vars": {
     "NEXTJS_BASE_URL": "https://gh-new2.vercel.app"
-  }
-}
 **Additional Change:**
 Updated worker name from "guess-history-party" to "guess-history-multiplayer" to match existing deployed worker.
-**Verification:**
 - npx partykit deploy succeeded
 - Worker URL confirmed: https://guess-history-multiplayer.lama010101.partykit.dev
 - Only partykit.json modified
-**Architecture Compliance:**
 - No code changes, only configuration
 - Production API calls now route to correct Vercel endpoint
 ### Task MP-FIX-PARTYKIT-BASEURL-002: Derive NEXTJS_BASE_URL dynamically from connection Origin header COMPLETE (April 29, 2026)
 **Deliverable:** PartyKit now derives NEXTJS_BASE_URL from connection Origin header instead of hardcoded env var.
-**Problem:**
 NEXTJS_BASE_URL was hardcoded in partykit.json as localhost:3000, breaking all API calls in production when deployed.
-**Root Cause Location:**
 d:\GH-NEW\partykit/server.ts
-**Changes Made:**
 1. Added private field: private detectedBaseUrl: string | null = null;
 2. Updated onConnect to detect base URL from Origin header at connection start
 3. Updated getNextJsBaseUrl() to use detectedBaseUrl first, then fall back to env var
@@ -1275,28 +922,28 @@ d:\GH-NEW\partykit/server.ts
 - Production: first client connection sets detectedBaseUrl to https://gh-new2.vercel.app (the Vercel origin)
 - Local dev: first client connection sets it to http://localhost:3000
 - Fallback to env var if no connection has been made yet (timer path)
-**Verification:**
 - tsc --noEmit confirms zero new TypeScript errors in partykit/server.ts
 - Only partykit/server.ts modified
-**Architecture Compliance:**
 - No logic changes, only URL resolution
 - Production API calls now route correctly based on client origin
 - Timer path still has env var fallback for cases without connection
 ### Task MP-FIX-PARTYKIT-BASEURL-003: Set NEXTJS_BASE_URL fallback in partykit.json and redeploy COMPLETE (April 29, 2026)
 **Deliverable:** Confirmed partykit.json fallback URL is set to production Vercel and redeployed PartyKit.
-**Problem:**
 NEXTJS_BASE_URL fallback in partykit.json needed to be set to production Vercel URL for the timer path (triggerRoundExpiry) when no client connection has been established yet.
-**Root Cause Location:**
-d:\GH-NEW\partykit.json:8-10
-**Changes:**
 - No file change needed — NEXTJS_BASE_URL was already set to https://gh-new2.vercel.app from MP-FIX-PARTYKIT-BASEURL-001
 - Redeployed PartyKit to ensure configuration is applied
-**Verification:**
 - npx partykit deploy succeeded with no errors
-- Worker URL confirmed: https://guess-history-multiplayer.lama010101.partykit.dev
 - Dynamic origin detection (MP-FIX-PARTYKIT-BASEURL-002) takes priority when connection exists
 - Fallback to env var for timer path is now production-ready
-**Architecture Compliance:**
 - No code changes, configuration only
 - Timer path now has correct production fallback
 - Client-origin detection still takes priority for normal gameplay
+ | MP-FIX-EVENT-DATA-001 | DONE | src/core/types.ts, src/server/getGameState.ts | Added RoundEventContent type and rounds field to CompeteSessionSnapshot; getGameState now fetches event content (title, year, lat/lng, imageUrl) from events/locations/images tables using fetchEventById; rounds array ordered by round index |
+| MP-FIX-EVENT-DATA-001 | DONE | src/core/types.ts, src/server/getGameState.ts, src/server/sessionCore.ts | Added RoundEventContent type and rounds field to CompeteSessionSnapshot; getGameState now fetches event content (title, year, lat/lng, imageUrl) from events/locations/images tables using fetchEventsWithDetails; rounds array ordered by round index; sessionCore.ts updated to pass rounds to snapshot assembly |
+| MP-FIX-EVENT-DATA-002 | DONE | src/app/compete/[gameId]/page.tsx | Added event reveal section to ROUND_COMPLETE and SESSION_COMPLETE result screens: event title, image (with null fallback), correct year, correct location (locationName with lat/lng fallback) displayed above existing leaderboard |
+|   M P - M I G R A T E - I M A G E S - 0 0 1   |   D O N E   |   s c r i p t s / m i g r a t e I m a g e s . t s   |   C r e a t e d   i m a g e   m i g r a t i o n   s c r i p t :   f e t c h e s   i m a g e   U R L s   f r o m   D B 1   i m a g e s   t a b l e   ( C O A L E S C E   i m a g e _ u r l ,   f i r e b a s e _ u r l ) ,   i n s e r t s   i n t o   D B 2   i m a g e s   t a b l e   k e y e d   o n   p r o m p t _ i d   =   e v e n t _ i d ,   m a r k s   D B 2   e v e n t s   w i t h   n o   m a t c h e d   i m a g e   a s   s t a t u s = ' n o _ i m a g e '   | 
+|   M P - M I G R A T E - I M A G E S - 0 0 2   |   D O N E   |   s c r i p t s / m i g r a t e I m a g e s . t s   |   R e p l a c e d   p g - b a s e d   m i g r a t i o n   w i t h   f e t c h ( ) - b a s e d   R E S T   A P I   m i g r a t i o n ;   u s e s   S u p a b a s e   R E S T   A P I   o v e r   H T T P S   t o   b y p a s s   l o c a l   D N S / f i r e w a l l   b l o c k i n g   p o r t   5 4 3 2 ;   b a t c h e d   r e a d s   f r o m   D B 1   a n d   w r i t e s   t o   D B 2   | 
+ 
+ |   M P - M I G R A T E - I M A G E S - 0 0 5   |   D O N E   |   s c r i p t s / m i g r a t e I m a g e s . t s   |   F i x e d   D B 1   f e t c h   t o   u s e   n o   s e r v e r - s i d e   f i l t e r s   +   R a n g e - U n i t   h e a d e r ;   e x e c u t e d   m i g r a t i o n :   1 2 6 2   i m a g e s   i n s e r t e d ,   0   e v e n t s   m a r k e d   n o _ i m a g e   ( c h e c k   c o n s t r a i n t   v i o l a t i o n )   | 
+ 
+ 

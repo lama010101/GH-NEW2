@@ -376,6 +376,31 @@ export default function CompeteGamePage() {
 
         {snapshot.status === "ROUND_ACTIVE" ? (
           <section className="card stack">
+            {(() => {
+              const currentEvent = snapshot.rounds?.[snapshot.currentRoundIndex];
+              return currentEvent ? (
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ fontWeight: 500, fontSize: 15, marginBottom: 8 }}>
+                    {currentEvent.title}
+                  </p>
+                  {currentEvent.imageUrl ? (
+                    <img
+                      src={currentEvent.imageUrl}
+                      alt={currentEvent.title}
+                      style={{ width: "100%", maxHeight: 300, objectFit: "cover", borderRadius: 8, display: "block" }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: "100%", height: 200, background: "var(--color-background-secondary)",
+                      borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "var(--color-text-secondary)", fontSize: 14
+                    }}>
+                      No image available
+                    </div>
+                  )}
+                </div>
+              ) : null;
+            })()}
             <h2>Round {snapshot.currentRoundIndex + 1}</h2>
             <p>
               Time remaining: <strong>{timeRemaining === null ? "—" : `${Math.max(0, Math.floor(timeRemaining))}s`}</strong>
@@ -461,6 +486,61 @@ export default function CompeteGamePage() {
         {snapshot.status === "ROUND_COMPLETE" ? (
           <section className="card stack">
             <h2>Round {snapshot.currentRoundIndex + 1} Results</h2>
+            {/* Event reveal section */}
+            {(() => {
+              const roundData = snapshot.rounds[snapshot.currentRoundIndex];
+              if (!roundData) return null;
+              return (
+                <div style={{ marginBottom: 16 }}>
+                  {roundData.title && (
+                    <h3 style={{ margin: "0 0 12px 0", fontSize: 18 }}>{roundData.title}</h3>
+                  )}
+                  {roundData.imageUrl ? (
+                    <img
+                      src={roundData.imageUrl}
+                      alt={roundData.title || "Event image"}
+                      style={{
+                        width: "100%",
+                        maxHeight: "300px",
+                        objectFit: "cover",
+                        borderRadius: 4,
+                        marginBottom: 12
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "200px",
+                        backgroundColor: "#e0e0e0",
+                        borderRadius: 4,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: 12,
+                        color: "#666"
+                      }}
+                    >
+                      No image available
+                    </div>
+                  )}
+                  {roundData.year && roundData.year !== 0 && (
+                    <p style={{ margin: "0 0 8px 0", fontSize: 14 }}>
+                      <strong>Answer: {roundData.year}</strong>
+                    </p>
+                  )}
+                  {roundData.locationName ? (
+                    <p style={{ margin: 0, fontSize: 14 }}>
+                      Location: {roundData.locationName}
+                    </p>
+                  ) : roundData.latitude !== 0 && roundData.longitude !== 0 ? (
+                    <p style={{ margin: 0, fontSize: 14 }}>
+                      Location: {roundData.latitude.toFixed(4)}, {roundData.longitude.toFixed(4)}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })()}
             {roundResults && roundResults.length > 0 ? (
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
@@ -516,6 +596,61 @@ export default function CompeteGamePage() {
         {snapshot.status === "SESSION_COMPLETE" ? (
           <section className="card stack">
             <h2>Game Over</h2>
+            {/* Event reveal section */}
+            {(() => {
+              const roundData = snapshot.rounds[snapshot.currentRoundIndex];
+              if (!roundData) return null;
+              return (
+                <div style={{ marginBottom: 16 }}>
+                  {roundData.title && (
+                    <h3 style={{ margin: "0 0 12px 0", fontSize: 18 }}>{roundData.title}</h3>
+                  )}
+                  {roundData.imageUrl ? (
+                    <img
+                      src={roundData.imageUrl}
+                      alt={roundData.title || "Event image"}
+                      style={{
+                        width: "100%",
+                        maxHeight: "300px",
+                        objectFit: "cover",
+                        borderRadius: 4,
+                        marginBottom: 12
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "200px",
+                        backgroundColor: "#e0e0e0",
+                        borderRadius: 4,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: 12,
+                        color: "#666"
+                      }}
+                    >
+                      No image available
+                    </div>
+                  )}
+                  {roundData.year && roundData.year !== 0 && (
+                    <p style={{ margin: "0 0 8px 0", fontSize: 14 }}>
+                      <strong>Answer: {roundData.year}</strong>
+                    </p>
+                  )}
+                  {roundData.locationName ? (
+                    <p style={{ margin: 0, fontSize: 14 }}>
+                      Location: {roundData.locationName}
+                    </p>
+                  ) : roundData.latitude !== 0 && roundData.longitude !== 0 ? (
+                    <p style={{ margin: 0, fontSize: 14 }}>
+                      Location: {roundData.latitude.toFixed(4)}, {roundData.longitude.toFixed(4)}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })()}
             {roundResults && roundResults.length > 0 ? (
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>

@@ -61,6 +61,16 @@ export type EventRecord = {
   difficulty?: number;
 };
 
+export type RoundEventContent = {
+  eventId: string;
+  title: string;
+  year: number;
+  latitude: number;
+  longitude: number;
+  locationName: string | null;
+  imageUrl: string | null;
+};
+
 export type GuessState = {
   year: number | null;
   location: LatLng | null;
@@ -172,6 +182,7 @@ export type CompeteSessionSnapshot = {
   roundEndsAt: string | null;
   viewerPlayerId: string | null;
   timeRemaining?: number | null;
+  rounds: RoundEventContent[];
 };
 
 export type CreateCompeteSessionInput = {

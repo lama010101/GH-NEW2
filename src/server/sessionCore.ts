@@ -391,7 +391,8 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     roundStartsAt,
     roundEndsAt,
     viewerPlayerId: viewerPlayerId ?? null,
-    timeRemaining: null
+    timeRemaining: null,
+    rounds: gameState.roundEventContent
   };
 
   // ═════════════════════════════════════════════════════════════════════════════
