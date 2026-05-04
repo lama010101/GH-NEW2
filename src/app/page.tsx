@@ -1,26 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { bootstrapIdentity, signOut, type IdentityState } from "@/core/identity";
+import { bootstrapIdentity, subscribeToIdentityChanges, signOut, type IdentityState } from "@/core/identity";
+import { AuthModal } from "@/components/AuthModal";
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [identity, setIdentity] = useState<IdentityState>({ status: "loading" });
-  const [signingOut, setSigningOut] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     bootstrapIdentity().then(setIdentity);
+    const unsubscribe = subscribeToIdentityChanges(setIdentity);
+    return unsubscribe;
   }, []);
 
-  async function handleSignOut() {
-    setSigningOut(true);
-    await signOut();
-    router.replace("/login");
-  }
+  useEffect(() => {
+    const next = searchParams.get("next");
+    if (next && identity.status === "unauthenticated") {
+      setShowAuthModal(true);
+    }
+  }, [searchParams, identity.status]);
 
-  const isAuthenticated = identity.status === "ready" && !identity.isAnonymous;
+
 
   return (
     <>
@@ -28,39 +33,27 @@ export default function HomePage() {
         {identity.status === "loading" && (
           <span style={{ color: "#9ca3af", fontSize: 14 }}>Loading…</span>
         )}
-        {identity.status === "unauthenticated" && (
-          <Link
-            href="/login"
+        {(identity.status === "unauthenticated" || identity.status === "ready") && (
+          <button
+            onClick={async () => {
+              if (identity.status === "ready") {
+                await signOut();
+              } else {
+                setShowAuthModal(true);
+              }
+            }}
             style={{
-              background: "#7c3aed",
+              background: identity.status === "ready" ? "transparent" : "#7c3aed",
               color: "#fff",
               padding: "8px 18px",
               borderRadius: 8,
               fontWeight: 600,
               fontSize: 14,
-              textDecoration: "none",
+              border: identity.status === "ready" ? "1px solid rgba(255,255,255,0.3)" : "none",
+              cursor: "pointer",
             }}
           >
-            Sign in
-          </Link>
-        )}
-        {isAuthenticated && (
-          <button
-            onClick={handleSignOut}
-            disabled={signingOut}
-            style={{
-              background: "#374151",
-              color: "#f3f4f6",
-              border: "none",
-              padding: "8px 18px",
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: signingOut ? "not-allowed" : "pointer",
-              opacity: signingOut ? 0.6 : 1,
-            }}
-          >
-            {signingOut ? "Signing out…" : "Sign out"}
+            {identity.status === "ready" ? "Sign out" : "Sign in"}
           </button>
         )}
       </div>
@@ -73,12 +66,29 @@ export default function HomePage() {
           </section>
 
           <section className="card stack">
-            <Link href="/compete" className="button">
+            <Link
+              href="/compete"
+              onClick={(e) => {
+                if (identity.status !== "ready") {
+                  e.preventDefault();
+                  setShowAuthModal(true);
+                }
+              }}
+              style={{
+                opacity: identity.status !== "ready" ? 0.5 : 1,
+                pointerEvents: "auto",
+              }}
+            >
               Compete
             </Link>
           </section>
         </div>
       </main>
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
     </>
   );
 }
