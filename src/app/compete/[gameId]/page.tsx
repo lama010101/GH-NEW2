@@ -408,31 +408,41 @@ export default function CompeteGamePage() {
           />
         )}
 
-        <section className="hero">
-          <span className="badge">Compete · {snapshot.status}</span>
-          {snapshot.status !== "LOBBY" ? (
-            <h1>
-              Round {Math.min(snapshot.currentRoundIndex + 1, snapshot.config.totalRounds)} of{" "}
-              {snapshot.config.totalRounds}
-            </h1>
-          ) : (
-            <h1>Lobby</h1>
-          )}
-          <p className="small">
-            Game ID: <code>{snapshot.gameId}</code>
-            {viewer?.isHost ? (
-              <button
-                type="button"
-                className="button secondary"
-                style={{ marginLeft: 8, padding: "2px 8px", fontSize: "0.8em" }}
-                onClick={() => { navigator.clipboard.writeText(snapshot.gameId); }}
-              >
-                Copy
-              </button>
-            ) : null}
-            {viewer ? <> · You: {viewer.displayName || shortId(viewer.playerId)}</> : null}
-          </p>
-        </section>
+        {/* Home button */}
+        <Link
+          href="/"
+          style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', zIndex: 50, textDecoration: 'none' }}
+        >
+          <span style={{ fontSize: 20, color: '#fff' }}>&#8592;</span>
+        </Link>
+
+        {snapshot.status !== "ROUND_COMPLETE" && (
+          <section className="hero">
+            <span className="badge">Compete · {snapshot.status}</span>
+            {snapshot.status !== "LOBBY" ? (
+              <h1>
+                Round {Math.min(snapshot.currentRoundIndex + 1, snapshot.config.totalRounds)} of{" "}
+                {snapshot.config.totalRounds}
+              </h1>
+            ) : (
+              <h1>Lobby</h1>
+            )}
+            <p className="small">
+              Game ID: <code>{snapshot.gameId}</code>
+              {viewer?.isHost ? (
+                <button
+                  type="button"
+                  className="button secondary"
+                  style={{ marginLeft: 8, padding: "2px 8px", fontSize: "0.8em" }}
+                  onClick={() => { navigator.clipboard.writeText(snapshot.gameId); }}
+                >
+                  Copy
+                </button>
+              ) : null}
+              {viewer ? <> · You: {viewer.displayName || shortId(viewer.playerId)}</> : null}
+            </p>
+          </section>
+        )}
 
         {snapshot.status === "LOBBY" ? (
           <section className="card stack">
@@ -584,7 +594,7 @@ export default function CompeteGamePage() {
         ) : null}
 
         {snapshot.status === "ROUND_COMPLETE" ? (
-          <section className="card stack">
+          <section className="card stack" style={{ background: "#000" }}>
             {(() => {
               const round = snapshot.rounds[snapshot.currentRoundIndex];
               if (!round) return null;
@@ -633,14 +643,14 @@ export default function CompeteGamePage() {
               return (
                 <>
                   {/* Card 1 — Accuracy Ring */}
-                  <div style={{ background: "#222", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
                     <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", textAlign: "center", marginBottom: 10 }}>
                       Accuracy
                     </div>
                     <RainbowRing value={accuracy} />
                   </div>
                   {/* Card 2 — XP */}
-                  <div style={{ background: "#222", borderRadius: 12, padding: 14, margin: "8px 10px", textAlign: "center" }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px", textAlign: "center" }}>
                     <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 10 }}>
                       Experience
                     </div>
@@ -648,7 +658,7 @@ export default function CompeteGamePage() {
                     <span style={{ fontSize: 13, color: "#f97316", marginLeft: 5 }}>XP</span>
                   </div>
                   {/* Card 3 — Event photo + info */}
-                  <div style={{ margin: "8px 10px", borderRadius: 12, overflow: "hidden", background: "#222" }}>
+                  <div style={{ margin: "8px 10px", borderRadius: 12, overflow: "hidden", background: "#333" }}>
                     {round.imageUrl ? (
                       <img src={round.imageUrl} alt={round.title}
                         style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
@@ -659,16 +669,16 @@ export default function CompeteGamePage() {
                     )}
                     <div style={{ padding: "10px 12px" }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{round.title}</div>
-                      {(round as any).description && (
-                        <div style={{ fontSize: 11, color: "#aaa", lineHeight: 1.5, marginBottom: 8 }}>{(round as any).description}</div>
+                      {(round as unknown as { description?: string }).description && (
+                        <div style={{ fontSize: 11, color: "#aaa", lineHeight: 1.5, marginBottom: 8 }}>{(round as unknown as { description?: string }).description}</div>
                       )}
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 11, color: "#aaa" }}>
-                          Confidence: <span style={{ color: "#fff" }}>{(round as any).confidencePct ?? "—"}%</span>
+                          Confidence: <span style={{ color: "#fff" }}>{(round as unknown as { confidencePct?: number }).confidencePct ?? "—"}%</span>
                         </span>
-                        {(round as any).sourceUrl && (
+                        {(round as unknown as { sourceUrl?: string }).sourceUrl && (
                           <button
-                            onClick={() => window.open((round as any).sourceUrl, "_blank")}
+                            onClick={() => window.open((round as unknown as { sourceUrl?: string }).sourceUrl, "_blank")}
                             style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
                             Source
                           </button>
@@ -681,7 +691,7 @@ export default function CompeteGamePage() {
                     </div>
                   </div>
                   {/* Card 4 — Round Leaderboard */}
-                  <div style={{ background: "#222", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
                     {leaderboardRows.map(row => {
                       const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
@@ -711,7 +721,7 @@ export default function CompeteGamePage() {
                     )}
                   </div>
                   {/* Card 5 — WHERE */}
-                  <div style={{ background: "#222", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Where</span>
                       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -754,7 +764,7 @@ export default function CompeteGamePage() {
                     )}
                   </div>
                   {/* Card 6 — WHEN */}
-                  <div style={{ background: "#222", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>When</div>
                     <div style={{ fontSize: 12, color: "#fff", marginBottom: 10 }}>
                       Correct year: <span style={{ color: "#f97316" }}>{correctYear}</span>
@@ -791,13 +801,17 @@ export default function CompeteGamePage() {
                   </div>
                   {/* Bottom Bar */}
                   <div style={{
+                    position: "fixed",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
                     background: "#000",
                     borderTop: "1px solid #222",
                     padding: "12px 14px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    margin: "8px 0 0",
+                    zIndex: 50,
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#999" }}>
                       Round {snapshot.currentRoundIndex + 1} / {snapshot.rounds.length}
