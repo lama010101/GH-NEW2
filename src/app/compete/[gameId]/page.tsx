@@ -45,6 +45,7 @@ type RoundResult = {
   rank: number;
   accuracy: number;
   didSubmit: boolean;
+  guessYear: number | null;
   guessLat?: number | null;
   guessLng?: number | null;
 };
@@ -76,6 +77,37 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
             Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
             Math.sin(dLng/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function RainbowRing({ value }: { value: number }) {
+  const r = 50;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference * (1 - Math.max(0, Math.min(100, value)) / 100);
+  const hue = Math.round((Math.max(0, Math.min(100, value)) / 100) * 120);
+  const color = `hsl(${hue}, 100%, 45%)`;
+  return (
+    <svg viewBox="0 0 120 120" style={{ width: 120, height: 120, margin: "0 auto", display: "block" }}>
+      <circle cx={60} cy={60} r={r} fill="none" stroke="#2a2a2a" strokeWidth={10} />
+      <circle
+        cx={60} cy={60} r={r} fill="none"
+        stroke={color}
+        strokeWidth={10}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        transform="rotate(-90 60 60)"
+        style={{ transition: "stroke-dashoffset 0.6s ease, stroke 0.6s ease" }}
+      />
+      <text x={60} y={60} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={22} fontWeight="bold">
+        {Math.round(value)}
+      </text>
+    </svg>
+  );
+}
+
+function yearAccuracyPct(diff: number | null): number | null {
+  if (diff == null) return null;
+  return Math.max(0, Math.round(100 - diff));
 }
 
 export default function CompeteGamePage() {
@@ -606,7 +638,7 @@ export default function CompeteGamePage() {
                 </div>
               );
             })()}
-            {/* Accuracy Ring + WHERE + WHEN cards */}
+            {/* Accuracy Ring + Leaderboard + WHERE + WHEN cards */}
             {(() => {
               const round = snapshot.rounds[snapshot.currentRoundIndex];
               if (!round) return null;
@@ -615,40 +647,117 @@ export default function CompeteGamePage() {
               const correctLat = round.latitude;
               const correctLng = round.longitude;
               const correctName = round.locationName;
-              const distanceKm = (guessLat != null && guessLng != null)
+              const myDistanceKm = (guessLat != null && guessLng != null)
                 ? haversineKm(guessLat, guessLng, correctLat, correctLng)
                 : null;
               const correctYear = round.year;
-              const playerGuessYear = guessYear;
-              const yearDiff = playerGuessYear != null ? Math.abs(playerGuessYear - correctYear) : null;
+              const leaderboardRows = (roundResults ?? [])
+                .slice()
+                .sort((a, b) => b.score - a.score)
+                .map((r, i) => ({
+                  rank: i + 1,
+                  playerId: r.playerId,
+                  displayName: snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8),
+                  score: r.score,
+                  accuracy: r.accuracy,
+                  isMe: r.playerId === playerId,
+                }));
+              const whenRows = snapshot.players
+                .map(p => {
+                  const resultRow = roundResults?.find(r => r.playerId === p.playerId);
+                  const theirGuessYear = resultRow?.guessYear ?? null;
+                  const diff = theirGuessYear != null ? Math.abs(theirGuessYear - correctYear) : null;
+                  return {
+                    playerId: p.playerId,
+                    displayName: p.displayName || p.playerId.slice(0, 8),
+                    guessYear: theirGuessYear,
+                    diff,
+                    isMe: p.playerId === playerId,
+                  };
+                })
+                .sort((a, b) => {
+                  if (a.diff == null && b.diff == null) return 0;
+                  if (a.diff == null) return 1;
+                  if (b.diff == null) return -1;
+                  return a.diff - b.diff;
+                });
               return (
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
                   {/* Card 1 — Accuracy Ring */}
                   <div style={{ backgroundColor: "#1a1a1a", borderRadius: 12, padding: 16, textAlign: "center" }}>
                     <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", marginBottom: 8, letterSpacing: 1 }}>ACCURACY</div>
-                    <svg viewBox="0 0 120 120" style={{ width: 120, height: 120, margin: "0 auto" }}>
-                      <circle cx={60} cy={60} r={50} fill="none" stroke="#2a2a2a" strokeWidth={10} />
-                      <circle
-                        cx={60} cy={60} r={50} fill="none" stroke="#f97316" strokeWidth={10}
-                        strokeLinecap="round"
-                        strokeDasharray={2 * Math.PI * 50}
-                        strokeDashoffset={314.16 * (1 - accuracy / 100)}
-                        transform="rotate(-90 60 60)"
-                      />
-                      <text x={60} y={60} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={22}>
-                        {Math.round(accuracy)}
-                      </text>
-                    </svg>
+                    <RainbowRing value={accuracy} />
                   </div>
-                  {/* Card 2 — WHERE */}
+                  {/* Card 2 — XP */}
+                  <div style={{ backgroundColor: "#1a1a1a", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                    <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                      EXPERIENCE
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: "bold", color: "white" }}>
+                      {myResult?.score ?? 0}
+                      <span style={{ fontSize: 14, color: "#f97316", marginLeft: 6 }}>XP</span>
+                    </div>
+                  </div>
+                  {/* Card 3 — Round Leaderboard */}
+                  <div style={{ backgroundColor: "#1a1a1a", borderRadius: 12, padding: 16 }}>
+                    <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", marginBottom: 10, letterSpacing: 1 }}>ROUND LEADERBOARD</div>
+                    {leaderboardRows.length > 0 ? (
+                      <div>
+                        {leaderboardRows.map((row) => (
+                          <div
+                            key={row.playerId}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px 10px",
+                              borderRadius: 8,
+                              marginBottom: 4,
+                              backgroundColor: row.isMe ? "#2a2a2a" : "transparent",
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                              <span style={{ color: "#888", fontSize: 12, minWidth: 20 }}>{row.rank}</span>
+                              <span style={{ color: row.isMe ? "#f97316" : "white", fontWeight: row.isMe ? "bold" : "normal", marginLeft: 8 }}>
+                                {row.displayName}
+                              </span>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                              <span style={{ color: "white", fontWeight: "bold" }}>{row.score}</span>
+                              <span style={{ backgroundColor: "#333", borderRadius: 999, padding: "2px 8px", fontSize: 11, color: "#aaa", marginLeft: 8 }}>
+                                {Math.round(row.accuracy)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ color: "#888", textAlign: "center", margin: 0 }}>Waiting for results…</p>
+                    )}
+                  </div>
+                  {/* Card 3 — WHERE */}
                   <div style={{ backgroundColor: "#1a1a1a", borderRadius: 12, padding: 16 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                       <span style={{ color: "#f97316", fontWeight: "bold", fontSize: 14 }}>📍 WHERE</span>
-                      {distanceKm != null && (
-                        <span style={{ backgroundColor: "#2a2a2a", borderRadius: 999, padding: "4px 10px", fontSize: 12, color: "#fff" }}>
-                          {Math.round(distanceKm)} km away
-                        </span>
-                      )}
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        {myResult != null && (
+                          <span style={{
+                            backgroundColor: "#1a2e1a",
+                            color: `hsl(${Math.round((Math.max(0, Math.min(100, myResult.accuracy)) / 100) * 120)}, 100%, 45%)`,
+                            borderRadius: 999,
+                            padding: "3px 10px",
+                            fontSize: 12,
+                            fontWeight: "bold",
+                          }}>
+                            {Math.round(myResult.accuracy)}%
+                          </span>
+                        )}
+                        {myDistanceKm != null && (
+                          <span style={{ backgroundColor: "#2a2a2a", borderRadius: 999, padding: "4px 10px", fontSize: 12, color: "#fff" }}>
+                            {Math.round(myDistanceKm)} km away
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div style={{ color: "#f97316", fontSize: 13, marginBottom: 8 }}>Correct: {correctName}</div>
                     {guessLat != null && guessLng != null ? (
@@ -659,76 +768,97 @@ export default function CompeteGamePage() {
                           correctLng={correctLng}
                           guessLat={guessLat}
                           guessLng={guessLng}
+                          playerGuesses={roundResults
+                            ?.filter((r) => r.didSubmit && r.guessLat != null && r.guessLng != null)
+                            .map((r) => ({
+                              playerId: r.playerId,
+                              lat: r.guessLat!,
+                              lng: r.guessLng!,
+                              label: playerLabel(snapshot.players, r.playerId),
+                              color: r.playerId === playerId ? "#f97316" : undefined,
+                            })) ?? undefined}
                         />
                       </div>
                     ) : (
                       <p style={{ color: "#888", fontSize: 13, margin: 0 }}>No location submitted</p>
                     )}
                   </div>
-                  {/* Card 3 — WHEN */}
+                  {/* Card 4 — WHEN */}
                   <div style={{ backgroundColor: "#1a1a1a", borderRadius: 12, padding: 16 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                      <span style={{ color: "#f97316", fontWeight: "bold", fontSize: 14 }}>📅 WHEN</span>
-                      {yearDiff != null && (
-                        <span style={{ backgroundColor: "#2a2a2a", borderRadius: 999, padding: "4px 10px", fontSize: 12, color: "#fff" }}>
-                          {yearDiff} years off
+                    <div style={{ color: "#f97316", fontWeight: "bold", fontSize: 14, marginBottom: 12 }}>📅 WHEN</div>
+                    <div style={{ color: "#f97316", fontSize: 14, fontWeight: "bold", marginBottom: 8 }}>Correct year: {correctYear}</div>
+                    {whenRows.map((row) => (
+                      <div
+                        key={row.playerId}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "6px 0",
+                          borderBottom: "1px solid #2a2a2a",
+                        }}
+                      >
+                        <span>
+                          <span style={{ color: row.isMe ? "#f97316" : "white" }}>{row.displayName}</span>
+                          {row.isMe && <span style={{ color: "#888" }}> (you)</span>}
                         </span>
-                      )}
-                    </div>
-                    <div style={{ color: "#f97316", fontSize: 13, marginBottom: 8 }}>Correct: {correctYear}</div>
-                    <div style={{ color: "#fff", fontSize: 13 }}>Your guess: {playerGuessYear ?? '—'}</div>
+                        <span style={{ color: "#aaa" }}>{row.guessYear ?? "—"}</span>
+                        <span>
+                          {row.diff === 0 ? (
+                            <span style={{ backgroundColor: "#22c55e", borderRadius: 999, padding: "2px 8px", fontSize: 12, color: "#fff" }}>Perfect!</span>
+                          ) : row.diff != null ? (
+                            <span style={{ backgroundColor: "#2a2a2a", borderRadius: 999, padding: "2px 8px", fontSize: 12, color: "#fff" }}>{row.diff} yrs off</span>
+                          ) : (
+                            <span style={{ color: "#888" }}>—</span>
+                          )}
+                        </span>
+                        {(() => {
+                          const acc = yearAccuracyPct(row.diff);
+                          if (acc == null) return <span style={{ color: "#888" }}>—</span>;
+                          const hue = Math.round((acc / 100) * 120);
+                          return (
+                            <span style={{
+                              backgroundColor: "#2a2a2a",
+                              borderRadius: 999,
+                              padding: "2px 8px",
+                              fontSize: 11,
+                              color: `hsl(${hue}, 100%, 45%)`,
+                              fontWeight: "bold",
+                              marginLeft: 4,
+                            }}>
+                              {acc}%
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
             })()}
-            {roundResults && roundResults.length > 0 ? (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: "left", padding: "8px 0" }}>Player</th>
-                    <th style={{ textAlign: "right", padding: "8px 0" }}>Score</th>
-                    <th style={{ textAlign: "right", padding: "8px 0" }}>Rank</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {roundResults.map((r) => (
-                    <tr key={r.playerId}>
-                      <td style={{ padding: "6px 0" }}>
-                        {playerLabel(snapshot.players, r.playerId)}
-                        {!r.didSubmit && (
-                          <span style={{
-                            marginLeft: 8,
-                            fontSize: 11,
-                            color: "var(--color-text-secondary)",
-                            background: "var(--color-background-secondary)",
-                            borderRadius: 4,
-                            padding: "1px 6px"
-                          }}>
-                            No guess
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right", padding: "6px 0" }}>
-                        {r.didSubmit ? r.score : "—"}
-                      </td>
-                      <td style={{ textAlign: "right", padding: "6px 0" }}>
-                        {r.didSubmit ? r.rank : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="small">Waiting for results…</p>
-            )}
-            <button
-              type="button"
-              className="button"
-              onClick={handleAdvanceRound}
-              disabled={busy}
-            >
-              {busy ? "Advancing…" : "Next Round"}
-            </button>
+            <div style={{
+              position: "sticky",
+              bottom: 0,
+              backgroundColor: "#111",
+              borderTop: "1px solid #2a2a2a",
+              padding: "12px 16px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              zIndex: 10,
+            }}>
+              <span style={{ color: "#888", fontSize: 13 }}>
+                Round {Math.min(snapshot.currentRoundIndex + 1, snapshot.config.totalRounds)} of {snapshot.config.totalRounds}
+              </span>
+              <button
+                type="button"
+                className="button"
+                onClick={handleAdvanceRound}
+                disabled={busy}
+              >
+                {busy ? "Advancing…" : "Next Round"}
+              </button>
+            </div>
             {renderError}
           </section>
         ) : null}
