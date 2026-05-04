@@ -390,7 +390,7 @@ export default function CompeteGamePage() {
   const renderError = error ? <p style={{ color: "#ff6b6b", margin: 0 }}>{error}</p> : null;
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" style={{ background: snapshot?.status === "ROUND_COMPLETE" ? "#000" : undefined }}>
       <div className="shell-grid">
         {/* Toast stack - top-center */}
         <div style={{ position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 50, pointerEvents: 'none' }}>
@@ -407,14 +407,6 @@ export default function CompeteGamePage() {
             style={{ position: 'absolute', inset: 0, zIndex: 40, pointerEvents: 'none', backgroundColor: 'rgba(220, 38, 38, 0.35)' }}
           />
         )}
-
-        {/* Home button */}
-        <Link
-          href="/"
-          style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', zIndex: 50, textDecoration: 'none' }}
-        >
-          <span style={{ fontSize: 20, color: '#fff' }}>&#8592;</span>
-        </Link>
 
         {snapshot.status !== "ROUND_COMPLETE" && (
           <section className="hero">
@@ -642,56 +634,24 @@ export default function CompeteGamePage() {
               const whereAccBg = (myResult?.accuracy ?? 0) >= 60 ? "#1a2e1a" : (myResult?.accuracy ?? 0) >= 30 ? "#2e2a1a" : "#2e1a1a";
               return (
                 <>
-                  {/* Card 1 — Accuracy Ring */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
-                    <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", textAlign: "center", marginBottom: 10 }}>
-                      Accuracy
+                  {/* Card 1 — Accuracy Ring + XP */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px" }}>
+                        Accuracy (%)
+                      </div>
+                      <span style={{ background: whereAccBg, color: whereAccColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                        {Math.round(myResult?.accuracy ?? 0)}%
+                      </span>
                     </div>
                     <RainbowRing value={accuracy} />
-                  </div>
-                  {/* Card 2 — XP */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px", textAlign: "center" }}>
-                    <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 10 }}>
-                      Experience
-                    </div>
-                    <span style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>{myResult?.score ?? 0}</span>
-                    <span style={{ fontSize: 13, color: "#f97316", marginLeft: 5 }}>XP</span>
-                  </div>
-                  {/* Card 3 — Event photo + info */}
-                  <div style={{ margin: "8px 10px", borderRadius: 12, overflow: "hidden", background: "#333" }}>
-                    {round.imageUrl ? (
-                      <img src={round.imageUrl} alt={round.title}
-                        style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
-                    ) : (
-                      <div style={{ height: 160, background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 12 }}>
-                        No image
-                      </div>
-                    )}
-                    <div style={{ padding: "10px 12px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{round.title}</div>
-                      {(round as unknown as { description?: string }).description && (
-                        <div style={{ fontSize: 11, color: "#aaa", lineHeight: 1.5, marginBottom: 8 }}>{(round as unknown as { description?: string }).description}</div>
-                      )}
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 11, color: "#aaa" }}>
-                          Confidence: <span style={{ color: "#fff" }}>{(round as unknown as { confidencePct?: number }).confidencePct ?? "—"}%</span>
-                        </span>
-                        {(round as unknown as { sourceUrl?: string }).sourceUrl && (
-                          <button
-                            onClick={() => window.open((round as unknown as { sourceUrl?: string }).sourceUrl, "_blank")}
-                            style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
-                            Source
-                          </button>
-                        )}
-                        <button
-                          style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
-                          Rate
-                        </button>
-                      </div>
+                    <div style={{ textAlign: "center", marginTop: 12, borderTop: "1px solid #444", paddingTop: 10 }}>
+                      <span style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>{myResult?.score ?? 0}</span>
+                      <span style={{ fontSize: 13, color: "#f97316", marginLeft: 5 }}>XP</span>
                     </div>
                   </div>
-                  {/* Card 4 — Round Leaderboard */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
+                  {/* Card 2 — Round Leaderboard */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
                     {leaderboardRows.map(row => {
                       const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
@@ -720,25 +680,59 @@ export default function CompeteGamePage() {
                       <p style={{ color: "#888", textAlign: "center", margin: 0, fontSize: 13 }}>Waiting for results…</p>
                     )}
                   </div>
-                  {/* Card 5 — WHERE */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>Where</span>
-                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                        {myDistanceKm != null && (
-                          <span style={{ background: "#3a3a3a", color: "#bbb", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
-                            {Math.round(myDistanceKm)} km away
-                          </span>
+                  {/* Card 3 — Event photo + info */}
+                  <div style={{ margin: "1px 5px", borderRadius: 12, overflow: "hidden", background: "#333" }}>
+                    {round.imageUrl ? (
+                      <img src={round.imageUrl} alt={round.title}
+                        style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
+                    ) : (
+                      <div style={{ height: 160, background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 12 }}>
+                        No image
+                      </div>
+                    )}
+                    <div style={{ padding: "10px 12px" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{round.title}</div>
+                      <div style={{ fontSize: 11, color: "#aaa", lineHeight: 1.5, marginBottom: 8 }}>
+                        {(round as unknown as { description?: string }).description ?? "No description available"}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, color: "#aaa" }}>
+                          Confidence: <span style={{ color: "#fff" }}>{(round as unknown as { confidencePct?: number }).confidencePct ?? "—"}%</span>
+                        </span>
+                        {(round as unknown as { sourceUrl?: string }).sourceUrl && (
+                          <button
+                            onClick={() => window.open((round as unknown as { sourceUrl?: string }).sourceUrl, "_blank")}
+                            style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
+                            Source
+                          </button>
                         )}
-                        {myResult != null && (
-                          <span style={{ background: whereAccBg, color: whereAccColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
-                            {Math.round(myResult.accuracy)}%
-                          </span>
-                        )}
+                        <button
+                          style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
+                          Rate
+                        </button>
                       </div>
                     </div>
-                    <div style={{ fontSize: 12, color: "#fff", marginBottom: 8 }}>
-                      Correct: <span style={{ color: "#f97316" }}>{correctName}</span>
+                  </div>
+                  {/* Card 4 — WHERE */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#f97316" }}>Where</span>
+                      {myResult != null && (
+                        <span style={{ background: whereAccBg, color: whereAccColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                          {Math.round(myResult.accuracy)}%
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#fff", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
+                      <span>Correct:</span>
+                      <span style={{ color: "#f97316" }}>{correctName}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
+                      {myDistanceKm != null && (
+                        <span style={{ background: "#3a3a3a", color: "#bbb", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                          {Math.round(myDistanceKm)} km away
+                        </span>
+                      )}
                     </div>
                     {guessLat != null && guessLng != null ? (
                       <div style={{ borderRadius: 8, overflow: "hidden", height: 200 }}>
@@ -763,11 +757,12 @@ export default function CompeteGamePage() {
                       <p style={{ color: "#888", fontSize: 13, margin: 0 }}>No location submitted</p>
                     )}
                   </div>
-                  {/* Card 6 — WHEN */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "8px 10px" }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>When</div>
-                    <div style={{ fontSize: 12, color: "#fff", marginBottom: 10 }}>
-                      Correct year: <span style={{ color: "#f97316" }}>{correctYear}</span>
+                  {/* Card 5 — WHEN */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#f97316", marginBottom: 10 }}>When</div>
+                    <div style={{ fontSize: 12, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
+                      <span>Correct:</span>
+                      <span style={{ color: "#f97316" }}>{correctYear}</span>
                     </div>
                     {whenRows.map((row, idx) => {
                       const hue = row.acc != null ? Math.round((row.acc / 100) * 120) : null;
@@ -786,11 +781,10 @@ export default function CompeteGamePage() {
                             </span>
                             {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
                           </span>
-                          <span style={{ fontSize: 12, color: "#aaa", minWidth: 36, textAlign: "center" }}>
-                            {row.guessYear ?? "—"}
-                          </span>
                           <span style={{ background: "#3a3a3a", color: "#bbb", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
-                            {row.diff != null ? `${row.diff} yrs off` : "—"}
+                            {row.guessYear != null
+                              ? `${row.guessYear}${row.diff != null ? ` | ${row.diff} yrs off` : ""}`
+                              : "—"}
                           </span>
                           <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
                             {row.acc != null ? `${row.acc}%` : "—"}
@@ -799,6 +793,8 @@ export default function CompeteGamePage() {
                       );
                     })}
                   </div>
+                  {/* Spacer for fixed bottom bar */}
+                  <div style={{ height: 70 }} />
                   {/* Bottom Bar */}
                   <div style={{
                     position: "fixed",
