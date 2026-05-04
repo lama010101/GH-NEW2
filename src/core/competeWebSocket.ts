@@ -10,13 +10,17 @@
 
 export type WebSocketMessage =
   | { type: "STATE_UPDATE"; snapshot: unknown }
-  | { type: "ERROR"; message: string };
+  | { type: "ERROR"; message: string }
+  | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
+  | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number };
 
 export type CompeteWebSocketCallbacks = {
   onStateUpdate?: (snapshot: unknown) => void;
   onError?: (message: string) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
+  onPlayerSubmitted?: (playerId: string, playerName: string) => void;
+  onTimerClamped?: (newPhaseEndsAt: string, clampedToSec: number) => void;
 };
 
 export class CompeteWebSocket {
@@ -94,6 +98,12 @@ export class CompeteWebSocket {
     switch (data.type) {
       case "STATE_UPDATE":
         this.callbacks.onStateUpdate?.(data.snapshot);
+        break;
+      case "PLAYER_SUBMITTED":
+        this.callbacks.onPlayerSubmitted?.(data.playerId, data.playerName);
+        break;
+      case "TIMER_CLAMPED":
+        this.callbacks.onTimerClamped?.(data.newPhaseEndsAt, data.clampedToSec);
         break;
       case "ERROR": {
         const msg = data.message ?? "";

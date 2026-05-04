@@ -259,7 +259,7 @@ export async function getRoundResultsRequest(
   gameId: string,
   roundIndex: number,
   fetchImpl: CompeteFetch = fetch
-): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number }>> {
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; guessLat: number | null; guessLng: number | null }>> {
   const response = await fetchImpl(`/api/compete/${encodeURIComponent(gameId)}/round/${roundIndex}/results`, {
     cache: "no-store"
   });
@@ -268,6 +268,6 @@ export async function getRoundResultsRequest(
     throw new Error(await extractError(response));
   }
 
-  const data = (await response.json()) as { results: Array<{ playerId: string; score: number; rank: number; accuracy: number }> };
+  const data = (await response.json()) as { results: Array<{ playerId: string; score: number; rank: number; accuracy: number; guessLat: number | null; guessLng: number | null }> };
   return data.results;
 }

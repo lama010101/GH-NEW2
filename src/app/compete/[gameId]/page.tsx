@@ -45,6 +45,8 @@ type RoundResult = {
   rank: number;
   accuracy: number;
   didSubmit: boolean;
+  guessLat?: number | null;
+  guessLng?: number | null;
 };
 
 function shortId(id: string): string {
@@ -89,6 +91,8 @@ export default function CompeteGamePage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [localSubmitted, setLocalSubmitted] = useState(false);
+  const [submissionToasts, setSubmissionToasts] = useState<string[]>([]);
+  const [timerClamped, setTimerClamped] = useState(false);
 
   const { playerId, isReady, isLoading: identityLoading, error: identityError } = useIdentity();
   const wsRef = useRef<CompeteWebSocket | null>(null);
@@ -150,6 +154,8 @@ export default function CompeteGamePage() {
             const results = (rawSnapshot as unknown as { results: RoundResult[] }).results;
             const ranked = [...results].sort((a, b) => a.rank - b.rank);
             setRoundResults(ranked);
+            setLocalSubmitted(false);
+            setSubmissionToasts([]); // Action completed — clear busy flag
           }
 
           setBusy(false); // Action completed — clear busy flag
@@ -157,6 +163,21 @@ export default function CompeteGamePage() {
           console.warn("[CompeteGamePage] Invalid STATE_UPDATE payload — ignoring, waiting for next update:", rawSnapshot);
           setBusy(false);
         }
+      },
+      onPlayerSubmitted: (submittedPlayerId, playerName) => {
+        const isSelf = submittedPlayerId === playerId;
+        const label = isSelf ? 'You made a guess' : `${playerName} made a guess`;
+        setSubmissionToasts(prev => [...prev, label]);
+      },
+      onTimerClamped: (newPhaseEndsAt) => {
+        // Update timer display from newPhaseEndsAt
+        setSnapshot((prev) => {
+          if (!prev) return prev;
+          return { ...prev, roundEndsAt: newPhaseEndsAt };
+        });
+        // Trigger red flash
+        setTimerClamped(true);
+        setTimeout(() => setTimerClamped(false), 600);
       },
       onError: (message) => {
         setError(message);
@@ -217,6 +238,7 @@ export default function CompeteGamePage() {
     setGuessLng(null);
     setLocalSubmitted(false);
     setRoundResults(null);
+    setSubmissionToasts([]);
   }, [snapshot?.currentRoundIndex]);
 
   const viewer = useMemo(() => {
@@ -260,6 +282,8 @@ export default function CompeteGamePage() {
     if (guessYear === null || guessLat === null || guessLng === null) return;
     if (localSubmitted) return;       // synchronous guard — no re-render needed
     setLocalSubmitted(true);
+    setTimerClamped(true);
+    setTimeout(() => setTimerClamped(false), 600);
     setBusy(true);
     setError(null);
     // Client → DO → DB: send action signal via WS
@@ -334,6 +358,22 @@ export default function CompeteGamePage() {
   return (
     <main className="app-shell">
       <div className="shell-grid">
+        {/* Toast stack - top-center */}
+        <div style={{ position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 50, pointerEvents: 'none' }}>
+          {submissionToasts.map((label, i) => (
+            <div key={i} style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '9999px', whiteSpace: 'nowrap' }}>
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* Red flash overlay */}
+        {timerClamped && (
+          <div
+            style={{ position: 'absolute', inset: 0, zIndex: 40, pointerEvents: 'none', backgroundColor: 'rgba(220, 38, 38, 0.35)' }}
+          />
+        )}
+
         <section className="hero">
           <span className="badge">Compete · {snapshot.status}</span>
           {snapshot.status !== "LOBBY" ? (
@@ -484,7 +524,7 @@ export default function CompeteGamePage() {
                   style={{ width: "100%" }}
                 />
               </div>
-              <div style={{ width: "100%", height: "320px", borderRadius: "20px", overflow: "hidden" }}>
+              <div style={{ width: "100%", height: "320px", borderRadius: "20px", overflow: "hidden", pointerEvents: (hasSubmitted || localSubmitted) ? "none" : "auto" }}>
                 <GameMap
                   guessLocation={guessLocation}
                   onSetLocation={handleSetLocation}
@@ -511,13 +551,11 @@ export default function CompeteGamePage() {
 
         {snapshot.status === "ROUND_COMPLETE" ? (
           <section className="card stack">
-            <h2>Round {snapshot.currentRoundIndex + 1} Results</h2>
-            {/* Event reveal section */}
             {(() => {
               const roundData = snapshot.rounds[snapshot.currentRoundIndex];
               if (!roundData) return null;
               return (
-                <div style={{ marginBottom: 16 }}>
+                <div>
                   {roundData.title && (
                     <h3 style={{ margin: "0 0 12px 0", fontSize: 18 }}>{roundData.title}</h3>
                   )}
@@ -568,40 +606,78 @@ export default function CompeteGamePage() {
                 </div>
               );
             })()}
-            {/* WHERE map card */}
+            {/* Accuracy Ring + WHERE + WHEN cards */}
             {(() => {
-              const roundData = snapshot.rounds[snapshot.currentRoundIndex];
-              if (!roundData) return null;
-              const hasGuess = guessLat !== null && guessLng !== null;
-              const distanceKm = hasGuess
-                ? haversineKm(guessLat!, guessLng!, roundData.latitude, roundData.longitude)
+              const round = snapshot.rounds[snapshot.currentRoundIndex];
+              if (!round) return null;
+              const myResult = roundResults?.find(r => r.playerId === playerId);
+              const accuracy = myResult?.accuracy ?? 0;
+              const correctLat = round.latitude;
+              const correctLng = round.longitude;
+              const correctName = round.locationName;
+              const distanceKm = (guessLat != null && guessLng != null)
+                ? haversineKm(guessLat, guessLng, correctLat, correctLng)
                 : null;
+              const correctYear = round.year;
+              const playerGuessYear = guessYear;
+              const yearDiff = playerGuessYear != null ? Math.abs(playerGuessYear - correctYear) : null;
               return (
-                <div style={{ marginBottom: 16 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 8,
-                      fontSize: 13,
-                    }}
-                  >
-                    <span>
-                      {hasGuess && distanceKm !== null
-                        ? `🌍 ${Math.round(distanceKm)} km away`
-                        : "🌍 No location guess"}
-                    </span>
-                    <span style={{ color: "#FF6B2B" }}>
-                      Correct: {roundData.locationName ?? `${roundData.latitude.toFixed(2)}, ${roundData.longitude.toFixed(2)}`}
-                    </span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Card 1 — Accuracy Ring */}
+                  <div style={{ backgroundColor: "#1a1a1a", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                    <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", marginBottom: 8, letterSpacing: 1 }}>ACCURACY</div>
+                    <svg viewBox="0 0 120 120" style={{ width: 120, height: 120, margin: "0 auto" }}>
+                      <circle cx={60} cy={60} r={50} fill="none" stroke="#2a2a2a" strokeWidth={10} />
+                      <circle
+                        cx={60} cy={60} r={50} fill="none" stroke="#f97316" strokeWidth={10}
+                        strokeLinecap="round"
+                        strokeDasharray={2 * Math.PI * 50}
+                        strokeDashoffset={314.16 * (1 - accuracy / 100)}
+                        transform="rotate(-90 60 60)"
+                      />
+                      <text x={60} y={60} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={22}>
+                        {Math.round(accuracy)}
+                      </text>
+                    </svg>
                   </div>
-                  <StaticResultMap
-                    correctLat={roundData.latitude}
-                    correctLng={roundData.longitude}
-                    guessLat={guessLat}
-                    guessLng={guessLng}
-                  />
+                  {/* Card 2 — WHERE */}
+                  <div style={{ backgroundColor: "#1a1a1a", borderRadius: 12, padding: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <span style={{ color: "#f97316", fontWeight: "bold", fontSize: 14 }}>📍 WHERE</span>
+                      {distanceKm != null && (
+                        <span style={{ backgroundColor: "#2a2a2a", borderRadius: 999, padding: "4px 10px", fontSize: 12, color: "#fff" }}>
+                          {Math.round(distanceKm)} km away
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: "#f97316", fontSize: 13, marginBottom: 8 }}>Correct: {correctName}</div>
+                    {guessLat != null && guessLng != null ? (
+                      <div style={{ height: 200, borderRadius: 8, overflow: "hidden" }}>
+                        <StaticResultMap
+                          key={`where-card-${snapshot.currentRoundIndex}`}
+                          correctLat={correctLat}
+                          correctLng={correctLng}
+                          guessLat={guessLat}
+                          guessLng={guessLng}
+                        />
+                      </div>
+                    ) : (
+                      <p style={{ color: "#888", fontSize: 13, margin: 0 }}>No location submitted</p>
+                    )}
+                  </div>
+                  {/* Card 3 — WHEN */}
+                  <div style={{ backgroundColor: "#1a1a1a", borderRadius: 12, padding: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <span style={{ color: "#f97316", fontWeight: "bold", fontSize: 14 }}>📅 WHEN</span>
+                      {yearDiff != null && (
+                        <span style={{ backgroundColor: "#2a2a2a", borderRadius: 999, padding: "4px 10px", fontSize: 12, color: "#fff" }}>
+                          {yearDiff} years off
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ color: "#f97316", fontSize: 13, marginBottom: 8 }}>Correct: {correctYear}</div>
+                    <div style={{ color: "#fff", fontSize: 13 }}>Your guess: {playerGuessYear ?? '—'}</div>
+                  </div>
                 </div>
               );
             })()}
@@ -712,6 +788,44 @@ export default function CompeteGamePage() {
                       Location: {roundData.latitude.toFixed(4)}, {roundData.longitude.toFixed(4)}
                     </p>
                   ) : null}
+                </div>
+              );
+            })()}
+            {/* Final round map */}
+            {(() => {
+              const roundData = snapshot.rounds[snapshot.currentRoundIndex];
+              if (!roundData) return null;
+              return (
+                <div style={{ marginBottom: 16 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                      fontSize: 13,
+                    }}
+                  >
+                    <span style={{ color: "#FF6B2B" }}>
+                      Correct: {roundData.locationName ?? `${roundData.latitude.toFixed(2)}, ${roundData.longitude.toFixed(2)}`}
+                    </span>
+                  </div>
+                  <StaticResultMap
+                    key="session-complete"
+                    correctLat={roundData.latitude}
+                    correctLng={roundData.longitude}
+                    guessLat={null}
+                    guessLng={null}
+                    playerGuesses={roundResults
+                      ?.filter((r) => r.didSubmit && r.guessLat != null && r.guessLng != null)
+                      .map((r) => ({
+                        playerId: r.playerId,
+                        lat: r.guessLat!,
+                        lng: r.guessLng!,
+                        label: playerLabel(snapshot.players, r.playerId),
+                        color: r.playerId === playerId ? "#FF6B2B" : undefined,
+                      })) ?? undefined}
+                  />
                 </div>
               );
             })()}

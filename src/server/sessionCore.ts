@@ -361,9 +361,11 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   const roundStartedEvent = gameState.events
     .filter(e => e.eventType === "ROUND_STARTED" && e.roundIndex === currentRound)
     .pop();
+
   const roundStartsAt = roundStartedEvent
     ? (roundStartedEvent.payload?.startedAt as string) ?? null
     : null;
+
   const roundEndsAt = roundStartedEvent
     ? (roundStartedEvent.payload?.phaseEndsAt as string) ?? null
     : null;
@@ -1296,15 +1298,26 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 export async function getRoundResults(
   gameId: string,
   roundIndex: number
-): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; didSubmit: boolean }>> {
-  const result = await dbPool.query<{ player_id: string; score: number | null; rank: number | null; location_score: number | null; time_score: number | null; year_guess: number | null }>(
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; didSubmit: boolean; guessLat: number | null; guessLng: number | null }>> {
+  const result = await dbPool.query<{
+    player_id: string;
+    score: number | null;
+    rank: number | null;
+    location_score: number | null;
+    time_score: number | null;
+    year_guess: number | null;
+    location_lat: number | null;
+    location_lng: number | null;
+  }>(
     `SELECT
       rr.player_id,
       rr.score,
       rr.rank,
       rr.location_score,
       rr.time_score,
-      rc.year_guess
+      rc.year_guess,
+      rc.location_lat,
+      rc.location_lng
     FROM round_results rr
     LEFT JOIN round_commits rc
       ON rc.game_id = rr.game_id
@@ -1320,7 +1333,9 @@ export async function getRoundResults(
     score: row.score ?? 0,
     rank: row.rank ?? 0,
     accuracy: Math.round(((row.location_score ?? 0) + (row.time_score ?? 0)) / 2),
-    didSubmit: row.year_guess !== null
+    didSubmit: row.year_guess !== null,
+    guessLat: row.location_lat,
+    guessLng: row.location_lng,
   }));
 }
 

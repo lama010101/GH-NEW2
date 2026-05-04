@@ -53,12 +53,17 @@ type RuntimeState = {
   players: Array<{ playerId: string; displayName: string; ready: boolean; isHost: boolean; hasSubmitted: boolean; leftAt: string | null }>;
   currentRoundIndex: number;
   roundEndsAt: string | null;
+  roundTimerSec: number;
 };
 
 function isRuntimeState(value: unknown): value is RuntimeState {
   if (typeof value !== "object" || value === null) return false;
   const obj = value as Record<string, unknown>;
   return typeof obj.gameId === "string" && typeof obj.status === "string" && Array.isArray(obj.players);
+}
+
+function computeClampSeconds(roundTimerSec: number): number {
+  return Math.max(10, Math.round(roundTimerSec * 0.30));
 }
 
 // Messages accepted FROM clients (action signals only — PartyKit never trusts payload fields except to forward to API)
@@ -72,7 +77,9 @@ export type ServerMessage =
 // Messages sent TO clients
 export type ClientMessage =
   | { type: "STATE_UPDATE"; snapshot: unknown }
-  | { type: "ERROR"; message: string };
+  | { type: "ERROR"; message: string }
+  | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
+  | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number };
 
 interface Room {
   id: string;
@@ -137,16 +144,6 @@ export default class GameServer {
 
   constructor(readonly room: Room) {}
 
-  private getSupabaseEnv(): { url: string; key: string } {
-    const env = this.room.env as Record<string, string | undefined>;
-    const url = env.SUPABASE_URL || "";
-    const key = env.SUPABASE_SERVICE_ROLE_KEY || "";
-    if (!url || !key) {
-      throw new Error("[PartyKit] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured");
-    }
-    return { url, key };
-  }
-
   private getNextJsBaseUrl(): string {
     if (this.detectedBaseUrl) return this.detectedBaseUrl;
     return (this.room.env.NEXTJS_BASE_URL as string | undefined) ?? "http://localhost:3000";
@@ -167,7 +164,12 @@ export default class GameServer {
       const text = await snapRes.text();
       throw new Error(`[loadFromDB] snapshot API error ${snapRes.status}: ${text}`);
     }
-    this.snapshot = await snapRes.json();
+    const snapshot = await snapRes.json();
+    // Extract roundTimerSec from config to populate RuntimeState
+    if (snapshot && typeof snapshot === "object" && snapshot.config && typeof snapshot.config.roundTimerSec === "number") {
+      (snapshot as RuntimeState).roundTimerSec = snapshot.config.roundTimerSec;
+    }
+    this.snapshot = snapshot;
     console.timeEnd("[PERF] loadFromDB:apiFetch");
     this.snapshotLoaded = true;
     this.scheduleRoundTimer();
@@ -551,7 +553,57 @@ export default class GameServer {
               break;
             }
             const snapshot = await response.json();
+
+            // Broadcast PLAYER_SUBMITTED to all clients
+            if (isRuntimeState(this.snapshot)) {
+              const submittingPlayer = this.snapshot.players.find(p => p.playerId === data.playerId);
+              if (submittingPlayer) {
+                const playerSubmittedMsg: ClientMessage = {
+                  type: "PLAYER_SUBMITTED",
+                  playerId: data.playerId,
+                  playerName: submittingPlayer.displayName
+                };
+                this.room.broadcast(JSON.stringify(playerSubmittedMsg));
+              }
+            }
+
+            // Apply snapshot immediately so clients see hasSubmitted=true before clamp logic
             this.applySnapshotAndBroadcast(snapshot);
+
+            // Check if this is the first submission of the round and apply timer clamp
+            if (isRuntimeState(this.snapshot) &&
+                this.snapshot.status === "ROUND_ACTIVE" &&
+                this.snapshot.currentRoundIndex === data.roundIndex &&
+                this.snapshot.roundEndsAt) {
+              // Count submitted players in updated snapshot (includes current submitter)
+              const submittedCount = this.snapshot.players.filter(p => p.hasSubmitted && p.leftAt === null).length;
+
+              // Fire clamp only on exactly the first submission (submittedCount === 1)
+              if (submittedCount === 1) {
+                const roundTimerSec = (this.snapshot as unknown as { config?: { roundTimerSec: number } }).config?.roundTimerSec ?? 120;
+                const clampTo = computeClampSeconds(roundTimerSec);
+                const remaining = (new Date(this.snapshot.roundEndsAt).getTime() - Date.now()) / 1000;
+
+                if (remaining > clampTo) {
+                  // Clamp the timer
+                  const newRoundEndsAt = new Date(Date.now() + clampTo * 1000);
+
+                  // Update RuntimeState
+                  if (isRuntimeState(snapshot)) {
+                    (snapshot as RuntimeState).roundEndsAt = newRoundEndsAt.toISOString();
+                  }
+
+                  // Broadcast TIMER_CLAMPED
+                  const timerClampedMsg: ClientMessage = {
+                    type: "TIMER_CLAMPED",
+                    newPhaseEndsAt: newRoundEndsAt.toISOString(),
+                    clampedToSec: clampTo
+                  };
+                  this.room.broadcast(JSON.stringify(timerClampedMsg));
+                  console.log(`[PartyKit] Timer clamped from ${Math.round(remaining)}s to ${clampTo}s`);
+                }
+              }
+            }
           } finally {
             this.submitInFlightPlayers.delete(submitKey);
             this.submitInFlight--;
@@ -582,7 +634,7 @@ export default class GameServer {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                cause: data.cause ?? "player",
+                cause: data.cause ?? TransitionCause.PLAYER,
                 playerId: data.playerId,
                 roundIndex: data.roundIndex
               })

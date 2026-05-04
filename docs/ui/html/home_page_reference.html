@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Guess-History Home Page Reference</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #111; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .gh-root {
+    width: 400px;
+    min-height: 500px;
+    background: #111;
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    user-select: none;
+  }
+  .mosaic {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 3px;
+    opacity: 0.32;
+  }
+  .mc { overflow: hidden; }
+  .mc svg { width: 100%; height: 100%; }
+  .overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.6) 100%); }
+  .content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; padding: 16px 14px 22px; }
+  .topbar { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .xp-pill { display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.09); border: 0.5px solid rgba(255,255,255,0.18); border-radius: 20px; padding: 5px 11px; }
+  .xp-pill .lvl { font-size: 12px; font-weight: 500; color: #fff; }
+  .xp-pill .sep { color: rgba(255,255,255,0.28); font-size: 11px; }
+  .xp-pill .xp { font-size: 12px; color: #f0c060; font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .bell { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.09); border: 0.5px solid rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #c45 30%, #89b); border: 1.5px solid rgba(255,255,255,0.28); cursor: pointer; }
+  .logo { font-size: 24px; font-weight: 700; letter-spacing: 1px; margin-bottom: 16px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+  .logo .g { color: #fff; }
+  .logo .hi { color: #c084fc; }
+  .logo .st { color: #fb923c; }
+
+  /* CARDS */
+  .cards-row { display: flex; gap: 8px; width: 100%; justify-content: center; margin-bottom: 0; }
+  .mode-card { flex: 1; min-width: 0; border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; outline: 2px solid transparent; transition: outline-color 0.18s, transform 0.15s; }
+  .mode-card.selected { outline-color: rgba(255,255,255,0.55); transform: translateY(-3px); }
+  .mode-card:active { transform: scale(0.97); }
+  .card-art { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; position: relative; }
+  .card-art svg { width: 66%; height: 66%; filter: drop-shadow(0 3px 7px rgba(0,0,0,0.45)); }
+  .card-bottom { padding: 6px 6px 8px; text-align: center; }
+  .mode-name { font-size: 10px; font-weight: 700; letter-spacing: 1.1px; color: #fff; text-transform: uppercase; margin-bottom: 1px; }
+  .mode-sub { font-size: 8.5px; font-weight: 500; letter-spacing: 0.7px; text-transform: uppercase; opacity: 0.65; color: #fff; }
+
+  /* DAILY */
+  .card-daily .card-art { background: linear-gradient(145deg, #0d2a50, #1a3f7a); }
+  .card-daily .card-bottom { background: #0d2040; }
+  .live-badge { position: absolute; top: 7px; right: 7px; background: #ef4444; color: #fff; font-size: 7.5px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; border-radius: 5px; padding: 2px 5px; }
+  /* PRACTICE */
+  .card-practice .card-art { background: linear-gradient(145deg, #7c3a0a, #d96b1a); }
+  .card-practice .card-bottom { background: #6a3008; }
+  /* LEVEL UP */
+  .card-levelup .card-art { background: linear-gradient(145deg, #4a1a7a, #9b4dca); }
+  .card-levelup .card-bottom { background: #3a1060; }
+  .lvl-pip { position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.13); border: 0.5px solid rgba(255,255,255,0.28); border-radius: 8px; padding: 2px 7px; font-size: 8px; color: #fff; white-space: nowrap; font-weight: 500; }
+  /* COMPETE */
+  .card-compete .card-art { background: linear-gradient(145deg, #0a4a3a, #1a9a7a); }
+  .card-compete .card-bottom { background: #093a2a; }
+
+  /* INFO PANEL */
+  .info-area { width: 100%; overflow: hidden; max-height: 0; transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease; opacity: 0; margin-top: 0; }
+  .info-area.visible { max-height: 200px; opacity: 1; margin-top: 12px; }
+
+  /* PANEL CONTENTS */
+  .daily-info { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .daily-countdown { font-size: 12px; color: #93c5fd; font-weight: 500; }
+  .daily-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ef4444; margin-right: 5px; vertical-align: middle; }
+  .start-btn { background: linear-gradient(135deg, #1a5cbf, #2a7aef); color: #fff; border: none; border-radius: 10px; padding: 10px 32px; font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; width: 100%; }
+
+  .practice-settings { display: flex; flex-direction: column; gap: 7px; width: 100%; }
+  .setting-row { display: flex; align-items: center; gap: 9px; background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.11); border-radius: 9px; padding: 8px 11px; }
+  .tog { width: 30px; height: 17px; border-radius: 9px; background: rgba(255,255,255,0.18); position: relative; flex-shrink: 0; cursor: pointer; transition: background 0.2s; }
+  .tog.on { background: #22c55e; }
+  .tog::after { content: ''; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: left 0.15s; }
+  .tog.on::after { left: 15px; }
+  .s-label { font-size: 11.5px; color: rgba(255,255,255,0.72); font-weight: 500; flex: 1; }
+  .s-val { font-size: 11.5px; font-weight: 600; color: #fb923c; }
+  .s-dim { font-size: 11.5px; color: rgba(255,255,255,0.35); margin: 0 2px; }
+  .practice-start { background: linear-gradient(135deg, #c05010, #f07820); color: #fff; border: none; border-radius: 10px; padding: 10px 32px; font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; width: 100%; margin-top: 2px; }
+
+  .levelup-info { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .level-progress-bar { width: 100%; height: 7px; background: rgba(255,255,255,0.12); border-radius: 4px; overflow: hidden; }
+  .level-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #9b4dca, #c084fc); width: 62%; }
+  .level-meta { display: flex; justify-content: space-between; align-items: center; }
+  .level-meta-l { font-size: 11px; color: rgba(255,255,255,0.6); }
+  .level-meta-l strong { color: #c084fc; }
+  .level-meta-r { font-size: 11px; color: rgba(255,255,255,0.4); }
+  .level-reqs { display: flex; gap: 6px; }
+  .req-pill { flex: 1; background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.11); border-radius: 8px; padding: 6px 8px; text-align: center; }
+  .req-label { font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.6px; color: rgba(255,255,255,0.4); margin-bottom: 2px; }
+  .req-val { font-size: 12px; font-weight: 600; color: #c084fc; }
+  .levelup-start { background: linear-gradient(135deg, #6020a0, #9b4dca); color: #fff; border: none; border-radius: 10px; padding: 10px 32px; font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; width: 100%; }
+
+  .compete-info { display: flex; flex-direction: column; gap: 7px; width: 100%; }
+  .compete-opts { display: flex; gap: 6px; }
+  .compete-btn-opt { flex: 1; border-radius: 9px; padding: 9px 6px; text-align: center; cursor: pointer; border: 0.5px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07); transition: background 0.15s, border-color 0.15s; }
+  .compete-btn-opt.active { background: rgba(26,154,122,0.25); border-color: rgba(26,154,122,0.6); }
+  .cbo-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
+  .cbo-val { font-size: 12px; font-weight: 600; color: #fff; }
+  .compete-start { background: linear-gradient(135deg, #0a5a40, #1a9a7a); color: #fff; border: none; border-radius: 10px; padding: 10px 32px; font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; width: 100%; }
+</style>
+</head>
+<body>
+<div class="gh-root">
+  <!-- MOSAIC BACKGROUND -->
+  <div class="mosaic">
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#1a1510"/><rect x="10" y="15" width="55" height="38" rx="2" fill="#2a2018" opacity="0.6"/><rect x="10" y="15" width="55" height="8" fill="#342808" opacity="0.7"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#0f1520"/><circle cx="50" cy="38" r="28" fill="#1a2535" opacity="0.6"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#121810"/><rect x="15" y="8" width="70" height="55" rx="3" fill="#1e2818" opacity="0.5"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#1a1010"/><ellipse cx="50" cy="42" rx="38" ry="22" fill="#2a1818" opacity="0.5"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#101520"/><polygon points="50,5 90,72 10,72" fill="#182030" opacity="0.45"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#151a10"/><rect x="5" y="20" width="40" height="50" rx="2" fill="#222a18" opacity="0.5"/><rect x="55" y="10" width="38" height="60" rx="2" fill="#222a18" opacity="0.5"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#101820"/><circle cx="35" cy="35" r="22" fill="#182030" opacity="0.5"/><circle cx="68" cy="55" r="14" fill="#182030" opacity="0.5"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#1c1510"/><rect x="0" y="28" width="100" height="24" fill="#2c2018" opacity="0.45"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#101a15"/><rect x="8" y="8" width="38" height="64" rx="2" fill="#182a20" opacity="0.5"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#1a1808"/><circle cx="50" cy="40" r="32" fill="#2a2810" opacity="0.35"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#0e1520"/><line x1="0" y1="80" x2="100" y2="0" stroke="#1a2030" stroke-width="28"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#1a1015"/><rect x="28" y="4" width="44" height="72" rx="2" fill="#2a1825" opacity="0.55"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#121a0e"/><ellipse cx="50" cy="72" rx="45" ry="18" fill="#1e2a18" opacity="0.5"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#101520"/><rect x="0" y="0" width="48" height="80" fill="#182028" opacity="0.4"/></svg></div>
+    <div class="mc"><svg viewBox="0 0 100 80"><rect width="100" height="80" fill="#1a1010"/><circle cx="75" cy="22" r="22" fill="#2a1818" opacity="0.5"/></svg></div>
+  </div>
+  <div class="overlay"></div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="xp-pill">
+        <span class="lvl">37 <span style="font-size:9px;opacity:0.55">%</span></span>
+        <span class="sep">|</span>
+        <span class="xp">59 325 <span style="font-size:9px;color:rgba(255,255,255,0.45)">XP</span></span>
+      </div>
+      <div class="topbar-right">
+        <div class="bell">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1.5">
+            <path d="M8 2a4 4 0 0 0-4 4v3l-1 1v1h10v-1l-1-1V6a4 4 0 0 0-4-4z"/>
+            <path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/>
+          </svg>
+        </div>
+        <!-- Avatar: tapping opens profile/sign-out -->
+        <div class="avatar" id="avatarBtn"></div>
+      </div>
+    </div>
+
+    <!-- LOGO -->
+    <div class="logo">
+      <span class="g">GUESS-</span><span class="hi">HIS</span><span class="st">TORY</span>
+    </div>
+
+    <!-- MODE CARDS -->
+    <div class="cards-row" id="cardsRow">
+
+      <!-- DAILY -->
+      <div class="mode-card card-daily" data-mode="daily" onclick="selectMode('daily')">
+        <div class="card-art">
+          <span class="live-badge">LIVE</span>
+          <svg viewBox="0 0 80 80" fill="none">
+            <circle cx="40" cy="40" r="28" fill="#1e3a6a" stroke="#3b6abf" stroke-width="1.5"/>
+            <rect x="26" y="22" width="28" height="30" rx="3" fill="#2a4a8a" stroke="#5080d0" stroke-width="1"/>
+            <rect x="26" y="22" width="28" height="8" rx="3" fill="#3a6abf"/>
+            <rect x="29" y="22" width="4" height="6" rx="2" fill="#c0d8ff" opacity="0.9"/>
+            <rect x="47" y="22" width="4" height="6" rx="2" fill="#c0d8ff" opacity="0.9"/>
+            <rect x="30" y="34" width="5" height="4" rx="1" fill="#60a0f0" opacity="0.8"/>
+            <rect x="38" y="34" width="5" height="4" rx="1" fill="#60a0f0" opacity="0.8"/>
+            <rect x="46" y="34" width="5" height="4" rx="1" fill="#60a0f0" opacity="0.8"/>
+            <rect x="30" y="41" width="5" height="4" rx="1" fill="#60a0f0" opacity="0.8"/>
+            <rect x="38" y="41" width="5" height="4" rx="1" fill="#ef4444" opacity="0.9"/>
+            <rect x="46" y="41" width="5" height="4" rx="1" fill="#60a0f0" opacity="0.4"/>
+            <circle cx="56" cy="56" r="10" fill="#1e3a6a" stroke="#3b6abf" stroke-width="1"/>
+            <circle cx="56" cy="56" r="7" fill="#ef4444"/>
+            <rect x="55.5" y="50.5" width="1.5" height="5" rx="0.75" fill="#fff"/>
+            <rect x="55.5" y="55.5" width="4" height="1.5" rx="0.75" fill="#fff"/>
+          </svg>
+        </div>
+        <div class="card-bottom">
+          <div class="mode-name">Daily</div>
+          <div class="mode-sub">Today's challenge</div>
+        </div>
+      </div>
+
+      <!-- PRACTICE -->
+      <div class="mode-card card-practice selected" data-mode="practice" onclick="selectMode('practice')">
+        <div class="card-art">
+          <svg viewBox="0 0 80 80" fill="none">
+            <circle cx="40" cy="40" r="26" fill="#5a2a08" stroke="#a05010" stroke-width="1.5"/>
+            <circle cx="40" cy="40" r="20" fill="#3a1a05" stroke="#804010" stroke-width="1"/>
+            <circle cx="40" cy="40" r="14" fill="#2a1205" stroke="#602e08" stroke-width="0.8"/>
+            <circle cx="40" cy="40" r="8" fill="#1a0a02" stroke="#401e04" stroke-width="0.8"/>
+            <circle cx="40" cy="40" r="3.5" fill="#f97316"/>
+            <line x1="40" y1="14" x2="40" y2="18" stroke="#a05010" stroke-width="1.5"/>
+            <line x1="40" y1="62" x2="40" y2="66" stroke="#a05010" stroke-width="1.5"/>
+            <line x1="14" y1="40" x2="18" y2="40" stroke="#a05010" stroke-width="1.5"/>
+            <line x1="62" y1="40" x2="66" y2="40" stroke="#a05010" stroke-width="1.5"/>
+            <line x1="55" y1="20" x2="42" y2="37" stroke="#f97316" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="57" cy="18" r="4" fill="#f97316"/>
+            <line x1="57" y1="14" x2="57" y2="18" stroke="#fff" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="card-bottom">
+          <div class="mode-name">Practice</div>
+          <div class="mode-sub">Solo warm-up</div>
+        </div>
+      </div>
+
+      <!-- LEVEL UP -->
+      <div class="mode-card card-levelup" data-mode="levelup" onclick="selectMode('levelup')">
+        <div class="card-art">
+          <svg viewBox="0 0 80 80" fill="none">
+            <ellipse cx="40" cy="52" rx="22" ry="10" fill="#2a1050" opacity="0.7"/>
+            <rect x="28" y="44" width="24" height="18" rx="2" fill="#2a1050" stroke="#6030a0" stroke-width="1"/>
+            <rect x="32" y="48" width="16" height="10" rx="1.5" fill="#1a0838"/>
+            <line x1="40" y1="44" x2="40" y2="18" stroke="#9b4dca" stroke-width="1.2" opacity="0.4"/>
+            <polygon points="40,10 34,30 40,26 46,30" fill="#c084fc"/>
+            <polygon points="36,30 40,26 44,30 40,44" fill="#9b4dca"/>
+            <rect x="34" y="52" width="5" height="6" rx="1" fill="#6030a0" opacity="0.8"/>
+            <rect x="41" y="52" width="5" height="6" rx="1" fill="#6030a0" opacity="0.8"/>
+          </svg>
+          <div class="lvl-pip">Level 5</div>
+        </div>
+        <div class="card-bottom">
+          <div class="mode-name">Level Up</div>
+          <div class="mode-sub">Progressive runs</div>
+        </div>
+      </div>
+
+      <!-- COMPETE -->
+      <div class="mode-card card-compete" data-mode="compete" onclick="selectMode('compete')">
+        <div class="card-art">
+          <svg viewBox="0 0 80 80" fill="none">
+            <circle cx="30" cy="28" r="12" fill="#0a3028" stroke="#1a8060" stroke-width="1.2"/>
+            <circle cx="30" cy="22" r="5" fill="#1a6050"/>
+            <circle cx="50" cy="24" r="10" fill="#0a3028" stroke="#1a8060" stroke-width="1.2"/>
+            <circle cx="50" cy="19" r="4" fill="#1a6050"/>
+            <path d="M18 52 Q30 42 42 50 Q50 56 62 46" stroke="#1a9a7a" stroke-width="1.5" fill="none"/>
+            <path d="M18 52 Q30 42 42 50 Q50 56 62 46 L62 66 L18 66 Z" fill="#0a3028" opacity="0.7"/>
+            <rect x="26" y="58" width="28" height="10" rx="3" fill="#0a4a3a" stroke="#1a7060" stroke-width="1"/>
+            <path d="M34 60 L40 56 L46 60 L44 68 L36 68 Z" fill="#1a9a7a"/>
+            <circle cx="40" cy="60" r="2.5" fill="#0a4a3a"/>
+          </svg>
+        </div>
+        <div class="card-bottom">
+          <div class="mode-name">Compete</div>
+          <div class="mode-sub">Friends lobby</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- INFO PANEL -->
+    <div class="info-area visible" id="infoArea">
+      <div id="infoContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const panels = {
+  daily: `
+    <div class="daily-info">
+      <div class="daily-countdown"><span class="daily-dot"></span>Today's challenge resets in <strong style="color:#93c5fd">11h 42m</strong></div>
+      <button class="start-btn">Play Today's Challenge</button>
+    </div>`,
+  practice: `
+    <div class="practice-settings">
+      <div class="setting-row">
+        <div class="tog on" onclick="this.classList.toggle('on')"></div>
+        <span class="s-label">Round Timer</span>
+        <span class="s-val">2:00</span>
+      </div>
+      <div class="setting-row">
+        <div class="tog on" onclick="this.classList.toggle('on')"></div>
+        <span class="s-label">Year Range</span>
+        <span class="s-val">655</span><span class="s-dim">—</span><span class="s-val">2025</span>
+      </div>
+      <button class="practice-start">Start Practice</button>
+    </div>`,
+  levelup: `
+    <div class="levelup-info">
+      <div class="level-meta">
+        <span class="level-meta-l">Level <strong>5</strong> &nbsp;→&nbsp; Level <strong>6</strong></span>
+        <span class="level-meta-r">Min accuracy: 52%</span>
+      </div>
+      <div class="level-progress-bar"><div class="level-progress-fill"></div></div>
+      <div class="level-reqs">
+        <div class="req-pill"><div class="req-label">Year range</div><div class="req-val">1776–2025</div></div>
+        <div class="req-pill"><div class="req-label">Timer</div><div class="req-val">4:50</div></div>
+        <div class="req-pill"><div class="req-label">Rounds</div><div class="req-val">5</div></div>
+      </div>
+      <button class="levelup-start">Start Level 5</button>
+    </div>`,
+  compete: `
+    <div class="compete-info">
+      <div class="compete-opts">
+        <div class="compete-btn-opt active" onclick="setCompeteOpt(this)"><div class="cbo-label">Create lobby</div><div class="cbo-val">New game</div></div>
+        <div class="compete-btn-opt" onclick="setCompeteOpt(this)"><div class="cbo-label">Join with code</div><div class="cbo-val">Enter code</div></div>
+      </div>
+      <button class="compete-start">Go to Lobby</button>
+    </div>`
+};
+
+function selectMode(mode) {
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector('[data-mode="' + mode + '"]').classList.add('selected');
+  const area = document.getElementById('infoArea');
+  const content = document.getElementById('infoContent');
+  area.classList.remove('visible');
+  setTimeout(() => {
+    content.innerHTML = panels[mode];
+    area.classList.add('visible');
+  }, 180);
+}
+
+function setCompeteOpt(el) {
+  document.querySelectorAll('.compete-btn-opt').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Init with practice selected
+document.getElementById('infoContent').innerHTML = panels.practice;
+</script>
+</body>
+</html>
