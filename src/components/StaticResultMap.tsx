@@ -1,15 +1,24 @@
 "use client";
 
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMap } from "react-leaflet";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+interface PlayerGuess {
+  playerId: string;
+  lat: number;
+  lng: number;
+  label?: string;
+  color?: string;
+}
 
 interface StaticResultMapProps {
   correctLat: number;
   correctLng: number;
   guessLat: number | null;
   guessLng: number | null;
+  playerGuesses?: PlayerGuess[];
 }
 
 // Custom marker icons
@@ -32,32 +41,40 @@ const createIcon = (color: string) => {
 const correctIcon = createIcon("#22C55E"); // Green
 const guessIcon = createIcon("#FF6B2B"); // Orange
 
+const PLAYER_COLORS = ["#EF4444", "#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6", "#F59E0B"];
+
 function MapController({
   correctLat,
   correctLng,
   guessLat,
   guessLng,
+  playerGuesses,
 }: {
   correctLat: number;
   correctLng: number;
   guessLat: number | null;
   guessLng: number | null;
+  playerGuesses?: PlayerGuess[];
 }) {
   const map = useMap();
 
   useEffect(() => {
+    const points: L.LatLngExpression[] = [[correctLat, correctLng]];
     if (guessLat !== null && guessLng !== null) {
-      // Both markers present: fit bounds with padding
-      const bounds = L.latLngBounds([
-        [correctLat, correctLng],
-        [guessLat, guessLng],
-      ]);
+      points.push([guessLat, guessLng]);
+    }
+    if (playerGuesses && playerGuesses.length > 0) {
+      for (const g of playerGuesses) {
+        points.push([g.lat, g.lng]);
+      }
+    }
+    if (points.length > 1) {
+      const bounds = L.latLngBounds(points);
       map.fitBounds(bounds, { padding: [40, 40] });
     } else {
-      // Only correct marker: center on it with zoom 5
       map.setView([correctLat, correctLng], 5);
     }
-  }, [map, correctLat, correctLng, guessLat, guessLng]);
+  }, [map, correctLat, correctLng, guessLat, guessLng, playerGuesses]);
 
   return null;
 }
@@ -67,6 +84,7 @@ export function StaticResultMap({
   correctLng,
   guessLat,
   guessLng,
+  playerGuesses,
 }: StaticResultMapProps) {
   const hasGuess = guessLat !== null && guessLng !== null;
 
@@ -90,6 +108,7 @@ export function StaticResultMap({
         correctLng={correctLng}
         guessLat={guessLat}
         guessLng={guessLng}
+        playerGuesses={playerGuesses}
       />
 
       {/* Correct location marker (always shown) */}
@@ -113,6 +132,42 @@ export function StaticResultMap({
           weight={2}
         />
       )}
+
+      {/* All player guess markers */}
+      {playerGuesses?.map((g, i) => {
+        const color = g.color ?? PLAYER_COLORS[i % PLAYER_COLORS.length];
+        return (
+          <Marker
+            key={g.playerId}
+            position={[g.lat, g.lng]}
+            icon={createIcon(color)}
+          >
+            {g.label ? (
+              <Tooltip direction="top" offset={[0, -10]}>
+                {g.label}
+              </Tooltip>
+            ) : null}
+          </Marker>
+        );
+      })}
+
+      {/* Polylines from each player guess to correct location */}
+      {playerGuesses?.map((g, i) => {
+        const color = g.color ?? PLAYER_COLORS[i % PLAYER_COLORS.length];
+        return (
+          <Polyline
+            key={`line-${g.playerId}`}
+            positions={[
+              [correctLat, correctLng],
+              [g.lat, g.lng],
+            ]}
+            dashArray="8, 6"
+            color={color}
+            opacity={0.5}
+            weight={1}
+          />
+        );
+      })}
     </MapContainer>
   );
 }

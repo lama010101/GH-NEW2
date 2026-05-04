@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:golden": "tsx scripts/testGameFlow.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit",
     "party:dev": "partykit dev",
     "party:build": "partykit build",

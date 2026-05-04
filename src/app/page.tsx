@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Navbar from '@/components/landing/Navbar';
-import HeroSection from '@/components/landing/HeroSection';
-import StickyCTA from '@/components/landing/StickyCTA';
-import AuthModal from '@/components/landing/AuthModal';
+import Link from "next/link";
 
 export default function HomePage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
-
   return (
-    <main style={{ background: '#000', minHeight: '100vh', color: '#fff' }}>
-      <Navbar onOpenModal={openModal} />
-      <HeroSection onOpenModal={openModal} />
-      <StickyCTA onOpenModal={openModal} />
-      <AuthModal isOpen={isModalOpen} onClose={closeModal} />
+    <main className="app-shell">
+      <div className="shell-grid">
+        <section className="hero">
+          <h1>Guess History</h1>
+          <p>Test your knowledge of historical events.</p>
+        </section>
+
+        <section className="card stack">
+          <Link href="/compete" className="button">
+            Compete
+          </Link>
+        </section>
+      </div>
     </main>
   );
 }
