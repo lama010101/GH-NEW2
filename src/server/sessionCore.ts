@@ -1334,6 +1334,7 @@ export async function getRoundResults(
     rank: row.rank ?? 0,
     accuracy: Math.round(((row.location_score ?? 0) + (row.time_score ?? 0)) / 2),
     didSubmit: row.year_guess !== null,
+    guessYear: row.year_guess ?? null,
     guessLat: row.location_lat,
     guessLng: row.location_lng,
   }));

@@ -2,7 +2,8 @@ import { supabaseBrowser } from "./supabaseBrowser";
 
 export type IdentityState =
   | { status: "loading" }
-  | { status: "ready"; playerId: string }
+  | { status: "ready"; playerId: string; isAnonymous: boolean }
+  | { status: "unauthenticated" }
   | { status: "error"; error: string };
 
 let cachedState: IdentityState = { status: "loading" };
@@ -21,7 +22,8 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
   bootstrapped = true;
 
   try {
-    const { data: { session }, error: sessionError } = await supabaseBrowser.auth.getSession();
+    const { data: { session }, error: sessionError } =
+      await supabaseBrowser.auth.getSession();
 
     if (sessionError) {
       cachedState = { status: "error", error: `Session check failed: ${sessionError.message}` };
@@ -29,30 +31,19 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
     }
 
     if (session?.user?.id) {
-      cachedState = { status: "ready", playerId: session.user.id };
+      const isAnonymous = session.user.is_anonymous ?? false;
+      cachedState = { status: "ready", playerId: session.user.id, isAnonymous };
       resolveReady?.(session.user.id);
       return cachedState;
     }
 
-    const { data: anonData, error: anonError } = await supabaseBrowser.auth.signInAnonymously();
-
-    if (anonError) {
-      cachedState = { status: "error", error: `Anonymous sign-in failed: ${anonError.message}` };
-      return cachedState;
-    }
-
-    if (!anonData?.user?.id) {
-      cachedState = { status: "error", error: "Anonymous sign-in returned no user ID" };
-      return cachedState;
-    }
-
-    cachedState = { status: "ready", playerId: anonData.user.id };
-    resolveReady?.(anonData.user.id);
+    // No session — user must sign in via /login
+    cachedState = { status: "unauthenticated" };
     return cachedState;
   } catch (err) {
     cachedState = {
       status: "error",
-      error: err instanceof Error ? err.message : "Unknown identity bootstrap error"
+      error: err instanceof Error ? err.message : "Unknown identity bootstrap error",
     };
     return cachedState;
   }
@@ -79,17 +70,24 @@ export async function onIdentityReady(): Promise<string> {
   return readyPromise;
 }
 
+export async function signOut(): Promise<void> {
+  await supabaseBrowser.auth.signOut();
+  bootstrapped = false;
+  cachedState = { status: "unauthenticated" };
+}
+
 export function subscribeToIdentityChanges(
   callback: (state: IdentityState) => void
 ): () => void {
   const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
     (_event, session) => {
       if (session?.user?.id) {
-        cachedState = { status: "ready", playerId: session.user.id };
+        const isAnonymous = session.user.is_anonymous ?? false;
+        cachedState = { status: "ready", playerId: session.user.id, isAnonymous };
         resolveReady?.(session.user.id);
       } else {
-        cachedState = { status: "loading" };
-        bootstrapIdentity();
+        bootstrapped = false;
+        cachedState = { status: "unauthenticated" };
       }
       callback(cachedState);
     }
