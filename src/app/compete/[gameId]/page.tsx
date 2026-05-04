@@ -636,13 +636,8 @@ export default function CompeteGamePage() {
                 <>
                   {/* Card 1 — Accuracy Ring + XP */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px" }}>
-                        Accuracy (%)
-                      </div>
-                      <span style={{ background: whereAccBg, color: whereAccColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
-                        {Math.round(myResult?.accuracy ?? 0)}%
-                      </span>
+                    <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", textAlign: "center", marginBottom: 10 }}>
+                      Accuracy (%)
                     </div>
                     <RainbowRing value={accuracy} />
                     <div style={{ textAlign: "center", marginTop: 12, borderTop: "1px solid #444", paddingTop: 10 }}>
@@ -759,7 +754,23 @@ export default function CompeteGamePage() {
                   </div>
                   {/* Card 5 — WHEN */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#f97316", marginBottom: 10 }}>When</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f97316" }}>When</div>
+                      {(() => {
+                        const myWhenRow = whenRows.find(r => r.isMe);
+                        const myWhenAcc = myWhenRow?.acc ?? null;
+                        const hue = myWhenAcc != null ? Math.round((myWhenAcc / 100) * 120) : null;
+                        const accColor = hue != null ? `hsl(${hue}, 100%, 50%)` : "#888";
+                        const accBg = myWhenAcc != null
+                          ? myWhenAcc >= 60 ? "#1a2e1a" : myWhenAcc >= 30 ? "#2e2a1a" : "#2e1a1a"
+                          : "#2a2a2a";
+                        return myWhenAcc != null ? (
+                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                            {Math.round(myWhenAcc)}%
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
                     <div style={{ fontSize: 12, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
                       <span>Correct:</span>
                       <span style={{ color: "#f97316" }}>{correctYear}</span>
