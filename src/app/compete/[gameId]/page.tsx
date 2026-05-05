@@ -265,6 +265,7 @@ export default function CompeteGamePage() {
   }, [timeRemaining, snapshot, localSubmitted, playerId]);
 
   // Reset guess inputs whenever the active round changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!snapshot) return;
     setGuessYear(null);
@@ -489,11 +490,14 @@ export default function CompeteGamePage() {
                     {currentEvent.title}
                   </p>
                   {currentEvent.imageUrl ? (
-                    <img
-                      src={currentEvent.imageUrl}
-                      alt={currentEvent.title}
-                      style={{ width: "100%", maxHeight: 300, objectFit: "cover", borderRadius: 8, display: "block" }}
-                    />
+                    <div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={currentEvent.imageUrl}
+                        alt={currentEvent.title}
+                        style={{ width: "100%", maxHeight: 300, objectFit: "cover", borderRadius: 8, display: "block" }}
+                      />
+                    </div>
                   ) : (
                     <div style={{
                       width: "100%", height: 200, background: "var(--color-background-secondary)",
@@ -678,8 +682,11 @@ export default function CompeteGamePage() {
                   {/* Card 3 — Event photo + info */}
                   <div style={{ margin: "1px 5px", borderRadius: 12, overflow: "hidden", background: "#333" }}>
                     {round.imageUrl ? (
-                      <img src={round.imageUrl} alt={round.title}
-                        style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
+                      <div>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={round.imageUrl} alt={round.title}
+                          style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
+                      </div>
                     ) : (
                       <div style={{ height: 160, background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 12 }}>
                         No image
@@ -688,7 +695,7 @@ export default function CompeteGamePage() {
                     <div style={{ padding: "10px 12px" }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{round.title}</div>
                       <div style={{ fontSize: 11, color: "#aaa", lineHeight: 1.5, marginBottom: 8 }}>
-                        {(round as unknown as { description?: string }).description ?? "No description available"}
+                        {round.description ?? "No description available"}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 11, color: "#aaa" }}>
@@ -909,17 +916,20 @@ export default function CompeteGamePage() {
                     <h3 style={{ margin: "0 0 12px 0", fontSize: 18 }}>{roundData.title}</h3>
                   )}
                   {roundData.imageUrl ? (
-                    <img
-                      src={roundData.imageUrl}
-                      alt={roundData.title || "Event image"}
-                      style={{
-                        width: "100%",
-                        maxHeight: "300px",
-                        objectFit: "cover",
-                        borderRadius: 4,
-                        marginBottom: 12
-                      }}
-                    />
+                    <div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={roundData.imageUrl}
+                        alt={roundData.title || "Event image"}
+                        style={{
+                          width: "100%",
+                          maxHeight: "300px",
+                          objectFit: "cover",
+                          borderRadius: 4,
+                          marginBottom: 12
+                        }}
+                      />
+                    </div>
                   ) : (
                     <div
                       style={{

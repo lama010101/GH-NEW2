@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { bootstrapIdentity, subscribeToIdentityChanges, signOut, type IdentityState } from "@/core/identity";
 import { AuthModal } from "@/components/AuthModal";
 
-export default function HomePage() {
-  const router = useRouter();
+function HomePageInner() {
   const searchParams = useSearchParams();
   const [identity, setIdentity] = useState<IdentityState>({ status: "loading" });
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -90,5 +89,13 @@ export default function HomePage() {
         onClose={() => setShowAuthModal(false)}
       />
     </>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={null}>
+      <HomePageInner />
+    </Suspense>
   );
 }

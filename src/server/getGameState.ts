@@ -367,6 +367,7 @@ export async function getGameState(
     const eventResult = await dbPool.query<{
       event_id: string;
       title: string;
+      description: string | null;
       event_year: number;
       latitude: number | null;
       longitude: number | null;
@@ -376,6 +377,7 @@ export async function getGameState(
       `SELECT
         e.id AS event_id,
         e.title,
+        e.description,
         e.event_year,
         l.latitude,
         l.longitude,
@@ -404,6 +406,7 @@ export async function getGameState(
         longitude: ev?.longitude ?? 0,
         locationName: ev?.display_name ?? null,
         imageUrl: ev?.image_url ?? null,
+        description: ev?.description ?? null,
       };
     });
   }
