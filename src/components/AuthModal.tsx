@@ -311,7 +311,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           >
             {mode === "signin" ? (
               <>
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <button
                   onClick={() => { setMode("signup"); setError(null); }}
                   disabled={loading}

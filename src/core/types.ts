@@ -69,6 +69,7 @@ export type RoundEventContent = {
   longitude: number;
   locationName: string | null;
   imageUrl: string | null;
+  description: string | null;
 };
 
 export type GuessState = {
