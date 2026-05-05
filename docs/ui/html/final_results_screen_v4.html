@@ -1,0 +1,311 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+.screen{background:#111;color:#fff;font-family:var(--font-sans);padding-bottom:80px;}
+.topbar{background:#111;border-bottom:0.5px solid #2a2a2a;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-label{font-size:11px;letter-spacing:.1em;color:#666;text-transform:uppercase;}
+.topbar-title{font-size:14px;font-weight:500;color:#fff;}
+.pips{display:flex;gap:4px;align-items:center;margin-top:2px;}
+.tpip{width:8px;height:8px;border-radius:50%;background:#E87722;}
+
+.hero-card{margin:12px;background:#1a1a1a;border-radius:14px;padding:20px 16px 18px;display:flex;flex-direction:column;align-items:center;}
+.card-label{font-size:10px;letter-spacing:.12em;color:#666;text-transform:uppercase;margin-bottom:12px;}
+.ring-wrap{position:relative;width:130px;height:130px;margin-bottom:10px;}
+.ring-wrap svg{width:130px;height:130px;}
+.ring-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.ring-num{font-size:42px;font-weight:500;color:#fff;line-height:1;}
+.xp-line{font-size:19px;font-weight:500;color:#fff;}
+.xp-line span{font-size:13px;color:#E87722;margin-left:3px;}
+
+.sub-grid{margin:0 12px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.sub-card{background:#1a1a1a;border-radius:12px;padding:16px 10px 14px;display:flex;flex-direction:column;align-items:center;}
+.sub-head{display:flex;align-items:center;gap:5px;margin-bottom:12px;}
+.sub-head svg{width:12px;height:12px;flex-shrink:0;}
+.sub-dim{font-size:13px;font-weight:500;color:#E87722;}
+.sub-ring-wrap{position:relative;width:84px;height:84px;margin-bottom:10px;}
+.sub-ring-wrap svg{width:84px;height:84px;}
+.sub-ring-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:500;color:#fff;}
+.sub-xp{font-size:16px;font-weight:500;color:#fff;}
+.sub-xp span{font-size:11px;color:#E87722;margin-left:2px;}
+.sub-detail{font-size:11px;color:#555;margin-top:3px;}
+
+.section{margin:0 12px 12px;background:#1a1a1a;border-radius:12px;overflow:hidden;}
+.sec-head{padding:12px 16px 10px;border-bottom:0.5px solid #252525;}
+.sec-title{font-size:10px;font-weight:500;color:#666;letter-spacing:.1em;text-transform:uppercase;}
+
+.lb-row{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:10px;padding:11px 16px;border-bottom:0.5px solid #1e1e1e;}
+.lb-row:last-child{border-bottom:none;}
+.lb-row.you{background:#1d1d28;}
+.lb-rank{font-size:12px;color:#555;text-align:center;}
+.lb-name{font-size:13px;color:#fff;}
+.lb-name .you-tag{font-size:11px;color:#555;margin-left:4px;}
+.lb-pips{display:flex;gap:3px;margin-top:3px;}
+.pip{width:20px;height:4px;border-radius:2px;background:#2a2a2a;}
+.pip.won{background:#E87722;}
+.lb-acc{font-size:15px;font-weight:500;color:#fff;text-align:right;}
+.lb-xp{font-size:11px;color:#555;text-align:right;margin-top:1px;}
+
+.breakdown-label{margin:4px 12px 8px;font-size:10px;letter-spacing:.1em;color:#555;text-transform:uppercase;}
+
+.round-card{margin:0 12px 8px;background:#1a1a1a;border-radius:12px;overflow:hidden;}
+.round-photo{width:100%;height:94px;display:flex;align-items:center;justify-content:center;}
+.round-photo span{font-size:11px;color:#3a3a3a;}
+.round-body{padding:11px 14px 14px;}
+.round-num{font-size:10px;color:#555;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;}
+.round-title{font-size:13px;font-weight:500;color:#fff;line-height:1.35;margin-bottom:5px;}
+.round-desc{font-size:11px;color:#666;line-height:1.5;margin-bottom:11px;}
+
+.score-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
+.sc{background:#141414;border-radius:8px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.sc-head{display:flex;align-items:center;gap:4px;}
+.sc-head svg{width:10px;height:10px;flex-shrink:0;}
+.sc-dim{font-size:10px;color:#555;letter-spacing:.05em;text-transform:uppercase;}
+.sc-val{font-size:17px;font-weight:500;line-height:1.1;}
+.sc-val.g{color:#7ed957;}
+.sc-val.y{color:#e8c022;}
+.sc-val.o{color:#E87722;}
+.sc-val.r{color:#e84422;}
+.sc-val.w{color:#fff;}
+.sc-sub{font-size:10px;color:#444;}
+
+.round-footer{margin-top:9px;padding-top:9px;border-top:0.5px solid #222;display:flex;align-items:center;justify-content:space-between;}
+.rf-label{font-size:11px;color:#555;}
+.rf-val{font-size:13px;font-weight:500;color:#fff;}
+.rf-val span{font-size:11px;color:#E87722;margin-left:3px;}
+
+.bottom-bar{background:#111;border-top:0.5px solid #2a2a2a;padding:12px 16px;display:flex;gap:10px;}
+.btn-home{padding:0 18px;height:46px;border-radius:10px;border:0.5px solid #333;background:transparent;color:#bbb;font-size:14px;cursor:pointer;}
+.btn-again{flex:1;height:46px;border-radius:10px;border:none;background:#E87722;color:#fff;font-size:15px;font-weight:500;cursor:pointer;}
+</style>
+
+<div class="screen">
+
+<div class="topbar">
+  <div>
+    <div class="topbar-label">Game over · Rush · HWGONB</div>
+    <div class="topbar-title">5 rounds complete</div>
+  </div>
+  <div class="pips">
+    <div class="tpip"></div><div class="tpip"></div><div class="tpip"></div><div class="tpip"></div><div class="tpip"></div>
+  </div>
+</div>
+
+<div style="height:12px;"></div>
+
+<div class="hero-card">
+  <div class="card-label">Overall accuracy</div>
+  <div class="ring-wrap">
+    <svg viewBox="0 0 130 130">
+      <circle cx="65" cy="65" r="54" fill="none" stroke="#2a2a2a" stroke-width="10"/>
+      <circle cx="65" cy="65" r="54" fill="none" stroke="#7ed957" stroke-width="10"
+        stroke-dasharray="339.3" stroke-dashoffset="61" stroke-linecap="round"
+        transform="rotate(-90 65 65)"/>
+    </svg>
+    <div class="ring-val"><div class="ring-num">82</div></div>
+  </div>
+  <div class="xp-line">442 <span>XP</span></div>
+</div>
+
+<div class="sub-grid">
+  <div class="sub-card">
+    <div class="sub-head">
+      <svg viewBox="0 0 12 12" fill="none"><path d="M6 1C4.34 1 3 2.34 3 4c0 2.25 3 7 3 7s3-4.75 3-7c0-1.66-1.34-3-3-3zm0 4a1 1 0 110-2 1 1 0 010 2z" fill="#E87722"/></svg>
+      <div class="sub-dim">Where</div>
+    </div>
+    <div class="sub-ring-wrap">
+      <svg viewBox="0 0 84 84">
+        <circle cx="42" cy="42" r="34" fill="none" stroke="#2a2a2a" stroke-width="8"/>
+        <circle cx="42" cy="42" r="34" fill="none" stroke="#e8c022" stroke-width="8"
+          stroke-dasharray="213.6" stroke-dashoffset="77" stroke-linecap="round"
+          transform="rotate(-90 42 42)"/>
+      </svg>
+      <div class="sub-ring-val">64</div>
+    </div>
+    <div class="sub-xp">64 <span>XP</span></div>
+    <div class="sub-detail">avg 1675 km away</div>
+  </div>
+  <div class="sub-card">
+    <div class="sub-head">
+      <svg viewBox="0 0 12 12" fill="none"><rect x="1.5" y="2" width="9" height="9" rx="1.5" stroke="#E87722" stroke-width="1.2"/><path d="M4 1v2M8 1v2M1.5 5h9" stroke="#E87722" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <div class="sub-dim">When</div>
+    </div>
+    <div class="sub-ring-wrap">
+      <svg viewBox="0 0 84 84">
+        <circle cx="42" cy="42" r="34" fill="none" stroke="#2a2a2a" stroke-width="8"/>
+        <circle cx="42" cy="42" r="34" fill="none" stroke="#7ed957" stroke-width="8"
+          stroke-dasharray="213.6" stroke-dashoffset="4" stroke-linecap="round"
+          transform="rotate(-90 42 42)"/>
+      </svg>
+      <div class="sub-ring-val">98</div>
+    </div>
+    <div class="sub-xp">98 <span>XP</span></div>
+    <div class="sub-detail">avg 2 yrs off</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-head"><div class="sec-title">Leaderboard</div></div>
+  <div class="lb-row you">
+    <div class="lb-rank">1</div>
+    <div>
+      <div class="lb-name">fews <span class="you-tag">(you)</span></div>
+      <div class="lb-pips"><div class="pip won"></div><div class="pip won"></div><div class="pip won"></div><div class="pip won"></div><div class="pip won"></div></div>
+    </div>
+    <div><div class="lb-acc">68%</div><div class="lb-xp">442 XP</div></div>
+  </div>
+  <div class="lb-row">
+    <div class="lb-rank">2</div>
+    <div>
+      <div class="lb-name">frede</div>
+      <div class="lb-pips"><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+    </div>
+    <div><div class="lb-acc">47%</div><div class="lb-xp">312 XP</div></div>
+  </div>
+  <div class="lb-row">
+    <div class="lb-rank">3</div>
+    <div>
+      <div class="lb-name">alex</div>
+      <div class="lb-pips"><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
+    </div>
+    <div><div class="lb-acc">31%</div><div class="lb-xp">198 XP</div></div>
+  </div>
+</div>
+
+<div class="breakdown-label">Round breakdown</div>
+
+<div class="round-card">
+  <div class="round-photo" style="background:linear-gradient(135deg,#1e2a1e,#2a3a28);"><span>Boulder, Colorado · 1995</span></div>
+  <div class="round-body">
+    <div class="round-num">Round 1</div>
+    <div class="round-title">Discovery of the First Bose-Einstein Condensate</div>
+    <div class="round-desc">In 1995, physicists Eric Cornell and Carl Wieman created the first BEC at the University of Colorado Boulder, cooling rubidium atoms to near absolute zero.</div>
+    <div class="score-row">
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#555" stroke-width="1.2"/><path d="M5 3v2l1.5 1" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg><span class="sc-dim">Total</span></div>
+        <div class="sc-val y">58%</div>
+        <div class="sc-sub">88 XP</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="#555"/></svg><span class="sc-dim">Where</span></div>
+        <div class="sc-val y">44%</div>
+        <div class="sc-sub">2780 km</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="#555" stroke-width="1.1"/><path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg><span class="sc-dim">When</span></div>
+        <div class="sc-val o">72%</div>
+        <div class="sc-sub">13 yrs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="round-card">
+  <div class="round-photo" style="background:linear-gradient(135deg,#1e1e2a,#252535);"><span>Madrid, Spain · 1969</span></div>
+  <div class="round-body">
+    <div class="round-num">Round 2</div>
+    <div class="round-title">Luxembourg at Eurovision 1969</div>
+    <div class="round-desc">Luxembourg claimed victory at Eurovision 1969 in Madrid, in a historic four-way tie — the only such result in the contest's history.</div>
+    <div class="score-row">
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#555" stroke-width="1.2"/><path d="M5 3v2l1.5 1" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg><span class="sc-dim">Total</span></div>
+        <div class="sc-val g">89%</div>
+        <div class="sc-sub">124 XP</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="#555"/></svg><span class="sc-dim">Where</span></div>
+        <div class="sc-val g">91%</div>
+        <div class="sc-sub">310 km</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="#555" stroke-width="1.1"/><path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg><span class="sc-dim">When</span></div>
+        <div class="sc-val g">88%</div>
+        <div class="sc-sub">2 yrs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="round-card">
+  <div class="round-photo" style="background:linear-gradient(135deg,#2a1a1a,#3a2020);"><span>Hiroshima, Japan · 1945</span></div>
+  <div class="round-body">
+    <div class="round-num">Round 3</div>
+    <div class="round-title">Atomic Bombing of Hiroshima</div>
+    <div class="round-desc">On August 6, 1945, the US dropped an atomic bomb on Hiroshima, instantly killing an estimated 80,000 people and reshaping the final weeks of WWII.</div>
+    <div class="score-row">
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#555" stroke-width="1.2"/><path d="M5 3v2l1.5 1" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg><span class="sc-dim">Total</span></div>
+        <div class="sc-val g">98%</div>
+        <div class="sc-sub">196 XP</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="#555"/></svg><span class="sc-dim">Where</span></div>
+        <div class="sc-val g">96%</div>
+        <div class="sc-sub">142 km</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="#555" stroke-width="1.1"/><path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg><span class="sc-dim">When</span></div>
+        <div class="sc-val g">100%</div>
+        <div class="sc-sub">0 yrs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="round-card">
+  <div class="round-photo" style="background:linear-gradient(135deg,#1a1e2a,#202535);"><span>North Atlantic · 1912</span></div>
+  <div class="round-body">
+    <div class="round-num">Round 4</div>
+    <div class="round-title">Sinking of the RMS Titanic</div>
+    <div class="round-desc">The RMS Titanic sank on April 15, 1912 after striking an iceberg on her maiden voyage, killing more than 1,500 passengers and crew.</div>
+    <div class="score-row">
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#555" stroke-width="1.2"/><path d="M5 3v2l1.5 1" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg><span class="sc-dim">Total</span></div>
+        <div class="sc-val o">44%</div>
+        <div class="sc-sub">62 XP</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="#555"/></svg><span class="sc-dim">Where</span></div>
+        <div class="sc-val r">22%</div>
+        <div class="sc-sub">5840 km</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="#555" stroke-width="1.1"/><path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg><span class="sc-dim">When</span></div>
+        <div class="sc-val o">66%</div>
+        <div class="sc-sub">18 yrs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="round-card">
+  <div class="round-photo" style="background:linear-gradient(135deg,#1a1e24,#222a32);"><span>Berlin, Germany · 1989</span></div>
+  <div class="round-body">
+    <div class="round-num">Round 5</div>
+    <div class="round-title">Fall of the Berlin Wall</div>
+    <div class="round-desc">On November 9, 1989, crowds began dismantling the Berlin Wall, ending 28 years of division and marking the collapse of the Iron Curtain.</div>
+    <div class="score-row">
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#555" stroke-width="1.2"/><path d="M5 3v2l1.5 1" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg><span class="sc-dim">Total</span></div>
+        <div class="sc-val g">91%</div>
+        <div class="sc-sub">138 XP</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="#555"/></svg><span class="sc-dim">Where</span></div>
+        <div class="sc-val g">87%</div>
+        <div class="sc-sub">480 km</div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><svg viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="#555" stroke-width="1.1"/><path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg><span class="sc-dim">When</span></div>
+        <div class="sc-val g">95%</div>
+        <div class="sc-sub">1 yr</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="btn-home">Home</button>
+  <button class="btn-again">Play Again ›</button>
+</div>
+
+</div>
