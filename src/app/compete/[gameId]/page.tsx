@@ -183,6 +183,7 @@ export default function CompeteGamePage() {
             Array.isArray((rawSnapshot as unknown as { results?: unknown }).results)
           ) {
             const results = (rawSnapshot as unknown as { results: RoundResult[] }).results;
+            console.log("[SCORING-DEBUG] results[0]:", JSON.stringify(results[0]));
             const ranked = [...results].sort((a, b) => a.rank - b.rank);
             setRoundResults(ranked);
             setLocalSubmitted(false);

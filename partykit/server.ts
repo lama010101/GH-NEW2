@@ -72,7 +72,7 @@ export type ServerMessage =
 
 // Messages sent TO clients
 export type ClientMessage =
-  | { type: "STATE_UPDATE"; snapshot: unknown }
+  | { type: "STATE_UPDATE"; snapshot: unknown; results?: unknown[] }
   | { type: "ERROR"; message: string }
   | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
   | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number };
@@ -133,6 +133,11 @@ export default class GameServer {
   // Prevents duplicate ROUND_STARTED → ROUND_STARTED transitions when scheduleRoundTimer
   // fires while expiry is already in progress or when a new round's timer is already expired.
   private completeInFlight = false;
+
+  // Pending results to be broadcast with next STATE_UPDATE.
+  // Set when API returns results (e.g., /guess after round complete).
+  // Cleared after broadcast to avoid stale results in future updates.
+  private pendingResults: unknown[] | null = null;
 
   // Detected base URL from first client connection's Origin header.
   // Used to derive NEXTJS_BASE_URL dynamically for production correctness.
@@ -323,8 +328,13 @@ export default class GameServer {
     if (isRuntimeState(this.snapshot)) {
       console.log("[PartyKit] Broadcasting to all, players:", this.snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
     }
-    const msg = JSON.stringify({ type: "STATE_UPDATE", snapshot: this.snapshot });
+    const msg = JSON.stringify({
+      type: "STATE_UPDATE",
+      snapshot: this.snapshot,
+      ...(this.pendingResults ? { results: this.pendingResults } : {})
+    });
     this.room.broadcast(msg);
+    this.pendingResults = null; // clear after broadcast
   }
 
   async onConnect(connection: Connection, ctx: { request: { headers: { get: (name: string) => string | null } } }): Promise<void> {
@@ -548,7 +558,12 @@ export default class GameServer {
               console.error(`[SUBMIT_GUESS] API error ${response.status}: ${body}`);
               break;
             }
-            const snapshot = await response.json();
+            const fullResponse = await response.json();
+            const results = Array.isArray(fullResponse.results) ? fullResponse.results : null;
+            this.pendingResults = results;
+
+            // Apply snapshot immediately so clients see hasSubmitted=true before clamp logic
+            this.applySnapshotAndBroadcast(fullResponse);
 
             // Broadcast PLAYER_SUBMITTED to all clients
             if (isRuntimeState(this.snapshot)) {
@@ -562,9 +577,6 @@ export default class GameServer {
                 this.room.broadcast(JSON.stringify(playerSubmittedMsg));
               }
             }
-
-            // Apply snapshot immediately so clients see hasSubmitted=true before clamp logic
-            this.applySnapshotAndBroadcast(snapshot);
 
             // Check if this is the first submission of the round and apply timer clamp
             if (isRuntimeState(this.snapshot) &&
@@ -584,8 +596,8 @@ export default class GameServer {
                   const newRoundEndsAt = new Date(Date.now() + clampTo * 1000);
 
                   // Update RuntimeState
-                  if (isRuntimeState(snapshot)) {
-                    (snapshot as RuntimeState).roundEndsAt = newRoundEndsAt.toISOString();
+                  if (isRuntimeState(fullResponse)) {
+                    (fullResponse as RuntimeState).roundEndsAt = newRoundEndsAt.toISOString();
                   }
 
                   // Broadcast TIMER_CLAMPED

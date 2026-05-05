@@ -9,7 +9,7 @@
 // ============================================================================
 
 export type WebSocketMessage =
-  | { type: "STATE_UPDATE"; snapshot: unknown }
+  | { type: "STATE_UPDATE"; snapshot: unknown; results?: unknown[] }
   | { type: "ERROR"; message: string }
   | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
   | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number };
@@ -97,7 +97,11 @@ export class CompeteWebSocket {
   private handleMessage(data: WebSocketMessage): void {
     switch (data.type) {
       case "STATE_UPDATE":
-        this.callbacks.onStateUpdate?.(data.snapshot);
+        // Merge results into snapshot before passing to callback
+        const snapshotWithResults = data.results
+          ? { ...(data.snapshot as Record<string, unknown>), results: data.results }
+          : data.snapshot;
+        this.callbacks.onStateUpdate?.(snapshotWithResults);
         break;
       case "PLAYER_SUBMITTED":
         this.callbacks.onPlayerSubmitted?.(data.playerId, data.playerName);
