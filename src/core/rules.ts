@@ -32,11 +32,11 @@ function getEventCoordinates(event: EventRecord): LatLng {
 }
 
 export function calculateLocationAccuracy(distanceKm: number): number {
-  return Math.round(clamp(100 - (distanceKm / MAX_DISTANCE_KM) * 100, 0, 100));
+  return Math.round(clamp(100 * Math.exp(-distanceKm / 1500), 0, 100));
 }
 
 export function calculateYearAccuracy(yearDiff: number): number {
-  return Math.round(clamp(100 - (Math.abs(yearDiff) / MAX_YEAR_DIFF) * 100, 0, 100));
+  return Math.round(clamp(100 * Math.exp(-Math.abs(yearDiff) / 40), 0, 100));
 }
 
 export function calculateBadges(round: Pick<import("./types").RoundResult, "yearAccuracy" | "locationAccuracy" | "comboAccuracy">): Badge[] {
