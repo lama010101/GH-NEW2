@@ -48,6 +48,7 @@ type RoundResult = {
   guessYear: number | null;
   guessLat?: number | null;
   guessLng?: number | null;
+  timeScore: number;
 };
 
 function shortId(id: string): string {
@@ -105,11 +106,6 @@ function RainbowRing({ value }: { value: number }) {
       </text>
     </svg>
   );
-}
-
-function yearAccuracyPct(diff: number | null): number | null {
-  if (diff == null) return null;
-  return Math.max(0, Math.round(100 - diff));
 }
 
 export default function CompeteGamePage() {
@@ -202,6 +198,10 @@ export default function CompeteGamePage() {
         const isSelf = submittedPlayerId === playerId;
         const label = isSelf ? 'You made a guess' : `${playerName} made a guess`;
         setSubmissionToasts(prev => [...prev, label]);
+        if (submittedPlayerId !== playerId) {
+          setTimerClamped(true);
+          setTimeout(() => setTimerClamped(false), 600);
+        }
       },
       onTimerClamped: (newPhaseEndsAt) => {
         // Update timer display from newPhaseEndsAt
@@ -316,8 +316,6 @@ export default function CompeteGamePage() {
     if (guessYear === null || guessLat === null || guessLng === null) return;
     if (localSubmitted) return;       // synchronous guard — no re-render needed
     setLocalSubmitted(true);
-    setTimerClamped(true);
-    setTimeout(() => setTimerClamped(false), 600);
     setBusy(true);
     setError(null);
     // Client → DO → DB: send action signal via WS
@@ -612,14 +610,16 @@ export default function CompeteGamePage() {
                 .map(p => {
                   const resultRow = roundResults?.find(r => r.playerId === p.playerId);
                   const theirGuessYear = resultRow?.guessYear ?? null;
-                  const diff = theirGuessYear != null ? Math.abs(theirGuessYear - correctYear) : null;
-                  const acc = yearAccuracyPct(diff);
+                  const acc = resultRow?.timeScore ?? null;
+                  const diff = theirGuessYear != null && correctYear != null
+                    ? Math.abs(theirGuessYear - correctYear)
+                    : null;
                   return {
                     playerId: p.playerId,
                     displayName: p.displayName || p.playerId.slice(0, 8),
                     guessYear: theirGuessYear,
-                    diff,
                     acc,
+                    diff,
                     isMe: p.playerId === playerId,
                   };
                 })
@@ -730,24 +730,57 @@ export default function CompeteGamePage() {
                       )}
                     </div>
                     {guessLat != null && guessLng != null ? (
-                      <div style={{ borderRadius: 8, overflow: "hidden", height: 200 }}>
-                        <StaticResultMap
-                          key={`result-map-${snapshot.currentRoundIndex}`}
-                          correctLat={correctLat}
-                          correctLng={correctLng}
-                          guessLat={guessLat}
-                          guessLng={guessLng}
-                          playerGuesses={roundResults
-                            ?.filter(r => r.didSubmit && r.guessLat != null && r.guessLng != null)
-                            .map(r => ({
-                              playerId: r.playerId,
-                              lat: r.guessLat!,
-                              lng: r.guessLng!,
-                              label: `${Math.round(r.accuracy)}%`,
-                              color: r.playerId === playerId ? "#f97316" : undefined,
-                            })) ?? undefined}
-                        />
-                      </div>
+                      <>
+                        <div style={{ borderRadius: 8, overflow: "hidden", height: 200 }}>
+                          <StaticResultMap
+                            key={`result-map-${snapshot.currentRoundIndex}`}
+                            correctLat={correctLat}
+                            correctLng={correctLng}
+                            guessLat={guessLat}
+                            guessLng={guessLng}
+                            playerGuesses={roundResults
+                              ?.filter(r => r.didSubmit && r.guessLat != null && r.guessLng != null)
+                              .map(r => ({
+                                playerId: r.playerId,
+                                lat: r.guessLat!,
+                                lng: r.guessLng!,
+                                label: `${Math.round(r.accuracy)}%`,
+                                color: r.playerId === playerId ? "#f97316" : undefined,
+                              })) ?? undefined}
+                          />
+                        </div>
+                        <div style={{ marginTop: 12 }}>
+                          {(roundResults ?? [])
+                            .slice()
+                            .sort((a, b) => a.rank - b.rank)
+                            .map((r, idx) => {
+                              const distanceKm = r.guessLat != null && r.guessLng != null
+                                ? haversineKm(r.guessLat, r.guessLng, correctLat, correctLng)
+                                : null;
+                              return (
+                                <div key={r.playerId} style={{
+                                  display: "flex", alignItems: "center", padding: "7px 8px", gap: 6,
+                                  borderRadius: 6,
+                                  background: r.playerId === playerId ? "rgba(255,255,255,0.06)" : "transparent",
+                                  borderBottom: idx < (roundResults?.length ?? 0) - 1 ? "1px solid #333" : "none",
+                                }}>
+                                  <span style={{ minWidth: 20, color: "#888", fontSize: 13, fontWeight: 600 }}>
+                                    {r.rank ?? "—"}
+                                  </span>
+                                  <span style={{ flex: 1, fontSize: 13 }}>
+                                    <span style={{ color: r.playerId === playerId ? "#f97316" : "#fff", fontWeight: r.playerId === playerId ? 600 : 400 }}>
+                                      {snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
+                                    </span>
+                                    {r.playerId === playerId && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
+                                  </span>
+                                  <span style={{ color: "#bbb", fontSize: 11, fontWeight: 600 }}>
+                                    {distanceKm != null ? `${Math.round(distanceKm)} km away` : "—"}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </>
                     ) : (
                       <p style={{ color: "#888", fontSize: 13, margin: 0 }}>No location submitted</p>
                     )}
@@ -781,21 +814,26 @@ export default function CompeteGamePage() {
                       const accBg = row.acc != null
                         ? row.acc >= 60 ? "#1a2e1a" : row.acc >= 30 ? "#2e2a1a" : "#2e1a1a"
                         : "#2a2a2a";
+                      const resultRow = roundResults?.find(r => r.playerId === row.playerId);
+                      const rank = resultRow?.rank ?? null;
                       return (
                         <div key={row.playerId} style={{
-                          display: "flex", alignItems: "center", padding: "7px 0", gap: 6,
+                          display: "flex", alignItems: "center", padding: "7px 8px", gap: 6,
+                          borderRadius: 6,
+                          background: row.isMe ? "rgba(255,255,255,0.06)" : "transparent",
                           borderBottom: idx < whenRows.length - 1 ? "1px solid #333" : "none",
                         }}>
+                          <span style={{ minWidth: 20, color: "#888", fontSize: 13, fontWeight: 600 }}>
+                            {rank ?? "—"}
+                          </span>
                           <span style={{ flex: 1, fontSize: 13 }}>
                             <span style={{ color: row.isMe ? "#f97316" : "#fff", fontWeight: row.isMe ? 600 : 400 }}>
                               {row.displayName}
                             </span>
                             {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
                           </span>
-                          <span style={{ background: "#3a3a3a", color: "#bbb", borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
-                            {row.guessYear != null
-                              ? `${row.guessYear}${row.diff != null ? ` | ${row.diff} yrs off` : ""}`
-                              : "—"}
+                          <span style={{ color: "#bbb", fontSize: 11, fontWeight: 600 }}>
+                            {row.diff != null ? `${row.diff} yrs off` : "—"}
                           </span>
                           <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
                             {row.acc != null ? `${row.acc}%` : "—"}
