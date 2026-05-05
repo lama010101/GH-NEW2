@@ -62,10 +62,6 @@ function isRuntimeState(value: unknown): value is RuntimeState {
   return typeof obj.gameId === "string" && typeof obj.status === "string" && Array.isArray(obj.players);
 }
 
-function computeClampSeconds(roundTimerSec: number): number {
-  return Math.max(10, Math.round(roundTimerSec * 0.30));
-}
-
 // Messages accepted FROM clients (action signals only — PartyKit never trusts payload fields except to forward to API)
 export type ServerMessage =
   | { type: "JOIN_ROOM"; playerId: string; displayName: string }
@@ -580,11 +576,10 @@ export default class GameServer {
 
               // Fire clamp only on exactly the first submission (submittedCount === 1)
               if (submittedCount === 1) {
-                const roundTimerSec = (this.snapshot as unknown as { config?: { roundTimerSec: number } }).config?.roundTimerSec ?? 120;
-                const clampTo = computeClampSeconds(roundTimerSec);
-                const remaining = (new Date(this.snapshot.roundEndsAt).getTime() - Date.now()) / 1000;
+                const remainingMs = new Date(this.snapshot.roundEndsAt).getTime() - Date.now();
+                const clampTo = Math.min(Math.ceil(remainingMs / 1000), 30);
 
-                if (remaining > clampTo) {
+                if (clampTo < remainingMs / 1000) {
                   // Clamp the timer
                   const newRoundEndsAt = new Date(Date.now() + clampTo * 1000);
 
@@ -600,7 +595,7 @@ export default class GameServer {
                     clampedToSec: clampTo
                   };
                   this.room.broadcast(JSON.stringify(timerClampedMsg));
-                  console.log(`[PartyKit] Timer clamped from ${Math.round(remaining)}s to ${clampTo}s`);
+                  console.log(`[PartyKit] Timer clamped from ${Math.round(remainingMs / 1000)}s to ${clampTo}s`);
                 }
               }
             }

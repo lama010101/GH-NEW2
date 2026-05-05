@@ -1298,7 +1298,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 export async function getRoundResults(
   gameId: string,
   roundIndex: number
-): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; didSubmit: boolean; guessLat: number | null; guessLng: number | null }>> {
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number }>> {
   const result = await dbPool.query<{
     player_id: string;
     score: number | null;
@@ -1337,6 +1337,7 @@ export async function getRoundResults(
     guessYear: row.year_guess ?? null,
     guessLat: row.location_lat,
     guessLng: row.location_lng,
+    timeScore: row.time_score ?? 0,
   }));
 }
 
