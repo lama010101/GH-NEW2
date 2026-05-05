@@ -19,7 +19,7 @@
 // ============================================================================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
@@ -111,6 +111,7 @@ function RainbowRing({ value }: { value: number }) {
 export default function CompeteGamePage() {
   const params = useParams<{ gameId: string }>();
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
+  const router = useRouter();
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
@@ -639,7 +640,7 @@ export default function CompeteGamePage() {
               return (
                 <>
                   {/* Card 1 — Accuracy Ring + XP */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
                     <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", textAlign: "center", marginBottom: 10 }}>
                       Accuracy (%)
                     </div>
@@ -650,7 +651,7 @@ export default function CompeteGamePage() {
                     </div>
                   </div>
                   {/* Card 2 — Round Leaderboard */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
                     {leaderboardRows.map(row => {
                       const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
@@ -680,7 +681,7 @@ export default function CompeteGamePage() {
                     )}
                   </div>
                   {/* Card 3 — Event photo + info */}
-                  <div style={{ margin: "1px 5px", borderRadius: 12, overflow: "hidden", background: "#333" }}>
+                  <div style={{ marginBottom: 6, marginLeft: 8, marginRight: 8, borderRadius: 12, overflow: "hidden", background: "#333" }}>
                     {round.imageUrl ? (
                       <div>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -716,11 +717,11 @@ export default function CompeteGamePage() {
                     </div>
                   </div>
                   {/* Card 4 — WHERE */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "#f97316" }}>Where</span>
+                      <span style={{ fontSize: 20, fontWeight: 700, color: "#f97316" }}>Where</span>
                       {myResult != null && (
-                        <span style={{ background: whereAccBg, color: whereAccColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                        <span style={{ background: whereAccBg, color: whereAccColor, borderRadius: 999, padding: "2px 9px", fontSize: 18, fontWeight: 700 }}>
                           {Math.round(myResult.accuracy)}%
                         </span>
                       )}
@@ -764,6 +765,14 @@ export default function CompeteGamePage() {
                               const distanceKm = r.guessLat != null && r.guessLng != null
                                 ? haversineKm(r.guessLat, r.guessLng, correctLat, correctLng)
                                 : null;
+                              const locationAcc = distanceKm != null
+                                ? Math.round(Math.min(100, 100 * Math.exp(-distanceKm / 1500)))
+                                : null;
+                              const locHue = locationAcc != null ? Math.round((locationAcc / 100) * 120) : null;
+                              const locAccColor = locHue != null ? `hsl(${locHue}, 100%, 50%)` : "#888";
+                              const locAccBg = locationAcc != null
+                                ? locationAcc >= 60 ? "#1a2e1a" : locationAcc >= 30 ? "#2e2a1a" : "#2e1a1a"
+                                : "#2a2a2a";
                               return (
                                 <div key={r.playerId} style={{
                                   display: "flex", alignItems: "center", padding: "7px 8px", gap: 6,
@@ -783,6 +792,11 @@ export default function CompeteGamePage() {
                                   <span style={{ color: "#bbb", fontSize: 11, fontWeight: 600 }}>
                                     {distanceKm != null ? `${Math.round(distanceKm)} km away` : "—"}
                                   </span>
+                                  {locationAcc != null && (
+                                    <span style={{ background: locAccBg, color: locAccColor, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
+                                      {locationAcc}%
+                                    </span>
+                                  )}
                                 </div>
                               );
                             })}
@@ -793,9 +807,9 @@ export default function CompeteGamePage() {
                     )}
                   </div>
                   {/* Card 5 — WHEN */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, margin: "1px 5px" }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f97316" }}>When</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: "#f97316" }}>When</div>
                       {(() => {
                         const myWhenRow = whenRows.find(r => r.isMe);
                         const myWhenAcc = myWhenRow?.acc ?? null;
@@ -805,7 +819,7 @@ export default function CompeteGamePage() {
                           ? myWhenAcc >= 60 ? "#1a2e1a" : myWhenAcc >= 30 ? "#2e2a1a" : "#2e1a1a"
                           : "#2a2a2a";
                         return myWhenAcc != null ? (
-                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 18, fontWeight: 700 }}>
                             {Math.round(myWhenAcc)}%
                           </span>
                         ) : null;
@@ -814,6 +828,103 @@ export default function CompeteGamePage() {
                     <div style={{ fontSize: 12, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
                       <span>Correct:</span>
                       <span style={{ color: "#f97316" }}>{correctYear}</span>
+                    </div>
+                    {/* Year timeline */}
+                    <div style={{ width: "100%", height: 80, position: "relative", margin: "12px 0", background: "#1a1a2a", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
+                      {/* Horizontal gradient bar */}
+                      <div style={{
+                        position: "absolute",
+                        top: "50%",
+                        height: 6,
+                        left: 16,
+                        right: 16,
+                        background: "linear-gradient(90deg, #1e3a5f, #2d6a4f)",
+                        borderRadius: 3,
+                        transform: "translateY(-50%)",
+                      }} />
+                      {/* Correct year marker */}
+                      <div style={{
+                        position: "absolute",
+                        top: "50%",
+                        transform: "translate(-50%, -50%)",
+                        width: 3,
+                        height: 28,
+                        background: "#ffffff",
+                        borderRadius: 2,
+                        left: "50%",
+                      }}>
+                        <div style={{
+                          position: "absolute",
+                          top: -20,
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          fontSize: 9,
+                          color: "#888",
+                          whiteSpace: "nowrap",
+                          textAlign: "center",
+                        }}>
+                          Correct
+                        </div>
+                        <div style={{
+                          position: "absolute",
+                          top: 32,
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          fontSize: 10,
+                          color: "#fff",
+                          whiteSpace: "nowrap",
+                          textAlign: "center",
+                        }}>
+                          {correctYear}
+                        </div>
+                      </div>
+                      {/* Player guess markers */}
+                      {(() => {
+                        const timelineMin = Math.max(0, correctYear - 150);
+                        const timelineMax = correctYear + 150;
+                        const timelineRange = timelineMax - timelineMin;
+                        const yearCounts = new Map<number, number>();
+                        whenRows.forEach(row => {
+                          if (row.guessYear != null) {
+                            yearCounts.set(row.guessYear, (yearCounts.get(row.guessYear) || 0) + 1);
+                          }
+                        });
+                        return whenRows.map((row) => {
+                          if (row.guessYear == null) return null;
+                          const position = ((row.guessYear - timelineMin) / timelineRange) * 100;
+                          const clampedPosition = Math.max(0, Math.min(100, position));
+                          const yearIndex = Array.from(yearCounts.keys()).indexOf(row.guessYear);
+                          const verticalOffset = yearIndex > 0 ? 20 : 0;
+                          return (
+                            <div key={row.playerId} style={{
+                              position: "absolute",
+                              top: "50%",
+                              transform: `translate(-50%, calc(-50% + ${verticalOffset}px))`,
+                              left: `${clampedPosition}%`,
+                            }}>
+                              <div style={{
+                                width: 14,
+                                height: 14,
+                                borderRadius: "50%",
+                                background: row.isMe ? "#f97316" : "#60a5fa",
+                                border: "2px solid #fff",
+                              }} />
+                              <div style={{
+                                position: "absolute",
+                                top: 18,
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                fontSize: 10,
+                                color: row.isMe ? "#f97316" : "#60a5fa",
+                                whiteSpace: "nowrap",
+                                textAlign: "center",
+                              }}>
+                                {row.guessYear}
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                     {whenRows.map((row, idx) => {
                       const hue = row.acc != null ? Math.round((row.acc / 100) * 120) : null;
@@ -849,6 +960,12 @@ export default function CompeteGamePage() {
                       );
                     })}
                   </div>
+                  {/* Card 6 — Hints */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>Hints</div>
+                    {/* TODO: Hints data not available on snapshot.rounds[currentRoundIndex].hints */}
+                    <p style={{ color: "#888", fontSize: 13, margin: 0 }}>Hints not available</p>
+                  </div>
                   {/* Spacer for fixed bottom bar */}
                   <div style={{ height: 70 }} />
                   {/* Bottom Bar */}
@@ -863,8 +980,22 @@ export default function CompeteGamePage() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    zIndex: 50,
+                    zIndex: 1000,
                   }}>
+                    <button
+                      onClick={() => router.push("/")}
+                      style={{
+                        background: "transparent",
+                        color: "#fff",
+                        border: "none",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        padding: "8px 16px",
+                      }}
+                    >
+                      🏠 Home
+                    </button>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#999" }}>
                       Round {snapshot.currentRoundIndex + 1} / {snapshot.rounds.length}
                       <div style={{ display: "flex", gap: 3 }}>
@@ -893,7 +1024,7 @@ export default function CompeteGamePage() {
                         cursor: "pointer",
                       }}
                     >
-                      Next Round ›
+                      {snapshot.currentRoundIndex === snapshot.rounds.length - 1 ? "Final Results" : "Next Round ›"}
                     </button>
                   </div>
                 </>
