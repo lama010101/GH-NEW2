@@ -93,7 +93,25 @@ export async function fetchEventsWithDetails(options: {
           ) ORDER BY i.display_order, i.created_at
         ) FILTER (WHERE i.id IS NOT NULL),
         '[]'::jsonb
-      ) as images
+      ) as images,
+      (
+        SELECT COALESCE(
+          jsonb_agg(
+            jsonb_build_object(
+              'id',            h.id,
+              'event_id',      h.event_id,
+              'tier',          h.tier,
+              'type',          h.type,
+              'content',       h.content,
+              'metadata',      h.metadata,
+              'display_order', h.display_order
+            ) ORDER BY h.display_order, h.tier, h.type
+          ),
+          '[]'::jsonb
+        )
+        FROM hints h
+        WHERE h.event_id = e.id
+      ) AS hints
     FROM events e
     JOIN locations l ON l.event_id = e.id
     LEFT JOIN images i ON i.event_id = e.id
@@ -113,6 +131,7 @@ export async function fetchEventsWithDetails(options: {
     region: string | null;
     category: string | null;
     images: unknown;
+    hints: unknown;
   }>(phase2Query, [selectedIds]);
 
   return result.rows.map((row) => mapEventRowToEventRecord(row));

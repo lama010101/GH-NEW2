@@ -733,6 +733,8 @@ export type SubmitGuessInput = {
   yearGuess: number | null;
   locationGuess: LatLng | null;
   hintsUsed: string[];
+  accPenalty?: number;
+  xpPenalty?: number;
   _executionContext?: "partykit" | "api";
 };
 
@@ -878,12 +880,19 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     event = await fetchEventById(eventIds[roundIndex]);
     if (!event) throw new Error("Could not load event");
 
+    const accPenaltyValue = typeof input.accPenalty === "number"
+      ? Math.max(0, Math.min(100, input.accPenalty))
+      : 0;
+    const xpPenaltyValue = typeof input.xpPenalty === "number"
+      ? Math.max(0, Math.min(200, input.xpPenalty))
+      : 0;
+
     const result = evaluateRound(
       event,
       { year: yearGuess, location: locationGuess },
       roundIndex,
       false,
-      { accuracy: 0, xp: 0 }
+      { accuracy: accPenaltyValue, xp: xpPenaltyValue }
     );
 
     const score = result.roundXp;
@@ -893,8 +902,8 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     const insertResult = await client.query(
       `INSERT INTO round_commits
          (game_id, player_id, round_index, submitted_at, year_guess,
-          location_lat, location_lng, hints_used, score, verification_token)
-       VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9)
+          location_lat, location_lng, hints_used, score, acc_penalty, verification_token)
+       VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10)
        ON CONFLICT (game_id, player_id, round_index) DO NOTHING`,
       [
         gameId,
@@ -905,6 +914,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         locationGuess?.lng ?? null,
         hintsUsedCount,
         score,
+        accPenaltyValue,
         commitToken
       ]
     );
@@ -1373,8 +1383,9 @@ async function computeAndWriteRoundResults(
     year_guess: number | null;
     location_lat: number | null;
     location_lng: number | null;
+    acc_penalty: number | null;
   }>(
-    `SELECT player_id, score, year_guess, location_lat, location_lng
+    `SELECT player_id, score, year_guess, location_lat, location_lng, acc_penalty
      FROM round_commits
      WHERE game_id = $1 AND round_index = $2
      ORDER BY score DESC NULLS LAST`,
@@ -1421,9 +1432,16 @@ async function computeAndWriteRoundResults(
       guessState,
       roundIndex,
       false,
-      { accuracy: 0, xp: 0 }
+      { accuracy: row.acc_penalty ?? 0, xp: 0 }
     );
     console.log(`[SCORE-DEBUG] evaluateRound result: distanceKm=${evaluation.distanceKm} yearDiff=${evaluation.yearDiff} locationAccuracy=${evaluation.locationAccuracy} yearAccuracy=${evaluation.yearAccuracy} roundXp=${evaluation.roundXp}`);
+
+    // Apply acc_penalty proportionally to location and year axes
+    const rawLocationAccuracy = evaluation.locationAccuracy;
+    const rawYearAccuracy = evaluation.yearAccuracy;
+    const penaltyPerAxis = Math.round((row.acc_penalty ?? 0) / 2);
+    const penalizedLocationScore = Math.max(0, rawLocationAccuracy - penaltyPerAxis);
+    const penalizedYearScore = Math.max(0, rawYearAccuracy - penaltyPerAxis);
 
     // Insert with all replay fields and verification token
     const insertResult = await executor.query(
@@ -1439,8 +1457,8 @@ async function computeAndWriteRoundResults(
         i + 1,
         evaluation.distanceKm,
         evaluation.yearDiff,
-        evaluation.locationAccuracy,
-        evaluation.yearAccuracy,
+        penalizedLocationScore,
+        penalizedYearScore,
         roundResultsToken
       ]
     );

@@ -67,7 +67,7 @@ export type ServerMessage =
   | { type: "JOIN_ROOM"; playerId: string; displayName: string }
   | { type: "TOGGLE_READY"; playerId: string; ready: boolean }
   | { type: "START_GAME"; playerId: string }
-  | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: number }
+  | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: number; accPenalty?: number; xpPenalty?: number }
   | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number; cause?: string };
 
 // Messages sent TO clients
@@ -550,7 +550,9 @@ export default class GameServer {
                 roundIndex: data.roundIndex,
                 year: data.year ?? null,
                 lat: data.lat ?? null,
-                lng: data.lng ?? null
+                lng: data.lng ?? null,
+                accPenalty: data.accPenalty ?? 0,
+                xpPenalty: data.xpPenalty ?? 0
               })
             });
             if (!response.ok) {

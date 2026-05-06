@@ -28,6 +28,8 @@ import {
 import { CompeteWebSocket } from "@/core/competeWebSocket";
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import { useIdentity } from "@/hooks/useIdentity";
+import { HintModal } from "@/components/HintModal";
+import type { HintPurchaseResult } from "@/components/HintModal";
 
 const GameMap = dynamic(
   () => import("@/components/GameMap").then((m) => m.GameMap),
@@ -50,6 +52,18 @@ type RoundResult = {
   guessLat?: number | null;
   guessLng?: number | null;
   timeScore: number;
+};
+
+type AllRoundResult = {
+  playerId: string;
+  roundIndex: number;
+  score: number;
+  rank: number;
+  distanceKm: number | null;
+  yearDiff: number | null;
+  locationScore: number | null;
+  timeScore: number | null;
+  didSubmit: boolean;
 };
 
 function shortId(id: string): string {
@@ -117,6 +131,7 @@ export default function CompeteGamePage() {
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
+  const [allRoundResults, setAllRoundResults] = useState<AllRoundResult[] | null>(null);
   const [guessYear, setGuessYear] = useState<number | null>(null);
   const [guessLat, setGuessLat] = useState<number | null>(null);
   const [guessLng, setGuessLng] = useState<number | null>(null);
@@ -125,6 +140,17 @@ export default function CompeteGamePage() {
   const [localSubmitted, setLocalSubmitted] = useState(false);
   const [submissionToasts, setSubmissionToasts] = useState<string[]>([]);
   const [timerClamped, setTimerClamped] = useState(false);
+  const [hintModalOpen, setHintModalOpen] = useState(false);
+  const [hintResult, setHintResult] = useState<HintPurchaseResult>({
+    purchasedIds: [],
+    accPenalty: 0,
+    xpPenalty: 0,
+  });
+  const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[] }>({
+    accPenalty: 0,
+    xpPenalty: 0,
+    purchasedIds: [],
+  });
 
   const { playerId, isReady, isLoading: identityLoading, error: identityError } = useIdentity();
   const wsRef = useRef<CompeteWebSocket | null>(null);
@@ -256,15 +282,23 @@ export default function CompeteGamePage() {
     const currentRoundIndex = snapshot.currentRoundIndex;
 
     // Auto-submit with whatever values the player has entered (null is valid)
+    submittedHintPenaltyRef.current = {
+      accPenalty: hintResult.accPenalty,
+      xpPenalty: hintResult.xpPenalty,
+      purchasedIds: hintResult.purchasedIds,
+    };
     setLocalSubmitted(true);
     setBusy(true);
     wsRef.current.submitGuess(
       currentRoundIndex,
       guessYearRef.current,
       guessLatRef.current,
-      guessLngRef.current
+      guessLngRef.current,
+      hintResult.purchasedIds,
+      hintResult.accPenalty,
+      hintResult.xpPenalty
     );
-  }, [timeRemaining, snapshot, localSubmitted, playerId]);
+  }, [timeRemaining, snapshot, localSubmitted, playerId, hintResult]);
 
   // Reset guess inputs whenever the active round changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -276,7 +310,63 @@ export default function CompeteGamePage() {
     setLocalSubmitted(false);
     setRoundResults(null);
     setSubmissionToasts([]);
+    setHintResult({ purchasedIds: [], accPenalty: 0, xpPenalty: 0 });
+    submittedHintPenaltyRef.current = { accPenalty: 0, xpPenalty: 0, purchasedIds: [] };
   }, [snapshot?.currentRoundIndex]);
+
+  // Fetch all round results when session completes
+  useEffect(() => {
+    if (snapshot?.status === "SESSION_COMPLETE" && gameId && !allRoundResults) {
+      fetch(`/api/compete/${gameId}/all-results`)
+        .then(r => r.json())
+        .then(data => setAllRoundResults(data.results ?? []))
+        .catch(err => {
+          console.error("[CompeteGamePage] Failed to fetch all round results:", err);
+        });
+    }
+  }, [snapshot?.status, gameId, allRoundResults]);
+
+  // Helper: compute derived stats for a player
+  const computePlayerStats = useCallback((pid: string) => {
+    if (!allRoundResults) return null;
+    const playerResults = allRoundResults.filter(r => r.playerId === pid && r.didSubmit);
+    if (playerResults.length === 0) return null;
+
+    const totalScore = playerResults.reduce((sum, r) => sum + r.score, 0);
+    const avgAccuracy = Math.round(playerResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / playerResults.length);
+    const avgLocationAccuracy = Math.round(playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / playerResults.length);
+    const avgYearAccuracy = Math.round(playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0) / playerResults.length);
+    const avgConsistency = Math.round(playerResults.reduce((sum, r) => sum + Math.min(r.locationScore ?? 0, r.timeScore ?? 0), 0) / playerResults.length);
+    const avgDistanceKm = playerResults.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0) / playerResults.length;
+    const avgYearDiff = playerResults.reduce((sum, r) => sum + (r.yearDiff ?? 0), 0) / playerResults.length;
+
+    return { totalScore, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgConsistency, avgDistanceKm, avgYearDiff };
+  }, [allRoundResults]);
+
+  // Helper: get ring color based on accuracy
+  const getRingColor = useCallback((value: number) => {
+    if (value >= 80) return "#7ed957";
+    if (value >= 60) return "#e8c022";
+    if (value >= 40) return "#E87722";
+    return "#e84422";
+  }, []);
+
+  // Helper: compute per-round stats for all players
+  const computeRoundStats = useCallback((roundIndex: number) => {
+    if (!allRoundResults) return null;
+    const roundResults = allRoundResults.filter(r => r.roundIndex === roundIndex && r.didSubmit);
+    if (roundResults.length === 0) return null;
+
+    const avgAccuracy = Math.round(roundResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / roundResults.length);
+    const avgLocationScore = Math.round(roundResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / roundResults.length);
+    const avgTimeScore = Math.round(roundResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0) / roundResults.length);
+    const avgDistanceKm = roundResults.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0) / roundResults.length;
+    const avgYearDiff = roundResults.reduce((sum, r) => sum + (r.yearDiff ?? 0), 0) / roundResults.length;
+    const totalScore = roundResults.reduce((sum, r) => sum + r.score, 0);
+    const bestPlayer = roundResults.reduce((best, r) => r.score > best.score ? r : best, roundResults[0]);
+
+    return { avgAccuracy, avgLocationScore, avgTimeScore, avgDistanceKm, avgYearDiff, totalScore, bestPlayerId: bestPlayer.playerId };
+  }, [allRoundResults]);
 
   const viewer = useMemo(() => {
     if (!snapshot || !playerId) return null;
@@ -318,6 +408,11 @@ export default function CompeteGamePage() {
     if (!snapshot || !playerId || !wsRef.current) return;
     if (guessYear === null || guessLat === null || guessLng === null) return;
     if (localSubmitted) return;       // synchronous guard — no re-render needed
+    submittedHintPenaltyRef.current = {
+      accPenalty: hintResult.accPenalty,
+      xpPenalty: hintResult.xpPenalty,
+      purchasedIds: hintResult.purchasedIds,
+    };
     setLocalSubmitted(true);
     setBusy(true);
     setError(null);
@@ -326,9 +421,12 @@ export default function CompeteGamePage() {
       snapshot.currentRoundIndex,
       guessYear,
       guessLat,
-      guessLng
+      guessLng,
+      hintResult.purchasedIds,
+      hintResult.accPenalty,
+      hintResult.xpPenalty
     );
-  }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted]);
+  }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult]);
 
   const handleAdvanceRound = useCallback(() => {
     if (!snapshot || !playerId || !wsRef.current) return;
@@ -584,6 +682,14 @@ export default function CompeteGamePage() {
               >
                 {busy ? "Submitting…" : "Submit Guess"}
               </button>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => setHintModalOpen(true)}
+                disabled={busy || hasSubmitted || localSubmitted}
+              >
+                Hints
+              </button>
             </div>
             {renderError}
           </section>
@@ -641,18 +747,50 @@ export default function CompeteGamePage() {
               return (
                 <>
                   {/* Card 1 — Accuracy Ring + XP */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 4, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", textAlign: "center", marginBottom: 10 }}>
                       Accuracy (%)
                     </div>
                     <RainbowRing value={accuracy} />
+                    {submittedHintPenaltyRef.current.accPenalty > 0 && (
+                      <div style={{ textAlign: "center", marginTop: 4, marginBottom: 2 }}>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 3,
+                          background: "rgba(232,68,34,0.12)",
+                          border: "0.5px solid rgba(232,68,34,0.35)",
+                          borderRadius: 999,
+                          padding: "2px 8px",
+                          fontSize: 11,
+                          color: "#e84422",
+                          fontWeight: 600,
+                        }}>
+                          −{submittedHintPenaltyRef.current.accPenalty}% hints
+                        </span>
+                      </div>
+                    )}
                     <div style={{ textAlign: "center", marginTop: 12, borderTop: "1px solid #444", paddingTop: 10 }}>
                       <span style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>{myResult?.score ?? 0}</span>
                       <span style={{ fontSize: 13, color: "#f97316", marginLeft: 5 }}>XP</span>
                     </div>
+                    {submittedHintPenaltyRef.current.xpPenalty > 0 && (
+                      <div style={{ textAlign: "center", marginTop: 3 }}>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 3,
+                          background: "rgba(232,68,34,0.12)",
+                          border: "0.5px solid rgba(232,68,34,0.35)",
+                          borderRadius: 999,
+                          padding: "2px 8px",
+                          fontSize: 11,
+                          color: "#e84422",
+                          fontWeight: 600,
+                        }}>
+                          −{submittedHintPenaltyRef.current.xpPenalty} XP hints
+                        </span>
+                      </div>
+                    )}
                   </div>
                   {/* Card 2 — Round Leaderboard */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 4, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
                     {leaderboardRows.map(row => {
                       const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
@@ -682,7 +820,7 @@ export default function CompeteGamePage() {
                     )}
                   </div>
                   {/* Card 3 — Event photo + info */}
-                  <div style={{ marginBottom: 6, marginLeft: 8, marginRight: 8, borderRadius: 12, overflow: "hidden", background: "#333" }}>
+                  <div style={{ marginBottom: 4, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333" }}>
                     {round.imageUrl ? (
                       <div>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -718,7 +856,7 @@ export default function CompeteGamePage() {
                     </div>
                   </div>
                   {/* Card 4 — WHERE */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 4, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <span style={{ fontSize: 20, fontWeight: 700, color: "#f97316" }}>Where</span>
                       {myResult != null && (
@@ -727,6 +865,16 @@ export default function CompeteGamePage() {
                         </span>
                       )}
                     </div>
+                    {submittedHintPenaltyRef.current.accPenalty > 0 && (
+                      <div style={{ textAlign: "right", marginBottom: 6, marginTop: -4 }}>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center",
+                          fontSize: 10, color: "#e84422", fontWeight: 600,
+                        }}>
+                          −{Math.round(submittedHintPenaltyRef.current.accPenalty / 2)}% hints
+                        </span>
+                      </div>
+                    )}
                     <div style={{ fontSize: 12, color: "#fff", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
                       <span>Correct:</span>
                       <span style={{ color: "#f97316" }}>{correctName}</span>
@@ -806,7 +954,7 @@ export default function CompeteGamePage() {
                     )}
                   </div>
                   {/* Card 5 — WHEN */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 4, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                       <div style={{ fontSize: 20, fontWeight: 700, color: "#f97316" }}>When</div>
                       {(() => {
@@ -824,6 +972,16 @@ export default function CompeteGamePage() {
                         ) : null;
                       })()}
                     </div>
+                    {submittedHintPenaltyRef.current.accPenalty > 0 && (
+                      <div style={{ textAlign: "right", marginBottom: 6, marginTop: -4 }}>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center",
+                          fontSize: 10, color: "#e84422", fontWeight: 600,
+                        }}>
+                          −{Math.round(submittedHintPenaltyRef.current.accPenalty / 2)}% hints
+                        </span>
+                      </div>
+                    )}
                     <div style={{ fontSize: 12, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
                       <span>Correct:</span>
                       <span style={{ color: "#f97316" }}>{correctYear}</span>
@@ -960,24 +1118,68 @@ export default function CompeteGamePage() {
                       );
                     })}
                   </div>
-                  {/* Card 6 — Hints */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>Hints</div>
-                    {(() => {
-                      const roundHints = snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [];
-                      if (roundHints.length === 0) {
-                        return <p style={{ color: "#888", fontSize: 13, margin: 0 }}>No hints for this event</p>;
-                      }
-                      return roundHints.map((hint, idx) => (
-                        <div key={hint.id} style={{ padding: "6px 0", borderBottom: idx < roundHints.length - 1 ? "1px solid #444" : "none" }}>
-                          <span style={{ fontSize: 13, color: "#ddd" }}>
-                            <span style={{ color: "#aaa", marginRight: 4 }}>{hint.type ?? "Hint"}:</span>
-                            {hint.content ?? "(hint)"}
-                          </span>
+                  {submittedHintPenaltyRef.current.purchasedIds.length > 0 && (() => {
+                    const usedHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
+                      .filter(h => submittedHintPenaltyRef.current.purchasedIds.includes(h.id))
+                      .sort((a, b) => a.tier - b.tier);
+                    if (usedHints.length === 0) return null;
+                    return (
+                      <div style={{
+                        background: "#333", borderRadius: 12, padding: 14,
+                        marginBottom: 4, marginLeft: 6, marginRight: 6,
+                      }}>
+                        <div style={{
+                          fontSize: 12, fontWeight: 600, color: "#aaa",
+                          textTransform: "uppercase", letterSpacing: "0.08em",
+                          marginBottom: 10,
+                        }}>
+                          Hints used
                         </div>
-                      ));
-                    })()}
-                  </div>
+                        {usedHints.map((hint, idx) => {
+                          const tierPenaltyAcc = [0,10,20,30,40,50][hint.tier] ?? 0;
+                          const meta = hint.metadata as { km?: number; years?: number | string } | null;
+                          let revealedText = hint.content;
+                          if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
+                            revealedText = `${hint.content} — ${meta.km} km away`;
+                          } else if (hint.type === "when" && (hint.tier === 2 || hint.tier === 4) && meta?.years != null) {
+                            revealedText = `${hint.content} — ${meta.years} years off`;
+                          }
+                          const labelMap: Record<string, Record<number, string>> = {
+                            when: { 1: "Century", 2: "Historical Event", 3: "Decade", 4: "Contemporary Event", 5: "Visual Clues" },
+                            where: { 1: "Continent", 2: "Remote Landmark", 3: "Region", 4: "Nearby Landmark", 5: "Visual Clues" },
+                          };
+                          const label = labelMap[hint.type]?.[hint.tier] ?? "Hint";
+                          return (
+                            <div key={hint.id} style={{
+                              display: "flex", alignItems: "center", gap: 10,
+                              padding: "7px 0",
+                              borderBottom: idx < usedHints.length - 1 ? "1px solid #3a3a3a" : "none",
+                            }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 12, fontWeight: 500, color: "#ccc" }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "#aaa", fontStyle: "italic", marginTop: 1 }}>
+                                  {revealedText}
+                                </div>
+                              </div>
+                              <span style={{
+                                display: "inline-flex", alignItems: "center",
+                                background: "rgba(232,68,34,0.12)",
+                                border: "0.5px solid rgba(232,68,34,0.35)",
+                                borderRadius: 999,
+                                padding: "2px 7px",
+                                fontSize: 10,
+                                color: "#e84422",
+                                fontWeight: 600,
+                                flexShrink: 0,
+                              }}>
+                                −{tierPenaltyAcc}%
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                   {/* Spacer for fixed bottom bar */}
                   <div style={{ height: 70 }} />
                   {/* Bottom Bar */}
@@ -1010,7 +1212,6 @@ export default function CompeteGamePage() {
                         <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
                         <polyline points="9 21 9 12 15 12 15 21" />
                       </svg>
-                      Home
                     </button>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#999" }}>
                       Round {snapshot.currentRoundIndex + 1} / {snapshot.rounds.length}
@@ -1052,149 +1253,450 @@ export default function CompeteGamePage() {
         ) : null}
 
         {snapshot.status === "SESSION_COMPLETE" ? (
-          <section className="card stack">
-            <h2>Game Over</h2>
-            {/* Event reveal section */}
-            {(() => {
-              const roundData = snapshot.rounds[snapshot.currentRoundIndex];
-              if (!roundData) return null;
+          <section style={{ paddingBottom: 80 }}>
+            {/* Loading state */}
+            {!allRoundResults ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#666" }}>
+                Loading results…
+              </div>
+            ) : (() => {
+              if (!playerId) return null;
+              const myStats = computePlayerStats(playerId);
+              const overallAccuracy = myStats?.avgAccuracy ?? 0;
+              const overallXP = myStats?.totalScore ?? 0;
+              const whereAccuracy = myStats?.avgLocationAccuracy ?? 0;
+              const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
+              const avgDistanceKm = myStats?.avgDistanceKm ?? 0;
+              const avgYearDiff = myStats?.avgYearDiff ?? 0;
+
+              // Compute leaderboard
+              const leaderboard = snapshot.players
+                .map(p => {
+                  const stats = computePlayerStats(p.playerId);
+                  return {
+                    playerId: p.playerId,
+                    displayName: p.displayName,
+                    totalScore: stats?.totalScore ?? 0,
+                    avgAccuracy: stats?.avgAccuracy ?? 0,
+                    submittedRounds: allRoundResults.filter(r => r.playerId === p.playerId && r.didSubmit).map(r => r.roundIndex),
+                  };
+                })
+                .sort((a, b) => b.totalScore - a.totalScore);
+
               return (
-                <div style={{ marginBottom: 16 }}>
-                  {roundData.title && (
-                    <h3 style={{ margin: "0 0 12px 0", fontSize: 18 }}>{roundData.title}</h3>
-                  )}
-                  {roundData.imageUrl ? (
+                <>
+                  {/* TOP BAR */}
+                  <div style={{
+                    background: "#111",
+                    borderBottom: "0.5px solid #2a2a2a",
+                    padding: "12px 16px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}>
                     <div>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={roundData.imageUrl}
-                        alt={roundData.title || "Event image"}
-                        style={{
-                          width: "100%",
-                          maxHeight: "300px",
-                          objectFit: "cover",
-                          borderRadius: 4,
-                          marginBottom: 12
-                        }}
-                      />
+                      <div style={{ color: "#666", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.05 }}>
+                        GAME OVER · RUSH · {gameId.slice(0, 6).toUpperCase()}
+                      </div>
+                      <div style={{ color: "#fff", fontSize: 14, marginTop: 2 }}>
+                        {snapshot.config.totalRounds} rounds complete
+                      </div>
                     </div>
-                  ) : (
-                    <div
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {Array.from({ length: snapshot.config.totalRounds }).map((_, i) => (
+                        <div key={i} style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: "#E87722",
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* HERO ACCURACY CARD */}
+                  <div style={{
+                    background: "#1a1a1a",
+                    borderRadius: 14,
+                    margin: 12,
+                    padding: "20px 16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}>
+                    <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 16 }}>
+                      OVERALL ACCURACY
+                    </div>
+                    <svg viewBox="0 0 130 130" style={{ width: 130, height: 130 }}>
+                      <circle cx={65} cy={65} r={54} fill="none" stroke="#2a2a2a" strokeWidth={10} />
+                      <circle
+                        cx={65} cy={65} r={54} fill="none"
+                        stroke={getRingColor(overallAccuracy)} strokeWidth={10} strokeLinecap="round"
+                        strokeDasharray={339.3}
+                        strokeDashoffset={339.3 * (1 - overallAccuracy / 100)}
+                        transform={`rotate(-90 65 65)`}
+                      />
+                      <text x={65} y={65} textAnchor="middle" dominantBaseline="central"
+                        fill="white" fontSize={42} fontWeight={500}>
+                        {overallAccuracy}
+                      </text>
+                    </svg>
+                    <div style={{ marginTop: 12, fontSize: 19, color: "#fff", fontWeight: 500 }}>
+                      {overallXP} <span style={{ fontSize: 13, color: "#E87722", fontWeight: 400 }}>XP</span>
+                    </div>
+                  </div>
+
+                  {/* WHERE / WHEN SUB-CARDS */}
+                  <div style={{ margin: "0 12px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {/* WHERE card */}
+                    <div style={{
+                      background: "#1a1a1a",
+                      borderRadius: 12,
+                      padding: "16px 10px 14px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                        <svg width={12} height={12} viewBox="0 0 24 24" fill="#E87722">
+                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                        <span style={{ fontSize: 13, color: "#E87722", fontWeight: 500 }}>WHERE</span>
+                      </div>
+                      <svg viewBox="0 0 84 84" style={{ width: 84, height: 84, marginBottom: 8 }}>
+                        <circle cx={42} cy={42} r={34} fill="none" stroke="#2a2a2a" strokeWidth={8} />
+                        <circle
+                          cx={42} cy={42} r={34} fill="none"
+                          stroke={getRingColor(whereAccuracy)} strokeWidth={8} strokeLinecap="round"
+                          strokeDasharray={213.6}
+                          strokeDashoffset={213.6 * (1 - whereAccuracy / 100)}
+                          transform={`rotate(-90 42 42)`}
+                        />
+                        <text x={42} y={42} textAnchor="middle" dominantBaseline="central"
+                          fill="white" fontSize={24} fontWeight={500}>
+                          {whereAccuracy}
+                        </text>
+                      </svg>
+                      <div style={{ fontSize: 16, color: "#fff", marginBottom: 4 }}>
+                        {whereAccuracy} <span style={{ fontSize: 11, color: "#E87722" }}>XP</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#555" }}>
+                        avg {Math.round(avgDistanceKm)} km away
+                      </div>
+                    </div>
+
+                    {/* WHEN card */}
+                    <div style={{
+                      background: "#1a1a1a",
+                      borderRadius: 12,
+                      padding: "16px 10px 14px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#E87722" strokeWidth={2}>
+                          <rect x="3" y="4" width={18} height={18} rx={2} ry={2} />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <span style={{ fontSize: 13, color: "#E87722", fontWeight: 500 }}>WHEN</span>
+                      </div>
+                      <svg viewBox="0 0 84 84" style={{ width: 84, height: 84, marginBottom: 8 }}>
+                        <circle cx={42} cy={42} r={34} fill="none" stroke="#2a2a2a" strokeWidth={8} />
+                        <circle
+                          cx={42} cy={42} r={34} fill="none"
+                          stroke={getRingColor(whenAccuracy)} strokeWidth={8} strokeLinecap="round"
+                          strokeDasharray={213.6}
+                          strokeDashoffset={213.6 * (1 - whenAccuracy / 100)}
+                          transform={`rotate(-90 42 42)`}
+                        />
+                        <text x={42} y={42} textAnchor="middle" dominantBaseline="central"
+                          fill="white" fontSize={24} fontWeight={500}>
+                          {whenAccuracy}
+                        </text>
+                      </svg>
+                      <div style={{ fontSize: 16, color: "#fff", marginBottom: 4 }}>
+                        {whenAccuracy} <span style={{ fontSize: 11, color: "#E87722" }}>XP</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#555" }}>
+                        avg {Math.round(avgYearDiff)} yrs off
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* LEADERBOARD SECTION */}
+                  <div style={{
+                    background: "#1a1a1a",
+                    borderRadius: 12,
+                    margin: "0 12px 12px",
+                    overflow: "hidden",
+                  }}>
+                    <div style={{
+                      fontSize: 10,
+                      color: "#666",
+                      textTransform: "uppercase",
+                      padding: "12px 16px 10px",
+                      borderBottom: "0.5px solid #252525",
+                    }}>
+                      FINAL RANKINGS
+                    </div>
+                    {leaderboard.map((player, index) => {
+                      const isCurrentPlayer = player.playerId === playerId;
+                      return (
+                        <div
+                          key={player.playerId}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "22px 1fr auto",
+                            padding: "11px 16px",
+                            borderBottom: index === leaderboard.length - 1 ? "none" : "0.5px solid #1e1e1e",
+                            background: isCurrentPlayer ? "#1d1d28" : "transparent",
+                          }}
+                        >
+                          <div style={{ fontSize: 12, color: "#555", display: "flex", alignItems: "center" }}>
+                            {index + 1}
+                          </div>
+                          <div style={{ fontSize: 13, color: "#fff", fontWeight: 500 }}>
+                            {playerLabel(snapshot.players, player.playerId)}
+                            {isCurrentPlayer && (
+                              <span style={{ fontSize: 11, color: "#555", marginLeft: 4 }}>(you)</span>
+                            )}
+                            <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
+                              {Array.from({ length: snapshot.config.totalRounds }).map((_, i) => (
+                                <div key={i} style={{
+                                  width: 20,
+                                  height: 4,
+                                  borderRadius: 2,
+                                  background: player.submittedRounds.includes(i) ? "#E87722" : "#2a2a2a",
+                                }} />
+                              ))}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 15, color: "#fff", fontWeight: 500 }}>
+                              {player.totalScore}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#555" }}>
+                              {player.avgAccuracy}%
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* ROUND BREAKDOWN LABEL */}
+                  <div style={{
+                    fontSize: 10,
+                    color: "#555",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    margin: "4px 12px 8px",
+                  }}>
+                    ROUND BREAKDOWN
+                  </div>
+
+                  {/* ROUND CARDS */}
+                  {snapshot.rounds.map((round, i) => {
+                    const roundStats = computeRoundStats(i);
+                    if (!roundStats) return null;
+                    return (
+                      <div key={i} style={{
+                        background: "#1a1a1a",
+                        borderRadius: 12,
+                        margin: "0 12px 8px",
+                        overflow: "hidden",
+                      }}>
+                        {/* Photo strip */}
+                        {round.imageUrl ? (
+                          <img
+                            src={round.imageUrl}
+                            alt={round.title}
+                            style={{ width: "100%", height: 94, objectFit: "cover", display: "block" }}
+                          />
+                        ) : (
+                          <div style={{
+                            height: 94,
+                            background: "#1e1e1e",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 11,
+                            color: "#3a3a3a",
+                          }}>
+                            {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`} · {round.year}
+                          </div>
+                        )}
+
+                        {/* Card body */}
+                        <div style={{ padding: "11px 14px 14px" }}>
+                          <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", marginBottom: 4 }}>
+                            ROUND {i + 1}
+                          </div>
+                          <div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.35, marginBottom: 10 }}>
+                            {round.title}
+                          </div>
+
+                          {/* 3-column score row */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
+                            {/* TOTAL cell */}
+                            <div style={{
+                              background: "#141414",
+                              borderRadius: 8,
+                              padding: "8px 6px",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                            }}>
+                              <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                  <circle cx={12} cy={12} r={10} />
+                                  <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                TOTAL
+                              </div>
+                              <div style={{ fontSize: 18, color: "#fff", fontWeight: 600, marginBottom: 2 }}>
+                                {roundStats.avgAccuracy}
+                              </div>
+                              <div style={{ fontSize: 10, color: "#444" }}>
+                                {roundStats.totalScore} pts
+                              </div>
+                            </div>
+
+                            {/* WHERE cell */}
+                            <div style={{
+                              background: "#141414",
+                              borderRadius: 8,
+                              padding: "8px 6px",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                            }}>
+                              <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                <svg width={10} height={10} viewBox="0 0 24 24" fill="#E87722">
+                                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                </svg>
+                                WHERE
+                              </div>
+                              <div style={{ fontSize: 18, color: "#fff", fontWeight: 600, marginBottom: 2 }}>
+                                {roundStats.avgLocationScore}
+                              </div>
+                              <div style={{ fontSize: 10, color: "#444" }}>
+                                avg {Math.round(roundStats.avgDistanceKm)} km
+                              </div>
+                            </div>
+
+                            {/* WHEN cell */}
+                            <div style={{
+                              background: "#141414",
+                              borderRadius: 8,
+                              padding: "8px 6px",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                            }}>
+                              <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#E87722" strokeWidth={2}>
+                                  <rect x="3" y="4" width={18} height={18} rx={2} ry={2} />
+                                  <line x1="16" y1="2" x2="16" y2="6" />
+                                  <line x1="8" y1="2" x2="8" y2="6" />
+                                  <line x1="3" y1="10" x2="21" y2="10" />
+                                </svg>
+                                WHEN
+                              </div>
+                              <div style={{ fontSize: 18, color: "#fff", fontWeight: 600, marginBottom: 2 }}>
+                                {roundStats.avgTimeScore}
+                              </div>
+                              <div style={{ fontSize: 10, color: "#444" }}>
+                                avg {Math.round(roundStats.avgYearDiff)} yrs
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Round footer */}
+                          <div style={{
+                            borderTop: "0.5px solid #222",
+                            marginTop: 9,
+                            paddingTop: 9,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}>
+                            <div style={{ fontSize: 11, color: "#555" }}>
+                              Best player:
+                            </div>
+                            <div style={{ fontSize: 13, color: "#fff", fontWeight: 500 }}>
+                              {playerLabel(snapshot.players, roundStats.bestPlayerId)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* BOTTOM ACTION BAR */}
+                  <div style={{
+                    position: "fixed",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: "#111",
+                    borderTop: "0.5px solid #2a2a2a",
+                    padding: "12px 16px",
+                    display: "flex",
+                    gap: 10,
+                    zIndex: 1000,
+                  }}>
+                    <button
+                      onClick={() => router.push("/")}
                       style={{
-                        width: "100%",
-                        height: "200px",
-                        backgroundColor: "#e0e0e0",
-                        borderRadius: 4,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginBottom: 12,
-                        color: "#666"
+                        height: 46,
+                        borderRadius: 10,
+                        border: "0.5px solid #333",
+                        background: "transparent",
+                        color: "#bbb",
+                        fontSize: 14,
+                        padding: "0 16px",
+                        cursor: "pointer",
                       }}
                     >
-                      No image available
-                    </div>
-                  )}
-                  {roundData.year && roundData.year !== 0 && (
-                    <p style={{ margin: "0 0 8px 0", fontSize: 14 }}>
-                      <strong>Answer: {roundData.year}</strong>
-                    </p>
-                  )}
-                  {roundData.locationName ? (
-                    <p style={{ margin: 0, fontSize: 14 }}>
-                      Location: {roundData.locationName}
-                    </p>
-                  ) : roundData.latitude !== 0 && roundData.longitude !== 0 ? (
-                    <p style={{ margin: 0, fontSize: 14 }}>
-                      Location: {roundData.latitude.toFixed(4)}, {roundData.longitude.toFixed(4)}
-                    </p>
-                  ) : null}
-                </div>
-              );
-            })()}
-            {/* Final round map */}
-            {(() => {
-              const roundData = snapshot.rounds[snapshot.currentRoundIndex];
-              if (!roundData) return null;
-              return (
-                <div style={{ marginBottom: 16 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 8,
-                      fontSize: 13,
-                    }}
-                  >
-                    <span style={{ color: "#FF6B2B" }}>
-                      Correct: {roundData.locationName ?? `${roundData.latitude.toFixed(2)}, ${roundData.longitude.toFixed(2)}`}
-                    </span>
+                      Home
+                    </button>
+                    <button
+                      onClick={() => router.push("/compete")}
+                      style={{
+                        flex: 1,
+                        height: 46,
+                        borderRadius: 10,
+                        border: "none",
+                        background: "#E87722",
+                        color: "#fff",
+                        fontSize: 15,
+                        fontWeight: 500,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Play Again
+                    </button>
                   </div>
-                  <StaticResultMap
-                    key="session-complete"
-                    correctLat={roundData.latitude}
-                    correctLng={roundData.longitude}
-                    guessLat={null}
-                    guessLng={null}
-                    playerGuesses={roundResults
-                      ?.filter((r) => r.didSubmit && r.guessLat != null && r.guessLng != null)
-                      .map((r) => ({
-                        playerId: r.playerId,
-                        lat: r.guessLat!,
-                        lng: r.guessLng!,
-                        label: playerLabel(snapshot.players, r.playerId),
-                        color: r.playerId === playerId ? "#FF6B2B" : undefined,
-                      })) ?? undefined}
-                  />
-                </div>
+                </>
               );
             })()}
-            {roundResults && roundResults.length > 0 ? (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: "left", padding: "8px 0" }}>Player</th>
-                    <th style={{ textAlign: "right", padding: "8px 0" }}>Score</th>
-                    <th style={{ textAlign: "right", padding: "8px 0" }}>Rank</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {roundResults.map((r) => (
-                    <tr key={r.playerId}>
-                      <td style={{ padding: "6px 0" }}>
-                        {playerLabel(snapshot.players, r.playerId)}
-                        {!r.didSubmit && (
-                          <span style={{
-                            marginLeft: 8,
-                            fontSize: 11,
-                            color: "var(--color-text-secondary)",
-                            background: "var(--color-background-secondary)",
-                            borderRadius: 4,
-                            padding: "1px 6px"
-                          }}>
-                            No guess
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right", padding: "6px 0" }}>
-                        {r.didSubmit ? r.score : "—"}
-                      </td>
-                      <td style={{ textAlign: "right", padding: "6px 0" }}>
-                        {r.didSubmit ? r.rank : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : null}
-            <Link href="/compete" className="button">
-              Play Again
-            </Link>
-            {renderError}
           </section>
         ) : null}
       </div>
+
+      {/* HintModal */}
+      <HintModal
+        hints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
+        isOpen={hintModalOpen}
+        onClose={(result: HintPurchaseResult) => {
+          setHintResult(result);
+          setHintModalOpen(false);
+        }}
+      />
     </main>
   );
 }
