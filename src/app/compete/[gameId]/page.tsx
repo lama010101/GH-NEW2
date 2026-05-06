@@ -44,6 +44,7 @@ type RoundResult = {
   score: number;
   rank: number;
   accuracy: number;
+  locationScore: number;
   didSubmit: boolean;
   guessYear: number | null;
   guessLat?: number | null;
@@ -183,7 +184,6 @@ export default function CompeteGamePage() {
             Array.isArray((rawSnapshot as unknown as { results?: unknown }).results)
           ) {
             const results = (rawSnapshot as unknown as { results: RoundResult[] }).results;
-            console.log("[SCORING-DEBUG] results[0]:", JSON.stringify(results[0]));
             const ranked = [...results].sort((a, b) => a.rank - b.rank);
             setRoundResults(ranked);
             setLocalSubmitted(false);
@@ -635,9 +635,9 @@ export default function CompeteGamePage() {
                   if (b.acc == null) return -1;
                   return b.acc - a.acc;
                 });
-              const whereHue = Math.round((Math.max(0, Math.min(100, myResult?.accuracy ?? 0)) / 100) * 120);
+              const whereHue = Math.round((Math.max(0, Math.min(100, myResult?.locationScore ?? 0)) / 100) * 120);
               const whereAccColor = `hsl(${whereHue}, 100%, 50%)`;
-              const whereAccBg = (myResult?.accuracy ?? 0) >= 60 ? "#1a2e1a" : (myResult?.accuracy ?? 0) >= 30 ? "#2e2a1a" : "#2e1a1a";
+              const whereAccBg = (myResult?.locationScore ?? 0) >= 60 ? "#1a2e1a" : (myResult?.locationScore ?? 0) >= 30 ? "#2e2a1a" : "#2e1a1a";
               return (
                 <>
                   {/* Card 1 — Accuracy Ring + XP */}
@@ -723,7 +723,7 @@ export default function CompeteGamePage() {
                       <span style={{ fontSize: 20, fontWeight: 700, color: "#f97316" }}>Where</span>
                       {myResult != null && (
                         <span style={{ background: whereAccBg, color: whereAccColor, borderRadius: 999, padding: "2px 9px", fontSize: 18, fontWeight: 700 }}>
-                          {Math.round(myResult.accuracy)}%
+                          {Math.round(myResult.locationScore)}%
                         </span>
                       )}
                     </div>
@@ -753,7 +753,7 @@ export default function CompeteGamePage() {
                                 playerId: r.playerId,
                                 lat: r.guessLat!,
                                 lng: r.guessLng!,
-                                label: `${Math.round(r.accuracy)}%`,
+                                label: `${Math.round(r.locationScore)}%`,
                                 color: r.playerId === playerId ? "#f97316" : undefined,
                               })) ?? undefined}
                           />
@@ -766,9 +766,7 @@ export default function CompeteGamePage() {
                               const distanceKm = r.guessLat != null && r.guessLng != null
                                 ? haversineKm(r.guessLat, r.guessLng, correctLat, correctLng)
                                 : null;
-                              const locationAcc = distanceKm != null
-                                ? Math.round(Math.min(100, 100 * Math.exp(-distanceKm / 1500)))
-                                : null;
+                              const locationAcc = r.locationScore;
                               const locHue = locationAcc != null ? Math.round((locationAcc / 100) * 120) : null;
                               const locAccColor = locHue != null ? `hsl(${locHue}, 100%, 50%)` : "#888";
                               const locAccBg = locationAcc != null
@@ -831,15 +829,15 @@ export default function CompeteGamePage() {
                       <span style={{ color: "#f97316" }}>{correctYear}</span>
                     </div>
                     {/* Year timeline */}
-                    <div style={{ width: "100%", height: 80, position: "relative", margin: "12px 0", background: "#1a1a2a", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
+                    <div style={{ width: "100%", height: 96, position: "relative", margin: "12px 0", background: "#1a1a2a", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
                       {/* Horizontal gradient bar */}
                       <div style={{
                         position: "absolute",
                         top: "50%",
-                        height: 6,
+                        height: 4,
                         left: 16,
                         right: 16,
-                        background: "linear-gradient(90deg, #1e3a5f, #2d6a4f)",
+                        background: "#555555",
                         borderRadius: 3,
                         transform: "translateY(-50%)",
                       }} />
@@ -848,8 +846,8 @@ export default function CompeteGamePage() {
                         position: "absolute",
                         top: "50%",
                         transform: "translate(-50%, -50%)",
-                        width: 3,
-                        height: 28,
+                        width: 4,
+                        height: 32,
                         background: "#ffffff",
                         borderRadius: 2,
                         left: "50%",
@@ -894,8 +892,9 @@ export default function CompeteGamePage() {
                           if (row.guessYear == null) return null;
                           const position = ((row.guessYear - timelineMin) / timelineRange) * 100;
                           const clampedPosition = Math.max(0, Math.min(100, position));
-                          const yearIndex = Array.from(yearCounts.keys()).indexOf(row.guessYear);
-                          const verticalOffset = yearIndex > 0 ? 20 : 0;
+                          const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
+                          const myIndexInGroup = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
+                          const verticalOffset = myIndexInGroup * 18;
                           return (
                             <div key={row.playerId} style={{
                               position: "absolute",
@@ -964,8 +963,20 @@ export default function CompeteGamePage() {
                   {/* Card 6 — Hints */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 6, marginLeft: 8, marginRight: 8 }}>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>Hints</div>
-                    {/* TODO: Hints data not available on snapshot.rounds[currentRoundIndex].hints */}
-                    <p style={{ color: "#888", fontSize: 13, margin: 0 }}>Hints not available</p>
+                    {(() => {
+                      const roundHints = snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [];
+                      if (roundHints.length === 0) {
+                        return <p style={{ color: "#888", fontSize: 13, margin: 0 }}>No hints for this event</p>;
+                      }
+                      return roundHints.map((hint, idx) => (
+                        <div key={hint.id} style={{ padding: "6px 0", borderBottom: idx < roundHints.length - 1 ? "1px solid #444" : "none" }}>
+                          <span style={{ fontSize: 13, color: "#ddd" }}>
+                            <span style={{ color: "#aaa", marginRight: 4 }}>{hint.type ?? "Hint"}:</span>
+                            {hint.content ?? "(hint)"}
+                          </span>
+                        </div>
+                      ));
+                    })()}
                   </div>
                   {/* Spacer for fixed bottom bar */}
                   <div style={{ height: 70 }} />
@@ -995,7 +1006,11 @@ export default function CompeteGamePage() {
                         padding: "8px 16px",
                       }}
                     >
-                      🏠 Home
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5, verticalAlign: "middle" }}>
+                        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+                        <polyline points="9 21 9 12 15 12 15 21" />
+                      </svg>
+                      Home
                     </button>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#999" }}>
                       Round {snapshot.currentRoundIndex + 1} / {snapshot.rounds.length}
@@ -1023,6 +1038,7 @@ export default function CompeteGamePage() {
                         borderRadius: 10,
                         padding: "11px 26px",
                         cursor: "pointer",
+                        whiteSpace: "nowrap",
                       }}
                     >
                       {snapshot.currentRoundIndex === snapshot.rounds.length - 1 ? "Final Results" : "Next Round ›"}

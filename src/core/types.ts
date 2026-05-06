@@ -39,12 +39,12 @@ export type HintType = "where" | "when" | "what";
 
 export type EventHint = {
   id: string;
-  level: number;
-  type: HintType;
-  text: string;
-  distanceKm: number | null;
-  timeDiffYears: number | null;
-  penaltyBp: number; // Basis points: 1000 = 10%, max 10000 = 100%
+  event_id: string;
+  tier: number;
+  type: string;
+  content: string;
+  metadata: Record<string, unknown> | null;
+  display_order: number;
 };
 
 export type EventRecord = {
@@ -70,6 +70,7 @@ export type RoundEventContent = {
   locationName: string | null;
   imageUrl: string | null;
   description: string | null;
+  hints: EventHint[];
 };
 
 export type GuessState = {
