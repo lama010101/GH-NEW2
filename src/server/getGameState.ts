@@ -16,7 +16,7 @@ import {
   deriveStateFromEventStream,
   type RoundEvent
 } from "./eventStream";
-import type { RoundEventContent } from "@/core/types";
+import type { RoundEventContent, EventHint } from "@/core/types";
 
 // Re-export for backwards compatibility
 export { VALID_PHASE_TRANSITIONS, deriveStateFromEventStream, type RoundEvent };
@@ -395,6 +395,47 @@ export async function getGameState(
       [eventIds]
     );
 
+    // Fetch hints for all events in a single query
+    const hintsResult = await dbPool.query<{
+      event_id: string;
+      id: string;
+      tier: number;
+      type: string;
+      content: string;
+      metadata: Record<string, unknown> | null;
+      display_order: number;
+    }>(
+      `SELECT
+        h.event_id,
+        h.id,
+        h.tier,
+        h.type,
+        h.content,
+        h.metadata,
+        h.display_order
+      FROM hints h
+      WHERE h.event_id = ANY($1::uuid[])
+      ORDER BY h.display_order, h.tier`,
+      [eventIds]
+    );
+
+    // Group hints by event_id
+    const hintsByEventId = new Map<string, EventHint[]>();
+
+    for (const row of hintsResult.rows) {
+      const hint: EventHint = {
+        id: row.id,
+        event_id: row.event_id,
+        tier: row.tier,
+        type: row.type,
+        content: row.content,
+        metadata: row.metadata,
+        display_order: row.display_order,
+      };
+      const existing = hintsByEventId.get(row.event_id) ?? [];
+      hintsByEventId.set(row.event_id, [...existing, hint]);
+    }
+
     const eventMap = new Map(eventResult.rows.map(row => [row.event_id, row]));
     roundEventContent = eventIds.map(id => {
       const ev = eventMap.get(id);
@@ -407,6 +448,7 @@ export async function getGameState(
         locationName: ev?.display_name ?? null,
         imageUrl: ev?.image_url ?? null,
         description: ev?.description ?? null,
+        hints: hintsByEventId.get(id) ?? [],
       };
     });
   }
