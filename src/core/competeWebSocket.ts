@@ -172,7 +172,10 @@ export class CompeteWebSocket {
     roundIndex: number,
     year: number | null,
     lat: number | null,
-    lng: number | null
+    lng: number | null,
+    hintsUsed: string[] = [],
+    accPenalty: number = 0,
+    xpPenalty: number = 0
   ): void {
     this.send({
       type: "SUBMIT_GUESS",
@@ -181,7 +184,9 @@ export class CompeteWebSocket {
       year,
       lat,
       lng,
-      hintsUsed: 0
+      hintsUsed,
+      accPenalty,
+      xpPenalty
     });
   }
 

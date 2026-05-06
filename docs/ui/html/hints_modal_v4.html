@@ -1,0 +1,390 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
+:root{
+  --bg:#111;--surface:#1a1a1a;--surface2:#141414;--surface3:#1e1e1e;
+  --border:#1e1e1e;--border-md:#252525;--border-hi:#333;
+  --text:#fff;--text-dim:#bbb;--text-muted:#666;
+  --g:#7ed957;--y:#e8c022;--o:#E87722;--r:#e84422;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+
+.page{min-height:780px;background:#1c1c1c;display:flex;align-items:center;justify-content:center;padding:24px 16px;font-family:'DM Sans',sans-serif;color:var(--text);}
+
+.modal{width:100%;max-width:460px;background:var(--bg);border-radius:16px;border:0.5px solid var(--border-md);overflow:hidden;display:flex;flex-direction:column;}
+
+/* HEADER */
+.modal-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border);}
+.modal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--text);}
+.modal-close{width:26px;height:26px;border-radius:50%;background:var(--surface);border:0.5px solid var(--border-md);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.modal-close svg{width:10px;height:10px;stroke:#555;stroke-width:2;stroke-linecap:round;}
+
+/* TOTAL PENALTY — big at top */
+.total-strip{
+  padding:16px 18px 14px;
+  border-bottom:0.5px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.total-left{display:flex;flex-direction:column;gap:2px;}
+.total-lbl{font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;}
+.total-big{font-family:'Syne',sans-serif;font-weight:800;font-size:38px;line-height:1;color:var(--g);}
+.total-big.y{color:var(--y);}
+.total-big.o{color:var(--o);}
+.total-big.r{color:var(--r);}
+.total-big.zero{color:#333;}
+.total-right{display:flex;gap:10px;}
+.axis-pen{display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--surface);border:0.5px solid var(--border-md);border-radius:10px;padding:8px 12px;}
+.axis-icon{display:flex;align-items:center;gap:4px;}
+.axis-icon svg{width:10px;height:10px;flex-shrink:0;}
+.axis-lbl{font-size:9px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;}
+.axis-val{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;line-height:1;color:var(--text);}
+.axis-val.zero{color:#333;}
+.axis-track{width:56px;height:2px;background:#1e1e1e;border-radius:2px;overflow:hidden;margin-top:3px;}
+.axis-fill{height:100%;border-radius:2px;background:#fff;transition:width .25s ease;}
+
+/* TABS */
+.tab-row{display:grid;grid-template-columns:1fr 1fr;margin:12px 14px 0;background:var(--surface);border-radius:10px;padding:3px;border:0.5px solid var(--border-md);}
+.tab-btn{padding:9px 0;border-radius:8px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s;}
+.tab-btn.active{background:var(--surface3);border:0.5px solid var(--border-md);}
+.tab-lbl{font-size:13px;font-weight:500;color:var(--text-muted);}
+.tab-btn.active .tab-lbl{color:var(--text);}
+.tab-btn svg path,.tab-btn svg rect,.tab-btn svg circle{stroke:var(--text-muted);}
+.tab-btn.active svg path,.tab-btn.active svg rect,.tab-btn.active svg circle{stroke:var(--text);}
+.tab-badge{margin-left:2px;width:16px;height:16px;border-radius:50%;background:var(--surface);border:0.5px solid var(--border-md);font-size:9px;font-weight:700;color:var(--text-muted);display:none;align-items:center;justify-content:center;font-family:'Syne',sans-serif;}
+
+/* HINTS LIST */
+.hints-panel{padding:10px 12px 14px;display:flex;flex-direction:column;gap:5px;max-height:380px;overflow-y:auto;}
+.hints-panel::-webkit-scrollbar{width:2px;}
+.hints-panel::-webkit-scrollbar-thumb{background:#222;border-radius:2px;}
+
+/* HINT BUTTON */
+.hint-btn{
+  background:var(--surface);
+  border:0.5px solid var(--border-md);
+  border-radius:10px;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+  transition:border-color .12s, background .12s, transform .08s;
+  position:relative;
+  overflow:hidden;
+  text-align:left;
+  width:100%;
+}
+/* clearly button-like: lift on hover */
+.hint-btn:hover:not(.locked):not(.revealed){
+  border-color:var(--border-hi);
+  background:#1d1d1d;
+  transform:translateY(-1px);
+}
+.hint-btn:active:not(.locked):not(.revealed){
+  transform:translateY(0);
+}
+.hint-btn.locked{opacity:.32;cursor:not-allowed;}
+.hint-btn.revealed{
+  border-color:#2a2a2a;
+  background:#161616;
+  cursor:default;
+}
+/* left accent bar when revealed */
+.hint-btn.revealed::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:2px;
+  background:#444;
+}
+
+/* icon box */
+.hint-icon{
+  width:30px;height:30px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  background:var(--surface2);
+  border:0.5px solid var(--border-md);
+  transition:background .12s;
+}
+.hint-icon svg{width:13px;height:13px;}
+.hint-btn:hover:not(.locked):not(.revealed) .hint-icon{background:#222;}
+
+/* body */
+.hint-body{flex:1;min-width:0;}
+.hint-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;line-height:1.3;}
+.hint-btn.locked .hint-name{color:#555;}
+.hint-sub{font-size:11px;color:var(--text-muted);line-height:1.4;}
+/* revealed answer — full visibility */
+.hint-answer{font-size:12px;color:var(--text-dim);line-height:1.45;font-style:italic;margin-top:2px;}
+
+/* right side */
+.hint-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+
+/* cost pill — colored by penalty amount */
+.cost-pill{
+  display:flex;align-items:center;
+  padding:3px 8px;
+  border-radius:20px;
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  font-size:11px;
+  border:0.5px solid;
+  letter-spacing:.02em;
+  transition:opacity .12s;
+}
+/* colors matching ring results: g y o r */
+.cost-g{background:rgba(126,217,87,0.10);border-color:rgba(126,217,87,0.3);color:var(--g);}
+.cost-y{background:rgba(232,192,34,0.10);border-color:rgba(232,192,34,0.3);color:var(--y);}
+.cost-o{background:rgba(232,119,34,0.10);border-color:rgba(232,119,34,0.3);color:var(--o);}
+.cost-r{background:rgba(232,68,34,0.10);border-color:rgba(232,68,34,0.3);color:var(--r);}
+
+.dep-note{font-size:9px;color:#444;display:flex;align-items:center;gap:3px;}
+.dep-note svg{width:9px;height:9px;flex-shrink:0;}
+
+.check-dot{width:18px;height:18px;border-radius:50%;background:#222;border:0.5px solid #333;display:flex;align-items:center;justify-content:center;}
+.check-dot svg{width:9px;height:9px;}
+</style>
+
+<div class="page">
+<div class="modal">
+
+  <div class="modal-header">
+    <div class="modal-title">Hints</div>
+    <div class="modal-close"><svg viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2L2 8"/></svg></div>
+  </div>
+
+  <!-- TOTAL PENALTY BIG -->
+  <div class="total-strip">
+    <div class="total-left">
+      <div class="total-lbl">Total penalty</div>
+      <div class="total-big zero" id="total-big">−0%</div>
+    </div>
+    <div class="total-right">
+      <div class="axis-pen">
+        <div class="axis-icon">
+          <svg viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="#555" stroke-width="1.1"/><path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg>
+          <span class="axis-lbl">When</span>
+        </div>
+        <div class="axis-val zero" id="when-val">−0%</div>
+        <div class="axis-track"><div class="axis-fill" id="when-fill" style="width:0%"></div></div>
+      </div>
+      <div class="axis-pen">
+        <div class="axis-icon">
+          <svg viewBox="0 0 10 10" fill="none"><path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="#555"/></svg>
+          <span class="axis-lbl">Where</span>
+        </div>
+        <div class="axis-val zero" id="where-val">−0%</div>
+        <div class="axis-track"><div class="axis-fill" id="where-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-row">
+    <div class="tab-btn active" id="tab-when" onclick="switchTab('when')">
+      <svg viewBox="0 0 12 12" fill="none" width="12" height="12"><rect x="1.5" y="2" width="9" height="9" rx="1.5" stroke-width="1.2"/><path d="M4 1v2M8 1v2M1.5 5h9" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <span class="tab-lbl">When</span>
+      <div class="tab-badge" id="when-badge"></div>
+    </div>
+    <div class="tab-btn" id="tab-where" onclick="switchTab('where')">
+      <svg viewBox="0 0 12 12" fill="none" width="12" height="12"><path d="M6 1C4.34 1 3 2.34 3 4c0 2.25 3 7 3 7s3-4.75 3-7c0-1.66-1.34-3-3-3zm0 4a1 1 0 110-2 1 1 0 010 2z" stroke-width="1.2"/></svg>
+      <span class="tab-lbl">Where</span>
+      <div class="tab-badge" id="where-badge"></div>
+    </div>
+  </div>
+
+  <div class="hints-panel" id="hints-panel"></div>
+
+</div>
+</div>
+
+<script>
+const ICONS = {
+  calendar:`<svg viewBox="0 0 13 13" fill="none"><rect x="1.2" y="2" width="10.6" height="10" rx="1.5" stroke="#555" stroke-width="1.1"/><path d="M4.3 1v2M8.7 1v2M1.2 5.3h10.6" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg>`,
+  clock:`<svg viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#555" stroke-width="1.1"/><path d="M6.5 3.5v3l2 1.5" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg>`,
+  trend:`<svg viewBox="0 0 13 13" fill="none"><path d="M2 9.5l3-4 2.5 2 4-5" stroke="#555" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  ruler:`<svg viewBox="0 0 13 13" fill="none"><rect x="1" y="5" width="11" height="3" rx="1" stroke="#555" stroke-width="1.1"/><path d="M3.5 5V3.5M6.5 5V4M9.5 5V3.5" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg>`,
+  tag:`<svg viewBox="0 0 13 13" fill="none"><path d="M2 2h5l4.5 4.5a1 1 0 010 1.4l-3.1 3.1a1 1 0 01-1.4 0L2.5 6.5V2H2z" stroke="#555" stroke-width="1.1"/><circle cx="4.5" cy="4.5" r=".8" fill="#555"/></svg>`,
+  globe:`<svg viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#555" stroke-width="1.1"/><path d="M1.5 6.5h10M6.5 1.5c-2 2-2 8 0 10M6.5 1.5c2 2 2 8 0 10" stroke="#555" stroke-width="1.1"/></svg>`,
+  mountain:`<svg viewBox="0 0 13 13" fill="none"><path d="M1.5 10.5l4-7 2.5 4 1.5-2 3 5H1.5z" stroke="#555" stroke-width="1.1" stroke-linejoin="round"/></svg>`,
+  flag:`<svg viewBox="0 0 13 13" fill="none"><path d="M3 11V2M3 2h7.5L8.5 5.5 10.5 9H3" stroke="#555" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  city:`<svg viewBox="0 0 13 13" fill="none"><path d="M1.5 11h10M3 11V6.5h3V4h4v7" stroke="#555" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 8.5h2M8 6.5h1M8 8.5h1" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg>`,
+  pin:`<svg viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5C4.84 1.5 3.5 2.84 3.5 4.5c0 2.5 3 7 3 7s3-4.5 3-7c0-1.66-1.34-3-3-3z" stroke="#555" stroke-width="1.1"/><circle cx="6.5" cy="4.5" r="1.2" stroke="#555" stroke-width="1.1"/></svg>`,
+  map:`<svg viewBox="0 0 13 13" fill="none"><path d="M1.5 3.5l3-1.5 4 1.5 3-1.5v8l-3 1.5-4-1.5-3 1.5V3.5z" stroke="#555" stroke-width="1.1" stroke-linejoin="round"/></svg>`,
+  lock:`<svg viewBox="0 0 10 10" fill="none"><rect x="1.5" y="4.5" width="7" height="5" rx="1" stroke="#555" stroke-width="1.1"/><path d="M3 4.5V3a2 2 0 014 0v1.5" stroke="#555" stroke-width="1.1"/></svg>`,
+  check:`<svg viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5l2.5 2.5 4-5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+};
+
+const TIER_ACC={1:10,2:20,3:30,4:40,5:50};
+
+const WHEN_HINTS=[
+  {id:'w1',tier:1,icon:'clock',   name:'Century',                   desc:'eg: 20th',                            revealed:'This event occurred in the 20th century.',dep:null},
+  {id:'w2',tier:2,icon:'trend',   name:'Distant Event',             desc:'More than 10 years off',              revealed:'Your guess is more than 10 years off.',dep:null},
+  {id:'w3',tier:2,icon:'ruler',   name:'Years From Distant Event',  desc:'Number of years off',                 revealed:'You are 23 years away from the correct date.',dep:'w2'},
+  {id:'w4',tier:3,icon:'trend',   name:'Recent Event',              desc:'Less than 10 years off',              revealed:'Your guess is less than 10 years off.',dep:null},
+  {id:'w5',tier:3,icon:'ruler',   name:'Years From Recent Event',   desc:'Number of years',                     revealed:'You are 4 years away from the correct date.',dep:'w4'},
+  {id:'w6',tier:4,icon:'tag',     name:'Temporal Clues',            desc:'Scene elements (can be precise or general)',revealed:'Clothing styles and technology suggest mid-20th century.',dep:null},
+  {id:'w7',tier:5,icon:'calendar',name:'Decade',                    desc:'eg: 1930s',                           revealed:'This event occurred in the 1940s.',dep:'w1'},
+];
+
+const WHERE_HINTS=[
+  {id:'l1',tier:1,icon:'globe',   name:'Continent',                       desc:'eg: Europe',                          revealed:'This event took place in Europe.',dep:null},
+  {id:'l2',tier:2,icon:'mountain',name:'Remote Landmark',                 desc:'More than 100km (60 mi) away',        revealed:'The event was near Mont Blanc, over 100km away.',dep:null},
+  {id:'l3',tier:2,icon:'ruler',   name:'Distance To Remote Landmark',     desc:'Distance in km or miles',             revealed:'Roughly 340 km from Mont Blanc.',dep:'l2'},
+  {id:'l4',tier:3,icon:'mountain',name:'Nearby Landmark',                 desc:'Less than 100km (60 mi) away',        revealed:'The event was near the Eiffel Tower, under 100km away.',dep:null},
+  {id:'l5',tier:3,icon:'ruler',   name:'Distance To The Nearby Landmark', desc:'Distance in km or miles',             revealed:'Roughly 18 km from the Eiffel Tower.',dep:'l4'},
+  {id:'l6',tier:4,icon:'tag',     name:'Geographical Clues',              desc:'Scene elements (can be precise or general)',revealed:'Classic Haussmann-style Parisian boulevard with zinc rooftops.',dep:null},
+  {id:'l7',tier:5,icon:'flag',    name:'Region',                          desc:'eg: California',                      revealed:'Île-de-France region.',dep:'l1'},
+];
+
+const purchased=new Set();
+let activeTab='when';
+
+function getHints(t){return t==='when'?WHEN_HINTS:WHERE_HINTS;}
+function isOwned(id){return purchased.has(id);}
+function depOk(h){return !h.dep||purchased.has(h.dep);}
+
+function penColor(pct){
+  if(pct===0) return 'zero';
+  if(pct<=20) return 'g';
+  if(pct<=40) return 'y';
+  if(pct<=60) return 'o';
+  return 'r';
+}
+function costClass(tier){
+  if(tier===1) return 'cost-g';
+  if(tier===2) return 'cost-y';
+  if(tier<=4)  return 'cost-o';
+  return 'cost-r';
+}
+
+function penalty(tab){
+  let a=0;
+  getHints(tab).forEach(h=>{if(isOwned(h.id))a+=TIER_ACC[h.tier];});
+  return Math.min(a,100);
+}
+function totalPenalty(){
+  let a=0;
+  [...WHEN_HINTS,...WHERE_HINTS].forEach(h=>{if(isOwned(h.id))a+=TIER_ACC[h.tier];});
+  return Math.min(a,100);
+}
+
+function updatePenalties(){
+  const w=penalty('when'),l=penalty('where'),tot=totalPenalty();
+
+  const tb=document.getElementById('total-big');
+  tb.textContent='−'+tot+'%';
+  tb.className='total-big '+penColor(tot);
+
+  const wv=document.getElementById('when-val');
+  wv.textContent='−'+w+'%';
+  wv.className='axis-val'+(w===0?' zero':'');
+  document.getElementById('when-fill').style.width=w+'%';
+
+  const lv=document.getElementById('where-val');
+  lv.textContent='−'+l+'%';
+  lv.className='axis-val'+(l===0?' zero':'');
+  document.getElementById('where-fill').style.width=l+'%';
+
+  ['when','where'].forEach(tab=>{
+    const c=getHints(tab).filter(h=>isOwned(h.id)).length;
+    const b=document.getElementById(tab+'-badge');
+    if(c>0){b.textContent=c;b.style.display='flex';}else b.style.display='none';
+  });
+}
+
+function switchTab(tab){
+  activeTab=tab;
+  document.getElementById('tab-when').className='tab-btn'+(tab==='when'?' active':'');
+  document.getElementById('tab-where').className='tab-btn'+(tab==='where'?' active':'');
+  renderHints();
+}
+
+function renderHints(){
+  const panel=document.getElementById('hints-panel');
+  panel.innerHTML='';
+  const hints=getHints(activeTab);
+
+  hints.forEach(hint=>{
+    const owned=isOwned(hint.id);
+    const locked=!depOk(hint);
+    const pct=TIER_ACC[hint.tier];
+
+    const btn=document.createElement('div');
+    btn.className='hint-btn'+(owned?' revealed':'')+(locked?' locked':'');
+
+    // icon
+    const icon=document.createElement('div');
+    icon.className='hint-icon';
+    icon.innerHTML=ICONS[hint.icon]||ICONS.calendar;
+    btn.appendChild(icon);
+
+    // body
+    const body=document.createElement('div');
+    body.className='hint-body';
+
+    const name=document.createElement('div');
+    name.className='hint-name';
+    name.textContent=hint.name;
+    body.appendChild(name);
+
+    if(owned){
+      const ans=document.createElement('div');
+      ans.className='hint-answer';
+      ans.textContent=hint.revealed;
+      body.appendChild(ans);
+    } else {
+      const sub=document.createElement('div');
+      sub.className='hint-sub';
+      sub.textContent=hint.desc;
+      body.appendChild(sub);
+    }
+
+    btn.appendChild(body);
+
+    // right
+    const right=document.createElement('div');
+    right.className='hint-right';
+
+    if(owned){
+      const chk=document.createElement('div');
+      chk.className='check-dot';
+      chk.innerHTML=ICONS.check;
+      right.appendChild(chk);
+    } else if(locked){
+      const lk=document.createElement('div');
+      lk.style.cssText='display:flex;align-items:center;gap:3px;';
+      lk.innerHTML=ICONS.lock;
+      const depHint=[...WHEN_HINTS,...WHERE_HINTS].find(x=>x.id===hint.dep);
+      const dn=document.createElement('div');
+      dn.className='dep-note';
+      dn.textContent='Requires '+depHint.name;
+      right.appendChild(lk);
+      right.appendChild(dn);
+    } else {
+      const pill=document.createElement('div');
+      pill.className='cost-pill '+costClass(hint.tier);
+      pill.textContent='−'+pct+'%';
+      right.appendChild(pill);
+    }
+
+    btn.appendChild(right);
+
+    if(!owned&&!locked){
+      btn.addEventListener('click',()=>{
+        purchased.add(hint.id);
+        renderHints();
+        updatePenalties();
+      });
+    }
+
+    panel.appendChild(btn);
+  });
+}
+
+renderHints();
+updatePenalties();
+</script>
