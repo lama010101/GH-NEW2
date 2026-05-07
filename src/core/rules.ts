@@ -42,8 +42,8 @@ export function calculateYearAccuracy(yearDiff: number): number {
 export function calculateBadges(round: Pick<import("./types").RoundResult, "yearAccuracy" | "locationAccuracy" | "comboAccuracy">): Badge[] {
   const getTier = (accuracy: number) => {
     if (accuracy === 100) return "gold" as const;
-    if (accuracy === 99) return "silver" as const;
-    if (accuracy === 98) return "bronze" as const;
+    if (accuracy >= 95) return "silver" as const;
+    if (accuracy >= 90) return "bronze" as const;
     return null;
   };
 
@@ -65,11 +65,47 @@ export function calculateBadges(round: Pick<import("./types").RoundResult, "year
   return badges;
 }
 
+export function evaluateNearMisses(
+  yearAccuracy: number,
+  locationAccuracy: number,
+  comboAccuracy: number,
+  badges: Badge[]
+): { dimension: 'year' | 'location' | 'combo'; accuracy: number }[] {
+  const hasBadge = (dim: string) => badges.some(b => b.dimension === dim);
+  const isNearMiss = (acc: number) => acc >= 88 && acc <= 89;
+  const result = [];
+  if (!hasBadge('year') && isNearMiss(yearAccuracy))
+    result.push({ dimension: 'year' as const, accuracy: yearAccuracy });
+  if (!hasBadge('location') && isNearMiss(locationAccuracy))
+    result.push({ dimension: 'location' as const, accuracy: locationAccuracy });
+  if (!hasBadge('combo') && isNearMiss(comboAccuracy))
+    result.push({ dimension: 'combo' as const, accuracy: comboAccuracy });
+  return result;
+}
+
 export function evaluateRound(event: EventRecord, guess: GuessState, roundIndex: number, didTimeout = false, penalty: { accuracy: number; xp: number } = { accuracy: 0, xp: 0 }) {
   const fallbackGuess: GuessState = {
     year: guess.year,
     location: guess.location
   };
+
+  if (fallbackGuess.year === null && fallbackGuess.location === null) {
+    return {
+      roundIndex,
+      event,
+      guess: fallbackGuess,
+      distanceKm: 0,
+      yearDiff: 0,
+      yearAccuracy: 0,
+      locationAccuracy: 0,
+      comboAccuracy: 0,
+      roundAccuracy: 0,
+      roundXp: 0,
+      badges: [] as Badge[],
+      didTimeout
+    };
+  }
+
   const eventCoordinates = getEventCoordinates(event);
 
   const yearDiff = fallbackGuess.year === null ? MAX_YEAR_DIFF : fallbackGuess.year - event.year;

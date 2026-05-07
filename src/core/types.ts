@@ -124,6 +124,7 @@ export type SessionPlayer = {
   leftAt: string | null;
   ready: boolean;
   isHost: boolean;
+  avatarUrl: string | null;
   /**
    * Derived per snapshot: true iff a row exists in round_commits for
    * (game_id, player_id, currentRoundIndex). NOT stored in session_players.
@@ -188,7 +189,7 @@ export type CompeteSessionSnapshot = {
 };
 
 export type CreateCompeteSessionInput = {
-  displayName: string;
+  displayName?: string;
   playerId: string;
   mode?: Exclude<SessionMode, "practice">;
   roundTimerSec?: number;
@@ -199,7 +200,7 @@ export type CreateCompeteSessionInput = {
 
 export type JoinCompeteSessionInput = {
   gameId: string;
-  displayName: string;
+  displayName?: string;
   playerId: string;
 };
 

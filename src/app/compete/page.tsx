@@ -14,7 +14,6 @@ export default function CompeteEntryPage() {
   const router = useRouter();
   const { playerId, isReady, isLoading: identityLoading, error: identityError } = useIdentity();
   const [mode, setMode] = useState<Mode>("create");
-  const [displayName, setDisplayName] = useState("");
   const [gameId, setGameId] = useState("");
   const [roundTimerSec, setRoundTimerSec] = useState<number>(120);
   const [loading, setLoading] = useState(false);
@@ -35,20 +34,15 @@ export default function CompeteEntryPage() {
       setError("Identity not ready — please wait");
       return;
     }
-    if (!displayName.trim()) {
-      setError("Display name is required");
-      return;
-    }
     setLoading(true);
     try {
       const snapshot = await createCompeteSessionRequest({
-        displayName: displayName.trim(),
         mode: "sync",
         totalRounds: 5,
         roundTimerSec,
         playerId
       });
-      redirectWithIdentity(snapshot.gameId, displayName.trim());
+      redirectWithIdentity(snapshot.gameId, "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create game");
       setLoading(false);
@@ -61,18 +55,17 @@ export default function CompeteEntryPage() {
       setError("Identity not ready — please wait");
       return;
     }
-    if (!gameId.trim() || !displayName.trim()) {
-      setError("Game ID and display name are required");
+    if (!gameId.trim()) {
+      setError("Game ID is required");
       return;
     }
     setLoading(true);
     try {
       const snapshot = await joinCompeteSessionRequest({
         gameId: gameId.trim(),
-        displayName: displayName.trim(),
         playerId
       });
-      redirectWithIdentity(snapshot.gameId, displayName.trim());
+      redirectWithIdentity(snapshot.gameId, "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to join game");
       setLoading(false);
@@ -124,18 +117,6 @@ export default function CompeteEntryPage() {
           {mode === "create" ? (
             <div className="stack">
               <div className="field">
-                <label htmlFor="create-name">Display Name</label>
-                <input
-                  id="create-name"
-                  className="input"
-                  type="text"
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  disabled={blocked || loading}
-                  placeholder="Your name"
-                />
-              </div>
-              <div className="field">
                 <label htmlFor="timer-slider">
                   Round Timer: {roundTimerSec >= 60
                     ? `${Math.floor(roundTimerSec / 60)}m ${roundTimerSec % 60 > 0 ? `${roundTimerSec % 60}s` : ""}`.trim()
@@ -178,18 +159,6 @@ export default function CompeteEntryPage() {
                   onChange={(event) => setGameId(event.target.value)}
                   disabled={blocked || loading}
                   placeholder="game-id"
-                />
-              </div>
-              <div className="field">
-                <label htmlFor="join-name">Display Name</label>
-                <input
-                  id="join-name"
-                  className="input"
-                  type="text"
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  disabled={blocked || loading}
-                  placeholder="Your name"
                 />
               </div>
               <button
