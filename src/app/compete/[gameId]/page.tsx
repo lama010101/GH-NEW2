@@ -71,6 +71,43 @@ function getUsernameGradientStyle(playerId: string): React.CSSProperties {
   };
 }
 
+function PlayerAvatar({ avatarUrl, displayName, size = 26 }: {
+  avatarUrl: string | null;
+  displayName: string;
+  size?: number;
+}) {
+  const initial = (displayName || "?")[0].toUpperCase();
+  const containerStyle: React.CSSProperties = {
+    width: size,
+    height: size,
+    borderRadius: "50%",
+    overflow: "hidden",
+    flexShrink: 0,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#2a2a3a",
+    border: "1.5px solid rgba(255,255,255,0.18)",
+    fontSize: size * 0.42,
+    fontWeight: 600,
+    color: "rgba(255,255,255,0.75)",
+    verticalAlign: "middle",
+  };
+  if (avatarUrl) {
+    return (
+      <span style={containerStyle}>
+        <img
+          src={avatarUrl}
+          alt={displayName}
+          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+        />
+      </span>
+    );
+  }
+  return <span style={containerStyle}>{initial}</span>;
+}
+
 type RoundResult = {
   playerId: string;
   score: number;
@@ -133,7 +170,7 @@ function getScoreColor(accuracy: number): string {
   return `hsl(${hue}, 100%, 50%)`;
 }
 
-function RainbowRing({ value, inView }: { value: number; inView: boolean }) {
+function RainbowRing({ value }: { value: number }) {
   const r = 80;
   const cx = 100;
   const cy = 100;
@@ -143,7 +180,7 @@ function RainbowRing({ value, inView }: { value: number; inView: boolean }) {
   const [displayed, setDisplayed] = useState(0);
 
   useEffect(() => {
-    if (!inView || value <= 0) {
+    if (value <= 0) {
       setDisplayed(0);
       return;
     }
@@ -176,7 +213,7 @@ function RainbowRing({ value, inView }: { value: number; inView: boolean }) {
         navigator.vibrate(0); // cancel haptic on unmount
       }
     };
-  }, [value, inView]);
+  }, [value]);
 
   const clamped = Math.max(0, Math.min(100, displayed));
   const offset = circumference * (1 - clamped / 100);
@@ -225,8 +262,6 @@ export default function CompeteGamePage() {
   });
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [resultSecsLeft, setResultSecsLeft] = useState<number | null>(null);
-  const [accuracyInView, setAccuracyInView] = useState(false);
-  const accuracyCardRef = useRef<HTMLDivElement>(null);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[] }>({
     accPenalty: 0,
     xpPenalty: 0,
@@ -424,34 +459,6 @@ export default function CompeteGamePage() {
 
     return () => clearInterval(interval);
   }, [snapshot?.status, snapshot?.resultPhaseEndsAt]);
-
-  // IntersectionObserver for accuracy circle animation
-  useEffect(() => {
-    const card = accuracyCardRef.current;
-    if (!card) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setAccuracyInView(true);
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    observer.observe(card);
-
-    // Check if already in viewport on mount
-    if (card.getBoundingClientRect().top < window.innerHeight && card.getBoundingClientRect().bottom > 0) {
-      setAccuracyInView(true);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   // Helper: compute derived stats for a player
   const computePlayerStats = useCallback((pid: string) => {
@@ -673,7 +680,10 @@ export default function CompeteGamePage() {
               ) : (
                 snapshot.players.map((p) => (
                   <div key={p.playerId} className="row">
-                    <span style={getUsernameGradientStyle(p.playerId)}>{p.displayName || shortId(p.playerId)}</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                      <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || shortId(p.playerId)} />
+                      <span style={getUsernameGradientStyle(p.playerId)}>{p.displayName || shortId(p.playerId)}</span>
+                    </span>
                     {p.isHost ? <span className="badge">Host</span> : null}
                     <span className="small">{p.ready ? "Ready" : "Not ready"}</span>
                   </div>
@@ -927,11 +937,11 @@ export default function CompeteGamePage() {
                     </div>
                   </div>
                   {/* Card 6 — Accuracy Ring + XP */}
-                  <div ref={accuracyCardRef} style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", textAlign: "center", marginBottom: 10 }}>
                       Accuracy (%)
                     </div>
-                    <RainbowRing value={accuracy} inView={accuracyInView} />
+                    <RainbowRing value={accuracy} />
                     {submittedHintPenaltyRef.current.accPenalty > 0 && (
                       <div style={{ textAlign: "center", marginTop: 4, marginBottom: 2 }}>
                         <span style={{
@@ -1298,6 +1308,7 @@ export default function CompeteGamePage() {
                         : "#2a2a2a";
                       const resultRow = roundResults?.find(r => r.playerId === row.playerId);
                       const rank = resultRow?.rank ?? null;
+                      const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
                       return (
                         <div key={row.playerId} style={{
                           display: "flex", alignItems: "center", padding: "7px 8px", gap: 6,
@@ -1309,8 +1320,11 @@ export default function CompeteGamePage() {
                             {rank ?? "—"}
                           </span>
                           <span style={{ flex: 1, fontSize: 13 }}>
-                            <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
-                              {row.displayName}
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                              <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
+                              <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
+                                {row.displayName}
+                              </span>
                             </span>
                             {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
                           </span>
@@ -1393,6 +1407,7 @@ export default function CompeteGamePage() {
                       const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
                       const accColor = `hsl(${hue}, 100%, 50%)`;
                       const accBg = row.accuracy >= 60 ? "#1a2e1a" : row.accuracy >= 30 ? "#2e2a1a" : "#2e1a1a";
+                      const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
                       return (
                         <div key={row.rank} style={{
                           display: "flex", alignItems: "center", padding: "7px 8px",
@@ -1401,8 +1416,11 @@ export default function CompeteGamePage() {
                         }}>
                           <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>{row.rank}</span>
                           <span style={{ flex: 1, fontSize: 13 }}>
-                            <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
-                              {row.displayName}
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                              <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
+                              <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
+                                {row.displayName}
+                              </span>
                             </span>
                             {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
                           </span>
@@ -1423,8 +1441,11 @@ export default function CompeteGamePage() {
                           }}>
                             <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>—</span>
                             <span style={{ flex: 1, fontSize: 13 }}>
-                              <span style={{ ...getUsernameGradientStyle(p.playerId), fontWeight: isMe ? 700 : 500 }}>
-                                {p.displayName || p.playerId.slice(0, 8)}
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                                <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} />
+                                <span style={{ ...getUsernameGradientStyle(p.playerId), fontWeight: isMe ? 700 : 500 }}>
+                                  {p.displayName || p.playerId.slice(0, 8)}
+                                </span>
                               </span>
                               {isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
                               <span style={{ color: "#555", fontSize: 11, fontStyle: "italic", marginLeft: 4 }}>No guess</span>
