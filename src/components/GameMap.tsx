@@ -2,12 +2,21 @@
 
 import { Component, type ReactNode } from "react";
 import { MapContainer, TileLayer, useMapEvents, Marker } from "react-leaflet";
+import L from "leaflet";
 import type { LatLng } from "@/core/types";
 import "leaflet/dist/leaflet.css";
 
 interface GameMapProps {
   guessLocation: LatLng | null;
   onSetLocation: (location: LatLng) => void;
+  playerMarkers?: Array<{
+    playerId: string;
+    displayName: string;
+    avatarUrl: string | null;
+    location: { lat: number; lng: number };
+  }>;
+  localPlayerAvatarUrl?: string | null;
+  localPlayerDisplayName?: string;
 }
 
 interface GameMapState {
@@ -76,6 +85,26 @@ function MapMarker({ location }: { location: LatLng }) {
   return <Marker position={[location.lat, location.lng]} />;
 }
 
+function createAvatarIcon(displayName: string, avatarUrl: string | null): L.DivIcon {
+  const initial = displayName.charAt(0).toUpperCase();
+  const circleContent = avatarUrl
+    ? `<img src="${avatarUrl}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); object-fit: cover; display: block;" />`
+    : `<div style="width: 36px; height: 36px; border-radius: 50%; background: #4b5563; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">${initial}</div>`;
+
+  const html = `
+    <div style="position: relative; width: 36px; height: 36px; overflow: visible;">
+      ${circleContent}
+    </div>
+  `;
+
+  return L.divIcon({
+    html,
+    className: '',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  });
+}
+
 export class GameMap extends Component<GameMapProps, GameMapState> {
   constructor(props: GameMapProps) {
     super(props);
@@ -135,7 +164,27 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <MapClickHandler onSetLocation={this.props.onSetLocation} />
-            {this.props.guessLocation && <MapMarker location={this.props.guessLocation} />}
+            {this.props.guessLocation && (
+              <Marker
+                position={[this.props.guessLocation.lat, this.props.guessLocation.lng]}
+                icon={
+                  this.props.localPlayerAvatarUrl !== undefined || this.props.localPlayerDisplayName !== undefined
+                    ? createAvatarIcon(
+                        this.props.localPlayerDisplayName ?? "You",
+                        this.props.localPlayerAvatarUrl ?? null
+                      )
+                    : undefined
+                }
+              />
+            )}
+            {this.props.playerMarkers &&
+              this.props.playerMarkers.map((marker) => (
+                <Marker
+                  key={marker.playerId}
+                  position={[marker.location.lat, marker.location.lng]}
+                  icon={createAvatarIcon(marker.displayName, marker.avatarUrl)}
+                />
+              ))}
           </MapContainer>
         </div>
       </GameMapErrorBoundary>

@@ -35,6 +35,7 @@ export type PlayerState = {
   leftAt: string | null;
   ready: boolean;
   isHost: boolean;
+  avatarUrl: string | null;
 };
 
 /** Single submission reconstructed from round_commits */
@@ -207,7 +208,7 @@ export async function getGameState(
         WHERE game_id = $1
       ),
       players_data AS (
-        SELECT player_id, display_name, joined_at, left_at, ready, is_host
+        SELECT player_id, display_name, joined_at, left_at, ready, is_host, avatar_url
         FROM session_players
         WHERE game_id = $1
         ORDER BY joined_at ASC, player_id ASC
@@ -275,7 +276,8 @@ export async function getGameState(
     joinedAt: new Date(p.joined_at as string).toISOString(),
     leftAt: p.left_at ? new Date(p.left_at as string).toISOString() : null,
     ready: p.ready as boolean,
-    isHost: p.is_host as boolean
+    isHost: p.is_host as boolean,
+    avatarUrl: (p.avatar_url as string) ?? null
   }));
 
   // ───────────────────────────────────────────────────────────────────────────

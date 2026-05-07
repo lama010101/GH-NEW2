@@ -122,7 +122,7 @@ export async function createCompeteSessionRequest(input: CreateCompeteSessionInp
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ displayName: input.displayName, playerId: input.playerId, mode: input.mode, roundTimerSec: input.roundTimerSec, totalRounds: input.totalRounds, yearMin: input.yearMin, yearMax: input.yearMax })
+    body: JSON.stringify({ displayName: input.displayName ?? "", playerId: input.playerId, mode: input.mode, roundTimerSec: input.roundTimerSec, totalRounds: input.totalRounds, yearMin: input.yearMin, yearMax: input.yearMax })
   });
 
   if (!response.ok) {
@@ -155,7 +155,7 @@ export async function joinCompeteSessionRequest(input: JoinCompeteSessionInput, 
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ displayName: input.displayName, playerId: input.playerId })
+    body: JSON.stringify({ displayName: input.displayName ?? "", playerId: input.playerId })
   });
 
   if (!response.ok) {

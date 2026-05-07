@@ -80,6 +80,7 @@ export type SessionRow = {
 
 // Exactly matches public.session_players columns (spec DDL, Section 3.3)
 // Updated by MP-STATE-COMPLETION-004 to include ready + is_host (migration 022).
+// Updated by MP-TYPE-AVATAR-001 to include avatar_url (migration 20260507100600).
 export type SessionPlayerRow = {
   game_id: string;
   player_id: string;
@@ -88,6 +89,7 @@ export type SessionPlayerRow = {
   left_at: Date | null;
   ready: boolean;
   is_host: boolean;
+  avatar_url: string | null;
 };
 
 // NOTE: round_timing table exists but is NOT used for phase derivation.
@@ -245,6 +247,7 @@ export function mapSessionPlayerRowToPlayer(row: SessionPlayerRow, hasSubmitted:
     leftAt: toIsoString(row.left_at),
     ready: row.ready,
     isHost: row.is_host,
+    avatarUrl: row.avatar_url ?? null,
     hasSubmitted
   };
 }
@@ -279,7 +282,7 @@ export async function loadSessionRow(gameId: string, executor: DbExecutor = dbPo
 export async function loadSessionPlayerRows(gameId: string, executor: DbExecutor = dbPool): Promise<SessionPlayerRow[]> {
   const result = await executor.query<SessionPlayerRow>(
     `
-      SELECT game_id, player_id, display_name, joined_at, left_at, ready, is_host
+      SELECT game_id, player_id, display_name, joined_at, left_at, ready, is_host, avatar_url
       FROM session_players
       WHERE game_id = $1
       ORDER BY joined_at ASC, player_id ASC
@@ -350,6 +353,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     leftAt: p.leftAt,
     ready: p.ready,
     isHost: p.isHost,
+    avatarUrl: p.avatarUrl ?? null,
     hasSubmitted: submittedPlayerIds.has(p.playerId)
   }));
   const activePlayers = players.filter((p) => p.leftAt === null);
@@ -434,7 +438,6 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
 }
 
 export async function createCompeteSession(input: CreateCompeteSessionInput): Promise<CompeteSessionSnapshot> {
-  assertValidDisplayName(input.displayName);
   const mode = input.mode ?? "sync";
   const roundTimerSec = clampRoundTimer(input.roundTimerSec);
   const totalRounds = normalizeTotalRounds(input.totalRounds);
@@ -475,10 +478,27 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
 
     verifyLog("INSERT", "session_players", "OK", `host player_id=${hostPlayerId} — executing`);
     // Host row: is_host=true, ready=false (host must still opt in).
+    const hostAvatarResult = await client.query<{ display_name: string; avatar_url: string }>(
+      `SELECT display_name, avatar_url FROM public.profiles WHERE id = $1`,
+      [hostPlayerId]
+    );
+    const hostProfileName: string | null = hostAvatarResult.rows[0]?.display_name ?? null;
+    const hostDisplayName = (hostProfileName && hostProfileName.trim().length > 0)
+      ? hostProfileName.trim()
+      : ((input.displayName && input.displayName.trim().length > 0) ? input.displayName.trim() : `Player-${hostPlayerId.slice(0, 6)}`);
+    assertValidDisplayName(hostDisplayName);
+    let hostAvatarUrl = hostAvatarResult.rows[0]?.avatar_url ?? null;
+    if (!hostAvatarUrl) {
+      const fallbackResult = await client.query<{ avatar_url: string }>(
+        `SELECT COALESCE(image_url, firebase_url) AS avatar_url
+         FROM public.avatars WHERE ready = true ORDER BY random() LIMIT 1`
+      );
+      hostAvatarUrl = fallbackResult.rows[0]?.avatar_url ?? null;
+    }
     await client.query(
-      `INSERT INTO session_players (game_id, player_id, display_name, joined_at, ready, is_host)
-       VALUES ($1, $2, $3, now(), false, true)`,
-      [gameId, hostPlayerId, input.displayName]
+      `INSERT INTO session_players (game_id, player_id, display_name, joined_at, ready, is_host, avatar_url)
+       VALUES ($1, $2, $3, now(), false, true, $4)`,
+      [gameId, hostPlayerId, hostDisplayName, hostAvatarUrl]
     );
 
     await appendEvent(client, gameId, "SESSION_CREATED", {
@@ -532,7 +552,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
 
 export async function joinCompeteSession(input: { gameId: string; displayName: string; playerId: string }): Promise<CompeteSessionSnapshot> {
   const gameId = input.gameId.trim();
-  assertValidDisplayName(input.displayName);
+  const playerId = input.playerId;
 
   if (gameId.length === 0) {
     throw new Error("gameId is required");
@@ -547,7 +567,6 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
     throw new Error("Practice sessions cannot be joined");
   }
 
-  const playerId = input.playerId;
   verifyLog("INSERT", "session_players", "OK", `joining player_id=${playerId} game_id=${gameId} — executing`);
   // Rejoin-aware upsert:
   //   - Fresh join: inserts with left_at=NULL, ready=false, is_host=false.
@@ -557,16 +576,34 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
   // This is the counterpart to /leave, which only sets left_at=now().
   // Without clearing left_at here, a single WS close (StrictMode remount, HMR,
   // tab refresh, transient network blip) permanently kicks the player out.
+  const joiningAvatarResult = await dbPool.query<{ display_name: string; avatar_url: string }>(
+    `SELECT display_name, avatar_url FROM public.profiles WHERE id = $1`,
+    [playerId]
+  );
+  const joinProfileName: string | null = joiningAvatarResult.rows[0]?.display_name ?? null;
+  const joinDisplayName = (joinProfileName && joinProfileName.trim().length > 0)
+    ? joinProfileName.trim()
+    : ((input.displayName && input.displayName.trim().length > 0) ? input.displayName.trim() : `Player-${playerId.slice(0, 6)}`);
+  assertValidDisplayName(joinDisplayName);
+  let joiningAvatarUrl = joiningAvatarResult.rows[0]?.avatar_url ?? null;
+  if (!joiningAvatarUrl) {
+    const fallbackResult = await dbPool.query<{ avatar_url: string }>(
+      `SELECT COALESCE(image_url, firebase_url) AS avatar_url
+       FROM public.avatars WHERE ready = true ORDER BY random() LIMIT 1`
+    );
+    joiningAvatarUrl = fallbackResult.rows[0]?.avatar_url ?? null;
+  }
   await dbPool.query(
-    `INSERT INTO session_players (game_id, player_id, display_name, joined_at, left_at, ready, is_host)
-     VALUES ($1, $2, $3, now(), NULL, false, false)
+    `INSERT INTO session_players (game_id, player_id, display_name, joined_at, left_at, ready, is_host, avatar_url)
+     VALUES ($1, $2, $3, now(), NULL, false, false, $4)
      ON CONFLICT (game_id, player_id) DO UPDATE
        SET left_at = NULL,
            display_name = CASE
              WHEN EXCLUDED.display_name <> '' THEN EXCLUDED.display_name
              ELSE session_players.display_name
-           END`,
-    [gameId, playerId, input.displayName]
+           END,
+           avatar_url = EXCLUDED.avatar_url`,
+    [gameId, playerId, joinDisplayName, joiningAvatarUrl]
   );
 
   // Host self-heal: if the rejoining player is still marked is_host but host

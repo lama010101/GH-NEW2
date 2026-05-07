@@ -146,6 +146,7 @@ export default function CompeteGamePage() {
     accPenalty: 0,
     xpPenalty: 0,
   });
+  const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[] }>({
     accPenalty: 0,
     xpPenalty: 0,
@@ -348,6 +349,14 @@ export default function CompeteGamePage() {
     if (value >= 80) return "#7ed957";
     if (value >= 60) return "#e8c022";
     if (value >= 40) return "#E87722";
+    return "#e84422";
+  }, []);
+
+  // Helper: get score color for all % values
+  const getScoreColor = useCallback((val: number): string => {
+    if (val >= 80) return "#7ed957";
+    if (val >= 60) return "#e8c022";
+    if (val >= 40) return "#E87722";
     return "#e84422";
   }, []);
 
@@ -666,6 +675,8 @@ export default function CompeteGamePage() {
                 <GameMap
                   guessLocation={guessLocation}
                   onSetLocation={handleSetLocation}
+                  localPlayerAvatarUrl={viewer?.avatarUrl ?? null}
+                  localPlayerDisplayName={viewer?.displayName}
                 />
               </div>
               <button
@@ -747,7 +758,7 @@ export default function CompeteGamePage() {
               return (
                 <>
                   {/* Card 1 — Accuracy Ring + XP */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 4, marginLeft: 6, marginRight: 6 }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", textAlign: "center", marginBottom: 10 }}>
                       Accuracy (%)
                     </div>
@@ -790,7 +801,7 @@ export default function CompeteGamePage() {
                     )}
                   </div>
                   {/* Card 2 — Round Leaderboard */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 4, marginLeft: 6, marginRight: 6 }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
                     {leaderboardRows.map(row => {
                       const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
@@ -816,11 +827,32 @@ export default function CompeteGamePage() {
                       );
                     })}
                     {leaderboardRows.length === 0 && (
-                      <p style={{ color: "#888", textAlign: "center", margin: 0, fontSize: 13 }}>Waiting for results…</p>
+                      snapshot.players.map((p) => {
+                        const isMe = p.playerId === playerId;
+                        return (
+                          <div key={p.playerId} style={{
+                            display: "flex", alignItems: "center", padding: "7px 8px",
+                            borderRadius: 8, marginBottom: 3, gap: 6,
+                            background: isMe ? "#2e2e2e" : "transparent",
+                          }}>
+                            <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>—</span>
+                            <span style={{ flex: 1, fontSize: 13 }}>
+                              <span style={{ color: isMe ? "#f97316" : "#fff", fontWeight: isMe ? 600 : 400 }}>
+                                {p.displayName || p.playerId.slice(0, 8)}
+                              </span>
+                              {isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
+                              <span style={{ color: "#555", fontSize: 11, fontStyle: "italic", marginLeft: 4 }}>No guess</span>
+                            </span>
+                            <span style={{ background: "#2a2a2a", color: "#888", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                              —
+                            </span>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                   {/* Card 3 — Event photo + info */}
-                  <div style={{ marginBottom: 4, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333" }}>
+                  <div style={{ marginBottom: 2, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333" }}>
                     {round.imageUrl ? (
                       <div>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -856,7 +888,7 @@ export default function CompeteGamePage() {
                     </div>
                   </div>
                   {/* Card 4 — WHERE */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 4, marginLeft: 6, marginRight: 6 }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <span style={{ fontSize: 20, fontWeight: 700, color: "#f97316" }}>Where</span>
                       {myResult != null && (
@@ -897,13 +929,17 @@ export default function CompeteGamePage() {
                             guessLng={guessLng}
                             playerGuesses={roundResults
                               ?.filter(r => r.didSubmit && r.guessLat != null && r.guessLng != null)
-                              .map(r => ({
-                                playerId: r.playerId,
-                                lat: r.guessLat!,
-                                lng: r.guessLng!,
-                                label: `${Math.round(r.locationScore)}%`,
-                                color: r.playerId === playerId ? "#f97316" : undefined,
-                              })) ?? undefined}
+                              .map(r => {
+                                const player = snapshot.players.find(p => p.playerId === r.playerId);
+                                return {
+                                  playerId: r.playerId,
+                                  lat: r.guessLat!,
+                                  lng: r.guessLng!,
+                                  label: player?.displayName ?? r.playerId.slice(0, 8),
+                                  color: r.playerId === playerId ? "#f97316" : undefined,
+                                  avatarUrl: player?.avatarUrl ?? null,
+                                };
+                              }) ?? undefined}
                           />
                         </div>
                         <div style={{ marginTop: 12 }}>
@@ -954,7 +990,7 @@ export default function CompeteGamePage() {
                     )}
                   </div>
                   {/* Card 5 — WHEN */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 4, marginLeft: 6, marginRight: 6 }}>
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                       <div style={{ fontSize: 20, fontWeight: 700, color: "#f97316" }}>When</div>
                       {(() => {
@@ -1126,7 +1162,7 @@ export default function CompeteGamePage() {
                     return (
                       <div style={{
                         background: "#333", borderRadius: 12, padding: 14,
-                        marginBottom: 4, marginLeft: 6, marginRight: 6,
+                        marginBottom: 2, marginLeft: 6, marginRight: 6,
                       }}>
                         <div style={{
                           fontSize: 12, fontWeight: 600, color: "#aaa",
@@ -1253,7 +1289,7 @@ export default function CompeteGamePage() {
         ) : null}
 
         {snapshot.status === "SESSION_COMPLETE" ? (
-          <section style={{ paddingBottom: 80 }}>
+          <section style={{ background: "#000", paddingBottom: 80 }}>
             {/* Loading state */}
             {!allRoundResults ? (
               <div style={{ padding: 40, textAlign: "center", color: "#666" }}>
@@ -1270,15 +1306,32 @@ export default function CompeteGamePage() {
               const avgYearDiff = myStats?.avgYearDiff ?? 0;
 
               // Compute leaderboard
+              // Compute round winners per round index
+              const roundWinners = new Map<number, string[]>();
+              for (let i = 0; i < snapshot.config.totalRounds; i++) {
+                const roundResults = allRoundResults.filter(r => r.roundIndex === i);
+                const maxScore = Math.max(...roundResults.map(r => r.score));
+                if (maxScore > 0) {
+                  const winners = roundResults.filter(r => r.score === maxScore).map(r => r.playerId);
+                  roundWinners.set(i, winners);
+                }
+              }
               const leaderboard = snapshot.players
                 .map(p => {
                   const stats = computePlayerStats(p.playerId);
+                  const wonRounds: number[] = [];
+                  for (let i = 0; i < snapshot.config.totalRounds; i++) {
+                    const winners = roundWinners.get(i);
+                    if (winners?.includes(p.playerId)) {
+                      wonRounds.push(i);
+                    }
+                  }
                   return {
                     playerId: p.playerId,
                     displayName: p.displayName,
                     totalScore: stats?.totalScore ?? 0,
                     avgAccuracy: stats?.avgAccuracy ?? 0,
-                    submittedRounds: allRoundResults.filter(r => r.playerId === p.playerId && r.didSubmit).map(r => r.roundIndex),
+                    wonRounds,
                   };
                 })
                 .sort((a, b) => b.totalScore - a.totalScore);
@@ -1331,13 +1384,13 @@ export default function CompeteGamePage() {
                       <circle cx={65} cy={65} r={54} fill="none" stroke="#2a2a2a" strokeWidth={10} />
                       <circle
                         cx={65} cy={65} r={54} fill="none"
-                        stroke={getRingColor(overallAccuracy)} strokeWidth={10} strokeLinecap="round"
+                        stroke={getScoreColor(overallAccuracy)} strokeWidth={10} strokeLinecap="round"
                         strokeDasharray={339.3}
                         strokeDashoffset={339.3 * (1 - overallAccuracy / 100)}
                         transform={`rotate(-90 65 65)`}
                       />
                       <text x={65} y={65} textAnchor="middle" dominantBaseline="central"
-                        fill="white" fontSize={42} fontWeight={500}>
+                        fill={getScoreColor(overallAccuracy)} fontSize={42} fontWeight={500}>
                         {overallAccuracy}
                       </text>
                     </svg>
@@ -1367,13 +1420,13 @@ export default function CompeteGamePage() {
                         <circle cx={42} cy={42} r={34} fill="none" stroke="#2a2a2a" strokeWidth={8} />
                         <circle
                           cx={42} cy={42} r={34} fill="none"
-                          stroke={getRingColor(whereAccuracy)} strokeWidth={8} strokeLinecap="round"
+                          stroke={getScoreColor(whereAccuracy)} strokeWidth={8} strokeLinecap="round"
                           strokeDasharray={213.6}
                           strokeDashoffset={213.6 * (1 - whereAccuracy / 100)}
                           transform={`rotate(-90 42 42)`}
                         />
                         <text x={42} y={42} textAnchor="middle" dominantBaseline="central"
-                          fill="white" fontSize={24} fontWeight={500}>
+                          fill={getScoreColor(whereAccuracy)} fontSize={24} fontWeight={500}>
                           {whereAccuracy}
                         </text>
                       </svg>
@@ -1407,13 +1460,13 @@ export default function CompeteGamePage() {
                         <circle cx={42} cy={42} r={34} fill="none" stroke="#2a2a2a" strokeWidth={8} />
                         <circle
                           cx={42} cy={42} r={34} fill="none"
-                          stroke={getRingColor(whenAccuracy)} strokeWidth={8} strokeLinecap="round"
+                          stroke={getScoreColor(whenAccuracy)} strokeWidth={8} strokeLinecap="round"
                           strokeDasharray={213.6}
                           strokeDashoffset={213.6 * (1 - whenAccuracy / 100)}
                           transform={`rotate(-90 42 42)`}
                         />
                         <text x={42} y={42} textAnchor="middle" dominantBaseline="central"
-                          fill="white" fontSize={24} fontWeight={500}>
+                          fill={getScoreColor(whenAccuracy)} fontSize={24} fontWeight={500}>
                           {whenAccuracy}
                         </text>
                       </svg>
@@ -1469,7 +1522,7 @@ export default function CompeteGamePage() {
                                   width: 20,
                                   height: 4,
                                   borderRadius: 2,
-                                  background: player.submittedRounds.includes(i) ? "#E87722" : "#2a2a2a",
+                                  background: player.wonRounds.includes(i) ? "#E87722" : "#2a2a2a",
                                 }} />
                               ))}
                             </div>
@@ -1478,7 +1531,7 @@ export default function CompeteGamePage() {
                             <div style={{ fontSize: 15, color: "#fff", fontWeight: 500 }}>
                               {player.totalScore}
                             </div>
-                            <div style={{ fontSize: 11, color: "#555" }}>
+                            <div style={{ fontSize: 11, color: getScoreColor(player.avgAccuracy) }}>
                               {player.avgAccuracy}%
                             </div>
                           </div>
@@ -1510,25 +1563,50 @@ export default function CompeteGamePage() {
                         overflow: "hidden",
                       }}>
                         {/* Photo strip */}
-                        {round.imageUrl ? (
-                          <img
-                            src={round.imageUrl}
-                            alt={round.title}
-                            style={{ width: "100%", height: 94, objectFit: "cover", display: "block" }}
-                          />
-                        ) : (
-                          <div style={{
-                            height: 94,
-                            background: "#1e1e1e",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 11,
-                            color: "#3a3a3a",
-                          }}>
-                            {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`} · {round.year}
-                          </div>
-                        )}
+                        <div style={{ position: "relative" }}>
+                          {round.imageUrl ? (
+                            <>
+                              <img
+                                src={round.imageUrl}
+                                alt={round.title}
+                                style={{ width: "100%", height: 94, objectFit: "cover", display: "block" }}
+                              />
+                              <button
+                                onClick={() => setFullscreenImg(round.imageUrl)}
+                                style={{
+                                  position: "absolute",
+                                  top: 8,
+                                  right: 8,
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: 6,
+                                  background: "rgba(0,0,0,0.55)",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2}>
+                                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                                </svg>
+                              </button>
+                            </>
+                          ) : (
+                            <div style={{
+                              height: 94,
+                              background: "#1e1e1e",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 11,
+                              color: "#3a3a3a",
+                            }}>
+                              {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`} · {round.year}
+                            </div>
+                          )}
+                        </div>
 
                         {/* Card body */}
                         <div style={{ padding: "11px 14px 14px" }}>
@@ -1543,7 +1621,7 @@ export default function CompeteGamePage() {
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
                             {/* TOTAL cell */}
                             <div style={{
-                              background: "#141414",
+                              background: "#1a1a1a",
                               borderRadius: 8,
                               padding: "8px 6px",
                               display: "flex",
@@ -1557,7 +1635,7 @@ export default function CompeteGamePage() {
                                 </svg>
                                 TOTAL
                               </div>
-                              <div style={{ fontSize: 18, color: "#fff", fontWeight: 600, marginBottom: 2 }}>
+                              <div style={{ fontSize: 18, color: getScoreColor(roundStats.avgAccuracy), fontWeight: 600, marginBottom: 2 }}>
                                 {roundStats.avgAccuracy}
                               </div>
                               <div style={{ fontSize: 10, color: "#444" }}>
@@ -1567,7 +1645,7 @@ export default function CompeteGamePage() {
 
                             {/* WHERE cell */}
                             <div style={{
-                              background: "#141414",
+                              background: "#1a1a1a",
                               borderRadius: 8,
                               padding: "8px 6px",
                               display: "flex",
@@ -1580,7 +1658,7 @@ export default function CompeteGamePage() {
                                 </svg>
                                 WHERE
                               </div>
-                              <div style={{ fontSize: 18, color: "#fff", fontWeight: 600, marginBottom: 2 }}>
+                              <div style={{ fontSize: 18, color: getScoreColor(roundStats.avgLocationScore), fontWeight: 600, marginBottom: 2 }}>
                                 {roundStats.avgLocationScore}
                               </div>
                               <div style={{ fontSize: 10, color: "#444" }}>
@@ -1590,7 +1668,7 @@ export default function CompeteGamePage() {
 
                             {/* WHEN cell */}
                             <div style={{
-                              background: "#141414",
+                              background: "#1a1a1a",
                               borderRadius: 8,
                               padding: "8px 6px",
                               display: "flex",
@@ -1606,7 +1684,7 @@ export default function CompeteGamePage() {
                                 </svg>
                                 WHEN
                               </div>
-                              <div style={{ fontSize: 18, color: "#fff", fontWeight: 600, marginBottom: 2 }}>
+                              <div style={{ fontSize: 18, color: getScoreColor(roundStats.avgTimeScore), fontWeight: 600, marginBottom: 2 }}>
                                 {roundStats.avgTimeScore}
                               </div>
                               <div style={{ fontSize: 10, color: "#444" }}>
@@ -1652,12 +1730,12 @@ export default function CompeteGamePage() {
                     <button
                       onClick={() => router.push("/")}
                       style={{
-                        height: 46,
-                        borderRadius: 10,
+                        height: 34,
+                        borderRadius: 8,
                         border: "0.5px solid #333",
                         background: "transparent",
                         color: "#bbb",
-                        fontSize: 14,
+                        fontSize: 13,
                         padding: "0 16px",
                         cursor: "pointer",
                       }}
@@ -1697,6 +1775,29 @@ export default function CompeteGamePage() {
           setHintModalOpen(false);
         }}
       />
+      {/* Fullscreen image overlay */}
+      {fullscreenImg && (
+        <div
+          onClick={() => setFullscreenImg(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.92)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <img
+            src={fullscreenImg}
+            alt="Fullscreen"
+            style={{ maxWidth: "100vw", maxHeight: "100vh", objectFit: "contain" }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </main>
   );
 }
