@@ -54,6 +54,7 @@ type RuntimeState = {
   currentRoundIndex: number;
   roundEndsAt: string | null;
   roundTimerSec: number;
+  roundResultsForClient?: unknown[];
 };
 
 function isRuntimeState(value: unknown): value is RuntimeState {
@@ -369,7 +370,7 @@ export default class GameServer {
     const msg = JSON.stringify({
       type: "STATE_UPDATE",
       snapshot: snapshotWithReadyState,
-      ...(this.pendingResults ? { results: this.pendingResults } : {})
+      results: this.pendingResults ?? (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
     });
     this.room.broadcast(msg);
     this.pendingResults = null; // clear after broadcast
@@ -392,7 +393,11 @@ export default class GameServer {
     if (this.snapshotLoaded && this.snapshot) {
       const state = this.snapshot as RuntimeState;
       console.log("[PartyKit] Sending snapshot on connect, players:", state.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
-      const msg = JSON.stringify({ type: "STATE_UPDATE", snapshot: this.snapshot });
+      const msg = JSON.stringify({
+        type: "STATE_UPDATE",
+        snapshot: state,
+        ...(state.roundResultsForClient ? { results: state.roundResultsForClient } : {})
+      });
       connection.send(msg);
     } else {
       // Cold start — load from DB, schedule timers, send to this client
@@ -400,7 +405,11 @@ export default class GameServer {
         await this.loadFromDB();
         const state = this.snapshot as RuntimeState;
         console.log("[PartyKit] Loaded snapshot from DB, players:", state.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
-        const msg = JSON.stringify({ type: "STATE_UPDATE", snapshot: this.snapshot });
+        const msg = JSON.stringify({
+          type: "STATE_UPDATE",
+          snapshot: state,
+          ...(state.roundResultsForClient ? { results: state.roundResultsForClient } : {})
+        });
         connection.send(msg);
       } catch (err) {
         console.error("[PartyKit] Failed to load snapshot on connect:", err instanceof Error ? err.message : err);
@@ -730,7 +739,7 @@ export default class GameServer {
               clearTimeout(this.roundTimerHandle);
               this.roundTimerHandle = null;
             }
-            // Call /advance with cause: "all_ready" if not already in flight
+            // Call /advance with cause: "player" if not already in flight
             if (!this.advanceInFlight) {
               this.advanceInFlight = true;
               try {
@@ -739,7 +748,7 @@ export default class GameServer {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    cause: "all_ready",
+                    cause: "player",
                     playerId: data.playerId,
                     roundIndex: data.roundIndex
                   })

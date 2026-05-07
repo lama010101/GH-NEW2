@@ -20,7 +20,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
   isCompeteSessionSnapshot
@@ -40,6 +39,37 @@ const StaticResultMap = dynamic(
   () => import("@/components/StaticResultMap").then((m) => m.StaticResultMap),
   { ssr: false }
 );
+
+const USERNAME_GRADIENT_PAIRS: [string, string][] = [
+  ["#93c5fd", "#fb923c"], // blue → orange
+  ["#93c5fd", "#c084fc"], // blue → purple
+  ["#93c5fd", "#2dd4bf"], // blue → teal
+  ["#fb923c", "#93c5fd"], // orange → blue
+  ["#fb923c", "#c084fc"], // orange → purple
+  ["#fb923c", "#2dd4bf"], // orange → teal
+  ["#c084fc", "#93c5fd"], // purple → blue
+  ["#c084fc", "#fb923c"], // purple → orange
+  ["#c084fc", "#2dd4bf"], // purple → teal
+  ["#2dd4bf", "#93c5fd"], // teal → blue
+  ["#2dd4bf", "#fb923c"], // teal → orange
+  ["#2dd4bf", "#c084fc"], // teal → purple
+];
+
+function getUsernameGradientStyle(playerId: string): React.CSSProperties {
+  let hash = 0;
+  for (let i = 0; i < playerId.length; i++) {
+    hash = (hash * 31 + playerId.charCodeAt(i)) >>> 0;
+  }
+  const [from, to] = USERNAME_GRADIENT_PAIRS[hash % USERNAME_GRADIENT_PAIRS.length];
+  return {
+    background: `linear-gradient(90deg, ${from}, ${to})`,
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+    fontWeight: 500,
+    display: "inline",
+  };
+}
 
 type RoundResult = {
   playerId: string;
@@ -97,16 +127,62 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function RainbowRing({ value }: { value: number }) {
+function getScoreColor(accuracy: number): string {
+  const clamped = Math.max(0, Math.min(100, accuracy));
+  const hue = Math.round((clamped / 100) * 120);
+  return `hsl(${hue}, 100%, 50%)`;
+}
+
+function RainbowRing({ value, inView }: { value: number; inView: boolean }) {
   const r = 80;
   const cx = 100;
   const cy = 100;
   const strokeWidth = 15;
   const circumference = 2 * Math.PI * r;
-  const clamped = Math.max(0, Math.min(100, value));
+
+  const [displayed, setDisplayed] = useState(0);
+
+  useEffect(() => {
+    if (!inView || value <= 0) {
+      setDisplayed(0);
+      return;
+    }
+
+    const steps = Math.round(value);
+    const totalDuration = 900; // ms
+    const stepDuration = totalDuration / steps;
+
+    // Build haptic pattern: 10ms vibration, 10ms gap per step
+    // navigator.vibrate accepts [vibrate, pause, vibrate, pause, ...]
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      const pattern: number[] = [];
+      for (let i = 0; i < steps; i++) {
+        pattern.push(10);  // vibrate 10ms
+        if (i < steps - 1) pattern.push(Math.max(0, Math.round(stepDuration) - 10)); // gap
+      }
+      navigator.vibrate(pattern);
+    }
+
+    let current = 0;
+    const interval = setInterval(() => {
+      current += 1;
+      setDisplayed(current);
+      if (current >= steps) clearInterval(interval);
+    }, stepDuration);
+
+    return () => {
+      clearInterval(interval);
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate(0); // cancel haptic on unmount
+      }
+    };
+  }, [value, inView]);
+
+  const clamped = Math.max(0, Math.min(100, displayed));
   const offset = circumference * (1 - clamped / 100);
   const hue = Math.round((clamped / 100) * 120);
   const color = `hsl(${hue}, 100%, 50%)`;
+
   return (
     <svg viewBox="0 0 200 200" style={{ width: 170, height: 170, display: "block", margin: "0 auto" }}>
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2a2a2a" strokeWidth={strokeWidth} />
@@ -115,11 +191,10 @@ function RainbowRing({ value }: { value: number }) {
         stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
         strokeDasharray={circumference} strokeDashoffset={offset}
         transform={`rotate(-90 ${cx} ${cy})`}
-        style={{ transition: "stroke-dashoffset 0.6s ease, stroke 0.6s ease" }}
       />
       <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central"
         fill="white" fontSize={52} fontWeight="bold">
-        {Math.round(clamped)}
+        {clamped}
       </text>
     </svg>
   );
@@ -150,6 +225,8 @@ export default function CompeteGamePage() {
   });
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [resultSecsLeft, setResultSecsLeft] = useState<number | null>(null);
+  const [accuracyInView, setAccuracyInView] = useState(false);
+  const accuracyCardRef = useRef<HTMLDivElement>(null);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[] }>({
     accPenalty: 0,
     xpPenalty: 0,
@@ -348,6 +425,34 @@ export default function CompeteGamePage() {
     return () => clearInterval(interval);
   }, [snapshot?.status, snapshot?.resultPhaseEndsAt]);
 
+  // IntersectionObserver for accuracy circle animation
+  useEffect(() => {
+    const card = accuracyCardRef.current;
+    if (!card) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setAccuracyInView(true);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(card);
+
+    // Check if already in viewport on mount
+    if (card.getBoundingClientRect().top < window.innerHeight && card.getBoundingClientRect().bottom > 0) {
+      setAccuracyInView(true);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   // Helper: compute derived stats for a player
   const computePlayerStats = useCallback((pid: string) => {
     if (!allRoundResults) return null;
@@ -366,15 +471,7 @@ export default function CompeteGamePage() {
   }, [allRoundResults]);
 
   // Helper: get ring color based on accuracy
-  const getRingColor = useCallback((value: number) => {
-    if (value >= 80) return "#7ed957";
-    if (value >= 60) return "#e8c022";
-    if (value >= 40) return "#E87722";
-    return "#e84422";
-  }, []);
-
-  // Helper: get score color for all % values
-  const getScoreColor = useCallback((val: number): string => {
+  const getRingCoolor = useCallback((val: number): string => {
     if (val >= 80) return "#7ed957";
     if (val >= 60) return "#e8c022";
     if (val >= 40) return "#E87722";
@@ -521,14 +618,16 @@ export default function CompeteGamePage() {
   return (
     <main className="app-shell" style={{ background: snapshot?.status === "ROUND_COMPLETE" ? "#000" : undefined }}>
       <div className="shell-grid">
-        {/* Toast stack - top-center */}
-        <div style={{ position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 50, pointerEvents: 'none' }}>
-          {submissionToasts.map((label, i) => (
-            <div key={i} style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '9999px', whiteSpace: 'nowrap' }}>
-              {label}
-            </div>
-          ))}
-        </div>
+        {/* Toast stack - top-center (hidden during ROUND_COMPLETE) */}
+        {snapshot.status !== "ROUND_COMPLETE" && (
+          <div style={{ position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 50, pointerEvents: 'none' }}>
+            {submissionToasts.map((label, i) => (
+              <div key={i} style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '9999px', whiteSpace: 'nowrap' }}>
+                {label}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Red flash overlay */}
         {timerClamped && (
@@ -574,7 +673,7 @@ export default function CompeteGamePage() {
               ) : (
                 snapshot.players.map((p) => (
                   <div key={p.playerId} className="row">
-                    <span>{p.displayName || shortId(p.playerId)}</span>
+                    <span style={getUsernameGradientStyle(p.playerId)}>{p.displayName || shortId(p.playerId)}</span>
                     {p.isHost ? <span className="badge">Host</span> : null}
                     <span className="small">{p.ready ? "Ready" : "Not ready"}</span>
                   </div>
@@ -745,6 +844,7 @@ export default function CompeteGamePage() {
                 .slice()
                 .sort((a, b) => b.score - a.score)
                 .map((r, i) => ({
+                  playerId: r.playerId,
                   rank: i + 1,
                   displayName: snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8),
                   accuracy: r.accuracy,
@@ -778,12 +878,60 @@ export default function CompeteGamePage() {
               const whereAccBg = (myResult?.locationScore ?? 0) >= 60 ? "#1a2e1a" : (myResult?.locationScore ?? 0) >= 30 ? "#2e2a1a" : "#2e1a1a";
               return (
                 <>
-                  {/* Card 1 — Accuracy Ring + XP */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
+                  {/* Card 1 — Event Title */}
+                  <div style={{ marginBottom: 2, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333", padding: 14 }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>{round.title}</div>
+                  </div>
+                  {/* Card 2 — Event Image */}
+                  <div style={{ marginBottom: 2, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333" }}>
+                    {round.imageUrl ? (
+                      <div>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={round.imageUrl} alt={round.title}
+                          style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
+                        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--color-primary, #f97316)", marginTop: 8, textAlign: "center", padding: "0 14px 14px" }}>
+                          {correctYear} · {correctName}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ height: 160, background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 12 }}>
+                          No image
+                        </div>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--color-primary, #f97316)", marginTop: 8, textAlign: "center", padding: "0 14px 14px" }}>
+                          {correctYear} · {correctName}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {/* Card 5 — Event Description */}
+                  <div style={{ marginBottom: 2, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333", padding: 14 }}>
+                    <div style={{ fontSize: 12, color: "#aaa", lineHeight: 1.5 }}>
+                      {round.description ?? "No description available"}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                      <span style={{ fontSize: 11, color: "#aaa" }}>
+                        Confidence: <span style={{ color: "#fff" }}>{(round as unknown as { confidencePct?: number }).confidencePct ?? "—"}%</span>
+                      </span>
+                      {(round as unknown as { sourceUrl?: string }).sourceUrl && (
+                        <button
+                          onClick={() => window.open((round as unknown as { sourceUrl?: string }).sourceUrl, "_blank")}
+                          style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
+                          Source
+                        </button>
+                      )}
+                      <button
+                        style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
+                        Rate
+                      </button>
+                    </div>
+                  </div>
+                  {/* Card 6 — Accuracy Ring + XP */}
+                  <div ref={accuracyCardRef} style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", textAlign: "center", marginBottom: 10 }}>
                       Accuracy (%)
                     </div>
-                    <RainbowRing value={accuracy} />
+                    <RainbowRing value={accuracy} inView={accuracyInView} />
                     {submittedHintPenaltyRef.current.accPenalty > 0 && (
                       <div style={{ textAlign: "center", marginTop: 4, marginBottom: 2 }}>
                         <span style={{
@@ -909,93 +1057,6 @@ export default function CompeteGamePage() {
                       </div>
                     );
                   })()}
-                  {/* Card 2 — Round Leaderboard */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
-                    {leaderboardRows.map(row => {
-                      const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
-                      const accColor = `hsl(${hue}, 100%, 50%)`;
-                      const accBg = row.accuracy >= 60 ? "#1a2e1a" : row.accuracy >= 30 ? "#2e2a1a" : "#2e1a1a";
-                      return (
-                        <div key={row.rank} style={{
-                          display: "flex", alignItems: "center", padding: "7px 8px",
-                          borderRadius: 8, marginBottom: 3, gap: 6,
-                          background: row.isMe ? "#2e2e2e" : "transparent",
-                        }}>
-                          <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>{row.rank}</span>
-                          <span style={{ flex: 1, fontSize: 13 }}>
-                            <span style={{ color: row.isMe ? "#f97316" : "#fff", fontWeight: row.isMe ? 600 : 400 }}>
-                              {row.displayName}
-                            </span>
-                            {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
-                          </span>
-                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
-                            {Math.round(row.accuracy)}%
-                          </span>
-                        </div>
-                      );
-                    })}
-                    {leaderboardRows.length === 0 && (
-                      snapshot.players.map((p) => {
-                        const isMe = p.playerId === playerId;
-                        return (
-                          <div key={p.playerId} style={{
-                            display: "flex", alignItems: "center", padding: "7px 8px",
-                            borderRadius: 8, marginBottom: 3, gap: 6,
-                            background: isMe ? "#2e2e2e" : "transparent",
-                          }}>
-                            <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>—</span>
-                            <span style={{ flex: 1, fontSize: 13 }}>
-                              <span style={{ color: isMe ? "#f97316" : "#fff", fontWeight: isMe ? 600 : 400 }}>
-                                {p.displayName || p.playerId.slice(0, 8)}
-                              </span>
-                              {isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
-                              <span style={{ color: "#555", fontSize: 11, fontStyle: "italic", marginLeft: 4 }}>No guess</span>
-                            </span>
-                            <span style={{ background: "#2a2a2a", color: "#888", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
-                              —
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                  {/* Card 3 — Event photo + info */}
-                  <div style={{ marginBottom: 2, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333" }}>
-                    {round.imageUrl ? (
-                      <div>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={round.imageUrl} alt={round.title}
-                          style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
-                      </div>
-                    ) : (
-                      <div style={{ height: 160, background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 12 }}>
-                        No image
-                      </div>
-                    )}
-                    <div style={{ padding: "10px 12px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4 }}>{round.title}</div>
-                      <div style={{ fontSize: 11, color: "#aaa", lineHeight: 1.5, marginBottom: 8 }}>
-                        {round.description ?? "No description available"}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 11, color: "#aaa" }}>
-                          Confidence: <span style={{ color: "#fff" }}>{(round as unknown as { confidencePct?: number }).confidencePct ?? "—"}%</span>
-                        </span>
-                        {(round as unknown as { sourceUrl?: string }).sourceUrl && (
-                          <button
-                            onClick={() => window.open((round as unknown as { sourceUrl?: string }).sourceUrl, "_blank")}
-                            style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
-                            Source
-                          </button>
-                        )}
-                        <button
-                          style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
-                          Rate
-                        </button>
-                      </div>
-                    </div>
-                  </div>
                   {/* Card 4 — WHERE */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -1151,7 +1212,7 @@ export default function CompeteGamePage() {
                         transform: "translate(-50%, -50%)",
                         width: 4,
                         height: 32,
-                        background: "#ffffff",
+                        background: "var(--color-primary, #f97316)",
                         borderRadius: 2,
                         left: "50%",
                       }}>
@@ -1173,7 +1234,7 @@ export default function CompeteGamePage() {
                           left: "50%",
                           transform: "translateX(-50%)",
                           fontSize: 10,
-                          color: "#fff",
+                          color: "var(--color-primary, #f97316)",
                           whiteSpace: "nowrap",
                           textAlign: "center",
                         }}>
@@ -1248,7 +1309,7 @@ export default function CompeteGamePage() {
                             {rank ?? "—"}
                           </span>
                           <span style={{ flex: 1, fontSize: 13 }}>
-                            <span style={{ color: row.isMe ? "#f97316" : "#fff", fontWeight: row.isMe ? 600 : 400 }}>
+                            <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
                               {row.displayName}
                             </span>
                             {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
@@ -1325,6 +1386,57 @@ export default function CompeteGamePage() {
                       </div>
                     );
                   })()}
+                  {/* Card 9 — Round Leaderboard */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
+                    {leaderboardRows.map(row => {
+                      const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
+                      const accColor = `hsl(${hue}, 100%, 50%)`;
+                      const accBg = row.accuracy >= 60 ? "#1a2e1a" : row.accuracy >= 30 ? "#2e2a1a" : "#2e1a1a";
+                      return (
+                        <div key={row.rank} style={{
+                          display: "flex", alignItems: "center", padding: "7px 8px",
+                          borderRadius: 8, marginBottom: 3, gap: 6,
+                          background: row.isMe ? "#2e2e2e" : "transparent",
+                        }}>
+                          <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>{row.rank}</span>
+                          <span style={{ flex: 1, fontSize: 13 }}>
+                            <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
+                              {row.displayName}
+                            </span>
+                            {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
+                          </span>
+                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                            {Math.round(row.accuracy)}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {leaderboardRows.length === 0 && (
+                      snapshot.players.map((p) => {
+                        const isMe = p.playerId === playerId;
+                        return (
+                          <div key={p.playerId} style={{
+                            display: "flex", alignItems: "center", padding: "7px 8px",
+                            borderRadius: 8, marginBottom: 3, gap: 6,
+                            background: isMe ? "#2e2e2e" : "transparent",
+                          }}>
+                            <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>—</span>
+                            <span style={{ flex: 1, fontSize: 13 }}>
+                              <span style={{ ...getUsernameGradientStyle(p.playerId), fontWeight: isMe ? 700 : 500 }}>
+                                {p.displayName || p.playerId.slice(0, 8)}
+                              </span>
+                              {isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
+                              <span style={{ color: "#555", fontSize: 11, fontStyle: "italic", marginLeft: 4 }}>No guess</span>
+                            </span>
+                            <span style={{ background: "#2a2a2a", color: "#888", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                              —
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                   {/* Countdown Timer and Player Ready Status */}
                   {resultSecsLeft !== null && (
                     <div style={{
@@ -1517,38 +1629,9 @@ export default function CompeteGamePage() {
 
               return (
                 <>
-                  {/* TOP BAR */}
-                  <div style={{
-                    background: "#111",
-                    borderBottom: "0.5px solid #2a2a2a",
-                    padding: "12px 16px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}>
-                    <div>
-                      <div style={{ color: "#666", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.05 }}>
-                        GAME OVER · RUSH · {gameId.slice(0, 6).toUpperCase()}
-                      </div>
-                      <div style={{ color: "#fff", fontSize: 14, marginTop: 2 }}>
-                        {snapshot.config.totalRounds} rounds complete
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 4 }}>
-                      {Array.from({ length: snapshot.config.totalRounds }).map((_, i) => (
-                        <div key={i} style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          background: "#E87722",
-                        }} />
-                      ))}
-                    </div>
-                  </div>
-
                   {/* HERO ACCURACY CARD */}
                   <div style={{
-                    background: "#1a1a1a",
+                    background: "#1e1e1e",
                     borderRadius: 14,
                     margin: 12,
                     padding: "20px 16px",
@@ -1556,7 +1639,7 @@ export default function CompeteGamePage() {
                     flexDirection: "column",
                     alignItems: "center",
                   }}>
-                    <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 8 }}>
                       OVERALL ACCURACY
                     </div>
                     <svg viewBox="0 0 130 130" style={{ width: 130, height: 130 }}>
@@ -1573,8 +1656,8 @@ export default function CompeteGamePage() {
                         {overallAccuracy}
                       </text>
                     </svg>
-                    <div style={{ marginTop: 12, fontSize: 19, color: "#fff", fontWeight: 500 }}>
-                      {overallXP} <span style={{ fontSize: 13, color: "#E87722", fontWeight: 400 }}>XP</span>
+                    <div style={{ marginTop: 4, fontSize: 13, color: "#666" }}>
+                      {overallXP} XP
                     </div>
                   </div>
 
@@ -1582,18 +1665,15 @@ export default function CompeteGamePage() {
                   <div style={{ margin: "0 12px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {/* WHERE card */}
                     <div style={{
-                      background: "#1a1a1a",
+                      background: "#1e1e1e",
                       borderRadius: 12,
                       padding: "16px 10px 14px",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-                        <svg width={12} height={12} viewBox="0 0 24 24" fill="#E87722">
-                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                        </svg>
-                        <span style={{ fontSize: 13, color: "#E87722", fontWeight: 500 }}>WHERE</span>
+                      <div style={{ fontSize: 10, color: "#888", letterSpacing: "1.2px", textTransform: "uppercase", fontWeight: 500, marginBottom: 12 }}>
+                        WHERE
                       </div>
                       <svg viewBox="0 0 84 84" style={{ width: 84, height: 84, marginBottom: 8 }}>
                         <circle cx={42} cy={42} r={34} fill="none" stroke="#2a2a2a" strokeWidth={8} />
@@ -1605,35 +1685,32 @@ export default function CompeteGamePage() {
                           transform={`rotate(-90 42 42)`}
                         />
                         <text x={42} y={42} textAnchor="middle" dominantBaseline="central"
-                          fill={getScoreColor(whereAccuracy)} fontSize={24} fontWeight={500}>
+                          fill={getScoreColor(whereAccuracy)} fontSize={36} fontWeight={700}>
                           {whereAccuracy}
                         </text>
                       </svg>
-                      <div style={{ fontSize: 16, color: "#fff", marginBottom: 4 }}>
-                        {whereAccuracy} <span style={{ fontSize: 11, color: "#E87722" }}>XP</span>
+                      <div style={{ fontSize: 16, color: "#bbb", fontWeight: 400, marginBottom: 4 }}>
+                        %
                       </div>
-                      <div style={{ fontSize: 11, color: "#555" }}>
+                      <div style={{ fontSize: 11, color: "#666" }}>
                         avg {Math.round(avgDistanceKm)} km away
+                      </div>
+                      <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
+                        {whereAccuracy} XP
                       </div>
                     </div>
 
                     {/* WHEN card */}
                     <div style={{
-                      background: "#1a1a1a",
+                      background: "#1e1e1e",
                       borderRadius: 12,
                       padding: "16px 10px 14px",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#E87722" strokeWidth={2}>
-                          <rect x="3" y="4" width={18} height={18} rx={2} ry={2} />
-                          <line x1="16" y1="2" x2="16" y2="6" />
-                          <line x1="8" y1="2" x2="8" y2="6" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        <span style={{ fontSize: 13, color: "#E87722", fontWeight: 500 }}>WHEN</span>
+                      <div style={{ fontSize: 10, color: "#888", letterSpacing: "1.2px", textTransform: "uppercase", fontWeight: 500, marginBottom: 12 }}>
+                        WHEN
                       </div>
                       <svg viewBox="0 0 84 84" style={{ width: 84, height: 84, marginBottom: 8 }}>
                         <circle cx={42} cy={42} r={34} fill="none" stroke="#2a2a2a" strokeWidth={8} />
@@ -1645,29 +1722,33 @@ export default function CompeteGamePage() {
                           transform={`rotate(-90 42 42)`}
                         />
                         <text x={42} y={42} textAnchor="middle" dominantBaseline="central"
-                          fill={getScoreColor(whenAccuracy)} fontSize={24} fontWeight={500}>
+                          fill={getScoreColor(whenAccuracy)} fontSize={36} fontWeight={700}>
                           {whenAccuracy}
                         </text>
                       </svg>
-                      <div style={{ fontSize: 16, color: "#fff", marginBottom: 4 }}>
-                        {whenAccuracy} <span style={{ fontSize: 11, color: "#E87722" }}>XP</span>
+                      <div style={{ fontSize: 16, color: "#bbb", fontWeight: 400, marginBottom: 4 }}>
+                        %
                       </div>
-                      <div style={{ fontSize: 11, color: "#555" }}>
+                      <div style={{ fontSize: 11, color: "#666" }}>
                         avg {Math.round(avgYearDiff)} yrs off
+                      </div>
+                      <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
+                        {whenAccuracy} XP
                       </div>
                     </div>
                   </div>
 
                   {/* LEADERBOARD SECTION */}
                   <div style={{
-                    background: "#1a1a1a",
+                    background: "#1e1e1e",
                     borderRadius: 12,
                     margin: "0 12px 12px",
                     overflow: "hidden",
                   }}>
                     <div style={{
-                      fontSize: 10,
-                      color: "#666",
+                      fontSize: 11,
+                      color: "#888",
+                      letterSpacing: "1.5px",
                       textTransform: "uppercase",
                       padding: "12px 16px 10px",
                       borderBottom: "0.5px solid #252525",
@@ -1676,42 +1757,70 @@ export default function CompeteGamePage() {
                     </div>
                     {leaderboard.map((player, index) => {
                       const isCurrentPlayer = player.playerId === playerId;
+                      const playerData = snapshot.players.find(p => p.playerId === player.playerId);
+                      const displayName = playerLabel(snapshot.players, player.playerId);
+                      const firstLetter = displayName ? displayName.charAt(0).toUpperCase() : "?";
                       return (
                         <div
                           key={player.playerId}
                           style={{
                             display: "grid",
-                            gridTemplateColumns: "22px 1fr auto",
+                            gridTemplateColumns: "20px 1fr auto",
                             padding: "11px 16px",
                             borderBottom: index === leaderboard.length - 1 ? "none" : "0.5px solid #1e1e1e",
-                            background: isCurrentPlayer ? "#1d1d28" : "transparent",
+                            background: isCurrentPlayer ? "#252525" : "transparent",
                           }}
                         >
-                          <div style={{ fontSize: 12, color: "#555", display: "flex", alignItems: "center" }}>
+                          <div style={{ fontSize: 13, color: "#bbb", width: 20, display: "flex", alignItems: "center" }}>
                             {index + 1}
                           </div>
-                          <div style={{ fontSize: 13, color: "#fff", fontWeight: 500 }}>
-                            {playerLabel(snapshot.players, player.playerId)}
-                            {isCurrentPlayer && (
-                              <span style={{ fontSize: 11, color: "#555", marginLeft: 4 }}>(you)</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            {playerData?.avatarUrl ? (
+                              <img
+                                src={playerData.avatarUrl}
+                                alt={displayName}
+                                style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
+                              />
+                            ) : (
+                              <div style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: "50%",
+                                background: "#444",
+                                color: "#fff",
+                                fontSize: 12,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}>
+                                {firstLetter}
+                              </div>
                             )}
-                            <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
-                              {Array.from({ length: snapshot.config.totalRounds }).map((_, i) => (
-                                <div key={i} style={{
-                                  width: 20,
-                                  height: 4,
-                                  borderRadius: 2,
-                                  background: player.wonRounds.includes(i) ? "#E87722" : "#2a2a2a",
-                                }} />
-                              ))}
+                            <div>
+                              <div style={{ fontSize: 13, ...getUsernameGradientStyle(player.playerId), fontWeight: 500 }}>
+                                {displayName}
+                                {isCurrentPlayer && (
+                                  <span style={{ fontSize: 11, color: "#E87722", marginLeft: 4 }}>(you)</span>
+                                )}
+                              </div>
+                              <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
+                                {Array.from({ length: snapshot.config.totalRounds }).map((_, i) => (
+                                  <div key={i} style={{
+                                    width: 20,
+                                    height: 4,
+                                    borderRadius: 2,
+                                    background: player.wonRounds.includes(i) ? "#E87722" : "#2a2a2a",
+                                  }} />
+                                ))}
+                              </div>
                             </div>
                           </div>
                           <div style={{ textAlign: "right" }}>
-                            <div style={{ fontSize: 15, color: "#fff", fontWeight: 500 }}>
-                              {player.totalScore}
+                            <div style={{ fontSize: 18, color: "#fff", fontWeight: 700 }}>
+                              {player.avgAccuracy}<span style={{ fontSize: 18, color: "#E87722", fontWeight: 700 }}>%</span>
                             </div>
-                            <div style={{ fontSize: 11, color: getScoreColor(player.avgAccuracy) }}>
-                              {player.avgAccuracy}%
+                            <div style={{ fontSize: 11, color: "#666" }}>
+                              {player.totalScore} XP
                             </div>
                           </div>
                         </div>
@@ -1734,9 +1843,12 @@ export default function CompeteGamePage() {
                   {snapshot.rounds.map((round, i) => {
                     const roundStats = computeRoundStats(i);
                     if (!roundStats) return null;
+                    const bestPlayerData = snapshot.players.find(p => p.playerId === roundStats.bestPlayerId);
+                    const bestPlayerName = playerLabel(snapshot.players, roundStats.bestPlayerId);
+                    const bestPlayerFirstLetter = bestPlayerName ? bestPlayerName.charAt(0).toUpperCase() : "?";
                     return (
                       <div key={i} style={{
-                        background: "#1a1a1a",
+                        background: "#1e1e1e",
                         borderRadius: 12,
                         margin: "0 12px 8px",
                         overflow: "hidden",
@@ -1792,15 +1904,29 @@ export default function CompeteGamePage() {
                           <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", marginBottom: 4 }}>
                             ROUND {i + 1}
                           </div>
-                          <div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.35, marginBottom: 10 }}>
+                          <div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.35, marginBottom: 3 }}>
                             {round.title}
                           </div>
+                          {round.description && (
+                            <div style={{
+                              fontSize: 12,
+                              color: "#888",
+                              marginTop: 3,
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              marginBottom: 10,
+                            }}>
+                              {round.description}
+                            </div>
+                          )}
 
                           {/* 3-column score row */}
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
                             {/* TOTAL cell */}
                             <div style={{
-                              background: "#1a1a1a",
+                              background: "#1e1e1e",
                               borderRadius: 8,
                               padding: "8px 6px",
                               display: "flex",
@@ -1815,16 +1941,16 @@ export default function CompeteGamePage() {
                                 TOTAL
                               </div>
                               <div style={{ fontSize: 18, color: getScoreColor(roundStats.avgAccuracy), fontWeight: 600, marginBottom: 2 }}>
-                                {roundStats.avgAccuracy}
+                                {roundStats.avgAccuracy}<span style={{ fontSize: 12, color: "#bbb" }}>%</span>
                               </div>
-                              <div style={{ fontSize: 10, color: "#444" }}>
+                              <div style={{ fontSize: 10, color: "#666" }}>
                                 {roundStats.totalScore} pts
                               </div>
                             </div>
 
                             {/* WHERE cell */}
                             <div style={{
-                              background: "#1a1a1a",
+                              background: "#1e1e1e",
                               borderRadius: 8,
                               padding: "8px 6px",
                               display: "flex",
@@ -1838,16 +1964,16 @@ export default function CompeteGamePage() {
                                 WHERE
                               </div>
                               <div style={{ fontSize: 18, color: getScoreColor(roundStats.avgLocationScore), fontWeight: 600, marginBottom: 2 }}>
-                                {roundStats.avgLocationScore}
+                                {roundStats.avgLocationScore}<span style={{ fontSize: 12, color: "#bbb" }}>%</span>
                               </div>
-                              <div style={{ fontSize: 10, color: "#444" }}>
+                              <div style={{ fontSize: 10, color: "#666" }}>
                                 avg {Math.round(roundStats.avgDistanceKm)} km
                               </div>
                             </div>
 
                             {/* WHEN cell */}
                             <div style={{
-                              background: "#1a1a1a",
+                              background: "#1e1e1e",
                               borderRadius: 8,
                               padding: "8px 6px",
                               display: "flex",
@@ -1864,9 +1990,9 @@ export default function CompeteGamePage() {
                                 WHEN
                               </div>
                               <div style={{ fontSize: 18, color: getScoreColor(roundStats.avgTimeScore), fontWeight: 600, marginBottom: 2 }}>
-                                {roundStats.avgTimeScore}
+                                {roundStats.avgTimeScore}<span style={{ fontSize: 12, color: "#bbb" }}>%</span>
                               </div>
-                              <div style={{ fontSize: 10, color: "#444" }}>
+                              <div style={{ fontSize: 10, color: "#666" }}>
                                 avg {Math.round(roundStats.avgYearDiff)} yrs
                               </div>
                             </div>
@@ -1881,11 +2007,34 @@ export default function CompeteGamePage() {
                             justifyContent: "space-between",
                             alignItems: "center",
                           }}>
-                            <div style={{ fontSize: 11, color: "#555" }}>
+                            <div style={{ fontSize: 11, color: "#666" }}>
                               Best player:
                             </div>
-                            <div style={{ fontSize: 13, color: "#fff", fontWeight: 500 }}>
-                              {playerLabel(snapshot.players, roundStats.bestPlayerId)}
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              {bestPlayerData?.avatarUrl ? (
+                                <img
+                                  src={bestPlayerData.avatarUrl}
+                                  alt={bestPlayerName}
+                                  style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }}
+                                />
+                              ) : (
+                                <div style={{
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: "50%",
+                                  background: "#444",
+                                  color: "#fff",
+                                  fontSize: 10,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}>
+                                  {bestPlayerFirstLetter}
+                                </div>
+                              )}
+                              <div style={{ fontSize: 11, color: "#ccc", fontWeight: 500 }}>
+                                {bestPlayerName}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1909,14 +2058,13 @@ export default function CompeteGamePage() {
                     <button
                       onClick={() => router.push("/")}
                       style={{
-                        height: 34,
-                        borderRadius: 8,
-                        border: "0.5px solid #333",
                         background: "transparent",
-                        color: "#bbb",
-                        fontSize: 13,
-                        padding: "0 16px",
+                        color: "#fff",
+                        border: "none",
+                        fontSize: 14,
+                        fontWeight: 600,
                         cursor: "pointer",
+                        padding: "8px 16px",
                       }}
                     >
                       Home

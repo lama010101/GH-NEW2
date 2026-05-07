@@ -81,10 +81,6 @@ function MapClickHandler({ onSetLocation }: { onSetLocation: (location: LatLng) 
   return null;
 }
 
-function MapMarker({ location }: { location: LatLng }) {
-  return <Marker position={[location.lat, location.lng]} />;
-}
-
 function createAvatarIcon(displayName: string, avatarUrl: string | null): L.DivIcon {
   const initial = displayName.charAt(0).toUpperCase();
   const circleContent = avatarUrl

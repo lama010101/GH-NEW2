@@ -42,12 +42,12 @@ a {
 
 .app-shell {
   min-height: 100vh;
-  padding: 24px;
+  padding: 12px;
 }
 
 .shell-grid {
   display: grid;
-  gap: 20px;
+  gap: 10px;
   max-width: 1320px;
   margin: 0 auto;
 }
@@ -88,7 +88,7 @@ a {
 
 .stack {
   display: grid;
-  gap: 16px;
+  gap: 10px;
 }
 
 .row {
@@ -129,7 +129,7 @@ a {
 }
 
 .card {
-  padding: 20px;
+  padding: 14px;
 }
 
 .map-grid {

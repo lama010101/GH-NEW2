@@ -35,8 +35,33 @@ export function calculateLocationAccuracy(distanceKm: number): number {
   return Math.round(clamp(100 * Math.exp(-distanceKm / 1500), 0, 100));
 }
 
-export function calculateYearAccuracy(yearDiff: number): number {
-  return Math.round(clamp(100 * Math.exp(-Math.abs(yearDiff) / 40), 0, 100));
+export function calculateYearAccuracy(
+  yearDiff: number,
+  yearMin: number,
+  yearMax: number
+): number {
+  const rangeWidth = Math.max(1, yearMax - yearMin);
+  const Ky = rangeWidth / 8;
+
+  const absDiff = Math.abs(yearDiff);
+
+  let gracePeriod: number;
+  if (yearMax >= 1950) {
+    gracePeriod = 0;
+  } else if (yearMax >= 1800) {
+    gracePeriod = 1;
+  } else if (yearMax >= 1400) {
+    gracePeriod = 5;
+  } else if (yearMax >= 500) {
+    gracePeriod = 15;
+  } else {
+    gracePeriod = 50;
+  }
+
+  if (absDiff <= gracePeriod) return 100;
+
+  const adjustedDiff = absDiff - gracePeriod;
+  return Math.round(clamp(100 * Math.exp(-adjustedDiff / Ky), 0, 100));
 }
 
 export function calculateBadges(round: Pick<import("./types").RoundResult, "yearAccuracy" | "locationAccuracy" | "comboAccuracy">): Badge[] {
@@ -83,7 +108,15 @@ export function evaluateNearMisses(
   return result;
 }
 
-export function evaluateRound(event: EventRecord, guess: GuessState, roundIndex: number, didTimeout = false, penalty: { accuracy: number; xp: number } = { accuracy: 0, xp: 0 }) {
+export function evaluateRound(
+  event: EventRecord,
+  guess: GuessState,
+  roundIndex: number,
+  didTimeout = false,
+  penalty: { accuracy: number; xp: number } = { accuracy: 0, xp: 0 },
+  yearMin = 0,
+  yearMax = 2025
+) {
   const fallbackGuess: GuessState = {
     year: guess.year,
     location: guess.location
@@ -111,7 +144,7 @@ export function evaluateRound(event: EventRecord, guess: GuessState, roundIndex:
   const yearDiff = fallbackGuess.year === null ? MAX_YEAR_DIFF : fallbackGuess.year - event.year;
   const distanceKm = fallbackGuess.location === null ? MAX_DISTANCE_KM : haversineDistanceKm(fallbackGuess.location, eventCoordinates);
 
-  const yearAccuracy = calculateYearAccuracy(yearDiff);
+  const yearAccuracy = calculateYearAccuracy(yearDiff, yearMin, yearMax);
   const locationAccuracy = calculateLocationAccuracy(distanceKm);
   const comboAccuracy = Math.floor((yearAccuracy + locationAccuracy) / 2);
 

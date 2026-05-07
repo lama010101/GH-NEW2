@@ -933,7 +933,9 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       { year: yearGuess, location: locationGuess },
       roundIndex,
       false,
-      { accuracy: accPenaltyValue, xp: xpPenaltyValue }
+      { accuracy: accPenaltyValue, xp: xpPenaltyValue },
+      session.year_min ?? 0,
+      session.year_max ?? 2025
     );
 
     const score = result.roundXp;
@@ -1427,6 +1429,12 @@ async function computeAndWriteRoundResults(
   executor: DbTransactionClient
 ): Promise<void> {
   console.log(`[SCORE-DEBUG] computeAndWriteRoundResults called: gameId=${gameId} roundIndex=${roundIndex}`);
+  const sessionRow = await executor.query<{ year_min: number; year_max: number }>(
+    `SELECT year_min, year_max FROM sessions WHERE game_id = $1 LIMIT 1`,
+    [gameId]
+  );
+  const yearMin = sessionRow.rows[0]?.year_min ?? 0;
+  const yearMax = sessionRow.rows[0]?.year_max ?? 2025;
   const commits = await executor.query<{
     player_id: string;
     score: number | null;
@@ -1482,7 +1490,9 @@ async function computeAndWriteRoundResults(
       guessState,
       roundIndex,
       false,
-      { accuracy: row.acc_penalty ?? 0, xp: 0 }
+      { accuracy: row.acc_penalty ?? 0, xp: 0 },
+      yearMin,
+      yearMax
     );
     console.log(`[SCORE-DEBUG] evaluateRound result: distanceKm=${evaluation.distanceKm} yearDiff=${evaluation.yearDiff} locationAccuracy=${evaluation.locationAccuracy} yearAccuracy=${evaluation.yearAccuracy} roundXp=${evaluation.roundXp}`);
 
