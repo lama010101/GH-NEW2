@@ -17,6 +17,7 @@ import {
   type RoundEvent
 } from "./eventStream";
 import type { RoundEventContent, EventHint } from "@/core/types";
+import { calculateBadges, evaluateNearMisses } from "@/core/rules";
 
 // Re-export for backwards compatibility
 export { VALID_PHASE_TRANSITIONS, deriveStateFromEventStream, type RoundEvent };
@@ -26,6 +27,22 @@ export { VALID_PHASE_TRANSITIONS, deriveStateFromEventStream, type RoundEvent };
 // ═════════════════════════════════════════════════════════════════════════════
 
 type DbExecutor = Pick<Pool, "query">;
+
+/** Round result shape for client consumption (matches page.tsx) */
+type RoundResultForClient = {
+  playerId: string;
+  score: number;
+  rank: number;
+  accuracy: number;
+  locationScore: number;
+  didSubmit: boolean;
+  guessYear: number | null;
+  guessLat: number | null;
+  guessLng: number | null;
+  timeScore: number;
+  badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>;
+  nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>;
+};
 
 /** Player state reconstructed from session_players */
 export type PlayerState = {
@@ -88,6 +105,7 @@ export type ReconstructedGameState = {
   rounds: RoundState[];
   events: RoundEvent[];
   roundEventContent: RoundEventContent[];
+  roundResultsForClient?: RoundResultForClient[];
 };
 
 // ═════════════════════════════════════════════════════════════════════════════

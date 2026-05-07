@@ -1,5 +1,5 @@
 {
-  "/page": "app/page.js",
-  "/compete/page": "app/compete/page.js",
-  "/compete/[gameId]/page": "app/compete/[gameId]/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js"
 }
