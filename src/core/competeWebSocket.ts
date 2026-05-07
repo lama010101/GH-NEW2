@@ -193,4 +193,8 @@ export class CompeteWebSocket {
   advanceRound(roundIndex: number): void {
     this.send({ type: "ADVANCE_ROUND", playerId: this.playerId, roundIndex });
   }
+
+  readyNext(roundIndex: number): void {
+    this.send({ type: "READY_NEXT", playerId: this.playerId, roundIndex });
+  }
 }
