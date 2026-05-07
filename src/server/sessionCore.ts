@@ -19,7 +19,7 @@ import {
   StartCompeteSessionInput
 } from "@/core/types";
 import { MAX_ROUNDS, TIMER_MAX_SEC, TIMER_MIN_SEC } from "@/core/types";
-import { evaluateRound } from "@/core/rules";
+import { calculateBadges, evaluateNearMisses, evaluateRound } from "@/core/rules";
 import {
   dbPool,
   generateVerificationToken,
@@ -398,7 +398,11 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     roundEndsAt,
     viewerPlayerId: viewerPlayerId ?? null,
     timeRemaining: null,
-    rounds: gameState.roundEventContent
+    rounds: gameState.roundEventContent,
+    // readyForNext and resultPhaseEndsAt are in-memory PartyKit state
+    // These are initialized to empty/undefined here and populated by PartyKit server when broadcasting
+    readyForNext: [],
+    resultPhaseEndsAt: undefined
   };
 
   // ═════════════════════════════════════════════════════════════════════════════
@@ -1345,7 +1349,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 export async function getRoundResults(
   gameId: string,
   roundIndex: number
-): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number }>> {
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }> }>> {
   const result = await dbPool.query<{
     player_id: string;
     score: number | null;
@@ -1375,18 +1379,27 @@ export async function getRoundResults(
     [gameId, roundIndex]
   );
 
-  return result.rows.map((row) => ({
-    playerId: row.player_id,
-    score: row.score ?? 0,
-    rank: row.rank ?? 0,
-    accuracy: Math.round(((row.location_score ?? 0) + (row.time_score ?? 0)) / 2),
-    locationScore: row.location_score ?? 0,
-    didSubmit: row.year_guess !== null,
-    guessYear: row.year_guess ?? null,
-    guessLat: row.location_lat,
-    guessLng: row.location_lng,
-    timeScore: row.time_score ?? 0,
-  }));
+  return result.rows.map((row) => {
+    const locationAccuracy = Math.round(row.location_score ?? 0);
+    const yearAccuracy = Math.round(row.time_score ?? 0);
+    const comboAccuracy = Math.min(locationAccuracy, yearAccuracy);
+    const badges = calculateBadges({ yearAccuracy, locationAccuracy, comboAccuracy });
+    const nearMisses = evaluateNearMisses(yearAccuracy, locationAccuracy, comboAccuracy, badges);
+    return {
+      playerId: row.player_id,
+      score: row.score ?? 0,
+      rank: row.rank ?? 0,
+      accuracy: Math.round(((row.location_score ?? 0) + (row.time_score ?? 0)) / 2),
+      locationScore: row.location_score ?? 0,
+      didSubmit: row.year_guess !== null,
+      guessYear: row.year_guess ?? null,
+      guessLat: row.location_lat,
+      guessLng: row.location_lng,
+      timeScore: row.time_score ?? 0,
+      badges,
+      nearMisses,
+    };
+  });
 }
 
 // NOTE: loadRoundTiming and loadRoundTimingWithLock REMOVED.

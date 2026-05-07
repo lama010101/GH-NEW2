@@ -186,6 +186,8 @@ export type CompeteSessionSnapshot = {
   viewerPlayerId: string | null;
   timeRemaining?: number | null;
   rounds: RoundEventContent[];
+  readyForNext: string[]; // array of playerIds who clicked "Next Round" in RESULT phase
+  resultPhaseEndsAt?: number; // epoch ms — when result phase auto-advances
 };
 
 export type CreateCompeteSessionInput = {

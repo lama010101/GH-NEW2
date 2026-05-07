@@ -68,7 +68,8 @@ export type ServerMessage =
   | { type: "TOGGLE_READY"; playerId: string; ready: boolean }
   | { type: "START_GAME"; playerId: string }
   | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: number; accPenalty?: number; xpPenalty?: number }
-  | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number; cause?: string };
+  | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number; cause?: string }
+  | { type: "READY_NEXT"; playerId: string; roundIndex: number };
 
 // Messages sent TO clients
 export type ClientMessage =
@@ -134,6 +135,13 @@ export default class GameServer {
   // fires while expiry is already in progress or when a new round's timer is already expired.
   private completeInFlight = false;
 
+  // Per-player ready state for RESULT phase (separate from lobby ready state).
+  // Tracks which players have clicked "Next Round" during ROUND_COMPLETE phase.
+  private readyForNext: Set<string> = new Set();
+
+  // Timestamp when RESULT phase started (epoch ms). Used to compute resultPhaseEndsAt.
+  private resultPhaseStartAt: number | null = null;
+
   // Pending results to be broadcast with next STATE_UPDATE.
   // Set when API returns results (e.g., /guess after round complete).
   // Cleared after broadcast to avoid stale results in future updates.
@@ -190,6 +198,14 @@ export default class GameServer {
   private applySnapshotAndBroadcast(snapshot: unknown): void {
     if (isRuntimeState(snapshot)) {
       console.log("[PartyKit] Applying snapshot, players:", snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+      // Reset readyForNext when transitioning from ROUND_COMPLETE to ROUND_ACTIVE (new round started)
+      if (isRuntimeState(this.snapshot) &&
+          this.snapshot.status === "ROUND_COMPLETE" &&
+          snapshot.status === "ROUND_ACTIVE") {
+        this.readyForNext.clear();
+        this.resultPhaseStartAt = null;
+        console.log("[PartyKit] New round started, readyForNext cleared");
+      }
     }
     this.snapshot = snapshot;
     this.snapshotLoaded = true;
@@ -237,8 +253,8 @@ export default class GameServer {
 
   /**
    * Called when a round timer expires. First completes the round (scores + ROUND_COMPLETE),
-   * waits 5 seconds for clients to display results, then advances to next round.
-   * Uses API-returned snapshots — no re-fetch.
+   * waits 40 seconds for clients to display results and optionally click "Next Round",
+   * then advances to next round. Uses API-returned snapshots — no re-fetch.
    */
   private async triggerRoundExpiry(): Promise<void> {
     if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_ACTIVE") {
@@ -293,10 +309,23 @@ export default class GameServer {
         }
       }
 
-      // Step 2: Wait 15 seconds so clients can display the results screen
-      await new Promise<void>((resolve) => setTimeout(resolve, 15000));
+      // Step 2: Record result phase start time and reset readyForNext
+      this.resultPhaseStartAt = Date.now();
+      this.readyForNext.clear();
+      console.log("[PartyKit] RESULT phase started, readyForNext cleared, timer scheduled for 40s");
+      this.broadcastStateUpdate();
 
-      // Step 3: Advance to next round (or SESSION_COMPLETE) — cause=TIMEOUT
+      // Step 3: Wait 40 seconds so clients can display the results screen
+      // and optionally click "Next Round" to advance early
+      await new Promise<void>((resolve) => setTimeout(resolve, 40000));
+
+      // Step 4: Advance to next round (or SESSION_COMPLETE) — cause=TIMEOUT
+      // Check if advance already triggered (all-ready path)
+      if (this.advanceInFlight) {
+        console.log("[PartyKit] Advance already in flight, skipping timeout advance");
+        return;
+      }
+
       try {
         const baseUrl = this.getNextJsBaseUrl();
         const advanceUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/advance`;
@@ -328,9 +357,18 @@ export default class GameServer {
     if (isRuntimeState(this.snapshot)) {
       console.log("[PartyKit] Broadcasting to all, players:", this.snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
     }
+    // Add readyForNext and resultPhaseEndsAt to snapshot before broadcasting
+    // These are in-memory PartyKit state, not persisted to DB
+    const snapshotWithReadyState = isRuntimeState(this.snapshot) ? {
+      ...this.snapshot,
+      readyForNext: [...this.readyForNext],
+      resultPhaseEndsAt: this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt !== null
+        ? this.resultPhaseStartAt + 40000
+        : undefined
+    } : this.snapshot;
     const msg = JSON.stringify({
       type: "STATE_UPDATE",
-      snapshot: this.snapshot,
+      snapshot: snapshotWithReadyState,
       ...(this.pendingResults ? { results: this.pendingResults } : {})
     });
     this.room.broadcast(msg);
@@ -657,6 +695,66 @@ export default class GameServer {
             this.applySnapshotAndBroadcast(snapshot);
           } finally {
             this.advanceInFlight = false;
+          }
+          break;
+        }
+
+        case "READY_NEXT": {
+          // Validate: current status must be ROUND_COMPLETE (result phase active)
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_COMPLETE") {
+            this.sendError(sender, "READY_NEXT only allowed during ROUND_COMPLETE phase");
+            break;
+          }
+          // Validate: roundIndex matches current round
+          if (this.snapshot.currentRoundIndex !== data.roundIndex) {
+            this.sendError(sender, "READY_NEXT roundIndex does not match current round");
+            break;
+          }
+          // Validate: playerId is in active players list (left_at is null)
+          const player = this.snapshot.players.find(p => p.playerId === data.playerId);
+          if (!player || player.leftAt !== null) {
+            this.sendError(sender, "Player not found or has left the session");
+            break;
+          }
+          // Add playerId to readyForNext set
+          this.readyForNext.add(data.playerId);
+          console.log(`[PartyKit] READY_NEXT: player ${data.playerId.slice(0, 8)} ready for next round, total ready: ${this.readyForNext.size}/${this.snapshot.players.filter(p => p.leftAt === null).length}`);
+          // Broadcast STATE_UPDATE with updated readyForNext array
+          this.broadcastStateUpdate();
+          // If all active players are ready, cancel result timer and advance
+          const activePlayers = this.snapshot.players.filter(p => p.leftAt === null);
+          if (this.readyForNext.size === activePlayers.length) {
+            console.log("[PartyKit] All players ready, cancelling result timer and advancing");
+            // Clear any existing result timer
+            if (this.roundTimerHandle !== null) {
+              clearTimeout(this.roundTimerHandle);
+              this.roundTimerHandle = null;
+            }
+            // Call /advance with cause: "all_ready" if not already in flight
+            if (!this.advanceInFlight) {
+              this.advanceInFlight = true;
+              try {
+                const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/advance`;
+                const response = await fetch(apiUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    cause: "all_ready",
+                    playerId: data.playerId,
+                    roundIndex: data.roundIndex
+                  })
+                });
+                if (!response.ok) {
+                  const text = await response.text();
+                  console.error(`[READY_NEXT] advance API error ${response.status}: ${text}`);
+                  break;
+                }
+                const snapshot = await response.json();
+                this.applySnapshotAndBroadcast(snapshot);
+              } finally {
+                this.advanceInFlight = false;
+              }
+            }
           }
           break;
         }
