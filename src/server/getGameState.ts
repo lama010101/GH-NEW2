@@ -17,7 +17,6 @@ import {
   type RoundEvent
 } from "./eventStream";
 import type { RoundEventContent, EventHint } from "@/core/types";
-import { calculateBadges, evaluateNearMisses } from "@/core/rules";
 
 // Re-export for backwards compatibility
 export { VALID_PHASE_TRANSITIONS, deriveStateFromEventStream, type RoundEvent };

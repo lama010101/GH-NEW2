@@ -477,14 +477,6 @@ export default function CompeteGamePage() {
     return { totalScore, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgConsistency, avgDistanceKm, avgYearDiff };
   }, [allRoundResults]);
 
-  // Helper: get ring color based on accuracy
-  const getRingCoolor = useCallback((val: number): string => {
-    if (val >= 80) return "#7ed957";
-    if (val >= 60) return "#e8c022";
-    if (val >= 40) return "#E87722";
-    return "#e84422";
-  }, []);
-
   // Helper: compute per-round stats for all players
   const computeRoundStats = useCallback((roundIndex: number) => {
     if (!allRoundResults) return null;
