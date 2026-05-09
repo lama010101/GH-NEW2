@@ -14,7 +14,7 @@ self["webpackHotUpdate_N_E"]("webpack",{},
 /******/ 	// This function allow to reference async chunks
 /******/ 	__webpack_require__.u = function(chunkId) {
 /******/ 		// return url for filenames based on template
-/******/ 		return undefined;
+/******/ 		return "static/chunks/" + chunkId + ".js";
 /******/ 	};
 /******/ }();
 /******/ 
@@ -23,13 +23,13 @@ self["webpackHotUpdate_N_E"]("webpack",{},
 /******/ 	// This function allow to reference async chunks
 /******/ 	__webpack_require__.miniCssF = function(chunkId) {
 /******/ 		// return url for filenames based on template
-/******/ 		return undefined;
+/******/ 		return "static/css/" + chunkId + ".css";
 /******/ 	};
 /******/ }();
 /******/ 
 /******/ /* webpack/runtime/getFullHash */
 /******/ !function() {
-/******/ 	__webpack_require__.h = function() { return "d59cba9c27ff8f9d"; }
+/******/ 	__webpack_require__.h = function() { return "ecc498b6064d8695"; }
 /******/ }();
 /******/ 
 /******/ /* webpack/runtime/css loading */
@@ -83,7 +83,23 @@ self["webpackHotUpdate_N_E"]("webpack",{},
 /******/ 			createStylesheet(chunkId, fullhref, resolve, reject);
 /******/ 		});
 /******/ 	}
-/******/ 	// no chunk loading
+/******/ 	// object to store loaded CSS chunks
+/******/ 	var installedCssChunks = {
+/******/ 		"webpack": 0
+/******/ 	};
+/******/ 	
+/******/ 	__webpack_require__.f.miniCss = function(chunkId, promises) {
+/******/ 		var cssChunks = {"_app-pages-browser_src_components_GameMap_tsx":1,"_app-pages-browser_src_components_StaticResultMap_tsx":1};
+/******/ 		if(installedCssChunks[chunkId]) promises.push(installedCssChunks[chunkId]);
+/******/ 		else if(installedCssChunks[chunkId] !== 0 && cssChunks[chunkId]) {
+/******/ 			promises.push(installedCssChunks[chunkId] = loadStylesheet(chunkId).then(function() {
+/******/ 				installedCssChunks[chunkId] = 0;
+/******/ 			}, function(e) {
+/******/ 				delete installedCssChunks[chunkId];
+/******/ 				throw e;
+/******/ 			}));
+/******/ 		}
+/******/ 	};
 /******/ 	
 /******/ 	var oldTags = [];
 /******/ 	var newTags = [];

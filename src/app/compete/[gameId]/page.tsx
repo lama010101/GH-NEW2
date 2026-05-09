@@ -369,6 +369,27 @@ export default function CompeteGamePage() {
     };
   }, [gameId, playerId, isReady]);
 
+  // Fetch round results from API when reconnecting in ROUND_COMPLETE phase
+  // This handles page refresh where snapshot.results is not populated from DB load
+  useEffect(() => {
+    if (snapshot?.status !== "ROUND_COMPLETE") return;
+    if (roundResults !== null) return;
+    if (!gameId) return;
+    if (typeof snapshot.currentRoundIndex !== "number") return;
+
+    fetch(`/api/compete/${gameId}/round/${snapshot.currentRoundIndex}/results`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.results)) {
+          const ranked = [...data.results].sort((a, b) => a.rank - b.rank);
+          setRoundResults(ranked);
+        }
+      })
+      .catch(err => {
+        console.error("[CompeteGamePage] Failed to fetch round results:", err);
+      });
+  }, [snapshot?.status, snapshot?.currentRoundIndex, roundResults, gameId]);
+
   // Local UI-only timer derived from snapshot.roundEndsAt.
   // This is a DISPLAY computation, not authoritative state.
   useEffect(() => {
@@ -1580,451 +1601,7 @@ export default function CompeteGamePage() {
 
         {snapshot.status === "SESSION_COMPLETE" ? (
           <section className="gh-final-section">
-            <style>{`
-              .gh-final-section {
-                min-height: 100vh;
-                width: 100%;
-                overflow-x: hidden;
-                background: #000000;
-                padding: 0 0 96px;
-                color: #ffffff;
-                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-              }
-              .gh-final-section * {
-                box-sizing: border-box;
-              }
-              .gh-final-topbar {
-                width: 100%;
-                min-height: 48px;
-                background: rgba(17, 24, 39, 0.72);
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 8px 14px;
-              }
-              .gh-final-title {
-                color: #6b7280;
-                font-size: 11px;
-                font-weight: 600;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-              }
-              .gh-final-profile {
-                position: relative;
-              }
-              .gh-final-profile summary {
-                list-style: none;
-              }
-              .gh-final-profile summary::-webkit-details-marker {
-                display: none;
-              }
-              .gh-final-avatar-button {
-                width: 32px;
-                height: 32px;
-                border: 0;
-                border-radius: 999px;
-                background: #333333;
-                color: #ffffff;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                cursor: pointer;
-                font-size: 13px;
-                font-weight: 700;
-              }
-              .gh-final-profile-menu {
-                position: absolute;
-                top: 40px;
-                right: 0;
-                z-index: 20;
-                min-width: 112px;
-                border-radius: 10px;
-                background: #333333;
-                padding: 6px;
-                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
-              }
-              .gh-final-profile-menu button {
-                width: 100%;
-                border: 0;
-                border-radius: 8px;
-                background: transparent;
-                color: #ffffff;
-                cursor: pointer;
-                font-size: 13px;
-                font-weight: 600;
-                padding: 8px 10px;
-                text-align: left;
-              }
-              .session-complete-content {
-                width: 100%;
-                max-width: 680px;
-                margin: 0 auto;
-                padding: 14px 12px 0;
-              }
-              .gh-final-score-grid {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 12px;
-                margin-bottom: 12px;
-              }
-              .session-complete-score-hero {
-                min-width: 0;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 24px 12px 18px;
-              }
-              .gh-final-xp {
-                margin-top: 8px;
-                color: #9ca3af;
-                font-size: 13px;
-                font-weight: 400;
-              }
-              .gh-final-card {
-                background: #333333;
-                border-radius: 14px;
-              }
-              .gh-final-stat-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-              }
-              .gh-final-stat-card {
-                min-width: 0;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 15px 10px;
-                background: #333333;
-                border-radius: 14px;
-              }
-              .gh-final-stat-icon {
-                width: 16px;
-                height: 16px;
-                color: #9ca3af;
-                margin-bottom: 8px;
-              }
-              .gh-final-percent-line {
-                display: inline-flex;
-                align-items: baseline;
-                justify-content: center;
-                font-weight: 700;
-                line-height: 1;
-              }
-              .gh-final-stat-number {
-                font-size: 24px;
-              }
-              .gh-final-stat-symbol {
-                font-size: 12px;
-                margin-left: 1px;
-              }
-              .gh-final-stat-sub {
-                margin-top: 7px;
-                color: #6b7280;
-                font-size: 11px;
-                font-weight: 400;
-                text-align: center;
-              }
-              .gh-final-panel {
-                overflow: hidden;
-                margin-bottom: 12px;
-                background: #333333;
-                border-radius: 14px;
-              }
-              .gh-final-panel-heading {
-                color: #9ca3af;
-                font-size: 11px;
-                font-weight: 600;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                padding: 13px 14px 10px;
-              }
-              .gh-final-rank-row {
-                display: grid;
-                grid-template-columns: 22px 30px minmax(0, 1fr) auto;
-                align-items: center;
-                gap: 9px;
-                padding: 11px 12px;
-                border-left: 3px solid transparent;
-              }
-              .gh-final-rank-row + .gh-final-rank-row {
-                border-top: 1px solid #374151;
-              }
-              .gh-final-rank-number {
-                color: #9ca3af;
-                font-size: 13px;
-                font-weight: 400;
-              }
-              .gh-final-rank-avatar {
-                width: 30px;
-                height: 30px;
-                border-radius: 999px;
-                background: #1a1a1a;
-                color: #ffffff;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                font-size: 12px;
-                font-weight: 700;
-              }
-              .gh-final-rank-main {
-                min-width: 0;
-              }
-              .gh-final-rank-name-line {
-                min-width: 0;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-              }
-              .gh-final-rank-name {
-                min-width: 0;
-                font-size: 13px;
-                font-weight: 600;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-              }
-              .gh-final-you-tag {
-                color: #9ca3af;
-                font-size: 11px;
-                font-weight: 400;
-                flex: 0 0 auto;
-              }
-              .gh-final-progress-track {
-                width: 100%;
-                height: 4px;
-                background: #1a1a1a;
-                border-radius: 999px;
-                margin-top: 6px;
-                overflow: hidden;
-              }
-              .gh-final-progress-fill {
-                height: 100%;
-                border-radius: 999px;
-                background: #9ca3af;
-              }
-              .gh-final-rank-score {
-                text-align: right;
-                white-space: nowrap;
-              }
-              .gh-final-rank-percent {
-                color: #ffffff;
-                font-size: 15px;
-                font-weight: 700;
-                line-height: 1;
-              }
-              .gh-final-rank-xp {
-                color: #9ca3af;
-                font-size: 11px;
-                font-weight: 400;
-                margin-top: 4px;
-              }
-              .gh-final-rounds {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 10px;
-              }
-              .gh-final-round-card {
-                overflow: hidden;
-                background: #333333;
-                border-radius: 14px;
-              }
-              .gh-final-photo {
-                position: relative;
-                width: 100%;
-                height: 112px;
-                overflow: hidden;
-                background: #1a1a1a;
-              }
-              .gh-final-photo img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
-                cursor: pointer;
-              }
-              .gh-final-round-badge {
-                position: absolute;
-                top: 9px;
-                left: 9px;
-                border-radius: 999px;
-                background: rgba(0, 0, 0, 0.72);
-                color: #9ca3af;
-                font-size: 11px;
-                font-weight: 600;
-                letter-spacing: 0.08em;
-                padding: 5px 8px;
-              }
-              .gh-final-photo-fallback {
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 12px;
-                color: #6b7280;
-                font-size: 11px;
-                font-weight: 400;
-                text-align: center;
-              }
-              .gh-final-round-body {
-                padding: 11px 12px 12px;
-              }
-              .gh-final-round-title {
-                color: #ffffff;
-                font-size: 14px;
-                font-weight: 600;
-                line-height: 1.35;
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
-                margin-bottom: 10px;
-              }
-              .gh-final-mini-grid {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 6px;
-              }
-              .gh-final-mini-tile {
-                min-width: 0;
-                background: #1a1a1a;
-                border-radius: 8px;
-                padding: 9px 4px 8px;
-                text-align: center;
-              }
-              .gh-final-mini-number {
-                font-size: 20px;
-              }
-              .gh-final-mini-symbol {
-                font-size: 11px;
-                margin-left: 1px;
-              }
-              .gh-final-mini-label {
-                color: #6b7280;
-                font-size: 11px;
-                font-weight: 600;
-                letter-spacing: 0.04em;
-                line-height: 1;
-                margin-top: 6px;
-                text-transform: uppercase;
-              }
-              .gh-final-mini-sub {
-                color: #6b7280;
-                font-size: 11px;
-                font-weight: 400;
-                line-height: 1.15;
-                margin-top: 5px;
-              }
-              .gh-final-best-row {
-                border-top: 1px solid #374151;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 10px;
-                margin-top: 10px;
-                padding-top: 10px;
-              }
-              .gh-final-best-label {
-                display: inline-flex;
-                align-items: center;
-                gap: 5px;
-                color: #6b7280;
-                font-size: 11px;
-                font-weight: 600;
-                letter-spacing: 0.05em;
-                text-transform: uppercase;
-              }
-              .gh-final-best-name {
-                min-width: 0;
-                color: #9ca3af;
-                font-size: 11px;
-                font-weight: 600;
-                overflow: hidden;
-                text-align: right;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-              }
-              .gh-final-cta {
-                position: fixed;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                z-index: 30;
-                display: flex;
-                gap: 10px;
-                width: 100%;
-                background: #000000;
-                padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-              }
-              .gh-final-cta button {
-                height: 46px;
-                border-radius: 12px;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 600;
-              }
-              .gh-final-home {
-                flex: 1;
-                background: #1a1a1a;
-                border: 1px solid #374151;
-                color: #9ca3af;
-              }
-              .gh-final-play {
-                flex: 1.25;
-                background: #f97316;
-                border: 1px solid #f97316;
-                color: #ffffff;
-              }
-              @media (min-width: 768px) {
-                .session-complete-content {
-                  max-width: 720px;
-                  margin: 0 auto;
-                }
-                .session-complete-score-hero {
-                  display: grid;
-                  grid-template-columns: auto 1fr;
-                  gap: 24px;
-                  align-items: center;
-                }
-                .gh-final-section {
-                  padding-bottom: 48px;
-                }
-                .gh-final-topbar {
-                  padding-left: 24px;
-                  padding-right: 24px;
-                }
-                .gh-final-score-grid {
-                  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-                  align-items: stretch;
-                }
-                .session-complete-score-hero {
-                  min-height: 230px;
-                }
-                .gh-final-stat-grid {
-                  height: 100%;
-                  align-content: stretch;
-                }
-                .gh-final-stat-card {
-                  min-height: 109px;
-                }
-                .gh-final-cta {
-                  position: static;
-                  max-width: 680px;
-                  margin: 18px auto 0;
-                  padding: 0 12px;
-                }
-              }
-            `}</style>
-            {/* Loading state */}
-            {!allRoundResults ? (
-              <div style={{ padding: 40, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
-                Loading results…
-              </div>
-            ) : (() => {
+            {(() => {
               if (!playerId) return null;
               const myStats = computePlayerStats(playerId);
               const overallAccuracy = myStats?.avgAccuracy ?? 0;
@@ -2068,6 +1645,449 @@ export default function CompeteGamePage() {
 
               return (
                 <>
+                  <style>{`
+                    .gh-final-section {
+                      min-height: 100vh;
+                      width: 100%;
+                      overflow-x: hidden;
+                      background: #000000;
+                      padding: 0 0 96px;
+                      color: #ffffff;
+                      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    }
+                    .gh-final-section * {
+                      box-sizing: border-box;
+                    }
+                    .gh-final-topbar {
+                      width: 100%;
+                      min-height: 48px;
+                      background: rgba(17, 24, 39, 0.72);
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                      padding: 8px 14px;
+                    }
+                    .gh-final-title {
+                      color: #6b7280;
+                      font-size: 11px;
+                      font-weight: 600;
+                      letter-spacing: 0.08em;
+                      text-transform: uppercase;
+                    }
+                    .gh-final-profile {
+                      position: relative;
+                    }
+                    .gh-final-profile summary {
+                      list-style: none;
+                    }
+                    .gh-final-profile summary::-webkit-details-marker {
+                      display: none;
+                    }
+                    .gh-final-avatar-button {
+                      width: 32px;
+                      height: 32px;
+                      border: 0;
+                      border-radius: 999px;
+                      background: #333333;
+                      color: #ffffff;
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      overflow: hidden;
+                      cursor: pointer;
+                      font-size: 13px;
+                      font-weight: 700;
+                    }
+                    .gh-final-profile-menu {
+                      position: absolute;
+                      top: 40px;
+                      right: 0;
+                      z-index: 20;
+                      min-width: 112px;
+                      border-radius: 10px;
+                      background: #333333;
+                      padding: 6px;
+                      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+                    }
+                    .gh-final-profile-menu button {
+                      width: 100%;
+                      border: 0;
+                      border-radius: 8px;
+                      background: transparent;
+                      color: #ffffff;
+                      cursor: pointer;
+                      font-size: 13px;
+                      font-weight: 600;
+                      padding: 8px 10px;
+                      text-align: left;
+                    }
+                    .session-complete-content {
+                      width: 100%;
+                      max-width: 680px;
+                      margin: 0 auto;
+                      padding: 14px 12px 0;
+                    }
+                    .gh-final-score-grid {
+                      display: grid;
+                      grid-template-columns: 1fr;
+                      gap: 12px;
+                      margin-bottom: 12px;
+                    }
+                    .session-complete-score-hero {
+                      min-width: 0;
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 24px 12px 18px;
+                    }
+                    .gh-final-xp {
+                      margin-top: 8px;
+                      color: #9ca3af;
+                      font-size: 13px;
+                      font-weight: 400;
+                    }
+                    .gh-final-card {
+                      background: #333333;
+                      border-radius: 14px;
+                    }
+                    .gh-final-stat-grid {
+                      display: grid;
+                      grid-template-columns: 1fr 1fr;
+                      gap: 8px;
+                    }
+                    .gh-final-stat-card {
+                      min-width: 0;
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 15px 10px;
+                      background: #333333;
+                      border-radius: 14px;
+                    }
+                    .gh-final-stat-icon {
+                      width: 16px;
+                      height: 16px;
+                      color: #9ca3af;
+                      margin-bottom: 8px;
+                    }
+                    .gh-final-percent-line {
+                      display: inline-flex;
+                      align-items: baseline;
+                      justify-content: center;
+                      font-weight: 700;
+                      line-height: 1;
+                    }
+                    .gh-final-stat-number {
+                      font-size: 24px;
+                    }
+                    .gh-final-stat-symbol {
+                      font-size: 12px;
+                      margin-left: 1px;
+                      color: #ffffff;
+                    }
+                    .gh-final-stat-sub {
+                      margin-top: 7px;
+                      color: #6b7280;
+                      font-size: 11px;
+                      font-weight: 400;
+                      text-align: center;
+                    }
+                    .gh-final-panel {
+                      overflow: hidden;
+                      margin-bottom: 12px;
+                      background: #333333;
+                      border-radius: 14px;
+                    }
+                    .gh-final-panel-heading {
+                      color: #9ca3af;
+                      font-size: 11px;
+                      font-weight: 600;
+                      letter-spacing: 0.08em;
+                      text-transform: uppercase;
+                      padding: 13px 14px 10px;
+                    }
+                    .gh-final-rank-row {
+                      display: grid;
+                      grid-template-columns: 22px 30px minmax(0, 1fr) auto;
+                      align-items: center;
+                      gap: 9px;
+                      padding: 11px 12px;
+                      border-left: 3px solid transparent;
+                    }
+                    .gh-final-rank-row + .gh-final-rank-row {
+                      border-top: 1px solid #374151;
+                    }
+                    .gh-final-rank-number {
+                      color: #9ca3af;
+                      font-size: 13px;
+                      font-weight: 400;
+                    }
+                    .gh-final-rank-avatar {
+                      width: 30px;
+                      height: 30px;
+                      border-radius: 999px;
+                      background: #1a1a1a;
+                      color: #ffffff;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      overflow: hidden;
+                      font-size: 12px;
+                      font-weight: 700;
+                    }
+                    .gh-final-rank-main {
+                      min-width: 0;
+                    }
+                    .gh-final-rank-name-line {
+                      min-width: 0;
+                      display: flex;
+                      align-items: center;
+                      gap: 5px;
+                    }
+                    .gh-final-rank-name {
+                      min-width: 0;
+                      font-size: 13px;
+                      font-weight: 600;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      white-space: nowrap;
+                    }
+                    .gh-final-you-tag {
+                      color: #9ca3af;
+                      font-size: 11px;
+                      font-weight: 400;
+                      flex: 0 0 auto;
+                    }
+                    .gh-final-progress-track {
+                      width: 100%;
+                      height: 4px;
+                      background: #1a1a1a;
+                      border-radius: 999px;
+                      margin-top: 6px;
+                      overflow: hidden;
+                    }
+                    .gh-final-progress-fill {
+                      height: 100%;
+                      border-radius: 999px;
+                      background: #9ca3af;
+                    }
+                    .gh-final-rank-score {
+                      text-align: right;
+                      white-space: nowrap;
+                    }
+                    .gh-final-rank-percent {
+                      color: #ffffff;
+                      font-size: 15px;
+                      font-weight: 700;
+                      line-height: 1;
+                      display: inline-flex;
+                      align-items: baseline;
+                    }
+                    .gh-final-rank-xp {
+                      color: #9ca3af;
+                      font-size: 11px;
+                      font-weight: 400;
+                      margin-top: 4px;
+                    }
+                    .gh-final-rounds {
+                      display: grid;
+                      grid-template-columns: 1fr;
+                      gap: 10px;
+                    }
+                    .gh-final-round-card {
+                      overflow: hidden;
+                      background: #333333;
+                      border-radius: 14px;
+                    }
+                    .gh-final-photo {
+                      position: relative;
+                      width: 100%;
+                      height: 112px;
+                      overflow: hidden;
+                      background: #1a1a1a;
+                    }
+                    .gh-final-photo img {
+                      width: 100%;
+                      height: 100%;
+                      object-fit: cover;
+                      display: block;
+                      cursor: pointer;
+                    }
+                    .gh-final-round-badge {
+                      position: absolute;
+                      top: 9px;
+                      left: 9px;
+                      border-radius: 999px;
+                      background: rgba(0, 0, 0, 0.72);
+                      color: #9ca3af;
+                      font-size: 11px;
+                      font-weight: 600;
+                      letter-spacing: 0.08em;
+                      padding: 5px 8px;
+                    }
+                    .gh-final-photo-fallback {
+                      height: 100%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 12px;
+                      color: #6b7280;
+                      font-size: 11px;
+                      font-weight: 400;
+                      text-align: center;
+                    }
+                    .gh-final-round-body {
+                      padding: 11px 12px 12px;
+                    }
+                    .gh-final-round-title {
+                      color: #ffffff;
+                      font-size: 14px;
+                      font-weight: 600;
+                      line-height: 1.35;
+                      display: -webkit-box;
+                      -webkit-line-clamp: 2;
+                      -webkit-box-orient: vertical;
+                      overflow: hidden;
+                      margin-bottom: 10px;
+                    }
+                    .gh-final-mini-grid {
+                      display: grid;
+                      grid-template-columns: repeat(3, minmax(0, 1fr));
+                      gap: 6px;
+                    }
+                    .gh-final-mini-tile {
+                      min-width: 0;
+                      background: #1a1a1a;
+                      border-radius: 8px;
+                      padding: 9px 4px 8px;
+                      text-align: center;
+                    }
+                    .gh-final-mini-number {
+                      font-size: 20px;
+                    }
+                    .gh-final-mini-symbol {
+                      font-size: 10px;
+                      margin-left: 1px;
+                      color: #ffffff;
+                    }
+                    .gh-final-mini-label {
+                      color: #6b7280;
+                      font-size: 11px;
+                      font-weight: 600;
+                      letter-spacing: 0.04em;
+                      line-height: 1;
+                      margin-top: 6px;
+                      text-transform: uppercase;
+                    }
+                    .gh-final-mini-sub {
+                      color: #6b7280;
+                      font-size: 11px;
+                      font-weight: 400;
+                      line-height: 1.15;
+                      margin-top: 5px;
+                    }
+                    .gh-final-best-row {
+                      border-top: 1px solid #374151;
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                      gap: 10px;
+                      margin-top: 10px;
+                      padding-top: 10px;
+                    }
+                    .gh-final-best-label {
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 5px;
+                      color: #6b7280;
+                      font-size: 11px;
+                      font-weight: 600;
+                      letter-spacing: 0.05em;
+                      text-transform: uppercase;
+                    }
+                    .gh-final-best-name {
+                      min-width: 0;
+                      color: #9ca3af;
+                      font-size: 11px;
+                      font-weight: 600;
+                      overflow: hidden;
+                      text-align: right;
+                      text-overflow: ellipsis;
+                      white-space: nowrap;
+                    }
+                    .gh-final-cta {
+                      position: fixed;
+                      left: 0;
+                      right: 0;
+                      bottom: 0;
+                      z-index: 30;
+                      display: flex;
+                      gap: 10px;
+                      width: 100%;
+                      background: #000000;
+                      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+                    }
+                    .gh-final-cta button {
+                      height: 46px;
+                      border-radius: 12px;
+                      cursor: pointer;
+                      font-size: 14px;
+                      font-weight: 600;
+                    }
+                    .gh-final-home {
+                      flex: 1;
+                      background: #1a1a1a;
+                      border: 1px solid #374151;
+                      color: #9ca3af;
+                    }
+                    .gh-final-play {
+                      flex: 1.25;
+                      background: #f97316;
+                      border: 1px solid #f97316;
+                      color: #ffffff;
+                    }
+                    @media (min-width: 768px) {
+                      .session-complete-content {
+                        max-width: 720px;
+                        margin: 0 auto;
+                      }
+                      .session-complete-score-hero {
+                        display: grid;
+                        grid-template-columns: auto 1fr;
+                        gap: 24px;
+                        align-items: center;
+                      }
+                      .gh-final-section {
+                        padding-bottom: 48px;
+                      }
+                      .gh-final-topbar {
+                        padding-left: 24px;
+                        padding-right: 24px;
+                      }
+                      .gh-final-score-grid {
+                        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                        align-items: stretch;
+                      }
+                      .session-complete-score-hero {
+                        min-height: 230px;
+                      }
+                      .gh-final-stat-grid {
+                        height: 100%;
+                        align-content: stretch;
+                      }
+                      .gh-final-stat-card {
+                        min-height: 109px;
+                      }
+                      .gh-final-cta {
+                        position: static;
+                        max-width: 680px;
+                        margin: 18px auto 0;
+                        padding: 0 12px;
+                      }
+                    }
+                  `}</style>
                   <div className="gh-final-topbar">
                     <div className="gh-final-title">Guess History</div>
                     <details className="gh-final-profile">
