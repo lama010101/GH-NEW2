@@ -13,6 +13,7 @@ export type HintModalProps = {
   hints: EventHint[];
   isOpen: boolean;
   onClose: (result: HintPurchaseResult) => void;
+  purchasedIds: string[];
 };
 
 // Tier penalty mapping (spec-authoritative)
@@ -126,17 +127,17 @@ function getRevealedText(hint: EventHint): string {
   return hint.content;
 }
 
-export function HintModal({ hints, isOpen, onClose }: HintModalProps) {
-  const [purchased, setPurchased] = useState<Set<string>>(new Set());
+export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalProps) {
+  const [purchased, setPurchased] = useState<Set<string>>(new Set(purchasedIds));
   const [activeTab, setActiveTab] = useState<TabType>("when");
 
   // Reset purchased set when modal opens
   useEffect(() => {
     if (isOpen) {
-      setPurchased(new Set());
+      setPurchased(new Set(purchasedIds));
       setActiveTab("when");
     }
-  }, [isOpen]);
+  }, [isOpen, purchasedIds]);
 
   // Get cost pill color class
   const getCostClass = (tier: number): string => {
