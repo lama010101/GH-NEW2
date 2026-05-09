@@ -199,6 +199,14 @@ export default class GameServer {
   private applySnapshotAndBroadcast(snapshot: unknown): void {
     if (isRuntimeState(snapshot)) {
       console.log("[PartyKit] Applying snapshot, players:", snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+      // Set resultPhaseStartAt when transitioning to ROUND_COMPLETE (from any state)
+      if (isRuntimeState(this.snapshot) &&
+          this.snapshot.status !== "ROUND_COMPLETE" &&
+          snapshot.status === "ROUND_COMPLETE") {
+        this.resultPhaseStartAt = Date.now();
+        this.readyForNext.clear();
+        console.log("[PartyKit] Result phase started, readyForNext cleared, resultPhaseStartAt set");
+      }
       // Reset readyForNext when transitioning from ROUND_COMPLETE to ROUND_ACTIVE (new round started)
       if (isRuntimeState(this.snapshot) &&
           this.snapshot.status === "ROUND_COMPLETE" &&
