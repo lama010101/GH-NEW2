@@ -455,6 +455,31 @@ export default function CompeteGamePage() {
     return () => clearInterval(interval);
   }, [snapshot?.status, snapshot?.resultPhaseEndsAt]);
 
+  const handleAdvanceRound = useCallback(() => {
+    if (!snapshot || !playerId || !wsRef.current) return;
+    setBusy(true);
+    setError(null);
+    // Client → DO → DB: send READY_NEXT action signal via WS
+    wsRef.current.readyNext(snapshot.currentRoundIndex);
+    setTimeout(() => setBusy(false), 5000);
+  }, [snapshot, playerId]);
+
+  // Auto-advance trigger when countdown reaches 0
+  useEffect(() => {
+    if (resultSecsLeft !== 0) return;
+    if (snapshot?.status !== "ROUND_COMPLETE") return;
+    const alreadyReady = snapshot?.readyForNext?.includes(playerId ?? "");
+    if (alreadyReady) return;
+    handleAdvanceRound();
+  }, [resultSecsLeft, snapshot?.status, snapshot?.readyForNext, playerId, handleAdvanceRound]);
+
+  // Scroll to top when ROUND_COMPLETE loads
+  useEffect(() => {
+    if (snapshot?.status === "ROUND_COMPLETE") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [snapshot?.status]);
+
   // Helper: compute derived stats for a player
   const computePlayerStats = useCallback((pid: string) => {
     if (!allRoundResults) return null;
@@ -548,15 +573,6 @@ export default function CompeteGamePage() {
       hintResult.xpPenalty
     );
   }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult]);
-
-  const handleAdvanceRound = useCallback(() => {
-    if (!snapshot || !playerId || !wsRef.current) return;
-    setBusy(true);
-    setError(null);
-    // Client → DO → DB: send READY_NEXT action signal via WS
-    wsRef.current.readyNext(snapshot.currentRoundIndex);
-    setTimeout(() => setBusy(false), 5000);
-  }, [snapshot, playerId]);
 
   if (!gameId) return null;
 
@@ -913,47 +929,45 @@ export default function CompeteGamePage() {
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#f97316", textAlign: "center", padding: "8px 16px" }}>
                       {correctYear} · {correctName}
                     </div>
-                    <div style={{ padding: "0 16px 16px" }}>
-                      <div style={{ fontSize: 13, color: "#d1d5db", lineHeight: 1.5, display: descriptionExpanded ? "block" : "-webkit-box", WebkitLineClamp: descriptionExpanded ? "unset" : 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    <div style={{ padding: "0 16px 8px" }}>
+                      <div style={{
+                        fontSize: 15,
+                        color: "#d1d5db",
+                        lineHeight: 1.6,
+                        display: descriptionExpanded ? "block" : "-webkit-box",
+                        WebkitLineClamp: descriptionExpanded ? undefined : 3,
+                        WebkitBoxOrient: "vertical" as const,
+                        overflow: "hidden",
+                      }}>
                         {round.description ?? "No description available"}
                       </div>
                       {!descriptionExpanded && (round.description?.length ?? 0) > 0 && (
                         <button
                           onClick={() => setDescriptionExpanded(true)}
-                          style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 13, textDecoration: "underline", cursor: "pointer", padding: 0, marginTop: 4 }}
+                          style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 13, textDecoration: "underline", cursor: "pointer", padding: 0, marginTop: 4, display: "block" }}
                         >
                           more
                         </button>
                       )}
-                      {(round as unknown as { sourceUrl?: string }).sourceUrl && (
+                    </div>
+                    {(round as unknown as { sourceUrl?: string }).sourceUrl && (
+                      <div style={{ padding: "0 16px 16px" }}>
                         <button
                           onClick={() => window.open((round as unknown as { sourceUrl?: string }).sourceUrl, "_blank")}
-                          style={{ background: "transparent", border: "1px solid #6b7280", color: "#6b7280", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer", marginTop: 8 }}
+                          style={{ background: "transparent", border: "1px solid #6b7280", color: "#9ca3af", fontSize: 12, borderRadius: 6, padding: "5px 12px", cursor: "pointer" }}
                         >
-                          Source
+                          Source ↗
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                   {/* ACCURACY RING CARD */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-                        <RainbowRing value={accuracy} />
-                        <span style={{
-                          position: "absolute",
-                          right: "-28px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          fontSize: 26,
-                          fontWeight: 700,
-                          color: "#fff",
-                          lineHeight: 1,
-                        }}>%</span>
-                      </div>
+                      <RainbowRing value={accuracy} />
                     </div>
                     <div style={{ textAlign: "center", marginTop: 12 }}>
-                      <span style={{ fontSize: 13, color: "#9ca3af" }}>{myResult?.score ?? 0} XP</span>
+                      <span style={{ fontSize: 15, color: "#9ca3af" }}>{myResult?.score ?? 0} XP</span>
                     </div>
                     {submittedHintPenaltyRef.current.xpPenalty > 0 && (
                       <div style={{ textAlign: "center", marginTop: 4 }}>
@@ -966,7 +980,7 @@ export default function CompeteGamePage() {
                           color: "#fca5a5",
                           fontWeight: 600,
                         }}>
-                          −{submittedHintPenaltyRef.current.xpPenalty} XP hints
+                          Hint penalties deducted
                         </span>
                       </div>
                     )}
@@ -1061,7 +1075,7 @@ export default function CompeteGamePage() {
                   })()}
                   {/* ROUND LEADERBOARD CARD */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
                     {leaderboardRows.map(row => {
                       const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
                       const accColor = `hsl(${hue}, 100%, 50%)`;
@@ -1074,7 +1088,7 @@ export default function CompeteGamePage() {
                           background: row.isMe ? "#2e2e2e" : "transparent",
                         }}>
                           <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>{row.rank}</span>
-                          <span style={{ flex: 1, fontSize: 13 }}>
+                          <span style={{ flex: 1, fontSize: 15 }}>
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
                               <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
                               <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
@@ -1083,7 +1097,7 @@ export default function CompeteGamePage() {
                             </span>
                             {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
                           </span>
-                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 13, fontWeight: 600 }}>
                             {Math.round(row.accuracy)}%
                           </span>
                         </div>
@@ -1099,7 +1113,7 @@ export default function CompeteGamePage() {
                             background: isMe ? "#2e2e2e" : "transparent",
                           }}>
                             <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>—</span>
-                            <span style={{ flex: 1, fontSize: 13 }}>
+                            <span style={{ flex: 1, fontSize: 15 }}>
                               <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
                                 <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} />
                                 <span style={{ ...getUsernameGradientStyle(p.playerId), fontWeight: isMe ? 700 : 500 }}>
@@ -1109,7 +1123,7 @@ export default function CompeteGamePage() {
                               {isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
                               <span style={{ color: "#555", fontSize: 11, fontStyle: "italic", marginLeft: 4 }}>No guess</span>
                             </span>
-                            <span style={{ background: "#2a2a2a", color: "#888", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                            <span style={{ background: "#2a2a2a", color: "#888", borderRadius: 999, padding: "2px 9px", fontSize: 13, fontWeight: 600 }}>
                               —
                             </span>
                           </div>
@@ -1122,11 +1136,11 @@ export default function CompeteGamePage() {
                   <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                           <circle cx="12" cy="10" r="3" />
                         </svg>
-                        <span style={{ fontSize: 16, fontWeight: 600, color: "#e5e7eb" }}>Where</span>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: "#f97316" }}>Where</span>
                       </div>
                       {myResult != null && (() => {
                         const locScore = Math.round(myResult.locationScore);
@@ -1134,8 +1148,8 @@ export default function CompeteGamePage() {
                         const locColor = `hsl(${locHue}, 100%, 50%)`;
                         return (
                           <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                            <span style={{ fontSize: 22, fontWeight: 700, color: locColor }}>{locScore}</span>
-                            <span style={{ fontSize: 11, color: locColor }}>%</span>
+                            <span style={{ fontSize: 28, fontWeight: 700, color: locColor }}>{locScore}</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>%</span>
                           </div>
                         );
                       })()}
@@ -1153,13 +1167,13 @@ export default function CompeteGamePage() {
                         </span>
                       </div>
                     )}
-                    <div style={{ fontSize: 13, color: "#fff", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
+                    <div style={{ fontSize: 15, color: "#fff", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
                       <span>Correct:</span>
                       <span style={{ color: "#f97316" }}>{correctName}</span>
                     </div>
                     {myDistanceKm != null && (
                       <div style={{ marginBottom: 8 }}>
-                        <span style={{ fontSize: 13, color: "#fff" }}>{Math.round(myDistanceKm)} km away</span>
+                        <span style={{ fontSize: 15, color: "#fff" }}>{Math.round(myDistanceKm)} km away</span>
                       </div>
                     )}
                     {guessLat != null && guessLng != null ? (
@@ -1210,17 +1224,17 @@ export default function CompeteGamePage() {
                                   <span style={{ minWidth: 20, color: "#888", fontSize: 13, fontWeight: 600 }}>
                                     {r.rank ?? "—"}
                                   </span>
-                                  <span style={{ flex: 1, fontSize: 13 }}>
+                                  <span style={{ flex: 1, fontSize: 15 }}>
                                     <span style={{ ...getUsernameGradientStyle(r.playerId), fontWeight: r.playerId === playerId ? 600 : 400 }}>
                                       {snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
                                     </span>
                                     {r.playerId === playerId && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
                                   </span>
-                                  <span style={{ color: "#bbb", fontSize: 11, fontWeight: 600 }}>
+                                  <span style={{ color: "#bbb", fontSize: 13, fontWeight: 600 }}>
                                     {distanceKm != null ? `${Math.round(distanceKm)} km away` : "—"}
                                   </span>
                                   {locationAcc != null && (
-                                    <span style={{ background: locAccBg, color: locAccColor, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
+                                    <span style={{ background: locAccBg, color: locAccColor, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 600 }}>
                                       {locationAcc}%
                                     </span>
                                   )}
@@ -1230,20 +1244,20 @@ export default function CompeteGamePage() {
                         </div>
                       </>
                     ) : (
-                      <p style={{ color: "#888", fontSize: 13, margin: 0 }}>No location submitted</p>
+                      <p style={{ color: "#888", fontSize: 15, margin: 0 }}>No location submitted</p>
                     )}
                   </div>
                   {/* WHEN CARD */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                           <line x1="16" y1="2" x2="16" y2="6" />
                           <line x1="8" y1="2" x2="8" y2="6" />
                           <line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
-                        <span style={{ fontSize: 16, fontWeight: 600, color: "#e5e7eb" }}>When</span>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: "#f97316" }}>When</span>
                       </div>
                       {(() => {
                         const myWhenRow = whenRows.find(r => r.isMe);
@@ -1254,8 +1268,8 @@ export default function CompeteGamePage() {
                           const whenColor = `hsl(${whenHue}, 100%, 50%)`;
                           return (
                             <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                              <span style={{ fontSize: 22, fontWeight: 700, color: whenColor }}>{whenScore}</span>
-                              <span style={{ fontSize: 11, color: whenColor }}>%</span>
+                              <span style={{ fontSize: 28, fontWeight: 700, color: whenColor }}>{whenScore}</span>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: "#ffffff" }}>%</span>
                             </div>
                           );
                         })() : null;
@@ -1395,7 +1409,7 @@ export default function CompeteGamePage() {
                           <span style={{ minWidth: 20, color: "#888", fontSize: 13, fontWeight: 600 }}>
                             {rank ?? "—"}
                           </span>
-                          <span style={{ flex: 1, fontSize: 13 }}>
+                          <span style={{ flex: 1, fontSize: 15 }}>
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
                               <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
                               <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
@@ -1407,7 +1421,7 @@ export default function CompeteGamePage() {
                           <span style={{ color: "#bbb", fontSize: 11, fontWeight: 600 }}>
                             {row.diff != null ? `${row.diff} yrs off` : "—"}
                           </span>
-                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
+                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 600 }}>
                             {row.acc != null ? `${row.acc}%` : "—"}
                           </span>
                         </div>
@@ -1478,6 +1492,19 @@ export default function CompeteGamePage() {
                       </div>
                     );
                   })()}
+                  {resultSecsLeft !== null && resultSecsLeft > 0 && (
+                    <div style={{ textAlign: "center", padding: "12px 0 4px", fontSize: 13, color: "#6b7280" }}>
+                      Auto-advancing in {resultSecsLeft}s
+                    </div>
+                  )}
+                  {snapshot.readyForNext && snapshot.readyForNext.length > 0 && (
+                    <div style={{ textAlign: "center", fontSize: 13, color: "#9ca3af", paddingBottom: 8 }}>
+                      {snapshot.readyForNext.map(pid => {
+                        const name = snapshot.players.find(p => p.playerId === pid)?.displayName ?? pid.slice(0, 8);
+                        return <span key={pid} style={{ marginRight: 6 }}><span style={getUsernameGradientStyle(pid)}>{name}</span> ✓</span>;
+                      })}
+                    </div>
+                  )}
                   {/* FIXED BOTTOM BAR */}
                   <div className="round-complete-desktop-bottom" style={{
                     position: "fixed",
@@ -1508,14 +1535,24 @@ export default function CompeteGamePage() {
                         <polyline points="9 21 9 12 15 12 15 21" />
                       </svg>
                     </button>
-                    <div style={{ fontSize: 13, color: "#9ca3af" }}>
-                      Round {snapshot.currentRoundIndex + 1} / {snapshot.rounds.length}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {Array.from({ length: snapshot.rounds.length }).map((_, i) => {
+                        const isDone = i < snapshot.currentRoundIndex;
+                        const isCurrent = i === snapshot.currentRoundIndex;
+                        return (
+                          <div key={i} style={{
+                            height: 4,
+                            width: 28,
+                            borderRadius: 2,
+                            background: isDone ? "#f97316" : isCurrent ? "#fb923c" : "#374151",
+                            opacity: isCurrent ? 0.7 : 1,
+                          }} />
+                        );
+                      })}
+                      <span style={{ fontSize: 12, color: "#9ca3af", whiteSpace: "nowrap" }}>
+                        Round {snapshot.currentRoundIndex + 1}/{snapshot.rounds.length}
+                      </span>
                     </div>
-                    {resultSecsLeft !== null && (
-                      <p className="text-sm text-gray-400 text-center mb-2">
-                        Auto-advancing in {resultSecsLeft}s
-                      </p>
-                    )}
                     <button
                       onClick={handleAdvanceRound}
                       disabled={snapshot.readyForNext?.includes(playerId ?? "")}
@@ -1532,7 +1569,7 @@ export default function CompeteGamePage() {
                         opacity: snapshot.readyForNext?.includes(playerId ?? "") ? 0.5 : 1,
                       }}
                     >
-                      Next Round →
+                      Next →
                     </button>
                   </div>
                 </>
@@ -1619,7 +1656,7 @@ export default function CompeteGamePage() {
                 padding: 8px 10px;
                 text-align: left;
               }
-              .gh-final-wrap {
+              .session-complete-content {
                 width: 100%;
                 max-width: 680px;
                 margin: 0 auto;
@@ -1631,48 +1668,13 @@ export default function CompeteGamePage() {
                 gap: 12px;
                 margin-bottom: 12px;
               }
-              .gh-final-score-hero {
+              .session-complete-score-hero {
                 min-width: 0;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 padding: 24px 12px 18px;
-              }
-              .gh-final-ring-row {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 6px;
-              }
-              .gh-final-ring-box {
-                position: relative;
-                width: 154px;
-                height: 154px;
-                flex: 0 0 auto;
-              }
-              .gh-final-ring-box svg {
-                width: 154px;
-                height: 154px;
-                display: block;
-              }
-              .gh-final-ring-number {
-                position: absolute;
-                inset: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #ffffff;
-                font-size: 48px;
-                font-weight: 700;
-                line-height: 1;
-              }
-              .gh-final-ring-percent {
-                color: #ffffff;
-                font-size: 24px;
-                font-weight: 700;
-                line-height: 1;
-                transform: translateY(10px);
               }
               .gh-final-xp {
                 margin-top: 8px;
@@ -1709,7 +1711,6 @@ export default function CompeteGamePage() {
                 display: inline-flex;
                 align-items: baseline;
                 justify-content: center;
-                color: #ffffff;
                 font-weight: 700;
                 line-height: 1;
               }
@@ -1781,7 +1782,6 @@ export default function CompeteGamePage() {
               }
               .gh-final-rank-name {
                 min-width: 0;
-                color: #ffffff;
                 font-size: 13px;
                 font-weight: 600;
                 overflow: hidden;
@@ -1979,15 +1979,17 @@ export default function CompeteGamePage() {
                 border: 1px solid #f97316;
                 color: #ffffff;
               }
-              @keyframes ghFinalRing {
-                from {
-                  stroke-dashoffset: 339.292;
-                }
-                to {
-                  stroke-dashoffset: var(--gh-final-ring-offset);
-                }
-              }
               @media (min-width: 768px) {
+                .session-complete-content {
+                  max-width: 720px;
+                  margin: 0 auto;
+                }
+                .session-complete-score-hero {
+                  display: grid;
+                  grid-template-columns: auto 1fr;
+                  gap: 24px;
+                  align-items: center;
+                }
                 .gh-final-section {
                   padding-bottom: 48px;
                 }
@@ -1995,14 +1997,11 @@ export default function CompeteGamePage() {
                   padding-left: 24px;
                   padding-right: 24px;
                 }
-                .gh-final-wrap {
-                  padding-top: 22px;
-                }
                 .gh-final-score-grid {
                   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
                   align-items: stretch;
                 }
-                .gh-final-score-hero {
+                .session-complete-score-hero {
                   min-height: 230px;
                 }
                 .gh-final-stat-grid {
@@ -2037,9 +2036,6 @@ export default function CompeteGamePage() {
               const currentPlayerData = snapshot.players.find(p => p.playerId === playerId);
               const currentDisplayName = playerLabel(snapshot.players, playerId);
               const currentInitial = currentDisplayName ? currentDisplayName.charAt(0).toUpperCase() : "?";
-              const ringRadius = 54;
-              const ringCircumference = 2 * Math.PI * ringRadius;
-              const ringOffset = ringCircumference * (1 - Math.max(0, Math.min(100, overallAccuracy)) / 100);
 
               const roundWinners = new Map<number, string[]>();
               for (let i = 0; i < snapshot.config.totalRounds; i++) {
@@ -2092,35 +2088,11 @@ export default function CompeteGamePage() {
                     </details>
                   </div>
 
-                  <div className="gh-final-wrap">
+                  <div className="session-complete-content">
                     {/* HERO ACCURACY CARD */}
                     <div className="gh-final-score-grid">
-                      <div className="gh-final-score-hero gh-final-card">
-                        <div className="gh-final-ring-row">
-                          <div className="gh-final-ring-box">
-                            <svg viewBox="0 0 154 154" aria-hidden="true">
-                              <circle cx={77} cy={77} r={ringRadius} fill="none" stroke="#1a1a1a" strokeWidth={10} />
-                              <circle
-                                cx={77}
-                                cy={77}
-                                r={ringRadius}
-                                fill="none"
-                                stroke="#f97316"
-                                strokeWidth={10}
-                                strokeLinecap="round"
-                                strokeDasharray={ringCircumference}
-                                strokeDashoffset={ringCircumference}
-                                transform="rotate(-90 77 77)"
-                                style={{
-                                  "--gh-final-ring-offset": `${ringOffset}`,
-                                  animation: "ghFinalRing 900ms ease-out forwards",
-                                } as React.CSSProperties}
-                              />
-                            </svg>
-                            <div className="gh-final-ring-number">{overallAccuracy}</div>
-                          </div>
-                          <span className="gh-final-ring-percent">%</span>
-                        </div>
+                      <div className="session-complete-score-hero gh-final-card">
+                        <RainbowRing value={overallAccuracy} />
                         <div className="gh-final-xp">{overallXP} XP</div>
                       </div>
 
@@ -2133,7 +2105,7 @@ export default function CompeteGamePage() {
                             <circle cx={12} cy={10} r={2.5} />
                           </svg>
                           <div className="gh-final-percent-line">
-                            <span className="gh-final-stat-number">{whereAccuracy}</span>
+                            <span className="gh-final-stat-number" style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whereAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whereAccuracy}</span>
                             <span className="gh-final-stat-symbol">%</span>
                           </div>
                           <div className="gh-final-stat-sub">avg {Math.round(avgDistanceKm)} km away</div>
@@ -2145,7 +2117,7 @@ export default function CompeteGamePage() {
                             <path d="M8 3v4M16 3v4M4 10h16" />
                           </svg>
                           <div className="gh-final-percent-line">
-                            <span className="gh-final-stat-number">{whenAccuracy}</span>
+                            <span className="gh-final-stat-number" style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whenAccuracy}</span>
                             <span className="gh-final-stat-symbol">%</span>
                           </div>
                           <div className="gh-final-stat-sub">avg {Math.round(avgYearDiff)} yrs off</div>
@@ -2183,7 +2155,7 @@ export default function CompeteGamePage() {
                               <div className="gh-final-rank-name-line">
                                 <span
                                   className="gh-final-rank-name"
-                                  style={{ color: isCurrentPlayer ? "#f97316" : "#ffffff" }}
+                                  style={getUsernameGradientStyle(player.playerId)}
                                 >
                                   {displayName}
                                 </span>
@@ -2324,6 +2296,7 @@ export default function CompeteGamePage() {
       <HintModal
         hints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
         isOpen={hintModalOpen}
+        purchasedIds={hintResult.purchasedIds}
         onClose={(result: HintPurchaseResult) => {
           setHintResult(result);
           setHintModalOpen(false);
