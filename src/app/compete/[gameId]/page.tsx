@@ -391,10 +391,14 @@ export default function CompeteGamePage() {
         if (Array.isArray(data.results)) {
           const ranked = [...data.results].sort((a, b) => a.rank - b.rank);
           setRoundResults(ranked);
+        } else {
+          console.warn("[CompeteGamePage] Round results API returned no results array:", data);
+          setRoundResults([]); // Unblock UI
         }
       })
       .catch(err => {
         console.error("[CompeteGamePage] Failed to fetch round results:", err);
+        setRoundResults([]); // Unblock UI — show empty results rather than permanent spinner
       });
   }, [snapshot?.status, snapshot?.currentRoundIndex, roundResults, gameId]);
 
