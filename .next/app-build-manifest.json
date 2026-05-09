@@ -1,20 +1,15 @@
 {
   "pages": {
-    "/page": [
+    "/compete/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
+      "static/chunks/app/compete/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
-    ],
-    "/compete/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/compete/page.js"
     ],
     "/compete/[gameId]/page": [
       "static/chunks/webpack.js",
