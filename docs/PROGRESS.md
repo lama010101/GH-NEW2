@@ -7,6 +7,7 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 ## Log
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-FIX-BUILD-001 | COMPLETE | src/app/compete/[gameId]/page.tsx | Added null guard (allRoundResults ?? []) before .filter call at line 1651 to fix TypeScript null error blocking Vercel build. Date: 2026-05-09 |
 | MP-UI-ROUNDRESULTS-005 | DONE | src/app/compete/[gameId]/page.tsx | Fix WHERE/WHEN headers orange, % white half-size, bottom bar Round label, readyForNext visibility. Date: 2026-05-09 |
 | MP-FIX-AUTOADVANCE-001 | DONE | src/app/compete/[gameId]/page.tsx | Fix auto-advance useEffect missing dependency and stale closure. Date: 2026-05-09 |
 | MP-UI-ROUNDRESULTS-004 | DONE | src/app/compete/[gameId]/page.tsx | Remove % from ring, progress bar in bottom bar, rename Next button. Date: 2026-05-09 |
