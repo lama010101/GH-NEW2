@@ -164,12 +164,6 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function getScoreColor(accuracy: number): string {
-  const clamped = Math.max(0, Math.min(100, accuracy));
-  const hue = Math.round((clamped / 100) * 120);
-  return `hsl(${hue}, 100%, 50%)`;
-}
-
 function RainbowRing({ value }: { value: number }) {
   const r = 80;
   const cx = 100;
@@ -901,7 +895,7 @@ export default function CompeteGamePage() {
                 <>
                   {/* EVENT CARD */}
                   <div style={{ background: "#333", borderRadius: 12, overflow: "hidden", marginBottom: "10px", minHeight: "50vh" }}>
-                    <div style={{ fontSize: 16, fontWeight: 600, color: "#fff", textAlign: "center", padding: "14px 16px 0" }}>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: "#fff", textAlign: "center", padding: "14px 16px 10px" }}>
                       {round.title}
                     </div>
                     {round.imageUrl ? (
@@ -943,30 +937,26 @@ export default function CompeteGamePage() {
                   </div>
                   {/* ACCURACY RING CARD */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                      <RainbowRing value={accuracy} />
-                      <span style={{ fontSize: 26, fontWeight: "bold", color: "#fff" }}>%</span>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                        <RainbowRing value={accuracy} />
+                        <span style={{
+                          position: "absolute",
+                          right: "-28px",
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          fontSize: 26,
+                          fontWeight: 700,
+                          color: "#fff",
+                          lineHeight: 1,
+                        }}>%</span>
+                      </div>
                     </div>
                     <div style={{ textAlign: "center", marginTop: 12 }}>
                       <span style={{ fontSize: 13, color: "#9ca3af" }}>{myResult?.score ?? 0} XP</span>
                     </div>
-                    {submittedHintPenaltyRef.current.accPenalty > 0 && (
-                      <div style={{ textAlign: "center", marginTop: 4 }}>
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 3,
-                          background: "#7f1d1d",
-                          borderRadius: 999,
-                          padding: "2px 8px",
-                          fontSize: 10,
-                          color: "#fca5a5",
-                          fontWeight: 600,
-                        }}>
-                          −{submittedHintPenaltyRef.current.accPenalty}% hints
-                        </span>
-                      </div>
-                    )}
                     {submittedHintPenaltyRef.current.xpPenalty > 0 && (
-                      <div style={{ textAlign: "center", marginTop: 2 }}>
+                      <div style={{ textAlign: "center", marginTop: 4 }}>
                         <span style={{
                           display: "inline-flex", alignItems: "center", gap: 3,
                           background: "#7f1d1d",
@@ -981,23 +971,174 @@ export default function CompeteGamePage() {
                       </div>
                     )}
                   </div>
+                  {/* BADGES CARD */}
+                  {(() => {
+                    const badges = myResult?.badges ?? [];
+                    const nearMisses = myResult?.nearMisses ?? [];
+                    if (badges.length === 0 && nearMisses.length === 0) return null;
+
+                    const tierColor: Record<string, string> = {
+                      gold: '#FFD700',
+                      silver: '#C0C0C0',
+                      bronze: '#CD7F32',
+                    };
+                    const tierBg: Record<string, string> = {
+                      gold: 'rgba(255,215,0,0.12)',
+                      silver: 'rgba(192,192,192,0.12)',
+                      bronze: 'rgba(205,127,50,0.12)',
+                    };
+                    const dimLabel: Record<string, string> = {
+                      location: 'WHERE',
+                      year: 'WHEN',
+                      combo: 'COMBO',
+                    };
+                    const dimIcon: Record<string, string> = {
+                      location: '📍',
+                      year: '📅',
+                      combo: '⚡',
+                    };
+
+                    return (
+                      <div style={{
+                        background: '#333', borderRadius: 12, padding: 16,
+                        marginBottom: '10px',
+                      }}>
+                        <div style={{
+                          fontSize: 10, color: '#999', textTransform: 'uppercase',
+                          letterSpacing: '1.5px', textAlign: 'center', marginBottom: 10,
+                        }}>
+                          Badges
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          {badges.map((badge, i) => (
+                            <div key={i} style={{
+                              display: 'flex', flexDirection: 'column', alignItems: 'center',
+                              gap: 3, background: tierBg[badge.tier],
+                              border: `1px solid ${tierColor[badge.tier]}44`,
+                              borderRadius: 10, padding: '8px 12px', minWidth: 64,
+                            }}>
+                              <span style={{ fontSize: 18 }}>{dimIcon[badge.dimension]}</span>
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, color: tierColor[badge.tier],
+                                textTransform: 'uppercase', letterSpacing: '1px',
+                              }}>
+                                {badge.tier}
+                              </span>
+                              <span style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
+                                {dimLabel[badge.dimension]}
+                              </span>
+                              <span style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>
+                                {badge.accuracy}%
+                              </span>
+                            </div>
+                          ))}
+                          {nearMisses.map((nm, i) => (
+                            <div key={`nm-${i}`} style={{
+                              display: 'flex', flexDirection: 'column', alignItems: 'center',
+                              gap: 3, background: 'rgba(255,255,255,0.04)',
+                              border: '1px solid rgba(255,255,255,0.12)',
+                              borderRadius: 10, padding: '8px 12px', minWidth: 64,
+                              opacity: 0.7,
+                            }}>
+                              <span style={{ fontSize: 18 }}>{dimIcon[nm.dimension]}</span>
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, color: '#888',
+                                textTransform: 'uppercase', letterSpacing: '1px',
+                              }}>
+                                CLOSE
+                              </span>
+                              <span style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
+                                {dimLabel[nm.dimension]}
+                              </span>
+                              <span style={{ fontSize: 11, color: '#aaa', fontWeight: 600 }}>
+                                {nm.accuracy}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {/* ROUND LEADERBOARD CARD */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
+                    {leaderboardRows.map(row => {
+                      const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
+                      const accColor = `hsl(${hue}, 100%, 50%)`;
+                      const accBg = row.accuracy >= 60 ? "#1a2e1a" : row.accuracy >= 30 ? "#2e2a1a" : "#2e1a1a";
+                      const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
+                      return (
+                        <div key={row.rank} style={{
+                          display: "flex", alignItems: "center", padding: "7px 8px",
+                          borderRadius: 8, marginBottom: 3, gap: 6,
+                          background: row.isMe ? "#2e2e2e" : "transparent",
+                        }}>
+                          <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>{row.rank}</span>
+                          <span style={{ flex: 1, fontSize: 13 }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                              <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
+                              <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
+                                {row.displayName}
+                              </span>
+                            </span>
+                            {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
+                          </span>
+                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                            {Math.round(row.accuracy)}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {leaderboardRows.length === 0 && (
+                      snapshot.players.map((p) => {
+                        const isMe = p.playerId === playerId;
+                        return (
+                          <div key={p.playerId} style={{
+                            display: "flex", alignItems: "center", padding: "7px 8px",
+                            borderRadius: 8, marginBottom: 3, gap: 6,
+                            background: isMe ? "#2e2e2e" : "transparent",
+                          }}>
+                            <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>—</span>
+                            <span style={{ flex: 1, fontSize: 13 }}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                                <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} />
+                                <span style={{ ...getUsernameGradientStyle(p.playerId), fontWeight: isMe ? 700 : 500 }}>
+                                  {p.displayName || p.playerId.slice(0, 8)}
+                                </span>
+                              </span>
+                              {isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
+                              <span style={{ color: "#555", fontSize: 11, fontStyle: "italic", marginLeft: 4 }}>No guess</span>
+                            </span>
+                            <span style={{ background: "#2a2a2a", color: "#888", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
+                              —
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                   <div className="round-complete-grid">
                   {/* WHERE CARD */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                           <circle cx="12" cy="10" r="3" />
                         </svg>
-                        <span style={{ fontSize: 14, color: "#9ca3af" }}>Where</span>
+                        <span style={{ fontSize: 16, fontWeight: 600, color: "#e5e7eb" }}>Where</span>
                       </div>
-                      {myResult != null && (
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                          <span style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{Math.round(myResult.locationScore)}</span>
-                          <span style={{ fontSize: 11, color: "#fff" }}>%</span>
-                        </div>
-                      )}
+                      {myResult != null && (() => {
+                        const locScore = Math.round(myResult.locationScore);
+                        const locHue = Math.round((Math.max(0, Math.min(100, locScore)) / 100) * 120);
+                        const locColor = `hsl(${locHue}, 100%, 50%)`;
+                        return (
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                            <span style={{ fontSize: 22, fontWeight: 700, color: locColor }}>{locScore}</span>
+                            <span style={{ fontSize: 11, color: locColor }}>%</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                     {submittedHintPenaltyRef.current.accPenalty > 0 && (
                       <div style={{ marginBottom: 6 }}>
@@ -1096,23 +1237,28 @@ export default function CompeteGamePage() {
                   <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                           <line x1="16" y1="2" x2="16" y2="6" />
                           <line x1="8" y1="2" x2="8" y2="6" />
                           <line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
-                        <span style={{ fontSize: 14, color: "#9ca3af" }}>When</span>
+                        <span style={{ fontSize: 16, fontWeight: 600, color: "#e5e7eb" }}>When</span>
                       </div>
                       {(() => {
                         const myWhenRow = whenRows.find(r => r.isMe);
                         const myWhenAcc = myWhenRow?.acc ?? null;
-                        return myWhenAcc != null ? (
-                          <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                            <span style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{Math.round(myWhenAcc)}</span>
-                            <span style={{ fontSize: 11, color: "#fff" }}>%</span>
-                          </div>
-                        ) : null;
+                        return myWhenAcc != null ? (() => {
+                          const whenScore = Math.round(myWhenAcc);
+                          const whenHue = Math.round((Math.max(0, Math.min(100, whenScore)) / 100) * 120);
+                          const whenColor = `hsl(${whenHue}, 100%, 50%)`;
+                          return (
+                            <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                              <span style={{ fontSize: 22, fontWeight: 700, color: whenColor }}>{whenScore}</span>
+                              <span style={{ fontSize: 11, color: whenColor }}>%</span>
+                            </div>
+                          );
+                        })() : null;
                       })()}
                     </div>
                     {submittedHintPenaltyRef.current.accPenalty > 0 && (
@@ -1269,152 +1415,6 @@ export default function CompeteGamePage() {
                     })}
                   </div>
                   </div>
-                  {/* ROUND LEADERBOARD CARD */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
-                    {leaderboardRows.map(row => {
-                      const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
-                      const accColor = `hsl(${hue}, 100%, 50%)`;
-                      const accBg = row.accuracy >= 60 ? "#1a2e1a" : row.accuracy >= 30 ? "#2e2a1a" : "#2e1a1a";
-                      const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
-                      return (
-                        <div key={row.rank} style={{
-                          display: "flex", alignItems: "center", padding: "7px 8px",
-                          borderRadius: 8, marginBottom: 3, gap: 6,
-                          background: row.isMe ? "#2e2e2e" : "transparent",
-                        }}>
-                          <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>{row.rank}</span>
-                          <span style={{ flex: 1, fontSize: 13 }}>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                              <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
-                              <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
-                                {row.displayName}
-                              </span>
-                            </span>
-                            {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
-                          </span>
-                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
-                            {Math.round(row.accuracy)}%
-                          </span>
-                        </div>
-                      );
-                    })}
-                    {leaderboardRows.length === 0 && (
-                      snapshot.players.map((p) => {
-                        const isMe = p.playerId === playerId;
-                        return (
-                          <div key={p.playerId} style={{
-                            display: "flex", alignItems: "center", padding: "7px 8px",
-                            borderRadius: 8, marginBottom: 3, gap: 6,
-                            background: isMe ? "#2e2e2e" : "transparent",
-                          }}>
-                            <span style={{ fontSize: 11, color: "#777", minWidth: 14 }}>—</span>
-                            <span style={{ flex: 1, fontSize: 13 }}>
-                              <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                                <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} />
-                                <span style={{ ...getUsernameGradientStyle(p.playerId), fontWeight: isMe ? 700 : 500 }}>
-                                  {p.displayName || p.playerId.slice(0, 8)}
-                                </span>
-                              </span>
-                              {isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
-                              <span style={{ color: "#555", fontSize: 11, fontStyle: "italic", marginLeft: 4 }}>No guess</span>
-                            </span>
-                            <span style={{ background: "#2a2a2a", color: "#888", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
-                              —
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                  {/* BADGES CARD */}
-                  {(() => {
-                    const badges = myResult?.badges ?? [];
-                    const nearMisses = myResult?.nearMisses ?? [];
-                    if (badges.length === 0 && nearMisses.length === 0) return null;
-
-                    const tierColor: Record<string, string> = {
-                      gold: '#FFD700',
-                      silver: '#C0C0C0',
-                      bronze: '#CD7F32',
-                    };
-                    const tierBg: Record<string, string> = {
-                      gold: 'rgba(255,215,0,0.12)',
-                      silver: 'rgba(192,192,192,0.12)',
-                      bronze: 'rgba(205,127,50,0.12)',
-                    };
-                    const dimLabel: Record<string, string> = {
-                      location: 'WHERE',
-                      year: 'WHEN',
-                      combo: 'COMBO',
-                    };
-                    const dimIcon: Record<string, string> = {
-                      location: '📍',
-                      year: '📅',
-                      combo: '⚡',
-                    };
-
-                    return (
-                      <div style={{
-                        background: '#333', borderRadius: 12, padding: 16,
-                        marginBottom: '10px',
-                      }}>
-                        <div style={{
-                          fontSize: 10, color: '#999', textTransform: 'uppercase',
-                          letterSpacing: '1.5px', textAlign: 'center', marginBottom: 10,
-                        }}>
-                          Badges
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          {badges.map((badge, i) => (
-                            <div key={i} style={{
-                              display: 'flex', flexDirection: 'column', alignItems: 'center',
-                              gap: 3, background: tierBg[badge.tier],
-                              border: `1px solid ${tierColor[badge.tier]}44`,
-                              borderRadius: 10, padding: '8px 12px', minWidth: 64,
-                            }}>
-                              <span style={{ fontSize: 18 }}>{dimIcon[badge.dimension]}</span>
-                              <span style={{
-                                fontSize: 10, fontWeight: 700, color: tierColor[badge.tier],
-                                textTransform: 'uppercase', letterSpacing: '1px',
-                              }}>
-                                {badge.tier}
-                              </span>
-                              <span style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
-                                {dimLabel[badge.dimension]}
-                              </span>
-                              <span style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>
-                                {badge.accuracy}%
-                              </span>
-                            </div>
-                          ))}
-                          {nearMisses.map((nm, i) => (
-                            <div key={`nm-${i}`} style={{
-                              display: 'flex', flexDirection: 'column', alignItems: 'center',
-                              gap: 3, background: 'rgba(255,255,255,0.04)',
-                              border: '1px solid rgba(255,255,255,0.12)',
-                              borderRadius: 10, padding: '8px 12px', minWidth: 64,
-                              opacity: 0.7,
-                            }}>
-                              <span style={{ fontSize: 18 }}>{dimIcon[nm.dimension]}</span>
-                              <span style={{
-                                fontSize: 10, fontWeight: 700, color: '#888',
-                                textTransform: 'uppercase', letterSpacing: '1px',
-                              }}>
-                                CLOSE
-                              </span>
-                              <span style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
-                                {dimLabel[nm.dimension]}
-                              </span>
-                              <span style={{ fontSize: 11, color: '#aaa', fontWeight: 600 }}>
-                                {nm.accuracy}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
                   {/* HINTS USED CARD */}
                   {submittedHintPenaltyRef.current.purchasedIds.length > 0 && (() => {
                     const usedHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
@@ -1511,6 +1511,11 @@ export default function CompeteGamePage() {
                     <div style={{ fontSize: 13, color: "#9ca3af" }}>
                       Round {snapshot.currentRoundIndex + 1} / {snapshot.rounds.length}
                     </div>
+                    {resultSecsLeft !== null && (
+                      <p className="text-sm text-gray-400 text-center mb-2">
+                        Auto-advancing in {resultSecsLeft}s
+                      </p>
+                    )}
                     <button
                       onClick={handleAdvanceRound}
                       disabled={snapshot.readyForNext?.includes(playerId ?? "")}
