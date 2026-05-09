@@ -612,6 +612,7 @@ export default class GameServer {
             this.pendingResults = results;
 
             // Apply snapshot immediately so clients see hasSubmitted=true before clamp logic
+            console.log(`[SUBMIT_GUESS] response status=${(fullResponse as {status?: string}).status} isRuntimeState=${isRuntimeState(fullResponse)}`);
             this.applySnapshotAndBroadcast(fullResponse);
 
             // Broadcast PLAYER_SUBMITTED to all clients
@@ -710,6 +711,7 @@ export default class GameServer {
 
         case "READY_NEXT": {
           // Validate: current status must be ROUND_COMPLETE (result phase active)
+          console.log(`[READY_NEXT] snapshot status=${isRuntimeState(this.snapshot) ? this.snapshot.status : "NOT_RUNTIME_STATE"} isRuntimeState=${isRuntimeState(this.snapshot)}`);
           if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_COMPLETE") {
             this.sendError(sender, "READY_NEXT only allowed during ROUND_COMPLETE phase");
             break;
@@ -756,10 +758,11 @@ export default class GameServer {
                 if (!response.ok) {
                   const text = await response.text();
                   console.error(`[READY_NEXT] advance API error ${response.status}: ${text}`);
-                  break;
+                  this.sendError(sender, `Failed to advance round: ${text}`);
+                } else {
+                  const snapshot = await response.json();
+                  this.applySnapshotAndBroadcast(snapshot);
                 }
-                const snapshot = await response.json();
-                this.applySnapshotAndBroadcast(snapshot);
               } finally {
                 this.advanceInFlight = false;
               }

@@ -262,6 +262,7 @@ export default function CompeteGamePage() {
   });
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [resultSecsLeft, setResultSecsLeft] = useState<number | null>(null);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[] }>({
     accPenalty: 0,
     xpPenalty: 0,
@@ -829,7 +830,28 @@ export default function CompeteGamePage() {
         ) : null}
 
         {snapshot.status === "ROUND_COMPLETE" ? (
-          <section className="card stack" style={{ background: "#000" }}>
+          <div style={{ padding: "0 12px", paddingBottom: "72px", maxWidth: "720px", margin: "0 auto", width: "100%" }}>
+            <style>{`
+              @media (min-width: 768px) {
+                .round-complete-grid {
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 12px;
+                }
+                .round-complete-desktop-bottom {
+                  position: static !important;
+                  display: flex;
+                  justify-content: flex-end;
+                  padding: 16px 0;
+                  background: transparent;
+                  border: none;
+                  height: auto;
+                }
+                .round-complete-event-image {
+                  height: 240px !important;
+                }
+              }
+            `}</style>
             {(() => {
               const round = snapshot.rounds[snapshot.currentRoundIndex];
               if (!round) return null;
@@ -875,95 +897,83 @@ export default function CompeteGamePage() {
                   if (b.acc == null) return -1;
                   return b.acc - a.acc;
                 });
-              const whereHue = Math.round((Math.max(0, Math.min(100, myResult?.locationScore ?? 0)) / 100) * 120);
-              const whereAccColor = `hsl(${whereHue}, 100%, 50%)`;
-              const whereAccBg = (myResult?.locationScore ?? 0) >= 60 ? "#1a2e1a" : (myResult?.locationScore ?? 0) >= 30 ? "#2e2a1a" : "#2e1a1a";
               return (
                 <>
-                  {/* Card 1 — Event Title */}
-                  <div style={{ marginBottom: 2, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333", padding: 14 }}>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>{round.title}</div>
-                  </div>
-                  {/* Card 2 — Event Image */}
-                  <div style={{ marginBottom: 2, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333" }}>
-                    {round.imageUrl ? (
-                      <div>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={round.imageUrl} alt={round.title}
-                          style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }} />
-                        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--color-primary, #f97316)", marginTop: 8, textAlign: "center", padding: "0 14px 14px" }}>
-                          {correctYear} · {correctName}
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div style={{ height: 160, background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 12 }}>
-                          No image
-                        </div>
-                        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--color-primary, #f97316)", marginTop: 8, textAlign: "center", padding: "0 14px 14px" }}>
-                          {correctYear} · {correctName}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  {/* Card 5 — Event Description */}
-                  <div style={{ marginBottom: 2, marginLeft: 6, marginRight: 6, borderRadius: 12, overflow: "hidden", background: "#333", padding: 14 }}>
-                    <div style={{ fontSize: 12, color: "#aaa", lineHeight: 1.5 }}>
-                      {round.description ?? "No description available"}
+                  {/* EVENT CARD */}
+                  <div style={{ background: "#333", borderRadius: 12, overflow: "hidden", marginBottom: "10px", minHeight: "50vh" }}>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: "#fff", textAlign: "center", padding: "14px 16px 0" }}>
+                      {round.title}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-                      <span style={{ fontSize: 11, color: "#aaa" }}>
-                        Confidence: <span style={{ color: "#fff" }}>{(round as unknown as { confidencePct?: number }).confidencePct ?? "—"}%</span>
-                      </span>
+                    {round.imageUrl ? (
+                      <img
+                        src={round.imageUrl}
+                        alt={round.title}
+                        style={{ width: "100%", height: "180px", objectFit: "cover", display: "block" }}
+                        className="round-complete-event-image"
+                      />
+                    ) : (
+                      <div style={{ width: "100%", height: "180px", background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 12 }}>
+                        No image available
+                      </div>
+                    )}
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#f97316", textAlign: "center", padding: "8px 16px" }}>
+                      {correctYear} · {correctName}
+                    </div>
+                    <div style={{ padding: "0 16px 16px" }}>
+                      <div style={{ fontSize: 13, color: "#d1d5db", lineHeight: 1.5, display: descriptionExpanded ? "block" : "-webkit-box", WebkitLineClamp: descriptionExpanded ? "unset" : 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {round.description ?? "No description available"}
+                      </div>
+                      {!descriptionExpanded && (round.description?.length ?? 0) > 0 && (
+                        <button
+                          onClick={() => setDescriptionExpanded(true)}
+                          style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 13, textDecoration: "underline", cursor: "pointer", padding: 0, marginTop: 4 }}
+                        >
+                          more
+                        </button>
+                      )}
                       {(round as unknown as { sourceUrl?: string }).sourceUrl && (
                         <button
                           onClick={() => window.open((round as unknown as { sourceUrl?: string }).sourceUrl, "_blank")}
-                          style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
+                          style={{ background: "transparent", border: "1px solid #6b7280", color: "#6b7280", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer", marginTop: 8 }}
+                        >
                           Source
                         </button>
                       )}
-                      <button
-                        style={{ background: "#3a3a3a", border: "none", color: "#bbb", fontSize: 11, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>
-                        Rate
-                      </button>
                     </div>
                   </div>
-                  {/* Card 6 — Accuracy Ring + XP */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
-                    <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "1.5px", textAlign: "center", marginBottom: 10 }}>
-                      Accuracy (%)
+                  {/* ACCURACY RING CARD */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                      <RainbowRing value={accuracy} />
+                      <span style={{ fontSize: 26, fontWeight: "bold", color: "#fff" }}>%</span>
                     </div>
-                    <RainbowRing value={accuracy} />
+                    <div style={{ textAlign: "center", marginTop: 12 }}>
+                      <span style={{ fontSize: 13, color: "#9ca3af" }}>{myResult?.score ?? 0} XP</span>
+                    </div>
                     {submittedHintPenaltyRef.current.accPenalty > 0 && (
-                      <div style={{ textAlign: "center", marginTop: 4, marginBottom: 2 }}>
+                      <div style={{ textAlign: "center", marginTop: 4 }}>
                         <span style={{
                           display: "inline-flex", alignItems: "center", gap: 3,
-                          background: "rgba(232,68,34,0.12)",
-                          border: "0.5px solid rgba(232,68,34,0.35)",
+                          background: "#7f1d1d",
                           borderRadius: 999,
                           padding: "2px 8px",
-                          fontSize: 11,
-                          color: "#e84422",
+                          fontSize: 10,
+                          color: "#fca5a5",
                           fontWeight: 600,
                         }}>
                           −{submittedHintPenaltyRef.current.accPenalty}% hints
                         </span>
                       </div>
                     )}
-                    <div style={{ textAlign: "center", marginTop: 12, borderTop: "1px solid #444", paddingTop: 10 }}>
-                      <span style={{ fontSize: 22, fontWeight: "bold", color: "#fff" }}>{myResult?.score ?? 0}</span>
-                      <span style={{ fontSize: 13, color: "#f97316", marginLeft: 5 }}>XP</span>
-                    </div>
                     {submittedHintPenaltyRef.current.xpPenalty > 0 && (
-                      <div style={{ textAlign: "center", marginTop: 3 }}>
+                      <div style={{ textAlign: "center", marginTop: 2 }}>
                         <span style={{
                           display: "inline-flex", alignItems: "center", gap: 3,
-                          background: "rgba(232,68,34,0.12)",
-                          border: "0.5px solid rgba(232,68,34,0.35)",
+                          background: "#7f1d1d",
                           borderRadius: 999,
                           padding: "2px 8px",
-                          fontSize: 11,
-                          color: "#e84422",
+                          fontSize: 10,
+                          color: "#fca5a5",
                           fontWeight: 600,
                         }}>
                           −{submittedHintPenaltyRef.current.xpPenalty} XP hints
@@ -971,125 +981,46 @@ export default function CompeteGamePage() {
                       </div>
                     )}
                   </div>
-                  {/* Card — Badges */}
-                  {(() => {
-                    const badges = myResult?.badges ?? [];
-                    const nearMisses = myResult?.nearMisses ?? [];
-                    if (badges.length === 0 && nearMisses.length === 0) return null;
-
-                    const tierColor: Record<string, string> = {
-                      gold: '#FFD700',
-                      silver: '#C0C0C0',
-                      bronze: '#CD7F32',
-                    };
-                    const tierBg: Record<string, string> = {
-                      gold: 'rgba(255,215,0,0.12)',
-                      silver: 'rgba(192,192,192,0.12)',
-                      bronze: 'rgba(205,127,50,0.12)',
-                    };
-                    const dimLabel: Record<string, string> = {
-                      location: 'WHERE',
-                      year: 'WHEN',
-                      combo: 'COMBO',
-                    };
-                    const dimIcon: Record<string, string> = {
-                      location: '📍',
-                      year: '📅',
-                      combo: '⚡',
-                    };
-
-                    return (
-                      <div style={{
-                        background: '#333', borderRadius: 12, padding: 14,
-                        marginBottom: 2, marginLeft: 6, marginRight: 6,
-                      }}>
-                        <div style={{
-                          fontSize: 10, color: '#999', textTransform: 'uppercase',
-                          letterSpacing: '1.5px', textAlign: 'center', marginBottom: 10,
-                        }}>
-                          Badges
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          {badges.map((badge, i) => (
-                            <div key={i} style={{
-                              display: 'flex', flexDirection: 'column', alignItems: 'center',
-                              gap: 3, background: tierBg[badge.tier],
-                              border: `1px solid ${tierColor[badge.tier]}44`,
-                              borderRadius: 10, padding: '8px 12px', minWidth: 64,
-                            }}>
-                              <span style={{ fontSize: 18 }}>{dimIcon[badge.dimension]}</span>
-                              <span style={{
-                                fontSize: 10, fontWeight: 700, color: tierColor[badge.tier],
-                                textTransform: 'uppercase', letterSpacing: '1px',
-                              }}>
-                                {badge.tier}
-                              </span>
-                              <span style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
-                                {dimLabel[badge.dimension]}
-                              </span>
-                              <span style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>
-                                {badge.accuracy}%
-                              </span>
-                            </div>
-                          ))}
-                          {nearMisses.map((nm, i) => (
-                            <div key={`nm-${i}`} style={{
-                              display: 'flex', flexDirection: 'column', alignItems: 'center',
-                              gap: 3, background: 'rgba(255,255,255,0.04)',
-                              border: '1px solid rgba(255,255,255,0.12)',
-                              borderRadius: 10, padding: '8px 12px', minWidth: 64,
-                              opacity: 0.7,
-                            }}>
-                              <span style={{ fontSize: 18 }}>{dimIcon[nm.dimension]}</span>
-                              <span style={{
-                                fontSize: 10, fontWeight: 700, color: '#888',
-                                textTransform: 'uppercase', letterSpacing: '1px',
-                              }}>
-                                CLOSE
-                              </span>
-                              <span style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
-                                {dimLabel[nm.dimension]}
-                              </span>
-                              <span style={{ fontSize: 11, color: '#aaa', fontWeight: 600 }}>
-                                {nm.accuracy}%
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  {/* Card 4 — WHERE */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
+                  <div className="round-complete-grid">
+                  {/* WHERE CARD */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <span style={{ fontSize: 20, fontWeight: 700, color: "#f97316" }}>Where</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        <span style={{ fontSize: 14, color: "#9ca3af" }}>Where</span>
+                      </div>
                       {myResult != null && (
-                        <span style={{ background: whereAccBg, color: whereAccColor, borderRadius: 999, padding: "2px 9px", fontSize: 18, fontWeight: 700 }}>
-                          {Math.round(myResult.locationScore)}%
-                        </span>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                          <span style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{Math.round(myResult.locationScore)}</span>
+                          <span style={{ fontSize: 11, color: "#fff" }}>%</span>
+                        </div>
                       )}
                     </div>
                     {submittedHintPenaltyRef.current.accPenalty > 0 && (
-                      <div style={{ textAlign: "right", marginBottom: 6, marginTop: -4 }}>
+                      <div style={{ marginBottom: 6 }}>
                         <span style={{
                           display: "inline-flex", alignItems: "center",
-                          fontSize: 10, color: "#e84422", fontWeight: 600,
+                          fontSize: 10, color: "#fca5a5", fontWeight: 600,
+                          background: "#7f1d1d",
+                          borderRadius: 999,
+                          padding: "2px 8px",
                         }}>
                           −{Math.round(submittedHintPenaltyRef.current.accPenalty / 2)}% hints
                         </span>
                       </div>
                     )}
-                    <div style={{ fontSize: 12, color: "#fff", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
+                    <div style={{ fontSize: 13, color: "#fff", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
                       <span>Correct:</span>
                       <span style={{ color: "#f97316" }}>{correctName}</span>
                     </div>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
-                      {myDistanceKm != null && (
-                        <span style={{ background: "#3a3a3a", color: "#bbb", borderRadius: 999, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>
-                          {Math.round(myDistanceKm)} km away
-                        </span>
-                      )}
-                    </div>
+                    {myDistanceKm != null && (
+                      <div style={{ marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, color: "#fff" }}>{Math.round(myDistanceKm)} km away</span>
+                      </div>
+                    )}
                     {guessLat != null && guessLng != null ? (
                       <>
                         <div style={{ borderRadius: 8, overflow: "hidden", height: 200 }}>
@@ -1139,7 +1070,7 @@ export default function CompeteGamePage() {
                                     {r.rank ?? "—"}
                                   </span>
                                   <span style={{ flex: 1, fontSize: 13 }}>
-                                    <span style={{ color: r.playerId === playerId ? "#f97316" : "#fff", fontWeight: r.playerId === playerId ? 600 : 400 }}>
+                                    <span style={{ ...getUsernameGradientStyle(r.playerId), fontWeight: r.playerId === playerId ? 600 : 400 }}>
                                       {snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
                                     </span>
                                     {r.playerId === playerId && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
@@ -1161,36 +1092,43 @@ export default function CompeteGamePage() {
                       <p style={{ color: "#888", fontSize: 13, margin: 0 }}>No location submitted</p>
                     )}
                   </div>
-                  {/* Card 5 — WHEN */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
+                  {/* WHEN CARD */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                      <div style={{ fontSize: 20, fontWeight: 700, color: "#f97316" }}>When</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <span style={{ fontSize: 14, color: "#9ca3af" }}>When</span>
+                      </div>
                       {(() => {
                         const myWhenRow = whenRows.find(r => r.isMe);
                         const myWhenAcc = myWhenRow?.acc ?? null;
-                        const hue = myWhenAcc != null ? Math.round((myWhenAcc / 100) * 120) : null;
-                        const accColor = hue != null ? `hsl(${hue}, 100%, 50%)` : "#888";
-                        const accBg = myWhenAcc != null
-                          ? myWhenAcc >= 60 ? "#1a2e1a" : myWhenAcc >= 30 ? "#2e2a1a" : "#2e1a1a"
-                          : "#2a2a2a";
                         return myWhenAcc != null ? (
-                          <span style={{ background: accBg, color: accColor, borderRadius: 999, padding: "2px 9px", fontSize: 18, fontWeight: 700 }}>
-                            {Math.round(myWhenAcc)}%
-                          </span>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+                            <span style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{Math.round(myWhenAcc)}</span>
+                            <span style={{ fontSize: 11, color: "#fff" }}>%</span>
+                          </div>
                         ) : null;
                       })()}
                     </div>
                     {submittedHintPenaltyRef.current.accPenalty > 0 && (
-                      <div style={{ textAlign: "right", marginBottom: 6, marginTop: -4 }}>
+                      <div style={{ marginBottom: 6 }}>
                         <span style={{
                           display: "inline-flex", alignItems: "center",
-                          fontSize: 10, color: "#e84422", fontWeight: 600,
+                          fontSize: 10, color: "#fca5a5", fontWeight: 600,
+                          background: "#7f1d1d",
+                          borderRadius: 999,
+                          padding: "2px 8px",
                         }}>
                           −{Math.round(submittedHintPenaltyRef.current.accPenalty / 2)}% hints
                         </span>
                       </div>
                     )}
-                    <div style={{ fontSize: 12, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
+                    <div style={{ fontSize: 13, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
                       <span>Correct:</span>
                       <span style={{ color: "#f97316" }}>{correctYear}</span>
                     </div>
@@ -1214,7 +1152,7 @@ export default function CompeteGamePage() {
                         transform: "translate(-50%, -50%)",
                         width: 4,
                         height: 32,
-                        background: "var(--color-primary, #f97316)",
+                        background: "#f97316",
                         borderRadius: 2,
                         left: "50%",
                       }}>
@@ -1236,7 +1174,7 @@ export default function CompeteGamePage() {
                           left: "50%",
                           transform: "translateX(-50%)",
                           fontSize: 10,
-                          color: "var(--color-primary, #f97316)",
+                          color: "#f97316",
                           whiteSpace: "nowrap",
                           textAlign: "center",
                         }}>
@@ -1330,70 +1268,9 @@ export default function CompeteGamePage() {
                       );
                     })}
                   </div>
-                  {submittedHintPenaltyRef.current.purchasedIds.length > 0 && (() => {
-                    const usedHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
-                      .filter(h => submittedHintPenaltyRef.current.purchasedIds.includes(h.id))
-                      .sort((a, b) => a.tier - b.tier);
-                    if (usedHints.length === 0) return null;
-                    return (
-                      <div style={{
-                        background: "#333", borderRadius: 12, padding: 14,
-                        marginBottom: 2, marginLeft: 6, marginRight: 6,
-                      }}>
-                        <div style={{
-                          fontSize: 12, fontWeight: 600, color: "#aaa",
-                          textTransform: "uppercase", letterSpacing: "0.08em",
-                          marginBottom: 10,
-                        }}>
-                          Hints used
-                        </div>
-                        {usedHints.map((hint, idx) => {
-                          const tierPenaltyAcc = [0,10,20,30,40,50][hint.tier] ?? 0;
-                          const meta = hint.metadata as { km?: number; years?: number | string } | null;
-                          let revealedText = hint.content;
-                          if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
-                            revealedText = `${hint.content} — ${meta.km} km away`;
-                          } else if (hint.type === "when" && (hint.tier === 2 || hint.tier === 4) && meta?.years != null) {
-                            revealedText = `${hint.content} — ${meta.years} years off`;
-                          }
-                          const labelMap: Record<string, Record<number, string>> = {
-                            when: { 1: "Century", 2: "Historical Event", 3: "Decade", 4: "Contemporary Event", 5: "Visual Clues" },
-                            where: { 1: "Continent", 2: "Remote Landmark", 3: "Region", 4: "Nearby Landmark", 5: "Visual Clues" },
-                          };
-                          const label = labelMap[hint.type]?.[hint.tier] ?? "Hint";
-                          return (
-                            <div key={hint.id} style={{
-                              display: "flex", alignItems: "center", gap: 10,
-                              padding: "7px 0",
-                              borderBottom: idx < usedHints.length - 1 ? "1px solid #3a3a3a" : "none",
-                            }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 12, fontWeight: 500, color: "#ccc" }}>{label}</div>
-                                <div style={{ fontSize: 11, color: "#aaa", fontStyle: "italic", marginTop: 1 }}>
-                                  {revealedText}
-                                </div>
-                              </div>
-                              <span style={{
-                                display: "inline-flex", alignItems: "center",
-                                background: "rgba(232,68,34,0.12)",
-                                border: "0.5px solid rgba(232,68,34,0.35)",
-                                borderRadius: 999,
-                                padding: "2px 7px",
-                                fontSize: 10,
-                                color: "#e84422",
-                                fontWeight: 600,
-                                flexShrink: 0,
-                              }}>
-                                −{tierPenaltyAcc}%
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                  {/* Card 9 — Round Leaderboard */}
-                  <div style={{ background: "#333", borderRadius: 12, padding: 14, marginBottom: 2, marginLeft: 6, marginRight: 6 }}>
+                  </div>
+                  {/* ROUND LEADERBOARD CARD */}
+                  <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 10 }}>Round leaderboard</div>
                     {leaderboardRows.map(row => {
                       const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
@@ -1450,121 +1327,189 @@ export default function CompeteGamePage() {
                       })
                     )}
                   </div>
-                  {/* Countdown Timer and Player Ready Status */}
-                  {resultSecsLeft !== null && (
-                    <div style={{
-                      padding: "12px 14px",
-                      background: "rgba(0,0,0,0.8)",
-                      borderBottom: "1px solid #222",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 10,
-                      alignItems: "center",
-                    }}>
-                      {/* Countdown Timer */}
+                  {/* BADGES CARD */}
+                  {(() => {
+                    const badges = myResult?.badges ?? [];
+                    const nearMisses = myResult?.nearMisses ?? [];
+                    if (badges.length === 0 && nearMisses.length === 0) return null;
+
+                    const tierColor: Record<string, string> = {
+                      gold: '#FFD700',
+                      silver: '#C0C0C0',
+                      bronze: '#CD7F32',
+                    };
+                    const tierBg: Record<string, string> = {
+                      gold: 'rgba(255,215,0,0.12)',
+                      silver: 'rgba(192,192,192,0.12)',
+                      bronze: 'rgba(205,127,50,0.12)',
+                    };
+                    const dimLabel: Record<string, string> = {
+                      location: 'WHERE',
+                      year: 'WHEN',
+                      combo: 'COMBO',
+                    };
+                    const dimIcon: Record<string, string> = {
+                      location: '📍',
+                      year: '📅',
+                      combo: '⚡',
+                    };
+
+                    return (
                       <div style={{
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: resultSecsLeft <= 5 ? "#f97316" : "#fff",
-                      }}>
-                        Next round in {resultSecsLeft}s
-                      </div>
-                      {/* Per-player ready status */}
-                      <div style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 6,
-                        alignItems: "center",
+                        background: '#333', borderRadius: 12, padding: 16,
+                        marginBottom: '10px',
                       }}>
                         <div style={{
-                          fontSize: 11,
-                          color: snapshot.readyForNext?.length === snapshot.players.filter(p => p.leftAt === null).length
-                            ? "#7ed957"
-                            : "#888",
-                          fontWeight: 500,
+                          fontSize: 10, color: '#999', textTransform: 'uppercase',
+                          letterSpacing: '1.5px', textAlign: 'center', marginBottom: 10,
                         }}>
-                          {snapshot.readyForNext?.length === snapshot.players.filter(p => p.leftAt === null).length
-                            ? "All ready! Starting..."
-                            : "Waiting for next round"}
+                          Badges
                         </div>
-                        <div style={{
-                          display: "flex",
-                          gap: 6,
-                          flexWrap: "wrap",
-                          justifyContent: "center",
-                        }}>
-                          {snapshot.players.filter(p => p.leftAt === null).map((player) => {
-                            const isReady = snapshot.readyForNext?.includes(player.playerId);
-                            const displayName = player.displayName || player.playerId.slice(0, 8);
-                            const truncatedName = displayName.length > 10 ? displayName.slice(0, 10) + "..." : displayName;
-                            return (
-                              <div key={player.playerId} style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                                padding: "4px 8px",
-                                borderRadius: 999,
-                                background: isReady ? "rgba(126, 217, 87, 0.15)" : "rgba(255,255,255,0.05)",
-                                border: isReady ? "1px solid rgba(126, 217, 87, 0.3)" : "1px solid #333",
-                                fontSize: 11,
-                                color: isReady ? "#7ed957" : "#888",
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          {badges.map((badge, i) => (
+                            <div key={i} style={{
+                              display: 'flex', flexDirection: 'column', alignItems: 'center',
+                              gap: 3, background: tierBg[badge.tier],
+                              border: `1px solid ${tierColor[badge.tier]}44`,
+                              borderRadius: 10, padding: '8px 12px', minWidth: 64,
+                            }}>
+                              <span style={{ fontSize: 18 }}>{dimIcon[badge.dimension]}</span>
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, color: tierColor[badge.tier],
+                                textTransform: 'uppercase', letterSpacing: '1px',
                               }}>
-                                <span>{isReady ? "✓" : "⏳"}</span>
-                                <span>{truncatedName}</span>
-                              </div>
-                            );
-                          })}
+                                {badge.tier}
+                              </span>
+                              <span style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
+                                {dimLabel[badge.dimension]}
+                              </span>
+                              <span style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>
+                                {badge.accuracy}%
+                              </span>
+                            </div>
+                          ))}
+                          {nearMisses.map((nm, i) => (
+                            <div key={`nm-${i}`} style={{
+                              display: 'flex', flexDirection: 'column', alignItems: 'center',
+                              gap: 3, background: 'rgba(255,255,255,0.04)',
+                              border: '1px solid rgba(255,255,255,0.12)',
+                              borderRadius: 10, padding: '8px 12px', minWidth: 64,
+                              opacity: 0.7,
+                            }}>
+                              <span style={{ fontSize: 18 }}>{dimIcon[nm.dimension]}</span>
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, color: '#888',
+                                textTransform: 'uppercase', letterSpacing: '1px',
+                              }}>
+                                CLOSE
+                              </span>
+                              <span style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
+                                {dimLabel[nm.dimension]}
+                              </span>
+                              <span style={{ fontSize: 11, color: '#aaa', fontWeight: 600 }}>
+                                {nm.accuracy}%
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
-                  )}
-                  {/* Spacer for fixed bottom bar */}
-                  <div style={{ height: 70 }} />
-                  {/* Bottom Bar */}
-                  <div style={{
+                    );
+                  })()}
+                  {/* HINTS USED CARD */}
+                  {submittedHintPenaltyRef.current.purchasedIds.length > 0 && (() => {
+                    const usedHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
+                      .filter(h => submittedHintPenaltyRef.current.purchasedIds.includes(h.id))
+                      .sort((a, b) => a.tier - b.tier);
+                    if (usedHints.length === 0) return null;
+                    return (
+                      <div style={{
+                        background: "#333", borderRadius: 12, padding: 16,
+                        marginBottom: "10px",
+                      }}>
+                        <div style={{
+                          fontSize: 12, fontWeight: 600, color: "#aaa",
+                          textTransform: "uppercase", letterSpacing: "0.08em",
+                          marginBottom: 10,
+                        }}>
+                          Hints used
+                        </div>
+                        {usedHints.map((hint, idx) => {
+                          const tierPenaltyAcc = [0,10,20,30,40,50][hint.tier] ?? 0;
+                          const meta = hint.metadata as { km?: number; years?: number | string } | null;
+                          let revealedText = hint.content;
+                          if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
+                            revealedText = `${hint.content} — ${meta.km} km away`;
+                          } else if (hint.type === "when" && (hint.tier === 2 || hint.tier === 4) && meta?.years != null) {
+                            revealedText = `${hint.content} — ${meta.years} years off`;
+                          }
+                          const labelMap: Record<string, Record<number, string>> = {
+                            when: { 1: "Century", 2: "Historical Event", 3: "Decade", 4: "Contemporary Event", 5: "Visual Clues" },
+                            where: { 1: "Continent", 2: "Remote Landmark", 3: "Region", 4: "Nearby Landmark", 5: "Visual Clues" },
+                          };
+                          const label = labelMap[hint.type]?.[hint.tier] ?? "Hint";
+                          return (
+                            <div key={hint.id} style={{
+                              display: "flex", alignItems: "center", gap: 10,
+                              padding: "7px 0",
+                              borderBottom: idx < usedHints.length - 1 ? "1px solid #3a3a3a" : "none",
+                            }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 12, fontWeight: 500, color: "#ccc" }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "#aaa", fontStyle: "italic", marginTop: 1 }}>
+                                  {revealedText}
+                                </div>
+                              </div>
+                              <span style={{
+                                display: "inline-flex", alignItems: "center",
+                                background: "rgba(232,68,34,0.12)",
+                                border: "0.5px solid rgba(232,68,34,0.35)",
+                                borderRadius: 999,
+                                padding: "2px 7px",
+                                fontSize: 10,
+                                color: "#e84422",
+                                fontWeight: 600,
+                                flexShrink: 0,
+                              }}>
+                                −{tierPenaltyAcc}%
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                  {/* FIXED BOTTOM BAR */}
+                  <div className="round-complete-desktop-bottom" style={{
                     position: "fixed",
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    background: "#000",
-                    borderTop: "1px solid #222",
-                    padding: "12px 14px",
+                    background: "#111111",
+                    borderTop: "1px solid #222222",
+                    height: "56px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
+                    padding: "0 16px",
+                    paddingBottom: "env(safe-area-inset-bottom, 0px)",
                     zIndex: 1000,
                   }}>
                     <button
                       onClick={() => router.push("/")}
                       style={{
                         background: "transparent",
-                        color: "#fff",
                         border: "none",
-                        fontSize: 14,
-                        fontWeight: 600,
                         cursor: "pointer",
-                        padding: "8px 16px",
+                        padding: 8,
                       }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5, verticalAlign: "middle" }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
                         <polyline points="9 21 9 12 15 12 15 21" />
                       </svg>
                     </button>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#999" }}>
+                    <div style={{ fontSize: 13, color: "#9ca3af" }}>
                       Round {snapshot.currentRoundIndex + 1} / {snapshot.rounds.length}
-                      <div style={{ display: "flex", gap: 3 }}>
-                        {snapshot.rounds.map((_, i) => (
-                          <div key={i} style={{
-                            width: 26, height: 4, borderRadius: 2,
-                            background: i < snapshot.currentRoundIndex
-                              ? "#f97316"
-                              : i === snapshot.currentRoundIndex
-                              ? "#553311"
-                              : "#333",
-                          }} />
-                        ))}
-                      </div>
                     </div>
                     <button
                       onClick={handleAdvanceRound}
@@ -1573,30 +1518,506 @@ export default function CompeteGamePage() {
                         background: "#f97316",
                         color: "#fff",
                         fontWeight: 700,
-                        fontSize: 15,
+                        fontSize: 14,
                         border: "none",
-                        borderRadius: 10,
-                        padding: "11px 26px",
+                        borderRadius: 8,
+                        padding: "10px 18px",
                         cursor: snapshot.readyForNext?.includes(playerId ?? "") ? "not-allowed" : "pointer",
                         whiteSpace: "nowrap",
                         opacity: snapshot.readyForNext?.includes(playerId ?? "") ? 0.5 : 1,
                       }}
                     >
-                      {snapshot.currentRoundIndex === snapshot.rounds.length - 1 ? "Final Results" : "Next Round ›"}
+                      Next Round →
                     </button>
                   </div>
                 </>
               );
             })()}
-            {renderError}
-          </section>
+          </div>
         ) : null}
 
         {snapshot.status === "SESSION_COMPLETE" ? (
-          <section style={{ background: "#000", paddingBottom: 80 }}>
+          <section className="gh-final-section">
+            <style>{`
+              .gh-final-section {
+                min-height: 100vh;
+                width: 100%;
+                overflow-x: hidden;
+                background: #000000;
+                padding: 0 0 96px;
+                color: #ffffff;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+              }
+              .gh-final-section * {
+                box-sizing: border-box;
+              }
+              .gh-final-topbar {
+                width: 100%;
+                min-height: 48px;
+                background: rgba(17, 24, 39, 0.72);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 8px 14px;
+              }
+              .gh-final-title {
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+              }
+              .gh-final-profile {
+                position: relative;
+              }
+              .gh-final-profile summary {
+                list-style: none;
+              }
+              .gh-final-profile summary::-webkit-details-marker {
+                display: none;
+              }
+              .gh-final-avatar-button {
+                width: 32px;
+                height: 32px;
+                border: 0;
+                border-radius: 999px;
+                background: #333333;
+                color: #ffffff;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 700;
+              }
+              .gh-final-profile-menu {
+                position: absolute;
+                top: 40px;
+                right: 0;
+                z-index: 20;
+                min-width: 112px;
+                border-radius: 10px;
+                background: #333333;
+                padding: 6px;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+              }
+              .gh-final-profile-menu button {
+                width: 100%;
+                border: 0;
+                border-radius: 8px;
+                background: transparent;
+                color: #ffffff;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 600;
+                padding: 8px 10px;
+                text-align: left;
+              }
+              .gh-final-wrap {
+                width: 100%;
+                max-width: 680px;
+                margin: 0 auto;
+                padding: 14px 12px 0;
+              }
+              .gh-final-score-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-bottom: 12px;
+              }
+              .gh-final-score-hero {
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 24px 12px 18px;
+              }
+              .gh-final-ring-row {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+              }
+              .gh-final-ring-box {
+                position: relative;
+                width: 154px;
+                height: 154px;
+                flex: 0 0 auto;
+              }
+              .gh-final-ring-box svg {
+                width: 154px;
+                height: 154px;
+                display: block;
+              }
+              .gh-final-ring-number {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #ffffff;
+                font-size: 48px;
+                font-weight: 700;
+                line-height: 1;
+              }
+              .gh-final-ring-percent {
+                color: #ffffff;
+                font-size: 24px;
+                font-weight: 700;
+                line-height: 1;
+                transform: translateY(10px);
+              }
+              .gh-final-xp {
+                margin-top: 8px;
+                color: #9ca3af;
+                font-size: 13px;
+                font-weight: 400;
+              }
+              .gh-final-card {
+                background: #333333;
+                border-radius: 14px;
+              }
+              .gh-final-stat-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+              }
+              .gh-final-stat-card {
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 15px 10px;
+                background: #333333;
+                border-radius: 14px;
+              }
+              .gh-final-stat-icon {
+                width: 16px;
+                height: 16px;
+                color: #9ca3af;
+                margin-bottom: 8px;
+              }
+              .gh-final-percent-line {
+                display: inline-flex;
+                align-items: baseline;
+                justify-content: center;
+                color: #ffffff;
+                font-weight: 700;
+                line-height: 1;
+              }
+              .gh-final-stat-number {
+                font-size: 24px;
+              }
+              .gh-final-stat-symbol {
+                font-size: 12px;
+                margin-left: 1px;
+              }
+              .gh-final-stat-sub {
+                margin-top: 7px;
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: 400;
+                text-align: center;
+              }
+              .gh-final-panel {
+                overflow: hidden;
+                margin-bottom: 12px;
+                background: #333333;
+                border-radius: 14px;
+              }
+              .gh-final-panel-heading {
+                color: #9ca3af;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                padding: 13px 14px 10px;
+              }
+              .gh-final-rank-row {
+                display: grid;
+                grid-template-columns: 22px 30px minmax(0, 1fr) auto;
+                align-items: center;
+                gap: 9px;
+                padding: 11px 12px;
+                border-left: 3px solid transparent;
+              }
+              .gh-final-rank-row + .gh-final-rank-row {
+                border-top: 1px solid #374151;
+              }
+              .gh-final-rank-number {
+                color: #9ca3af;
+                font-size: 13px;
+                font-weight: 400;
+              }
+              .gh-final-rank-avatar {
+                width: 30px;
+                height: 30px;
+                border-radius: 999px;
+                background: #1a1a1a;
+                color: #ffffff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                font-size: 12px;
+                font-weight: 700;
+              }
+              .gh-final-rank-main {
+                min-width: 0;
+              }
+              .gh-final-rank-name-line {
+                min-width: 0;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+              }
+              .gh-final-rank-name {
+                min-width: 0;
+                color: #ffffff;
+                font-size: 13px;
+                font-weight: 600;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+              .gh-final-you-tag {
+                color: #9ca3af;
+                font-size: 11px;
+                font-weight: 400;
+                flex: 0 0 auto;
+              }
+              .gh-final-progress-track {
+                width: 100%;
+                height: 4px;
+                background: #1a1a1a;
+                border-radius: 999px;
+                margin-top: 6px;
+                overflow: hidden;
+              }
+              .gh-final-progress-fill {
+                height: 100%;
+                border-radius: 999px;
+                background: #9ca3af;
+              }
+              .gh-final-rank-score {
+                text-align: right;
+                white-space: nowrap;
+              }
+              .gh-final-rank-percent {
+                color: #ffffff;
+                font-size: 15px;
+                font-weight: 700;
+                line-height: 1;
+              }
+              .gh-final-rank-xp {
+                color: #9ca3af;
+                font-size: 11px;
+                font-weight: 400;
+                margin-top: 4px;
+              }
+              .gh-final-rounds {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 10px;
+              }
+              .gh-final-round-card {
+                overflow: hidden;
+                background: #333333;
+                border-radius: 14px;
+              }
+              .gh-final-photo {
+                position: relative;
+                width: 100%;
+                height: 112px;
+                overflow: hidden;
+                background: #1a1a1a;
+              }
+              .gh-final-photo img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+                cursor: pointer;
+              }
+              .gh-final-round-badge {
+                position: absolute;
+                top: 9px;
+                left: 9px;
+                border-radius: 999px;
+                background: rgba(0, 0, 0, 0.72);
+                color: #9ca3af;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                padding: 5px 8px;
+              }
+              .gh-final-photo-fallback {
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 12px;
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: 400;
+                text-align: center;
+              }
+              .gh-final-round-body {
+                padding: 11px 12px 12px;
+              }
+              .gh-final-round-title {
+                color: #ffffff;
+                font-size: 14px;
+                font-weight: 600;
+                line-height: 1.35;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                margin-bottom: 10px;
+              }
+              .gh-final-mini-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 6px;
+              }
+              .gh-final-mini-tile {
+                min-width: 0;
+                background: #1a1a1a;
+                border-radius: 8px;
+                padding: 9px 4px 8px;
+                text-align: center;
+              }
+              .gh-final-mini-number {
+                font-size: 20px;
+              }
+              .gh-final-mini-symbol {
+                font-size: 11px;
+                margin-left: 1px;
+              }
+              .gh-final-mini-label {
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.04em;
+                line-height: 1;
+                margin-top: 6px;
+                text-transform: uppercase;
+              }
+              .gh-final-mini-sub {
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: 400;
+                line-height: 1.15;
+                margin-top: 5px;
+              }
+              .gh-final-best-row {
+                border-top: 1px solid #374151;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-top: 10px;
+                padding-top: 10px;
+              }
+              .gh-final-best-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+              }
+              .gh-final-best-name {
+                min-width: 0;
+                color: #9ca3af;
+                font-size: 11px;
+                font-weight: 600;
+                overflow: hidden;
+                text-align: right;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+              .gh-final-cta {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 30;
+                display: flex;
+                gap: 10px;
+                width: 100%;
+                background: #000000;
+                padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+              }
+              .gh-final-cta button {
+                height: 46px;
+                border-radius: 12px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+              }
+              .gh-final-home {
+                flex: 1;
+                background: #1a1a1a;
+                border: 1px solid #374151;
+                color: #9ca3af;
+              }
+              .gh-final-play {
+                flex: 1.25;
+                background: #f97316;
+                border: 1px solid #f97316;
+                color: #ffffff;
+              }
+              @keyframes ghFinalRing {
+                from {
+                  stroke-dashoffset: 339.292;
+                }
+                to {
+                  stroke-dashoffset: var(--gh-final-ring-offset);
+                }
+              }
+              @media (min-width: 768px) {
+                .gh-final-section {
+                  padding-bottom: 48px;
+                }
+                .gh-final-topbar {
+                  padding-left: 24px;
+                  padding-right: 24px;
+                }
+                .gh-final-wrap {
+                  padding-top: 22px;
+                }
+                .gh-final-score-grid {
+                  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                  align-items: stretch;
+                }
+                .gh-final-score-hero {
+                  min-height: 230px;
+                }
+                .gh-final-stat-grid {
+                  height: 100%;
+                  align-content: stretch;
+                }
+                .gh-final-stat-card {
+                  min-height: 109px;
+                }
+                .gh-final-cta {
+                  position: static;
+                  max-width: 680px;
+                  margin: 18px auto 0;
+                  padding: 0 12px;
+                }
+              }
+            `}</style>
             {/* Loading state */}
             {!allRoundResults ? (
-              <div style={{ padding: 40, textAlign: "center", color: "#666" }}>
+              <div style={{ padding: 40, textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
                 Loading results…
               </div>
             ) : (() => {
@@ -1608,9 +2029,13 @@ export default function CompeteGamePage() {
               const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
               const avgDistanceKm = myStats?.avgDistanceKm ?? 0;
               const avgYearDiff = myStats?.avgYearDiff ?? 0;
+              const currentPlayerData = snapshot.players.find(p => p.playerId === playerId);
+              const currentDisplayName = playerLabel(snapshot.players, playerId);
+              const currentInitial = currentDisplayName ? currentDisplayName.charAt(0).toUpperCase() : "?";
+              const ringRadius = 54;
+              const ringCircumference = 2 * Math.PI * ringRadius;
+              const ringOffset = ringCircumference * (1 - Math.max(0, Math.min(100, overallAccuracy)) / 100);
 
-              // Compute leaderboard
-              // Compute round winners per round index
               const roundWinners = new Map<number, string[]>();
               for (let i = 0; i < snapshot.config.totalRounds; i++) {
                 const roundResults = allRoundResults.filter(r => r.roundIndex === i);
@@ -1642,462 +2067,246 @@ export default function CompeteGamePage() {
 
               return (
                 <>
-                  {/* HERO ACCURACY CARD */}
-                  <div style={{
-                    background: "#1e1e1e",
-                    borderRadius: 14,
-                    margin: 12,
-                    padding: "20px 16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}>
-                    <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 8 }}>
-                      OVERALL ACCURACY
-                    </div>
-                    <svg viewBox="0 0 130 130" style={{ width: 130, height: 130 }}>
-                      <circle cx={65} cy={65} r={54} fill="none" stroke="#2a2a2a" strokeWidth={10} />
-                      <circle
-                        cx={65} cy={65} r={54} fill="none"
-                        stroke={getScoreColor(overallAccuracy)} strokeWidth={10} strokeLinecap="round"
-                        strokeDasharray={339.3}
-                        strokeDashoffset={339.3 * (1 - overallAccuracy / 100)}
-                        transform={`rotate(-90 65 65)`}
-                      />
-                      <text x={65} y={65} textAnchor="middle" dominantBaseline="central"
-                        fill={getScoreColor(overallAccuracy)} fontSize={42} fontWeight={500}>
-                        {overallAccuracy}
-                      </text>
-                    </svg>
-                    <div style={{ marginTop: 4, fontSize: 13, color: "#666" }}>
-                      {overallXP} XP
-                    </div>
+                  <div className="gh-final-topbar">
+                    <div className="gh-final-title">Guess History</div>
+                    <details className="gh-final-profile">
+                      <summary aria-label="Open profile menu">
+                        <span className="gh-final-avatar-button">
+                          {currentPlayerData?.avatarUrl ? (
+                            <img
+                              src={currentPlayerData.avatarUrl}
+                              alt={currentDisplayName}
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                          ) : currentInitial}
+                        </span>
+                      </summary>
+                      <div className="gh-final-profile-menu">
+                        <button type="button">Sign Out</button>
+                      </div>
+                    </details>
                   </div>
 
-                  {/* WHERE / WHEN SUB-CARDS */}
-                  <div style={{ margin: "0 12px 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {/* WHERE card */}
-                    <div style={{
-                      background: "#1e1e1e",
-                      borderRadius: 12,
-                      padding: "16px 10px 14px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                    }}>
-                      <div style={{ fontSize: 10, color: "#888", letterSpacing: "1.2px", textTransform: "uppercase", fontWeight: 500, marginBottom: 12 }}>
-                        WHERE
-                      </div>
-                      <svg viewBox="0 0 84 84" style={{ width: 84, height: 84, marginBottom: 8 }}>
-                        <circle cx={42} cy={42} r={34} fill="none" stroke="#2a2a2a" strokeWidth={8} />
-                        <circle
-                          cx={42} cy={42} r={34} fill="none"
-                          stroke={getScoreColor(whereAccuracy)} strokeWidth={8} strokeLinecap="round"
-                          strokeDasharray={213.6}
-                          strokeDashoffset={213.6 * (1 - whereAccuracy / 100)}
-                          transform={`rotate(-90 42 42)`}
-                        />
-                        <text x={42} y={42} textAnchor="middle" dominantBaseline="central"
-                          fill={getScoreColor(whereAccuracy)} fontSize={36} fontWeight={700}>
-                          {whereAccuracy}
-                        </text>
-                      </svg>
-                      <div style={{ fontSize: 16, color: "#bbb", fontWeight: 400, marginBottom: 4 }}>
-                        %
-                      </div>
-                      <div style={{ fontSize: 11, color: "#666" }}>
-                        avg {Math.round(avgDistanceKm)} km away
-                      </div>
-                      <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
-                        {whereAccuracy} XP
-                      </div>
-                    </div>
-
-                    {/* WHEN card */}
-                    <div style={{
-                      background: "#1e1e1e",
-                      borderRadius: 12,
-                      padding: "16px 10px 14px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                    }}>
-                      <div style={{ fontSize: 10, color: "#888", letterSpacing: "1.2px", textTransform: "uppercase", fontWeight: 500, marginBottom: 12 }}>
-                        WHEN
-                      </div>
-                      <svg viewBox="0 0 84 84" style={{ width: 84, height: 84, marginBottom: 8 }}>
-                        <circle cx={42} cy={42} r={34} fill="none" stroke="#2a2a2a" strokeWidth={8} />
-                        <circle
-                          cx={42} cy={42} r={34} fill="none"
-                          stroke={getScoreColor(whenAccuracy)} strokeWidth={8} strokeLinecap="round"
-                          strokeDasharray={213.6}
-                          strokeDashoffset={213.6 * (1 - whenAccuracy / 100)}
-                          transform={`rotate(-90 42 42)`}
-                        />
-                        <text x={42} y={42} textAnchor="middle" dominantBaseline="central"
-                          fill={getScoreColor(whenAccuracy)} fontSize={36} fontWeight={700}>
-                          {whenAccuracy}
-                        </text>
-                      </svg>
-                      <div style={{ fontSize: 16, color: "#bbb", fontWeight: 400, marginBottom: 4 }}>
-                        %
-                      </div>
-                      <div style={{ fontSize: 11, color: "#666" }}>
-                        avg {Math.round(avgYearDiff)} yrs off
-                      </div>
-                      <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
-                        {whenAccuracy} XP
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* LEADERBOARD SECTION */}
-                  <div style={{
-                    background: "#1e1e1e",
-                    borderRadius: 12,
-                    margin: "0 12px 12px",
-                    overflow: "hidden",
-                  }}>
-                    <div style={{
-                      fontSize: 11,
-                      color: "#888",
-                      letterSpacing: "1.5px",
-                      textTransform: "uppercase",
-                      padding: "12px 16px 10px",
-                      borderBottom: "0.5px solid #252525",
-                    }}>
-                      FINAL RANKINGS
-                    </div>
-                    {leaderboard.map((player, index) => {
-                      const isCurrentPlayer = player.playerId === playerId;
-                      const playerData = snapshot.players.find(p => p.playerId === player.playerId);
-                      const displayName = playerLabel(snapshot.players, player.playerId);
-                      const firstLetter = displayName ? displayName.charAt(0).toUpperCase() : "?";
-                      return (
-                        <div
-                          key={player.playerId}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "20px 1fr auto",
-                            padding: "11px 16px",
-                            borderBottom: index === leaderboard.length - 1 ? "none" : "0.5px solid #1e1e1e",
-                            background: isCurrentPlayer ? "#252525" : "transparent",
-                          }}
-                        >
-                          <div style={{ fontSize: 13, color: "#bbb", width: 20, display: "flex", alignItems: "center" }}>
-                            {index + 1}
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            {playerData?.avatarUrl ? (
-                              <img
-                                src={playerData.avatarUrl}
-                                alt={displayName}
-                                style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
-                              />
-                            ) : (
-                              <div style={{
-                                width: 28,
-                                height: 28,
-                                borderRadius: "50%",
-                                background: "#444",
-                                color: "#fff",
-                                fontSize: 12,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}>
-                                {firstLetter}
-                              </div>
-                            )}
-                            <div>
-                              <div style={{ fontSize: 13, ...getUsernameGradientStyle(player.playerId), fontWeight: 500 }}>
-                                {displayName}
-                                {isCurrentPlayer && (
-                                  <span style={{ fontSize: 11, color: "#E87722", marginLeft: 4 }}>(you)</span>
-                                )}
-                              </div>
-                              <div style={{ display: "flex", gap: 2, marginTop: 4 }}>
-                                {Array.from({ length: snapshot.config.totalRounds }).map((_, i) => (
-                                  <div key={i} style={{
-                                    width: 20,
-                                    height: 4,
-                                    borderRadius: 2,
-                                    background: player.wonRounds.includes(i) ? "#E87722" : "#2a2a2a",
-                                  }} />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ textAlign: "right" }}>
-                            <div style={{ fontSize: 18, color: "#fff", fontWeight: 700 }}>
-                              {player.avgAccuracy}<span style={{ fontSize: 18, color: "#E87722", fontWeight: 700 }}>%</span>
-                            </div>
-                            <div style={{ fontSize: 11, color: "#666" }}>
-                              {player.totalScore} XP
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* ROUND BREAKDOWN LABEL */}
-                  <div style={{
-                    fontSize: 10,
-                    color: "#555",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    margin: "4px 12px 8px",
-                  }}>
-                    ROUND BREAKDOWN
-                  </div>
-
-                  {/* ROUND CARDS */}
-                  {snapshot.rounds.map((round, i) => {
-                    const roundStats = computeRoundStats(i);
-                    if (!roundStats) return null;
-                    const bestPlayerData = snapshot.players.find(p => p.playerId === roundStats.bestPlayerId);
-                    const bestPlayerName = playerLabel(snapshot.players, roundStats.bestPlayerId);
-                    const bestPlayerFirstLetter = bestPlayerName ? bestPlayerName.charAt(0).toUpperCase() : "?";
-                    return (
-                      <div key={i} style={{
-                        background: "#1e1e1e",
-                        borderRadius: 12,
-                        margin: "0 12px 8px",
-                        overflow: "hidden",
-                      }}>
-                        {/* Photo strip */}
-                        <div style={{ position: "relative" }}>
-                          {round.imageUrl ? (
-                            <>
-                              <img
-                                src={round.imageUrl}
-                                alt={round.title}
-                                style={{ width: "100%", height: 94, objectFit: "cover", display: "block" }}
-                              />
-                              <button
-                                onClick={() => setFullscreenImg(round.imageUrl)}
+                  <div className="gh-final-wrap">
+                    {/* HERO ACCURACY CARD */}
+                    <div className="gh-final-score-grid">
+                      <div className="gh-final-score-hero gh-final-card">
+                        <div className="gh-final-ring-row">
+                          <div className="gh-final-ring-box">
+                            <svg viewBox="0 0 154 154" aria-hidden="true">
+                              <circle cx={77} cy={77} r={ringRadius} fill="none" stroke="#1a1a1a" strokeWidth={10} />
+                              <circle
+                                cx={77}
+                                cy={77}
+                                r={ringRadius}
+                                fill="none"
+                                stroke="#f97316"
+                                strokeWidth={10}
+                                strokeLinecap="round"
+                                strokeDasharray={ringCircumference}
+                                strokeDashoffset={ringCircumference}
+                                transform="rotate(-90 77 77)"
                                 style={{
-                                  position: "absolute",
-                                  top: 8,
-                                  right: 8,
-                                  width: 28,
-                                  height: 28,
-                                  borderRadius: 6,
-                                  background: "rgba(0,0,0,0.55)",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                              >
-                                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2}>
-                                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                                </svg>
-                              </button>
-                            </>
-                          ) : (
-                            <div style={{
-                              height: 94,
-                              background: "#1e1e1e",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 11,
-                              color: "#3a3a3a",
-                            }}>
-                              {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`} · {round.year}
-                            </div>
-                          )}
+                                  "--gh-final-ring-offset": `${ringOffset}`,
+                                  animation: "ghFinalRing 900ms ease-out forwards",
+                                } as React.CSSProperties}
+                              />
+                            </svg>
+                            <div className="gh-final-ring-number">{overallAccuracy}</div>
+                          </div>
+                          <span className="gh-final-ring-percent">%</span>
                         </div>
+                        <div className="gh-final-xp">{overallXP} XP</div>
+                      </div>
 
-                        {/* Card body */}
-                        <div style={{ padding: "11px 14px 14px" }}>
-                          <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", marginBottom: 4 }}>
-                            ROUND {i + 1}
+                      {/* WHERE / WHEN SUB-CARDS */}
+                      <div className="gh-final-stat-grid">
+                        {/* WHERE card */}
+                        <div className="gh-final-stat-card">
+                          <svg className="gh-final-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z" />
+                            <circle cx={12} cy={10} r={2.5} />
+                          </svg>
+                          <div className="gh-final-percent-line">
+                            <span className="gh-final-stat-number">{whereAccuracy}</span>
+                            <span className="gh-final-stat-symbol">%</span>
                           </div>
-                          <div style={{ fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.35, marginBottom: 3 }}>
-                            {round.title}
+                          <div className="gh-final-stat-sub">avg {Math.round(avgDistanceKm)} km away</div>
+                        </div>
+                        {/* WHEN card */}
+                        <div className="gh-final-stat-card">
+                          <svg className="gh-final-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <rect x={4} y={5} width={16} height={15} rx={2} />
+                            <path d="M8 3v4M16 3v4M4 10h16" />
+                          </svg>
+                          <div className="gh-final-percent-line">
+                            <span className="gh-final-stat-number">{whenAccuracy}</span>
+                            <span className="gh-final-stat-symbol">%</span>
                           </div>
-                          {round.description && (
-                            <div style={{
-                              fontSize: 12,
-                              color: "#888",
-                              marginTop: 3,
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                              overflow: "hidden",
-                              marginBottom: 10,
-                            }}>
-                              {round.description}
-                            </div>
-                          )}
+                          <div className="gh-final-stat-sub">avg {Math.round(avgYearDiff)} yrs off</div>
+                        </div>
+                      </div>
+                    </div>
 
-                          {/* 3-column score row */}
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
-                            {/* TOTAL cell */}
-                            <div style={{
-                              background: "#1e1e1e",
-                              borderRadius: 8,
-                              padding: "8px 6px",
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                            }}>
-                              <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                  <circle cx={12} cy={12} r={10} />
-                                  <polyline points="12 6 12 12 16 14" />
-                                </svg>
-                                TOTAL
-                              </div>
-                              <div style={{ fontSize: 18, color: getScoreColor(roundStats.avgAccuracy), fontWeight: 600, marginBottom: 2 }}>
-                                {roundStats.avgAccuracy}<span style={{ fontSize: 12, color: "#bbb" }}>%</span>
-                              </div>
-                              <div style={{ fontSize: 10, color: "#666" }}>
-                                {roundStats.totalScore} pts
-                              </div>
-                            </div>
-
-                            {/* WHERE cell */}
-                            <div style={{
-                              background: "#1e1e1e",
-                              borderRadius: 8,
-                              padding: "8px 6px",
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                            }}>
-                              <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                                <svg width={10} height={10} viewBox="0 0 24 24" fill="#E87722">
-                                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                                </svg>
-                                WHERE
-                              </div>
-                              <div style={{ fontSize: 18, color: getScoreColor(roundStats.avgLocationScore), fontWeight: 600, marginBottom: 2 }}>
-                                {roundStats.avgLocationScore}<span style={{ fontSize: 12, color: "#bbb" }}>%</span>
-                              </div>
-                              <div style={{ fontSize: 10, color: "#666" }}>
-                                avg {Math.round(roundStats.avgDistanceKm)} km
-                              </div>
-                            </div>
-
-                            {/* WHEN cell */}
-                            <div style={{
-                              background: "#1e1e1e",
-                              borderRadius: 8,
-                              padding: "8px 6px",
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                            }}>
-                              <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#E87722" strokeWidth={2}>
-                                  <rect x="3" y="4" width={18} height={18} rx={2} ry={2} />
-                                  <line x1="16" y1="2" x2="16" y2="6" />
-                                  <line x1="8" y1="2" x2="8" y2="6" />
-                                  <line x1="3" y1="10" x2="21" y2="10" />
-                                </svg>
-                                WHEN
-                              </div>
-                              <div style={{ fontSize: 18, color: getScoreColor(roundStats.avgTimeScore), fontWeight: 600, marginBottom: 2 }}>
-                                {roundStats.avgTimeScore}<span style={{ fontSize: 12, color: "#bbb" }}>%</span>
-                              </div>
-                              <div style={{ fontSize: 10, color: "#666" }}>
-                                avg {Math.round(roundStats.avgYearDiff)} yrs
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Round footer */}
-                          <div style={{
-                            borderTop: "0.5px solid #222",
-                            marginTop: 9,
-                            paddingTop: 9,
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}>
-                            <div style={{ fontSize: 11, color: "#666" }}>
-                              Best player:
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              {bestPlayerData?.avatarUrl ? (
+                    {/* LEADERBOARD SECTION */}
+                    <div className="gh-final-panel">
+                      <div className="gh-final-panel-heading">Final Rankings</div>
+                      {leaderboard.map((player, index) => {
+                        const isCurrentPlayer = player.playerId === playerId;
+                        const playerData = snapshot.players.find(p => p.playerId === player.playerId);
+                        const displayName = playerLabel(snapshot.players, player.playerId);
+                        const firstLetter = displayName ? displayName.charAt(0).toUpperCase() : "?";
+                        return (
+                          <div
+                            key={player.playerId}
+                            className="gh-final-rank-row"
+                            style={{
+                              borderLeftColor: index === 0 ? "#f59e0b" : "transparent",
+                            }}
+                          >
+                            <div className="gh-final-rank-number">{index + 1}</div>
+                            <div className="gh-final-rank-avatar">
+                              {playerData?.avatarUrl ? (
                                 <img
-                                  src={bestPlayerData.avatarUrl}
-                                  alt={bestPlayerName}
-                                  style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }}
+                                  src={playerData.avatarUrl}
+                                  alt={displayName}
+                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                />
+                              ) : firstLetter}
+                            </div>
+                            <div className="gh-final-rank-main">
+                              <div className="gh-final-rank-name-line">
+                                <span
+                                  className="gh-final-rank-name"
+                                  style={{ color: isCurrentPlayer ? "#f97316" : "#ffffff" }}
+                                >
+                                  {displayName}
+                                </span>
+                                {isCurrentPlayer ? <span className="gh-final-you-tag">(you)</span> : null}
+                              </div>
+                              <div className="gh-final-progress-track">
+                                <div
+                                  className="gh-final-progress-fill"
+                                  style={{
+                                    width: `${Math.max(0, Math.min(100, player.avgAccuracy))}%`,
+                                    background: "#9ca3af",
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <div className="gh-final-rank-score">
+                              <div className="gh-final-rank-percent">{player.avgAccuracy}%</div>
+                              <div className="gh-final-rank-xp">{player.totalScore} XP</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* ROUND BREAKDOWN LABEL */}
+                    <div className="gh-final-panel-heading" style={{ paddingLeft: 2 }}>Round Breakdown</div>
+                    {/* ROUND CARDS */}
+                    <div className="gh-final-rounds">
+                      {snapshot.rounds.map((round, i) => {
+                        const roundStats = computeRoundStats(i);
+                        if (!roundStats) return null;
+                        const bestPlayerName = playerLabel(snapshot.players, roundStats.bestPlayerId);
+                        const isCurrentBestPlayer = roundStats.bestPlayerId === playerId;
+                        return (
+                          <div key={i} className="gh-final-round-card">
+                            {/* Photo strip */}
+                            <div className="gh-final-photo">
+                              {round.imageUrl ? (
+                                <img
+                                  src={round.imageUrl}
+                                  alt={round.title}
+                                  onClick={() => setFullscreenImg(round.imageUrl)}
                                 />
                               ) : (
-                                <div style={{
-                                  width: 20,
-                                  height: 20,
-                                  borderRadius: "50%",
-                                  background: "#444",
-                                  color: "#fff",
-                                  fontSize: 10,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}>
-                                  {bestPlayerFirstLetter}
+                                <div className="gh-final-photo-fallback">
+                                  {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`} · {round.year}
                                 </div>
                               )}
-                              <div style={{ fontSize: 11, color: "#ccc", fontWeight: 500 }}>
-                                {bestPlayerName}
+                              <div className="gh-final-round-badge">ROUND {i + 1}</div>
+                            </div>
+
+                            {/* Card body */}
+                            <div className="gh-final-round-body">
+                              <div className="gh-final-round-title">{round.title}</div>
+
+                              {/* 3-column score row */}
+                              <div className="gh-final-mini-grid">
+                                {/* TOTAL cell */}
+                                <div className="gh-final-mini-tile">
+                                  <div className="gh-final-percent-line">
+                                    <span className="gh-final-mini-number">{roundStats.avgAccuracy}</span>
+                                    <span className="gh-final-mini-symbol">%</span>
+                                  </div>
+                                  <div className="gh-final-mini-label">Total</div>
+                                  <div className="gh-final-mini-sub">{roundStats.totalScore} pts</div>
+                                </div>
+
+                                <div className="gh-final-mini-tile">
+                                  <div className="gh-final-percent-line">
+                                    <span className="gh-final-mini-number">{roundStats.avgLocationScore}</span>
+                                    <span className="gh-final-mini-symbol">%</span>
+                                  </div>
+                                  <div className="gh-final-mini-label">Where</div>
+                                  <div className="gh-final-mini-sub">avg {Math.round(roundStats.avgDistanceKm)} km</div>
+                                </div>
+
+                                <div className="gh-final-mini-tile">
+                                  <div className="gh-final-percent-line">
+                                    <span className="gh-final-mini-number">{roundStats.avgTimeScore}</span>
+                                    <span className="gh-final-mini-symbol">%</span>
+                                  </div>
+                                  <div className="gh-final-mini-label">When</div>
+                                  <div className="gh-final-mini-sub">avg {Math.round(roundStats.avgYearDiff)} yrs</div>
+                                </div>
+                              </div>
+
+                              {/* Round footer */}
+                              <div className="gh-final-best-row">
+                                <div className="gh-final-best-label">
+                                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="M8 21h8" />
+                                    <path d="M12 17v4" />
+                                    <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
+                                    <path d="M5 6H3a3 3 0 0 0 3 3h1" />
+                                    <path d="M19 6h2a3 3 0 0 1-3 3h-1" />
+                                  </svg>
+                                  Best Player
+                                </div>
+                                <div
+                                  className="gh-final-best-name"
+                                  style={{ color: isCurrentBestPlayer ? "#f97316" : "#9ca3af" }}
+                                >
+                                  {bestPlayerName}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
 
-                  {/* BOTTOM ACTION BAR */}
-                  <div style={{
-                    position: "fixed",
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    background: "#111",
-                    borderTop: "0.5px solid #2a2a2a",
-                    padding: "12px 16px",
-                    display: "flex",
-                    gap: 10,
-                    zIndex: 1000,
-                  }}>
-                    <button
-                      onClick={() => router.push("/")}
-                      style={{
-                        background: "transparent",
-                        color: "#fff",
-                        border: "none",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        padding: "8px 16px",
-                      }}
-                    >
-                      Home
-                    </button>
-                    <button
-                      onClick={() => router.push("/compete")}
-                      style={{
-                        flex: 1,
-                        height: 46,
-                        borderRadius: 10,
-                        border: "none",
-                        background: "#E87722",
-                        color: "#fff",
-                        fontSize: 15,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Play Again
-                    </button>
+                    {/* BOTTOM ACTION BAR */}
+                    <div className="gh-final-cta">
+                      <button
+                        type="button"
+                        className="gh-final-home"
+                        onClick={() => router.push("/")}
+                      >
+                        Home
+                      </button>
+                      <button
+                        type="button"
+                        className="gh-final-play"
+                        onClick={() => router.push("/compete")}
+                      >
+                        Play Again
+                      </button>
+                    </div>
                   </div>
                 </>
               );
