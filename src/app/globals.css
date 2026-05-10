@@ -23,7 +23,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background: radial-gradient(circle at top, #18264a 0%, var(--bg) 55%);
+  background: var(--bg);
   color: var(--text);
 }
 
@@ -214,4 +214,79 @@ a {
   .layout {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================================
+   DESIGN TOKENS — typography + theme
+   Usage: var(--font-xs), var(--color-bg), etc.
+   ============================================================ */
+
+:root {
+  /* --- Typography scale (mobile-first, 16px base) --- */
+  --font-2xs:   11px;   /* use only for badges/labels — sparingly */
+  --font-xs:    12px;   /* captions, secondary metadata */
+  --font-sm:    14px;   /* secondary labels, pill text */
+  --font-base:  16px;   /* body text — MINIMUM for readable content */
+  --font-lg:    18px;   /* emphasized body, card headers */
+  --font-xl:    20px;   /* section titles */
+  --font-2xl:   24px;   /* screen headers */
+  --font-3xl:   28px;   /* large display numbers */
+  --font-4xl:   38px;   /* hero numbers (XP, accuracy ring) */
+
+  /* --- Spacing --- */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+  --radius-pill: 9999px;
+}
+
+/* ============================================================
+   DARK THEME (default — app is dark by default)
+   ============================================================ */
+:root,
+.dark {
+  --color-bg:           #0f0f0f;
+  --color-bg-card:      #1a1a1a;
+  --color-bg-modal:     #1c1c1e;
+  --color-bg-input:     #2a2a2a;
+  --color-bg-pill:      rgba(255,255,255,0.08);
+
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: rgba(255,255,255,0.65);
+  --color-text-muted:     rgba(255,255,255,0.38);
+
+  --color-border:         rgba(255,255,255,0.10);
+  --color-border-strong:  rgba(255,255,255,0.22);
+
+  --color-orange:  #fb923c;
+  --color-purple:  #c084fc;
+  --color-gold:    #f0c060;
+  --color-green:   #22c55e;
+  --color-cyan:    #22d3ee;
+  --color-red:     #ef4444;
+}
+
+/* ============================================================
+   LIGHT THEME
+   ============================================================ */
+.light {
+  --color-bg:           #f4f4f5;
+  --color-bg-card:      #ffffff;
+  --color-bg-modal:     #ffffff;
+  --color-bg-input:     #f0f0f0;
+  --color-bg-pill:      rgba(0,0,0,0.06);
+
+  --color-text-primary:   #0f0f0f;
+  --color-text-secondary: rgba(0,0,0,0.60);
+  --color-text-muted:     rgba(0,0,0,0.38);
+
+  --color-border:         rgba(0,0,0,0.10);
+  --color-border-strong:  rgba(0,0,0,0.20);
+
+  --color-orange:  #ea6f10;
+  --color-purple:  #9333ea;
+  --color-gold:    #ca8a04;
+  --color-green:   #16a34a;
+  --color-cyan:    #0891b2;
+  --color-red:     #dc2626;
 }

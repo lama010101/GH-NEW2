@@ -182,6 +182,12 @@ export default class GameServer {
     this.snapshot = snapshot;
     console.timeEnd("[PERF] loadFromDB:apiFetch");
     this.snapshotLoaded = true;
+    // Restore resultPhaseStartAt if session is already in ROUND_COMPLETE on cold load
+    if (isRuntimeState(this.snapshot) && this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt === null) {
+      this.resultPhaseStartAt = Date.now();
+      this.readyForNext.clear();
+      console.log("[PartyKit] Cold load: restored resultPhaseStartAt for ROUND_COMPLETE session");
+    }
     this.scheduleRoundTimer();
   }
 
@@ -245,17 +251,18 @@ export default class GameServer {
     const endsAt = new Date(this.snapshot.roundEndsAt).getTime();
     const now = Date.now();
     const delay = endsAt - now;
+    const expectedRoundIndex = this.snapshot.currentRoundIndex;
 
     if (delay <= 0) {
       // Round already expired — trigger advance immediately
       console.log("[PartyKit] Round expired, triggering advance");
-      this.triggerRoundExpiry();
+      this.triggerRoundExpiry(expectedRoundIndex);
     } else {
       // Schedule advance for when the round expires
       console.log(`[PartyKit] Round timer scheduled: ${Math.round(delay / 1000)}s`);
       this.roundTimerHandle = setTimeout(() => {
         this.roundTimerHandle = null;
-        this.triggerRoundExpiry();
+        this.triggerRoundExpiry(expectedRoundIndex);
       }, delay);
     }
   }
@@ -265,7 +272,13 @@ export default class GameServer {
    * waits 40 seconds for clients to display results and optionally click "Next Round",
    * then advances to next round. Uses API-returned snapshots — no re-fetch.
    */
-  private async triggerRoundExpiry(): Promise<void> {
+  private async triggerRoundExpiry(expectedRoundIndex: number): Promise<void> {
+    const currentRoundIndex = isRuntimeState(this.snapshot) ? this.snapshot.currentRoundIndex : null;
+    if (currentRoundIndex !== expectedRoundIndex) {
+      console.log(`[PartyKit] Stale round timer ignored: expected round ${expectedRoundIndex}, current round ${currentRoundIndex}`);
+      return;
+    }
+
     if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_ACTIVE") {
       return;
     }
@@ -335,6 +348,31 @@ export default class GameServer {
         return;
       }
 
+      // Fetch current snapshot to verify phase before advancing
+      // This prevents INVALID_TRANSITION if READY_NEXT path already advanced during the 40s wait
+      try {
+        const baseUrl = this.getNextJsBaseUrl();
+        const snapshotUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}`;
+        const snapshotRes = await fetch(snapshotUrl);
+        if (!snapshotRes.ok) {
+          console.warn(`[PartyKit] Failed to fetch snapshot for phase check: ${snapshotRes.status}`);
+          return;
+        }
+        const currentSnapshot = await snapshotRes.json();
+        if (currentSnapshot.status !== "ROUND_COMPLETE") {
+          console.log(`[PartyKit] Phase is ${currentSnapshot.status}, not ROUND_COMPLETE — skipping timer advance (already advanced by player)`);
+          return;
+        }
+      } catch (err) {
+        console.warn("[PartyKit] Snapshot fetch failed for phase check:", err instanceof Error ? err.message : err);
+        return;
+      }
+
+      if (this.advanceInFlight) {
+        console.log("[PartyKit] advanceInFlight true at timeout advance, aborting");
+        return;
+      }
+      this.advanceInFlight = true;
       try {
         const baseUrl = this.getNextJsBaseUrl();
         const advanceUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/advance`;
@@ -351,6 +389,8 @@ export default class GameServer {
         this.applySnapshotAndBroadcast(advanceSnapshot);
       } catch (err) {
         console.error("[PartyKit] Round advance after expiry failed:", err instanceof Error ? err.message : err);
+      } finally {
+        this.advanceInFlight = false;
       }
     } finally {
       this.completeInFlight = false;
@@ -619,34 +659,17 @@ export default class GameServer {
             const results = Array.isArray(fullResponse.results) ? fullResponse.results : null;
             this.pendingResults = results;
 
-            // Apply snapshot immediately so clients see hasSubmitted=true before clamp logic
-            console.log(`[SUBMIT_GUESS] response status=${(fullResponse as {status?: string}).status} isRuntimeState=${isRuntimeState(fullResponse)}`);
-            this.applySnapshotAndBroadcast(fullResponse);
-
-            // Broadcast PLAYER_SUBMITTED to all clients
-            if (isRuntimeState(this.snapshot)) {
-              const submittingPlayer = this.snapshot.players.find(p => p.playerId === data.playerId);
-              if (submittingPlayer) {
-                const playerSubmittedMsg: ClientMessage = {
-                  type: "PLAYER_SUBMITTED",
-                  playerId: data.playerId,
-                  playerName: submittingPlayer.displayName
-                };
-                this.room.broadcast(JSON.stringify(playerSubmittedMsg));
-              }
-            }
-
             // Check if this is the first submission of the round and apply timer clamp
-            if (isRuntimeState(this.snapshot) &&
-                this.snapshot.status === "ROUND_ACTIVE" &&
-                this.snapshot.currentRoundIndex === data.roundIndex &&
-                this.snapshot.roundEndsAt) {
+            if (isRuntimeState(fullResponse) &&
+                fullResponse.status === "ROUND_ACTIVE" &&
+                fullResponse.currentRoundIndex === data.roundIndex &&
+                fullResponse.roundEndsAt) {
               // Count submitted players in updated snapshot (includes current submitter)
-              const submittedCount = this.snapshot.players.filter(p => p.hasSubmitted && p.leftAt === null).length;
+              const submittedCount = fullResponse.players.filter(p => p.hasSubmitted && p.leftAt === null).length;
 
               // Fire clamp only on exactly the first submission (submittedCount === 1)
               if (submittedCount === 1) {
-                const remainingMs = new Date(this.snapshot.roundEndsAt).getTime() - Date.now();
+                const remainingMs = new Date(fullResponse.roundEndsAt).getTime() - Date.now();
                 const clampTo = Math.min(Math.ceil(remainingMs / 1000), 30);
 
                 if (clampTo < remainingMs / 1000) {
@@ -667,6 +690,23 @@ export default class GameServer {
                   this.room.broadcast(JSON.stringify(timerClampedMsg));
                   console.log(`[PartyKit] Timer clamped from ${Math.round(remainingMs / 1000)}s to ${clampTo}s`);
                 }
+              }
+            }
+
+            // Apply snapshot after clamp shaping so clients see hasSubmitted=true and clamped timer together
+            console.log(`[SUBMIT_GUESS] response status=${(fullResponse as {status?: string}).status} isRuntimeState=${isRuntimeState(fullResponse)}`);
+            this.applySnapshotAndBroadcast(fullResponse);
+
+            // Broadcast PLAYER_SUBMITTED to all clients
+            if (isRuntimeState(this.snapshot)) {
+              const submittingPlayer = this.snapshot.players.find(p => p.playerId === data.playerId);
+              if (submittingPlayer) {
+                const playerSubmittedMsg: ClientMessage = {
+                  type: "PLAYER_SUBMITTED",
+                  playerId: data.playerId,
+                  playerName: submittingPlayer.displayName
+                };
+                this.room.broadcast(JSON.stringify(playerSubmittedMsg));
               }
             }
           } finally {
