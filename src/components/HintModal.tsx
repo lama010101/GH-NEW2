@@ -7,6 +7,8 @@ export type HintPurchaseResult = {
   purchasedIds: string[];
   accPenalty: number;
   xpPenalty: number;
+  whereAccPenalty: number;
+  whenAccPenalty: number;
 };
 
 export type HintModalProps = {
@@ -211,6 +213,8 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
       purchasedIds: Array.from(purchased),
       accPenalty: penalties.totalAcc,
       xpPenalty: penalties.totalXp,
+      whereAccPenalty: penalties.whereAcc,
+      whenAccPenalty: penalties.whenAcc,
     });
   };
 

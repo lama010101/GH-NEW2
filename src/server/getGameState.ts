@@ -456,15 +456,23 @@ export async function getGameState(
     }
 
     const eventMap = new Map(eventResult.rows.map(row => [row.event_id, row]));
-    roundEventContent = eventIds.map(id => {
+    const hiddenAnswerValue = null as unknown as number;
+    roundEventContent = eventIds.map((id, roundIndex) => {
       const ev = eventMap.get(id);
+      const latestRoundEvent = events
+        .filter(event => event.roundIndex === roundIndex)
+        .reduce<RoundEvent | null>(
+          (latest, event) => latest === null || event.id > latest.id ? event : latest,
+          null
+        );
+      const shouldRevealAnswer = latestRoundEvent?.eventType === "ROUND_COMPLETE" || latestRoundEvent?.eventType === "SESSION_COMPLETE";
       return {
         eventId: id,
         title: ev?.title ?? '',
-        year: ev?.event_year ?? 0,
-        latitude: ev?.latitude ?? 0,
-        longitude: ev?.longitude ?? 0,
-        locationName: ev?.display_name ?? null,
+        year: shouldRevealAnswer ? ev?.event_year ?? 0 : hiddenAnswerValue,
+        latitude: shouldRevealAnswer ? ev?.latitude ?? 0 : hiddenAnswerValue,
+        longitude: shouldRevealAnswer ? ev?.longitude ?? 0 : hiddenAnswerValue,
+        locationName: shouldRevealAnswer ? ev?.display_name ?? null : null,
         imageUrl: ev?.image_url ?? null,
         description: ev?.description ?? null,
         hints: hintsByEventId.get(id) ?? [],

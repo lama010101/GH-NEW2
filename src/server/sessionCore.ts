@@ -1171,6 +1171,10 @@ export async function completeRound(input: {
   const client = await getTransactionClient();
   try {
     await client.query("BEGIN");
+    await client.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2::text))`,
+      [gameId, roundIndex]
+    );
 
     // Idempotency: if ROUND_COMPLETE already exists, skip all writes
     const existing = await client.query(
@@ -1181,10 +1185,10 @@ export async function completeRound(input: {
     );
 
     if (existing.rows.length === 0) {
-      await insertMissingCommits(client, gameId, roundIndex);
-      await computeAndWriteRoundResults(gameId, roundIndex, client);
       const commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
       await appendEvent(client, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
+      await insertMissingCommits(client, gameId, roundIndex);
+      await computeAndWriteRoundResults(gameId, roundIndex, client);
     }
 
     await client.query("COMMIT");
