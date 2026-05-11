@@ -68,7 +68,14 @@ export default function WhereCard({
           </svg>
           <span style={{ fontSize: 18, fontWeight: 700, color: "#f97316" }}>Where</span>
         </div>
-        {myResult != null && (() => {
+        {(() => {
+          if (myResult == null || !myResult.didSubmit) {
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 19, fontWeight: 700, color: "#666" }}>—</span>
+              </div>
+            );
+          }
           const locScore = Math.round(myResult.locationScore);
           const locHue = Math.round((Math.max(0, Math.min(100, locScore)) / 100) * 120);
           const locColor = `hsl(${locHue}, 100%, 50%)`;
@@ -99,11 +106,23 @@ export default function WhereCard({
         <span>Correct:</span>
         <span style={{ color: "#f97316" }}>{correctName}</span>
       </div>
-      {myDistanceKm != null && (
-        <div style={{ marginBottom: 8 }}>
-          <span style={{ fontSize: 15, color: "#fff" }}>{Math.round(myDistanceKm)} km away</span>
-        </div>
-      )}
+      {(() => {
+        if (myResult == null || !myResult.didSubmit) {
+          return (
+            <div style={{ marginBottom: 8 }}>
+              <span style={{ fontSize: 15, color: "#666" }}>No guess</span>
+            </div>
+          );
+        }
+        if (myDistanceKm != null) {
+          return (
+            <div style={{ marginBottom: 8 }}>
+              <span style={{ fontSize: 15, color: "#fff" }}>{Math.round(myDistanceKm)} km away</span>
+            </div>
+          );
+        }
+        return null;
+      })()}
       <div style={{ borderRadius: 8, overflow: "hidden", height: 200 }}>
         {correctLat != null && correctLng != null && (
           <StaticResultMap
@@ -113,7 +132,7 @@ export default function WhereCard({
             guessLat={guessLat}
             guessLng={guessLng}
             playerGuesses={roundResults
-              ?.filter(r => r.didSubmit && r.guessLat != null && r.guessLng != null)
+              ?.filter(r => r.didSubmit && r.guessLat != null && r.guessLng != null && r.playerId !== playerId)
               .map(r => {
                 const player = snapshotPlayers.find(p => p.playerId === r.playerId);
                 return {
