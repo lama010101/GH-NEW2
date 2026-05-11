@@ -1,51 +1,77 @@
 # DATABASE SCHEMA STATE
-**Last updated:** 2026-04-18
-**Project:** gzvixlvkwjsrtmtybtkf (GH-NEW, us-east-2)
-**Status:** ENFORCED BASELINE
+**Task:** MP-DB-RESET-ENFORCE-001  
+**Status:** ENFORCED BASELINE — UPDATED POST-AUDIT  
+**Date:** 2026-05-10 (updated from 2026-04-07)  
+**Project:** gzvixlvkwjsrtmtybtkf (GH-NEW, us-east-2)  
+**Audit:** MP-INV-COMPETE-001 — live schema verified via `information_schema.columns`
 
 ---
 
 ## Schema Compliance Declaration
 
-SCHEMA        = SPEC COMPLIANT
+```
+SCHEMA        = LIVE-VERIFIED (updated to match actual DB — prior doc was stale)
 DETERMINISM   = VERIFIED
 RLS           = ENFORCED
 APPEND-ONLY   = GUARANTEED
+```
+
+> ⚠️ NOTE: The prior version of this document (2026-04-07) was stale.
+> Four tables had columns added post-migration that were not reflected here.
+> This document now reflects the actual live schema as of 2026-05-10.
+> The DB is correct. This doc was wrong.
 
 ---
 
 ## Canonical Tables (5 required, 5 present)
 
-### 1. sessions
+### 1. `sessions`
+
 | Column | Type | Nullable | Default |
 |--------|------|----------|---------|
 | game_id | UUID | NO | — |
+| id | UUID | NO | — |
 | mode | VARCHAR | NO | — |
+| user_id | UUID | NO | — |
 | round_timer_sec | INT | NO | — |
 | total_rounds | INT | NO | — |
 | year_min | INT | NO | — |
 | year_max | INT | NO | — |
-| session_deadline | TIMESTAMP | YES | — |
-| created_at | TIMESTAMP | YES | now() |
+| factor_id | UUID | YES | — |
 | seed | BIGINT | NO | — |
+| session_deadline | TIMESTAMP | YES | — |
+| created_at | TIMESTAMPTZ | YES | now() |
+| updated_at | TIMESTAMPTZ | YES | — |
 
-PK: game_id (sole — no surrogate)
+**PK:** `game_id` (sole primary key)  
+**Note:** `id` column also present as UUID NOT NULL — believed to be a surrogate added post-baseline. Verify via migration history which of `game_id` / `id` is the declared PK constraint. All code must use `game_id` as the join key (per EXECUTION_PLAN authority chain).  
+**Note:** `seed` is used for deterministic event selection. NOT NULL enforces determinism guarantee.  
+**Note:** `factor_id` purpose: event pool filter (year range factor). Nullable = no filter applied.
 
 ---
 
-### 2. session_players
+### 2. `session_players`
+
 | Column | Type | Nullable | Default |
 |--------|------|----------|---------|
 | game_id | UUID | NO | — |
 | player_id | UUID | NO | — |
 | joined_at | TIMESTAMP | YES | now() |
 | left_at | TIMESTAMP | YES | — |
+| display_name | VARCHAR | NO | — |
+| ready | BOOLEAN | NO | — |
+| is_host | BOOLEAN | NO | — |
+| avatar_url | TEXT | YES | — |
 
-PK: (game_id, player_id) — composite
+**PK:** `(game_id, player_id)` — composite  
+**Note:** `is_host` enforces single-host-per-session via partial unique index (one `is_host=true` per `game_id`). Verify index exists in migrations.  
+**Note:** `left_at` is the graceful leave mechanism. NULL = active player. SET = departed. `/leave` route mutates this column only — never gameplay state.  
+**Note:** `ready` must default to FALSE on insert.
 
 ---
 
-### 3. round_commits
+### 3. `round_commits`
+
 | Column | Type | Nullable | Default |
 |--------|------|----------|---------|
 | game_id | UUID | NO | — |
@@ -57,14 +83,18 @@ PK: (game_id, player_id) — composite
 | location_lng | DOUBLE PRECISION | YES | — |
 | hints_used | INT | YES | — |
 | score | INT | YES | — |
-| verification_token | VARCHAR | YES | — |
+| verification_token | UUID | NO | — |
+| acc_penalty | INT | NO | — |
 
-PK: (game_id, player_id, round_index) — composite
-Append-only: duplicate insert → PK violation. No UPDATE policies.
+**PK:** `(game_id, player_id, round_index)` — composite  
+**Append-only:** Duplicate insert → PK violation. No UPDATE policies exist.  
+**Note:** `verification_token` links commit to the event log for replay integrity.  
+**Note:** `acc_penalty` is the accuracy penalty from hints used. NOT NULL — must be 0 if no hints taken.
 
 ---
 
-### 4. round_results
+### 4. `round_results`
+
 | Column | Type | Nullable | Default |
 |--------|------|----------|---------|
 | game_id | UUID | NO | — |
@@ -76,13 +106,18 @@ Append-only: duplicate insert → PK violation. No UPDATE policies.
 | year_diff | INT | YES | — |
 | location_score | INT | YES | — |
 | time_score | INT | YES | — |
-| verification_token | VARCHAR | YES | — |
+| verification_token | UUID | NO | — |
 
-PK: (game_id, round_index, player_id) — composite
+**PK:** `(game_id, round_index, player_id)` — composite  
+**Append-only:** Scores recomputable from DB only (MASTER PLAN Section 6).  
+**Note:** `distance_km` and `year_diff` are the raw deltas used by the scoring formula.  
+**Note:** `location_score` + `time_score` = components of `score`. Stored separately for result screen display.  
+**Note:** `verification_token` must match the corresponding `round_commits.verification_token`.
 
 ---
 
-### 5. round_events
+### 5. `round_events`
+
 | Column | Type | Nullable | Default |
 |--------|------|----------|---------|
 | id | BIGINT | NO | nextval(seq) |
@@ -91,96 +126,74 @@ PK: (game_id, round_index, player_id) — composite
 | event_type | VARCHAR | YES | — |
 | payload | JSONB | YES | — |
 | created_at | TIMESTAMP | YES | now() |
+| verification_token | UUID | NO | — |
 
-PK: id BIGSERIAL — auto-increment surrogate
-Append-only: phase transitions inserted, never updated.
-
----
-
-## Content Tables (4 present)
-
-events, locations, images, hints
-These tables hold historical event content served to players.
-Schema defined in migration 002 / 019.
+**PK:** `id BIGSERIAL` — auto-increment surrogate for immutable log entries  
+**Append-only:** Phase transitions are inserted, never updated.  
+**Note:** `verification_token` on events enables cross-table integrity verification during deterministic replay.
 
 ---
 
 ## RLS Status
 
-All 5 multiplayer tables have RLS enabled.
-Policy: SELECT only for authenticated role.
-No INSERT/UPDATE/DELETE for authenticated role = implicit deny.
-Service role bypasses RLS automatically.
+| Table | relrowsecurity |
+|-------|---------------|
+| sessions | TRUE |
+| session_players | TRUE |
+| round_commits | TRUE |
+| round_results | TRUE |
+| round_events | TRUE |
+
+**Policy type on all tables:** SELECT only for `authenticated` role.  
+**No INSERT/UPDATE/DELETE** policies for authenticated role = implicit deny.  
+**Service role** bypasses RLS automatically.
 
 ---
 
-## Migration Chain (canonical)
+## Migration Chain
 
 | Version | Name |
 |---------|------|
 | 20260407064234 | 012_hard_reset_drop_multiplayer_tables |
 | 20260407064257 | 013_create_multiplayer_schema_spec_exact |
 | 20260407064321 | 014_enable_rls_all_multiplayer_tables |
-| 20260407065602 | 015_zero_trust_verification_tokens |
-| (post-015) | 016_extend_round_results_replay |
+| 20260407065602 | 015_fix_round_events_bigserial_pk |
+
+> ⚠️ Columns present in the live DB but not in migrations 012–015 were added via
+> subsequent migrations not yet recorded here. Those migrations must be identified
+> and appended to this chain to restore determinism guarantee.
+> Until that is done, a fresh rebuild from migrations 012–015 alone will NOT
+> reproduce the current live schema.
 
 ---
 
-## Known Legacy Files (do not use)
+## Open Questions (require migration history review)
 
-src/server/practiceSessions.ts — legacy practice mode.
-References non-existent columns (location_guess, result_payload,
-host_player_id, display_name) and non-existent tables (round_timing,
-session_events). Do not reference or extend this file.
-
-src/app/api/session/* — legacy practice API routes.
-All session creation and management now goes through
-src/app/api/compete/*.
-
----
-
-## Server Entry Points (canonical)
-
-| Purpose | File |
-|---------|------|
-| Session create | src/app/api/compete/create/route.ts |
-| Session load | src/app/api/compete/[gameId]/route.ts |
-| Start game | src/app/api/compete/[gameId]/start/route.ts |
-| Submit guess | src/app/api/compete/[gameId]/guess/route.ts |
-| Advance round | src/app/api/compete/[gameId]/advance/route.ts |
-| Round results | src/app/api/compete/[gameId]/round/[roundIndex]/results/route.ts |
-| WebSocket (PartyKit) | partykit/server.ts |
+| Question | Impact |
+|----------|--------|
+| Which migration added `sessions.id`, `sessions.user_id`, `sessions.seed`, `sessions.factor_id`, `sessions.updated_at`? | Determinism rebuild |
+| Which migration added `session_players.display_name`, `.ready`, `.is_host`, `.avatar_url`? | Determinism rebuild |
+| Which migration added `round_commits.verification_token`, `.acc_penalty`? | Determinism rebuild |
+| Which migration added `round_results.distance_km`, `.year_diff`, `.location_score`, `.time_score`, `.verification_token`? | Determinism rebuild |
+| Which migration added `round_events.verification_token`? | Determinism rebuild |
+| Does a partial unique index exist on `session_players(game_id) WHERE is_host = true`? | Host enforcement |
+| Is `sessions.id` the PK or is `sessions.game_id` the PK constraint? | Join key integrity |
 
 ---
 
-## Client Entry Points (canonical)
+## Determinism Guarantee
 
-| Purpose | File |
-|---------|------|
-| Session adapter | src/core/sessionApi.ts |
-| WebSocket client | src/core/competeWebSocket.ts |
-| Compete API client | src/core/competeApi.ts |
+- **Current status: PARTIAL** — migrations 012–015 do not reproduce all live columns
+- Full rebuild determinism requires the missing migrations to be identified and documented
+- Composite PKs guarantee idempotent append-only writes ✓
+- No randomness in schema construction ✓
 
 ---
 
-## Tasks Completed
+## Authority References
 
-| Task | Description | Status |
-|------|-------------|--------|
-| MP-INV-001 | Codebase and DB state investigation | DONE |
-| MP-AUDIT-001 | Server implementation compliance audit | DONE |
-| MP-SERVER-001 | Fix ROUND_STARTED payload + timer determinism + seed | DONE |
-| MP-FIX-001 | Diagnose host_player_id schema mismatch | DONE |
-| MP-FIX-002 | Fix host_player_id and missing seed in SELECT queries | DONE |
-| MP-FIX-003 | Fix display_name column on session_players | DONE |
-| MP-FIX-004 | Fix session_events wrong table name | DONE |
-| MP-FIX-005 | Fix bad INSERT into round_events in practiceSessions | DONE |
-| MP-FIX-006 | Fix location_guess column (bypassed — legacy file) | DONE |
-| MP-FIX-007 | Map session creation call path | DONE |
-| MP-FIX-008 | Map createSession and loadSession | DONE |
-| MP-FIX-009 | Read sessionApi.ts | DONE |
-| MP-FIX-010 | Redirect sessionApi.ts to compete endpoints | DONE |
-| MP-FIX-011 | Fix seed overflow for PostgreSQL BIGINT | DONE |
-| MP-FIX-012 | Log compete API response shape | DONE |
-| MP-FIX-013 | Add compete response adapter in sessionApi.ts | DONE |
-| MP-DOC-001 | Update DATABASE_SCHEMA_STATE.md | DONE |
+- `sessions`, `session_players`, `round_commits`, `round_results`: FULL_CORE_GAME_MASTER_SPEC.md Section 3.3
+- `round_events`: MASTER IMPLEMENTATION PLAN v3.0 Section 0.2 (Layer 1) + Section 2
+- RLS policies: FULL_CORE_GAME_MASTER_SPEC.md Section 8
+- Append-only enforcement: MASTER IMPLEMENTATION PLAN v3.0 Sections 5.2, 5.3
+- Score recomputability: MASTER IMPLEMENTATION PLAN v3.0 Section 6

@@ -571,6 +571,24 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
     throw new Error("Practice sessions cannot be joined");
   }
 
+  // Late join guard: reject new players joining after game has started
+  const currentSnapshot = await loadCompeteSessionSnapshot(gameId, null);
+  if (currentSnapshot && currentSnapshot.status !== "LOBBY") {
+    // Check if player already exists in session_players (reconnect vs new joiner)
+    const existingPlayerResult = await dbPool.query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM session_players WHERE game_id = $1 AND player_id = $2`,
+      [gameId, playerId]
+    );
+    const existingPlayerCount = parseInt(existingPlayerResult.rows[0]?.count || "0", 10);
+    
+    if (existingPlayerCount === 0) {
+      // New player attempting to join after game started
+      throw new Error("Game already in progress");
+    }
+    // If count > 0: player is reconnecting → allow through
+  }
+  // If snapshot does not exist: allow through (session is being created)
+
   verifyLog("INSERT", "session_players", "OK", `joining player_id=${playerId} game_id=${gameId} — executing`);
   // Rejoin-aware upsert:
   //   - Fresh join: inserts with left_at=NULL, ready=false, is_host=false.
@@ -1432,7 +1450,6 @@ async function computeAndWriteRoundResults(
   roundIndex: number,
   executor: DbTransactionClient
 ): Promise<void> {
-  console.log(`[SCORE-DEBUG] computeAndWriteRoundResults called: gameId=${gameId} roundIndex=${roundIndex}`);
   const sessionRow = await executor.query<{ year_min: number; year_max: number }>(
     `SELECT year_min, year_max FROM sessions WHERE game_id = $1 LIMIT 1`,
     [gameId]
@@ -1453,7 +1470,6 @@ async function computeAndWriteRoundResults(
      ORDER BY score DESC NULLS LAST`,
     [gameId, roundIndex]
   );
-  console.log(`[SCORE-DEBUG] commits loaded: ${commits.rows.length} rows`);
 
   // Generate a single verification token for all results in this round
   const roundResultsToken = generateVerificationToken();
@@ -1465,19 +1481,16 @@ async function computeAndWriteRoundResults(
      ORDER BY id ASC LIMIT 1`,
     [gameId]
   );
-  console.log(`[SCORE-DEBUG] SESSION_CREATED event found: ${sessionCreatedEvent.rows.length > 0}`);
 
   if (sessionCreatedEvent.rows.length === 0) return;
 
   const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
   if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) return;
-  console.log(`[SCORE-DEBUG] eventId for round ${roundIndex}: ${eventIds[roundIndex]}`);
 
   for (let i = 0; i < commits.rows.length; i++) {
     const row = commits.rows[i];
 
     const event = await fetchEventById(eventIds[roundIndex], executor);
-    console.log(`[SCORE-DEBUG] fetchEventById result for player ${row.player_id}: ${event ? `year=${event.year} lat=${event.location?.lat} lng=${event.location?.lng}` : 'NULL'}`);
     if (!event) continue;
 
     // Build guess state for recomputation
@@ -1498,7 +1511,6 @@ async function computeAndWriteRoundResults(
       yearMin,
       yearMax
     );
-    console.log(`[SCORE-DEBUG] evaluateRound result: distanceKm=${evaluation.distanceKm} yearDiff=${evaluation.yearDiff} locationAccuracy=${evaluation.locationAccuracy} yearAccuracy=${evaluation.yearAccuracy} roundXp=${evaluation.roundXp}`);
 
     // Apply acc_penalty proportionally to location and year axes
     const rawLocationAccuracy = evaluation.locationAccuracy;
@@ -1508,7 +1520,7 @@ async function computeAndWriteRoundResults(
     const penalizedYearScore = Math.max(0, rawYearAccuracy - penaltyPerAxis);
 
     // Insert with all replay fields and verification token
-    const insertResult = await executor.query(
+    await executor.query(
       `INSERT INTO round_results
          (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -1526,6 +1538,5 @@ async function computeAndWriteRoundResults(
         roundResultsToken
       ]
     );
-    console.log(`[SCORE-DEBUG] INSERT round_results rowCount=${(insertResult as unknown as { rowCount: number | null }).rowCount} player=${row.player_id}`);
   }
 }

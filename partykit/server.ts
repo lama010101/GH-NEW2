@@ -379,7 +379,7 @@ export default class GameServer {
         const advanceRes = await fetch(advanceUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cause: "timeout", roundIndex })
+          body: JSON.stringify({ cause: TransitionCause.TIMEOUT, roundIndex })
         });
         if (!advanceRes.ok) {
           const text = await advanceRes.text();
@@ -798,7 +798,7 @@ export default class GameServer {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    cause: "player",
+                    cause: TransitionCause.PLAYER,
                     playerId: data.playerId,
                     roundIndex: data.roundIndex
                   })

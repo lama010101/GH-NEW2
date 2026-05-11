@@ -1,0 +1,36 @@
+                          {/* Decade tick marks */}
+                          {(() => {
+                            const ticks: { year: number; isMajor: boolean; xPercent: number }[] = [];
+                            for (let year = timelineMin; year <= timelineMax; year += 10) {
+                              const xPercent = ((year - timelineMin) / timelineRange) * 100;
+                              ticks.push({ year, isMajor: year % 50 === 0, xPercent });
+                            }
+                            return ticks.map((tick) => {
+                              const isNearCorrect = Math.abs(tick.xPercent - 50) < 8;
+                              return (
+                                <div key={tick.year} style={{
+                                  position: "absolute",
+                                  top: "50%",
+                                  left: `${tick.xPercent}%`,
+                                  width: 1,
+                                  height: tick.isMajor ? 10 : 6,
+                                  background: "#444",
+                                  transform: "translateY(-50%)",
+                                }}>
+                                  {tick.isMajor && !isNearCorrect && (
+                                    <div style={{
+                                      position: "absolute",
+                                      top: 14,
+                                      left: "50%",
+                                      transform: "translateX(-50%)",
+                                      fontSize: 8,
+                                      color: "#555",
+                                      whiteSpace: "nowrap",
+                                    }}>
+                                      {tick.year}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            });
+                          })()}
