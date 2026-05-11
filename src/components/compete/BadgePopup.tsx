@@ -139,6 +139,7 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
                         borderRadius: '50%',
                         boxShadow: isDominant ? tierGlow[badge.tier] : 'none',
                       }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={`/badges/coin_${badge.tier}.webp`}
                           alt=""
@@ -150,6 +151,7 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
                         />
                       </div>
                       {/* Layer 2: dimension icon — centered inside coin, 58% size */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={`/badges/${dimIcon}_${badge.tier}.webp`}
                         alt=""
@@ -177,6 +179,7 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
                           3: '24%',
                         };
                         return (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             key={starIndex}
                             src={`/badges/star_${badge.tier}.webp`}

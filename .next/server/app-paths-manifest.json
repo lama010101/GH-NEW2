@@ -1,7 +1,7 @@
 {
-  "/page": "app/page.js",
   "/compete/[gameId]/page": "app/compete/[gameId]/page.js",
-  "/api/compete/[gameId]/route": "app/api/compete/[gameId]/route.js",
-  "/api/compete/[gameId]/join/route": "app/api/compete/[gameId]/join/route.js",
-  "/api/compete/[gameId]/leave/route": "app/api/compete/[gameId]/leave/route.js"
+  "/page": "app/page.js",
+  "/api/compete/[gameId]/ready/route": "app/api/compete/[gameId]/ready/route.js",
+  "/api/compete/[gameId]/start/route": "app/api/compete/[gameId]/start/route.js",
+  "/api/compete/[gameId]/guess/route": "app/api/compete/[gameId]/guess/route.js"
 }

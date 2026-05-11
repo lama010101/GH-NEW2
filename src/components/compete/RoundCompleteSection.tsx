@@ -111,6 +111,7 @@ export default function RoundCompleteSection({
                 {round.title}
               </div>
               {round.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={round.imageUrl}
                   alt={round.title}

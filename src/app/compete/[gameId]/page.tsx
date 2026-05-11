@@ -227,6 +227,7 @@ export default function CompeteGamePage() {
         } catch { /* silent */ }
       }, i * 220 + 100);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showBadgePopup]);
 
   const viewer = useMemo(() => {
@@ -376,13 +377,16 @@ export default function CompeteGamePage() {
               <h1>Lobby</h1>
             )}
             <p className="small">
-              Game ID: <code>{snapshot.gameId}</code>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Room code: </span>
+              <code style={{ fontSize: 16, fontWeight: 800, letterSpacing: '3px', color: '#fff', background: 'rgba(255,255,255,0.1)', padding: '3px 10px', borderRadius: 6 }}>
+                {snapshot.roomCode}
+              </code>
               {viewer?.isHost ? (
                 <button
                   type="button"
                   className="button secondary"
                   style={{ marginLeft: 8, padding: "2px 8px", fontSize: "0.8em" }}
-                  onClick={() => { navigator.clipboard.writeText(snapshot.gameId); }}
+                  onClick={() => { navigator.clipboard.writeText(snapshot.roomCode); }}
                 >
                   Copy
                 </button>
@@ -481,6 +485,7 @@ export default function CompeteGamePage() {
             cursor: "pointer",
           }}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={fullscreenImg}
             alt="Fullscreen"

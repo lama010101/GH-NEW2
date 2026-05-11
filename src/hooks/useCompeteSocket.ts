@@ -109,6 +109,7 @@ export default function useCompeteSocket({
       ws.disconnect();
       wsRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, playerId]);
 
   // Fetch round results from API when reconnecting in ROUND_COMPLETE phase
@@ -134,6 +135,7 @@ export default function useCompeteSocket({
         console.error("[CompeteGamePage] Failed to fetch round results:", err);
         onRoundResults([]); // Unblock UI — show empty results rather than permanent spinner
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshot?.status, snapshot?.currentRoundIndex, roundResults, gameId]);
 
   const toggleReady = () => {

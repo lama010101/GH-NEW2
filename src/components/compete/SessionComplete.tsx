@@ -554,6 +554,7 @@ export default function SessionComplete({
                 <summary aria-label="Open profile menu">
                   <span className="gh-final-avatar-button">
                     {currentPlayerData?.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={currentPlayerData.avatarUrl}
                         alt={currentDisplayName}
@@ -624,6 +625,7 @@ export default function SessionComplete({
                       <div className="gh-final-rank-number">{index + 1}</div>
                       <div className="gh-final-rank-avatar">
                         {playerData?.avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={playerData.avatarUrl}
                             alt={displayName}
@@ -679,6 +681,7 @@ export default function SessionComplete({
                       {/* Photo strip */}
                       <div className="gh-final-photo">
                         {round.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={round.imageUrl}
                             alt={round.title}

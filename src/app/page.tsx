@@ -508,6 +508,7 @@ function HomePageInner() {
         {Array.from({ length: 15 }).map((_, i) => (
           <div key={i} style={{ overflow: 'hidden', background: '#111' }}>
             {mosaicUrls.length > 0 && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={mosaicUrls[i % mosaicUrls.length]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.55, filter: 'grayscale(20%)' }} loading="lazy" />
             )}
           </div>
@@ -532,7 +533,10 @@ function HomePageInner() {
           </button>
           <button onClick={() => router.push('/profile')} style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.4)', background: 'linear-gradient(135deg,#c45,#89b)', cursor: 'pointer', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {avatarUrl
-              ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              )
               : <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{initials.slice(0,2)}</span>
             }
           </button>
@@ -569,8 +573,8 @@ function HomePageInner() {
           {panelMode === 'levelup' && <LevelUpPanel onStart={() => handleNav('/levelup')} />}
           {panelMode === 'compete' && (
             <CompetePanel
-              playerId={(identity as any).playerId ?? ''}
-              displayName={(identity as any).displayName ?? 'Player'}
+              playerId={(identity as { status: string; playerId: string; displayName: string }).playerId ?? ''}
+              displayName={(identity as { status: string; playerId: string; displayName: string }).displayName ?? 'Player'}
               onLobby={(gameId) => router.push(`/compete/${gameId}`)}
             />
           )}
