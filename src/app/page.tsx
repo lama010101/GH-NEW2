@@ -285,14 +285,21 @@ function CompetePanel({ onLobby, playerId, displayName }: {
 
 function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean; onSelect: (m: Mode) => void }) {
   return (
-    <div
+    <button
+      type="button"
       className="card-item"
       onClick={() => onSelect(mode)}
       style={{
+        display: 'block',
+        padding: 0,
+        border: 'none',
         borderRadius: 16,
+        background: 'transparent',
         overflow: 'hidden',
         cursor: 'pointer',
         outline: selected ? '3px solid rgba(255,255,255,0.7)' : '3px solid transparent',
+        textAlign: 'initial',
+        touchAction: 'manipulation',
         transform: selected ? 'translateY(-5px)' : 'none',
         transition: 'outline-color 0.18s, transform 0.15s',
       }}
@@ -321,7 +328,7 @@ function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean;
         <div style={{ position: 'relative', zIndex: 1, fontSize: 13, fontWeight: 800, letterSpacing: '1.5px', color: '#fff', textTransform: 'uppercase' }}>{CARD_NAME[mode]}</div>
         <div style={{ position: 'relative', zIndex: 1, fontSize: 10, fontWeight: 500, letterSpacing: '1px', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginTop: 3 }}>{CARD_SUB[mode]}</div>
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -483,15 +490,11 @@ function HomePageInner() {
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            padding-left: 0;
-            padding-right: 0;
+            padding-left: calc((100vw - 270px) / 2);
+            padding-right: calc((100vw - 270px) / 2);
+            scroll-padding-inline: calc((100vw - 270px) / 2);
             box-sizing: border-box;
             gap: 12px;
-          }
-          .cards-container::before,
-          .cards-container::after {
-            content: "";
-            flex: 0 0 calc(50vw - 147px);
           }
           .cards-container::-webkit-scrollbar { display: none; }
           .card-item {

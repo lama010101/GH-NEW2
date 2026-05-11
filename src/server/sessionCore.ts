@@ -478,19 +478,40 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   const gameId = randomUUID();
   const hostPlayerId = input.playerId;
   const seed = BigInt("0x" + randomBytes(8).toString("hex")) & BigInt("0x7FFFFFFFFFFFFFFF");
-  const roomCode = generateRoomCode();
   const client = await getTransactionClient();
 
   try {
     console.time("[PERF] createCompeteSession:transaction");
     await client.query("BEGIN");
 
-    verifyLog("INSERT", "sessions", "OK", `game_id=${gameId} — executing`);
-    await client.query(
-      `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed, room_code)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, seed, roomCode]
-    );
+    // Retry loop for room code unique violation
+    let roomCode = generateRoomCode();
+    let roomCodeAttempts = 0;
+    const maxRoomCodeAttempts = 5;
+    let roomCodeInsertSuccess = false;
+
+    while (!roomCodeInsertSuccess && roomCodeAttempts < maxRoomCodeAttempts) {
+      try {
+        verifyLog("INSERT", "sessions", "OK", `game_id=${gameId} — executing`);
+        await client.query(
+          `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed, room_code)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, seed, roomCode]
+        );
+        roomCodeInsertSuccess = true;
+      } catch (err: unknown) {
+        roomCodeAttempts++;
+        if (roomCodeAttempts >= maxRoomCodeAttempts) {
+          throw new Error("Failed to generate unique room code after 5 attempts");
+        }
+        // Check for Postgres unique violation error code 23505
+        if (err instanceof Error && "code" in err && (err as { code: string }).code === "23505") {
+          roomCode = generateRoomCode();
+        } else {
+          throw err; // Re-throw non-unique-violation errors immediately
+        }
+      }
+    }
     // Cross-connection verification will happen AFTER commit
 
     verifyLog("INSERT", "session_players", "OK", `host player_id=${hostPlayerId} — executing`);
