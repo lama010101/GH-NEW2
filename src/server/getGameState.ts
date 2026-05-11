@@ -93,6 +93,7 @@ export type SessionState = {
   yearMax: number;
   sessionDeadline: string | null;
   createdAt: string;
+  roomCode: string;
 };
 
 /** Fully reconstructed game state — deterministic from DB only */
@@ -220,7 +221,7 @@ export async function getGameState(
     `WITH
       session_data AS (
         SELECT game_id, mode, round_timer_sec, total_rounds, year_min, year_max,
-               session_deadline, created_at, seed
+               session_deadline, created_at, seed, room_code
         FROM sessions
         WHERE game_id = $1
       ),
@@ -281,7 +282,8 @@ export async function getGameState(
     yearMin: sessionJson.year_min as number,
     yearMax: sessionJson.year_max as number,
     sessionDeadline: sessionJson.session_deadline ? new Date(sessionJson.session_deadline as string).toISOString() : null,
-    createdAt: new Date(sessionJson.created_at as string).toISOString()
+    createdAt: new Date(sessionJson.created_at as string).toISOString(),
+    roomCode: sessionJson.room_code as string
   };
 
   // ───────────────────────────────────────────────────────────────────────────
