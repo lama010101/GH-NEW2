@@ -33,27 +33,43 @@ function HomePageInner() {
           <span style={{ color: "#9ca3af", fontSize: 14 }}>Loading…</span>
         )}
         {(identity.status === "unauthenticated" || identity.status === "ready") && (
-          <button
-            onClick={async () => {
-              if (identity.status === "ready") {
-                await signOut();
-              } else {
-                setShowAuthModal(true);
-              }
-            }}
-            style={{
-              background: identity.status === "ready" ? "transparent" : "#7c3aed",
-              color: "#fff",
-              padding: "8px 18px",
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 14,
-              border: identity.status === "ready" ? "1px solid rgba(255,255,255,0.3)" : "none",
-              cursor: "pointer",
-            }}
-          >
-            {identity.status === "ready" ? "Sign out" : "Sign in"}
-          </button>
+          <>
+            {identity.status === "ready" && (
+              <Link
+                href="/profile"
+                style={{
+                  color: "#f5f0e8",
+                  fontSize: 14,
+                  marginRight: 12,
+                  textDecoration: "none",
+                  fontWeight: 500
+                }}
+              >
+                Profile
+              </Link>
+            )}
+            <button
+              onClick={async () => {
+                if (identity.status === "ready") {
+                  await signOut();
+                } else {
+                  setShowAuthModal(true);
+                }
+              }}
+              style={{
+                background: identity.status === "ready" ? "transparent" : "#7c3aed",
+                color: "#fff",
+                padding: "8px 18px",
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 14,
+                border: identity.status === "ready" ? "1px solid rgba(255,255,255,0.3)" : "none",
+                cursor: "pointer",
+              }}
+            >
+              {identity.status === "ready" ? "Sign out" : "Sign in"}
+            </button>
+          </>
         )}
       </div>
 

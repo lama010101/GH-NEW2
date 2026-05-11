@@ -144,7 +144,9 @@ export function evaluateRound(
   const yearDiff = fallbackGuess.year === null ? MAX_YEAR_DIFF : fallbackGuess.year - event.year;
   const distanceKm = fallbackGuess.location === null ? MAX_DISTANCE_KM : haversineDistanceKm(fallbackGuess.location, eventCoordinates);
 
-  const yearAccuracy = calculateYearAccuracy(yearDiff, yearMin, yearMax);
+  const yearAccuracy = fallbackGuess.year === null
+    ? 0
+    : calculateYearAccuracy(yearDiff, yearMin, yearMax);
   const locationAccuracy = calculateLocationAccuracy(distanceKm);
   const comboAccuracy = Math.floor((yearAccuracy + locationAccuracy) / 2);
 

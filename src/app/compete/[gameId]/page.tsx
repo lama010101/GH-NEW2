@@ -164,6 +164,17 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+function getBadgeSoundPath(tier: string, dimension: string): string {
+  if (dimension === 'combo') {
+    if (tier === 'gold') return '/sounds/badges/perfect-combo.mp3';
+    if (tier === 'silver') return '/sounds/badges/great-combo.mp3';
+    return '/sounds/badges/amazing-combo.mp3';
+  }
+  if (tier === 'gold') return '/sounds/badges/perfect.mp3';
+  if (tier === 'silver') return '/sounds/badges/great.mp3';
+  return '/sounds/badges/amazing.mp3';
+}
+
 function RainbowRing({ value }: { value: number }) {
   const r = 80;
   const cx = 100;
@@ -259,8 +270,10 @@ export default function CompeteGamePage() {
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [resultSecsLeft, setResultSecsLeft] = useState<number | null>(null);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [whereExpanded, setWhereExpanded] = useState(true);
-  const [whenExpanded, setWhenExpanded] = useState(true);
+  const [whereLbExpanded, setWhereLbExpanded] = useState(false);
+  const [whenLbExpanded, setWhenLbExpanded] = useState(false);
+  const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
+  const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [showBadgePopup, setShowBadgePopup] = useState(false);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
@@ -269,6 +282,7 @@ export default function CompeteGamePage() {
     whereAccPenalty: 0,
     whenAccPenalty: 0,
   });
+  const badgePopupShownForRoundRef = useRef<number>(-1);
 
   const { playerId, isReady, isLoading: identityLoading, error: identityError } = useIdentity();
   const wsRef = useRef<CompeteWebSocket | null>(null);
@@ -290,15 +304,13 @@ export default function CompeteGamePage() {
     }
   }, [gameId]);
 
-  // Sync refs with state to avoid stale closure issues in auto-submit effect.
-  useEffect(() => { guessYearRef.current = guessYear; }, [guessYear]);
-  useEffect(() => { guessLatRef.current = guessLat; }, [guessLat]);
-  useEffect(() => { guessLngRef.current = guessLng; }, [guessLng]);
 
   // Reset card expansion when round changes
   useEffect(() => {
-    setWhereExpanded(true);
-    setWhenExpanded(true);
+    setWhereLbExpanded(false);
+    setWhenLbExpanded(false);
+    setWhereCluesExpanded(false);
+    setWhenCluesExpanded(false);
   }, [snapshot?.currentRoundIndex]);
 
   // No REST fallback — WS is the ONLY state source.
@@ -524,17 +536,40 @@ export default function CompeteGamePage() {
   // Auto-open badge popup on ROUND_COMPLETE when badges or near-misses exist
   useEffect(() => {
     if (snapshot?.status === "ROUND_COMPLETE") {
+      const currentRound = snapshot?.currentRoundIndex ?? -1;
       const myResult = roundResults?.find(r => r.playerId === playerId);
-      if (myResult && ((myResult.badges?.length ?? 0) > 0 || (myResult.nearMisses?.length ?? 0) > 0)) {
+      if (
+        myResult &&
+        ((myResult.badges?.length ?? 0) > 0 || (myResult.nearMisses?.length ?? 0) > 0) &&
+        badgePopupShownForRoundRef.current !== currentRound
+      ) {
+        badgePopupShownForRoundRef.current = currentRound;
         // Delay 600ms to allow accuracy ring animation to start first
         setTimeout(() => setShowBadgePopup(true), 600);
       }
     }
     // Reset popup on round change so it doesn't re-open on reconnect
+    // Do NOT reset badgePopupShownForRoundRef — it must persist to prevent re-trigger on same round
     if (snapshot?.status === "ROUND_ACTIVE") {
       setShowBadgePopup(false);
     }
-  }, [snapshot?.status, roundResults, playerId]);
+  }, [snapshot?.status, snapshot?.currentRoundIndex, roundResults, playerId]);
+
+  useEffect(() => {
+    if (!showBadgePopup) return;
+    const myResult = roundResults?.find(r => r.playerId === playerId);
+    const badges = myResult?.badges ?? [];
+    badges.forEach((badge, i) => {
+      setTimeout(() => {
+        try {
+          const soundPath = getBadgeSoundPath(badge.tier, badge.dimension);
+          const audio = new Audio(soundPath);
+          audio.volume = 0.5;
+          audio.play().catch(() => {});
+        } catch { /* silent */ }
+      }, i * 220 + 100);
+    });
+  }, [showBadgePopup]);
 
   // Helper: compute derived stats for a player
   const computePlayerStats = useCallback((pid: string) => {
@@ -588,6 +623,8 @@ export default function CompeteGamePage() {
     : null;
 
   const handleSetLocation = useCallback((location: { lat: number; lng: number }) => {
+    guessLatRef.current = location.lat;
+    guessLngRef.current = location.lng;
     setGuessLat(location.lat);
     setGuessLng(location.lng);
   }, []);
@@ -844,10 +881,12 @@ export default function CompeteGamePage() {
                   onChange={(e) => {
                     const v = e.target.value;
                     if (v === "") {
+                      guessYearRef.current = null;
                       setGuessYear(null);
                     } else {
                       const num = Number(v);
                       if (!Number.isNaN(num)) {
+                        guessYearRef.current = num;
                         setGuessYear(num);
                       }
                     }
@@ -861,6 +900,7 @@ export default function CompeteGamePage() {
                   // TODO: wire min/max from session config when available
                   value={guessYear ?? Math.floor((-3000 + new Date().getFullYear()) / 2)}
                   onChange={(e) => {
+                    guessYearRef.current = Number(e.target.value);
                     setGuessYear(Number(e.target.value));
                   }}
                   disabled={busy || hasSubmitted}
@@ -1054,7 +1094,6 @@ export default function CompeteGamePage() {
                     {leaderboardRows.map(row => {
                       const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
                       const accColor = `hsl(${hue}, 100%, 50%)`;
-                      const accBg = row.accuracy >= 60 ? "#1a2e1a" : row.accuracy >= 30 ? "#2e2a1a" : "#2e1a1a";
                       const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
                       return (
                         <div key={row.rank} style={{
@@ -1111,8 +1150,7 @@ export default function CompeteGamePage() {
                   {/* WHERE CARD */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div
-                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, cursor: "pointer", userSelect: "none" }}
-                      onClick={() => setWhereExpanded(prev => !prev)}
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1131,16 +1169,11 @@ export default function CompeteGamePage() {
                               <span style={{ fontSize: 28, fontWeight: 700, color: locColor }}>{locScore}</span>
                               <span style={{ fontSize: 7, fontWeight: 600, color: "#ffffff" }}>%</span>
                             </div>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              {whereExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 18l6-6 6-6" />}
-                            </svg>
                           </div>
                         );
                       })()}
                     </div>
-                    {whereExpanded && (
-                      <>
-                        {submittedHintPenaltyRef.current.accPenalty > 0 && (
+                    {submittedHintPenaltyRef.current.accPenalty > 0 && (
                           <div style={{ marginBottom: 6 }}>
                             <span style={{
                               display: "inline-flex", alignItems: "center",
@@ -1184,57 +1217,136 @@ export default function CompeteGamePage() {
                               }) ?? undefined}
                           />
                         </div>
-                        <div style={{ marginTop: 12 }}>
-                        {(roundResults ?? [])
-                          .slice()
-                          .sort((a, b) => a.rank - b.rank)
-                          .map((r, idx) => {
-                            const distanceKm = r.guessLat != null && r.guessLng != null
-                              ? haversineKm(r.guessLat, r.guessLng, correctLat, correctLng)
-                              : null;
-                            const locationAcc = r.locationScore;
-                            const locHue = locationAcc != null ? Math.round((locationAcc / 100) * 120) : null;
-                            const locAccColor = locHue != null ? `hsl(${locHue}, 100%, 50%)` : "#888";
-                            const locAccBg = locationAcc != null
-                              ? locationAcc >= 60 ? "#1a2e1a" : locationAcc >= 30 ? "#2e2a1a" : "#2e1a1a"
-                              : "#2a2a2a";
-                            return (
-                              <div key={r.playerId} style={{
-                                display: "flex", alignItems: "center", padding: "7px 8px", gap: 6,
-                                borderRadius: 6,
-                                background: r.playerId === playerId ? "rgba(255,255,255,0.06)" : "transparent",
-                                borderBottom: idx < (roundResults?.length ?? 0) - 1 ? "1px solid #333" : "none",
-                              }}>
-                                <span style={{ minWidth: 20, color: "#888", fontSize: 13, fontWeight: 600 }}>
-                                  {r.rank ?? "—"}
+                        <div style={{ marginTop: 10, background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+                          <div
+                            onClick={() => setWhereLbExpanded(prev => !prev)}
+                            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                {whereLbExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
+                              </svg>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                Leaderboard
+                              </span>
+                            </div>
+                            {(() => {
+                              const myRank = roundResults?.find(r => r.playerId === playerId)?.rank ?? null;
+                              return myRank != null ? (
+                                <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>
+                                  #{myRank}
                                 </span>
-                                <span style={{ flex: 1, fontSize: 15 }}>
-                                  <span style={{ ...getUsernameGradientStyle(r.playerId), fontWeight: r.playerId === playerId ? 600 : 400 }}>
-                                    {snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
-                                  </span>
-                                  {r.playerId === playerId && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
-                                </span>
-                                <span style={{ color: "#bbb", fontSize: 13, fontWeight: 600 }}>
-                                  {distanceKm != null ? `${Math.round(distanceKm)} km away` : "—"}
-                                </span>
-                                {locationAcc != null && (
-                                  <span style={{ background: "#2a2a2a", color: locAccColor, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 600 }}>
-                                    <span style={{ color: "#ffffff", fontSize: "var(--font-base)" }}>{locationAcc}</span>
-                                    <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "var(--font-xs)" }}>%</span>
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
+                              ) : null;
+                            })()}
+                          </div>
+                          {whereLbExpanded && (
+                            <div style={{ padding: "0 4px 8px" }}>
+                              {(roundResults ?? [])
+                                .slice()
+                                .sort((a, b) => a.rank - b.rank)
+                                .map((r, idx) => {
+                                  const distanceKm = r.guessLat != null && r.guessLng != null
+                                    ? haversineKm(r.guessLat, r.guessLng, correctLat, correctLng)
+                                    : null;
+                                  const locationAcc = r.locationScore;
+                                  const locHue = locationAcc != null ? Math.round((locationAcc / 100) * 120) : null;
+                                  const locAccColor = locHue != null ? `hsl(${locHue}, 100%, 50%)` : "#888";
+                                  return (
+                                    <div key={r.playerId} style={{
+                                      display: "flex", alignItems: "center", padding: "7px 8px", gap: 6,
+                                      borderRadius: 6,
+                                      background: r.playerId === playerId ? "rgba(255,255,255,0.06)" : "transparent",
+                                      borderBottom: idx < (roundResults?.length ?? 0) - 1 ? "1px solid #333" : "none",
+                                    }}>
+                                      <span style={{ minWidth: 20, color: "#888", fontSize: 13, fontWeight: 600 }}>
+                                        {r.rank ?? "—"}
+                                      </span>
+                                      <span style={{ flex: 1, fontSize: 15 }}>
+                                        <span style={{ ...getUsernameGradientStyle(r.playerId), fontWeight: r.playerId === playerId ? 600 : 400 }}>
+                                          {snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
+                                        </span>
+                                        {r.playerId === playerId && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
+                                      </span>
+                                      <span style={{ color: "#bbb", fontSize: 13, fontWeight: 600 }}>
+                                        {distanceKm != null ? `${Math.round(distanceKm)} km away` : "—"}
+                                      </span>
+                                      {locationAcc != null && (
+                                        <span style={{ background: "#2a2a2a", color: locAccColor, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 600 }}>
+                                          <span style={{ color: "#ffffff", fontSize: "var(--font-base)" }}>{locationAcc}</span>
+                                          <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "var(--font-xs)" }}>%</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          )}
                         </div>
-                      </>
-                    )}
+                        <div style={{ marginTop: 6, background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+                          <div
+                            onClick={() => setWhereCluesExpanded(prev => !prev)}
+                            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                {whereCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
+                              </svg>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                Clues
+                              </span>
+                            </div>
+                            {(() => {
+                              const myResult = roundResults?.find(r => r.playerId === playerId);
+                              const xp = myResult?.locationScore ?? null;
+                              return xp != null ? (
+                                <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600 }}>
+                                  {xp} XP
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
+                          {whereCluesExpanded && (
+                            <div style={{ padding: "0 12px 12px" }}>
+                              {(() => {
+                                const whereHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
+                                  .filter(h => h.type === "where")
+                                  .sort((a, b) => a.tier - b.tier);
+                                if (whereHints.length === 0) return (
+                                  <div style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>
+                                    No location clues available for this event.
+                                  </div>
+                                );
+                                const labelMap: Record<number, string> = {
+                                  1: "Continent", 2: "Remote Landmark", 3: "Region",
+                                  4: "Nearby Landmark", 5: "Visual Clues"
+                                };
+                                return whereHints.map((hint, idx) => (
+                                  <div key={hint.id} style={{
+                                    padding: "8px 0",
+                                    borderBottom: idx < whereHints.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                                  }}>
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                                      <span style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                                        {labelMap[hint.tier] ?? `Tier ${hint.tier}`}
+                                      </span>
+                                      <span style={{ fontSize: 10, color: "#e84422", fontWeight: 600 }}>
+                                        -{[0,10,20,30,40,50][hint.tier] ?? 0}%
+                                      </span>
+                                    </div>
+                                    <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.4 }}>
+                                      {hint.content}
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          )}
+                        </div>
                   </div>
                   {/* WHEN CARD */}
                   <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
                     <div
-                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, cursor: "pointer", userSelect: "none" }}
-                      onClick={() => setWhenExpanded(prev => !prev)}
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1258,17 +1370,12 @@ export default function CompeteGamePage() {
                                 <span style={{ fontSize: 28, fontWeight: 700, color: whenColor }}>{whenScore}</span>
                                 <span style={{ fontSize: 7, fontWeight: 600, color: "#ffffff" }}>%</span>
                               </div>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                {whenExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 18l6-6 6-6" />}
-                              </svg>
                             </div>
                           );
                         })() : null;
                       })()}
                     </div>
-                    {whenExpanded && (
-                      <>
-                        {submittedHintPenaltyRef.current.whenAccPenalty > 0 && (
+                    {submittedHintPenaltyRef.current.whenAccPenalty > 0 && (
                           <div style={{ marginBottom: 6 }}>
                             <span style={{
                               display: "inline-flex", alignItems: "center",
@@ -1336,96 +1443,223 @@ export default function CompeteGamePage() {
                           </div>
                           {/* Player guess markers */}
                           {(() => {
-                            const timelineMin = Math.max(0, correctYear - 150);
-                            const timelineMax = correctYear + 150;
+                            const allYears = [correctYear, ...whenRows.map(r => r.guessYear).filter((y): y is number => y != null)];
+                            const maxDelta = allYears.reduce((max, y) => Math.max(max, Math.abs(y - correctYear)), 0);
+                            const minSpread = maxDelta === 0 ? 20 : maxDelta;
+                            const padding = Math.max(10, Math.ceil(minSpread / 10) * 10 - minSpread + 10);
+                            const timelineMin = Math.floor((Math.min(...allYears) - padding) / 10) * 10;
+                            const timelineMax = Math.ceil((Math.max(...allYears) + padding) / 10) * 10;
                             const timelineRange = timelineMax - timelineMin;
                             const yearCounts = new Map<number, number>();
+                            // Decade tick marks
+                            const ticks: { year: number; isMajor: boolean; xPercent: number }[] = [];
+                            for (let year = timelineMin; year <= timelineMax; year += 10) {
+                              const xPercent = ((year - timelineMin) / timelineRange) * 100;
+                              ticks.push({ year, isMajor: year % 50 === 0, xPercent });
+                            }
                             whenRows.forEach(row => {
                               if (row.guessYear != null) {
                                 yearCounts.set(row.guessYear, (yearCounts.get(row.guessYear) || 0) + 1);
                               }
                             });
-                            return whenRows.map((row) => {
-                              if (row.guessYear == null) return null;
-                              const position = ((row.guessYear - timelineMin) / timelineRange) * 100;
-                              const clampedPosition = Math.max(0, Math.min(100, position));
-                              const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
-                              const myIndexInGroup = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
-                              const verticalOffset = myIndexInGroup * 18;
-                              return (
-                                <div key={row.playerId} style={{
-                                  position: "absolute",
-                                  top: "50%",
-                                  transform: `translate(-50%, calc(-50% + ${verticalOffset}px))`,
-                                  left: `${clampedPosition}%`,
-                                }}>
-                                  <div style={{
-                                    width: 14,
-                                    height: 14,
-                                    borderRadius: "50%",
-                                    background: row.isMe ? "#f97316" : "#60a5fa",
-                                    border: "2px solid #fff",
-                                  }} />
-                                  <div style={{
-                                    position: "absolute",
-                                    top: 18,
-                                    left: "50%",
-                                    transform: "translateX(-50%)",
-                                    fontSize: 10,
-                                    color: row.isMe ? "#f97316" : "#60a5fa",
-                                    whiteSpace: "nowrap",
-                                    textAlign: "center",
-                                  }}>
-                                    {row.guessYear}
-                                  </div>
-                                </div>
-                              );
-                            });
+                            return (
+                              <>
+                                {/* Decade tick marks */}
+                                {ticks.map((tick) => {
+                                  const isNearCorrect = Math.abs(tick.xPercent - 50) < 8;
+                                  return (
+                                    <div key={tick.year} style={{
+                                      position: "absolute",
+                                      top: "50%",
+                                      left: `${tick.xPercent}%`,
+                                      width: 1,
+                                      height: tick.isMajor ? 10 : 6,
+                                      background: "#444",
+                                      transform: "translateY(-50%)",
+                                    }}>
+                                      {tick.isMajor && !isNearCorrect && (
+                                        <div style={{
+                                          position: "absolute",
+                                          top: 14,
+                                          left: "50%",
+                                          transform: "translateX(-50%)",
+                                          fontSize: 8,
+                                          color: "#555",
+                                          whiteSpace: "nowrap",
+                                        }}>
+                                          {tick.year}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                                {/* Player guess markers */}
+                                {whenRows.map((row) => {
+                                  if (row.guessYear == null) return null;
+                                  const position = ((row.guessYear - timelineMin) / timelineRange) * 100;
+                                  const clampedPosition = Math.max(0, Math.min(100, position));
+                                  const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
+                                  const myIndexInGroup = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
+                                  const verticalOffset = myIndexInGroup * 18;
+                                  return (
+                                    <div key={row.playerId} style={{
+                                      position: "absolute",
+                                      top: "50%",
+                                      transform: `translate(-50%, calc(-50% + ${verticalOffset}px))`,
+                                      left: `${clampedPosition}%`,
+                                    }}>
+                                      <div style={{
+                                        width: 14,
+                                        height: 14,
+                                        borderRadius: "50%",
+                                        background: row.isMe ? "#f97316" : "#60a5fa",
+                                        border: "2px solid #fff",
+                                      }} />
+                                      <div style={{
+                                        position: "absolute",
+                                        top: 18,
+                                        left: "50%",
+                                        transform: "translateX(-50%)",
+                                        fontSize: 10,
+                                        color: row.isMe ? "#f97316" : "#60a5fa",
+                                        whiteSpace: "nowrap",
+                                        textAlign: "center",
+                                      }}>
+                                        {row.guessYear}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </>
+                            );
                           })()}
                         </div>
-                        <div>
-                        {whenRows.map((row, idx) => {
-                          const hue = row.acc != null ? Math.round((row.acc / 100) * 120) : null;
-                          const accColor = hue != null ? `hsl(${hue}, 100%, 50%)` : "#888";
-                          const resultRow = roundResults?.find(r => r.playerId === row.playerId);
-                          const rank = resultRow?.rank ?? null;
-                          const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
-                          return (
-                            <div key={row.playerId} style={{
-                              display: "flex", alignItems: "center", padding: "7px 8px", gap: 6,
-                              borderRadius: 6,
-                              background: row.isMe ? "rgba(255,255,255,0.06)" : "transparent",
-                              borderBottom: idx < whenRows.length - 1 ? "1px solid #333" : "none",
-                            }}>
-                              <span style={{ minWidth: 20, color: "#888", fontSize: 13, fontWeight: 600 }}>
-                                {rank ?? "—"}
-                              </span>
-                              <span style={{ flex: 1, fontSize: 15 }}>
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                                  <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
-                                  <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
-                                    {row.displayName}
-                                  </span>
-                                </span>
-                                {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
-                              </span>
-                              <span style={{ color: "#bbb", fontSize: 11, fontWeight: 600 }}>
-                                {row.diff != null ? `${row.diff} yrs off` : "—"}
-                              </span>
-                              <span style={{ background: "#2a2a2a", color: accColor, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 600 }}>
-                                {row.acc != null ? (
-                                  <>
-                                    <span style={{ color: "#ffffff", fontSize: "var(--font-base)" }}>{row.acc}</span>
-                                    <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "var(--font-xs)" }}>%</span>
-                                  </>
-                                ) : "—"}
+                        <div style={{ marginTop: 10, background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+                          <div
+                            onClick={() => setWhenLbExpanded(prev => !prev)}
+                            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                {whenLbExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
+                              </svg>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                Leaderboard
                               </span>
                             </div>
-                          );
-                        })}
+                            {(() => {
+                              const myRank = roundResults?.find(r => r.playerId === playerId)?.rank ?? null;
+                              return myRank != null ? (
+                                <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>
+                                  #{myRank}
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
+                          {whenLbExpanded && (
+                            <div style={{ padding: "0 4px 8px" }}>
+                              {whenRows.map((row, idx) => {
+                                const hue = row.acc != null ? Math.round((row.acc / 100) * 120) : null;
+                                const accColor = hue != null ? `hsl(${hue}, 100%, 50%)` : "#888";
+                                const resultRow = roundResults?.find(r => r.playerId === row.playerId);
+                                const rank = resultRow?.rank ?? null;
+                                const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
+                                return (
+                                  <div key={row.playerId} style={{
+                                    display: "flex", alignItems: "center", padding: "7px 8px", gap: 6,
+                                    borderRadius: 6,
+                                    background: row.isMe ? "rgba(255,255,255,0.06)" : "transparent",
+                                    borderBottom: idx < whenRows.length - 1 ? "1px solid #333" : "none",
+                                  }}>
+                                    <span style={{ minWidth: 20, color: "#888", fontSize: 13, fontWeight: 600 }}>
+                                      {rank ?? "—"}
+                                    </span>
+                                    <span style={{ flex: 1, fontSize: 15 }}>
+                                      <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                                        <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
+                                        <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
+                                          {row.displayName}
+                                        </span>
+                                      </span>
+                                      {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
+                                    </span>
+                                    <span style={{ color: "#bbb", fontSize: 11, fontWeight: 600 }}>
+                                      {row.diff != null ? `${row.diff} yrs off` : "—"}
+                                    </span>
+                                    <span style={{ background: "#2a2a2a", color: accColor, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 600 }}>
+                                      {row.acc != null ? (
+                                        <>
+                                          <span style={{ color: "#ffffff", fontSize: "var(--font-base)" }}>{row.acc}</span>
+                                          <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "var(--font-xs)" }}>%</span>
+                                        </>
+                                      ) : "—"}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                      </>
-                    )}
+                        <div style={{ marginTop: 6, background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+                          <div
+                            onClick={() => setWhenCluesExpanded(prev => !prev)}
+                            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                {whenCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
+                              </svg>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                Clues
+                              </span>
+                            </div>
+                            {(() => {
+                              const myResult = roundResults?.find(r => r.playerId === playerId);
+                              const xp = myResult?.timeScore ?? null;
+                              return xp != null ? (
+                                <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600 }}>
+                                  {xp} XP
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
+                          {whenCluesExpanded && (
+                            <div style={{ padding: "0 12px 12px" }}>
+                              {(() => {
+                                const whenHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
+                                  .filter(h => h.type === "when")
+                                  .sort((a, b) => a.tier - b.tier);
+                                if (whenHints.length === 0) return (
+                                  <div style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>
+                                    No time clues available for this event.
+                                  </div>
+                                );
+                                const labelMap: Record<number, string> = {
+                                  1: "Century", 2: "Historical Event", 3: "Decade",
+                                  4: "Contemporary Event", 5: "Visual Clues"
+                                };
+                                return whenHints.map((hint, idx) => (
+                                  <div key={hint.id} style={{
+                                    padding: "8px 0",
+                                    borderBottom: idx < whenHints.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                                  }}>
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                                      <span style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                                        {labelMap[hint.tier] ?? `Tier ${hint.tier}`}
+                                      </span>
+                                      <span style={{ fontSize: 10, color: "#e84422", fontWeight: 600 }}>
+                                        -{[0,10,20,30,40,50][hint.tier] ?? 0}%
+                                      </span>
+                                    </div>
+                                    <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.4 }}>
+                                      {hint.content}
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          )}
+                        </div>
                   </div>
                   </div>
                   {/* HINTS USED CARD */}
@@ -2391,6 +2625,24 @@ export default function CompeteGamePage() {
                 65%  { transform: scale(1.08) translateY(-2px); }
                 100% { opacity: 1; transform: scale(1) translateY(0); }
               }
+              @keyframes coinRise {
+                from { transform: translateY(24px) scale(0.7); opacity: 0; }
+                to   { transform: translateY(0)    scale(1);   opacity: 1; }
+              }
+              @keyframes iconDrop {
+                from { transform: translateY(-20px) scale(0.7); opacity: 0; }
+                to   { transform: translateY(0)     scale(1);   opacity: 1; }
+              }
+              @keyframes starsDrop {
+                from { transform: translateY(-28px) scale(0.6); opacity: 0; }
+                to   { transform: translateY(0)     scale(1);   opacity: 1; }
+              }
+              @keyframes medalSnap {
+                0%   { transform: scale(1); }
+                40%  { transform: scale(1.08); }
+                70%  { transform: scale(0.96); }
+                100% { transform: scale(1); }
+              }
             `}</style>
 
             <div
@@ -2443,7 +2695,51 @@ export default function CompeteGamePage() {
                       boxShadow: isDominant ? tierGlow[badge.tier] : 'none',
                       animation: `badgePop 0.45s ease ${i * 0.12 + 0.1}s both`,
                     }}>
-                      <span style={{ fontSize: 24 }}>{dimIcon[badge.dimension]}</span>
+                      {(() => {
+                        const dimIcon = badge.dimension === 'year' ? 'calendar' : badge.dimension === 'location' ? 'map' : 'combo';
+                        const starCount = badge.tier === 'gold' ? 3 : badge.tier === 'silver' ? 2 : 1;
+                        const baseDelay = i * 0.22;
+                        return (
+                          <div style={{ position: 'relative', width: 96, height: 96, margin: '0 auto' }}>
+                            {/* Layer 1: coin ring — fills full tile, enters from below */}
+                            <img
+                              src={`/badges/coin_${badge.tier}.webp`}
+                              alt=""
+                              style={{
+                                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                                objectFit: 'contain',
+                                animation: `coinRise 0.28s ease ${baseDelay}s both, medalSnap 0.12s ease ${baseDelay + 0.3}s both`,
+                              }}
+                            />
+                            {/* Layer 2: dimension icon — centered inside coin, 58% size */}
+                            <img
+                              src={`/badges/${dimIcon}_${badge.tier}.webp`}
+                              alt=""
+                              style={{
+                                position: 'absolute',
+                                top: '50%', left: '50%',
+                                width: '58%', height: '58%',
+                                transform: 'translate(-50%, -50%)',
+                                objectFit: 'contain',
+                                animation: `iconDrop 0.28s ease ${baseDelay + 0.05}s both, medalSnap 0.12s ease ${baseDelay + 0.3}s both`,
+                              }}
+                            />
+                            {/* Layer 3: stars — at top of coin, 42% size */}
+                            <img
+                              src={`/badges/star_${badge.tier}.webp`}
+                              alt=""
+                              style={{
+                                position: 'absolute',
+                                top: 0, left: '50%',
+                                width: '42%', height: 'auto',
+                                transform: 'translateX(-50%)',
+                                objectFit: 'contain',
+                                animation: `starsDrop 0.28s ease ${baseDelay + 0.1}s both, medalSnap 0.12s ease ${baseDelay + 0.3}s both`,
+                              }}
+                            />
+                          </div>
+                        );
+                      })()}
                       <span style={{
                         fontSize: 11, fontWeight: 800,
                         color: tierColor[badge.tier],

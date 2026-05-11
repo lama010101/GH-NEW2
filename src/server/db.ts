@@ -274,7 +274,7 @@ export async function verifyTransactionIsolation(
     await connA.client.query(
       `INSERT INTO round_commits (game_id, player_id, round_index, submitted_at, year_guess, verification_token)
        VALUES ($1, $2, 999, now(), 1776, $3)`,
-      [gameId, "isolation-test-player", token]
+      [gameId, "00000000-0000-0000-0000-000000000099", token]
     );
 
     // Step 2: Connection A sees uncommitted row
@@ -322,7 +322,7 @@ export async function verifyTransactionIsolation(
     emitExecutionProofV2({
       test: operation,
       table: "round_commits",
-      primary_key: `${gameId}:isolation-test-player:999`,
+      primary_key: `${gameId}:00000000-0000-0000-0000-000000000099:999`,
       operation: "ISOLATION",
       verification_token: token,
       cross_connection: true,
@@ -352,7 +352,7 @@ export async function verifyTransactionIsolation(
     emitExecutionProofV2({
       test: operation,
       table: "round_commits",
-      primary_key: `${gameId}:isolation-test-player:999`,
+      primary_key: `${gameId}:00000000-0000-0000-0000-000000000099:999`,
       operation: "ISOLATION",
       verification_token: token,
       cross_connection: true,

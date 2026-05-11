@@ -145,14 +145,14 @@ describe("scoring calibration", () => {
     it("shows different scaling for accuracy vs XP", () => {
       const halfCorrect = evaluateRound(
         MOON_LANDING_EVENT,
-        { year: 1969, location: { lat: 40.7128, lng: -74.006 } }, // ~3477km from moon (approx 82%)
+        { year: 1969, location: { lat: 40.7128, lng: -74.006 } }, // ~9500km from moon landing site (approx 0%)
         0
       );
       // Year accuracy is 100%
       expect(halfCorrect.yearAccuracy).toBe(100);
       // Location accuracy depends on distance
       expect(halfCorrect.locationAccuracy).toBeLessThan(100);
-      expect(halfCorrect.locationAccuracy).toBeGreaterThan(0);
+      expect(halfCorrect.locationAccuracy).toBe(0);
 
       // Accuracy is average
       const expectedAccuracy = Math.floor((halfCorrect.yearAccuracy + halfCorrect.locationAccuracy) / 2);
@@ -210,12 +210,12 @@ describe("scoring calibration", () => {
     it("handles wrong year / right location", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
-        { year: 1869, location: { lat: 0.67408, lng: 23.47297 } }, // 100 years off
+        { year: 1869, location: { lat: 0.67408, lng: 23.47297 } }, // 100 years off, exponential decay
         0
       );
-      expect(result.yearAccuracy).toBe(50); // 100/200 = 50%
+      expect(result.yearAccuracy).toBe(67); // exponential decay: ~67% at 100 years off
       expect(result.locationAccuracy).toBe(100);
-      expect(result.roundAccuracy).toBe(75); // Average
+      expect(result.roundAccuracy).toBe(83); // floor((67 + 100) / 2) = 83
     });
 
     it("handles right year / wrong location", () => {
@@ -236,7 +236,7 @@ describe("scoring calibration", () => {
         { year: 1769, location: { lat: 0.67408, lng: 23.47297 } },
         0
       );
-      expect(result.yearAccuracy).toBe(0); // (200/200) * 100 = 100% penalty
+      expect(result.yearAccuracy).toBe(45); // exponential decay: ~45% at 200 years off
     });
   });
 });
