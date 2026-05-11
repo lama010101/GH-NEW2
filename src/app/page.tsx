@@ -298,24 +298,18 @@ function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean;
       }}
     >
       <div style={{ width: '100%', aspectRatio: '1/1', position: 'relative', background: CARD_GRADIENT[mode], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{
-          position: 'relative',
-          width:  mode === 'daily'   ? 220 :
-                  mode === 'levelup' ? 118 : 115,
-          height: mode === 'daily'   ? 147 :
-                  mode === 'levelup' ? 113 : 115,
-        }}>
+        <div style={{ position: 'relative', width: 214, height: 214, transform: mode === 'daily' ? 'translateY(18px)' : 'none' }}>
           <Image
             src={
-              mode === 'daily'    ? '/icons/daily.webp'    :
-              mode === 'practice' ? '/icons/practice.webp' :
-              mode === 'levelup'  ? '/icons/level.webp'    :
-                                    '/icons/compete.webp'
+              mode === 'daily'    ? '/icons/daily_large.webp'    :
+              mode === 'practice' ? '/icons/practice_large.webp' :
+              mode === 'levelup'  ? '/icons/levels_large.webp'   :
+                                    '/icons/compete_large.webp'
             }
             alt={CARD_NAME[mode]}
             fill
             style={{ objectFit: 'contain' }}
-            sizes="200px"
+            sizes="160px"
           />
         </div>
         {mode === 'levelup' && (
@@ -508,25 +502,15 @@ function HomePageInner() {
         }
       `}</style>
 
-      <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gridTemplateRows: 'repeat(3, 1fr)', gap: '3px' }}>
-        {Array.from({ length: 15 }).map((_, i) => (
-          <div key={i} style={{ overflow: 'hidden', background: '#111' }}>
-            {mosaicUrls.length > 0 && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={mosaicUrls[i % mosaicUrls.length]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.55, filter: 'grayscale(20%)' }} loading="lazy" />
-            )}
-          </div>
-        ))}
-      </div>
+      <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'url(/home_background.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
 
-      <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0,0,0,0.55)' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0,0,0,0.7)' }} />
 
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 16px', pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '6px 14px' }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{accuracy}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 2 }}>%</span></span>
           <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>|</span>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#f0c060' }}>{xp}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 2 }}>XP</span></span>
-          <svg width="10" height="10" viewBox="0 0 10 10"><polygon points="5,1 9,9 1,9" fill="rgba(255,255,255,0.35)"/></svg>
         </div>
         <div style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: 12, pointerEvents: 'auto' }}>
           <button onClick={() => router.push('/notifications')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}>
@@ -547,10 +531,10 @@ function HomePageInner() {
         </div>
       </div>
 
-      <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 60 }}>
+      <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 30 }}>
 
         {/* padded inner — logo only */}
-        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', marginBottom: 24, textAlign: 'center' }}>
+        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', marginBottom: 12, textAlign: 'center' }}>
           <div style={{ position: 'relative', width: 280, height: 72, margin: '0 auto' }}>
             <Image
               src="/icons/logo.webp"
@@ -563,8 +547,12 @@ function HomePageInner() {
           </div>
         </div>
 
+        <div style={{ width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 16, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 130, padding: '0 24px', boxSizing: 'border-box' }}>
+          Where and when did it happen?
+        </div>
+
         {/* cards — full width, no padding constraint */}
-        <div className="cards-container" ref={carouselRef}>
+        <div className="cards-container" ref={carouselRef} style={{ marginTop: -50 }}>
           {MODES.map(mode => (
             <CardItem key={mode} mode={mode} selected={selectedMode === mode} onSelect={selectCard} />
           ))}
