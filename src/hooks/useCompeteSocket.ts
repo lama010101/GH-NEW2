@@ -1,0 +1,183 @@
+import { useEffect, useRef } from "react";
+import { CompeteWebSocket } from "@/core/competeWebSocket";
+import { isCompeteSessionSnapshot } from "@/core/competeApi";
+import type { CompeteSessionSnapshot } from "@/core/types";
+import type { RoundResult } from "@/core/competeTypes";
+
+interface UseCompeteSocketParams {
+  gameId: string;
+  playerId: string | null;
+  snapshot: CompeteSessionSnapshot | null;
+  roundResults: RoundResult[] | null;
+  onStateUpdate: (snapshot: CompeteSessionSnapshot) => void;
+  onPlayerSubmitted: (submittedPlayerId: string, playerName: string) => void;
+  onTimerClamped: (newPhaseEndsAt: string) => void;
+  onError: (message: string) => void;
+  onRoundResults: (results: RoundResult[]) => void;
+  onSetBusy: (value: boolean) => void;
+  onSetLocalSubmitted: (value: boolean) => void;
+  onClearSubmissionToasts: () => void;
+}
+
+export default function useCompeteSocket({
+  gameId,
+  playerId,
+  snapshot,
+  roundResults,
+  onStateUpdate,
+  onPlayerSubmitted,
+  onTimerClamped,
+  onError,
+  onRoundResults,
+  onSetBusy,
+  onSetLocalSubmitted,
+  onClearSubmissionToasts,
+}: UseCompeteSocketParams) {
+  const wsRef = useRef<CompeteWebSocket | null>(null);
+  const displayNameRef = useRef<string>("");
+
+  // Read display name from sessionStorage (cosmetic only — identity is Supabase)
+  useEffect(() => {
+    if (!gameId) return;
+    try {
+      displayNameRef.current = sessionStorage.getItem(`compete_display_name_${gameId}`) || "";
+    } catch {
+      // ignore
+    }
+  }, [gameId]);
+
+  // Connect WebSocket — BLOCKED until Supabase identity is ready.
+  // DO delivers authoritative state via STATE_UPDATE.
+  useEffect(() => {
+    if (!gameId || !playerId) return;
+
+    const ws = new CompeteWebSocket(gameId, playerId, {
+      onConnect: () => {
+        // Signal intent to join (PartyKit → API → DB → broadcast STATE_UPDATE).
+        // Fallback to a short id-derived name when the page is opened via
+        // a direct URL (no sessionStorage displayName). Server /join validates
+        // non-empty displayName — so we must never send "".
+        const fallbackName = displayNameRef.current.trim().length > 0
+          ? displayNameRef.current
+          : `Player-${playerId.slice(0, 6)}`;
+        ws.joinRoom(fallbackName);
+      },
+      onStateUpdate: (rawSnapshot) => {
+        // DO-authoritative: apply snapshot directly from WS.
+        // Validate before accepting — never trust unvalidated payloads.
+        if (isCompeteSessionSnapshot(rawSnapshot)) {
+          console.log("[CompeteGamePage] State update received, players:", rawSnapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+          onStateUpdate(rawSnapshot);
+
+          // If the snapshot includes pre-fetched results (from /complete route), apply them directly
+          if (
+            isCompeteSessionSnapshot(rawSnapshot) &&
+            (rawSnapshot.status === "ROUND_COMPLETE" || rawSnapshot.status === "SESSION_COMPLETE") &&
+            Array.isArray((rawSnapshot as unknown as { results?: unknown }).results)
+          ) {
+            const results = (rawSnapshot as unknown as { results: RoundResult[] }).results;
+            const ranked = [...results].sort((a, b) => a.rank - b.rank);
+            onRoundResults(ranked);
+            onSetLocalSubmitted(false);
+            onClearSubmissionToasts();
+          }
+
+          onSetBusy(false); // Action completed — clear busy flag
+        } else {
+          console.warn("[CompeteGamePage] Invalid STATE_UPDATE payload — ignoring, waiting for next update:", rawSnapshot);
+          onSetBusy(false);
+        }
+      },
+      onPlayerSubmitted: (submittedPlayerId, playerName) => {
+        onPlayerSubmitted(submittedPlayerId, playerName);
+      },
+      onTimerClamped: (newPhaseEndsAt) => {
+        onTimerClamped(newPhaseEndsAt);
+      },
+      onError: (message) => {
+        onError(message);
+        onSetBusy(false); // Action failed — clear busy flag
+      }
+    });
+
+    wsRef.current = ws;
+    ws.connect();
+
+    // DO sends STATE_UPDATE on connect — no REST fetch needed.
+
+    return () => {
+      ws.disconnect();
+      wsRef.current = null;
+    };
+  }, [gameId, playerId]);
+
+  // Fetch round results from API when reconnecting in ROUND_COMPLETE phase
+  // This handles page refresh where snapshot.results is not populated from DB load
+  useEffect(() => {
+    if (snapshot?.status !== "ROUND_COMPLETE") return;
+    if (roundResults !== null) return;
+    if (!gameId) return;
+    if (typeof snapshot.currentRoundIndex !== "number") return;
+
+    fetch(`/api/compete/${gameId}/results?roundIndex=${snapshot.currentRoundIndex}`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.results)) {
+          const ranked = [...data.results].sort((a, b) => a.rank - b.rank);
+          onRoundResults(ranked);
+        } else {
+          console.warn("[CompeteGamePage] Round results API returned no results array:", data);
+          onRoundResults([]); // Unblock UI
+        }
+      })
+      .catch(err => {
+        console.error("[CompeteGamePage] Failed to fetch round results:", err);
+        onRoundResults([]); // Unblock UI — show empty results rather than permanent spinner
+      });
+  }, [snapshot?.status, snapshot?.currentRoundIndex, roundResults, gameId]);
+
+  const toggleReady = () => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    // Client → DO → DB: send action signal via WS
+    wsRef.current.toggleReady(true);
+    // DO will broadcast STATE_UPDATE or ERROR via WS callbacks
+    // busy flag cleared when STATE_UPDATE arrives (snapshot changes)
+  };
+
+  const startGame = () => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    // Client → DO → DB: send action signal via WS
+    wsRef.current.startGame();
+  };
+
+  const submitGuess = (
+    roundIndex: number,
+    year: number | null,
+    lat: number | null,
+    lng: number | null,
+    hintsUsed: string[],
+    accPenalty: number,
+    xpPenalty: number
+  ) => {
+    if (!playerId || !wsRef.current) return;
+    wsRef.current.submitGuess(roundIndex, year, lat, lng, hintsUsed, accPenalty, xpPenalty);
+  };
+
+  const readyNext = (roundIndex: number) => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    // Client → DO → DB: send READY_NEXT action signal via WS
+    wsRef.current.readyNext(roundIndex);
+  };
+
+  return {
+    wsRef,
+    displayNameRef,
+    toggleReady,
+    startGame,
+    submitGuess,
+    readyNext,
+  };
+}

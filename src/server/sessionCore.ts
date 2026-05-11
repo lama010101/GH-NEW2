@@ -1222,6 +1222,93 @@ export async function completeRound(input: {
   return snapshot;
 }
 
+async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync" | "async"): Promise<void> {
+  // Guard: practice sessions never update global stats
+  if (mode === "practice") {
+    return;
+  }
+
+  try {
+    // Fetch all round_results for this game
+    const roundResults = await dbPool.query<{
+      player_id: string;
+      location_score: number;
+      time_score: number;
+    }>(
+      `SELECT player_id, location_score, time_score
+       FROM round_results
+       WHERE game_id = $1`,
+      [gameId]
+    );
+
+    // Group by player_id
+    const playerMap = new Map<string, {
+      rounds_in_session: number;
+      session_total_xp: number;
+      session_accuracy_per_round: number[];
+    }>();
+
+    for (const row of roundResults.rows) {
+      const playerId = row.player_id;
+      const xp = row.location_score + row.time_score;
+      const accuracy = (row.location_score + row.time_score) / 2;
+
+      if (!playerMap.has(playerId)) {
+        playerMap.set(playerId, {
+          rounds_in_session: 0,
+          session_total_xp: 0,
+          session_accuracy_per_round: []
+        });
+      }
+
+      const data = playerMap.get(playerId)!;
+      data.rounds_in_session += 1;
+      data.session_total_xp += xp;
+      data.session_accuracy_per_round.push(accuracy);
+    }
+
+    // For each player, upsert player_global_stats using running average
+    for (const [playerId, data] of playerMap.entries()) {
+      // Fetch existing stats
+      const existing = await dbPool.query<{
+        rounds_played: number;
+        avg_accuracy: number;
+      }>(
+        `SELECT rounds_played, avg_accuracy
+         FROM player_global_stats
+         WHERE player_id = $1`,
+        [playerId]
+      );
+
+      const existingRounds = existing.rows[0]?.rounds_played ?? 0;
+      const existingAvg = existing.rows[0]?.avg_accuracy ?? 0;
+
+      // Compute running average incrementally per round
+      let runningAvg = existingAvg;
+      let runningCount = existingRounds;
+      for (const roundAcc of data.session_accuracy_per_round) {
+        runningAvg = (runningAvg * runningCount + roundAcc) / (runningCount + 1);
+        runningCount += 1;
+      }
+
+      // Upsert
+      await dbPool.query(
+        `INSERT INTO player_global_stats (player_id, rounds_played, avg_accuracy, total_xp, updated_at)
+         VALUES ($1, $2, $3, $4, now())
+         ON CONFLICT (player_id) DO UPDATE SET
+           avg_accuracy = $3,
+           total_xp = player_global_stats.total_xp + $4,
+           rounds_played = $2,
+           updated_at = now()`,
+        [playerId, runningCount, runningAvg, data.session_total_xp]
+      );
+    }
+  } catch (error) {
+    console.error('[updatePlayerGlobalStats]', error);
+    // Do NOT throw — stats write failure must not crash the session
+  }
+}
+
 export type AdvanceRoundInput = {
   gameId: string;
   cause: TransitionCause;  // Authoritative domain type — from @/core/transitionCause (shared Next.js + PartyKit)
@@ -1267,6 +1354,10 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
   // Track events emitted by existing logic for transition-engine comparison
   const existingEvents: TransitionEvent[] = [];
 
+  // Declare variables outside try block for fire-and-forget stats update access
+  let session: SessionRow | null = null;
+  let nextRoundIndex: number;
+
   try {
     await client.query("BEGIN");
 
@@ -1287,14 +1378,14 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
       throw new Error("INVALID_ADVANCE_SOURCE_PHASE");
     }
 
-    const session = await loadSessionRow(gameId, client);
+    session = await loadSessionRow(gameId, client);
     if (!session) throw new Error("Session not found");
 
     if (session.mode === "practice") {
       throw new Error("Practice sessions use the dedicated practice flow");
     }
 
-    const nextRoundIndex = roundIndex + 1;
+    nextRoundIndex = roundIndex + 1;
     let advanceEventIds: string[] | undefined;
     let advanceStartedAt = "";
     let advancePhaseEndsAt = "";
@@ -1362,6 +1453,13 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     throw error;
   } finally {
     client.release();
+  }
+
+  // Fire-and-forget: update player_global_stats after SESSION_COMPLETE
+  if (nextRoundIndex >= session.total_rounds) {
+    updatePlayerGlobalStats(gameId, session.mode).catch((err) =>
+      console.error('[advanceRound] updatePlayerGlobalStats fire-and-forget error:', err)
+    );
   }
 
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId ?? undefined);
