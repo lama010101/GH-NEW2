@@ -402,6 +402,7 @@ export default function ProfilePage() {
           {/* Avatar */}
           <div style={{ ...STYLES.avatar, ...syne.style, overflow: 'hidden' as const }}>
             {profileData.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profileData.avatarUrl}
                 alt="Avatar"

@@ -27,6 +27,7 @@ export default function PlayerAvatar({ avatarUrl, displayName, size = 26 }: Play
   if (avatarUrl) {
     return (
       <span style={containerStyle}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={avatarUrl}
           alt={displayName}

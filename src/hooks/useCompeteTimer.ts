@@ -84,6 +84,7 @@ export default function useCompeteTimer({
       hintResult.accPenalty,
       hintResult.xpPenalty
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, localSubmitted, playerId, hintResult]);
 
   // Live countdown timer for RESULT phase
@@ -102,6 +103,7 @@ export default function useCompeteTimer({
     const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshot?.status, snapshot?.resultPhaseEndsAt]);
 
   // Auto-advance trigger when countdown reaches 0

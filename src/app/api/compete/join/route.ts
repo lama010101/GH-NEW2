@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
 
+    console.log('[JOIN_ROUTE] Resolved room code', code, '→ gameId:', data.game_id)
     return NextResponse.json({ gameId: data.game_id })
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
