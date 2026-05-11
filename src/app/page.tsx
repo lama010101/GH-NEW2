@@ -8,7 +8,7 @@ import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { AuthModal } from '@/components/AuthModal'
 
 const CARD_GRADIENT: Record<string, string> = {
-  daily:    'linear-gradient(180deg, #1a3a6a 0%, #0d2050 100%)',
+  daily:    'linear-gradient(180deg, #FF0A68 0%, #E1005A 45%, #B80042 100%)',
   practice: 'linear-gradient(180deg, #fcd34d 0%, #f97316 60%, #ea580c 100%)',
   levelup:  'linear-gradient(180deg, #f9a8d4 0%, #e879f9 40%, #7c3aed 100%)',
   compete:  'linear-gradient(180deg, #45fff0 0%, #00adc1 100%)',
@@ -47,9 +47,9 @@ function DailyPanel({ onPlay }: { onPlay: () => void }) {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
-Today&apos;s challenge resets in <strong style={{ color: '#93c5fd' }}>{countdown}</strong>
+Today&apos;s challenge resets in <strong style={{ color: '#fca5a5' }}>{countdown}</strong>
       </div>
-      <button onClick={onPlay} style={{ width: '100%', maxWidth: 320, padding: '12px 32px', background: 'linear-gradient(135deg,#1a3f7a,#2a6abf)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+      <button onClick={onPlay} style={{ width: '100%', maxWidth: 320, padding: '12px 32px', background: 'linear-gradient(135deg,#991b1b,#dc2626)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
         Play Today&apos;s Challenge
       </button>
     </div>
@@ -232,8 +232,8 @@ function CompetePanel({ onLobby, playerId, displayName }: {
         {(['create', 'join'] as const).map(m => (
           <button key={m} onClick={() => { setCmode(m); setCode(''); setError(null) }}
             style={{ flex: 1, padding: '10px 8px', borderRadius: 10, cursor: 'pointer',
-              border: cmode===m ? '2px solid #1a9a7a' : '1px solid rgba(255,255,255,0.15)',
-              background: cmode===m ? 'rgba(26,154,122,0.2)' : 'rgba(255,255,255,0.05)' }}>
+              border: cmode===m ? '2px solid #00adc1' : '1px solid rgba(255,255,255,0.15)',
+              background: cmode===m ? 'rgba(0,173,193,0.2)' : 'rgba(255,255,255,0.05)' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>
               {m === 'create' ? 'New Game' : 'Join with code'}
             </div>
@@ -265,7 +265,7 @@ function CompetePanel({ onLobby, playerId, displayName }: {
           cursor: loading || (cmode === 'join' && !code) ? 'not-allowed' : 'pointer',
           background: loading || (cmode === 'join' && !code)
             ? 'rgba(255,255,255,0.08)'
-            : 'linear-gradient(135deg,#0a4a3a,#1a9a7a)',
+            : 'linear-gradient(135deg,#008b9a,#00adc1)',
           color: loading || (cmode === 'join' && !code)
             ? 'rgba(255,255,255,0.3)'
             : '#fff' }}>
@@ -297,7 +297,7 @@ function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean;
         transition: 'outline-color 0.18s, transform 0.15s',
       }}
     >
-      <div style={{ width: '100%', aspectRatio: '1/1', position: 'relative', background: CARD_GRADIENT[mode], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '100%', aspectRatio: '5/4', position: 'relative', background: CARD_GRADIENT[mode], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ position: 'relative', width: 214, height: 214, transform: mode === 'daily' ? 'translateY(18px)' : 'none' }}>
           <Image
             src={
@@ -316,9 +316,10 @@ function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean;
           <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10, padding: '3px 10px', fontSize: 10, color: '#fff', whiteSpace: 'nowrap', fontWeight: 600 }}>Level 5</div>
         )}
       </div>
-      <div style={{ background: 'rgba(12,12,18,0.97)', padding: '10px 8px 12px', textAlign: 'center' }}>
-        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '1.5px', color: '#fff', textTransform: 'uppercase' }}>{CARD_NAME[mode]}</div>
-        <div style={{ fontSize: 10, fontWeight: 500, letterSpacing: '1px', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginTop: 3 }}>{CARD_SUB[mode]}</div>
+      <div style={{ background: CARD_GRADIENT[mode], padding: '10px 8px 12px', textAlign: 'center', position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(12,12,18,0.8)' }} />
+        <div style={{ position: 'relative', zIndex: 1, fontSize: 13, fontWeight: 800, letterSpacing: '1.5px', color: '#fff', textTransform: 'uppercase' }}>{CARD_NAME[mode]}</div>
+        <div style={{ position: 'relative', zIndex: 1, fontSize: 10, fontWeight: 500, letterSpacing: '1px', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginTop: 3 }}>{CARD_SUB[mode]}</div>
       </div>
     </div>
   )
@@ -360,9 +361,9 @@ function HomePageInner() {
         }
       } catch {}
     })()
-  }, [identity.status])
+  }, [identity])
 
-  const [mosaicUrls, setMosaicUrls] = useState<string[]>([])
+  const [, setMosaicUrls] = useState<string[]>([])
   useEffect(() => {
     ;(async () => {
       try {
@@ -371,6 +372,10 @@ function HomePageInner() {
       } catch {}
     })()
   }, [])
+
+  const [selectedMode, setSelectedMode] = useState<Mode>('daily')
+  const [panelMode, setPanelMode] = useState<Mode>('daily')
+  const [panelVisible, setPanelVisible] = useState(true)
 
   useEffect(() => {
     const el = carouselRef.current
@@ -386,12 +391,8 @@ function HomePageInner() {
         inline: 'center',
       })
     }
-  }, [])
+  }, [selectedMode])
 
-
-  const [selectedMode, setSelectedMode] = useState<Mode>('daily')
-  const [panelMode, setPanelMode] = useState<Mode>('daily')
-  const [panelVisible, setPanelVisible] = useState(true)
 
   const selectCard = (mode: Mode) => {
     if (mode === selectedMode) return
@@ -408,7 +409,7 @@ function HomePageInner() {
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: '#0a0a0a' }}>
 
-      <style>{`
+      <style suppressHydrationWarning>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
         .cards-container {
@@ -489,8 +490,8 @@ function HomePageInner() {
           }
           .cards-container::before,
           .cards-container::after {
-            content: '';
-            flex: 0 0 calc(50vw - 135px);
+            content: "";
+            flex: 0 0 calc(50vw - 147px);
           }
           .cards-container::-webkit-scrollbar { display: none; }
           .card-item {
@@ -504,7 +505,7 @@ function HomePageInner() {
 
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'url(/home_background.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
 
-      <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0,0,0,0.7)' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0,0,0,0.8)' }} />
 
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 16px', pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '6px 14px' }}>
@@ -531,10 +532,10 @@ function HomePageInner() {
         </div>
       </div>
 
-      <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 30 }}>
+      <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 1 }}>
 
         {/* padded inner — logo only */}
-        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', marginBottom: 12, textAlign: 'center' }}>
+        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', marginBottom: 1, textAlign: 'center' }}>
           <div style={{ position: 'relative', width: 280, height: 72, margin: '0 auto' }}>
             <Image
               src="/icons/logo.webp"
@@ -547,7 +548,7 @@ function HomePageInner() {
           </div>
         </div>
 
-        <div style={{ width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 16, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 130, padding: '0 24px', boxSizing: 'border-box' }}>
+        <div style={{ width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 16, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 100, padding: '0 24px', boxSizing: 'border-box' }}>
           Where and when did it happen?
         </div>
 
