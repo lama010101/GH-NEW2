@@ -405,24 +405,27 @@ export default class GameServer {
    */
   private broadcastStateUpdate(): void {
     if (!this.snapshot) return;
+    let snapshotWithReadyState: unknown = this.snapshot;
+    let resultPhaseEndsAt: number | undefined;
     if (isRuntimeState(this.snapshot)) {
       console.log("[PartyKit] Broadcasting to all, players:", this.snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+      resultPhaseEndsAt = this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt !== null
+        ? this.resultPhaseStartAt + 40000
+        : undefined;
+      snapshotWithReadyState = {
+        ...this.snapshot,
+        readyForNext: [...this.readyForNext],
+        resultPhaseEndsAt
+      };
     }
     // Add readyForNext and resultPhaseEndsAt to snapshot before broadcasting
     // These are in-memory PartyKit state, not persisted to DB
-    const snapshotWithReadyState = isRuntimeState(this.snapshot) ? {
-      ...this.snapshot,
-      readyForNext: [...this.readyForNext],
-      resultPhaseEndsAt: this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt !== null
-        ? this.resultPhaseStartAt + 40000
-        : undefined
-    } : this.snapshot;
 
     // Regression guard: ROUND_COMPLETE snapshots must always carry resultPhaseEndsAt.
     // If this fires, resultPhaseStartAt was not set before broadcastStateUpdate was called.
-    if (isRuntimeState(snapshotWithReadyState) &&
-        snapshotWithReadyState.status === "ROUND_COMPLETE" &&
-        typeof snapshotWithReadyState.resultPhaseEndsAt !== "number") {
+    if (isRuntimeState(this.snapshot) &&
+        this.snapshot.status === "ROUND_COMPLETE" &&
+        typeof resultPhaseEndsAt !== "number") {
       console.error(
         "[PartyKit] INVARIANT VIOLATION: broadcasting ROUND_COMPLETE without resultPhaseEndsAt. " +
         "resultPhaseStartAt=" + this.resultPhaseStartAt + " This is a bug — timer and Next button will not work."
