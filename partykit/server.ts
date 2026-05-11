@@ -169,7 +169,11 @@ export default class GameServer {
     console.time("[PERF] loadFromDB:apiFetch");
     const baseUrl = this.getNextJsBaseUrl();
     const snapUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}`;
-    const snapRes = await fetch(snapUrl);
+    const snapRes = await fetch(snapUrl, {
+      headers: {
+        "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+      }
+    });
     if (!snapRes.ok) {
       const text = await snapRes.text();
       throw new Error(`[loadFromDB] snapshot API error ${snapRes.status}: ${text}`);
@@ -316,7 +320,10 @@ export default class GameServer {
         const completeUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/complete`;
         const completeRes = await fetch(completeUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+          },
           body: JSON.stringify({ roundIndex })
         });
         if (!completeRes.ok) {
@@ -351,7 +358,11 @@ export default class GameServer {
       try {
         const baseUrl = this.getNextJsBaseUrl();
         const snapshotUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}`;
-        const snapshotRes = await fetch(snapshotUrl);
+        const snapshotRes = await fetch(snapshotUrl, {
+          headers: {
+            "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+          }
+        });
         if (!snapshotRes.ok) {
           console.warn(`[PartyKit] Failed to fetch snapshot for phase check: ${snapshotRes.status}`);
           return;
@@ -380,7 +391,10 @@ export default class GameServer {
         const advanceUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/advance`;
         const advanceRes = await fetch(advanceUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+          },
           body: JSON.stringify({ cause: TransitionCause.TIMEOUT, roundIndex })
         });
         if (!advanceRes.ok) {
@@ -531,7 +545,10 @@ export default class GameServer {
         const leaveUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/leave`;
         const leaveRes = await fetch(leaveUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+          },
           body: JSON.stringify({ playerId })
         });
         if (!leaveRes.ok) {
@@ -540,7 +557,11 @@ export default class GameServer {
         }
         // Reload and broadcast updated snapshot
         const snapUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}`;
-        const snapRes = await fetch(snapUrl);
+        const snapRes = await fetch(snapUrl, {
+          headers: {
+            "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+          }
+        });
         if (snapRes.ok) {
           const snapshot = await snapRes.json();
           this.applySnapshotAndBroadcast(snapshot);
@@ -590,7 +611,10 @@ export default class GameServer {
           const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/join`;
           const response = await fetch(apiUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
             body: JSON.stringify({
               playerId: data.playerId,
               displayName: data.displayName
@@ -610,7 +634,10 @@ export default class GameServer {
           const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/ready`;
           const response = await fetch(apiUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
             body: JSON.stringify({
               playerId: data.playerId,
               ready: data.ready
@@ -630,7 +657,10 @@ export default class GameServer {
           const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/start`;
           const response = await fetch(apiUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
             body: JSON.stringify({
               playerId: data.playerId
             })
@@ -656,7 +686,10 @@ export default class GameServer {
             const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/guess`;
             const response = await fetch(apiUrl, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+              },
               body: JSON.stringify({
                 playerId: data.playerId,
                 roundIndex: data.roundIndex,
@@ -755,7 +788,10 @@ export default class GameServer {
             const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/advance`;
             const response = await fetch(apiUrl, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+              },
               body: JSON.stringify({
                 cause: data.cause ?? TransitionCause.PLAYER,
                 playerId: data.playerId,
@@ -814,7 +850,10 @@ export default class GameServer {
                 const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/advance`;
                 const response = await fetch(apiUrl, {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: {
+                    "Content-Type": "application/json",
+                    "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+                  },
                   body: JSON.stringify({
                     cause: TransitionCause.PLAYER,
                     playerId: data.playerId,

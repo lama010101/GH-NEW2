@@ -120,7 +120,7 @@ export default function useCompeteSocket({
     if (!gameId) return;
     if (typeof snapshot.currentRoundIndex !== "number") return;
 
-    fetch(`/api/compete/${gameId}/results?roundIndex=${snapshot.currentRoundIndex}`)
+    fetch(`/api/compete/${gameId}/round/${snapshot.currentRoundIndex}/results`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data.results)) {
