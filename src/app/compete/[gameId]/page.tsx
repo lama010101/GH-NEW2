@@ -110,7 +110,7 @@ export default function CompeteGamePage() {
     setSubmissionToasts([]);
     setHintResult({ purchasedIds: [], accPenalty: 0, xpPenalty: 0, whereAccPenalty: 0, whenAccPenalty: 0 });
     submittedHintPenaltyRef.current = { accPenalty: 0, xpPenalty: 0, purchasedIds: [], whereAccPenalty: 0, whenAccPenalty: 0 };
-  }, [snapshot?.currentRoundIndex]);
+  }, [snapshot?.currentRoundIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch all round results when session completes
   useEffect(() => {
