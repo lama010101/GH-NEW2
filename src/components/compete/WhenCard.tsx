@@ -79,6 +79,14 @@ export default function WhenCard({
         {(() => {
           const myWhenRow = whenRows.find(r => r.isMe);
           const myWhenAcc = myWhenRow?.acc ?? null;
+          const myResult = roundResults?.find(r => r.playerId === playerId);
+          if (myResult == null || !myResult.didSubmit) {
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 19, fontWeight: 700, color: "#666" }}>—</span>
+              </div>
+            );
+          }
           return myWhenAcc != null ? (() => {
             const whenScore = Math.round(myWhenAcc);
             const whenHue = Math.round((Math.max(0, Math.min(100, whenScore)) / 100) * 120);
@@ -215,6 +223,7 @@ export default function WhenCard({
               {/* Player guess markers */}
               {whenRows.map((row) => {
                 if (row.guessYear == null) return null;
+                if (row.isMe) return null;
                 const xPercent = ((row.guessYear - timelineMin) / timelineRange) * 100;
                 const clampedXPercent = Math.max(0, Math.min(100, xPercent));
                 const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);

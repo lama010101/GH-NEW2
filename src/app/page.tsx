@@ -423,7 +423,7 @@ function HomePageInner() {
           width: 100%;
           max-width: 860px;
           margin: 0 auto;
-          padding: 0 24px;
+          padding: 8px 24px 0;
           box-sizing: border-box;
         }
 
@@ -486,13 +486,17 @@ function HomePageInner() {
             margin: 0;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
-            scroll-padding-left: calc(50vw - 135px);
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            padding-left: calc(50vw - 135px);
-            padding-right: calc(50vw - 135px);
-            box-sizing: content-box;
+            padding-left: 0;
+            padding-right: 0;
+            box-sizing: border-box;
             gap: 12px;
+          }
+          .cards-container::before,
+          .cards-container::after {
+            content: '';
+            flex: 0 0 calc(50vw - 135px);
           }
           .cards-container::-webkit-scrollbar { display: none; }
           .card-item {

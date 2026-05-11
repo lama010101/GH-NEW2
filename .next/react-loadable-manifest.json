@@ -1,16 +1,18 @@
 {
   "components\\compete\\RoundActiveSection.tsx -> @/components/GameMap": {
-    "id": "components\\compete\\RoundActiveSection.tsx -> @/components/GameMap",
+    "id": 1262,
     "files": [
-      "static/css/_app-pages-browser_src_components_GameMap_tsx.css",
-      "static/chunks/_app-pages-browser_src_components_GameMap_tsx.js"
+      "static/css/d3e383b9ef67ddcb.css",
+      "static/chunks/d0deef33.bd75b11a952a2d3d.js",
+      "static/chunks/262.aed978e593b29421.js"
     ]
   },
   "components\\compete\\WhereCard.tsx -> @/components/StaticResultMap": {
-    "id": "components\\compete\\WhereCard.tsx -> @/components/StaticResultMap",
+    "id": 5163,
     "files": [
-      "static/css/_app-pages-browser_src_components_StaticResultMap_tsx.css",
-      "static/chunks/_app-pages-browser_src_components_StaticResultMap_tsx.js"
+      "static/css/d3e383b9ef67ddcb.css",
+      "static/chunks/d0deef33.bd75b11a952a2d3d.js",
+      "static/chunks/163.475ed3fcad8545c6.js"
     ]
   }
 }

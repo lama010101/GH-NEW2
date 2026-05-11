@@ -205,13 +205,15 @@ export default class GameServer {
   private applySnapshotAndBroadcast(snapshot: unknown): void {
     if (isRuntimeState(snapshot)) {
       console.log("[PartyKit] Applying snapshot, players:", snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
-      // Set resultPhaseStartAt when transitioning to ROUND_COMPLETE (from any state)
-      if (isRuntimeState(this.snapshot) &&
-          this.snapshot.status !== "ROUND_COMPLETE" &&
-          snapshot.status === "ROUND_COMPLETE") {
-        this.resultPhaseStartAt = Date.now();
-        this.readyForNext.clear();
-        console.log("[PartyKit] Result phase started, readyForNext cleared, resultPhaseStartAt set");
+      // Set resultPhaseStartAt whenever snapshot is ROUND_COMPLETE and not yet set.
+      // Using a presence check (not a transition check) so this works on cold load,
+      // DO restart, and any call site that returns a ROUND_COMPLETE snapshot.
+      if (isRuntimeState(snapshot) && snapshot.status === "ROUND_COMPLETE") {
+        if (this.resultPhaseStartAt === null) {
+          this.resultPhaseStartAt = Date.now();
+          this.readyForNext.clear();
+          console.log("[PartyKit] Result phase active, resultPhaseStartAt initialized");
+        }
       }
       // Reset readyForNext when transitioning from ROUND_COMPLETE to ROUND_ACTIVE (new round started)
       if (isRuntimeState(this.snapshot) &&
@@ -331,10 +333,6 @@ export default class GameServer {
         }
       }
 
-      // Step 2: Record result phase start time and reset readyForNext
-      this.resultPhaseStartAt = Date.now();
-      this.readyForNext.clear();
-      console.log("[PartyKit] RESULT phase started, readyForNext cleared, timer scheduled for 40s");
       this.broadcastStateUpdate();
 
       // Step 3: Wait 40 seconds so clients can display the results screen
@@ -419,6 +417,18 @@ export default class GameServer {
         ? this.resultPhaseStartAt + 40000
         : undefined
     } : this.snapshot;
+
+    // Regression guard: ROUND_COMPLETE snapshots must always carry resultPhaseEndsAt.
+    // If this fires, resultPhaseStartAt was not set before broadcastStateUpdate was called.
+    if (isRuntimeState(snapshotWithReadyState) &&
+        snapshotWithReadyState.status === "ROUND_COMPLETE" &&
+        typeof snapshotWithReadyState.resultPhaseEndsAt !== "number") {
+      console.error(
+        "[PartyKit] INVARIANT VIOLATION: broadcasting ROUND_COMPLETE without resultPhaseEndsAt. " +
+        "resultPhaseStartAt=" + this.resultPhaseStartAt + " This is a bug — timer and Next button will not work."
+      );
+    }
+
     const msg = JSON.stringify({
       type: "STATE_UPDATE",
       snapshot: snapshotWithReadyState,
