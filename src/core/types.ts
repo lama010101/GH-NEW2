@@ -188,6 +188,7 @@ export type CompeteSessionSnapshot = {
   rounds: RoundEventContent[];
   readyForNext: string[]; // array of playerIds who clicked "Next Round" in RESULT phase
   resultPhaseEndsAt?: number; // epoch ms — when result phase auto-advances
+  roomCode: string;
 };
 
 export type CreateCompeteSessionInput = {

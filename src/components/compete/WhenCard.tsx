@@ -219,12 +219,12 @@ export default function WhenCard({
                 const clampedXPercent = Math.max(0, Math.min(100, xPercent));
                 const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
                 const groupIndex = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
-                const verticalOffset = groupIndex * 20;
+                const verticalOffset = groupIndex * 22;
                 return (
                   <div key={row.playerId} style={{
                     position: "absolute",
                     top: "50%",
-                    transform: `translate(-50%, calc(-50% + ${verticalOffset}px))`,
+                    transform: `translate(-50%, calc(-50% - ${verticalOffset}px))`,
                     left: `${clampedXPercent}%`,
                   }}>
                     <div style={{

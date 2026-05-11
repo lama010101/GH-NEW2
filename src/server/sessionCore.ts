@@ -76,6 +76,7 @@ export type SessionRow = {
   session_deadline: Date | null;
   created_at: Date;
   seed: bigint;
+  room_code: string;
 };
 
 // Exactly matches public.session_players columns (spec DDL, Section 3.3)
@@ -109,6 +110,15 @@ export type RoundCommitRow = {
   score: number | null;
   verification_token: string | null;
 };
+
+function generateRoomCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return code
+}
 
 function clampRoundTimer(roundTimerSec: number | undefined): number {
   if (roundTimerSec === undefined) {
@@ -268,7 +278,8 @@ export async function loadSessionRow(gameId: string, executor: DbExecutor = dbPo
         year_max,
         session_deadline,
         created_at,
-        seed
+        seed,
+        room_code
       FROM sessions
       WHERE game_id = $1
       LIMIT 1
@@ -402,7 +413,8 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     // readyForNext and resultPhaseEndsAt are in-memory PartyKit state
     // These are initialized to empty/undefined here and populated by PartyKit server when broadcasting
     readyForNext: [],
-    resultPhaseEndsAt: undefined
+    resultPhaseEndsAt: undefined,
+    roomCode: gameState.session.roomCode
   };
 
   // ═════════════════════════════════════════════════════════════════════════════
@@ -466,6 +478,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   const gameId = randomUUID();
   const hostPlayerId = input.playerId;
   const seed = BigInt("0x" + randomBytes(8).toString("hex")) & BigInt("0x7FFFFFFFFFFFFFFF");
+  const roomCode = generateRoomCode();
   const client = await getTransactionClient();
 
   try {
@@ -474,9 +487,9 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
 
     verifyLog("INSERT", "sessions", "OK", `game_id=${gameId} — executing`);
     await client.query(
-      `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, seed]
+      `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed, room_code)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, seed, roomCode]
     );
     // Cross-connection verification will happen AFTER commit
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
@@ -179,10 +179,7 @@ function CompetePanel({ onLobby, playerId, displayName }: {
   const [error, setError] = useState<string|null>(null)
 
   const handleCreate = async () => {
-    if (!playerId) {
-      setError('Please sign in first')
-      return
-    }
+    if (!playerId) { setError('Please sign in first'); return }
     setLoading(true)
     setError(null)
     try {
@@ -203,7 +200,27 @@ function CompetePanel({ onLobby, playerId, displayName }: {
       if (!res.ok) throw new Error(data.error || 'Failed to create session')
       onLobby(data.gameId)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error')
+      setError(e instanceof Error ? e.message : 'Error creating game')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleJoin = async () => {
+    if (!code) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/compete/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomCode: code }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Room not found')
+      onLobby(data.gameId)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Room not found')
     } finally {
       setLoading(false)
     }
@@ -212,30 +229,56 @@ function CompetePanel({ onLobby, playerId, displayName }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8 }}>
-        {(['create','join'] as const).map(m => (
-          <button key={m} onClick={() => { setCmode(m); setCode('') }}
+        {(['create', 'join'] as const).map(m => (
+          <button key={m} onClick={() => { setCmode(m); setCode(''); setError(null) }}
             style={{ flex: 1, padding: '10px 8px', borderRadius: 10, cursor: 'pointer',
               border: cmode===m ? '2px solid #1a9a7a' : '1px solid rgba(255,255,255,0.15)',
               background: cmode===m ? 'rgba(26,154,122,0.2)' : 'rgba(255,255,255,0.05)' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{m==='create' ? 'New Game' : 'Join with code'}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{m==='create' ? 'Create lobby' : 'Enter code'}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>
+              {m === 'create' ? 'New Game' : 'Join with code'}
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>
+              {m === 'create' ? 'Create a lobby' : 'Enter room code'}
+            </div>
           </button>
         ))}
       </div>
+
       {cmode === 'join' && (
-        <input value={code} onChange={e => setCode(e.target.value.toUpperCase().slice(0,8))}
-          placeholder="ROOM CODE"
-          style={{ width: '100%', padding: '11px 14px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#fff', fontSize: 15, fontWeight: 700, letterSpacing: '3px', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+        <input
+          value={code}
+          onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+          placeholder="ABCD12"
+          maxLength={6}
+          style={{ width: '100%', padding: '11px 14px', background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#fff',
+            fontSize: 18, fontWeight: 700, letterSpacing: '4px', textAlign: 'center',
+            outline: 'none', boxSizing: 'border-box' }}
+        />
       )}
+
       <button
-        onClick={cmode === 'create' ? handleCreate : () => onLobby(code)}
+        onClick={cmode === 'create' ? handleCreate : handleJoin}
         disabled={loading || (cmode === 'join' && code.length === 0)}
-        style={{ width: '100%', padding: 13, borderRadius: 12, fontSize: 15, fontWeight: 700, border: 'none', cursor: loading || (cmode === 'join' && !code) ? 'not-allowed' : 'pointer',
-          background: loading || (cmode === 'join' && !code) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,#0a4a3a,#1a9a7a)',
-          color: loading || (cmode === 'join' && !code) ? 'rgba(255,255,255,0.3)' : '#fff' }}>
-        {loading ? 'Creating...' : (cmode === 'create' ? 'Create Game' : 'Go to Lobby')}
+        style={{ width: '100%', padding: 13, borderRadius: 12, fontSize: 15, fontWeight: 700,
+          border: 'none', letterSpacing: '0.3px',
+          cursor: loading || (cmode === 'join' && !code) ? 'not-allowed' : 'pointer',
+          background: loading || (cmode === 'join' && !code)
+            ? 'rgba(255,255,255,0.08)'
+            : 'linear-gradient(135deg,#0a4a3a,#1a9a7a)',
+          color: loading || (cmode === 'join' && !code)
+            ? 'rgba(255,255,255,0.3)'
+            : '#fff' }}>
+        {loading
+          ? (cmode === 'create' ? 'Creating...' : 'Joining...')
+          : (cmode === 'create' ? 'Create Game' : 'Go to Lobby')}
       </button>
-      {error && <div style={{ fontSize: 12, color: '#f87171', marginTop: 6, textAlign: 'center' }}>{error}</div>}
+
+      {error && (
+        <div style={{ fontSize: 12, color: '#f87171', textAlign: 'center', marginTop: 2 }}>
+          {error}
+        </div>
+      )}
     </div>
   )
 }
@@ -257,8 +300,10 @@ function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean;
       <div style={{ width: '100%', aspectRatio: '1/1', position: 'relative', background: CARD_GRADIENT[mode], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{
           position: 'relative',
-          width:  mode === 'daily' ? 180 : mode === 'levelup' ? 140 : 155,
-          height: mode === 'daily' ? 120 : mode === 'levelup' ? 133 : 155,
+          width:  mode === 'daily'   ? 220 :
+                  mode === 'levelup' ? 118 : 115,
+          height: mode === 'daily'   ? 147 :
+                  mode === 'levelup' ? 113 : 115,
         }}>
           <Image
             src={
@@ -287,6 +332,7 @@ function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean;
 
 function HomePageInner() {
   const router = useRouter()
+  const carouselRef = useRef<HTMLDivElement>(null)
 
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -332,9 +378,25 @@ function HomePageInner() {
     })()
   }, [])
 
+  useEffect(() => {
+    const el = carouselRef.current
+    if (!el) return
+    if (window.innerWidth > 768) return
+    // Find the card matching selectedMode and scroll it into view
+    const cards = el.querySelectorAll('.card-item')
+    const idx = MODES.indexOf(selectedMode)
+    if (cards[idx]) {
+      (cards[idx] as HTMLElement).scrollIntoView({
+        behavior: 'auto',
+        block: 'nearest',
+        inline: 'center',
+      })
+    }
+  }, [])
 
-  const [selectedMode, setSelectedMode] = useState<Mode>('practice')
-  const [panelMode, setPanelMode] = useState<Mode>('practice')
+
+  const [selectedMode, setSelectedMode] = useState<Mode>('daily')
+  const [panelMode, setPanelMode] = useState<Mode>('daily')
   const [panelVisible, setPanelVisible] = useState(true)
 
   const selectCard = (mode: Mode) => {
@@ -494,7 +556,7 @@ function HomePageInner() {
         </div>
 
         {/* cards — full width, no padding constraint */}
-        <div className="cards-container">
+        <div className="cards-container" ref={carouselRef}>
           {MODES.map(mode => (
             <CardItem key={mode} mode={mode} selected={selectedMode === mode} onSelect={selectCard} />
           ))}
