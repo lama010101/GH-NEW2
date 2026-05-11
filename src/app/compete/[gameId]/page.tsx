@@ -19,25 +19,17 @@
 // ============================================================================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
+import { useParams } from "next/navigation";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import { useIdentity } from "@/hooks/useIdentity";
 import { HintModal } from "@/components/HintModal";
 import type { HintPurchaseResult } from "@/components/HintModal";
 import { RoundResult, AllRoundResult } from "@/core/competeTypes";
 import {
-  getUsernameGradientStyle,
   shortId,
-  playerLabel,
-  haversineKm,
   getBadgeSoundPath
 } from "@/core/competeUtils";
-import PlayerAvatar from "@/components/compete/PlayerAvatar";
-import RainbowRing from "@/components/compete/RainbowRing";
 import BadgePopup from "@/components/compete/BadgePopup";
-import WhenCard from "@/components/compete/WhenCard";
-import WhereCard from "@/components/compete/WhereCard";
 import SessionComplete from "@/components/compete/SessionComplete";
 import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import LobbySection from "@/components/compete/LobbySection";
@@ -48,7 +40,6 @@ import useCompeteSocket from "@/hooks/useCompeteSocket";
 export default function CompeteGamePage() {
   const params = useParams<{ gameId: string }>();
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
-  const router = useRouter();
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
@@ -452,7 +443,6 @@ export default function CompeteGamePage() {
             setWhenCluesExpanded={setWhenCluesExpanded}
             resultSecsLeft={resultSecsLeft}
             onAdvanceRound={handleAdvanceRound}
-            setFullscreenImg={setFullscreenImg}
           />
         ) : null}
 

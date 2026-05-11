@@ -5,17 +5,9 @@ import RainbowRing from "@/components/compete/RainbowRing";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereCard from "@/components/compete/WhereCard";
 import WhenCard from "@/components/compete/WhenCard";
-import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
+import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
-
-interface Hint {
-  id: string;
-  type: string;
-  tier: number;
-  content: string;
-  metadata?: { km?: number; years?: number | string } | null;
-}
 
 interface RoundCompleteSectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -42,7 +34,6 @@ interface RoundCompleteSectionProps {
   setWhenCluesExpanded: (v: boolean) => void;
   resultSecsLeft: number | null;
   onAdvanceRound: () => void;
-  setFullscreenImg: (url: string | null) => void;
 }
 
 export default function RoundCompleteSection({
@@ -64,7 +55,6 @@ export default function RoundCompleteSection({
   setWhenCluesExpanded,
   resultSecsLeft,
   onAdvanceRound,
-  setFullscreenImg,
 }: RoundCompleteSectionProps) {
   const router = useRouter();
 
