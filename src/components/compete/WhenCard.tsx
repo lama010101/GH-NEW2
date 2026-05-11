@@ -215,17 +215,17 @@ export default function WhenCard({
               {/* Player guess markers */}
               {whenRows.map((row) => {
                 if (row.guessYear == null) return null;
-                const position = ((row.guessYear - timelineMin) / timelineRange) * 100;
-                const clampedPosition = Math.max(0, Math.min(100, position));
+                const xPercent = ((row.guessYear - timelineMin) / timelineRange) * 100;
+                const clampedXPercent = Math.max(0, Math.min(100, xPercent));
                 const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
-                const myIndexInGroup = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
-                const verticalOffset = myIndexInGroup * 18;
+                const groupIndex = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
+                const verticalOffset = groupIndex * 20;
                 return (
                   <div key={row.playerId} style={{
                     position: "absolute",
                     top: "50%",
                     transform: `translate(-50%, calc(-50% + ${verticalOffset}px))`,
-                    left: `${clampedPosition}%`,
+                    left: `${clampedXPercent}%`,
                   }}>
                     <div style={{
                       width: 14,

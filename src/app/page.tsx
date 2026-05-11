@@ -47,10 +47,10 @@ function DailyPanel({ onPlay }: { onPlay: () => void }) {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
-        Today's challenge resets in <strong style={{ color: '#93c5fd' }}>{countdown}</strong>
+Today&apos;s challenge resets in <strong style={{ color: '#93c5fd' }}>{countdown}</strong>
       </div>
       <button onClick={onPlay} style={{ width: '100%', maxWidth: 320, padding: '12px 32px', background: 'linear-gradient(135deg,#1a3f7a,#2a6abf)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-        Play Today's Challenge
+        Play Today&apos;s Challenge
       </button>
     </div>
   )
@@ -168,9 +168,47 @@ function LevelUpPanel({ onStart }: { onStart: () => void }) {
   )
 }
 
-function CompetePanel({ onLobby }: { onLobby: (code: string) => void }) {
+function CompetePanel({ onLobby, playerId, displayName }: {
+  onLobby: (gameId: string) => void
+  playerId: string
+  displayName: string
+}) {
   const [cmode, setCmode] = useState<'create'|'join'>('create')
   const [code, setCode] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string|null>(null)
+
+  const handleCreate = async () => {
+    if (!playerId) {
+      setError('Please sign in first')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/compete/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId,
+          displayName,
+          mode: 'sync',
+          roundTimerSec: 120,
+          totalRounds: 5,
+          yearMin: -100,
+          yearMax: 2025,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to create session')
+      onLobby(data.gameId)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -179,8 +217,8 @@ function CompetePanel({ onLobby }: { onLobby: (code: string) => void }) {
             style={{ flex: 1, padding: '10px 8px', borderRadius: 10, cursor: 'pointer',
               border: cmode===m ? '2px solid #1a9a7a' : '1px solid rgba(255,255,255,0.15)',
               background: cmode===m ? 'rgba(26,154,122,0.2)' : 'rgba(255,255,255,0.05)' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{m==='create' ? 'Create lobby' : 'Join with code'}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{m==='create' ? 'New game' : 'Enter code'}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{m==='create' ? 'New Game' : 'Join with code'}</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{m==='create' ? 'Create lobby' : 'Enter code'}</div>
           </button>
         ))}
       </div>
@@ -189,13 +227,15 @@ function CompetePanel({ onLobby }: { onLobby: (code: string) => void }) {
           placeholder="ROOM CODE"
           style={{ width: '100%', padding: '11px 14px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#fff', fontSize: 15, fontWeight: 700, letterSpacing: '3px', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
       )}
-      <button onClick={() => onLobby(cmode==='join' ? code : '')}
-        disabled={cmode==='join' && code.length===0}
-        style={{ width: '100%', padding: 13, borderRadius: 12, fontSize: 15, fontWeight: 700, border: 'none', cursor: cmode==='join' && !code ? 'not-allowed' : 'pointer',
-          background: cmode==='join' && !code ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,#0a4a3a,#1a9a7a)',
-          color: cmode==='join' && !code ? 'rgba(255,255,255,0.3)' : '#fff' }}>
-        Go to Lobby
+      <button
+        onClick={cmode === 'create' ? handleCreate : () => onLobby(code)}
+        disabled={loading || (cmode === 'join' && code.length === 0)}
+        style={{ width: '100%', padding: 13, borderRadius: 12, fontSize: 15, fontWeight: 700, border: 'none', cursor: loading || (cmode === 'join' && !code) ? 'not-allowed' : 'pointer',
+          background: loading || (cmode === 'join' && !code) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg,#0a4a3a,#1a9a7a)',
+          color: loading || (cmode === 'join' && !code) ? 'rgba(255,255,255,0.3)' : '#fff' }}>
+        {loading ? 'Creating...' : (cmode === 'create' ? 'Create Game' : 'Go to Lobby')}
       </button>
+      {error && <div style={{ fontSize: 12, color: '#f87171', marginTop: 6, textAlign: 'center' }}>{error}</div>}
     </div>
   )
 }
@@ -206,8 +246,6 @@ function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean;
       className="card-item"
       onClick={() => onSelect(mode)}
       style={{
-        flex: 1,
-        minWidth: 0,
         borderRadius: 16,
         overflow: 'hidden',
         cursor: 'pointer',
@@ -217,30 +255,24 @@ function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean;
       }}
     >
       <div style={{ width: '100%', aspectRatio: '1/1', position: 'relative', background: CARD_GRADIENT[mode], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {mode === 'daily' ? (
-          <div style={{ position: 'relative', width: 120, height: 120 }}>
-            <Image
-              src="/icons/daily.webp"
-              alt="Daily"
-              fill
-              style={{ objectFit: 'contain' }}
-              sizes="200px"
-            />
-          </div>
-        ) : (
-          <div style={{ position: 'relative', width: 120, height: 120 }}>
-            <Image
-              src={mode === 'practice' ? '/icons/practice.webp' : mode === 'levelup' ? '/icons/level.webp' : '/icons/compete.webp'}
-              alt={CARD_NAME[mode]}
-              fill
-              style={{ objectFit: 'contain' }}
-              sizes="200px"
-            />
-          </div>
-        )}
-        {mode === 'daily' && (
-          <span style={{ position: 'absolute', top: 10, right: 10, background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', borderRadius: 6, padding: '3px 7px' }}>LIVE</span>
-        )}
+        <div style={{
+          position: 'relative',
+          width:  mode === 'daily' ? 180 : mode === 'levelup' ? 140 : 155,
+          height: mode === 'daily' ? 120 : mode === 'levelup' ? 133 : 155,
+        }}>
+          <Image
+            src={
+              mode === 'daily'    ? '/icons/daily.webp'    :
+              mode === 'practice' ? '/icons/practice.webp' :
+              mode === 'levelup'  ? '/icons/level.webp'    :
+                                    '/icons/compete.webp'
+            }
+            alt={CARD_NAME[mode]}
+            fill
+            style={{ objectFit: 'contain' }}
+            sizes="200px"
+          />
+        </div>
         {mode === 'levelup' && (
           <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10, padding: '3px 10px', fontSize: 10, color: '#fff', whiteSpace: 'nowrap', fontWeight: 600 }}>Level 5</div>
         )}
@@ -271,7 +303,7 @@ function HomePageInner() {
 
   useEffect(() => {
     if (identity.status !== 'ready') return
-    const pid = (identity as any).playerId
+    const pid = (identity as { status: string; playerId?: string }).playerId
     ;(async () => {
       try {
         const { data: stats } = await supabaseBrowser.from('player_global_stats').select('avg_accuracy,total_xp').eq('player_id', pid).single()
@@ -295,7 +327,7 @@ function HomePageInner() {
     ;(async () => {
       try {
         const { data } = await supabaseBrowser.from('images').select('image_url').limit(15)
-        if (data?.length) setMosaicUrls(data.map((r: any) => r.image_url))
+        if (data?.length) setMosaicUrls(data.map((r: { image_url: string }) => r.image_url))
       } catch {}
     })()
   }, [])
@@ -327,12 +359,15 @@ function HomePageInner() {
           display: flex;
           gap: 14px;
           width: 100%;
+          max-width: 860px;
+          margin: 0 auto;
           padding: 0 24px;
           box-sizing: border-box;
         }
 
-        .cards-container .card-item {
-          scroll-snap-align: center;
+        .card-item {
+          flex: 1 1 0;
+          min-width: 0;
         }
 
         .range-wrap { position: relative; height: 20px; }
@@ -383,12 +418,13 @@ function HomePageInner() {
           border-radius: 2px;
         }
 
-        @media (max-width: 768px), (max-width: 1024px) and (pointer: coarse) {
+        @media (max-width: 768px) {
           .cards-container {
-            width: 100vw;
-            margin-left: calc(-50vw + 50%);
+            max-width: 100vw;
+            margin: 0;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
+            scroll-padding-left: calc(50vw - 135px);
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
             padding-left: calc(50vw - 135px);
@@ -398,9 +434,10 @@ function HomePageInner() {
           }
           .cards-container::-webkit-scrollbar { display: none; }
           .card-item {
+            flex: 0 0 270px;
             min-width: 270px;
             max-width: 270px;
-            flex-shrink: 0;
+            scroll-snap-align: center;
           }
         }
       `}</style>
@@ -442,7 +479,8 @@ function HomePageInner() {
 
       <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 60 }}>
 
-        <div style={{ marginBottom: 24, textAlign: 'center' }}>
+        {/* padded inner — logo only */}
+        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', marginBottom: 24, textAlign: 'center' }}>
           <div style={{ position: 'relative', width: 280, height: 72, margin: '0 auto' }}>
             <Image
               src="/icons/logo.webp"
@@ -455,17 +493,25 @@ function HomePageInner() {
           </div>
         </div>
 
+        {/* cards — full width, no padding constraint */}
         <div className="cards-container">
           {MODES.map(mode => (
             <CardItem key={mode} mode={mode} selected={selectedMode === mode} onSelect={selectCard} />
           ))}
         </div>
 
-        <div style={{ width: '100%', maxWidth: 900, padding: '0 16px', maxHeight: panelVisible ? 280 : 0, opacity: panelVisible ? 1 : 0, overflow: 'hidden', transition: 'max-height 0.25s ease, opacity 0.2s ease', marginTop: 14 }}>
+        {/* info panel — padded */}
+        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', maxHeight: panelVisible ? 320 : 0, opacity: panelVisible ? 1 : 0, overflow: 'hidden', transition: 'max-height 0.3s ease, opacity 0.22s ease', marginTop: panelVisible ? 14 : 0 }}>
           {panelMode === 'daily' && <DailyPanel onPlay={() => handleNav('/daily')} />}
           {panelMode === 'practice' && <PracticePanel onStart={() => handleNav('/practice')} />}
           {panelMode === 'levelup' && <LevelUpPanel onStart={() => handleNav('/levelup')} />}
-          {panelMode === 'compete' && <CompetePanel onLobby={(code) => handleNav(code ? `/compete?join=${code}` : '/compete')} />}
+          {panelMode === 'compete' && (
+            <CompetePanel
+              playerId={(identity as any).playerId ?? ''}
+              displayName={(identity as any).displayName ?? 'Player'}
+              onLobby={(gameId) => router.push(`/compete/${gameId}`)}
+            />
+          )}
         </div>
 
       </div>

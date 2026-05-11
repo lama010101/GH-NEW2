@@ -131,10 +131,11 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
                   const starCount = badge.tier === 'gold' ? 3 : badge.tier === 'silver' ? 2 : 1;
                   const baseDelay = i * 0.22;
                   return (
-                    <div style={{ position: 'relative', width: 96, height: 96, margin: '0 auto' }}>
+                    <div style={{ position: 'relative', width: '100px', height: '110px', margin: '0 auto' }}>
                       {/* Layer 1: coin ring — fills full tile, enters from below */}
                       <div style={{
-                        position: 'absolute', inset: 0, width: '100%', height: '100%',
+                        position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+                        width: '90px', height: '90px',
                         borderRadius: '50%',
                         boxShadow: isDominant ? tierGlow[badge.tier] : 'none',
                       }}>
@@ -154,9 +155,9 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
                         alt=""
                         style={{
                           position: 'absolute',
-                          top: '50%', left: '50%',
-                          width: '58%', height: '58%',
-                          transform: 'translate(-50%, -50%)',
+                          bottom: '8px', left: '50%',
+                          width: '50px', height: '50px',
+                          transform: 'translateX(-50%)',
                           objectFit: 'contain',
                           animation: `iconDrop 0.28s ease ${baseDelay + 0.05}s both, medalSnap 0.12s ease ${baseDelay + 0.3}s both`,
                         }}

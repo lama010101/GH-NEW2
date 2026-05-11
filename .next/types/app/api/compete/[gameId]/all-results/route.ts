@@ -1,8 +1,8 @@
-// File: D:\GH-NEW\src\app\api\compete\create\route.ts
-import * as entry from '../../../../../../src/app/api/compete/create/route.js'
+// File: D:\GH-NEW\src\app\api\compete\[gameId]\all-results\route.ts
+import * as entry from '../../../../../../../src/app/api/compete/[gameId]/all-results/route.js'
 import type { NextRequest } from 'next/server.js'
 
-type TEntry = typeof import('../../../../../../src/app/api/compete/create/route.js')
+type TEntry = typeof import('../../../../../../../src/app/api/compete/[gameId]/all-results/route.js')
 
 // Check that the entry is a valid entry
 checkFields<Diff<{
