@@ -1,6 +1,11 @@
 'use client';
 
 import { Syne, DM_Sans } from 'next/font/google';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useIdentity } from '@/hooks/useIdentity';
+import { signOut } from '@/core/identity';
+import { supabaseBrowser } from '@/core/supabaseBrowser';
 
 const syne = Syne({ subsets: ['latin'], weight: ['400', '700', '800'] });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] });
@@ -28,7 +33,7 @@ const STYLES = {
     minHeight: '100vh',
     paddingBottom: 60,
     position: 'relative' as const,
-    overflow: 'hidden' as const,
+    overflow: 'visible' as const,
   },
   heroBg: {
     position: 'absolute' as const,
@@ -74,14 +79,19 @@ const STYLES = {
     zIndex: 10,
     maxWidth: 820,
     margin: '0 auto',
-    padding: '0 20px',
+    padding: '80px 20px 0 20px',
   },
   topBar: {
-    marginTop: -280,
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
     padding: '16px 24px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    zIndex: 100,
+    backgroundColor: C.bg,
   },
   backLink: {
     display: 'flex',
@@ -104,7 +114,7 @@ const STYLES = {
     cursor: 'pointer',
   },
   heroSection: {
-    marginTop: -200,
+    marginTop: 0,
     padding: '0 24px',
   },
   avatar: {
@@ -287,54 +297,99 @@ const STYLES = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { playerId } = useIdentity();
+  const [profileData, setProfileData] = useState<{ displayName: string | null; avatarUrl: string | null; email: string | null; createdAt: string | null; avgAccuracy: number | null; totalXp: number | null; roundsPlayed: number | null }>({
+    displayName: null,
+    avatarUrl: null,
+    email: null,
+    createdAt: null,
+    avgAccuracy: null,
+    totalXp: null,
+    roundsPlayed: null,
+  });
+
+  useEffect(() => {
+    if (!playerId) return;
+
+    const fetchProfileData = async () => {
+      try {
+        const { data: profileResult } = await supabaseBrowser
+          .from('profiles')
+          .select('display_name, avatar_url')
+          .eq('id', playerId)
+          .limit(1)
+          .single();
+
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        const email = sessionData.session?.user?.email ?? null;
+        const createdAt = sessionData.session?.user?.created_at ?? null;
+
+        const { data: statsResult } = await supabaseBrowser
+          .from('player_global_stats')
+          .select('avg_accuracy, total_xp, rounds_played')
+          .eq('player_id', playerId)
+          .limit(1)
+          .single();
+
+        setProfileData({
+          displayName: profileResult?.display_name ?? null,
+          avatarUrl: profileResult?.avatar_url ?? null,
+          email,
+          createdAt,
+          avgAccuracy: statsResult?.avg_accuracy ?? null,
+          totalXp: statsResult?.total_xp ?? null,
+          roundsPlayed: statsResult?.rounds_played ?? null,
+        });
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+      }
+    };
+
+    fetchProfileData();
+  }, [playerId]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/');
+  };
+
+  const getInitials = (name: string | null): string => {
+    if (!name) return '?';
+    const words = name.trim().split(/\s+/);
+    const initials = words.map(w => w[0]).join('').toUpperCase();
+    return initials.slice(0, 2);
+  };
+
+  const formatMemberSince = (dateStr: string | null): string => {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
   return (
     <div style={STYLES.root} className={dmSans.className}>
 
       {/* 1. HERO BACKGROUND */}
-      <div style={{ ...STYLES.heroBg, position: 'absolute' as const }}>
-        <div 
-          style={{ ...STYLES.heroGradient, position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0 }}
-        >
-          {/* Radial glow overlays */}
-          <div 
-            style={{ ...STYLES.radialGlow1, position: 'absolute' as const }}
-          />
-          <div 
-            style={{ ...STYLES.radialGlow2, position: 'absolute' as const }}
-          />
-          <div 
-            style={{ ...STYLES.radialGlow3, position: 'absolute' as const }}
-          />
-          
-          {/* Mosaic strip */}
-          <div style={{ ...STYLES.mosaicStrip, position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0 }}>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div 
-                key={i}
-                style={{
-                  backgroundColor: i % 2 === 0 ? '#7c3aed' : '#c2410c'
-                }}
-              />
-            ))}
-          </div>
-          
-          {/* Fade overlay */}
-          <div 
-            style={{ ...STYLES.fadeOverlay, position: 'absolute' as const, bottom: 0, left: 0, right: 0, height: 96 }}
-          />
-        </div>
-      </div>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 280, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0e0c 100%)', zIndex: 0 }} />
 
       {/* 2. TOP BAR */}
       <div style={STYLES.topBar}>
-        <a 
-          href="/"
-          style={STYLES.backLink}
+        <button
+          onClick={() => router.back()}
+          style={{
+            ...STYLES.backLink,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: C.text,
+            fontWeight: 600,
+          }}
         >
           <span style={{ fontSize: 18 }}>←</span>
-          <span>Home</span>
-        </a>
-        <button 
+          <span>Back</span>
+        </button>
+        <button
           style={{ ...STYLES.editButton, ...syne.style }}
         >
           Edit Profile
@@ -345,80 +400,110 @@ export default function ProfilePage() {
       <div style={STYLES.heroSection}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           {/* Avatar */}
-          <div style={{ position: 'relative' as const }}>
-            <div 
-              style={{ ...STYLES.avatar, ...syne.style }}
-            >
-              LB
-            </div>
-            {/* Level badge */}
-            <div 
-              style={{ ...STYLES.levelBadge, ...syne.style }}
-            >
-              Lvl 23
-            </div>
+          <div style={{ ...STYLES.avatar, ...syne.style, overflow: 'hidden' as const }}>
+            {profileData.avatarUrl ? (
+              <img
+                src={profileData.avatarUrl}
+                alt="Avatar"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: 9999,
+                }}
+              />
+            ) : (
+              getInitials(profileData.displayName)
+            )}
           </div>
-          
+
           {/* User info */}
           <div style={{ flex: 1, paddingTop: 8 }}>
-            <h1 style={{ ...STYLES.username, ...syne.style }}>LoloBlaze</h1>
+            <h1 style={{ ...STYLES.username, ...syne.style }}>{profileData.displayName ?? '—'}</h1>
             <p style={STYLES.handle}>
-              @loloblaze · Joined March 2024
-            </p>
-            <p style={STYLES.bio}>
-              History addict. Strong on medieval Europe, weak on Pacific prehistory.
+              @{profileData.displayName?.toLowerCase().replace(/\s+/g, '') ?? 'user'} · Joined {formatMemberSince(profileData.createdAt)}
             </p>
           </div>
         </div>
-        
-        {/* Pills row */}
+
+        {/* Stat pills row */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginTop: 16 }}>
-          <span 
+          <div
             style={{
-              ...STYLES.pill,
-              backgroundColor: 'rgba(251,146,60,0.15)',
-              color: C.orange,
-              border: '1px solid rgba(251,146,60,0.3)'
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              borderRadius: 9999,
+              padding: '6px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2,
             }}
           >
-            Top 4% Daily
-          </span>
-          <span 
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>
+              {profileData.avgAccuracy === null ? '—' : Math.round(Number(profileData.avgAccuracy)) + '%'}
+            </div>
+            <div style={{ fontSize: 11, color: C.muted }}>
+              Accuracy
+            </div>
+          </div>
+          <div
             style={{
-              ...STYLES.pill,
-              backgroundColor: 'rgba(192,132,252,0.15)',
-              color: C.purple,
-              border: '1px solid rgba(192,132,252,0.3)'
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              borderRadius: 9999,
+              padding: '6px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2,
             }}
           >
-            Level 23
-          </span>
-          <span 
-            style={{
-              ...STYLES.pill,
-              backgroundColor: 'rgba(20,184,166,0.15)',
-              color: C.teal,
-              border: '1px solid rgba(20,184,166,0.3)'
-            }}
-          >
-            42-day streak
-          </span>
-          <div 
-            style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: C.purpleDark }}
-            title="Prestige I"
-          />
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>
+              {profileData.totalXp === null ? '—' : profileData.totalXp.toLocaleString() + ' XP'}
+            </div>
+            <div style={{ fontSize: 11, color: C.muted }}>
+              XP
+            </div>
+          </div>
         </div>
       </div>
 
       {/* 4. STAT STRIP */}
       <div style={STYLES.statStrip}>
         {[
-          { value: '37%', label: 'Avg accuracy', color: C.orange },
-          { value: '59,325', label: 'Total XP', color: C.gold },
-          { value: '847', label: 'Games played', color: C.purple },
-          { value: '4,235', label: 'Rounds played', color: C.teal }
+          {
+            value: profileData.avgAccuracy === null
+              ? '...'
+              : profileData.avgAccuracy !== null
+                ? Math.round(Number(profileData.avgAccuracy)) + '%'
+                : '—',
+            label: 'Avg accuracy',
+            color: C.orange
+          },
+          {
+            value: profileData.totalXp === null
+              ? '...'
+              : profileData.totalXp !== null
+                ? profileData.totalXp.toLocaleString() + ' XP'
+                : '—',
+            label: 'Total XP',
+            color: C.gold
+          },
+          {
+            value: '—',
+            label: 'Games played (coming soon)',
+            color: C.purple
+          },
+          {
+            value: profileData.roundsPlayed === null
+              ? '...'
+              : profileData.roundsPlayed !== null
+                ? profileData.roundsPlayed.toLocaleString()
+                : '—',
+            label: 'Rounds played',
+            color: C.teal
+          }
         ].map((stat, i) => (
-          <div 
+          <div
             key={i}
             style={STYLES.statCard}
           >
@@ -437,50 +522,10 @@ export default function ProfilePage() {
         {/* Left: Accuracy breakdown */}
         <div style={STYLES.panel}>
           <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Accuracy breakdown</h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: C.dim }}>Year (when)</span>
-                <span style={{ color: C.orange }}>42%</span>
-              </div>
-              <div style={{ ...STYLES.barContainer, height: 8 }}>
-                <div 
-                  style={{ ...STYLES.barFill, width: '42%', backgroundColor: C.orange }}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: C.dim }}>Location (where)</span>
-                <span style={{ color: C.purple }}>31%</span>
-              </div>
-              <div style={{ ...STYLES.barContainer, height: 8 }}>
-                <div 
-                  style={{ ...STYLES.barFill, width: '31%', backgroundColor: C.purple }}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: C.dim }}>Combo mastery</span>
-                <span style={{ color: C.teal }}>18%</span>
-              </div>
-              <div style={{ ...STYLES.barContainer, height: 8 }}>
-                <div 
-                  style={{ ...STYLES.barFill, width: '18%', backgroundColor: C.teal }}
-                />
-              </div>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 24 }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>—</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
           </div>
-          
-          <div style={STYLES.divider} />
-          
-          <p style={{ fontSize: 12, color: C.muted }}>
-            Gold rate 3.2% · Combo mastery rate 1.1%
-          </p>
         </div>
         
         {/* Right: Badge collection */}
@@ -489,19 +534,19 @@ export default function ProfilePage() {
           
           <div style={STYLES.badgeGrid}>
             {[
-              { label: 'Gold', count: 136, color: C.gold },
-              { label: 'Silver', count: 284, color: C.silver },
-              { label: 'Bronze', count: 521, color: C.bronze },
-              { label: 'Year', count: 68, color: C.gold, sub: 'gold' },
-              { label: 'Location', count: 41, color: C.gold, sub: 'gold' },
-              { label: 'Combo', count: 27, color: C.gold, sub: 'gold' }
+              { label: 'Gold', count: null, color: C.gold },
+              { label: 'Silver', count: null, color: C.silver },
+              { label: 'Bronze', count: null, color: C.bronze },
+              { label: 'Year', count: null, color: C.gold, sub: 'gold' },
+              { label: 'Location', count: null, color: C.gold, sub: 'gold' },
+              { label: 'Combo', count: null, color: C.gold, sub: 'gold' }
             ].map((badge, i) => (
               <div 
                 key={i}
                 style={STYLES.badgeCell}
               >
                 <div style={{ ...STYLES.badgeCount, ...syne.style, color: badge.color }}>
-                  {badge.count}
+                  {badge.count ?? '—'}
                 </div>
                 <div style={STYLES.badgeLabel}>
                   {badge.label}
@@ -527,19 +572,9 @@ export default function ProfilePage() {
                 style={{ ...STYLES.modeAccent, backgroundColor: '#3b82f6' }}
               />
               <div style={{ ...STYLES.modeTitle, ...syne.style }}>Daily</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={STYLES.modeStat}>
-                  <span style={{ fontWeight: 700, color: C.orange }}>41%</span> avg accuracy
-                </div>
-                <div style={STYLES.modeStat}>
-                  Best <span style={{ fontWeight: 700, color: C.gold }}>84%</span>
-                </div>
-                <div style={STYLES.modeStat}>
-                  Rank <span style={{ fontWeight: 700 }}>#142</span>
-                </div>
-                <div style={{ fontSize: 12, color: C.muted }}>
-                  42-day streak
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center', padding: 16 }}>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>—</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
               </div>
             </div>
             
@@ -551,19 +586,9 @@ export default function ProfilePage() {
                 style={{ ...STYLES.modeAccent, backgroundColor: C.purple }}
               />
               <div style={{ ...STYLES.modeTitle, ...syne.style }}>Level Up</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={STYLES.modeStat}>
-                  Level <span style={{ fontWeight: 700, color: C.purple }}>23</span>
-                </div>
-                <div style={STYLES.modeStat}>
-                  Pass threshold <span style={{ fontWeight: 700 }}>56.9%</span>
-                </div>
-                <div style={STYLES.modeStat}>
-                  <span style={{ fontWeight: 700, color: C.purpleDark }}>Prestige I</span>
-                </div>
-                <div style={{ fontSize: 12, color: C.muted }}>
-                  234 attempts
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center', padding: 16 }}>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>—</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
               </div>
             </div>
             
@@ -575,19 +600,9 @@ export default function ProfilePage() {
                 style={{ ...STYLES.modeAccent, backgroundColor: C.teal }}
               />
               <div style={{ ...STYLES.modeTitle, ...syne.style }}>Compete</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={STYLES.modeStat}>
-                  <span style={{ fontWeight: 700, color: C.orange }}>34%</span> avg accuracy
-                </div>
-                <div style={STYLES.modeStat}>
-                  Sessions <span style={{ fontWeight: 700 }}>89</span>
-                </div>
-                <div style={STYLES.modeStat}>
-                  Win rate <span style={{ fontWeight: 700 }}>31%</span>
-                </div>
-                <div style={{ fontSize: 12, color: C.muted }}>
-                  Rush 52 / Relax 37
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center', padding: 16 }}>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>—</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
               </div>
             </div>
           </div>
@@ -599,75 +614,16 @@ export default function ProfilePage() {
         {/* Left: Leaderboard positions */}
         <div style={STYLES.panel}>
           <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Leaderboard positions</h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={STYLES.leaderboardItem}>
-              <div>
-                <div style={{ ...syne.style, fontSize: 14, fontWeight: 700, color: '#3b82f6' }}>
-                  #142 / Daily
-                </div>
-                <div style={{ fontSize: 12, color: C.muted }}>
-                  today · Apr 28, 2026
-                </div>
-              </div>
-              <div style={{ ...syne.style, fontSize: 14, fontWeight: 700, color: C.orange }}>
-                73%
-              </div>
-            </div>
-            
-            <div style={STYLES.leaderboardItem}>
-              <div>
-                <div style={{ ...syne.style, fontSize: 14, fontWeight: 700, color: C.purple }}>
-                  #889 / Level Up
-                </div>
-                <div style={{ fontSize: 12, color: C.muted }}>
-                  all time · Level 23, 58% accuracy
-                </div>
-              </div>
-              <div style={{ ...syne.style, fontSize: 14, fontWeight: 700, color: C.purple }}>
-                Lvl 23
-              </div>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 24 }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
           </div>
-          
-          <div style={STYLES.divider} />
-          
-          <p style={{ fontSize: 12, fontStyle: 'italic', color: C.muted }}>
-            No global Compete leaderboard — in-session only.
-          </p>
         </div>
         
         {/* Right: Score distribution */}
         <div style={STYLES.panel}>
           <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Score distribution</h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { label: '81–100', percent: 8, opacity: 1 },
-              { label: '61–80', percent: 22, opacity: 0.8 },
-              { label: '41–60', percent: 38, opacity: 0.6 },
-              { label: '21–40', percent: 24, opacity: 0.4 },
-              { label: '0–20', percent: 8, opacity: 0.2 }
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, width: 64, color: C.dim }}>
-                  {item.label}
-                </span>
-                <div style={{ flex: 1, ...STYLES.barContainer, height: 8 }}>
-                  <div 
-                    style={{ 
-                      ...STYLES.barFill,
-                      width: `${item.percent}%`, 
-                      backgroundColor: C.orange,
-                      opacity: item.opacity
-                    }}
-                  />
-                </div>
-                <span style={{ fontSize: 12, width: 32, textAlign: 'right', color: C.muted }}>
-                  {item.percent}%
-                </span>
-              </div>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 24 }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
           </div>
         </div>
       </div>
@@ -679,17 +635,17 @@ export default function ProfilePage() {
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
             {[
-              { label: 'Events seen', value: 342, color: C.orange },
-              { label: 'Rated', value: 28, color: C.purple },
-              { label: 'Regions', value: 5, color: C.teal },
-              { label: 'Countries', value: 12, color: C.gold }
+              { label: 'Events seen', value: null, color: C.orange },
+              { label: 'Rated', value: null, color: C.purple },
+              { label: 'Regions', value: null, color: C.teal },
+              { label: 'Countries', value: null, color: C.gold }
             ].map((item, i) => (
               <div 
                 key={i}
                 style={STYLES.badgeCell}
               >
                 <div style={{ ...STYLES.badgeCount, ...syne.style, color: item.color, fontSize: 20 }}>
-                  {item.value}
+                  {item.value ?? '—'}
                 </div>
                 <div style={STYLES.badgeLabel}>
                   {item.label}
@@ -703,23 +659,23 @@ export default function ProfilePage() {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                { label: 'Contemporary', count: 222, percent: 65 },
-                { label: 'Modern', count: 103, percent: 30 },
-                { label: 'Early Modern', count: 11, percent: 7 },
-                { label: 'Medieval', count: 6, percent: 4 },
-                { label: 'Ancient', count: 0, percent: 1 }
+                { label: 'Contemporary', count: null, percent: 0 },
+                { label: 'Modern', count: null, percent: 0 },
+                { label: 'Early Modern', count: null, percent: 0 },
+                { label: 'Medieval', count: null, percent: 0 },
+                { label: 'Ancient', count: null, percent: 0 }
               ].map((era, i) => (
                 <div key={i}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
                     <span style={{ color: C.dim }}>{era.label}</span>
-                    <span style={{ color: C.muted }}>{era.count} ({era.percent}%)</span>
+                    <span style={{ color: C.muted }}>{era.count ?? '—'} ({era.percent}%)</span>
                   </div>
                   <div style={{ ...STYLES.barContainer, height: 6 }}>
                     <div 
                       style={{ 
                         ...STYLES.barFill,
                         width: `${era.percent}%`, 
-                        backgroundColor: era.count > 0 ? C.orange : 'rgba(255,255,255,0.2)'
+                        backgroundColor: 'rgba(255,255,255,0.2)'
                       }}
                     />
                   </div>
@@ -737,12 +693,12 @@ export default function ProfilePage() {
           
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {[
-              { label: '1900s', percent: 51, opacity: 1 },
-              { label: '1800s', percent: 44, opacity: 0.85 },
-              { label: '2000s', percent: 38, opacity: 0.7 },
-              { label: '1700s', percent: 27, opacity: 0.55 },
-              { label: '1500s', percent: 19, opacity: 0.4 },
-              { label: 'pre-1500', percent: 0, opacity: 0.25 }
+              { label: '1900s', percent: null, opacity: 1 },
+              { label: '1800s', percent: null, opacity: 0.85 },
+              { label: '2000s', percent: null, opacity: 0.7 },
+              { label: '1700s', percent: null, opacity: 0.55 },
+              { label: '1500s', percent: null, opacity: 0.4 },
+              { label: 'pre-1500', percent: null, opacity: 0.25 }
             ].map((century, i) => (
               <div 
                 key={i}
@@ -752,10 +708,53 @@ export default function ProfilePage() {
                   {century.label}
                 </div>
                 <div style={STYLES.centuryPercent}>
-                  {century.percent > 0 ? `${century.percent}%` : '—'}
+                  {century.percent ?? '—'}
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 10. ACCOUNT SECTION */}
+      <div style={STYLES.fullPanel}>
+        <div style={STYLES.panel}>
+          <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Account</h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 14, color: C.dim }}>Email</span>
+              <span style={{ fontSize: 14, color: C.muted }}>{profileData.email ?? '—'}</span>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 14, color: C.dim }}>Member since</span>
+              <span style={{ fontSize: 14, color: C.muted }}>{formatMemberSince(profileData.createdAt)}</span>
+            </div>
+            
+            <button
+              onClick={handleSignOut}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 600,
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                color: '#ef4444',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.25)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+              }}
+            >
+              Sign out
+            </button>
           </div>
         </div>
       </div>

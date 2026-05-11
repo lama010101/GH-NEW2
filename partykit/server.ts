@@ -68,7 +68,7 @@ export type ServerMessage =
   | { type: "JOIN_ROOM"; playerId: string; displayName: string }
   | { type: "TOGGLE_READY"; playerId: string; ready: boolean }
   | { type: "START_GAME"; playerId: string }
-  | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: number; accPenalty?: number; xpPenalty?: number }
+  | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: string[]; accPenalty?: number; xpPenalty?: number }
   | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number; cause?: string }
   | { type: "READY_NEXT"; playerId: string; roundIndex: number };
 
@@ -363,6 +363,10 @@ export default class GameServer {
           console.log(`[PartyKit] Phase is ${currentSnapshot.status}, not ROUND_COMPLETE — skipping timer advance (already advanced by player)`);
           return;
         }
+        if (currentSnapshot.currentRoundIndex !== expectedRoundIndex) {
+          console.log(`[PartyKit] Stale result timer ignored: expected round ${expectedRoundIndex}, current round ${currentSnapshot.currentRoundIndex}`);
+          return;
+        }
       } catch (err) {
         console.warn("[PartyKit] Snapshot fetch failed for phase check:", err instanceof Error ? err.message : err);
         return;
@@ -646,6 +650,7 @@ export default class GameServer {
                 year: data.year ?? null,
                 lat: data.lat ?? null,
                 lng: data.lng ?? null,
+                hintsUsed: Array.isArray(data.hintsUsed) ? data.hintsUsed : [],
                 accPenalty: data.accPenalty ?? 0,
                 xpPenalty: data.xpPenalty ?? 0
               })

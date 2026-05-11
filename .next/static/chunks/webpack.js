@@ -192,7 +192,7 @@
 /******/ 	
 /******/ 	/* webpack/runtime/getFullHash */
 /******/ 	!function() {
-/******/ 		__webpack_require__.h = function() { return "2b077fa43d9f0e92"; }
+/******/ 		__webpack_require__.h = function() { return "1671b7a3ecbba260"; }
 /******/ 	}();
 /******/ 	
 /******/ 	/* webpack/runtime/global */
@@ -791,7 +791,7 @@
 /******/ 		};
 /******/ 		
 /******/ 		__webpack_require__.f.miniCss = function(chunkId, promises) {
-/******/ 			var cssChunks = {"_app-pages-browser_src_components_GameMap_tsx":1,"_app-pages-browser_src_components_StaticResultMap_tsx":1};
+/******/ 			var cssChunks = {"_app-pages-browser_src_components_StaticResultMap_tsx":1,"_app-pages-browser_src_components_GameMap_tsx":1};
 /******/ 			if(installedCssChunks[chunkId]) promises.push(installedCssChunks[chunkId]);
 /******/ 			else if(installedCssChunks[chunkId] !== 0 && cssChunks[chunkId]) {
 /******/ 				promises.push(installedCssChunks[chunkId] = loadStylesheet(chunkId).then(function() {
