@@ -100,8 +100,11 @@ export default function CompeteGamePage() {
   useEffect(() => {
     if (!snapshot) return;
     setGuessYear(null);
+    guessYearRef.current = null;
     setGuessLat(null);
+    guessLatRef.current = null;
     setGuessLng(null);
+    guessLngRef.current = null;
     setLocalSubmitted(false);
     setRoundResults(null);
     setSubmissionToasts([]);
