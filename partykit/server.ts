@@ -253,6 +253,12 @@ export default class GameServer {
    */
   private applySnapshotAndBroadcast(snapshot: unknown): void {
     if (isRuntimeState(snapshot)) {
+      console.log("[APPLY_SNAPSHOT_INCOMING]", {
+        previousRoundEndsAt: (isRuntimeState(this.snapshot) ? this.snapshot.roundEndsAt : null) ?? null,
+        incomingRoundEndsAt: snapshot.roundEndsAt ?? null,
+        status: snapshot.status,
+        roundIndex: snapshot.currentRoundIndex,
+      });
       if (
         isRuntimeState(this.snapshot) &&
         this.snapshot.status === "ROUND_ACTIVE" &&
@@ -262,6 +268,10 @@ export default class GameServer {
         snapshot.roundEndsAt &&
         new Date(this.snapshot.roundEndsAt).getTime() < new Date(snapshot.roundEndsAt).getTime()
       ) {
+        console.log("[APPLY_SNAPSHOT_PRESERVED_OLD_TIMER]", {
+          preserved: this.snapshot.roundEndsAt,
+          rejected: snapshot.roundEndsAt,
+        });
         snapshot.roundEndsAt = this.snapshot.roundEndsAt;
       }
       console.log("[PartyKit] Applying snapshot, players:", snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
@@ -272,10 +282,22 @@ export default class GameServer {
         this.readyForNext.clear();
         console.log("[PartyKit] New round started, readyForNext cleared");
       }
+      console.log("[PARTYKIT_APPLY_PLAYERS]", {
+        totalPlayers: snapshot.players.length,
+        players: snapshot.players.map((p) => ({
+          playerId: p.playerId,
+          displayName: p.displayName,
+          leftAt: p.leftAt,
+        })),
+      });
     }
     this.snapshot = snapshot;
     this.snapshotLoaded = true;
     this.scheduleRoundTimer();
+    console.log("[STATE_UPDATE_OUTBOUND]", {
+      roundEndsAt: (isRuntimeState(this.snapshot) ? this.snapshot.roundEndsAt : null) ?? null,
+      status: (isRuntimeState(this.snapshot) ? this.snapshot.status : null) ?? null,
+    });
     this.broadcastStateUpdate();
   }
 
@@ -479,6 +501,14 @@ export default class GameServer {
         "resultPhaseStartedAt=" + this.snapshot.resultPhaseStartedAt + " This is a bug — timer and Next button will not work."
       );
     }
+
+    console.log("[PARTYKIT_BROADCAST_PLAYERS]", {
+      totalPlayers: (this.snapshot as any).players?.length ?? null,
+      players: (this.snapshot as any).players?.map((p: any) => ({
+        playerId: p.playerId,
+        displayName: p.displayName,
+      })),
+    });
 
     const msg = JSON.stringify({
       type: "STATE_UPDATE",
@@ -774,6 +804,14 @@ export default class GameServer {
 
                 if (clampTo < remainingMs / 1000) {
                   const newRoundEndsAt = new Date(Date.now() + clampTo * 1000);
+                  console.log("[CLAMP_BEFORE]", {
+                    gameId: this.room.id,
+                    roundIndex: fullResponse.currentRoundIndex,
+                    currentRoundEndsAt: fullResponse.roundEndsAt,
+                    remainingMs,
+                    clampTo,
+                    now: new Date().toISOString(),
+                  });
                   const pressureRes = await fetch(`${this.getNextJsBaseUrl()}/api/compete/${this.room.id}/pressure`, {
                     method: "POST",
                     headers: {
@@ -792,6 +830,10 @@ export default class GameServer {
                     console.error(`[PartyKit] PRESSURE_APPLIED persist failed ${pressureRes.status}: ${text}`);
                     break;
                   }
+                  console.log("[CLAMP_AFTER_API]", {
+                    newRoundEndsAt: newRoundEndsAt.toISOString(),
+                    apiStatus: pressureRes.status,
+                  });
 
                   // Update RuntimeState
                   if (isRuntimeState(fullResponse)) {
