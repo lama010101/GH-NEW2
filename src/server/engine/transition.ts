@@ -155,9 +155,9 @@ export function transition(
       return handleSubmitGuess(state, intent.context);
     case "ADVANCE_ROUND":
       return handleAdvanceRound(state, intent.context);
-    default:
-      // Exhaustive check; this line is unreachable for valid Intent types.
+    default: {
       const _exhaustiveCheck: never = intent;
-      return _exhaustiveCheck;
+      throw new Error(`Unknown intent type: ${JSON.stringify(_exhaustiveCheck)}`);
+    }
   }
 }
