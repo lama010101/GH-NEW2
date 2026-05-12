@@ -126,6 +126,14 @@ export default function LobbySection({
   const isReady         = viewer?.ready ?? false;
   const canStart        = isHost && allReady && !busy;
 
+  console.log("[PLAYERS_RENDER]", {
+    totalPlayers: snapshot.players?.length ?? null,
+    players: snapshot.players?.map((p) => ({
+      playerId: p.playerId,
+      displayName: p.displayName,
+    })),
+  });
+
   return (
     <div className="lobby-shell">
       {/* Title Bar */}
@@ -347,6 +355,15 @@ export default function LobbySection({
             {activePlayers.length === 0 ? (
               <p className="small">No players yet.</p>
             ) : (
+              activePlayers.forEach((p, index) => {
+                console.log("[PLAYER_RENDER_ITEM]", {
+                  index,
+                  playerId: p?.playerId,
+                  displayName: p?.displayName,
+                  ready: p?.ready,
+                  isHost: p?.isHost,
+                });
+              }),
               activePlayers.map((p) => (
                 <div
                   key={p.playerId}

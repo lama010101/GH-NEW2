@@ -405,6 +405,18 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     ? (roundCompleteEvent.payload?.resultPhaseStartedAt as string) ?? null
     : null;
 
+  console.log("[SNAPSHOT_PLAYERS]", {
+    gameId,
+    totalPlayers: players.length,
+    players: players.map((p) => ({
+      playerId: p.playerId,
+      displayName: p.displayName,
+      leftAt: p.leftAt,
+      ready: p.ready,
+      isHost: p.isHost,
+    })),
+  });
+
   // STEP 5: Build snapshot from reconstructed state
   const snapshot: CompeteSessionSnapshot = {
     gameId: gameState.session.gameId,

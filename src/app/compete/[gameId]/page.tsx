@@ -85,6 +85,19 @@ export default function CompeteGamePage() {
   const guessLngRef = useRef<number | null>(null);
 
 
+  // Global error capture for React minified errors
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error("[GLOBAL_ERROR]", event.error);
+    };
+
+    window.addEventListener("error", handleError);
+
+    return () => {
+      window.removeEventListener("error", handleError);
+    };
+  }, []);
+
   // Reset card expansion when round changes
   useEffect(() => {
     setWhereLbExpanded(false);
@@ -141,6 +154,18 @@ export default function CompeteGamePage() {
     snapshot,
     roundResults,
     onStateUpdate: (newSnapshot) => {
+      console.log("[CLIENT_STATE_UPDATE]", {
+        roundEndsAt: newSnapshot.roundEndsAt,
+        status: newSnapshot.status,
+        roundIndex: newSnapshot.currentRoundIndex,
+      });
+      console.log("[CLIENT_RECEIVED_PLAYERS]", {
+        totalPlayers: newSnapshot.players?.length ?? null,
+        players: newSnapshot.players?.map((p) => ({
+          playerId: p.playerId,
+          displayName: p.displayName,
+        })),
+      });
       setWsDisconnected(false);
       setSnapshot(newSnapshot);
     },
@@ -154,9 +179,8 @@ export default function CompeteGamePage() {
       }
     },
     onTimerClamped: (newPhaseEndsAt) => {
-      setSnapshot((prev) => {
-        if (!prev) return prev;
-        return { ...prev, roundEndsAt: newPhaseEndsAt };
+      console.log("[TIMER_CLAMP_EVENT]", {
+        newPhaseEndsAt,
       });
       setTimerClamped(true);
       setTimeout(() => setTimerClamped(false), 600);

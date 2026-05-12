@@ -47,7 +47,14 @@ export default function useCompeteTimer({
       setTimeRemaining(null);
       return;
     }
-    const tick = () => setTimeRemaining(computeTimeRemaining(snapshot.roundEndsAt));
+    const tick = () => {
+      console.log("[CLIENT_TIMER_COMPUTE]", {
+        roundEndsAt: snapshot.roundEndsAt,
+        computed: computeTimeRemaining(snapshot.roundEndsAt),
+        status: snapshot.status,
+      });
+      setTimeRemaining(computeTimeRemaining(snapshot.roundEndsAt));
+    };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
