@@ -2,7 +2,7 @@ import { supabaseBrowser } from "./supabaseBrowser";
 
 export type IdentityState =
   | { status: "loading" }
-  | { status: "ready"; playerId: string; isAnonymous: boolean }
+  | { status: "ready"; playerId: string; isAnonymous: boolean; displayName: string }
   | { status: "unauthenticated" }
   | { status: "error"; error: string };
 
@@ -13,6 +13,15 @@ const readyPromise = new Promise<string>((resolve) => {
 });
 
 let bootstrapped = false;
+
+async function fetchDisplayName(userId: string): Promise<string> {
+  const { data } = await supabaseBrowser
+    .from("profiles")
+    .select("display_name")
+    .eq("id", userId)
+    .single();
+  return data?.display_name ?? "";
+}
 
 export async function bootstrapIdentity(): Promise<IdentityState> {
   if (bootstrapped && cachedState.status === "ready") {
@@ -32,7 +41,13 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
 
     if (session?.user?.id) {
       const isAnonymous = session.user.is_anonymous ?? false;
-      cachedState = { status: "ready", playerId: session.user.id, isAnonymous };
+      const displayName = await fetchDisplayName(session.user.id);
+      cachedState = {
+        status: "ready",
+        playerId: session.user.id,
+        isAnonymous,
+        displayName
+      };
       resolveReady?.(session.user.id);
       return cachedState;
     }
@@ -80,10 +95,16 @@ export function subscribeToIdentityChanges(
   callback: (state: IdentityState) => void
 ): () => void {
   const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-    (_event, session) => {
+    async (_event, session) => {
       if (session?.user?.id) {
         const isAnonymous = session.user.is_anonymous ?? false;
-        cachedState = { status: "ready", playerId: session.user.id, isAnonymous };
+        const displayName = await fetchDisplayName(session.user.id);
+        cachedState = {
+          status: "ready",
+          playerId: session.user.id,
+          isAnonymous,
+          displayName
+        };
         resolveReady?.(session.user.id);
       } else {
         bootstrapped = false;

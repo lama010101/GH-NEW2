@@ -10,6 +10,7 @@ import {
 export type UseIdentityReturn = {
   state: IdentityState;
   playerId: string | null;
+  displayName: string | null;
   isReady: boolean;
   isLoading: boolean;
   error: string | null;
@@ -30,9 +31,10 @@ export function useIdentity(): UseIdentityReturn {
   }, []);
 
   const playerId = state.status === "ready" ? state.playerId : null;
+  const displayName = state.status === "ready" ? state.displayName : null;
   const isReady = state.status === "ready";
   const isLoading = state.status === "loading";
   const error = state.status === "error" ? state.error : null;
 
-  return { state, playerId, isReady, isLoading, error };
+  return { state, playerId, displayName, isReady, isLoading, error };
 }

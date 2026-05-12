@@ -32,6 +32,7 @@ export class CompeteWebSocket {
   private maxReconnectAttempts = 20;
   private reconnectDelay = 1000;
   private manuallyDisconnected = false;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     gameId: string,
@@ -58,6 +59,7 @@ export class CompeteWebSocket {
       this.partyKitHost.includes("localhost") || this.partyKitHost.includes("127.0.0.1");
     const protocol = isLocalhost ? "ws" : "wss";
     const url = `${protocol}://${this.partyKitHost}/parties/lobby/${this.gameId}`;
+    console.log("[WS_CONNECT_URL]", { url });
     console.log("[CompeteWebSocket] Connecting to:", url);
     this.ws = new WebSocket(url);
 
@@ -66,6 +68,11 @@ export class CompeteWebSocket {
       this.reconnectAttempts = 0;
       this.manuallyDisconnected = false;
       this.callbacks.onConnect?.();
+      this.heartbeatInterval = setInterval(() => {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({ type: "PING" }));
+        }
+      }, 20000);
     };
 
     this.ws.onmessage = (event) => {
@@ -78,6 +85,7 @@ export class CompeteWebSocket {
     };
 
     this.ws.onclose = (event: CloseEvent) => {
+      this.clearHeartbeat();
       console.log("[CompeteWebSocket] Disconnected — code:", event.code, "reason:", event.reason || "(none)");
       this.callbacks.onDisconnect?.();
       this.attemptReconnect();
@@ -89,6 +97,7 @@ export class CompeteWebSocket {
   }
 
   disconnect(): void {
+    this.clearHeartbeat();
     this.manuallyDisconnected = true;
     if (this.ws) {
       this.ws.close();
@@ -131,6 +140,13 @@ export class CompeteWebSocket {
         }
         break;
       }
+    }
+  }
+
+  private clearHeartbeat(): void {
+    if (this.heartbeatInterval !== null) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
   }
 
