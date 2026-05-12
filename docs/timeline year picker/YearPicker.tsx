@@ -243,7 +243,6 @@ export const YearPicker = forwardRef<YearPickerHandle, YearPickerProps>(
 
           const nextStep = SCALE_STEP[nextScale];
           const prevStep = SCALE_STEP[prev];
-          const isZoomingOut = nextStep > prevStep;
           const pivotAligned = prevStep > 1 ? roundToStep(resolvePivot(), prevStep) : resolvePivot();
 
           const snapped = (() => {

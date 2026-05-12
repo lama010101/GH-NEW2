@@ -398,6 +398,13 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     ? (pressureAppliedEvent?.payload?.newRoundEndsAt as string) ?? (roundStartedEvent.payload?.phaseEndsAt as string) ?? null
     : null;
 
+  const roundCompleteEvent = gameState.events
+    .filter(e => e.eventType === "ROUND_COMPLETE" && e.roundIndex === currentRound)
+    .pop();
+  const resultPhaseStartedAt = roundCompleteEvent
+    ? (roundCompleteEvent.payload?.resultPhaseStartedAt as string) ?? null
+    : null;
+
   // STEP 5: Build snapshot from reconstructed state
   const snapshot: CompeteSessionSnapshot = {
     gameId: gameState.session.gameId,
@@ -429,6 +436,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     // These are initialized to empty/undefined here and populated by PartyKit server when broadcasting
     readyForNext: [],
     resultPhaseEndsAt: undefined,
+    resultPhaseStartedAt,
     roomCode: gameState.session.roomCode
   };
 
@@ -1308,10 +1316,19 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     const resultsClient = await getTransactionClient();
     try {
       await resultsClient.query("BEGIN");
-      await computeAndWriteRoundResults(gameId, roundIndex, resultsClient);
-      shouldVerifyRoundResults = true;
-      verifyLog("INSERT", "round_results", "OK", `${finalCommitCount} rows written for round=${roundIndex}`);
-      await appendEvent(resultsClient, gameId, "ROUND_COMPLETE", { commitCount: finalCommitCount }, roundIndex);
+      // Idempotency: another request may have already completed the round
+      const existing = await resultsClient.query(
+        `SELECT 1 FROM round_events
+         WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_COMPLETE'
+         LIMIT 1`,
+        [gameId, roundIndex]
+      );
+      if (existing.rows.length === 0) {
+        await computeAndWriteRoundResults(gameId, roundIndex, resultsClient);
+        shouldVerifyRoundResults = true;
+        verifyLog("INSERT", "round_results", "OK", `${finalCommitCount} rows written for round=${roundIndex}`);
+        await appendEvent(resultsClient, gameId, "ROUND_COMPLETE", { commitCount: finalCommitCount, resultPhaseStartedAt: new Date().toISOString() }, roundIndex);
+      }
       await resultsClient.query("COMMIT");
     } catch (error) {
       await resultsClient.query("ROLLBACK");
@@ -1468,7 +1485,7 @@ export async function completeRound(input: {
 
     if (existing.rows.length === 0) {
       const commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
-      await appendEvent(client, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
+      await appendEvent(client, gameId, "ROUND_COMPLETE", { commitCount, resultPhaseStartedAt: new Date().toISOString() }, roundIndex);
       await insertMissingCommits(client, gameId, roundIndex);
       await computeAndWriteRoundResults(gameId, roundIndex, client);
     }
