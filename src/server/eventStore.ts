@@ -22,6 +22,8 @@ export type EventType =
   | "ROUND_STARTED"
   | "GUESS_SUBMITTED"
   | "ROUND_COMPLETE"
+  | "RESULT_STARTED"
+  | "READY_NEXT"
   | "SESSION_COMPLETE"
   | "PRESSURE_APPLIED";
 
