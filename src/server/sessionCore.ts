@@ -1077,7 +1077,9 @@ export type SubmitGuessInput = {
 };
 
 function assertValidExecutionContext(input: { _executionContext?: string }): void {
-  if (input._executionContext !== "partykit" && input._executionContext !== "api") {
+  const validContexts = new Set(["partykit", "api"]);
+  if (!input._executionContext || !validContexts.has(input._executionContext)) {
+    console.error("[EXEC_CONTEXT_REJECT]", { received: input._executionContext });
     throw new Error("Direct mutation not allowed - use PartyKit WebSocket or API routes for state mutations");
   }
 }
