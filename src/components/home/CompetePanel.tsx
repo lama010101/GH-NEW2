@@ -1,9 +1,10 @@
 import { useState } from 'react'
 
-export function CompetePanel({ onLobby, playerId, displayName }: {
+export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: {
   onLobby: (gameId: string) => void
   playerId: string
   displayName: string
+  onRequireAuth: () => void
 }) {
   const [cmode, setCmode] = useState<'create'|'join'>('create')
   const [code, setCode] = useState('')
@@ -11,7 +12,7 @@ export function CompetePanel({ onLobby, playerId, displayName }: {
   const [error, setError] = useState<string|null>(null)
 
   const handleCreate = async () => {
-    if (!playerId) { setError('Please sign in first'); return }
+    if (!playerId) { onRequireAuth(); return }
     setLoading(true)
     setError(null)
     try {
@@ -39,6 +40,7 @@ export function CompetePanel({ onLobby, playerId, displayName }: {
   }
 
   const handleJoin = async () => {
+    if (!playerId) { onRequireAuth(); return }
     if (!code) return
     setLoading(true)
     setError(null)
