@@ -46,6 +46,19 @@
 
 import { TransitionCause } from "../src/core/transitionCause";
 
+interface Room {
+  id: string;
+  env: Record<string, unknown>;
+  broadcast: (msg: string | ArrayBuffer | ArrayBufferView, without?: string[]) => void;
+  getConnection(id: string): Connection | undefined;
+  getConnections(tag?: string): Iterable<Connection>;
+}
+
+interface Connection {
+  id: string;
+  send: (msg: string | ArrayBuffer | ArrayBufferView) => void;
+}
+
 // Runtime state shape — mirrors CompeteSessionSnapshot for type safety.
 type RuntimeState = {
   gameId: string;
@@ -79,7 +92,8 @@ export type ServerMessage =
   | { type: "SET_TIMER"; playerId: string; roundTimerSec: number }
   | { type: "SET_YEAR_RANGE"; playerId: string; yearMin: number; yearMax: number }
   | { type: "SET_RESULTS_TIMER"; playerId: string; resultsAutoAdvanceSec: number }
-  | { type: "KICK_PLAYER"; playerId: string; targetPlayerId: string };
+  | { type: "KICK_PLAYER"; playerId: string; targetPlayerId: string }
+  | { type: "PING" };
 
 // Messages sent TO clients
 export type ClientMessage =
@@ -88,17 +102,6 @@ export type ClientMessage =
   | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
   | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number };
 
-interface Room {
-  id: string;
-  broadcast: (message: string) => void;
-  env: Record<string, string | undefined>;
-  connections: Iterable<Connection>;
-}
-
-interface Connection {
-  id: string;
-  send: (message: string) => void;
-}
 
 
 export default class GameServer {
@@ -525,7 +528,7 @@ export default class GameServer {
       socketCount: this.connections.size,
     });
 
-    for (const connection of this.room.connections) {
+    for (const connection of this.room.getConnections()) {
       const socketPlayerId = this.connections.get(connection.id);
       const perSocketSnapshot = { ...snapshotWithReadyState as Record<string, unknown>, viewerPlayerId: socketPlayerId ?? null };
       connection.send(JSON.stringify({
@@ -1149,6 +1152,10 @@ export default class GameServer {
           this.applySnapshotAndBroadcast(snapshot);
           break;
         }
+
+        case "PING":
+          // Keepalive — no response needed
+          break;
 
         default: {
           this.sendError(sender, `Unhandled message type: ${(data as { type: string }).type}`);

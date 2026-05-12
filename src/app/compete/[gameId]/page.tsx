@@ -77,7 +77,7 @@ export default function CompeteGamePage() {
   });
   const badgePopupShownForRoundRef = useRef<number>(-1);
 
-  const { playerId, isLoading: identityLoading, error: identityError } = useIdentity();
+  const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity();
   // Auto-submit on timer expiry using current input values.
   // Refs are necessary because useEffect closures cannot safely read state that changes frequently.
   const guessYearRef = useRef<number | null>(null);
@@ -151,6 +151,7 @@ export default function CompeteGamePage() {
   } = useCompeteSocket({
     gameId,
     playerId,
+    displayName: displayName ?? "",
     snapshot,
     roundResults,
     onStateUpdate: (newSnapshot) => {
@@ -165,6 +166,9 @@ export default function CompeteGamePage() {
           playerId: p.playerId,
           displayName: p.displayName,
         })),
+      });
+      console.log("[CLIENT_WS_MESSAGE_APPLIED]", {
+        totalPlayers: newSnapshot.players.length,
       });
       setWsDisconnected(false);
       setSnapshot(newSnapshot);
