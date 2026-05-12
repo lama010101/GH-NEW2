@@ -838,11 +838,12 @@ export default class GameServer {
 
               // Fire clamp only on exactly the first submission (submittedCount === 1)
               if (submittedCount === 1) {
+                const CLAMP_SEC = 30;
                 const remainingMs = new Date(fullResponse.roundEndsAt).getTime() - Date.now();
-                const clampTo = Math.min(Math.ceil(remainingMs / 1000), 30);
 
-                if (clampTo < remainingMs / 1000) {
-                  const newRoundEndsAt = new Date(Date.now() + clampTo * 1000);
+                if (remainingMs > CLAMP_SEC * 1000) {
+                  const newRoundEndsAt = new Date(Date.now() + CLAMP_SEC * 1000);
+                  const clampTo = CLAMP_SEC;
                   console.log("[CLAMP_BEFORE]", {
                     gameId: this.room.id,
                     roundIndex: fullResponse.currentRoundIndex,
@@ -867,7 +868,8 @@ export default class GameServer {
                   if (!pressureRes.ok) {
                     const text = await pressureRes.text();
                     console.error(`[PartyKit] PRESSURE_APPLIED persist failed ${pressureRes.status}: ${text}`);
-                    break;
+                    // Do NOT break — fall through to applySnapshotAndBroadcast
+                    // so clients still receive the updated snapshot with hasSubmitted=true
                   }
                   console.log("[CLAMP_AFTER_API]", {
                     newRoundEndsAt: newRoundEndsAt.toISOString(),
@@ -885,7 +887,9 @@ export default class GameServer {
                     newPhaseEndsAt: newRoundEndsAt.toISOString(),
                     clampedToSec: clampTo
                   };
-                  this.room.broadcast(JSON.stringify(timerClampedMsg));
+                  for (const connection of this.room.getConnections()) {
+                    connection.send(JSON.stringify(timerClampedMsg));
+                  }
                   console.log(`[PartyKit] Timer clamped from ${Math.round(remainingMs / 1000)}s to ${clampTo}s`);
                 }
               }
@@ -904,7 +908,9 @@ export default class GameServer {
                   playerId: data.playerId,
                   playerName: submittingPlayer.displayName
                 };
-                this.room.broadcast(JSON.stringify(playerSubmittedMsg));
+                for (const connection of this.room.getConnections()) {
+                  connection.send(JSON.stringify(playerSubmittedMsg));
+                }
               }
             }
           } finally {

@@ -168,7 +168,7 @@ export const YearPicker = forwardRef<YearPickerHandle, YearPickerProps>(
       onChangeRef.current = onChange;
     }, [onChange]);
 
-    const timelineVisible = value >= min && value <= max;
+    const timelineVisible = typeof min === 'number' && typeof max === 'number' && min < max;
     const resolvedSelectedTick = useMemo(
       () => normalizeZeroYear(alignCenterToScale(value, scale)),
       [scale, value],
