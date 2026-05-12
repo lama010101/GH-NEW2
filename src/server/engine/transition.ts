@@ -157,8 +157,7 @@ export function transition(
       return handleAdvanceRound(state, intent.context);
     default:
       // Exhaustive check; this line is unreachable for valid Intent types.
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _exhaustive: never = intent;
-      throw new Error(`Unknown intent type: ${JSON.stringify(intent)}`);
+      const _exhaustiveCheck: never = intent;
+      return _exhaustiveCheck;
   }
 }
