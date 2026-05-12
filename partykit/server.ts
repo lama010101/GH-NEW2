@@ -55,6 +55,9 @@ type RuntimeState = {
   roundEndsAt: string | null;
   roundTimerSec: number;
   roundResultsForClient?: unknown[];
+  events?: Array<{ eventType: string; payload?: Record<string, unknown> }>;
+  readyForNext?: string[];
+  resultPhaseEndsAt?: number;
 };
 
 function isRuntimeState(value: unknown): value is RuntimeState {
@@ -188,10 +191,47 @@ export default class GameServer {
     this.snapshotLoaded = true;
     // Restore resultPhaseStartAt if session is already in ROUND_COMPLETE on cold load
     if (isRuntimeState(this.snapshot) && this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt === null) {
-      this.resultPhaseStartAt = Date.now();
-      this.readyForNext.clear();
-      console.log("[PartyKit] Cold load: restored resultPhaseStartAt for ROUND_COMPLETE session");
+      // Rebuild from RESULT_STARTED event payload
+      const resultStartedEvent = this.snapshot.events
+        ?.slice()
+        .reverse()
+        .find((e: { eventType: string }) => e.eventType === "RESULT_STARTED");
+      if (resultStartedEvent?.payload?.resultPhaseEndsAt) {
+        this.resultPhaseStartAt = new Date(resultStartedEvent.payload.resultPhaseEndsAt as string).getTime() - 30000;
+      } else {
+        this.resultPhaseStartAt = Date.now();
+      }
+      // Rebuild readyForNext from READY_NEXT events
+      const readyNextEvents = this.snapshot.events
+        ?.filter((e: { eventType: string }) => e.eventType === "READY_NEXT");
+      this.readyForNext = new Set(
+        (readyNextEvents ?? [])
+          .map((e: { payload?: Record<string, unknown> }) => e.payload?.playerId as string)
+          .filter(Boolean)
+      );
+      console.log("[PartyKit] Cold load: restored resultPhaseStartAt and readyForNext from DB events for ROUND_COMPLETE session");
     }
+
+    // If a PRESSURE_APPLIED event exists for the current round,
+    // use its newRoundEndsAt instead of the original ROUND_STARTED value
+    if (isRuntimeState(this.snapshot) &&
+        this.snapshot.status === "ROUND_ACTIVE" &&
+        this.snapshot.events) {
+      const currentRound = this.snapshot.currentRoundIndex;
+      const pressureEvent = this.snapshot.events
+        .slice()
+        .reverse()
+        .find((e: { eventType: string; payload?: Record<string, unknown> }) =>
+          e.eventType === "PRESSURE_APPLIED" &&
+          (e as { roundIndex?: number }).roundIndex === currentRound
+        );
+      if (pressureEvent?.payload?.newRoundEndsAt) {
+        (this.snapshot as RuntimeState).roundEndsAt =
+          pressureEvent.payload.newRoundEndsAt as string;
+        console.log("[PartyKit] Cold load: restored clamped roundEndsAt from PRESSURE_APPLIED event");
+      }
+    }
+
     this.scheduleRoundTimer();
   }
 
@@ -740,6 +780,20 @@ export default class GameServer {
                   };
                   this.room.broadcast(JSON.stringify(timerClampedMsg));
                   console.log(`[PartyKit] Timer clamped from ${Math.round(remainingMs / 1000)}s to ${clampTo}s`);
+
+                  fetch(`${this.getNextJsBaseUrl()}/api/compete/${this.room.id}/pressure`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+                    },
+                    body: JSON.stringify({
+                      roundIndex: data.roundIndex,
+                      newRoundEndsAt: newRoundEndsAt.toISOString(),
+                      clampedToSec: clampTo,
+                      _executionContext: "partykit"
+                    })
+                  }).catch(err => console.error("[PartyKit] PRESSURE_APPLIED persist failed:", err));
                 }
               }
             }
@@ -832,6 +886,19 @@ export default class GameServer {
           // Add playerId to readyForNext set
           this.readyForNext.add(data.playerId);
           console.log(`[PartyKit] READY_NEXT: player ${data.playerId.slice(0, 8)} ready for next round, total ready: ${this.readyForNext.size}/${this.snapshot.players.filter(p => p.leftAt === null).length}`);
+          // Persist READY_NEXT event to DB (fire-and-forget)
+          fetch(`${this.getNextJsBaseUrl()}/api/compete/${gameId}/ready-next`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              roundIndex: this.snapshot.currentRoundIndex,
+              _executionContext: "partykit"
+            })
+          }).catch(err => console.error("[PartyKit] READY_NEXT persist failed:", err));
           // Broadcast STATE_UPDATE with updated readyForNext array
           this.broadcastStateUpdate();
           // If all active players are ready, cancel result timer and advance

@@ -1082,6 +1082,13 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       shouldVerifyRoundResults = true;
       verifyLog("INSERT", "round_results", "OK", `${commitCount} rows written for round=${roundIndex}`);
       await appendEvent(resultsClient, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
+      await appendEvent(
+        resultsClient,
+        gameId,
+        "RESULT_STARTED",
+        { resultPhaseEndsAt: new Date(Date.now() + RESULTS_COUNTDOWN_SECONDS * 1000).toISOString() },
+        roundIndex
+      );
       await resultsClient.query("COMMIT");
     } catch (error) {
       await resultsClient.query("ROLLBACK");
@@ -1500,6 +1507,62 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
   if (!snapshot) throw new Error("Session not found");
 
   return snapshot;
+}
+
+export async function recordReadyNext(input: {
+  gameId: string;
+  playerId: string;
+  roundIndex: number;
+  _executionContext?: string;
+}): Promise<void> {
+  assertValidExecutionContext(input);
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+    await appendEvent(
+      client,
+      input.gameId,
+      "READY_NEXT",
+      { playerId: input.playerId },
+      input.roundIndex
+    );
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function recordPressureApplied(input: {
+  gameId: string;
+  roundIndex: number;
+  newRoundEndsAt: string;
+  clampedToSec: number;
+  _executionContext?: string;
+}): Promise<void> {
+  assertValidExecutionContext(input);
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+    await appendEvent(
+      client,
+      input.gameId,
+      "PRESSURE_APPLIED",
+      {
+        newRoundEndsAt: input.newRoundEndsAt,
+        clampedToSec: input.clampedToSec
+      },
+      input.roundIndex
+    );
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 export async function getRoundResults(
