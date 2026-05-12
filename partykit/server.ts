@@ -59,6 +59,7 @@ type RuntimeState = {
   events?: Array<{ id: number; roundIndex: number | null; eventType: string; payload?: Record<string, unknown>; createdAt?: string }>;
   readyForNext?: string[];
   resultPhaseEndsAt?: number;
+  resultPhaseStartedAt?: string | null;
 };
 
 function isRuntimeState(value: unknown): value is RuntimeState {
@@ -153,9 +154,6 @@ export default class GameServer {
   // Tracks which players have clicked "Next Round" during ROUND_COMPLETE phase.
   private readyForNext: Set<string> = new Set();
 
-  // Timestamp when RESULT phase started (epoch ms). Used to compute resultPhaseEndsAt.
-  private resultPhaseStartAt: number | null = null;
-
   // Pending results to be broadcast with next STATE_UPDATE.
   // Set when API returns results (e.g., /guess after round complete).
   // Cleared after broadcast to avoid stale results in future updates.
@@ -204,37 +202,19 @@ export default class GameServer {
     this.snapshot = snapshot;
     console.timeEnd("[PERF] loadFromDB:apiFetch");
     this.snapshotLoaded = true;
-    // Restore resultPhaseStartAt if session is already in ROUND_COMPLETE on cold load
-    if (isRuntimeState(this.snapshot) && this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt === null) {
-      // Rebuild from RESULT_STARTED event payload
-      const resultStartedEvent = this.snapshot.events
-        ?.slice()
-        .reverse()
-        .find((e: { eventType: string }) => e.eventType === "RESULT_STARTED");
-      if (resultStartedEvent?.payload?.resultPhaseEndsAt) {
-        const autoAdvanceMs = ((this.snapshot as RuntimeState).resultsAutoAdvanceSec ?? 10) * 1000;
-        this.resultPhaseStartAt = new Date(resultStartedEvent.payload.resultPhaseEndsAt as string).getTime() - autoAdvanceMs;
-      } else {
-        const roundCompleteEvent = this.snapshot.events
-          ?.slice()
-          .reverse()
-          .find((e) =>
-            e.eventType === "ROUND_COMPLETE" &&
-            e.roundIndex === (this.snapshot as RuntimeState).currentRoundIndex
-          );
-        this.resultPhaseStartAt = roundCompleteEvent?.createdAt
-          ? new Date(roundCompleteEvent.createdAt).getTime()
-          : Date.now();
-      }
-      // Rebuild readyForNext from READY_NEXT events
+    // Rebuild readyForNext from READY_NEXT events for the current round only
+    if (isRuntimeState(this.snapshot) && this.snapshot.status === "ROUND_COMPLETE") {
+      const currentRound = this.snapshot.currentRoundIndex;
       const readyNextEvents = this.snapshot.events
-        ?.filter((e: { eventType: string }) => e.eventType === "READY_NEXT");
+        ?.filter((e: { eventType: string; roundIndex?: number | null }) =>
+          e.eventType === "READY_NEXT" && e.roundIndex === currentRound
+        );
       this.readyForNext = new Set(
         (readyNextEvents ?? [])
           .map((e: { payload?: Record<string, unknown> }) => e.payload?.playerId as string)
           .filter(Boolean)
       );
-      console.log("[PartyKit] Cold load: restored resultPhaseStartAt and readyForNext from DB events for ROUND_COMPLETE session");
+      console.log("[PartyKit] Cold load: restored readyForNext from DB events for ROUND_COMPLETE session");
     }
 
     // If a PRESSURE_APPLIED event exists for the current round,
@@ -285,22 +265,11 @@ export default class GameServer {
         snapshot.roundEndsAt = this.snapshot.roundEndsAt;
       }
       console.log("[PartyKit] Applying snapshot, players:", snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
-      // Set resultPhaseStartAt whenever snapshot is ROUND_COMPLETE and not yet set.
-      // Using a presence check (not a transition check) so this works on cold load,
-      // DO restart, and any call site that returns a ROUND_COMPLETE snapshot.
-      if (isRuntimeState(snapshot) && snapshot.status === "ROUND_COMPLETE") {
-        if (this.resultPhaseStartAt === null) {
-          this.resultPhaseStartAt = Date.now();
-          this.readyForNext.clear();
-          console.log("[PartyKit] Result phase active, resultPhaseStartAt initialized");
-        }
-      }
       // Reset readyForNext when transitioning from ROUND_COMPLETE to ROUND_ACTIVE (new round started)
       if (isRuntimeState(this.snapshot) &&
           this.snapshot.status === "ROUND_COMPLETE" &&
           snapshot.status === "ROUND_ACTIVE") {
         this.readyForNext.clear();
-        this.resultPhaseStartAt = null;
         console.log("[PartyKit] New round started, readyForNext cleared");
       }
     }
@@ -331,9 +300,9 @@ export default class GameServer {
 
     if (!this.snapshot || !isRuntimeState(this.snapshot)) return;
 
-    if (this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt !== null) {
+    if (this.snapshot.status === "ROUND_COMPLETE" && this.snapshot.resultPhaseStartedAt) {
       const autoAdvanceMs = (this.snapshot.resultsAutoAdvanceSec ?? 10) * 1000;
-      const delay = this.resultPhaseStartAt + autoAdvanceMs - Date.now();
+      const delay = new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs - Date.now();
       const expectedRoundIndex = this.snapshot.currentRoundIndex;
       if (delay <= 0) {
         this.triggerResultAutoAdvance(expectedRoundIndex);
@@ -488,8 +457,8 @@ export default class GameServer {
     if (isRuntimeState(this.snapshot)) {
       console.log("[PartyKit] Broadcasting to all, players:", this.snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
       const autoAdvanceMs = (this.snapshot.resultsAutoAdvanceSec ?? 10) * 1000;
-      resultPhaseEndsAt = this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt !== null
-        ? this.resultPhaseStartAt + autoAdvanceMs
+      resultPhaseEndsAt = this.snapshot.status === "ROUND_COMPLETE" && this.snapshot.resultPhaseStartedAt
+        ? new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs
         : undefined;
       snapshotWithReadyState = {
         ...this.snapshot,
@@ -498,16 +467,16 @@ export default class GameServer {
       };
     }
     // Add readyForNext and resultPhaseEndsAt to snapshot before broadcasting
-    // These are in-memory PartyKit state, not persisted to DB
+    // readyForNext is in-memory PartyKit state; resultPhaseEndsAt is derived from DB payload
 
     // Regression guard: ROUND_COMPLETE snapshots must always carry resultPhaseEndsAt.
-    // If this fires, resultPhaseStartAt was not set before broadcastStateUpdate was called.
+    // If this fires, the snapshot builder did not include resultPhaseStartedAt from DB.
     if (isRuntimeState(this.snapshot) &&
         this.snapshot.status === "ROUND_COMPLETE" &&
         typeof resultPhaseEndsAt !== "number") {
       console.error(
         "[PartyKit] INVARIANT VIOLATION: broadcasting ROUND_COMPLETE without resultPhaseEndsAt. " +
-        "resultPhaseStartAt=" + this.resultPhaseStartAt + " This is a bug — timer and Next button will not work."
+        "resultPhaseStartedAt=" + this.snapshot.resultPhaseStartedAt + " This is a bug — timer and Next button will not work."
       );
     }
 

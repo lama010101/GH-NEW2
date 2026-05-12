@@ -190,6 +190,7 @@ export type CompeteSessionSnapshot = {
   events?: Array<{ id: number; roundIndex: number | null; eventType: string; payload: Record<string, unknown>; createdAt: string }>;
   readyForNext: string[]; // array of playerIds who clicked "Next Round" in RESULT phase
   resultPhaseEndsAt?: number; // epoch ms — when result phase auto-advances
+  resultPhaseStartedAt?: string | null; // ISO string — when result phase started, from ROUND_COMPLETE payload
   roomCode: string;
 };
 
