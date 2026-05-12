@@ -30,8 +30,10 @@ export type RoundEvent = {
 export const VALID_PHASE_TRANSITIONS: Record<string, Set<string>> = {
   "SESSION_CREATED": new Set(["ROUND_STARTED", "SESSION_COMPLETE"]),
   "ROUND_STARTED": new Set(["GUESS_SUBMITTED", "ROUND_COMPLETE"]),
-  "GUESS_SUBMITTED": new Set(["GUESS_SUBMITTED", "ROUND_COMPLETE"]),
-  "ROUND_COMPLETE": new Set(["ROUND_STARTED", "SESSION_COMPLETE"]),
+  "GUESS_SUBMITTED": new Set(["GUESS_SUBMITTED", "ROUND_COMPLETE", "PRESSURE_APPLIED"]),
+  "PRESSURE_APPLIED": new Set(["GUESS_SUBMITTED", "ROUND_COMPLETE", "PRESSURE_APPLIED"]),
+  "ROUND_COMPLETE": new Set(["ROUND_STARTED", "SESSION_COMPLETE", "READY_NEXT"]),
+  "READY_NEXT": new Set(["READY_NEXT", "ROUND_STARTED", "SESSION_COMPLETE"]),
   "SESSION_COMPLETE": new Set([])
 };
 
@@ -120,7 +122,8 @@ export function deriveStateFromEventStream(inputEvents: RoundEvent[]): {
         "ROUND_STARTED",
         "GUESS_SUBMITTED",
         "ROUND_COMPLETE",
-        "PRESSURE_APPLIED"
+        "PRESSURE_APPLIED",
+        "READY_NEXT"
       ];
       if (gameplayEvents.includes(event.eventType)) {
         throw new Error(

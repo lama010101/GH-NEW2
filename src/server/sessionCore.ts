@@ -15,7 +15,11 @@ import {
   SessionConfig,
   SessionPlayer,
   SessionStatus,
+  KickCompetePlayerInput,
   SetCompeteReadyInput,
+  SetCompeteResultsTimerInput,
+  SetCompeteTimerInput,
+  SetCompeteYearRangeInput,
   StartCompeteSessionInput
 } from "@/core/types";
 import { MAX_ROUNDS, TIMER_MAX_SEC, TIMER_MIN_SEC } from "@/core/types";
@@ -73,6 +77,7 @@ export type SessionRow = {
   total_rounds: number;
   year_min: number;
   year_max: number;
+  results_auto_advance_sec: number;
   session_deadline: Date | null;
   created_at: Date;
   seed: bigint;
@@ -231,6 +236,7 @@ export function mapSessionRowToConfig(row: SessionRow): SessionConfig {
     totalRounds: row.total_rounds,
     yearMin: row.year_min,
     yearMax: row.year_max,
+    resultsAutoAdvanceSec: row.results_auto_advance_sec,
     hostPlayerId: null,
     sessionDeadline: toIsoString(row.session_deadline),
     startedAt: null,
@@ -276,6 +282,7 @@ export async function loadSessionRow(gameId: string, executor: DbExecutor = dbPo
         total_rounds,
         year_min,
         year_max,
+        results_auto_advance_sec,
         session_deadline,
         created_at,
         seed,
@@ -326,8 +333,11 @@ function eventTypeToSessionStatus(eventType: string | null): SessionStatus {
       return "LOBBY";
     case "ROUND_STARTED":
     case "GUESS_SUBMITTED":
+    case "PRESSURE_APPLIED":
       return "ROUND_ACTIVE";
     case "ROUND_COMPLETE":
+    case "READY_NEXT":
+    case "RESULT_STARTED":
       return "ROUND_COMPLETE";
     case "SESSION_COMPLETE":
       return "SESSION_COMPLETE";
@@ -376,13 +386,16 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   const roundStartedEvent = gameState.events
     .filter(e => e.eventType === "ROUND_STARTED" && e.roundIndex === currentRound)
     .pop();
+  const pressureAppliedEvent = gameState.events
+    .filter(e => e.eventType === "PRESSURE_APPLIED" && e.roundIndex === currentRound)
+    .pop();
 
   const roundStartsAt = roundStartedEvent
     ? (roundStartedEvent.payload?.startedAt as string) ?? null
     : null;
 
   const roundEndsAt = roundStartedEvent
-    ? (roundStartedEvent.payload?.phaseEndsAt as string) ?? null
+    ? (pressureAppliedEvent?.payload?.newRoundEndsAt as string) ?? (roundStartedEvent.payload?.phaseEndsAt as string) ?? null
     : null;
 
   // STEP 5: Build snapshot from reconstructed state
@@ -395,6 +408,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
       totalRounds: gameState.session.totalRounds,
       yearMin: gameState.session.yearMin,
       yearMax: gameState.session.yearMax,
+      resultsAutoAdvanceSec: gameState.session.resultsAutoAdvanceSec,
       hostPlayerId: hostPlayer ? hostPlayer.playerId : null,
       sessionDeadline: gameState.session.sessionDeadline,
       startedAt: null,
@@ -410,6 +424,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     viewerPlayerId: viewerPlayerId ?? null,
     timeRemaining: null,
     rounds: gameState.roundEventContent,
+    events: gameState.events,
     // readyForNext and resultPhaseEndsAt are in-memory PartyKit state
     // These are initialized to empty/undefined here and populated by PartyKit server when broadcasting
     readyForNext: [],
@@ -453,12 +468,24 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   return snapshot;
 }
 
+const RESULTS_AUTO_ADVANCE_DEFAULT = 10;
+const RESULTS_AUTO_ADVANCE_MIN = 0;
+const RESULTS_AUTO_ADVANCE_MAX = 300;
+
+function clampResultsAutoAdvanceSec(value: number | undefined): number {
+  if (value === undefined || value === null) return RESULTS_AUTO_ADVANCE_DEFAULT;
+  const num = Math.round(Number(value));
+  if (!Number.isFinite(num)) return RESULTS_AUTO_ADVANCE_DEFAULT;
+  return Math.max(RESULTS_AUTO_ADVANCE_MIN, Math.min(RESULTS_AUTO_ADVANCE_MAX, num));
+}
+
 export async function createCompeteSession(input: CreateCompeteSessionInput): Promise<CompeteSessionSnapshot> {
   const mode = input.mode ?? "sync";
   const roundTimerSec = clampRoundTimer(input.roundTimerSec);
   const totalRounds = normalizeTotalRounds(input.totalRounds);
   const yearMin = normalizeYearBoundary(input.yearMin, -100, "yearMin");
   const yearMax = normalizeYearBoundary(input.yearMax, 2026, "yearMax");
+  const resultsAutoAdvanceSec = clampResultsAutoAdvanceSec(input.resultsAutoAdvanceSec);
 
   if (yearMin > yearMax) {
     throw new Error("yearMin must be less than or equal to yearMax");
@@ -494,9 +521,9 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
       try {
         verifyLog("INSERT", "sessions", "OK", `game_id=${gameId} — executing`);
         await client.query(
-          `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, seed, room_code)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, seed, roomCode]
+          `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, results_auto_advance_sec, seed, room_code)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, resultsAutoAdvanceSec, seed, roomCode]
         );
         roomCodeInsertSuccess = true;
       } catch (err: unknown) {
@@ -737,6 +764,204 @@ export async function setCompetePlayerReady(input: SetCompeteReadyInput): Promis
   return snapshot;
 }
 
+export async function setCompeteTimer(input: SetCompeteTimerInput): Promise<CompeteSessionSnapshot> {
+  const gameId = input.gameId.trim();
+  const playerId = input.playerId.trim();
+
+  if (gameId.length === 0) {
+    throw new Error("gameId is required");
+  }
+
+  if (playerId.length === 0) {
+    throw new Error("playerId is required");
+  }
+
+  const clamped = clampRoundTimer(input.roundTimerSec);
+
+  // Verify host authority
+  const hostCheck = await dbPool.query<{ player_id: string }>(
+    `SELECT player_id FROM session_players
+     WHERE game_id = $1 AND player_id = $2 AND is_host = true`,
+    [gameId, playerId]
+  );
+
+  if (hostCheck.rows.length === 0) {
+    throw new Error("Only the host can change the timer");
+  }
+
+  await dbPool.query(
+    `UPDATE sessions SET round_timer_sec = $2 WHERE game_id = $1`,
+    [gameId, clamped]
+  );
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    throw new Error("Session not found");
+  }
+
+  return snapshot;
+}
+
+export async function setCompeteYearRange(input: SetCompeteYearRangeInput): Promise<CompeteSessionSnapshot> {
+  const gameId = input.gameId.trim();
+  const playerId = input.playerId.trim();
+
+  if (gameId.length === 0) {
+    throw new Error("gameId is required");
+  }
+
+  if (playerId.length === 0) {
+    throw new Error("playerId is required");
+  }
+
+  const yearMin = Math.round(input.yearMin);
+  const yearMax = Math.round(input.yearMax);
+
+  if (!Number.isInteger(yearMin) || !Number.isInteger(yearMax)) {
+    throw new Error("yearMin and yearMax must be integers");
+  }
+
+  if (yearMin > yearMax) {
+    throw new Error("yearMin must be less than or equal to yearMax");
+  }
+
+  // Verify host authority
+  const hostCheck = await dbPool.query<{ player_id: string }>(
+    `SELECT player_id FROM session_players
+     WHERE game_id = $1 AND player_id = $2 AND is_host = true`,
+    [gameId, playerId]
+  );
+
+  if (hostCheck.rows.length === 0) {
+    throw new Error("Only the host can change the year range");
+  }
+
+  await dbPool.query(
+    `UPDATE sessions SET year_min = $2, year_max = $3 WHERE game_id = $1`,
+    [gameId, yearMin, yearMax]
+  );
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    throw new Error("Session not found");
+  }
+
+  return snapshot;
+}
+
+export async function setCompeteResultsTimer(input: SetCompeteResultsTimerInput): Promise<CompeteSessionSnapshot> {
+  const gameId = input.gameId.trim();
+  const playerId = input.playerId.trim();
+
+  if (gameId.length === 0) {
+    throw new Error("gameId is required");
+  }
+
+  if (playerId.length === 0) {
+    throw new Error("playerId is required");
+  }
+
+  const clamped = clampResultsAutoAdvanceSec(input.resultsAutoAdvanceSec);
+
+  // Verify host authority
+  const hostCheck = await dbPool.query<{ player_id: string }>(
+    `SELECT player_id FROM session_players
+     WHERE game_id = $1 AND player_id = $2 AND is_host = true`,
+    [gameId, playerId]
+  );
+
+  if (hostCheck.rows.length === 0) {
+    throw new Error("Only the host can change the results auto-advance timer");
+  }
+
+  await dbPool.query(
+    `UPDATE sessions SET results_auto_advance_sec = $2 WHERE game_id = $1`,
+    [gameId, clamped]
+  );
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    throw new Error("Session not found");
+  }
+
+  return snapshot;
+}
+
+export async function kickCompetePlayer(input: KickCompetePlayerInput): Promise<CompeteSessionSnapshot> {
+  const gameId = input.gameId.trim();
+  const playerId = input.playerId.trim();
+  const targetPlayerId = input.targetPlayerId.trim();
+
+  if (gameId.length === 0) {
+    throw new Error("gameId is required");
+  }
+
+  if (playerId.length === 0) {
+    throw new Error("playerId is required");
+  }
+
+  if (targetPlayerId.length === 0) {
+    throw new Error("targetPlayerId is required");
+  }
+
+  if (playerId === targetPlayerId) {
+    throw new Error("Cannot kick yourself");
+  }
+
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+
+    // Verify host authority
+    const hostCheck = await client.query<{ player_id: string }>(
+      `SELECT player_id FROM session_players
+       WHERE game_id = $1 AND player_id = $2 AND is_host = true AND left_at IS NULL`,
+      [gameId, playerId]
+    );
+
+    if (hostCheck.rows.length === 0) {
+      throw new Error("Only the host can kick players");
+    }
+
+    // Verify target is an active player and not the host
+    const targetCheck = await client.query<{ player_id: string; is_host: boolean }>(
+      `SELECT player_id, is_host FROM session_players
+       WHERE game_id = $1 AND player_id = $2 AND left_at IS NULL`,
+      [gameId, targetPlayerId]
+    );
+
+    if (targetCheck.rows.length === 0) {
+      throw new Error("Target player not found or already left");
+    }
+
+    if (targetCheck.rows[0].is_host) {
+      throw new Error("Cannot kick the host");
+    }
+
+    // Kick: set left_at
+    await client.query(
+      `UPDATE session_players
+       SET left_at = now()
+       WHERE game_id = $1 AND player_id = $2`,
+      [gameId, targetPlayerId]
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    throw new Error("Session not found");
+  }
+
+  return snapshot;
+}
+
 export async function startCompeteSession(input: StartCompeteSessionInput): Promise<CompeteSessionSnapshot> {
   const gameId = input.gameId.trim();
   const playerId = input.playerId.trim();
@@ -871,7 +1096,6 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   const commitToken = generateVerificationToken();
 
   // Variables needed after transaction completes
-  let allActiveSubmitted = false;
   let activePlayers: Awaited<ReturnType<typeof loadSessionPlayerRows>> = [];
   let commitCount = 0;
 
@@ -1037,7 +1261,6 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       // no-op: all players disconnected
     } else {
       commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
-      allActiveSubmitted = commitCount >= activePlayers.length;
     }
 
     // Transition-engine validation: compare existing logic with centralized engine
@@ -1073,22 +1296,22 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   // ═════════════════════════════════════════════════════════════════════════════
   // ROUND COMPLETION (outside main transaction for performance)
   // ═════════════════════════════════════════════════════════════════════════════
-  if (allActiveSubmitted) {
-    verifyLog("INSERT", "round_results", "OK", `round=${roundIndex} all ${activePlayers.length} active players submitted — computing`);
+  // Re-check commit count after commit to close race where concurrent
+  // submissions each saw < total commits inside their transaction.
+  const finalCommitCount = await loadRoundCommitCount(gameId, roundIndex, dbPool);
+  const finalPlayerRows = await loadSessionPlayerRows(gameId, dbPool);
+  const finalActivePlayers = finalPlayerRows.filter((p) => p.left_at === null);
+  const finalAllActiveSubmitted = finalActivePlayers.length > 0 && finalCommitCount >= finalActivePlayers.length;
+
+  if (finalAllActiveSubmitted) {
+    verifyLog("INSERT", "round_results", "OK", `round=${roundIndex} all ${finalActivePlayers.length} active players submitted — computing`);
     const resultsClient = await getTransactionClient();
     try {
       await resultsClient.query("BEGIN");
       await computeAndWriteRoundResults(gameId, roundIndex, resultsClient);
       shouldVerifyRoundResults = true;
-      verifyLog("INSERT", "round_results", "OK", `${commitCount} rows written for round=${roundIndex}`);
-      await appendEvent(resultsClient, gameId, "ROUND_COMPLETE", { commitCount }, roundIndex);
-      await appendEvent(
-        resultsClient,
-        gameId,
-        "RESULT_STARTED",
-        { resultPhaseEndsAt: new Date(Date.now() + RESULTS_COUNTDOWN_SECONDS * 1000).toISOString() },
-        roundIndex
-      );
+      verifyLog("INSERT", "round_results", "OK", `${finalCommitCount} rows written for round=${roundIndex}`);
+      await appendEvent(resultsClient, gameId, "ROUND_COMPLETE", { commitCount: finalCommitCount }, roundIndex);
       await resultsClient.query("COMMIT");
     } catch (error) {
       await resultsClient.query("ROLLBACK");
@@ -1414,7 +1637,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
       throw new Error("SESSION_COMPLETE");
     }
 
-    if (currentPhase !== "ROUND_COMPLETE") {
+    if (currentPhase !== "ROUND_COMPLETE" && currentPhase !== "READY_NEXT") {
       await client.query("ROLLBACK");
       throw new Error("INVALID_ADVANCE_SOURCE_PHASE");
     }

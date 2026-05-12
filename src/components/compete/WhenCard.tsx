@@ -223,7 +223,6 @@ export default function WhenCard({
               {/* Player guess markers */}
               {whenRows.map((row) => {
                 if (row.guessYear == null) return null;
-                if (row.isMe) return null;
                 const xPercent = ((row.guessYear - timelineMin) / timelineRange) * 100;
                 const clampedXPercent = Math.max(0, Math.min(100, xPercent));
                 const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);

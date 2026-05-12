@@ -67,6 +67,7 @@ export default function CompeteGamePage() {
   const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [showBadgePopup, setShowBadgePopup] = useState(false);
+  const [wsDisconnected, setWsDisconnected] = useState(false);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
     xpPenalty: 0,
@@ -130,12 +131,19 @@ export default function CompeteGamePage() {
     startGame,
     submitGuess,
     readyNext,
+    setTimer,
+    setYearRange,
+    setResultsTimer,
+    kickPlayer,
   } = useCompeteSocket({
     gameId,
     playerId,
     snapshot,
     roundResults,
-    onStateUpdate: setSnapshot,
+    onStateUpdate: (newSnapshot) => {
+      setWsDisconnected(false);
+      setSnapshot(newSnapshot);
+    },
     onPlayerSubmitted: (submittedPlayerId, playerName) => {
       const isSelf = submittedPlayerId === playerId;
       const label = isSelf ? 'You made a guess' : `${playerName} made a guess`;
@@ -155,6 +163,9 @@ export default function CompeteGamePage() {
     },
     onError: (message) => {
       setError(message);
+    },
+    onDisconnect: () => {
+      setWsDisconnected(true);
     },
     onRoundResults: setRoundResults,
     onSetBusy: setBusy,
@@ -182,7 +193,6 @@ export default function CompeteGamePage() {
     hintResult,
     wsRef,
     submittedHintPenaltyRef,
-    onAdvanceRound: handleAdvanceRound,
     setLocalSubmitted,
     setBusy,
   });
@@ -270,6 +280,38 @@ export default function CompeteGamePage() {
     // Client → DO → DB: send action signal via WS
     startGame();
   }, [playerId, startGame]);
+
+  const handleSetTimer = useCallback((roundTimerSec: number) => {
+    if (!playerId) return;
+    setBusy(true);
+    setError(null);
+    // Client → DO → DB: send action signal via WS
+    setTimer(roundTimerSec);
+  }, [playerId, setTimer]);
+
+  const handleSetYearRange = useCallback((yearMin: number, yearMax: number) => {
+    if (!playerId) return;
+    setBusy(true);
+    setError(null);
+    // Client → DO → DB: send action signal via WS
+    setYearRange(yearMin, yearMax);
+  }, [playerId, setYearRange]);
+
+  const handleSetResultsTimer = useCallback((resultsAutoAdvanceSec: number) => {
+    if (!playerId) return;
+    setBusy(true);
+    setError(null);
+    // Client → DO → DB: send action signal via WS
+    setResultsTimer(resultsAutoAdvanceSec);
+  }, [playerId, setResultsTimer]);
+
+  const handleKickPlayer = useCallback((targetPlayerId: string) => {
+    if (!playerId) return;
+    setBusy(true);
+    setError(null);
+    // Client → DO → DB: send action signal via WS
+    kickPlayer(targetPlayerId);
+  }, [playerId, kickPlayer]);
 
   const handleSubmitGuess = useCallback(() => {
     if (!snapshot || snapshot.status !== 'ROUND_ACTIVE') return;
@@ -400,14 +442,52 @@ export default function CompeteGamePage() {
         )}
 
         {snapshot.status === "LOBBY" ? (
-          <LobbySection
-            snapshot={snapshot}
-            viewer={viewer}
-            busy={busy}
-            error={error}
-            onToggleReady={handleReady}
-            onStartGame={handleStart}
-          />
+          <>
+            {wsDisconnected && (
+              <section
+                className="card"
+                style={{
+                  marginBottom: '1rem',
+                  background: 'rgba(34, 211, 238, 0.06)',
+                  border: '1px solid rgba(34, 211, 238, 0.35)',
+                  borderRadius: 16,
+                  padding: '14px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <p style={{ color: "#22d3ee", margin: 0, fontSize: 14, fontWeight: 500 }}>
+                  Connection lost. Reconnect to restore live state.
+                </p>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => {
+                    setWsDisconnected(false);
+                    wsRef.current?.reconnect();
+                  }}
+                >
+                  Reconnect
+                </button>
+              </section>
+            )}
+            <LobbySection
+              snapshot={snapshot}
+              viewer={viewer}
+              busy={busy}
+              error={error}
+              isConnected={!wsDisconnected}
+              onToggleReady={handleReady}
+              onStartGame={handleStart}
+              onSetTimer={handleSetTimer}
+              onSetYearRange={handleSetYearRange}
+              onSetResultsTimer={handleSetResultsTimer}
+              onKickPlayer={handleKickPlayer}
+            />
+          </>
         ) : null}
 
         {snapshot.status === "ROUND_ACTIVE" ? (

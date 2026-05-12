@@ -124,6 +124,7 @@ function assertRoundConsistency(
     case "GUESS_SUBMITTED":
     case "ROUND_COMPLETE":
     case "PRESSURE_APPLIED":
+    case "READY_NEXT":
       // These events must stay in the same round
       if (nextRound !== prevRound) {
         throw new Error(

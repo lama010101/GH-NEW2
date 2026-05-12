@@ -91,6 +91,7 @@ export type SessionState = {
   totalRounds: number;
   yearMin: number;
   yearMax: number;
+  resultsAutoAdvanceSec: number;
   sessionDeadline: string | null;
   createdAt: string;
   roomCode: string;
@@ -281,6 +282,7 @@ export async function getGameState(
     totalRounds: sessionJson.total_rounds as number,
     yearMin: sessionJson.year_min as number,
     yearMax: sessionJson.year_max as number,
+    resultsAutoAdvanceSec: (sessionJson.results_auto_advance_sec as number) ?? 10,
     sessionDeadline: sessionJson.session_deadline ? new Date(sessionJson.session_deadline as string).toISOString() : null,
     createdAt: new Date(sessionJson.created_at as string).toISOString(),
     roomCode: sessionJson.room_code as string

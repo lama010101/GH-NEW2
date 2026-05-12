@@ -3,7 +3,7 @@ import type { TransitionCause } from "./transitionCause";
 export const MAX_ROUNDS = 5;
 export const REPEAT_PROTECTION_BUFFER = 500;
 export const AUTOPAN_DURATION_SEC = 5;
-export const TIMER_MIN_SEC = 5;
+export const TIMER_MIN_SEC = 15;
 export const TIMER_MAX_SEC = 300;
 export const HINT_TOTAL = 12;
 export const MAX_HINT_PENALTY = 1;
@@ -138,6 +138,7 @@ export type SessionConfig = {
   totalRounds: number;
   yearMin: number;
   yearMax: number;
+  resultsAutoAdvanceSec: number;
   hostPlayerId: string | null;
   sessionDeadline: string | null;
   startedAt: string | null;
@@ -186,6 +187,7 @@ export type CompeteSessionSnapshot = {
   viewerPlayerId: string | null;
   timeRemaining?: number | null;
   rounds: RoundEventContent[];
+  events?: Array<{ id: number; roundIndex: number | null; eventType: string; payload: Record<string, unknown>; createdAt: string }>;
   readyForNext: string[]; // array of playerIds who clicked "Next Round" in RESULT phase
   resultPhaseEndsAt?: number; // epoch ms — when result phase auto-advances
   roomCode: string;
@@ -199,6 +201,7 @@ export type CreateCompeteSessionInput = {
   totalRounds?: number;
   yearMin?: number;
   yearMax?: number;
+  resultsAutoAdvanceSec?: number;
 };
 
 export type JoinCompeteSessionInput = {
@@ -211,6 +214,31 @@ export type SetCompeteReadyInput = {
   gameId: string;
   playerId: string;
   ready: boolean;
+};
+
+export type SetCompeteTimerInput = {
+  gameId: string;
+  playerId: string;
+  roundTimerSec: number;
+};
+
+export type SetCompeteYearRangeInput = {
+  gameId: string;
+  playerId: string;
+  yearMin: number;
+  yearMax: number;
+};
+
+export type SetCompeteResultsTimerInput = {
+  gameId: string;
+  playerId: string;
+  resultsAutoAdvanceSec: number;
+};
+
+export type KickCompetePlayerInput = {
+  gameId: string;
+  playerId: string;
+  targetPlayerId: string;
 };
 
 export type StartCompeteSessionInput = {

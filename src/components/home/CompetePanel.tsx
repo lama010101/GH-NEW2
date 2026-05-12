@@ -10,6 +10,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string|null>(null)
+  const [isFocused, setIsFocused] = useState(false)
 
   const handleCreate = async () => {
     if (!playerId) { onRequireAuth(); return }
@@ -82,12 +83,18 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         <input
           value={code}
           onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           placeholder="ABCD12"
           maxLength={6}
-          style={{ width: '100%', padding: '11px 14px', background: 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#fff',
+          style={{ width: '100%', padding: '11px 14px',
+            background: isFocused ? 'rgba(0,173,193,0.22)' : 'rgba(0,173,193,0.12)',
+            border: isFocused ? '1px solid rgba(0,173,193,0.85)' : '1px solid rgba(0,173,193,0.55)',
+            borderRadius: 10, color: '#fff',
             fontSize: 18, fontWeight: 700, letterSpacing: '4px', textAlign: 'center',
-            outline: 'none', boxSizing: 'border-box' }}
+            outline: 'none', boxSizing: 'border-box',
+            boxShadow: isFocused ? '0 0 0 3px rgba(0,173,193,0.25)' : '0 0 8px rgba(0,173,193,0.15)',
+            transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s' }}
         />
       )}
 

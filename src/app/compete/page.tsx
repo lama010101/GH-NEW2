@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  createCompeteSessionRequest,
-  joinCompeteSessionRequest
+  createCompeteSessionRequest
 } from "@/core/competeApi";
 import { useIdentity } from "@/hooks/useIdentity";
 
@@ -55,17 +54,28 @@ export default function CompeteEntryPage() {
       setError("Identity not ready — please wait");
       return;
     }
-    if (!gameId.trim()) {
-      setError("Game ID is required");
+    const code = gameId.trim().toUpperCase();
+    if (code.length === 0) {
+      setError("Room code is required");
       return;
     }
     setLoading(true);
     try {
-      const snapshot = await joinCompeteSessionRequest({
-        gameId: gameId.trim(),
-        playerId
+      const res = await fetch("/api/compete/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roomCode: code }),
       });
-      redirectWithIdentity(snapshot.gameId, "");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? "Failed to join game");
+      }
+      const data = await res.json() as { gameId?: string };
+      const resolvedGameId = data.gameId;
+      if (!resolvedGameId) {
+        throw new Error("Invalid response from server");
+      }
+      redirectWithIdentity(resolvedGameId, "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to join game");
       setLoading(false);
@@ -150,15 +160,15 @@ export default function CompeteEntryPage() {
           ) : (
             <div className="stack">
               <div className="field">
-                <label htmlFor="join-game-id">Game ID</label>
+                <label htmlFor="join-game-id">Room Code</label>
                 <input
                   id="join-game-id"
                   className="input"
                   type="text"
-                  value={gameId}
+                  value={gameId.toUpperCase()}
                   onChange={(event) => setGameId(event.target.value)}
                   disabled={blocked || loading}
-                  placeholder="game-id"
+                  placeholder="e.g. SSJC5Q"
                 />
               </div>
               <button
