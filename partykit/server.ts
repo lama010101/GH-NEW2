@@ -54,8 +54,9 @@ type RuntimeState = {
   currentRoundIndex: number;
   roundEndsAt: string | null;
   roundTimerSec: number;
+  resultsAutoAdvanceSec: number;
   roundResultsForClient?: unknown[];
-  events?: Array<{ eventType: string; payload?: Record<string, unknown> }>;
+  events?: Array<{ id: number; roundIndex: number | null; eventType: string; payload?: Record<string, unknown>; createdAt?: string }>;
   readyForNext?: string[];
   resultPhaseEndsAt?: number;
 };
@@ -73,7 +74,11 @@ export type ServerMessage =
   | { type: "START_GAME"; playerId: string }
   | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: string[]; accPenalty?: number; xpPenalty?: number }
   | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number; cause?: string }
-  | { type: "READY_NEXT"; playerId: string; roundIndex: number };
+  | { type: "READY_NEXT"; playerId: string; roundIndex: number }
+  | { type: "SET_TIMER"; playerId: string; roundTimerSec: number }
+  | { type: "SET_YEAR_RANGE"; playerId: string; yearMin: number; yearMax: number }
+  | { type: "SET_RESULTS_TIMER"; playerId: string; resultsAutoAdvanceSec: number }
+  | { type: "KICK_PLAYER"; playerId: string; targetPlayerId: string };
 
 // Messages sent TO clients
 export type ClientMessage =
@@ -110,6 +115,7 @@ export default class GameServer {
   // normal network blips — but short enough that real disconnects flush
   // out of the active roster within a round.
   private static readonly LEAVE_GRACE_MS = 5_000;
+  private static readonly ROUND_EXPIRY_SUBMIT_GRACE_MS = 1_000;
 
   // Runtime state — derived, rebuildable from DB at any time.
   // This is the DO's authoritative view. DB remains canonical truth.
@@ -120,6 +126,7 @@ export default class GameServer {
   // Timer handle for round countdown (Phase 4+ — not yet active).
   // Will be used to broadcast timer ticks and auto-advance on expiry.
   private roundTimerHandle: ReturnType<typeof setTimeout> | null = null;
+  private resultTimerHandle: ReturnType<typeof setTimeout> | null = null;
 
   // In-flight lock for ADVANCE_ROUND to prevent race condition when
   // multiple players click "Next Round" simultaneously.
@@ -138,6 +145,9 @@ export default class GameServer {
   // Prevents duplicate ROUND_STARTED → ROUND_STARTED transitions when scheduleRoundTimer
   // fires while expiry is already in progress or when a new round's timer is already expired.
   private completeInFlight = false;
+
+  // In-flight lock for START_GAME to prevent double-start when host double-clicks.
+  private startInFlight = false;
 
   // Per-player ready state for RESULT phase (separate from lobby ready state).
   // Tracks which players have clicked "Next Round" during ROUND_COMPLETE phase.
@@ -182,9 +192,14 @@ export default class GameServer {
       throw new Error(`[loadFromDB] snapshot API error ${snapRes.status}: ${text}`);
     }
     const snapshot = await snapRes.json();
-    // Extract roundTimerSec from config to populate RuntimeState
-    if (snapshot && typeof snapshot === "object" && snapshot.config && typeof snapshot.config.roundTimerSec === "number") {
-      (snapshot as RuntimeState).roundTimerSec = snapshot.config.roundTimerSec;
+    // Extract config fields to populate RuntimeState
+    if (snapshot && typeof snapshot === "object" && snapshot.config) {
+      if (typeof snapshot.config.roundTimerSec === "number") {
+        (snapshot as RuntimeState).roundTimerSec = snapshot.config.roundTimerSec;
+      }
+      if (typeof snapshot.config.resultsAutoAdvanceSec === "number") {
+        (snapshot as RuntimeState).resultsAutoAdvanceSec = snapshot.config.resultsAutoAdvanceSec;
+      }
     }
     this.snapshot = snapshot;
     console.timeEnd("[PERF] loadFromDB:apiFetch");
@@ -197,9 +212,19 @@ export default class GameServer {
         .reverse()
         .find((e: { eventType: string }) => e.eventType === "RESULT_STARTED");
       if (resultStartedEvent?.payload?.resultPhaseEndsAt) {
-        this.resultPhaseStartAt = new Date(resultStartedEvent.payload.resultPhaseEndsAt as string).getTime() - 30000;
+        const autoAdvanceMs = ((this.snapshot as RuntimeState).resultsAutoAdvanceSec ?? 10) * 1000;
+        this.resultPhaseStartAt = new Date(resultStartedEvent.payload.resultPhaseEndsAt as string).getTime() - autoAdvanceMs;
       } else {
-        this.resultPhaseStartAt = Date.now();
+        const roundCompleteEvent = this.snapshot.events
+          ?.slice()
+          .reverse()
+          .find((e) =>
+            e.eventType === "ROUND_COMPLETE" &&
+            e.roundIndex === (this.snapshot as RuntimeState).currentRoundIndex
+          );
+        this.resultPhaseStartAt = roundCompleteEvent?.createdAt
+          ? new Date(roundCompleteEvent.createdAt).getTime()
+          : Date.now();
       }
       // Rebuild readyForNext from READY_NEXT events
       const readyNextEvents = this.snapshot.events
@@ -221,9 +246,9 @@ export default class GameServer {
       const pressureEvent = this.snapshot.events
         .slice()
         .reverse()
-        .find((e: { eventType: string; payload?: Record<string, unknown> }) =>
+        .find((e) =>
           e.eventType === "PRESSURE_APPLIED" &&
-          (e as { roundIndex?: number }).roundIndex === currentRound
+          e.roundIndex === currentRound
         );
       if (pressureEvent?.payload?.newRoundEndsAt) {
         (this.snapshot as RuntimeState).roundEndsAt =
@@ -248,6 +273,17 @@ export default class GameServer {
    */
   private applySnapshotAndBroadcast(snapshot: unknown): void {
     if (isRuntimeState(snapshot)) {
+      if (
+        isRuntimeState(this.snapshot) &&
+        this.snapshot.status === "ROUND_ACTIVE" &&
+        snapshot.status === "ROUND_ACTIVE" &&
+        this.snapshot.currentRoundIndex === snapshot.currentRoundIndex &&
+        this.snapshot.roundEndsAt &&
+        snapshot.roundEndsAt &&
+        new Date(this.snapshot.roundEndsAt).getTime() < new Date(snapshot.roundEndsAt).getTime()
+      ) {
+        snapshot.roundEndsAt = this.snapshot.roundEndsAt;
+      }
       console.log("[PartyKit] Applying snapshot, players:", snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
       // Set resultPhaseStartAt whenever snapshot is ROUND_COMPLETE and not yet set.
       // Using a presence check (not a transition check) so this works on cold load,
@@ -288,8 +324,27 @@ export default class GameServer {
       clearTimeout(this.roundTimerHandle);
       this.roundTimerHandle = null;
     }
+    if (this.resultTimerHandle !== null) {
+      clearTimeout(this.resultTimerHandle);
+      this.resultTimerHandle = null;
+    }
 
     if (!this.snapshot || !isRuntimeState(this.snapshot)) return;
+
+    if (this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt !== null) {
+      const autoAdvanceMs = (this.snapshot.resultsAutoAdvanceSec ?? 10) * 1000;
+      const delay = this.resultPhaseStartAt + autoAdvanceMs - Date.now();
+      const expectedRoundIndex = this.snapshot.currentRoundIndex;
+      if (delay <= 0) {
+        this.triggerResultAutoAdvance(expectedRoundIndex);
+      } else {
+        this.resultTimerHandle = setTimeout(() => {
+          this.resultTimerHandle = null;
+          this.triggerResultAutoAdvance(expectedRoundIndex);
+        }, delay);
+      }
+      return;
+    }
 
     // Only schedule for active rounds with a known end time
     if (this.snapshot.status !== "ROUND_ACTIVE" || !this.snapshot.roundEndsAt) return;
@@ -337,6 +392,12 @@ export default class GameServer {
     const gameId = this.room.id;
     const roundIndex = this.snapshot.currentRoundIndex;
 
+    await new Promise<void>((resolve) => setTimeout(resolve, GameServer.ROUND_EXPIRY_SUBMIT_GRACE_MS));
+    if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_ACTIVE" || this.snapshot.currentRoundIndex !== expectedRoundIndex) {
+      this.completeInFlight = false;
+      return;
+    }
+
     // Wait for any in-flight submissions to complete before closing the round
     if (this.submitInFlight > 0) {
       const waited = await new Promise<boolean>((resolve) => {
@@ -380,76 +441,39 @@ export default class GameServer {
         }
       }
 
-      this.broadcastStateUpdate();
-
-      // Step 3: Wait 40 seconds so clients can display the results screen
-      // and optionally click "Next Round" to advance early
-      await new Promise<void>((resolve) => setTimeout(resolve, 40000));
-
-      // Step 4: Advance to next round (or SESSION_COMPLETE) — cause=TIMEOUT
-      // Check if advance already triggered (all-ready path)
-      if (this.advanceInFlight) {
-        console.log("[PartyKit] Advance already in flight, skipping timeout advance");
-        return;
-      }
-
-      // Fetch current snapshot to verify phase before advancing
-      // This prevents INVALID_TRANSITION if READY_NEXT path already advanced during the 40s wait
-      try {
-        const baseUrl = this.getNextJsBaseUrl();
-        const snapshotUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}`;
-        const snapshotRes = await fetch(snapshotUrl, {
-          headers: {
-            "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
-          }
-        });
-        if (!snapshotRes.ok) {
-          console.warn(`[PartyKit] Failed to fetch snapshot for phase check: ${snapshotRes.status}`);
-          return;
-        }
-        const currentSnapshot = await snapshotRes.json();
-        if (currentSnapshot.status !== "ROUND_COMPLETE") {
-          console.log(`[PartyKit] Phase is ${currentSnapshot.status}, not ROUND_COMPLETE — skipping timer advance (already advanced by player)`);
-          return;
-        }
-        if (currentSnapshot.currentRoundIndex !== expectedRoundIndex) {
-          console.log(`[PartyKit] Stale result timer ignored: expected round ${expectedRoundIndex}, current round ${currentSnapshot.currentRoundIndex}`);
-          return;
-        }
-      } catch (err) {
-        console.warn("[PartyKit] Snapshot fetch failed for phase check:", err instanceof Error ? err.message : err);
-        return;
-      }
-
-      if (this.advanceInFlight) {
-        console.log("[PartyKit] advanceInFlight true at timeout advance, aborting");
-        return;
-      }
-      this.advanceInFlight = true;
-      try {
-        const baseUrl = this.getNextJsBaseUrl();
-        const advanceUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/advance`;
-        const advanceRes = await fetch(advanceUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
-          },
-          body: JSON.stringify({ cause: TransitionCause.TIMEOUT, roundIndex })
-        });
-        if (!advanceRes.ok) {
-          const text = await advanceRes.text();
-          throw new Error(`[triggerRoundExpiry] advance API error ${advanceRes.status}: ${text}`);
-        }
-        const advanceSnapshot = await advanceRes.json();
-        this.applySnapshotAndBroadcast(advanceSnapshot);
-      } catch (err) {
-        console.error("[PartyKit] Round advance after expiry failed:", err instanceof Error ? err.message : err);
-      } finally {
-        this.advanceInFlight = false;
-      }
     } finally {
       this.completeInFlight = false;
+    }
+  }
+
+  private async triggerResultAutoAdvance(expectedRoundIndex: number): Promise<void> {
+    if (!isRuntimeState(this.snapshot)) return;
+    if (this.snapshot.status !== "ROUND_COMPLETE") return;
+    if (this.snapshot.currentRoundIndex !== expectedRoundIndex) return;
+    if (this.advanceInFlight) return;
+
+    this.advanceInFlight = true;
+    try {
+      const baseUrl = this.getNextJsBaseUrl();
+      const advanceUrl = `${baseUrl}/api/compete/${encodeURIComponent(this.room.id)}/advance`;
+      const advanceRes = await fetch(advanceUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+        },
+        body: JSON.stringify({ cause: TransitionCause.TIMEOUT, roundIndex: expectedRoundIndex })
+      });
+      if (!advanceRes.ok) {
+        const text = await advanceRes.text();
+        throw new Error(`[triggerResultAutoAdvance] advance API error ${advanceRes.status}: ${text}`);
+      }
+      const advanceSnapshot = await advanceRes.json();
+      this.applySnapshotAndBroadcast(advanceSnapshot);
+    } catch (err) {
+      console.error("[PartyKit] Result auto-advance failed:", err instanceof Error ? err.message : err);
+    } finally {
+      this.advanceInFlight = false;
     }
   }
 
@@ -463,8 +487,9 @@ export default class GameServer {
     let resultPhaseEndsAt: number | undefined;
     if (isRuntimeState(this.snapshot)) {
       console.log("[PartyKit] Broadcasting to all, players:", this.snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+      const autoAdvanceMs = (this.snapshot.resultsAutoAdvanceSec ?? 10) * 1000;
       resultPhaseEndsAt = this.snapshot.status === "ROUND_COMPLETE" && this.resultPhaseStartAt !== null
-        ? this.resultPhaseStartAt + 40000
+        ? this.resultPhaseStartAt + autoAdvanceMs
         : undefined;
       snapshotWithReadyState = {
         ...this.snapshot,
@@ -694,24 +719,39 @@ export default class GameServer {
         }
 
         case "START_GAME": {
-          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/start`;
-          const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
-            },
-            body: JSON.stringify({
-              playerId: data.playerId
-            })
-          });
-          if (!response.ok) {
-            const text = await response.text();
-            console.error(`[START_GAME] API error ${response.status}: ${text}`);
+          // Validate: only allowed in LOBBY phase
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "START_GAME only allowed in LOBBY phase");
             break;
           }
-          const snapshot = await response.json();
-          this.applySnapshotAndBroadcast(snapshot);
+          // Prevent double-start: reject if another start is already in flight
+          if (this.startInFlight) {
+            console.log("[PartyKit] START_GAME ignored — start already in flight");
+            break;
+          }
+          this.startInFlight = true;
+          try {
+            const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/start`;
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+              },
+              body: JSON.stringify({
+                playerId: data.playerId
+              })
+            });
+            if (!response.ok) {
+              const text = await response.text();
+              console.error(`[START_GAME] API error ${response.status}: ${text}`);
+              break;
+            }
+            const snapshot = await response.json();
+            this.applySnapshotAndBroadcast(snapshot);
+          } finally {
+            this.startInFlight = false;
+          }
           break;
         }
 
@@ -764,8 +804,25 @@ export default class GameServer {
                 const clampTo = Math.min(Math.ceil(remainingMs / 1000), 30);
 
                 if (clampTo < remainingMs / 1000) {
-                  // Clamp the timer
                   const newRoundEndsAt = new Date(Date.now() + clampTo * 1000);
+                  const pressureRes = await fetch(`${this.getNextJsBaseUrl()}/api/compete/${this.room.id}/pressure`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+                    },
+                    body: JSON.stringify({
+                      roundIndex: data.roundIndex,
+                      newRoundEndsAt: newRoundEndsAt.toISOString(),
+                      clampedToSec: clampTo,
+                      _executionContext: "partykit"
+                    })
+                  });
+                  if (!pressureRes.ok) {
+                    const text = await pressureRes.text();
+                    console.error(`[PartyKit] PRESSURE_APPLIED persist failed ${pressureRes.status}: ${text}`);
+                    break;
+                  }
 
                   // Update RuntimeState
                   if (isRuntimeState(fullResponse)) {
@@ -780,20 +837,6 @@ export default class GameServer {
                   };
                   this.room.broadcast(JSON.stringify(timerClampedMsg));
                   console.log(`[PartyKit] Timer clamped from ${Math.round(remainingMs / 1000)}s to ${clampTo}s`);
-
-                  fetch(`${this.getNextJsBaseUrl()}/api/compete/${this.room.id}/pressure`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
-                    },
-                    body: JSON.stringify({
-                      roundIndex: data.roundIndex,
-                      newRoundEndsAt: newRoundEndsAt.toISOString(),
-                      clampedToSec: clampTo,
-                      _executionContext: "partykit"
-                    })
-                  }).catch(err => console.error("[PartyKit] PRESSURE_APPLIED persist failed:", err));
                 }
               }
             }
@@ -914,6 +957,10 @@ export default class GameServer {
             if (!this.advanceInFlight) {
               this.advanceInFlight = true;
               try {
+                if (this.resultTimerHandle !== null) {
+                  clearTimeout(this.resultTimerHandle);
+                  this.resultTimerHandle = null;
+                }
                 const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/advance`;
                 const response = await fetch(apiUrl, {
                   method: "POST",
@@ -940,6 +987,119 @@ export default class GameServer {
               }
             }
           }
+          break;
+        }
+
+        case "SET_TIMER": {
+          // Validate: only allowed in LOBBY phase (before game starts)
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "SET_TIMER only allowed in LOBBY phase");
+            break;
+          }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/timer`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              roundTimerSec: data.roundTimerSec
+            })
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[SET_TIMER] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
+          this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "SET_YEAR_RANGE": {
+          // Validate: only allowed in LOBBY phase (before game starts)
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "SET_YEAR_RANGE only allowed in LOBBY phase");
+            break;
+          }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/year-range`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              yearMin: data.yearMin,
+              yearMax: data.yearMax
+            })
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[SET_YEAR_RANGE] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
+          this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "SET_RESULTS_TIMER": {
+          // Validate: only allowed in LOBBY phase (before game starts)
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "SET_RESULTS_TIMER only allowed in LOBBY phase");
+            break;
+          }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/results-timer`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              resultsAutoAdvanceSec: data.resultsAutoAdvanceSec
+            })
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[SET_RESULTS_TIMER] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
+          this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "KICK_PLAYER": {
+          // Validate: only allowed in LOBBY phase
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "KICK_PLAYER only allowed in LOBBY phase");
+            break;
+          }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/kick`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              targetPlayerId: data.targetPlayerId
+            })
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[KICK_PLAYER] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
+          this.applySnapshotAndBroadcast(snapshot);
           break;
         }
 

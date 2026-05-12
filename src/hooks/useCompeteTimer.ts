@@ -20,7 +20,6 @@ interface UseCompeteTimerParams {
     whereAccPenalty: number;
     whenAccPenalty: number;
   }>;
-  onAdvanceRound: () => void;
   setLocalSubmitted: (value: boolean) => void;
   setBusy: (value: boolean) => void;
 }
@@ -35,7 +34,6 @@ export default function useCompeteTimer({
   hintResult,
   wsRef,
   submittedHintPenaltyRef,
-  onAdvanceRound,
   setLocalSubmitted,
   setBusy,
 }: UseCompeteTimerParams) {
@@ -105,15 +103,6 @@ export default function useCompeteTimer({
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshot?.status, snapshot?.resultPhaseEndsAt]);
-
-  // Auto-advance trigger when countdown reaches 0
-  useEffect(() => {
-    if (resultSecsLeft !== 0) return;
-    if (snapshot?.status !== "ROUND_COMPLETE") return;
-    const alreadyReady = snapshot?.readyForNext?.includes(playerId ?? "");
-    if (alreadyReady) return;
-    onAdvanceRound();
-  }, [resultSecsLeft, snapshot?.status, snapshot?.readyForNext, playerId, onAdvanceRound]);
 
   return { timeRemaining, resultSecsLeft };
 }

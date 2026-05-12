@@ -13,6 +13,7 @@ interface UseCompeteSocketParams {
   onPlayerSubmitted: (submittedPlayerId: string, playerName: string) => void;
   onTimerClamped: (newPhaseEndsAt: string) => void;
   onError: (message: string) => void;
+  onDisconnect?: () => void;
   onRoundResults: (results: RoundResult[]) => void;
   onSetBusy: (value: boolean) => void;
   onSetLocalSubmitted: (value: boolean) => void;
@@ -28,6 +29,7 @@ export default function useCompeteSocket({
   onPlayerSubmitted,
   onTimerClamped,
   onError,
+  onDisconnect,
   onRoundResults,
   onSetBusy,
   onSetLocalSubmitted,
@@ -97,6 +99,9 @@ export default function useCompeteSocket({
       onError: (message) => {
         onError(message);
         onSetBusy(false); // Action failed — clear busy flag
+      },
+      onDisconnect: () => {
+        onDisconnect?.();
       }
     });
 
@@ -174,6 +179,34 @@ export default function useCompeteSocket({
     wsRef.current.readyNext(roundIndex);
   };
 
+  const setTimer = (roundTimerSec: number) => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    // Client → DO → DB: send SET_TIMER action signal via WS
+    wsRef.current.setTimer(roundTimerSec);
+  };
+
+  const setYearRange = (yearMin: number, yearMax: number) => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    // Client → DO → DB: send SET_YEAR_RANGE action signal via WS
+    wsRef.current.setYearRange(yearMin, yearMax);
+  };
+
+  const setResultsTimer = (resultsAutoAdvanceSec: number) => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    // Client → DO → DB: send SET_RESULTS_TIMER action signal via WS
+    wsRef.current.setResultsTimer(resultsAutoAdvanceSec);
+  };
+
+  const kickPlayer = (targetPlayerId: string) => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    // Client → DO → DB: send KICK_PLAYER action signal via WS
+    wsRef.current.kickPlayer(targetPlayerId);
+  };
+
   return {
     wsRef,
     displayNameRef,
@@ -181,5 +214,9 @@ export default function useCompeteSocket({
     startGame,
     submitGuess,
     readyNext,
+    setTimer,
+    setYearRange,
+    setResultsTimer,
+    kickPlayer,
   };
 }

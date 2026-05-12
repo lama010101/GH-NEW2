@@ -29,8 +29,9 @@ export class CompeteWebSocket {
   private playerId: string;
   private callbacks: CompeteWebSocketCallbacks;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private maxReconnectAttempts = 20;
   private reconnectDelay = 1000;
+  private manuallyDisconnected = false;
 
   constructor(
     gameId: string,
@@ -63,6 +64,7 @@ export class CompeteWebSocket {
     this.ws.onopen = () => {
       console.log("[CompeteWebSocket] Connected");
       this.reconnectAttempts = 0;
+      this.manuallyDisconnected = false;
       this.callbacks.onConnect?.();
     };
 
@@ -75,8 +77,8 @@ export class CompeteWebSocket {
       }
     };
 
-    this.ws.onclose = () => {
-      console.log("[CompeteWebSocket] Disconnected");
+    this.ws.onclose = (event: CloseEvent) => {
+      console.log("[CompeteWebSocket] Disconnected — code:", event.code, "reason:", event.reason || "(none)");
       this.callbacks.onDisconnect?.();
       this.attemptReconnect();
     };
@@ -87,7 +89,7 @@ export class CompeteWebSocket {
   }
 
   disconnect(): void {
-    this.reconnectAttempts = this.maxReconnectAttempts; // prevent auto-reconnect
+    this.manuallyDisconnected = true;
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -133,6 +135,7 @@ export class CompeteWebSocket {
   }
 
   private attemptReconnect(): void {
+    if (this.manuallyDisconnected) return;
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error("[CompeteWebSocket] Max reconnect attempts reached");
       this.callbacks.onError?.("Failed to reconnect after multiple attempts");
@@ -168,6 +171,22 @@ export class CompeteWebSocket {
     this.send({ type: "START_GAME", playerId: this.playerId });
   }
 
+  setTimer(roundTimerSec: number): void {
+    this.send({ type: "SET_TIMER", playerId: this.playerId, roundTimerSec });
+  }
+
+  setYearRange(yearMin: number, yearMax: number): void {
+    this.send({ type: "SET_YEAR_RANGE", playerId: this.playerId, yearMin, yearMax });
+  }
+
+  setResultsTimer(resultsAutoAdvanceSec: number): void {
+    this.send({ type: "SET_RESULTS_TIMER", playerId: this.playerId, resultsAutoAdvanceSec });
+  }
+
+  kickPlayer(targetPlayerId: string): void {
+    this.send({ type: "KICK_PLAYER", playerId: this.playerId, targetPlayerId });
+  }
+
   submitGuess(
     roundIndex: number,
     year: number | null,
@@ -196,5 +215,11 @@ export class CompeteWebSocket {
 
   readyNext(roundIndex: number): void {
     this.send({ type: "READY_NEXT", playerId: this.playerId, roundIndex });
+  }
+
+  reconnect(): void {
+    this.manuallyDisconnected = false;
+    this.reconnectAttempts = 0;
+    this.connect();
   }
 }

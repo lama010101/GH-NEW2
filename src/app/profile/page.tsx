@@ -10,296 +10,27 @@ import { supabaseBrowser } from '@/core/supabaseBrowser';
 const syne = Syne({ subsets: ['latin'], weight: ['400', '700', '800'] });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] });
 
-const C = {
-  orange: '#fb923c',
-  purple: '#c084fc',
-  purpleDark: '#7c3aed',
-  teal: '#14b8a6',
-  gold: '#f0c060',
-  silver: '#94a3b8',
-  bronze: '#cd7c4a',
-  surface: 'rgba(255,255,255,0.04)',
-  border: 'rgba(255,255,255,0.09)',
-  muted: 'rgba(255,255,255,0.45)',
-  dim: 'rgba(255,255,255,0.7)',
-  bg: '#0f0e0c',
-  text: '#f5f0e8',
-};
-
-const STYLES = {
-  root: {
-    backgroundColor: C.bg,
-    color: C.text,
-    minHeight: '100vh',
-    paddingBottom: 60,
-    position: 'relative' as const,
-    overflow: 'visible' as const,
-  },
-  heroBg: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 280,
-  },
-  heroGradient: {
-    background: 'linear-gradient(135deg, #1a0a2e 0%, #0d1a0a 40%, #1a0d08 100%)',
-  },
-  radialGlow1: {
-    width: '60%',
-    height: '60%',
-    top: '20%',
-    left: '20%',
-    background: 'radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 70%)',
-  },
-  radialGlow2: {
-    width: '30%',
-    height: '30%',
-    top: '35%',
-    left: '35%',
-    background: 'radial-gradient(circle, rgba(124,58,237,0.6) 0%, transparent 70%)',
-  },
-  radialGlow3: {
-    width: '30%',
-    height: '30%',
-    top: '25%',
-    left: '60%',
-    background: 'radial-gradient(circle, rgba(194,65,12,0.3) 0%, transparent 70%)',
-  },
-  mosaicStrip: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(8, 1fr)',
-    opacity: 0.12,
-  },
-  fadeOverlay: {
-    background: 'linear-gradient(to bottom, transparent, #0f0e0c)',
-  },
-  contentWrapper: {
-    position: 'relative' as const,
-    zIndex: 10,
-    maxWidth: 820,
-    margin: '0 auto',
-    padding: '80px 20px 0 20px',
-  },
-  topBar: {
-    position: 'fixed' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    padding: '16px 24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    zIndex: 100,
-    backgroundColor: C.bg,
-  },
-  backLink: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    fontSize: 14,
-    color: C.muted,
-    textDecoration: 'none',
-  },
-  editButton: {
-    padding: '8px 16px',
-    borderRadius: 9999,
-    fontSize: 12,
-    textTransform: 'uppercase' as const,
-    fontWeight: 700,
-    letterSpacing: '0.05em',
-    backgroundColor: C.surface,
-    color: C.muted,
-    border: `1px solid ${C.border}`,
-    cursor: 'pointer',
-  },
-  heroSection: {
-    marginTop: 0,
-    padding: '0 24px',
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 9999,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #7c3aed 0%, #c2410c 100%)',
-    fontSize: 28,
-    fontWeight: 800,
-  },
-  levelBadge: {
-    position: 'absolute' as const,
-    bottom: -4,
-    right: -4,
-    padding: '2px 8px',
-    borderRadius: 9999,
-    fontSize: 10,
-    fontWeight: 700,
-    backgroundColor: C.purpleDark,
-    color: 'white',
-  },
-  username: {
-    fontSize: 24,
-    fontWeight: 800,
-    marginBottom: 4,
-  },
-  handle: {
-    fontSize: 14,
-    color: C.muted,
-    marginBottom: 8,
-  },
-  bio: {
-    fontSize: 14,
-    lineHeight: 1.5,
-    color: C.dim,
-  },
-  pill: {
-    padding: '4px 12px',
-    borderRadius: 9999,
-    fontSize: 12,
-    fontWeight: 500,
-  },
-  statStrip: {
-    padding: '0 24px',
-    marginTop: 24,
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: 10,
-    marginBottom: 24,
-  },
-  statCard: {
-    background: C.surface,
-    border: '0.5px solid ' + C.border,
-    borderRadius: 12,
-    padding: '14px 16px',
-    textAlign: 'center' as const,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 800,
-  },
-  statLabel: {
-    fontSize: 12,
-    marginTop: 4,
-    color: C.muted,
-  },
-  twoColRow: {
-    padding: '0 24px',
-    marginTop: 24,
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 12,
-    marginBottom: 24,
-  },
-  panel: {
-    background: C.surface,
-    border: '0.5px solid ' + C.border,
-    borderRadius: 12,
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 700,
-    marginBottom: 16,
-  },
-  barContainer: {
-    height: 4,
-    background: 'rgba(255,255,255,0.08)',
-    borderRadius: 2,
-    overflow: 'hidden' as const,
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  divider: {
-    height: 1,
-    background: C.border,
-    margin: '16px 0',
-  },
-  badgeGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: 8,
-  },
-  badgeCell: {
-    padding: 12,
-    borderRadius: 8,
-    textAlign: 'center' as const,
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid ' + C.border,
-  },
-  badgeCount: {
-    fontSize: 18,
-    fontWeight: 700,
-  },
-  badgeLabel: {
-    fontSize: 10,
-    marginTop: 4,
-    color: C.muted,
-  },
-  modeRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: 10,
-  },
-  modeCard: {
-    padding: 16,
-    borderRadius: 12,
-    position: 'relative' as const,
-    overflow: 'hidden' as const,
-  },
-  modeAccent: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-  },
-  modeTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    marginBottom: 8,
-  },
-  modeStat: {
-    fontSize: 12,
-    color: C.dim,
-  },
-  fullPanel: {
-    padding: '0 24px',
-    marginTop: 24,
-    marginBottom: 24,
-  },
-  leaderboardItem: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  centuryTile: {
-    padding: '12px 12px',
-    borderRadius: 8,
-    textAlign: 'center' as const,
-    background: 'rgba(251,146,60,0.1)',
-    border: '1px solid rgba(251,146,60,0.2)',
-  },
-  centuryLabel: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: C.orange,
-  },
-  centuryPercent: {
-    fontSize: 12,
-    marginTop: 2,
-    color: C.muted,
-  },
+type ProfileHistoricalAvatar = {
+  avatarName: string;
+  avatarDescription: string;
+  bornLabel: string;
+  diedLabel: string;
+  avatarImageUrl: string;
 };
 
 export default function ProfilePage() {
   const router = useRouter();
   const { playerId } = useIdentity();
-  const [profileData, setProfileData] = useState<{ displayName: string | null; avatarUrl: string | null; email: string | null; createdAt: string | null; avgAccuracy: number | null; totalXp: number | null; roundsPlayed: number | null }>({
+  const [profileData, setProfileData] = useState<{
+    displayName: string | null;
+    avatarUrl: string | null;
+    email: string | null;
+    createdAt: string | null;
+    avgAccuracy: number | null;
+    totalXp: number | null;
+    roundsPlayed: number | null;
+    historicalAvatar: ProfileHistoricalAvatar | null;
+  }>({
     displayName: null,
     avatarUrl: null,
     email: null,
@@ -307,6 +38,7 @@ export default function ProfilePage() {
     avgAccuracy: null,
     totalXp: null,
     roundsPlayed: null,
+    historicalAvatar: null,
   });
 
   useEffect(() => {
@@ -332,6 +64,52 @@ export default function ProfilePage() {
           .limit(1)
           .single();
 
+        let historicalAvatar: ProfileHistoricalAvatar | null = null;
+        if (profileResult?.avatar_url) {
+          let { data: avatarResult } = await supabaseBrowser
+            .from('avatars')
+            .select('first_name, last_name, description, birth_day, death_day, birth_city, birth_country, death_city, death_country')
+            .eq('image_url', profileResult.avatar_url)
+            .limit(1)
+            .single();
+
+          if (!avatarResult) {
+            ({ data: avatarResult } = await supabaseBrowser
+              .from('avatars')
+              .select('first_name, last_name, description, birth_day, death_day, birth_city, birth_country, death_city, death_country')
+              .eq('firebase_url', profileResult.avatar_url)
+              .limit(1)
+              .single());
+          }
+
+          if (avatarResult) {
+            const nameParts: string[] = [];
+            if (avatarResult.first_name) nameParts.push(avatarResult.first_name);
+            if (avatarResult.last_name) nameParts.push(avatarResult.last_name);
+            const avatarName = nameParts.join(' ').trim();
+
+            const bornParts: string[] = [];
+            if (avatarResult.birth_day) bornParts.push(avatarResult.birth_day);
+            if (avatarResult.birth_city) bornParts.push(avatarResult.birth_city);
+            if (avatarResult.birth_country) bornParts.push(avatarResult.birth_country);
+            const bornLabel = bornParts.length > 0 ? `Born: ${bornParts.join(', ')}` : '';
+
+            const diedParts: string[] = [];
+            if (avatarResult.death_day) diedParts.push(avatarResult.death_day);
+            if (avatarResult.death_city) diedParts.push(avatarResult.death_city);
+            if (avatarResult.death_country) diedParts.push(avatarResult.death_country);
+            const diedLabel = diedParts.length > 0 ? `Died: ${diedParts.join(', ')}` : '';
+
+            historicalAvatar = {
+              avatarName,
+              avatarDescription: avatarResult.description ?? '',
+              bornLabel,
+              diedLabel,
+              avatarImageUrl: profileResult.avatar_url,
+            };
+          }
+        }
+
         setProfileData({
           displayName: profileResult?.display_name ?? null,
           avatarUrl: profileResult?.avatar_url ?? null,
@@ -340,6 +118,7 @@ export default function ProfilePage() {
           avgAccuracy: statsResult?.avg_accuracy ?? null,
           totalXp: statsResult?.total_xp ?? null,
           roundsPlayed: statsResult?.rounds_played ?? null,
+          historicalAvatar,
         });
       } catch (error) {
         console.error('Error fetching profile data:', error);
@@ -364,112 +143,89 @@ export default function ProfilePage() {
   const formatMemberSince = (dateStr: string | null): string => {
     if (!dateStr) return '—';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
   };
 
   return (
-    <div style={STYLES.root} className={dmSans.className}>
+    <div className={`${dmSans.className} min-h-screen bg-[#0f0e0c] text-[#f5f0e8] pb-[60px] relative`}>
 
       {/* 1. HERO BACKGROUND */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 280, background: 'linear-gradient(180deg, #1a1a2e 0%, #0f0e0c 100%)', zIndex: 0 }} />
+      <div className="absolute top-0 left-0 right-0 h-[280px] bg-gradient-to-b from-[#1a1a2e] to-[#0f0e0c] z-0" />
 
       {/* 2. TOP BAR */}
-      <div style={STYLES.topBar}>
+      <div className="fixed top-0 left-0 right-0 px-6 py-4 flex items-center justify-between z-[100] bg-[#0f0e0c]">
         <button
           onClick={() => router.back()}
-          style={{
-            ...STYLES.backLink,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: C.text,
-            fontWeight: 600,
-          }}
+          className="flex items-center gap-2 text-sm bg-transparent border-none cursor-pointer font-semibold text-[#f5f0e8]"
         >
-          <span style={{ fontSize: 18 }}>←</span>
+          <span className="text-lg">←</span>
           <span>Back</span>
         </button>
         <button
-          style={{ ...STYLES.editButton, ...syne.style }}
+          className={`${syne.className} px-4 py-2 rounded-full text-xs uppercase font-bold tracking-wider bg-white/[0.04] text-white/45 border border-white/[0.09] cursor-pointer`}
         >
           Edit Profile
         </button>
       </div>
 
       {/* 3. HERO SECTION */}
-      <div style={STYLES.heroSection}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-          {/* Avatar */}
-          <div style={{ ...STYLES.avatar, ...syne.style, overflow: 'hidden' as const }}>
+      <div className="relative z-10 max-w-[820px] mx-auto pt-20 px-6 flex flex-col items-center text-center">
+        {/* Avatar with gradient border */}
+        <div className="relative mb-4">
+          <div className="w-[110px] h-[110px] rounded-full p-[3px] bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">
             {profileData.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profileData.avatarUrl}
                 alt="Avatar"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: 9999,
-                }}
+                className="w-full h-full object-cover rounded-full"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
             ) : (
-              getInitials(profileData.displayName)
+              <span className={`${syne.className} text-4xl font-extrabold text-[#f5f0e8]`}>
+                {getInitials(profileData.displayName)}
+              </span>
             )}
           </div>
-
-          {/* User info */}
-          <div style={{ flex: 1, paddingTop: 8 }}>
-            <h1 style={{ ...STYLES.username, ...syne.style }}>{profileData.displayName ?? '—'}</h1>
-            <p style={STYLES.handle}>
-              @{profileData.displayName?.toLowerCase().replace(/\s+/g, '') ?? 'user'} · Joined {formatMemberSince(profileData.createdAt)}
-            </p>
-          </div>
         </div>
 
-        {/* Stat pills row */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginTop: 16 }}>
-          <div
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.08)',
-              borderRadius: 9999,
-              padding: '6px 14px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 2,
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>
-              {profileData.avgAccuracy === null ? '—' : Math.round(Number(profileData.avgAccuracy)) + '%'}
-            </div>
-            <div style={{ fontSize: 11, color: C.muted }}>
-              Accuracy
-            </div>
+        {/* Username */}
+        <h2 className={`${syne.className} text-xl font-bold mb-1 bg-gradient-to-r from-pink-300 to-yellow-300 bg-clip-text text-transparent`}>
+          {profileData.displayName ?? ''}
+        </h2>
+
+        {/* Member since */}
+        <p className="text-sm text-white/45 mb-6">
+          Member since {formatMemberSince(profileData.createdAt)}
+        </p>
+
+        {/* Historical Avatar Card */}
+        {profileData.historicalAvatar && (
+          <div className="bg-white/[0.08] rounded-2xl py-5 px-6 w-full max-w-[400px] text-center">
+            <h3 className={`${syne.className} text-lg font-bold mb-2 text-[#f5f0e8]`}>
+              {profileData.historicalAvatar.avatarName}
+            </h3>
+            {profileData.historicalAvatar.avatarDescription && (
+              <p className="text-sm text-white/45 mb-2 leading-relaxed">
+                {profileData.historicalAvatar.avatarDescription}
+              </p>
+            )}
+            {profileData.historicalAvatar.bornLabel && (
+              <p className="text-xs text-white/45 mb-1">
+                {profileData.historicalAvatar.bornLabel}
+              </p>
+            )}
+            {profileData.historicalAvatar.diedLabel && (
+              <p className="text-xs text-white/45">
+                {profileData.historicalAvatar.diedLabel}
+              </p>
+            )}
           </div>
-          <div
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.08)',
-              borderRadius: 9999,
-              padding: '6px 14px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 2,
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.gold }}>
-              {profileData.totalXp === null ? '—' : profileData.totalXp.toLocaleString() + ' XP'}
-            </div>
-            <div style={{ fontSize: 11, color: C.muted }}>
-              XP
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 4. STAT STRIP */}
-      <div style={STYLES.statStrip}>
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-4 gap-[10px] mb-6">
         {[
           {
             value: profileData.avgAccuracy === null
@@ -478,7 +234,7 @@ export default function ProfilePage() {
                 ? Math.round(Number(profileData.avgAccuracy)) + '%'
                 : '—',
             label: 'Avg accuracy',
-            color: C.orange
+            color: 'text-[#fb923c]'
           },
           {
             value: profileData.totalXp === null
@@ -487,12 +243,12 @@ export default function ProfilePage() {
                 ? profileData.totalXp.toLocaleString() + ' XP'
                 : '—',
             label: 'Total XP',
-            color: C.gold
+            color: 'text-[#f0c060]'
           },
           {
             value: '—',
             label: 'Games played (coming soon)',
-            color: C.purple
+            color: 'text-[#c084fc]'
           },
           {
             value: profileData.roundsPlayed === null
@@ -501,17 +257,17 @@ export default function ProfilePage() {
                 ? profileData.roundsPlayed.toLocaleString()
                 : '—',
             label: 'Rounds played',
-            color: C.teal
+            color: 'text-[#14b8a6]'
           }
         ].map((stat, i) => (
           <div
             key={i}
-            style={STYLES.statCard}
+            className="bg-white/[0.04] border border-white/[0.09] rounded-xl py-3.5 px-4 text-center"
           >
-            <div style={{ ...STYLES.statValue, ...syne.style, color: stat.color }}>
+            <div className={`${syne.className} text-2xl font-extrabold ${stat.color}`}>
               {stat.value}
             </div>
-            <div style={STYLES.statLabel}>
+            <div className="text-xs mt-1 text-white/45">
               {stat.label}
             </div>
           </div>
@@ -519,39 +275,38 @@ export default function ProfilePage() {
       </div>
 
       {/* 5. TWO-COLUMN ROW */}
-      <div style={STYLES.twoColRow}>
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
         {/* Left: Accuracy breakdown */}
-        <div style={STYLES.panel}>
-          <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Accuracy breakdown</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 24 }}>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>—</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
+        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Accuracy breakdown</h3>
+          <div className="flex flex-col items-center gap-2 py-6">
+            <div className="text-sm text-white/35">—</div>
+            <div className="text-xs text-white/35">Coming soon</div>
           </div>
         </div>
         
         {/* Right: Badge collection */}
-        <div style={STYLES.panel}>
-          <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Badge collection</h3>
-          
-          <div style={STYLES.badgeGrid}>
+        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Badge collection</h3>
+          <div className="grid grid-cols-3 gap-2">
             {[
-              { label: 'Gold', count: null, color: C.gold },
-              { label: 'Silver', count: null, color: C.silver },
-              { label: 'Bronze', count: null, color: C.bronze },
-              { label: 'Year', count: null, color: C.gold, sub: 'gold' },
-              { label: 'Location', count: null, color: C.gold, sub: 'gold' },
-              { label: 'Combo', count: null, color: C.gold, sub: 'gold' }
+              { label: 'Gold', count: null, color: '#f0c060' },
+              { label: 'Silver', count: null, color: '#94a3b8' },
+              { label: 'Bronze', count: null, color: '#cd7c4a' },
+              { label: 'Year', count: null, color: '#f0c060', sub: 'gold' },
+              { label: 'Location', count: null, color: '#f0c060', sub: 'gold' },
+              { label: 'Combo', count: null, color: '#f0c060', sub: 'gold' }
             ].map((badge, i) => (
               <div 
                 key={i}
-                style={STYLES.badgeCell}
+                className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]"
               >
-                <div style={{ ...STYLES.badgeCount, ...syne.style, color: badge.color }}>
+                <div className={`${syne.className} text-lg font-bold`} style={{ color: badge.color }}>
                   {badge.count ?? '—'}
                 </div>
-                <div style={STYLES.badgeLabel}>
+                <div className="text-[10px] mt-1 text-white/45">
                   {badge.label}
-                  {badge.sub && <span style={{ marginLeft: 2, opacity: 0.7 }}>({badge.sub})</span>}
+                  {badge.sub && <span className="ml-0.5 opacity-70">({badge.sub})</span>}
                 </div>
               </div>
             ))}
@@ -560,50 +315,37 @@ export default function ProfilePage() {
       </div>
 
       {/* 6. FULL-WIDTH PANEL - Performance by mode */}
-      <div style={STYLES.fullPanel}>
-        <div style={STYLES.panel}>
-          <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Performance by mode</h3>
-          
-          <div style={STYLES.modeRow}>
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
+        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Performance by mode</h3>
+          <div className="grid grid-cols-3 gap-[10px]">
             {/* Daily */}
-            <div 
-              style={{ ...STYLES.modeCard, backgroundColor: 'rgba(30,58,138,0.4)', border: '1px solid rgba(59,130,246,0.3)' }}
-            >
-              <div 
-                style={{ ...STYLES.modeAccent, backgroundColor: '#3b82f6' }}
-              />
-              <div style={{ ...STYLES.modeTitle, ...syne.style }}>Daily</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center', padding: 16 }}>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>—</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
+            <div className="p-4 rounded-xl relative overflow-hidden bg-blue-900/40 border border-blue-500/30">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500" />
+              <div className={`${syne.className} text-lg font-bold mb-2`}>Daily</div>
+              <div className="flex flex-col gap-1 items-center py-4">
+                <div className="text-sm text-white/35">—</div>
+                <div className="text-xs text-white/35">Coming soon</div>
               </div>
             </div>
             
             {/* Level Up */}
-            <div 
-              style={{ ...STYLES.modeCard, backgroundColor: 'rgba(124,58,237,0.3)', border: '1px solid rgba(192,132,252,0.3)' }}
-            >
-              <div 
-                style={{ ...STYLES.modeAccent, backgroundColor: C.purple }}
-              />
-              <div style={{ ...STYLES.modeTitle, ...syne.style }}>Level Up</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center', padding: 16 }}>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>—</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
+            <div className="p-4 rounded-xl relative overflow-hidden bg-purple-900/30 border border-purple-400/30">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#c084fc]" />
+              <div className={`${syne.className} text-lg font-bold mb-2`}>Level Up</div>
+              <div className="flex flex-col gap-1 items-center py-4">
+                <div className="text-sm text-white/35">—</div>
+                <div className="text-xs text-white/35">Coming soon</div>
               </div>
             </div>
             
             {/* Compete */}
-            <div 
-              style={{ ...STYLES.modeCard, backgroundColor: 'rgba(20,184,166,0.25)', border: '1px solid rgba(20,184,166,0.3)' }}
-            >
-              <div 
-                style={{ ...STYLES.modeAccent, backgroundColor: C.teal }}
-              />
-              <div style={{ ...STYLES.modeTitle, ...syne.style }}>Compete</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center', padding: 16 }}>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>—</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
+            <div className="p-4 rounded-xl relative overflow-hidden bg-teal-500/25 border border-teal-500/30">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#14b8a6]" />
+              <div className={`${syne.className} text-lg font-bold mb-2`}>Compete</div>
+              <div className="flex flex-col gap-1 items-center py-4">
+                <div className="text-sm text-white/35">—</div>
+                <div className="text-xs text-white/35">Coming soon</div>
               </div>
             </div>
           </div>
@@ -611,54 +353,48 @@ export default function ProfilePage() {
       </div>
 
       {/* 7. TWO-COLUMN ROW */}
-      <div style={STYLES.twoColRow}>
-        {/* Left: Leaderboard positions */}
-        <div style={STYLES.panel}>
-          <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Leaderboard positions</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 24 }}>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
+        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Leaderboard positions</h3>
+          <div className="flex flex-col items-center gap-2 py-6">
+            <div className="text-sm text-white/35">Coming soon</div>
           </div>
         </div>
-        
-        {/* Right: Score distribution */}
-        <div style={STYLES.panel}>
-          <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Score distribution</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 24 }}>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>Coming soon</div>
+        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Score distribution</h3>
+          <div className="flex flex-col items-center gap-2 py-6">
+            <div className="text-sm text-white/35">Coming soon</div>
           </div>
         </div>
       </div>
 
       {/* 8. FULL-WIDTH PANEL - History collection */}
-      <div style={STYLES.fullPanel}>
-        <div style={STYLES.panel}>
-          <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>History collection</h3>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
+        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+          <h3 className={`${syne.className} text-sm font-bold mb-4`}>History collection</h3>
+          <div className="grid grid-cols-4 gap-3 mb-6">
             {[
-              { label: 'Events seen', value: null, color: C.orange },
-              { label: 'Rated', value: null, color: C.purple },
-              { label: 'Regions', value: null, color: C.teal },
-              { label: 'Countries', value: null, color: C.gold }
+              { label: 'Events seen', value: null, color: '#fb923c' },
+              { label: 'Rated', value: null, color: '#c084fc' },
+              { label: 'Regions', value: null, color: '#14b8a6' },
+              { label: 'Countries', value: null, color: '#f0c060' }
             ].map((item, i) => (
               <div 
                 key={i}
-                style={STYLES.badgeCell}
+                className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]"
               >
-                <div style={{ ...STYLES.badgeCount, ...syne.style, color: item.color, fontSize: 20 }}>
+                <div className={`${syne.className} text-xl font-bold`} style={{ color: item.color }}>
                   {item.value ?? '—'}
                 </div>
-                <div style={STYLES.badgeLabel}>
+                <div className="text-[10px] mt-1 text-white/45">
                   {item.label}
                 </div>
               </div>
             ))}
           </div>
-          
-          <div style={{ marginTop: 24 }}>
-            <h4 style={{ fontSize: 12, fontWeight: 700, marginBottom: 12, color: C.dim }}>By era</h4>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="mt-6">
+            <h4 className="text-xs font-bold mb-3 text-white/70">By era</h4>
+            <div className="flex flex-col gap-2">
               {[
                 { label: 'Contemporary', count: null, percent: 0 },
                 { label: 'Modern', count: null, percent: 0 },
@@ -667,17 +403,14 @@ export default function ProfilePage() {
                 { label: 'Ancient', count: null, percent: 0 }
               ].map((era, i) => (
                 <div key={i}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                    <span style={{ color: C.dim }}>{era.label}</span>
-                    <span style={{ color: C.muted }}>{era.count ?? '—'} ({era.percent}%)</span>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-white/70">{era.label}</span>
+                    <span className="text-white/45">{era.count ?? '—'} ({era.percent}%)</span>
                   </div>
-                  <div style={{ ...STYLES.barContainer, height: 6 }}>
-                    <div 
-                      style={{ 
-                        ...STYLES.barFill,
-                        width: `${era.percent}%`, 
-                        backgroundColor: 'rgba(255,255,255,0.2)'
-                      }}
+                  <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-white/20"
+                      style={{ width: `${era.percent}%` }}
                     />
                   </div>
                 </div>
@@ -688,11 +421,10 @@ export default function ProfilePage() {
       </div>
 
       {/* 9. FULL-WIDTH PANEL - Accuracy by century */}
-      <div style={{ ...STYLES.fullPanel, paddingBottom: 32 }}>
-        <div style={STYLES.panel}>
-          <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Accuracy by century</h3>
-          
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8">
+        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Accuracy by century</h3>
+          <div className="flex flex-wrap gap-2">
             {[
               { label: '1900s', percent: null, opacity: 1 },
               { label: '1800s', percent: null, opacity: 0.85 },
@@ -701,14 +433,15 @@ export default function ProfilePage() {
               { label: '1500s', percent: null, opacity: 0.4 },
               { label: 'pre-1500', percent: null, opacity: 0.25 }
             ].map((century, i) => (
-              <div 
+              <div
                 key={i}
-                style={{ ...STYLES.centuryTile, opacity: century.opacity }}
+                className="py-3 px-3 rounded-lg text-center bg-[rgba(251,146,60,0.1)] border border-[rgba(251,146,60,0.2)]"
+                style={{ opacity: century.opacity }}
               >
-                <div style={{ ...STYLES.centuryLabel, ...syne.style }}>
+                <div className={`${syne.className} text-sm font-bold text-[#fb923c]`}>
                   {century.label}
                 </div>
-                <div style={STYLES.centuryPercent}>
+                <div className="text-xs mt-0.5 text-white/45">
                   {century.percent ?? '—'}
                 </div>
               </div>
@@ -718,41 +451,21 @@ export default function ProfilePage() {
       </div>
 
       {/* 10. ACCOUNT SECTION */}
-      <div style={STYLES.fullPanel}>
-        <div style={STYLES.panel}>
-          <h3 style={{ ...STYLES.sectionTitle, ...syne.style }}>Account</h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 14, color: C.dim }}>Email</span>
-              <span style={{ fontSize: 14, color: C.muted }}>{profileData.email ?? '—'}</span>
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
+        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Account</h3>
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-white/70">Email</span>
+              <span className="text-sm text-white/45">{profileData.email ?? '—'}</span>
             </div>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 14, color: C.dim }}>Member since</span>
-              <span style={{ fontSize: 14, color: C.muted }}>{formatMemberSince(profileData.createdAt)}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-white/70">Member since</span>
+              <span className="text-sm text-white/45">{formatMemberSince(profileData.createdAt)}</span>
             </div>
-            
             <button
               onClick={handleSignOut}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                borderRadius: 8,
-                fontSize: 14,
-                fontWeight: 600,
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                color: '#ef4444',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.25)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
-              }}
+              className="w-full py-3 px-4 rounded-lg text-sm font-semibold bg-red-500/15 text-red-500 border border-red-500/30 cursor-pointer transition-colors hover:bg-red-500/25"
             >
               Sign out
             </button>
