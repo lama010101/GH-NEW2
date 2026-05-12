@@ -92,6 +92,7 @@ interface Room {
   id: string;
   broadcast: (message: string) => void;
   env: Record<string, string | undefined>;
+  connections: Iterable<Connection>;
 }
 
 interface Connection {
@@ -163,7 +164,12 @@ export default class GameServer {
   // Used to derive NEXTJS_BASE_URL dynamically for production correctness.
   private detectedBaseUrl: string | null = null;
 
-  constructor(readonly room: Room) {}
+  constructor(readonly room: Room) {
+    console.log("[DO_INSTANCE]", {
+      room: this.room.id,
+      location: "constructor"
+    });
+  }
 
   private getNextJsBaseUrl(): string {
     if (this.detectedBaseUrl) return this.detectedBaseUrl;
@@ -473,6 +479,10 @@ export default class GameServer {
    * This replaces STATE_INVALIDATED — clients no longer need to REST-fetch.
    */
   private broadcastStateUpdate(): void {
+    console.log("[DO_INSTANCE]", {
+      room: this.room.id,
+      location: "broadcastStateUpdate"
+    });
     if (!this.snapshot) return;
     let snapshotWithReadyState: unknown = this.snapshot;
     let resultPhaseEndsAt: number | undefined;
@@ -510,16 +520,33 @@ export default class GameServer {
       })),
     });
 
-    const msg = JSON.stringify({
-      type: "STATE_UPDATE",
-      snapshot: snapshotWithReadyState,
-      results: this.pendingResults ?? (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
+    console.log("[DO_BROADCAST_ROOM]", {
+      room: this.room.id,
+      socketCount: this.connections.size,
     });
-    this.room.broadcast(msg);
+
+    for (const connection of this.room.connections) {
+      const socketPlayerId = this.connections.get(connection.id);
+      const perSocketSnapshot = { ...snapshotWithReadyState as Record<string, unknown>, viewerPlayerId: socketPlayerId ?? null };
+      connection.send(JSON.stringify({
+        type: "STATE_UPDATE",
+        snapshot: perSocketSnapshot,
+        results: this.pendingResults ?? (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
+      }));
+    }
     this.pendingResults = null; // clear after broadcast
   }
 
   async onConnect(connection: Connection, ctx: { request: { headers: { get: (name: string) => string | null } } }): Promise<void> {
+    console.log("[DO_INSTANCE]", {
+      room: this.room.id,
+      location: "onConnect"
+    });
+    console.log("[DO_SOCKET_CONNECTED]", {
+      room: this.room.id,
+      connectionId: connection.id,
+      socketCount: this.connections.size,
+    });
     console.log("[PartyKit] Client connected:", connection.id);
 
     // Detect base URL from Origin header for production correctness
@@ -562,6 +589,11 @@ export default class GameServer {
   }
 
   async onClose(connection: Connection): Promise<void> {
+    console.log("[DO_SOCKET_DISCONNECTED]", {
+      room: this.room.id,
+      connectionId: connection.id,
+      socketCount: this.connections.size,
+    });
     console.log("[PartyKit] Client disconnected:", connection.id);
 
     const playerId = this.connections.get(connection.id);
@@ -672,6 +704,10 @@ export default class GameServer {
     try {
       switch (data.type) {
         case "JOIN_ROOM": {
+          console.log("[DO_INSTANCE]", {
+            room: this.room.id,
+            location: "JOIN_ROOM"
+          });
           const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/join`;
           const response = await fetch(apiUrl, {
             method: "POST",
