@@ -1,13 +1,15 @@
+"use client";
+
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
-import { YearPicker } from "@/components/game/YearPicker";
-import type { YearPickerHandle, YearPickerScale } from "@/components/game/YearPicker";
 import dynamic from "next/dynamic";
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 
 const GameMap = dynamic(
   () => import("@/components/GameMap").then((m) => m.GameMap),
   { ssr: false }
 );
+
+type YearScale = "century" | "decade" | "year";
 
 interface RoundActiveSectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -27,6 +29,12 @@ interface RoundActiveSectionProps {
   viewer: SessionPlayer | null;
 }
 
+const SCALE_STEP: Record<YearScale, number> = {
+  century: 100,
+  decade: 10,
+  year: 1,
+};
+
 export default function RoundActiveSection({
   snapshot,
   timeRemaining,
@@ -41,292 +49,268 @@ export default function RoundActiveSection({
   onSubmit,
   onOpenHints,
   guessYearRef,
-  viewer,
 }: RoundActiveSectionProps) {
   const currentEvent = snapshot.rounds?.[snapshot.currentRoundIndex];
-  const guessLocation = guessLat !== null && guessLng !== null
-    ? { lat: guessLat, lng: guessLng }
-    : null;
-
-  const handleMapSetLocation = (location: { lat: number; lng: number }) => {
-    onSetLocation(location);
-  };
+  const guessLocation =
+    guessLat !== null && guessLng !== null
+      ? { lat: guessLat, lng: guessLng }
+      : null;
 
   const [minimapExpanded, setMinimapExpanded] = useState(false);
-  const yearPickerRef = useRef<YearPickerHandle | null>(null);
-  const [yearScale, setYearScale] = useState<YearPickerScale>('century');
+  const [yearScale, setYearScale] = useState<YearScale>("century");
 
-  const effectiveMinYear = snapshot.config.yearMin;
-  const effectiveMaxYear = snapshot.config.yearMax;
-  const pickerValue = Math.min(Math.max(1950, effectiveMinYear), effectiveMaxYear);
-  const selectedYear = guessYear;
-  const isYearSelected = selectedYear !== null;
+  const yearMin = snapshot.config.yearMin;
+  const yearMax = snapshot.config.yearMax;
 
-  const handleYearChange = useCallback((nextYear: number) => {
-    guessYearRef.current = nextYear;
-    onSetYear(nextYear);
-  }, [guessYearRef, onSetYear]);
+  const isLocked = busy || hasSubmitted || localSubmitted;
+  const canSubmit = !isLocked && guessYear !== null && guessLocation !== null;
 
-  const formatTime = (seconds: number) => {
-    const s = Math.max(0, Math.floor(seconds));
-    const mins = Math.floor(s / 60);
-    const secs = s % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  // Format timer
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  const canInteract = !(hasSubmitted || localSubmitted || busy);
+  // Snap slider value to scale step
+  const snapToScale = (raw: number, scale: YearScale): number => {
+    const step = SCALE_STEP[scale];
+    return Math.round(raw / step) * step;
+  };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = Number(e.target.value);
+    const snapped = snapToScale(raw, yearScale);
+    const clamped = Math.max(yearMin, Math.min(yearMax, snapped));
+    onSetYear(clamped);
+    guessYearRef.current = clamped;
+  };
+
+  const handleScaleChange = (scale: YearScale) => {
+    setYearScale(scale);
+    // Re-snap current value to new scale
+    if (guessYear !== null) {
+      const snapped = snapToScale(guessYear, scale);
+      const clamped = Math.max(yearMin, Math.min(yearMax, snapped));
+      onSetYear(clamped);
+      guessYearRef.current = clamped;
+    }
+  };
+
+  const handleMapSetLocation = (location: { lat: number; lng: number }) => {
+    if (!isLocked) {
+      onSetLocation(location);
+    }
+  };
 
   return (
-    <section style={{
-      position: "fixed",
-      inset: 0,
-      zIndex: 30,
-      display: "flex",
-      flexDirection: "column",
-      background: "#000",
-      overflow: "hidden",
-      fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
-    }}>
-      {/* Top overlay bar */}
-      <div style={{
-        height: 48,
-        background: "rgba(0, 0, 0, 0.55)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 16px",
-        flexShrink: 0,
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-      }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: "#fff", letterSpacing: "1px", textTransform: "uppercase" }}>
-          Round {snapshot.currentRoundIndex + 1}
-        </span>
-        <span style={{
-          fontSize: 15,
-          fontWeight: 500,
-          color: timeRemaining !== null && timeRemaining <= 10 ? "#ef4444" : "#fff",
-          fontVariantNumeric: "tabular-nums",
-          letterSpacing: "0.5px",
-        }}>
-          {timeRemaining === null ? "—" : formatTime(timeRemaining)}
-        </span>
-      </div>
-
-      {/* Main image surface */}
-      <div style={{
-        flex: 1,
-        position: "relative",
+    <section
+      style={{
+        height: "100dvh",
+        width: "100%",
+        background: "#111",
         overflow: "hidden",
-        minHeight: 0,
-      }}>
-        {currentEvent?.imageUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={currentEvent.imageUrl}
-            alt={currentEvent.title ?? "Historical image"}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-            }}
-          />
-        ) : (
-          <div style={{
-            width: "100%",
-            height: "100%",
-            background: "#0f0f0f",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "rgba(255,255,255,0.4)",
-            fontSize: 14,
-          }}>
-            No image available
-          </div>
-        )}
+        position: "relative",
+      }}
+    >
+      <style>{`
+        .minimap-container .leaflet-control-zoom {
+          display: none !important;
+        }
+      `}</style>
 
-        {/* Floating translucent minimap */}
-        <div style={{
+      {/* IMAGE */}
+      {currentEvent?.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={currentEvent.imageUrl}
+          alt="Historical event"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
+        <div style={{ position: "absolute", inset: 0, width: "100%", height: "100%", background: "#222" }} />
+      )}
+
+      {/* MINIMAP overlay */}
+      <div
+        className="minimap-container"
+        style={{
           position: "absolute",
-          bottom: 16,
-          right: 16,
-          width: minimapExpanded ? "min(300px, 60vw)" : "min(120px, 26vw)",
-          height: minimapExpanded ? "min(220px, 35vh)" : "min(120px, 26vw)",
+          bottom: 12,
+          right: 12,
+          width: minimapExpanded ? 220 : 120,
+          height: minimapExpanded ? 220 : 120,
           borderRadius: 12,
           overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.12)",
-          background: "rgba(0,0,0,0.4)",
-          backdropFilter: "blur(4px)",
-          WebkitBackdropFilter: "blur(4px)",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
-          transition: "width 0.3s ease, height 0.3s ease",
-          zIndex: 5,
-          pointerEvents: canInteract ? "auto" : "none",
-        }}>
-          <div style={{ width: "100%", height: "100%", filter: minimapExpanded ? "none" : "saturate(0.6) brightness(0.85)" }}>
-            <GameMap
-              guessLocation={guessLocation}
-              onSetLocation={handleMapSetLocation}
-              localPlayerAvatarUrl={viewer?.avatarUrl ?? null}
-              localPlayerDisplayName={viewer?.displayName}
-            />
-          </div>
-
-          {/* Compact overlay */}
-          {!minimapExpanded && (
-            <div
-              onClick={() => setMinimapExpanded(true)}
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(0,0,0,0.2)",
-                cursor: "pointer",
-                zIndex: 10,
-              }}
-            >
-              <span style={{
-                fontSize: 10,
-                color: "rgba(255,255,255,0.8)",
-                fontWeight: 600,
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                padding: "4px 8px",
-                borderRadius: 4,
-                background: "rgba(0,0,0,0.4)",
-              }}>
-                Map
-              </span>
-            </div>
-          )}
-
-          {/* Collapse button */}
-          {minimapExpanded && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setMinimapExpanded(false); }}
-              style={{
-                position: "absolute",
-                top: 6,
-                right: 6,
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                background: "rgba(0,0,0,0.6)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                color: "#fff",
-                fontSize: 16,
-                lineHeight: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                zIndex: 10,
-                padding: 0,
-              }}
-              aria-label="Collapse map"
-              type="button"
-            >
-              ×
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Persistent timeline */}
-      <div
-        style={{
-          height: 104,
-          background: "rgba(0, 0, 0, 0.85)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "8px 10px 10px",
-          flexShrink: 0,
-          opacity: canInteract ? 1 : 0.5,
-          pointerEvents: canInteract ? "auto" : "none",
+          border: "2px solid rgba(255,255,255,0.2)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.5)",
+          transition: "width 0.2s ease, height 0.2s ease",
+          zIndex: 10,
+          cursor: "pointer",
         }}
+        onClick={() => setMinimapExpanded((v) => !v)}
       >
-        <YearPicker
-          ref={yearPickerRef}
-          value={selectedYear ?? pickerValue}
-          onChange={handleYearChange}
-          min={effectiveMinYear}
-          max={effectiveMaxYear}
-          defaultScale={yearScale}
-          onScaleChange={setYearScale}
-          className="w-full"
-          valueIsCommitted={isYearSelected}
+        <GameMap
+          guessLocation={guessLocation}
+          onSetLocation={handleMapSetLocation}
         />
       </div>
 
-      {/* Bottom action area */}
-      <div style={{
-        padding: "16px 20px calc(16px + env(safe-area-inset-bottom))",
-        background: "rgba(0, 0, 0, 0.9)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 10,
-        flexShrink: 0,
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-      }}>
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={busy || hasSubmitted || localSubmitted || guessYear === null || guessLocation === null}
+      {/* FLOATING BOTTOM PANEL */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: "rgba(17, 17, 17, 0.82)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          padding: "16px 16px 28px",
+          zIndex: 20,
+        }}
+      >
+        {/* Scale tabs */}
+        <div
+          style={{
+            display: "flex",
+            background: "rgba(255,255,255,0.07)",
+            borderRadius: 999,
+            padding: 3,
+            marginBottom: 16,
+          }}
+        >
+          {(["year", "decade", "century"] as YearScale[]).map((scale) => {
+            const active = scale === yearScale;
+            return (
+              <button
+                key={scale}
+                type="button"
+                onClick={() => handleScaleChange(scale)}
+                disabled={isLocked}
+                style={{
+                  flex: 1,
+                  padding: "6px 0",
+                  borderRadius: 999,
+                  border: "none",
+                  background: active ? "rgba(255,174,66,0.18)" : "transparent",
+                  color: active ? "#ffae42" : "rgba(255,255,255,0.5)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.8px",
+                  textTransform: "uppercase",
+                  cursor: isLocked ? "not-allowed" : "pointer",
+                  transition: "all 150ms ease",
+                }}
+              >
+                {scale.toUpperCase()}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Year display */}
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 28,
+            fontWeight: 700,
+            color: guessYear !== null ? "#ffae42" : "rgba(255,255,255,0.25)",
+            marginBottom: 12,
+            fontVariantNumeric: "tabular-nums",
+            minHeight: 36,
+          }}
+        >
+          {guessYear !== null ? guessYear : "—"}
+        </div>
+
+        {/* Slider */}
+        <input
+          type="range"
+          min={yearMin}
+          max={yearMax}
+          step={SCALE_STEP[yearScale]}
+          value={guessYear ?? Math.round((yearMin + yearMax) / 2)}
+          onChange={handleSliderChange}
+          disabled={isLocked}
           style={{
             width: "100%",
-            maxWidth: 320,
-            height: 52,
-            borderRadius: 999,
-            border: "none",
-            background: busy || hasSubmitted || localSubmitted || guessYear === null || guessLocation === null
-              ? "rgba(255,255,255,0.1)"
-              : "linear-gradient(135deg, #ff8a00, #ffae42)",
-            color: busy || hasSubmitted || localSubmitted || guessYear === null || guessLocation === null
-              ? "rgba(255,255,255,0.4)"
-              : "#17110a",
-            fontSize: 16,
-            fontWeight: 700,
-            cursor: busy || hasSubmitted || localSubmitted || guessYear === null || guessLocation === null
-              ? "not-allowed"
-              : "pointer",
+            accentColor: "#ffae42",
+            cursor: isLocked ? "not-allowed" : "pointer",
+            height: 4,
+            marginBottom: 8,
+          }}
+        />
+
+        {/* Range labels */}
+        <div
+          style={{
             display: "flex",
+            justifyContent: "space-between",
+            fontSize: 10,
+            color: "rgba(255,255,255,0.3)",
+            marginBottom: 16,
+          }}
+        >
+          <span>{yearMin}</span>
+          <span>{yearMax}</span>
+        </div>
+
+        {/* SUBMIT ROW */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: 12,
             alignItems: "center",
             justifyContent: "center",
-            letterSpacing: "0.5px",
           }}
         >
-          {busy ? "Submitting…" : "Submit Guess"}
-        </button>
+          <button
+            type="button"
+            onClick={onOpenHints}
+            disabled={isLocked}
+            style={{
+              width: 80,
+              height: 52,
+              borderRadius: 999,
+              border: "1.5px solid rgba(255,255,255,0.25)",
+              background: "rgba(255,255,255,0.08)",
+              color: isLocked ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.6)",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: isLocked ? "not-allowed" : "pointer",
+            }}
+          >
+            Hints
+          </button>
 
-        <button
-          type="button"
-          onClick={onOpenHints}
-          disabled={busy || hasSubmitted || localSubmitted}
-          style={{
-            background: "transparent",
-            border: "none",
-            color: busy || hasSubmitted || localSubmitted ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.6)",
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: busy || hasSubmitted || localSubmitted ? "not-allowed" : "pointer",
-            padding: "8px 16px",
-            letterSpacing: "0.5px",
-          }}
-        >
-          Hints
-        </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={!canSubmit}
+            style={{
+              width: "100%",
+              maxWidth: 240,
+              height: 52,
+              borderRadius: 999,
+              border: "none",
+              background: canSubmit
+                ? "linear-gradient(135deg, #ff8a00, #ffae42)"
+                : "rgba(255,255,255,0.1)",
+              color: canSubmit ? "#17110a" : "rgba(255,255,255,0.4)",
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: canSubmit ? "pointer" : "not-allowed",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              letterSpacing: "0.5px",
+            }}
+          >
+            {busy ? "Submitting…" : hasSubmitted || localSubmitted ? "Submitted ✓" : "Submit Guess"}
+          </button>
+        </div>
       </div>
     </section>
   );

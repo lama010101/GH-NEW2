@@ -81,26 +81,6 @@ function MapClickHandler({ onSetLocation }: { onSetLocation: (location: LatLng) 
   return null;
 }
 
-function createAvatarIcon(displayName: string, avatarUrl: string | null): L.DivIcon {
-  const initial = displayName.charAt(0).toUpperCase();
-  const circleContent = avatarUrl
-    ? `<img src="${avatarUrl}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); object-fit: cover; display: block;" />`
-    : `<div style="width: 36px; height: 36px; border-radius: 50%; background: #4b5563; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">${initial}</div>`;
-
-  const html = `
-    <div style="position: relative; width: 36px; height: 36px; overflow: visible;">
-      ${circleContent}
-    </div>
-  `;
-
-  return L.divIcon({
-    html,
-    className: '',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-  });
-}
-
 export class GameMap extends Component<GameMapProps, GameMapState> {
   constructor(props: GameMapProps) {
     super(props);
@@ -109,13 +89,6 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
 
   static getDerivedStateFromError(error: Error): GameMapState {
     return { hasError: true, errorMessage: error.message };
-  }
-
-  componentDidMount() {
-    console.log("[GAME_MAP_MOUNT]", {
-      guessLocation: this.props.guessLocation,
-      timestamp: Date.now()
-    });
   }
 
   componentDidUpdate(prevProps: GameMapProps) {
@@ -163,14 +136,12 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
             {this.props.guessLocation && (
               <Marker
                 position={[this.props.guessLocation.lat, this.props.guessLocation.lng]}
-                icon={
-                  this.props.localPlayerAvatarUrl !== undefined || this.props.localPlayerDisplayName !== undefined
-                    ? createAvatarIcon(
-                        this.props.localPlayerDisplayName ?? "You",
-                        this.props.localPlayerAvatarUrl ?? null
-                      )
-                    : undefined
-                }
+                icon={L.divIcon({
+                  className: "",
+                  html: '<div style="width:12px;height:12px;background:#ff8a00;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
+                  iconSize: [12, 12],
+                  iconAnchor: [6, 6],
+                })}
               />
             )}
             {this.props.playerMarkers &&
@@ -178,7 +149,12 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
                 <Marker
                   key={marker.playerId}
                   position={[marker.location.lat, marker.location.lng]}
-                  icon={createAvatarIcon(marker.displayName, marker.avatarUrl)}
+                  icon={L.divIcon({
+                    className: "",
+                    html: '<div style="width:12px;height:12px;background:#ff8a00;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6],
+                  })}
                 />
               ))}
           </MapContainer>

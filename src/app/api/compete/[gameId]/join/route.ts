@@ -8,8 +8,11 @@ export async function POST(
   request: Request,
   { params }: { params: { gameId: string } }
 ) {
-  const secret = request.headers.get("x-partykit-secret");
-  if (!secret || secret !== process.env.PARTYKIT_SECRET) {
+  const partykitSecret = request.headers.get("x-partykit-secret");
+  const expectedSecret = process.env.PARTYKIT_SECRET;
+  if (partykitSecret && expectedSecret && partykitSecret === expectedSecret) {
+    // Server-to-server call from PartyKit — skip user auth
+  } else {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
