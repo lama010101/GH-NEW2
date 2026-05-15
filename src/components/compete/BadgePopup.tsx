@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface Badge {
   dimension: 'year' | 'location' | 'combo';
@@ -18,249 +18,241 @@ interface BadgePopupProps {
 }
 
 export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopupProps) {
+  const [currentBadgeIndex, setCurrentBadgeIndex] = useState(0);
+  const [showNearMisses, setShowNearMisses] = useState(false);
+  const [showTapToContinue, setShowTapToContinue] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const badgeCardRef = useRef<HTMLDivElement>(null);
+
   const tierColor: Record<string, string> = {
-    gold: '#FFD700',
-    silver: '#C0C0C0',
-    bronze: '#CD7F32',
+    gold: '#ffd700',
+    silver: '#c0c0c0',
+    bronze: '#cd7f32',
   };
-  const tierGlow: Record<string, string> = {
-    gold: '0 0 18px 4px rgba(255,215,0,0.45)',
-    silver: '0 0 18px 4px rgba(192,192,192,0.35)',
-    bronze: '0 0 18px 4px rgba(205,127,50,0.35)',
-  };
+
   const dimLabel: Record<string, string> = {
     location: 'WHERE',
     year: 'WHEN',
-    combo: 'COMBO',
-  };
-  const dimIcon: Record<string, string> = {
-    location: '📍',
-    year: '📅',
-    combo: '⚡',
+    combo: 'WHERE',
   };
 
-  // Dominant badge: combo wins, else highest tier, else no preference
-  const tierRank: Record<string, number> = { gold: 3, silver: 2, bronze: 1 };
-  let dominantBadge: typeof badges[0] | null = null;
-  for (const b of badges) {
-    if (!dominantBadge) { dominantBadge = b; continue }
-    if (b.dimension === 'combo') { dominantBadge = b; break }
-    if (tierRank[b.tier] > tierRank[dominantBadge.tier]) dominantBadge = b;
-  }
+  const starCount: Record<string, number> = {
+    gold: 3,
+    silver: 2,
+    bronze: 1,
+  };
+
+  // Auto-advance badge sequence
+  useEffect(() => {
+    if (badges.length === 0) {
+      setShowNearMisses(true);
+      setShowTapToContinue(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (currentBadgeIndex < badges.length - 1) {
+        setCurrentBadgeIndex(prev => prev + 1);
+      } else {
+        setShowNearMisses(true);
+        setShowTapToContinue(true);
+      }
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [currentBadgeIndex, badges.length]);
+
+  // Trigger celebration effect at 400ms after badge appears
+  useEffect(() => {
+    if (badges.length > 0 && currentBadgeIndex < badges.length) {
+      const timer = setTimeout(() => {
+        setCelebrate(true);
+        // Reset celebration after animation
+        setTimeout(() => setCelebrate(false), 600);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [currentBadgeIndex, badges.length]);
+
+  // Generate celebration particles
+  const renderParticles = () => {
+    if (!celebrate || !badgeCardRef.current) return null;
+
+    const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#fff'];
+    const particles = [];
+
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * 360;
+      const distance = 60 + Math.random() * 40;
+      const dx = Math.cos((angle * Math.PI) / 180) * distance;
+      const dy = Math.sin((angle * Math.PI) / 180) * distance;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+
+      particles.push(
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: color,
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            animation: 'particleFly 600ms ease-out forwards',
+            '--dx': `${dx}px` as any,
+            '--dy': `${dy}px` as any,
+          } as any}
+        />
+      );
+    }
+
+    return <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>{particles}</div>;
+  };
+
+  const currentBadge = badges[currentBadgeIndex];
 
   return (
     <div
       onClick={onDismiss}
       style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,0.72)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '24px',
-        animation: 'badgeFadeIn 0.28s ease',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(0,0,0,0.75)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '24px',
       }}
     >
       <style>{`
-        @keyframes badgeFadeIn {
-          from { opacity: 0; transform: scale(0.92); }
-          to   { opacity: 1; transform: scale(1); }
+        @keyframes badgeEnter {
+          from { transform: scale(0.3); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
         }
-        @keyframes badgePop {
-          0%   { opacity: 0; transform: scale(0.7) translateY(12px); }
-          65%  { transform: scale(1.08) translateY(-2px); }
-          100% { opacity: 1; transform: scale(1) translateY(0); }
+        @keyframes starEnter {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes coinRise {
-          from { transform: translateY(24px) scale(0.7); opacity: 0; }
-          to   { transform: translateY(0)    scale(1);   opacity: 1; }
-        }
-        @keyframes iconDrop {
-          from { transform: translateY(-20px) scale(0.7); opacity: 0; }
-          to   { transform: translateY(0)     scale(1);   opacity: 1; }
-        }
-        @keyframes starsDrop {
-          from { transform: translateY(-28px) scale(0.6); opacity: 0; }
-          to   { transform: translateY(0)     scale(1);   opacity: 1; }
-        }
-        @keyframes medalSnap {
-          0%   { transform: scale(1); }
-          40%  { transform: scale(1.08); }
-          70%  { transform: scale(0.96); }
-          100% { transform: scale(1); }
+        @keyframes particleFly {
+          0% { transform: translate(0,0) scale(1); opacity: 1; }
+          100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
         }
       `}</style>
 
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: '#1e1e1e',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 20,
-          padding: '28px 24px 22px',
-          maxWidth: 380,
-          width: '100%',
-          textAlign: 'center',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
-        }}
-      >
-        {dominantBadge && (
-          <div style={{
-            fontSize: 13, fontWeight: 700,
-            color: tierColor[dominantBadge.tier],
-            marginBottom: 18, letterSpacing: '0.5px',
-          }}>
-            {dominantBadge.tier.toUpperCase()} · {dimLabel[dominantBadge.dimension]}
-          </div>
-        )}
-
-        {/* Badge tiles */}
-        <div style={{
-          display: 'flex', justifyContent: 'center',
-          gap: 10, flexWrap: 'wrap', marginBottom: nearMisses.length > 0 ? 16 : 0,
-        }}>
-          {badges.map((badge, i) => {
-            const isDominant = dominantBadge?.dimension === badge.dimension && dominantBadge?.tier === badge.tier;
-            return (
-              <div key={i} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: 4,
-                minWidth: 76,
-                animation: `badgePop 0.45s ease ${i * 0.12 + 0.1}s both`,
-              }}>
-                {(() => {
-                  const dimIcon = badge.dimension === 'year' ? 'calendar' : badge.dimension === 'location' ? 'map' : 'combo';
-                  const starCount = badge.tier === 'gold' ? 3 : badge.tier === 'silver' ? 2 : 1;
-                  const baseDelay = i * 0.22;
-                  return (
-                    <div style={{ position: 'relative', width: '100px', height: '110px', margin: '0 auto' }}>
-                      {/* Layer 1: coin ring — fills full tile, enters from below */}
-                      <div style={{
-                        position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-                        width: '90px', height: '90px',
-                        borderRadius: '50%',
-                        boxShadow: isDominant ? tierGlow[badge.tier] : 'none',
-                      }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={`/badges/coin_${badge.tier}.webp`}
-                          alt=""
-                          style={{
-                            width: '100%', height: '100%',
-                            objectFit: 'contain',
-                            animation: `coinRise 0.28s ease ${baseDelay}s both, medalSnap 0.12s ease ${baseDelay + 0.3}s both`,
-                          }}
-                        />
-                      </div>
-                      {/* Layer 2: dimension icon — centered inside coin, 58% size */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`/badges/${dimIcon}_${badge.tier}.webp`}
-                        alt=""
-                        style={{
-                          position: 'absolute',
-                          bottom: '8px', left: '50%',
-                          width: '50px', height: '50px',
-                          transform: 'translateX(-50%)',
-                          objectFit: 'contain',
-                          animation: `iconDrop 0.28s ease ${baseDelay + 0.05}s both, medalSnap 0.12s ease ${baseDelay + 0.3}s both`,
-                        }}
-                      />
-                      {/* Layer 3: stars — at top of coin */}
-                      {Array.from({ length: starCount }).map((_, starIndex) => {
-                        // Explicit star positions to avoid overlap
-                        const starPositions: Record<number, number[]> = {
-                          1: [50],
-                          2: [35, 65],
-                          3: [25, 50, 75],
-                        };
-                        // Star sizes based on count to prevent overlap
-                        const starWidths: Record<number, string> = {
-                          1: '42%',
-                          2: '30%',
-                          3: '24%',
-                        };
-                        return (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            key={starIndex}
-                            src={`/badges/star_${badge.tier}.webp`}
-                            alt=""
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: `${starPositions[starCount][starIndex]}%`,
-                              width: starWidths[starCount],
-                              height: 'auto',
-                              transform: 'translateX(-50%)',
-                              objectFit: 'contain',
-                              animation: `starsDrop 0.28s ease ${baseDelay + 0.1}s both, medalSnap 0.12s ease ${baseDelay + 0.3}s both`,
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Near-miss section */}
-        {nearMisses.length > 0 && (
-          <>
-            <div style={{
-              fontSize: 10, color: '#555', textTransform: 'uppercase',
-              letterSpacing: '1.5px', marginBottom: 8,
-            }}>
-              So Close
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-              {nearMisses.map((nm, i) => (
-                <div key={i} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  gap: 3,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 10,
-                  padding: '8px 12px',
-                  minWidth: 64,
-                  opacity: 0.75,
-                  animation: `badgePop 0.4s ease ${i * 0.1 + (badges.length * 0.12) + 0.2}s both`,
-                }}>
-                  <span style={{ fontSize: 18 }}>{dimIcon[nm.dimension]}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    CLOSE
-                  </span>
-                  <span style={{ fontSize: 10, color: '#666', textTransform: 'uppercase' }}>
-                    {dimLabel[nm.dimension]}
-                  </span>
-                  <span style={{ fontSize: 11, color: '#888', fontWeight: 600 }}>
-                    {nm.accuracy}<span style={{ color: "#ffffff", fontSize: "2.75px" }}>%</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Dismiss */}
-        <button
-          onClick={onDismiss}
+      {/* Badge card */}
+      {currentBadge && (
+        <div
+          ref={badgeCardRef}
           style={{
-            marginTop: 20,
+            position: 'relative',
+            width: '160px',
+            height: '200px',
             background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 10,
-            color: '#aaa',
-            fontSize: 12,
-            padding: '8px 24px',
-            cursor: 'pointer',
-            letterSpacing: '0.5px',
+            borderRadius: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
           }}
         >
-          TAP TO DISMISS
-        </button>
-      </div>
+          {renderParticles()}
+
+          {/* Base image */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={currentBadge.dimension === 'year' ? '/badges/when.webp' : '/badges/where.webp'}
+            alt=""
+            style={{
+              width: '96px',
+              height: '96px',
+              objectFit: 'contain',
+              animation: 'badgeEnter 400ms ease-out 0ms both',
+            }}
+          />
+
+          {/* Stars row */}
+          <div style={{ display: 'flex', flexDirection: 'row', gap: '6px' }}>
+            {Array.from({ length: starCount[currentBadge.tier] }).map((_, starIndex) => (
+              <span
+                key={starIndex}
+                style={{
+                  fontSize: '20px',
+                  color: tierColor[currentBadge.tier],
+                  animation: `starEnter 250ms ease-out ${420 + starIndex * 140}ms both`,
+                }}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+
+          {/* Tier label */}
+          <div
+            style={{
+              fontSize: '10px',
+              letterSpacing: '1.5px',
+              color: tierColor[currentBadge.tier],
+              opacity: 0.8,
+              textTransform: 'uppercase',
+            }}
+          >
+            {currentBadge.tier}
+          </div>
+
+          {/* Dimension label */}
+          <div
+            style={{
+              fontSize: '11px',
+              color: 'white',
+              opacity: 0.55,
+              textTransform: 'uppercase',
+            }}
+          >
+            {dimLabel[currentBadge.dimension]}
+          </div>
+        </div>
+      )}
+
+      {/* Near-misses */}
+      {showNearMisses && nearMisses.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          {nearMisses.map((nm, i) => (
+            <div
+              key={i}
+              style={{
+                width: '120px',
+                height: '60px',
+                background: 'rgba(255,255,255,0.04)',
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+              }}
+            >
+              <div style={{ fontSize: '11px', color: 'white', opacity: 0.55, textTransform: 'uppercase' }}>
+                {dimLabel[nm.dimension]}
+              </div>
+              <div style={{ fontSize: '12px', color: 'white', opacity: 0.7 }}>
+                {nm.accuracy}%
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tap to continue */}
+      {showTapToContinue && (
+        <div style={{ fontSize: '12px', color: 'white', opacity: 0.6 }}>
+          Tap to continue
+        </div>
+      )}
     </div>
   );
 }

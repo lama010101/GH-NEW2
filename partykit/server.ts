@@ -126,6 +126,7 @@ export default class GameServer {
   // This is the DO's authoritative view. DB remains canonical truth.
   // INVARIANT: if snapshotLoaded=true, snapshot is a valid RuntimeState.
   private snapshot: unknown | null = null;
+  // @ts-ignore - kept for future cold start path
   private snapshotLoaded = false;
 
   // Timer handle for round countdown (Phase 4+ — not yet active).
@@ -184,6 +185,7 @@ export default class GameServer {
    * This is the ONLY path that reads from DB.
    * NOT called after writes — use applySnapshotAndBroadcast() instead.
    */
+  // @ts-ignore - kept for future cold start path
   private async loadFromDB(): Promise<void> {
     const gameId = this.room.id;
     console.time("[PERF] loadFromDB:apiFetch");
@@ -561,34 +563,21 @@ export default class GameServer {
       }
     }
 
-    // Send current snapshot to the newly connected client immediately.
-    // If snapshot not yet loaded, load from DB first (cold start).
+    // Send loading-state snapshot to connecting socket only as unblock.
+    // This prevents client from hanging if JOIN_ROOM fails or is slow.
+    // viewerPlayerId is null here because socket is not yet registered.
+    // Correct viewerPlayerId arrives with JOIN_ROOM broadcast moments later.
     if (this.snapshotLoaded && this.snapshot) {
-      const state = this.snapshot as RuntimeState;
-      console.log("[PartyKit] Sending snapshot on connect, players:", state.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
-      const msg = JSON.stringify({
+      connection.send(JSON.stringify({
         type: "STATE_UPDATE",
-        snapshot: state,
-        ...(state.roundResultsForClient ? { results: state.roundResultsForClient } : {})
-      });
-      connection.send(msg);
-    } else {
-      // Cold start — load from DB, schedule timers, send to this client
-      try {
-        await this.loadFromDB();
-        const state = this.snapshot as RuntimeState;
-        console.log("[PartyKit] Loaded snapshot from DB, players:", state.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
-        const msg = JSON.stringify({
-          type: "STATE_UPDATE",
-          snapshot: state,
-          ...(state.roundResultsForClient ? { results: state.roundResultsForClient } : {})
-        });
-        connection.send(msg);
-      } catch (err) {
-        console.error("[PartyKit] Failed to load snapshot on connect:", err instanceof Error ? err.message : err);
-        this.sendError(connection, "Failed to load session state");
-      }
+        snapshot: { ...this.snapshot as Record<string, unknown>, viewerPlayerId: null },
+        results: (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
+      }));
     }
+
+    // Do NOT broadcast snapshot here to all sockets. The client sends JOIN_ROOM
+    // immediately after connecting, which triggers a DB write and a fresh
+    // broadcastStateUpdate to all sockets with correct viewerPlayerId per socket.
   }
 
   async onClose(connection: Connection): Promise<void> {
@@ -711,6 +700,7 @@ export default class GameServer {
             room: this.room.id,
             location: "JOIN_ROOM"
           });
+          this.connections.set(sender.id, data.playerId);
           const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/join`;
           const response = await fetch(apiUrl, {
             method: "POST",
