@@ -232,6 +232,24 @@ export default function CompeteGamePage() {
     }
   }, [snapshot?.status]);
 
+  // Preload next round image when current round changes
+  useEffect(() => {
+    if (snapshot?.status !== "ROUND_ACTIVE" && snapshot?.status !== "ROUND_COMPLETE") {
+      return;
+    }
+    const currentRoundIndex = snapshot.currentRoundIndex ?? 0;
+    const nextRoundIndex = currentRoundIndex + 1;
+    if (nextRoundIndex >= (snapshot.rounds?.length ?? 0)) {
+      return;
+    }
+    const nextImageUrl = snapshot.rounds?.[nextRoundIndex]?.imageUrl;
+    if (!nextImageUrl) {
+      return;
+    }
+    const img = new Image();
+    img.src = nextImageUrl;
+  }, [snapshot?.currentRoundIndex, snapshot?.status, snapshot?.rounds]);
+
   // Auto-open badge popup on ROUND_COMPLETE when badges or near-misses exist
   useEffect(() => {
     if (snapshot?.status === "ROUND_COMPLETE") {

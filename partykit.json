@@ -6,7 +6,7 @@
     "lobby": "partykit/server.ts"
   },
   "vars": {
-    "NEXTJS_BASE_URL": "https://gh-new2.vercel.app",
+    "NEXTJS_BASE_URL": "http://localhost:3000",
     "PARTYKIT_SECRET": "dev-internal-secret-changeme"
   }
 }

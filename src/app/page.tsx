@@ -111,10 +111,10 @@ function HomePageInner() {
         </div>
       </div>
 
-      <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 1 }}>
+      <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 0.8 }}>
 
         {/* padded inner — logo only */}
-        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', marginBottom: 1, textAlign: 'center' }}>
+        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', marginBottom: 0.1, textAlign: 'center' }}>
           <div style={{ position: 'relative', width: 280, height: 72, margin: '0 auto' }}>
             <Image
               src="/icons/logo.webp"

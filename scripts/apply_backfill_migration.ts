@@ -37,7 +37,7 @@ BEGIN
 
     UPDATE public.profiles
     SET
-      avatar_url = COALESCE(selected_avatar.image_url, selected_avatar.firebase_url),
+      avatar_url = COALESCE(selected_avatar.firebase_url, selected_avatar.image_url),
       display_name = COALESCE(computed_display_name, display_name),
       updated_at = now()
     WHERE id = profile_row.id;
