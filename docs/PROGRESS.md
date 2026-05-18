@@ -1287,3 +1287,21 @@ NEXTJS_BASE_URL fallback in partykit.json needed to be set to production Vercel 
 | MP-FIX-LEAFLET-ICON-003 | DONE | src/components/GameMap.tsx | Moved Leaflet icon patch to module scope with typeof window guard. Fixes createIcon crash by ensuring patch runs before first Marker render. | 2026-05-15 |
 | MP-FIX-LEAFLET-ICON-004 | DONE | src/components/GameMap.tsx | Replaced broken Leaflet Icon.Default with explicit L.divIcon on all Markers. Eliminates createIcon crash permanently. | 2026-05-15 |
 | MP-BADGE-RESET-002 | Rewrite BadgePopup with when/where images + star overlay | DONE | 2026-05-15 |
+| MP-FIX-GAMEPAGE-UI-001 | Game page UI overhaul — remove debug header, fullscreen image, minimap fixes, hints+submit row | DONE | src/app/compete/[gameId]/page.tsx, src/components/compete/RoundActiveSection.tsx | Date: 2026-05-15 |
+| MP-FIX-YEARPICKER-001 | Replace range slider with legacy YearPicker (drag/momentum/pinch/haptics) | DONE | src/components/YearPicker.tsx (new), src/components/compete/RoundActiveSection.tsx | Date: 2026-05-15 |
+| MP-FIX-GAMEPAGE-HEADER-001 | Remove debug header block from page.tsx during ROUND_ACTIVE | DONE | src/app/compete/[gameId]/page.tsx | Date: 2026-05-15 |
+| MP-FIX-GAMEPAGE-UI-002 | Fix YearPicker CSS tokens, minimap visibility, timer pill, fullscreen section | DONE | src/components/YearPicker.tsx, src/components/compete/RoundActiveSection.tsx, src/app/globals.css | Date: 2026-05-15 |
+| MP-FIX-GAMEPAGE-UI-003 | Fullscreen minimap on click, keyboard year input, transparent navbar redesign | DONE | src/components/compete/RoundActiveSection.tsx | Date: 2026-05-15 |
+| MP-FIX-GAMEPAGE-UI-004 | Minimap zIndex above panel, backdrop close, shell padding fix during ROUND_ACTIVE | DONE | src/app/compete/[gameId]/page.tsx, src/components/compete/RoundActiveSection.tsx, src/app/globals.css | Date: 2026-05-15 |
+| MP-FIX-GAMEPAGE-UI-005 | Image pan gesture (useGesture), fullscreen map overlay layout, safe area padding | DONE | src/components/compete/RoundActiveSection.tsx | Date: 2026-05-15 |
+| MP-ZERO-TRUST-ROUND-RESULTS-001 | Add verifyRowIntegrity for round_results in submitGuess | DONE | src/server/sessionCore.ts | Added zero-trust row integrity verification for round_results table in submitGuess function. Changes: (1) Modified computeAndWriteRoundResults to return Promise<string> (roundResultsToken), (2) Added roundResultsToken variable in submitGuess to capture token, (3) Modified computeAndWriteRoundResults call to capture returned token, (4) Added verifyRowIntegrity calls for each round_result entry after verifyWriteSet, (5) Verification occurs after transaction commits and before snapshot load. Verification checks full payload (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token) against expected values using roundResultsToken. TypeScript validation passed (exit code 0). Date: 2026-05-15 |
+| MP-FIX-AVATAR-MIGRATION-001 | Migrate profiles.avatar_url from dead Runware URLs to live Firebase URLs | DONE | supabase/migrations/031_migrate_profiles_avatar_url_to_firebase.sql | Created migration file to UPDATE profiles.avatar_url with firebase_url from avatars table using join key a.image_url = p.avatar_url. Executed migration against Supabase DB. Verification: total_profiles=12, firebase_count=12, runware_count=0. All sample rows now contain firebasestorage.googleapis.com URLs. Date: 2026-05-18 |
+| MP-FIX-AVATAR-JOIN-001 | Write Firebase avatar URL into session_players at join time | DONE | src/server/sessionCore.ts | Verified that joinCompeteSession already uses LEFT JOIN avatars with COALESCE(a.firebase_url, p.avatar_url) at line 686. This was already implemented in MP-FIX-AVATAR-008. No code changes needed. Validation: grep for firebase_url returns 4 matches (lines 567, 581, 686, 700), npx tsc --noEmit exits 0. Date: 2026-05-18 |
+
+## MP-FIX-IMGPRELOAD-001
+File modified: src/app/compete/[gameId]/page.tsx
+Description: Added useEffect hook to preload next round image when current round index changes during ROUND_ACTIVE or ROUND_COMPLETE status
+
+## MP-FIX-CONFIG-001 - Fix partykit.json NEXTJS_BASE_URL to localhost for local dev
+- **File modified**: partykit.json
+- **Change**: Changed NEXTJS_BASE_URL from https://gh-new2.vercel.app to http://localhost:3000

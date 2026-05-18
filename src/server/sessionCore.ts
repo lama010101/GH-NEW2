@@ -564,7 +564,10 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     verifyLog("INSERT", "session_players", "OK", `host player_id=${hostPlayerId} — executing`);
     // Host row: is_host=true, ready=false (host must still opt in).
     const hostAvatarResult = await client.query<{ display_name: string; avatar_url: string }>(
-      `SELECT display_name, avatar_url FROM public.profiles WHERE id = $1`,
+      `SELECT p.display_name, COALESCE(a.firebase_url, p.avatar_url) AS avatar_url
+       FROM public.profiles p
+       LEFT JOIN avatars a ON a.image_url = p.avatar_url
+       WHERE p.id = $1`,
       [hostPlayerId]
     );
     const hostProfileName: string | null = hostAvatarResult.rows[0]?.display_name ?? null;
@@ -575,7 +578,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     let hostAvatarUrl = hostAvatarResult.rows[0]?.avatar_url ?? null;
     if (!hostAvatarUrl) {
       const fallbackResult = await client.query<{ avatar_url: string }>(
-        `SELECT COALESCE(image_url, firebase_url) AS avatar_url
+        `SELECT COALESCE(firebase_url, image_url) AS avatar_url
          FROM public.avatars WHERE ready = true ORDER BY random() LIMIT 1`
       );
       hostAvatarUrl = fallbackResult.rows[0]?.avatar_url ?? null;
@@ -680,7 +683,10 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
   // Without clearing left_at here, a single WS close (StrictMode remount, HMR,
   // tab refresh, transient network blip) permanently kicks the player out.
   const joiningAvatarResult = await dbPool.query<{ display_name: string; avatar_url: string }>(
-    `SELECT display_name, avatar_url FROM public.profiles WHERE id = $1`,
+    `SELECT p.display_name, COALESCE(a.firebase_url, p.avatar_url) AS avatar_url
+     FROM public.profiles p
+     LEFT JOIN avatars a ON a.image_url = p.avatar_url
+     WHERE p.id = $1`,
     [playerId]
   );
   const joinProfileName: string | null = joiningAvatarResult.rows[0]?.display_name ?? null;
@@ -691,7 +697,7 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
   let joiningAvatarUrl = joiningAvatarResult.rows[0]?.avatar_url ?? null;
   if (!joiningAvatarUrl) {
     const fallbackResult = await dbPool.query<{ avatar_url: string }>(
-      `SELECT COALESCE(image_url, firebase_url) AS avatar_url
+      `SELECT COALESCE(firebase_url, image_url) AS avatar_url
        FROM public.avatars WHERE ready = true ORDER BY random() LIMIT 1`
     );
     joiningAvatarUrl = fallbackResult.rows[0]?.avatar_url ?? null;
@@ -1120,6 +1126,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   // Variables needed after transaction completes
   let activePlayers: Awaited<ReturnType<typeof loadSessionPlayerRows>> = [];
   let commitCount = 0;
+  let roundResultsToken: string | null = null;
 
   try {
     console.time("[PERF] submitGuess:transaction");
@@ -1338,9 +1345,9 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         [gameId, roundIndex]
       );
       if (existing.rows.length === 0) {
-        await computeAndWriteRoundResults(gameId, roundIndex, resultsClient);
+        roundResultsToken = await computeAndWriteRoundResults(gameId, roundIndex, resultsClient);
         shouldVerifyRoundResults = true;
-        verifyLog("INSERT", "round_results", "OK", `${finalCommitCount} rows written for round=${roundIndex}`);
+        verifyLog("INSERT", "round_results", "OK", `${finalCommitCount} rows written for round=${roundIndex} token=${roundResultsToken.slice(0, 8)}...`);
         await appendEvent(resultsClient, gameId, "ROUND_COMPLETE", { commitCount: finalCommitCount, resultPhaseStartedAt: new Date().toISOString() }, roundIndex);
       }
       await resultsClient.query("COMMIT");
@@ -1416,6 +1423,48 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         ],
         commitToken
       );
+    }
+
+    // Row integrity verification for each round_result entry
+    if (process.env.ENABLE_ZERO_TRUST === "true" && roundResultsToken) {
+      const resultsRows = await dbPool.query<{
+        player_id: string;
+        score: number;
+        rank: number;
+        distance_km: number;
+        year_diff: number;
+        location_score: number;
+        time_score: number;
+        verification_token: string;
+      }>(
+        `SELECT player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token
+         FROM round_results
+         WHERE game_id = $1 AND round_index = $2
+         ORDER BY player_id`,
+        [gameId, roundIndex]
+      );
+
+      for (const row of resultsRows.rows) {
+        await verifyRowIntegrity(
+          "round_results",
+          {
+            game_id: gameId,
+            round_index: roundIndex,
+            player_id: row.player_id,
+            score: row.score,
+            rank: row.rank,
+            distance_km: row.distance_km,
+            year_diff: row.year_diff,
+            location_score: row.location_score,
+            time_score: row.time_score,
+            verification_token: roundResultsToken
+          },
+          "game_id = $1 AND round_index = $2 AND player_id = $3",
+          [gameId, roundIndex, row.player_id],
+          "submitGuess-results",
+          roundResultsToken
+        );
+      }
     }
 
     // 5. FULL DETERMINISTIC REPLAY VERIFICATION
@@ -1898,7 +1947,7 @@ async function computeAndWriteRoundResults(
   gameId: string,
   roundIndex: number,
   executor: DbTransactionClient
-): Promise<void> {
+): Promise<string> {
   const sessionRow = await executor.query<{ year_min: number; year_max: number }>(
     `SELECT year_min, year_max FROM sessions WHERE game_id = $1 LIMIT 1`,
     [gameId]
@@ -1931,10 +1980,10 @@ async function computeAndWriteRoundResults(
     [gameId]
   );
 
-  if (sessionCreatedEvent.rows.length === 0) return;
+  if (sessionCreatedEvent.rows.length === 0) return roundResultsToken;
 
   const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
-  if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) return;
+  if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) return roundResultsToken;
 
   for (let i = 0; i < commits.rows.length; i++) {
     const row = commits.rows[i];
@@ -1988,4 +2037,6 @@ async function computeAndWriteRoundResults(
       ]
     );
   }
+
+  return roundResultsToken;
 }

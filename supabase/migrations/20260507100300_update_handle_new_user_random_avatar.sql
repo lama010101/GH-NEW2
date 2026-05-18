@@ -33,7 +33,7 @@ BEGIN
   VALUES (
     NEW.id,
     computed_display_name,
-    COALESCE(selected_avatar.image_url, selected_avatar.firebase_url)
+    COALESCE(selected_avatar.firebase_url, selected_avatar.image_url)
   )
   ON CONFLICT (id) DO NOTHING;
 
