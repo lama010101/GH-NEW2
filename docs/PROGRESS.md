@@ -1297,6 +1297,9 @@ NEXTJS_BASE_URL fallback in partykit.json needed to be set to production Vercel 
 | MP-ZERO-TRUST-ROUND-RESULTS-001 | Add verifyRowIntegrity for round_results in submitGuess | DONE | src/server/sessionCore.ts | Added zero-trust row integrity verification for round_results table in submitGuess function. Changes: (1) Modified computeAndWriteRoundResults to return Promise<string> (roundResultsToken), (2) Added roundResultsToken variable in submitGuess to capture token, (3) Modified computeAndWriteRoundResults call to capture returned token, (4) Added verifyRowIntegrity calls for each round_result entry after verifyWriteSet, (5) Verification occurs after transaction commits and before snapshot load. Verification checks full payload (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token) against expected values using roundResultsToken. TypeScript validation passed (exit code 0). Date: 2026-05-15 |
 | MP-FIX-AVATAR-MIGRATION-001 | Migrate profiles.avatar_url from dead Runware URLs to live Firebase URLs | DONE | supabase/migrations/031_migrate_profiles_avatar_url_to_firebase.sql | Created migration file to UPDATE profiles.avatar_url with firebase_url from avatars table using join key a.image_url = p.avatar_url. Executed migration against Supabase DB. Verification: total_profiles=12, firebase_count=12, runware_count=0. All sample rows now contain firebasestorage.googleapis.com URLs. Date: 2026-05-18 |
 | MP-FIX-AVATAR-JOIN-001 | Write Firebase avatar URL into session_players at join time | DONE | src/server/sessionCore.ts | Verified that joinCompeteSession already uses LEFT JOIN avatars with COALESCE(a.firebase_url, p.avatar_url) at line 686. This was already implemented in MP-FIX-AVATAR-008. No code changes needed. Validation: grep for firebase_url returns 4 matches (lines 567, 581, 686, 700), npx tsc --noEmit exits 0. Date: 2026-05-18 |
+| MP-FIX-DOCS-001 | DONE | docs/DATABASE_SCHEMA_STATE.md | Updated schema documentation with PK verification via pg_indexes (MP-INV-SCHEMA-PK-001), documented migration chain 024-032 + timestamped migrations, added indexes section, replaced Open Questions with Open Items, updated authority references to GUESS_HISTORY_MASTER_SPEC.md. Validation: first 10 lines returned, grep for VERIFIED returns 9 matches including line 32 PK verification. Date: 2026-05-18 |
+| MP-INV-MIGRATION-001 | DONE | READ ONLY | Dumped live schema DDL for all canonical multiplayer tables (sessions, session_players, round_commits, round_results, round_events) via 9 information_schema queries. Found: no RLS policies exist (empty pg_policies), no foreign key constraints exist, sessions table missing id/user_id/factor_id/updated_at columns compared to docs. Date: 2026-05-18 |
+| MP-FIX-MIGRATION-001 | DONE | supabase/migrations/012_consolidated_multiplayer_baseline.sql | Created consolidated baseline migration to replace missing migrations 012–023. Reconstructed full multiplayer schema from live DB audit using CREATE TABLE IF NOT EXISTS and CREATE INDEX IF NOT EXISTS for safe idempotent execution. Applied migration to Supabase DB successfully. Verification: all 5 tables exist, all 5 RLS SELECT policies created (sessions_select_policy, session_players_select_policy, round_commits_select_policy, round_results_select_policy, round_events_select_policy), all 5 tables have relrowsecurity=true. Date: 2026-05-18 |
 
 ## MP-FIX-IMGPRELOAD-001
 File modified: src/app/compete/[gameId]/page.tsx
@@ -1305,3 +1308,21 @@ Description: Added useEffect hook to preload next round image when current round
 ## MP-FIX-CONFIG-001 - Fix partykit.json NEXTJS_BASE_URL to localhost for local dev
 - **File modified**: partykit.json
 - **Change**: Changed NEXTJS_BASE_URL from https://gh-new2.vercel.app to http://localhost:3000
+
+## MP-FIX-SECRET-001 - Sync .env.local PARTYKIT_SECRET to match .dev.vars
+- **File modified**: .env.local
+- **Change**: Changed PARTYKIT_SECRET from dev-internal-secret-changeme to 76d9112bdb5c5705394f224de2f2d4dcbb53c63baf297b524412e771acf3d104
+
+## MP-FIX-SCHEMA-CLEANUP-001 - Remove duplicate room_code unique index on sessions table
+- **File created**: supabase/migrations/032_drop_duplicate_room_code_index.sql
+- **Change**: Dropped duplicate index idx_sessions_room_code from public.sessions table
+- **Verification**: Only sessions_room_code_key remains on room_code column
+
+## MP-FIX-COLDSTART-001
+**File Modified:** partykit/server.ts
+**Changes:** Removed @ts-ignore comments from snapshotLoaded and loadFromDB, added snapshotLoading field, added cold start trigger in onConnect to call loadFromDB when snapshotLoaded is false
+
+## MP-FIX-VALIDATION-001
+**File Modified:** partykit/server.ts
+**Changes:** Added zod dependency, added Zod schemas for all ServerMessage types, replaced raw JSON.parse with Zod validation in onMessage
+| MP-FIX-GAMEUI-001 | RoundActiveSection new panel UI | DONE | 2026-05-18 |
