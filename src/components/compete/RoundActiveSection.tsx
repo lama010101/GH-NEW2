@@ -375,7 +375,8 @@ export default function RoundActiveSection({
           style={{
             position: "absolute",
             top: 12,
-            right: 12,
+            left: "50%",
+            transform: "translateX(-50%)",
             zIndex: 15,
             background: "rgba(0,0,0,0.55)",
             backdropFilter: "blur(6px)",
@@ -390,6 +391,29 @@ export default function RoundActiveSection({
           }}
         >
           {formatTime(timeRemaining)}
+        </div>
+      )}
+
+      {snapshot.currentRoundIndex !== undefined && snapshot.config?.totalRounds !== undefined && (
+        <div
+          style={{
+            position: "absolute",
+            top: 12,
+            left: 12,
+            zIndex: 15,
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            borderRadius: 999,
+            padding: "6px 14px",
+            fontSize: 14,
+            fontWeight: 700,
+            color: "rgba(255,255,255,0.85)",
+            fontVariantNumeric: "tabular-nums",
+            border: "1px solid rgba(255,255,255,0.15)",
+          }}
+        >
+          {snapshot.currentRoundIndex + 1} / {snapshot.config.totalRounds}
         </div>
       )}
 
@@ -529,19 +553,6 @@ export default function RoundActiveSection({
               </div>
               {!searchExpanded && (
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <span style={{
-                    fontSize: guessLocation !== null ? 18 : 13,
-                    fontWeight: guessLocation !== null ? 700 : 400,
-                    color: guessLocation !== null ? "#fb923c" : "rgba(255,255,255,0.35)",
-                    maxWidth: 160,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}>
-                    {guessLocation !== null
-                      ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
-                      : "Tap map to place pin"}
-                  </span>
                   <button
                     type="button"
                     onClick={() => setSearchExpanded(true)}
@@ -555,12 +566,36 @@ export default function RoundActiveSection({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      flexShrink: 0,
                     }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round">
                       <circle cx="11" cy="11" r="8"/>
                       <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => !isLocked && setSearchExpanded(true)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      color: guessLocation !== null ? "#fb923c" : "#fb923c",
+                      fontSize: guessLocation !== null ? 18 : 18,
+                      fontWeight: 700,
+                      cursor: isLocked ? "default" : "pointer",
+                      textDecoration: guessLocation === null ? "underline dotted rgba(251,146,60,0.4)" : "none",
+                      textUnderlineOffset: "3px",
+                      maxWidth: 180,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {guessLocation !== null
+                      ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
+                      : "Select a location"}
                   </button>
                 </div>
               )}
@@ -796,6 +831,74 @@ export default function RoundActiveSection({
           </div>
         )}
 
+        {snapshot.players && snapshot.players.length >= 2 && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "6px 16px 2px",
+            }}
+          >
+            {snapshot.players.map((p) => {
+              const submitted = p.hasSubmitted;
+              const initials = (p.displayName ?? p.playerId ?? "?")
+                .split(" ")
+                .map((w: string) => w[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
+              return (
+                <div
+                  key={p.playerId}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 3,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      border: submitted
+                        ? "2px solid #22c55e"
+                        : "2px solid rgba(255,255,255,0.20)",
+                      flexShrink: 0,
+                      background: "rgba(255,255,255,0.08)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: "rgba(255,255,255,0.7)",
+                    }}
+                  >
+                    {p.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.avatarUrl}
+                        alt={initials}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* NAVBAR */}
         <div
           className={styles.navbar}
@@ -914,6 +1017,8 @@ export default function RoundActiveSection({
               justifyContent: "center",
               gap: 7,
               opacity: canSubmit ? 1.0 : 0.50,
+              minWidth: 120,
+              padding: "0 16px",
             }}
           >
             {!busy && !hasSubmitted && !localSubmitted && (
