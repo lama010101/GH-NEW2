@@ -1326,3 +1326,35 @@ Description: Added useEffect hook to preload next round image when current round
 **File Modified:** partykit/server.ts
 **Changes:** Added zod dependency, added Zod schemas for all ServerMessage types, replaced raw JSON.parse with Zod validation in onMessage
 | MP-FIX-GAMEUI-001 | RoundActiveSection new panel UI | DONE | 2026-05-18 |
+| MP-FIX-GAMEUI-002a | WHERE card search toggle + gap fix | DONE | 2026-05-18 |
+| MP-FIX-GAMEUI-002b | Year click-to-edit + hide/show into navbar | DONE | 2026-05-18 |
+| MP-FIX-GAMEUI-003a | Navbar: restore settings + restyle hide/show | DONE | 2026-05-18 |
+| MP-FIX-GAMEUI-003b | Image pan: inertia system rewrite | DONE | 2026-05-18 |
+| MP-FIX-GAMEUI-004a | CSS module + map fullscreen + zoom hide | DONE | 2026-05-18 |
+| MP-FIX-GAMEUI-004b | Show/hide button centered + opacity slider + shine | DONE | 2026-05-18 |
+| MP-FIX-GAMEUI-005a | Remove opacity, navbar redesign, zero card gap | DONE | 2026-05-18 |
+| MP-FIX-GAMEUI-005b | Reverse geocode location name on map click | DONE | 2026-05-18 |
+| MP-FIX-GAMEUI-005c | Search: Nominatim forward geocode + map flyTo | DONE | 2026-05-18 |
+| UI-FIX-GAMEPAGE-001 | Game page location text parity + fullscreen overlay | DONE | src/components/compete/RoundActiveSection.tsx | 2026-05-19 |
+| UI-FIX-GAMEPAGE-002 | Card frames transparent + Where/When icon replacement | DONE | src/components/compete/RoundActiveSection.tsx | 2026-05-19 |
+| UI-FIX-GAMEPAGE-003 | Badge UI redesign — icon, accuracy %, stars animation, verdict | DONE | src/components/compete/BadgePopup.tsx | 2026-05-19 |
+| UI-FIX-GAMEPAGE-004 | Bottom bar reorder + settings modal | DONE | src/components/compete/RoundActiveSection.tsx | 2026-05-19 |
+| UI-FIX-FINALRESULTS-001 | Play Again → home, /compete → redirect | DONE | src/components/compete/SessionComplete.tsx, src/app/compete/page.tsx | 2026-05-19 |
+| MP-FIX-GAMEUI-004c | Shine effect mutually exclusive logic | DONE | 2026-05-18 |
+| MP-INV-PLAYAGAIN-001 | Investigate Play Again lobby creation flow | DONE | — | 2026-05-19 |
+| UI-FIX-FINALRESULTS-001 | Play Again creates new session with same settings | DONE | src/components/compete/SessionComplete.tsx | 2026-05-19 |
+| UI-FIX-GAMEPAGE-004 | Bottom bar layout fix mobile | DONE | 2026-05-19 |
+| MP-FIX-NAV-MODAL-001 | Avatar nav modal | page.tsx + NavModal.tsx | COMPLETE | 2026-05-19 |
+| MP-FIX-BADGE-013 | Badge popup — full layout redesign | src/components/compete/BadgePopup.tsx | DONE | 2026-05-19 |
+| MP-FIX-NAV-WIRE-001 | Wire Progress + Account nav links, create stub routes | NavModal.tsx + progress/page.tsx + account/page.tsx | COMPLETE | 2026-05-19 |
+| MP-FIX-ROUND-UI-013-01 | Navbar grid: 44px 120px 56px 1fr | done |
+| MP-FIX-ROUND-UI-013-02 | Cards glassmorphism blur background | done |
+| MP-FIX-ROUND-UI-013-03 | Fullscreen button: remove inline 80px size override | done |
+| MP-FIX-ROUND-UI-013-04 | Show/Hide button: remove conflicting flex/margin inline | done |
+| MP-FIX-ROUND-UI-013-05 | Make Guess button: remove flex:1 from grid context | done |
+| MP-FIX-ROUND-UI-013-06 | Where card: placeholder text when no location set | done |
+| MP-FIX-ROUND-UI-013-07 | Map wrapper: border-radius 10px → 12px | done |
+| MP-FIX-ROUND-UI-013-08 | Settings button: glassmorphism style, remove opacity:1 | done |
+| MP-FIX-ROUND-UI-013-09 | Hints button: width 100%, remove flex:none | done |
+| MP-FIX-ROUND-UI-013-10 | Show/Hide button: X when open, map-pin when closed | done |
+| MP-FIX-ROUND-UI-013-11 | Collapsed state: answer summary pills above navbar | done |

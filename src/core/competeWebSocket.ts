@@ -12,7 +12,8 @@ export type WebSocketMessage =
   | { type: "STATE_UPDATE"; snapshot: unknown; results?: unknown[] }
   | { type: "ERROR"; message: string }
   | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
-  | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number };
+  | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number }
+  | { type: "PLAY_AGAIN"; newGameId: string };
 
 export type CompeteWebSocketCallbacks = {
   onStateUpdate?: (snapshot: unknown) => void;
@@ -21,6 +22,7 @@ export type CompeteWebSocketCallbacks = {
   onDisconnect?: () => void;
   onPlayerSubmitted?: (playerId: string, playerName: string) => void;
   onTimerClamped?: (newPhaseEndsAt: string, clampedToSec: number) => void;
+  onPlayAgain?: (newGameId: string) => void;
 };
 
 export class CompeteWebSocket {
@@ -119,6 +121,9 @@ export class CompeteWebSocket {
         break;
       case "TIMER_CLAMPED":
         this.callbacks.onTimerClamped?.(data.newPhaseEndsAt, data.clampedToSec);
+        break;
+      case "PLAY_AGAIN":
+        this.callbacks.onPlayAgain?.(data.newGameId);
         break;
       case "ERROR": {
         const msg = data.message ?? "";
@@ -231,6 +236,10 @@ export class CompeteWebSocket {
 
   readyNext(roundIndex: number): void {
     this.send({ type: "READY_NEXT", playerId: this.playerId, roundIndex });
+  }
+
+  playAgain(newGameId: string): void {
+    this.send({ type: "PLAY_AGAIN", playerId: this.playerId, newGameId });
   }
 
   reconnect(): void {
