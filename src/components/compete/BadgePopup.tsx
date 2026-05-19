@@ -101,9 +101,9 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
             top: '50%',
             transform: 'translate(-50%, -50%)',
             animation: 'particleFly 600ms ease-out forwards',
-            '--dx': `${dx}px` as any,
-            '--dy': `${dy}px` as any,
-          } as any}
+            '--dx': `${dx}px`,
+            '--dy': `${dy}px`,
+          } as React.CSSProperties & { [key: string]: string }}
         />
       );
     }
