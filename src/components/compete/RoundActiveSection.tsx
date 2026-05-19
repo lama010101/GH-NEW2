@@ -27,6 +27,7 @@ interface RoundActiveSectionProps {
   guessYearRef: React.MutableRefObject<number | null>;
   viewer: SessionPlayer | null;
   timeRemaining: number | null;
+  hintsUsedCount?: number;
 }
 
 
@@ -44,6 +45,7 @@ export default function RoundActiveSection({
   onOpenHints,
   guessYearRef,
   timeRemaining,
+  hintsUsedCount,
 }: RoundActiveSectionProps) {
   const currentEvent = snapshot.rounds?.[snapshot.currentRoundIndex];
   const guessLocation =
@@ -51,11 +53,8 @@ export default function RoundActiveSection({
       ? { lat: guessLat, lng: guessLng }
       : null;
 
-  const [minimapExpanded, setMinimapExpanded] = useState(false);
-  // Fullscreen map: width = 100vw, height = 100vw (square)
-  const mapSize = minimapExpanded
-    ? { width: "100vw", height: "100vw", bottom: 0, right: 0, borderRadius: 0 }
-    : { width: 120, height: 120, bottom: 200, right: 12, borderRadius: 12 };
+  const [panelVisible, setPanelVisible] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [imgOffsetX, setImgOffsetX] = useState(0);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -115,20 +114,6 @@ export default function RoundActiveSection({
       }}
     >
       <style>{`
-        .minimap-container .leaflet-control-zoom {
-          display: none !important;
-        }
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        .minimap-fullscreen .leaflet-container {
-          border-radius: 0 !important;
-        }
-        .minimap-fullscreen > div {
-          border-radius: 0 !important;
-        }
       `}</style>
 
       {/* IMAGE CONTAINER — full section size, clips overflow */}
@@ -190,314 +175,259 @@ export default function RoundActiveSection({
         </div>
       )}
 
-      {/* MINIMAP overlay */}
-      <div
-        className="minimap-container"
-        style={{
-          position: "absolute",
-          bottom: mapSize.bottom,
-          right: mapSize.right,
-          width: mapSize.width,
-          height: mapSize.height,
-          borderRadius: mapSize.borderRadius,
-          overflow: "hidden",
-          border: minimapExpanded ? "none" : "2px solid rgba(255,255,255,0.2)",
-          boxShadow: minimapExpanded ? "none" : "0 2px 12px rgba(0,0,0,0.5)",
-          transition: "width 0.25s ease, height 0.25s ease, border-radius 0.25s ease",
-          zIndex: minimapExpanded ? 25 : 21,
-          cursor: "pointer",
-          display: minimapExpanded ? "none" : "block",
-        }}
-        onClick={() => setMinimapExpanded((v) => !v)}
-      >
-        <GameMap
-          guessLocation={guessLocation}
-          onSetLocation={handleMapSetLocation}
-        />
-      </div>
 
-      {minimapExpanded && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 40,
-            display: "flex",
-            flexDirection: "column",
-            background: "#111",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header row */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "14px 16px 10px",
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 16 }}>📍</span>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "#ffae42" }}>Where?</span>
-            </div>
-            <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", fontStyle: "italic" }}>
-              {guessLocation ? "Location selected ✓" : "Choose a location"}
-            </span>
-          </div>
-
-          {/* Map — fills remaining height */}
-          <div
-            style={{
-              flex: 1,
-              minHeight: 0,
-              position: "relative",
-            }}
-          >
-            <div
-              className="minimap-container minimap-fullscreen"
-              style={{ width: "100%", height: "100%" }}
-            >
-              <GameMap
-                guessLocation={guessLocation}
-                onSetLocation={(loc) => {
-                  handleMapSetLocation(loc);
-                }}
-              />
-            </div>
-            {/* Tap outside map to close — invisible backdrop behind map */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                zIndex: -1,
-              }}
-              onClick={() => setMinimapExpanded(false)}
-            />
-          </div>
-
-          {/* Bottom nav row — same as main bottom nav */}
-          <div
-            style={{
-              flexShrink: 0,
-              background: "rgba(17,17,17,0.95)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              padding: "12px 16px calc(20px + env(safe-area-inset-bottom))",
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => { window.location.href = "/"; }}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "rgba(255,255,255,0.55)",
-                fontSize: 22,
-                cursor: "pointer",
-                padding: "8px 12px",
-                lineHeight: 1,
-              }}
-              aria-label="Home"
-            >
-              ⌂
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMinimapExpanded(false); onSubmit(); }}
-              disabled={!canSubmit}
-              style={{
-                flex: 1,
-                maxWidth: 220,
-                height: 48,
-                borderRadius: 999,
-                border: "none",
-                background: canSubmit
-                  ? "linear-gradient(135deg, #ff8a00, #ffae42)"
-                  : "rgba(255,255,255,0.1)",
-                color: canSubmit ? "#17110a" : "rgba(255,255,255,0.3)",
-                fontSize: 15,
-                fontWeight: 700,
-                cursor: canSubmit ? "pointer" : "not-allowed",
-                letterSpacing: "0.4px",
-                margin: "0 12px",
-              }}
-            >
-              {busy ? "Submitting…" : hasSubmitted || localSubmitted ? "Submitted ✓" : "Make Guess"}
-            </button>
-            <button
-              type="button"
-              onClick={onOpenHints}
-              disabled={isLocked}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: isLocked ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.55)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: isLocked ? "not-allowed" : "pointer",
-                padding: "8px 12px",
-                letterSpacing: "0.3px",
-              }}
-            >
-              Hints
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* FLOATING BOTTOM PANEL */}
+      {/* NEW BOTTOM PANEL */}
       <div
         style={{
           position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          background: "rgba(17, 17, 17, 0.82)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          padding: "16px 16px calc(28px + env(safe-area-inset-bottom))",
           zIndex: 20,
         }}
       >
-        {/* YEAR INPUT ROW */}
-        <div
+        {/* HIDE/SHOW BUTTON */}
+        <button
+          type="button"
+          onClick={() => setPanelVisible((v) => !v)}
           style={{
+            position: "absolute",
+            bottom: 72,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 32,
+            height: 32,
+            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            borderRadius: "50%",
+            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 8,
-            marginBottom: 8,
+            color: "rgba(255,255,255,0.6)",
+            fontSize: 16,
+            zIndex: 21,
           }}
+          aria-label={panelVisible ? "Hide panel" : "Show panel"}
         >
-          <input
-            type="number"
-            min={yearMin}
-            max={yearMax}
-            value={guessYear ?? ""}
-            placeholder="Year"
-            disabled={isLocked}
-            onChange={(e) => {
-              const raw = e.target.value;
-              if (raw === "") {
-                onSetYear(null);
-                guessYearRef.current = null;
-                return;
-              }
-              const parsed = parseInt(raw, 10);
-              if (!isNaN(parsed)) {
-                const clamped = Math.max(yearMin, Math.min(yearMax, parsed));
-                onSetYear(clamped);
-                guessYearRef.current = clamped;
-              }
-            }}
+          {panelVisible ? "▾" : "▴"}
+        </button>
+
+        {/* WHERE CARD */}
+        {panelVisible && (
+          <div
             style={{
-              width: 100,
-              height: 40,
-              borderRadius: 10,
-              border: "1.5px solid rgba(255,255,255,0.2)",
-              background: "rgba(255,255,255,0.07)",
-              color: guessYear !== null ? "#ffae42" : "rgba(255,255,255,0.4)",
-              fontSize: 18,
-              fontWeight: 700,
-              textAlign: "center",
-              fontVariantNumeric: "tabular-nums",
-              outline: "none",
-              padding: "0 8px",
-              MozAppearance: "textfield",
-            } as React.CSSProperties}
-          />
-        </div>
+              background: "#1a1714",
+              borderRadius: "14px 14px 0 0",
+              padding: "12px 16px 0",
+            }}
+          >
+            {/* Header Row */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fb923c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#fb923c" }}>Where?</span>
+              </div>
+              {guessLocation && (
+                <span style={{ fontSize: 13, color: "#fb923c", fontWeight: 600 }}>Location set ✓</span>
+              )}
+            </div>
 
-        <YearPicker
-          value={guessYear ?? Math.round((yearMin + yearMax) / 2)}
-          onChange={(year) => {
-            onSetYear(year);
-            guessYearRef.current = year;
-          }}
-          min={yearMin}
-          max={yearMax}
-          defaultScale="century"
-          valueIsCommitted={guessYear !== null}
-          className="w-full"
-        />
+            {/* Search Field */}
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search a place (city, country)…"
+              disabled={isLocked}
+              style={{
+                width: "100%",
+                background: "rgba(255,255,255,0.06)",
+                border: "1.5px solid rgba(255,255,255,0.12)",
+                borderRadius: 10,
+                padding: "10px 14px",
+                color: "rgba(255,255,255,0.55)",
+                fontSize: 14,
+                outline: "none",
+                marginBottom: 8,
+              }}
+            />
 
-        {/* BOTTOM NAV ROW — no background, 3 elements */}
+            {/* Map */}
+            <div
+              style={{
+                height: 180,
+                width: "100%",
+                borderRadius: 10,
+                overflow: "hidden",
+                marginBottom: 10,
+              }}
+            >
+              <GameMap
+                guessLocation={guessLocation}
+                onSetLocation={handleMapSetLocation}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* WHEN CARD */}
+        {panelVisible && (
+          <div
+            style={{
+              background: "#1a1714",
+              padding: "12px 16px 0",
+            }}
+          >
+            {/* Header Row */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fb923c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#fb923c" }}>When?</span>
+              </div>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "#fb923c", fontVariantNumeric: "tabular-nums" }}>
+                {guessYear !== null ? guessYear : "--"}
+              </span>
+            </div>
+
+            {/* Year Picker */}
+            <YearPicker
+              value={guessYear ?? Math.round((yearMin + yearMax) / 2)}
+              onChange={(year) => {
+                onSetYear(year);
+                guessYearRef.current = year;
+              }}
+              min={yearMin}
+              max={yearMax}
+              defaultScale="century"
+              valueIsCommitted={guessYear !== null}
+              className="w-full"
+            />
+          </div>
+        )}
+
+        {/* NAVBAR */}
         <div
           style={{
+            background: "rgba(20,18,16,0.97)",
+            padding: "10px 16px calc(10px + env(safe-area-inset-bottom))",
             display: "flex",
-            flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            marginTop: 12,
-            paddingTop: 4,
           }}
         >
-          {/* Home button — left */}
+          {/* Settings Button */}
           <button
             type="button"
-            onClick={() => { window.location.href = "/"; }}
             style={{
-              background: "transparent",
+              width: 40,
+              height: 40,
+              background: "rgba(255,255,255,0.08)",
               border: "none",
-              color: "rgba(255,255,255,0.55)",
-              fontSize: 22,
+              borderRadius: "50%",
               cursor: "pointer",
-              padding: "8px 12px",
-              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-            aria-label="Home"
+            aria-label="Settings"
           >
-            ⌂
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
           </button>
 
-          {/* Make Guess button — center, primary CTA */}
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={!canSubmit}
-            style={{
-              flex: 1,
-              maxWidth: 220,
-              height: 48,
-              borderRadius: 999,
-              border: "none",
-              background: canSubmit
-                ? "linear-gradient(135deg, #ff8a00, #ffae42)"
-                : "rgba(255,255,255,0.1)",
-              color: canSubmit ? "#17110a" : "rgba(255,255,255,0.3)",
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: canSubmit ? "pointer" : "not-allowed",
-              letterSpacing: "0.4px",
-              margin: "0 12px",
-            }}
-          >
-            {busy ? "Submitting…" : hasSubmitted || localSubmitted ? "Submitted ✓" : "Make Guess"}
-          </button>
-
-          {/* Hints button — right */}
+          {/* Hints Pill Button */}
           <button
             type="button"
             onClick={onOpenHints}
             disabled={isLocked}
             style={{
-              background: "transparent",
+              background: "linear-gradient(135deg, #a8edbc, #7dd8f0, #c4b5f7)",
               border: "none",
-              color: isLocked ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.55)",
-              fontSize: 13,
-              fontWeight: 600,
+              borderRadius: 999,
+              height: 40,
+              padding: "0 20px",
               cursor: isLocked ? "not-allowed" : "pointer",
-              padding: "8px 12px",
-              letterSpacing: "0.3px",
+              opacity: isLocked ? 0.4 : 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
             }}
           >
-            Hints
+            <span style={{ color: "#111", fontSize: 14, fontWeight: 700 }}>Hints</span>
+            <span
+              style={{
+                background: "rgba(0,0,0,0.25)",
+                borderRadius: 999,
+                padding: "2px 8px",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#111",
+              }}
+            >
+              {hintsUsedCount ?? 0}/14
+            </span>
+          </button>
+
+          {/* Make Guess Button */}
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={!canSubmit}
+            style={{
+              height: 40,
+              borderRadius: 999,
+              padding: "0 20px",
+              border: "none",
+              background: busy || hasSubmitted || localSubmitted
+                ? "rgba(255,255,255,0.10)"
+                : canSubmit
+                ? "linear-gradient(135deg, #ff8a00, #ffae42)"
+                : "rgba(255,255,255,0.10)",
+              color: busy || hasSubmitted || localSubmitted
+                ? "rgba(255,255,255,0.5)"
+                : canSubmit
+                ? "#17110a"
+                : "rgba(255,255,255,0.28)",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: canSubmit ? "pointer" : "not-allowed",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            {!busy && !hasSubmitted && !localSubmitted && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            )}
+            {busy ? "Submitting…" : hasSubmitted || localSubmitted ? "Submitted ✓" : "Make Guess"}
           </button>
         </div>
       </div>

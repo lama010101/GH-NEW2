@@ -45,6 +45,7 @@
 // ============================================================================
 
 import { TransitionCause } from "../src/core/transitionCause";
+import { z } from "zod";
 
 interface Room {
   id: string;
@@ -58,6 +59,91 @@ interface Connection {
   id: string;
   send: (msg: string | ArrayBuffer | ArrayBufferView) => void;
 }
+
+const JoinRoomSchema = z.object({
+  type: z.literal("JOIN_ROOM"),
+  playerId: z.string().uuid(),
+  displayName: z.string().min(1).max(32)
+});
+
+const ToggleReadySchema = z.object({
+  type: z.literal("TOGGLE_READY"),
+  playerId: z.string().uuid(),
+  ready: z.boolean()
+});
+
+const StartGameSchema = z.object({
+  type: z.literal("START_GAME"),
+  playerId: z.string().uuid()
+});
+
+const SubmitGuessSchema = z.object({
+  type: z.literal("SUBMIT_GUESS"),
+  playerId: z.string().uuid(),
+  roundIndex: z.number().int().min(0),
+  year: z.number().int().nullable(),
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
+  hintsUsed: z.array(z.string()),
+  accPenalty: z.number().int().min(0).optional(),
+  xpPenalty: z.number().int().min(0).optional()
+});
+
+const AdvanceRoundSchema = z.object({
+  type: z.literal("ADVANCE_ROUND"),
+  playerId: z.string().uuid(),
+  roundIndex: z.number().int().min(0),
+  cause: z.string().optional()
+});
+
+const ReadyNextSchema = z.object({
+  type: z.literal("READY_NEXT"),
+  playerId: z.string().uuid(),
+  roundIndex: z.number().int().min(0)
+});
+
+const SetTimerSchema = z.object({
+  type: z.literal("SET_TIMER"),
+  playerId: z.string().uuid(),
+  roundTimerSec: z.number().int().min(10).max(300)
+});
+
+const SetYearRangeSchema = z.object({
+  type: z.literal("SET_YEAR_RANGE"),
+  playerId: z.string().uuid(),
+  yearMin: z.number().int(),
+  yearMax: z.number().int()
+});
+
+const SetResultsTimerSchema = z.object({
+  type: z.literal("SET_RESULTS_TIMER"),
+  playerId: z.string().uuid(),
+  resultsAutoAdvanceSec: z.number().int().min(5).max(120)
+});
+
+const KickPlayerSchema = z.object({
+  type: z.literal("KICK_PLAYER"),
+  playerId: z.string().uuid(),
+  targetPlayerId: z.string().uuid()
+});
+
+const PingSchema = z.object({
+  type: z.literal("PING")
+});
+
+const ServerMessageSchema = z.discriminatedUnion("type", [
+  JoinRoomSchema,
+  ToggleReadySchema,
+  StartGameSchema,
+  SubmitGuessSchema,
+  AdvanceRoundSchema,
+  ReadyNextSchema,
+  SetTimerSchema,
+  SetYearRangeSchema,
+  SetResultsTimerSchema,
+  KickPlayerSchema,
+  PingSchema
+]);
 
 // Runtime state shape — mirrors CompeteSessionSnapshot for type safety.
 type RuntimeState = {
@@ -126,7 +212,6 @@ export default class GameServer {
   // This is the DO's authoritative view. DB remains canonical truth.
   // INVARIANT: if snapshotLoaded=true, snapshot is a valid RuntimeState.
   private snapshot: unknown | null = null;
-  // @ts-ignore - kept for future cold start path
   private snapshotLoaded = false;
 
   // Timer handle for round countdown (Phase 4+ — not yet active).
@@ -168,6 +253,9 @@ export default class GameServer {
   // Used to derive NEXTJS_BASE_URL dynamically for production correctness.
   private detectedBaseUrl: string | null = null;
 
+  // Loading lock to prevent concurrent loadFromDB calls on cold start.
+  private snapshotLoading = false;
+
   constructor(readonly room: Room) {
     console.log("[DO_INSTANCE]", {
       room: this.room.id,
@@ -185,7 +273,6 @@ export default class GameServer {
    * This is the ONLY path that reads from DB.
    * NOT called after writes — use applySnapshotAndBroadcast() instead.
    */
-  // @ts-ignore - kept for future cold start path
   private async loadFromDB(): Promise<void> {
     const gameId = this.room.id;
     console.time("[PERF] loadFromDB:apiFetch");
@@ -563,6 +650,19 @@ export default class GameServer {
       }
     }
 
+    // Cold start: if DO just woke up and has no snapshot, load from DB.
+    // Uses a lock to prevent concurrent loads if multiple clients connect simultaneously.
+    if (!this.snapshotLoaded && !this.snapshotLoading) {
+      this.snapshotLoading = true;
+      try {
+        await this.loadFromDB();
+      } catch (err) {
+        console.error("[PartyKit] Cold start loadFromDB failed:", err instanceof Error ? err.message : err);
+      } finally {
+        this.snapshotLoading = false;
+      }
+    }
+
     // Send loading-state snapshot to connecting socket only as unblock.
     // This prevents client from hanging if JOIN_ROOM fails or is slow.
     // viewerPlayerId is null here because socket is not yet registered.
@@ -666,7 +766,18 @@ export default class GameServer {
   async onMessage(message: string, sender: Connection): Promise<void> {
     let data: ServerMessage;
     try {
-      data = JSON.parse(message) as ServerMessage;
+      const raw = JSON.parse(message) as unknown;
+      const result = ServerMessageSchema.safeParse(raw);
+      if (!result.success) {
+        const firstError = result.error.issues[0];
+        const errorMsg = firstError
+          ? `Invalid message: ${firstError.path.join(".")} — ${firstError.message}` 
+          : "Invalid message format";
+        console.warn("[PartyKit] Message validation failed:", result.error.issues);
+        this.sendError(sender, errorMsg);
+        return;
+      }
+      data = result.data;
     } catch (err) {
       this.sendError(sender, "Invalid message format");
       return;
