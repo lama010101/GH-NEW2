@@ -13,6 +13,7 @@ import { LevelUpPanel } from '@/components/home/LevelUpPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
 import { MODES, type Mode } from '@/components/home/types'
 import styles from './home.module.css'
+import { NavModal } from '@/components/NavModal'
 
 function HomePageInner() {
   const router = useRouter()
@@ -62,6 +63,7 @@ function HomePageInner() {
   }, [])
 
   const [cardState, setCardState] = useState<{ mode: Mode; panelVisible: boolean }>({ mode: 'daily', panelVisible: true })
+  const [showNavModal, setShowNavModal] = useState(false)
 
 
 
@@ -99,7 +101,7 @@ function HomePageInner() {
               <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
           </button>
-          <button onClick={() => { if (identity.status !== 'ready') { setShowAuthModal(true); return } router.push('/profile') }} style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.4)', background: 'linear-gradient(135deg,#c45,#89b)', cursor: 'pointer', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button onClick={() => { if (identity.status !== 'ready') { setShowAuthModal(true); return } setShowNavModal(true) }} style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.4)', background: 'linear-gradient(135deg,#c45,#89b)', cursor: 'pointer', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {avatarUrl
               ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -155,6 +157,13 @@ function HomePageInner() {
 
       </div>
 
+      <NavModal
+        isOpen={showNavModal}
+        onClose={() => setShowNavModal(false)}
+        avatarUrl={avatarUrl}
+        initials={initials}
+        displayName={(identity as { status: string; playerId: string; displayName: string }).displayName ?? initials}
+      />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   )

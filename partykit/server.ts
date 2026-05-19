@@ -127,6 +127,12 @@ const KickPlayerSchema = z.object({
   targetPlayerId: z.string().uuid()
 });
 
+const PlayAgainSchema = z.object({
+  type: z.literal("PLAY_AGAIN"),
+  playerId: z.string().uuid(),
+  newGameId: z.string().uuid()
+});
+
 const PingSchema = z.object({
   type: z.literal("PING")
 });
@@ -142,6 +148,7 @@ const ServerMessageSchema = z.discriminatedUnion("type", [
   SetYearRangeSchema,
   SetResultsTimerSchema,
   KickPlayerSchema,
+  PlayAgainSchema,
   PingSchema
 ]);
 
@@ -179,6 +186,7 @@ export type ServerMessage =
   | { type: "SET_YEAR_RANGE"; playerId: string; yearMin: number; yearMax: number }
   | { type: "SET_RESULTS_TIMER"; playerId: string; resultsAutoAdvanceSec: number }
   | { type: "KICK_PLAYER"; playerId: string; targetPlayerId: string }
+  | { type: "PLAY_AGAIN"; playerId: string; newGameId: string }
   | { type: "PING" };
 
 // Messages sent TO clients
@@ -1257,6 +1265,30 @@ export default class GameServer {
           }
           const snapshot = await response.json();
           this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "PLAY_AGAIN": {
+          const parseResult = PlayAgainSchema.safeParse(data);
+          if (!parseResult.success) {
+            return;
+          }
+          const message = parseResult.data;
+          // Verify sender is host
+          if (!isRuntimeState(this.snapshot)) {
+            return;
+          }
+          const player = this.snapshot.players.find(p => p.playerId === message.playerId);
+          if (!player || !player.isHost) {
+            return;
+          }
+          // Broadcast to all connections
+          for (const connection of this.room.getConnections()) {
+            connection.send(JSON.stringify({
+              type: "PLAY_AGAIN",
+              newGameId: message.newGameId
+            }));
+          }
           break;
         }
 

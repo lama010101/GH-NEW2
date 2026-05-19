@@ -19,6 +19,7 @@ interface UseCompeteSocketParams {
   onSetBusy: (value: boolean) => void;
   onSetLocalSubmitted: (value: boolean) => void;
   onClearSubmissionToasts: () => void;
+  onPlayAgain?: (newGameId: string) => void;
 }
 
 export default function useCompeteSocket({
@@ -36,6 +37,7 @@ export default function useCompeteSocket({
   onSetBusy,
   onSetLocalSubmitted,
   onClearSubmissionToasts,
+  onPlayAgain,
 }: UseCompeteSocketParams) {
   const wsRef = useRef<CompeteWebSocket | null>(null);
 
@@ -87,6 +89,9 @@ export default function useCompeteSocket({
       },
       onDisconnect: () => {
         onDisconnect?.();
+      },
+      onPlayAgain: (newGameId) => {
+        onPlayAgain?.(newGameId);
       }
     });
 
@@ -192,6 +197,11 @@ export default function useCompeteSocket({
     wsRef.current.kickPlayer(targetPlayerId);
   };
 
+  const playAgain = (newGameId: string) => {
+    if (!playerId || !wsRef.current) return;
+    wsRef.current.playAgain(newGameId);
+  };
+
   return {
     wsRef,
     toggleReady,
@@ -202,5 +212,6 @@ export default function useCompeteSocket({
     setYearRange,
     setResultsTimer,
     kickPlayer,
+    playAgain,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { Component, type ReactNode } from "react";
-import { MapContainer, TileLayer, useMapEvents, Marker } from "react-leaflet";
+import { Component, type ReactNode, useEffect, useRef } from "react";
+import { MapContainer, TileLayer, useMapEvents, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import type { LatLng } from "@/core/types";
 import "leaflet/dist/leaflet.css";
@@ -17,6 +17,8 @@ interface GameMapProps {
   }>;
   localPlayerAvatarUrl?: string | null;
   localPlayerDisplayName?: string;
+  hideZoomControls?: boolean;
+  flyToTarget?: { lat: number; lng: number; id: number } | null;
 }
 
 interface GameMapState {
@@ -81,6 +83,18 @@ function MapClickHandler({ onSetLocation }: { onSetLocation: (location: LatLng) 
   return null;
 }
 
+function FlyToHandler({ target }: { target: { lat: number; lng: number; id: number } | null | undefined }) {
+  const map = useMap();
+  const lastId = useRef(-1);
+  useEffect(() => {
+    if (target && target.id !== lastId.current) {
+      lastId.current = target.id;
+      map.flyTo([target.lat, target.lng], 6, { animate: true, duration: 0.8 });
+    }
+  }, [target, map]);
+  return null;
+}
+
 export class GameMap extends Component<GameMapProps, GameMapState> {
   constructor(props: GameMapProps) {
     super(props);
@@ -127,12 +141,14 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
             center={[20, 0]}
             zoom={2}
             style={{ width: "100%", height: "100%" }}
+            zoomControl={!this.props.hideZoomControls}
             scrollWheelZoom={true}
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <MapClickHandler onSetLocation={this.props.onSetLocation} />
+            <FlyToHandler target={this.props.flyToTarget} />
             {this.props.guessLocation && (
               <Marker
                 position={[this.props.guessLocation.lat, this.props.guessLocation.lng]}

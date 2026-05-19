@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   createCompeteSessionRequest
@@ -11,6 +11,11 @@ type Mode = "create" | "join";
 
 export default function CompeteEntryPage() {
   const router = useRouter();
+  
+  // Redirect to home page - this route is deprecated
+  useEffect(() => {
+    router.push("/");
+  }, [router]);
   const { playerId, isReady, isLoading: identityLoading, error: identityError } = useIdentity();
   const [mode, setMode] = useState<Mode>("create");
   const [gameId, setGameId] = useState("");

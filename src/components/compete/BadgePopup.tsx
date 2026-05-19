@@ -19,8 +19,6 @@ interface BadgePopupProps {
 
 export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopupProps) {
   const [currentBadgeIndex, setCurrentBadgeIndex] = useState(0);
-  const [showNearMisses, setShowNearMisses] = useState(false);
-  const [showTapToContinue, setShowTapToContinue] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const badgeCardRef = useRef<HTMLDivElement>(null);
 
@@ -45,8 +43,7 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
   // Auto-advance badge sequence
   useEffect(() => {
     if (badges.length === 0) {
-      setShowNearMisses(true);
-      setShowTapToContinue(true);
+      onDismiss();
       return;
     }
 
@@ -54,13 +51,12 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
       if (currentBadgeIndex < badges.length - 1) {
         setCurrentBadgeIndex(prev => prev + 1);
       } else {
-        setShowNearMisses(true);
-        setShowTapToContinue(true);
+        onDismiss();
       }
     }, 1800);
 
     return () => clearTimeout(timer);
-  }, [currentBadgeIndex, badges.length]);
+  }, [currentBadgeIndex, badges.length, onDismiss]);
 
   // Trigger celebration effect at 400ms after badge appears
   useEffect(() => {
@@ -115,7 +111,6 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
 
   return (
     <div
-      onClick={onDismiss}
       style={{
         position: 'fixed',
         inset: 0,
@@ -125,7 +120,7 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '24px',
+        gap: '16px',
       }}
     >
       <style>{`
@@ -134,6 +129,10 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
           to { transform: scale(1); opacity: 1; }
         }
         @keyframes starEnter {
+          from { opacity: 0; transform: scale(0); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes verdictEnter {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
@@ -143,114 +142,116 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
         }
       `}</style>
 
+      {/* Close button */}
+      <div
+        onClick={onDismiss}
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          width: '36px',
+          height: '36px',
+          background: 'rgba(255,255,255,0.12)',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+        }}
+      >
+        <span style={{ fontSize: '20px', color: 'white' }}>×</span>
+      </div>
+
       {/* Badge card */}
       {currentBadge && (
         <div
           ref={badgeCardRef}
           style={{
             position: 'relative',
-            width: '160px',
-            height: '200px',
-            background: 'rgba(255,255,255,0.07)',
-            borderRadius: '16px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
           }}
         >
           {renderParticles()}
 
-          {/* Base image */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={currentBadge.dimension === 'year' ? '/badges/when.webp' : '/badges/where.webp'}
-            alt=""
-            style={{
-              width: '96px',
-              height: '96px',
-              objectFit: 'contain',
-              animation: 'badgeEnter 400ms ease-out 0ms both',
-            }}
-          />
-
-          {/* Stars row */}
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '6px' }}>
-            {Array.from({ length: starCount[currentBadge.tier] }).map((_, starIndex) => (
-              <span
-                key={starIndex}
-                style={{
-                  fontSize: '20px',
-                  color: tierColor[currentBadge.tier],
-                  animation: `starEnter 250ms ease-out ${420 + starIndex * 140}ms both`,
-                }}
-              >
-                ★
-              </span>
-            ))}
-          </div>
-
-          {/* Tier label */}
-          <div
-            style={{
-              fontSize: '10px',
-              letterSpacing: '1.5px',
-              color: tierColor[currentBadge.tier],
-              opacity: 0.8,
-              textTransform: 'uppercase',
-            }}
-          >
-            {currentBadge.tier}
-          </div>
-
-          {/* Dimension label */}
-          <div
-            style={{
-              fontSize: '11px',
-              color: 'white',
-              opacity: 0.55,
-              textTransform: 'uppercase',
-            }}
-          >
-            {dimLabel[currentBadge.dimension]}
-          </div>
-        </div>
-      )}
-
-      {/* Near-misses */}
-      {showNearMisses && nearMisses.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          {nearMisses.map((nm, i) => (
+          {/* Verdict text */}
+          {currentBadge.accuracy >= 80 && (
             <div
-              key={i}
               style={{
-                width: '120px',
-                height: '60px',
-                background: 'rgba(255,255,255,0.04)',
-                borderRadius: '8px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
+                fontSize: '28px',
+                fontWeight: 800,
+                letterSpacing: '1px',
+                color: tierColor[currentBadge.tier],
+                animation: 'verdictEnter 250ms ease-out',
               }}
             >
-              <div style={{ fontSize: '11px', color: 'white', opacity: 0.55, textTransform: 'uppercase' }}>
-                {dimLabel[nm.dimension]}
-              </div>
-              <div style={{ fontSize: '12px', color: 'white', opacity: 0.7 }}>
-                {nm.accuracy}%
-              </div>
+              {currentBadge.accuracy === 100 ? 'PERFECT!' : currentBadge.accuracy >= 95 ? 'AMAZING!' : currentBadge.accuracy >= 90 ? 'GREAT!' : 'GOOD'}
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      {/* Tap to continue */}
-      {showTapToContinue && (
-        <div style={{ fontSize: '12px', color: 'white', opacity: 0.6 }}>
-          Tap to continue
+          {/* Icon with stars overlaid */}
+          <div
+            style={{
+              position: 'relative',
+              width: '180px',
+              height: '180px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {/* Base image */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentBadge.dimension === 'year' ? '/badges/when.webp' : '/badges/where.webp'}
+              alt=""
+              style={{
+                width: '180px',
+                height: '180px',
+                objectFit: 'contain',
+                animation: 'badgeEnter 400ms ease-out 0ms both',
+              }}
+            />
+
+            {/* Stars overlaid */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '-10px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                flexDirection: 'row',
+                gap: '6px',
+              }}
+            >
+              {Array.from({ length: starCount[currentBadge.tier] }).map((_, starIndex) => (
+                <span
+                  key={starIndex}
+                  style={{
+                    fontSize: '24px',
+                    color: tierColor[currentBadge.tier],
+                    animation: `starEnter 300ms ease-out ${starIndex * 150}ms both`,
+                  }}
+                >
+                  ★
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Accuracy + dimension line */}
+          <div
+            style={{
+              fontSize: '22px',
+              fontWeight: 700,
+              color: 'white',
+              marginTop: '16px',
+            }}
+          >
+            {currentBadge.accuracy}% {dimLabel[currentBadge.dimension]}
+          </div>
         </div>
       )}
     </div>

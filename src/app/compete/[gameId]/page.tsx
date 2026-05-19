@@ -148,6 +148,7 @@ export default function CompeteGamePage() {
     setYearRange,
     setResultsTimer,
     kickPlayer,
+    playAgain,
   } = useCompeteSocket({
     gameId,
     playerId,
@@ -199,6 +200,9 @@ export default function CompeteGamePage() {
     onSetBusy: setBusy,
     onSetLocalSubmitted: setLocalSubmitted,
     onClearSubmissionToasts: () => setSubmissionToasts([]),
+    onPlayAgain: (newGameId) => {
+      router.push(`/compete/${newGameId}`);
+    },
   });
 
   const handleAdvanceRound = useCallback(() => {
@@ -585,6 +589,7 @@ export default function CompeteGamePage() {
             playerId={playerId}
             allRoundResults={allRoundResults}
             setFullscreenImg={setFullscreenImg}
+            sendMessage={(msg) => playAgain((msg as { newGameId: string }).newGameId)}
           />
         ) : null}
       </div>

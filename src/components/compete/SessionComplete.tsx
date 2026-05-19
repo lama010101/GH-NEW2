@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import RainbowRing from "@/components/compete/RainbowRing";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
@@ -11,6 +12,7 @@ interface SessionCompleteProps {
   playerId: string | null;
   allRoundResults: AllRoundResult[] | null;
   setFullscreenImg: (url: string | null) => void;
+  sendMessage: (msg: object) => void;
 }
 
 export default function SessionComplete({
@@ -18,8 +20,50 @@ export default function SessionComplete({
   playerId,
   allRoundResults,
   setFullscreenImg,
+  sendMessage,
 }: SessionCompleteProps) {
   const router = useRouter();
+  const [isCreatingLobby, setIsCreatingLobby] = useState(false);
+  const [lobbyError, setLobbyError] = useState<string | null>(null);
+
+  const isHost = snapshot.players?.find((p: any) => p.playerId === playerId)?.isHost ?? false;
+
+  const handlePlayAgain = async () => {
+    if (!playerId) return;
+    if (!isHost) return;
+
+    setIsCreatingLobby(true);
+    setLobbyError(null);
+    try {
+      const currentDisplayName = playerLabel(snapshot.players, playerId);
+      const response = await fetch("/api/compete/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playerId,
+          displayName: currentDisplayName,
+          mode: snapshot.config.mode,
+          roundTimerSec: snapshot.config.roundTimerSec,
+          totalRounds: snapshot.config.totalRounds,
+          yearMin: snapshot.config.yearMin,
+          yearMax: snapshot.config.yearMax,
+          resultsAutoAdvanceSec: snapshot.config.resultsAutoAdvanceSec,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to create lobby");
+      }
+      const data = await response.json();
+      sendMessage({ type: "PLAY_AGAIN", playerId, newGameId: data.gameId });
+      router.push(`/compete/${data.gameId}`);
+    } catch (error) {
+      console.error("Failed to create lobby:", error);
+      setLobbyError("Failed to create lobby, try again");
+    } finally {
+      setIsCreatingLobby(false);
+    }
+  };
 
   // Helper: compute derived stats for a player
   const computePlayerStats = (pid: string) => {
@@ -766,13 +810,30 @@ export default function SessionComplete({
                 >
                   Home
                 </button>
-                <button
-                  type="button"
-                  className="gh-final-play"
-                  onClick={() => router.push("/compete")}
-                >
-                  Play Again
-                </button>
+                {isHost ? (
+                  <button
+                    type="button"
+                    className="gh-final-play"
+                    onClick={handlePlayAgain}
+                    disabled={isCreatingLobby}
+                  >
+                    {isCreatingLobby ? "Creating lobby..." : "Play Again"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="gh-final-play"
+                    disabled
+                    style={{ opacity: 0.5, cursor: "not-allowed" }}
+                  >
+                    Waiting for host...
+                  </button>
+                )}
+                {lobbyError && (
+                  <div style={{ color: "#ef4444", fontSize: "12px", marginTop: "8px", gridColumn: "1 / -1", textAlign: "center" }}>
+                    {lobbyError}
+                  </div>
+                )}
               </div>
             </div>
           </>
