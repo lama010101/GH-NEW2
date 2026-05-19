@@ -100,7 +100,7 @@
   padding: 10px 16px;
   padding-bottom: calc(12px + env(safe-area-inset-bottom));
   display: grid;
-  grid-template-columns: 44px 120px 56px 1fr;
+  grid-template-columns: 44px 1fr 56px minmax(120px, auto);
   align-items: center;
   gap: 8px;
 }
