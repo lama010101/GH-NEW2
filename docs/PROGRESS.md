@@ -50,6 +50,8 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | HOME-DECOMPOSE-001d | DONE | src/components/home/PracticePanel.tsx (new), src/app/page.tsx | Extracted PracticePanel component from page.tsx into src/components/home/PracticePanel.tsx. Moved PracticePanel function definition with props type exactly as-is. Added necessary imports (React, useState). Included local Toggle component in PracticePanel.tsx since PracticePanel uses it. Exported PracticePanel as named export. Deleted PracticePanel from page.tsx, added import statement. Validation: npm run typecheck exits 0, grep for PracticePanel function in page.tsx returns 0 matches, grep for PracticePanel function in PracticePanel.tsx returns 1 match, grep for PracticePanel import in page.tsx returns 1 match. Date: 2026-05-12 |
 | MP-UI-LOBBY-002 | DONE | src/app/compete/[gameId]/page.tsx | Removed redundant hero block (lines 463-492) showing room code and "You: [name]" above Compete title bar. Also removed unused shortId import from line 29. LobbySection.tsx title bar with "Room [code] · Status: [phase]" remains intact. Validation: grep for "Room code:" in page.tsx returns 0 matches, grep for "You:" in page.tsx returns 0 matches, shortId import removed. Build has pre-existing ESLint errors in BadgePopup.tsx, RoundActiveSection.tsx, SessionComplete.tsx unrelated to this change. Date: 2026-05-19 |
 | MP-UI-LOBBY-003 | DONE | src/app/compete/[gameId]/page.tsx, src/components/compete/LobbySection.tsx | Set page background to #000000 (page.tsx line 442) and card backgrounds to #333333 (LobbySection.tsx line 608). No other color values changed. Validation: grep for background.*#000 in page.tsx returns 1 match, grep for background.*#333 in LobbySection.tsx returns 1 match. Build has pre-existing ESLint errors in BadgePopup.tsx, RoundActiveSection.tsx, SessionComplete.tsx unrelated to this change. Date: 2026-05-19 |
+| MP-UI-LOBBY-004 | DONE | src/components/compete/LobbySection.tsx | Invite panel restructure: expanded by default (inviteExpanded true), removed Supabase friends logic (profiles, friendSearch, useEffect, filteredFriends), added localStorage recent invites (gh_last_invited_players, last 5), reordered sections to friends→room code→invite link, removed search input, changed labels to uppercase. Validation: grep for gh_last_invited_players returns 1 match, grep for Search friends returns 0 matches, grep for inviteExpanded true returns 1 match. Build has pre-existing ESLint errors in BadgePopup.tsx, RoundActiveSection.tsx, SessionComplete.tsx unrelated to this change. Date: 2026-05-19 |
+| MP-FIX-AUTOADVANCE-001 | DONE | partykit/server.ts | Added sync logic in applySnapshotAndBroadcast (lines 400-409) to copy session.resultsAutoAdvanceSec and session.roundTimerSec to RuntimeState top-level fields before this.snapshot assignment. Mirrors loadFromDB logic (lines 304-305). Validation: grep for resultsAutoAdvanceSec shows new block at lines 403-404 inside applySnapshotAndBroadcast before this.snapshot = snapshot at line 410, grep for room.broadcast returns 0 matches. TypeScript has pre-existing errors in page.tsx, BadgePopup.tsx, LobbySection.tsx unrelated to this change. Date: 2026-05-20 |
 | HOME-DECOMPOSE-001c | DONE | src/components/home/DailyPanel.tsx (new), src/app/page.tsx | Extracted DailyPanel component from page.tsx into src/components/home/DailyPanel.tsx. Moved DailyPanel function definition with props type exactly as-is. Added necessary imports (React, useState, useEffect). Exported as named export. Deleted DailyPanel from page.tsx, added import statement. Validation: npm run typecheck exits 0, grep for DailyPanel function in page.tsx returns 0 matches, grep for DailyPanel function in DailyPanel.tsx returns 1 match, grep for DailyPanel import in page.tsx returns 1 match. Date: 2026-05-12 |
 | HOME-DECOMPOSE-001b | DONE | src/components/home/types.ts (new), src/components/home/CardItem.tsx, src/app/page.tsx | Extracted shared home page constants and Mode type into src/components/home/types.ts. Created types.ts with MODES, Mode, CARD_GRADIENT, CARD_NAME, CARD_SUB exported as named exports. Removed duplicate definitions from CardItem.tsx and page.tsx, added imports from types.ts. Validation: npm run typecheck exits 0, grep for const definitions in page.tsx returns 0 matches, grep for const definitions in CardItem.tsx returns 0 matches, grep for export in types.ts returns 5 matches. Date: 2026-05-12 |
 | HOME-DECOMPOSE-001a | DONE | src/components/home/CardItem.tsx (new), src/app/page.tsx | Extracted CardItem component from page.tsx into src/components/home/CardItem.tsx. Moved CardItem function definition with props type exactly as-is. Added necessary imports (React, Image, constants). Exported as named export. Deleted CardItem from page.tsx, added import statement. Validation: npm run typecheck exits 0, grep for CardItem function in page.tsx returns 0 matches, grep for CardItem function in CardItem.tsx returns 1 match, grep for CardItem import in page.tsx returns 1 match. Date: 2026-05-12 |
@@ -1360,3 +1362,79 @@ Description: Added useEffect hook to preload next round image when current round
 | MP-FIX-ROUND-UI-013-09 | Hints button: width 100%, remove flex:none | done |
 | MP-FIX-ROUND-UI-013-10 | Show/Hide button: X when open, map-pin when closed | done |
 | MP-FIX-ROUND-UI-013-11 | Collapsed state: answer summary pills above navbar | done |
+| MP-UI-ROUND-NAVBAR-001 | DONE | src/components/compete/RoundActiveSection.tsx, src/components/compete/RoundActiveSection.module.css | Remove avatar block between WHEN card and NAVBAR, add opponent avatars fixed top-right with toast notifications, fix navbar layout to 3 columns (settings, hints, make guess). Date: 2026-05-20 |
+| MP-UI-ROUND-NAVBAR-002 | DONE | src/components/compete/RoundActiveSection.tsx | Fix bottom navbar layout — restore correct 4-button structure. Changed opponent avatars top from 72 to 100. Replaced navbar contents with 4 children: Settings button (flex: 0 0 44px), Hints button (flex: 0 0 auto, width: 110), Show/Hide toggle button (flex: 0 0 56px, circular, gradient background, X icon when panelVisible=true, location pin when panelVisible=false, onClick toggles setPanelVisible, shineBtn class when !panelVisible && !canSubmit), Make Guess button (flex: 1 1 0, minWidth: 0). Navbar div: display flex, flexDirection row, alignItems center, width 100%, gap 8px. Date: 2026-05-20 |
+| MP-UI-ROUND-NAVBAR-002 | DONE | src/components/compete/RoundActiveSection.tsx | File already in correct state: navbar has 4 children (settings flex 0 0 44px, hints flex 0 0 auto width 110, toggle flex 0 0 56px, make guess flex 1 1 0), opponent avatars top 100. No changes needed. Date: 2026-05-20 |
+| MP-UI-ROUND-NAVBAR-003 | DONE | src/components/compete/RoundActiveSection.tsx, src/components/compete/RoundActiveSection.module.css, src/app/compete/[gameId]/page.tsx | Remove navbar flex/grid conflict (remove inline flex styles, change CSS grid to 44px 110px 56px 1fr, remove flex props from buttons), remove duplicate top-center 'made a guess' notification from page.tsx. Date: 2026-05-20 |
+| MP-UI-ROUND-NAVBAR-004 | DONE | src/components/compete/RoundActiveSection.tsx | Make disabled Make Guess button more visible: background rgba(255,255,255,0.13), color rgba(255,255,255,0.55), opacity 1. Date: 2026-05-20 |
+| MP-FIX-AUTOADVANCE-DEFAULT-001 | supabase/migrations/030_add_results_auto_advance_to_sessions.sql, partykit/server.ts | Changed DEFAULT from 10 to 90 in migration and PartyKit fallbacks. Lobby UI had no fallback to change. |
+
+| MP-FIX-SHORTID-001 | src/components/compete/LobbySection.tsx | Replaced shortId(p.playerId) with p.playerId.slice(0, 8) at lines 367 and 371 |
+
+MP-UI-ROUND-NAVBAR-005a DONE
+- Modified: src/components/compete/RoundActiveSection.module.css (navbar rule replaced with flexbox)
+- Modified: src/components/compete/RoundActiveSection.tsx (navbar restructured into 3 flex groups)
+
+MP-UI-ROUND-NAVBAR-005b DONE
+- Modified: src/components/compete/RoundActiveSection.tsx (opponent avatars moved to top: 16, right: 16)
+
+MP-UI-ROUND-NAVBAR-005d DONE
+- Modified: src/components/compete/RoundActiveSection.tsx (WHEN card bottom corners rounded)
+
+MP-UI-ROUND-NAVBAR-005f DONE
+- Modified: src/components/compete/RoundActiveSection.tsx (added guess hint message when Make Guess clicked while disabled)
+| MP-FIX-LOBBY-SYNC-001 | partykit/server.ts | Added config object to perSocketSnapshot in broadcastStateUpdate() with all SessionConfig fields |
+| MP-FIX-LOBBY-SYNC-002 | DONE | partykit/server.ts | Fixed broadcastStateUpdate() and applySnapshotAndBroadcast() reading from snapshot["session"] instead of snapshot["config"]. Changed all session?.["fieldName"] references to configRecord?.["fieldName"] for mode, totalRounds, yearMin, yearMax, sessionDeadline, startedAt, completedAt. Fixed applySnapshotAndBroadcast() to read resultsAutoAdvanceSec and roundTimerSec from config instead of session. Validation: grep -n 'session\[' partykit/server.ts returns 0 matches, grep -n 'configRecord' partykit/server.ts returns matches in both functions, grep -n 'room.broadcast' partykit/server.ts returns 0 matches, npx tsc --noEmit returns 0 new errors. Date: 2026-05-20 |
+| MP-UI-ROUND-NAVBAR-006a | DONE | src/components/compete/RoundActiveSection.module.css, src/components/compete/RoundActiveSection.tsx | Fixed navbar layout with CSS Grid. Replaced flex layout with grid (grid-template-columns: 44px 110px 1fr 56px 1fr). Settings=44px (col 1), Hints=110px (col 2), spacer=1fr (col 3), Toggle=56px (col 4), Make Guess=1fr (col 5). Removed 3 wrapper divs (left/center/right groups) from 005a. Added gridColumn: 4 to toggle button, gridColumn: 5 + width: "100%" to Make Guess button. Validation: grep "grid-template-columns" shows 44px 110px 1fr 56px 1fr, grep "gridColumn" returns exactly 2 matches (4 and 5), tsc --noEmit has 0 new errors. Date: 2026-05-20 |
+| MP-UI-ROUND-NAVBAR-006b | DONE | src/components/compete/RoundActiveSection.tsx | Increased opacity of inactive Make Guess button. Changed disabled-state background from rgba(255,255,255,0.10) to rgba(255,255,255,0.18), color from rgba(255,255,255,0.55) to rgba(255,255,255,0.70). Applied to both busy/submitted branch and !canSubmit branch. Validation: grep rgba(255,255,255,0.18) returns 2 matches, grep rgba(255,255,255,0.70) returns 2 matches, tsc --noEmit has 0 new errors. Date: 2026-05-20 |
+| MP-UI-ROUND-NAVBAR-006c | DONE | src/components/compete/RoundActiveSection.tsx | Replaced location/year text labels with where/when badge icons. WHERE card header: added where.webp 20x20 icon. WHEN card header: added when.webp 20x20 icon. Collapsed summary pills: replaced emoji with 14x14 webp icons. Fullscreen map header: replaced SVG pin with where.webp 20x20 icon. Validation: grep badges/where.webp returns 3 matches (header, pill, fullscreen), grep badges/when.webp returns 2 matches (header, pill), tsc --noEmit has 0 new errors. Date: 2026-05-20 |
+MP-FIX-LOBBY-SYNC-003 | partykit/server.ts | Fixed roundTimerSec and resultsAutoAdvanceSec to read from configRecord first in broadcastStateUpdate
+
+MP-FIX-RESULTS-MAP-002 | src/components/StaticResultMap.tsx, src/components/compete/WhereCard.tsx | Fixed own guess marker to render as avatar pin instead of orange dot
+
+| MP-FIX-LOBBY-SYNC-004 | DONE | partykit/server.ts | Added yearMin and yearMax normalization to applySnapshotAndBroadcast() (lines 409-414) matching roundTimerSec pattern. Updated broadcastStateUpdate() config construction to include top-level fallback for yearMin and yearMax (line 657-658) matching roundTimerSec and resultsAutoAdvanceSec pattern. Validation: grep -n 'yearMin' shows normalization at line 409-410 and config fallback at line 657; grep -n 'yearMax' shows normalization at line 412-413 and config fallback at line 658; grep -n 'room.broadcast' returns 0 matches; npx tsc --noEmit returns 0 new errors (2 pre-existing errors unrelated to this change). Date: 2026-05-21 |
+| MP-FIX-PLAYAGAIN-001 | Fix Play Again WS race condition | SessionComplete.tsx | DONE | 2026-05-21 |
+| MP-UI-NAVBAR-CENTER-001 | Fix navbar layout: center show/hide, increase button visibility, position hints midway | src/components/compete/RoundActiveSection.tsx, src/components/compete/RoundActiveSection.module.css | DONE | 2026-05-21 |
+
+2026-05-21 - Set lobby auto-advance timer default to 90 seconds
+  File: src/server/sessionCore.ts
+  Change: RESULTS_AUTO_ADVANCE_DEFAULT from 10 to 90
+
+## [2026-05-21] Set Lobby Auto-Advance Timer Default to 90 Seconds
+
+**Task:** Update default auto-advance timer in lobby from 10 to 90 seconds
+
+**Files Modified:**
+- `src/server/sessionCore.ts` (line 491)
+
+**Changes:**
+- Changed `RESULTS_AUTO_ADVANCE_DEFAULT` constant from 10 to 90
+- This affects the default value when creating new compete sessions
+
+**Validation:**
+- Single file modified
+- Single constant changed
+- No duplicate logic introduced
+| MP-CLEANUP-DIAG-001 | partykit/server.ts | Removed temporary diagnostic console.log block from broadcastStateUpdate function |
+| MP-FIX-STUCK-ROUND-001 | Fix stuck round after timer expiry — fallback snapshot recovery | partykit/server.ts | DONE | 2026-05-21 |
+| MP-FIX-TRANSITION-EXPECTED-001 | DONE | src/server/engine/transition.ts, src/server/sessionCore.ts | Fixed false alarm TRANSITION MISMATCH log by adding resultPhaseStartedAt placeholder to expected ROUND_COMPLETE payload in transition engine (transition.ts:102) and normalizing comparison in compareTransitionEvents (sessionCore.ts:48-68) to ignore timestamp value differences. Validation: npx tsc --noEmit exits 0, grep for TRANSITION MISMATCH returns 1 match (check still present), comparison now uses normalizeForComparison() to mask resultPhaseStartedAt values. | 2026-05-21 |
+| MP-FIX-RESILIENCE-001 | Fallback snapshot recovery for triggerResultAutoAdvance, ADVANCE_ROUND, READY_NEXT | partykit/server.ts | DONE | 2026-05-21 |
+
+## [2026-05-21] Fix: Lobby auto-advance timer defaulting to 10 instead of 90 seconds
+
+**Root cause:** Multiple hardcoded 10-second defaults existed beyond sessionCore.ts constant.
+
+**Files modified:**
+- src/server/getGameState.ts:285 — changed fallback ?? 10 → ?? 90
+- supabase/migrations/012_consolidated_multiplayer_baseline.sql:22 — changed DEFAULT 10 → DEFAULT 90
+- supabase/migrations/030_add_results_auto_advance_to_sessions.sql — added ALTER COLUMN SET DEFAULT 90
+- src/server/sessionCore.ts:491 — previously changed RESULTS_AUTO_ADVANCE_DEFAULT 10 → 90
+
+**Action required:** Rebuild/restart dev server to clear stale .next cache.
+**Action required:** Re-run migration 030 on DB (or apply ALTER COLUMN manually) if DB was already initialized.
+| BADGE-MODAL-CLICK-001 | DONE | src/components/compete/BadgePopup.tsx | Added click-outside functionality to close badge modal. onClick handler added to outer overlay div (line 114) to dismiss when clicking anywhere on page background. onClick stopPropagation added to badge card (line 170) to prevent dismiss when clicking on badge content. Date: 2026-05-21 |
+| UI-FIX-CINEMATIC-001 | DONE | src/components/compete/RoundActiveSection.tsx | Auto-show WHERE/WHEN panel when cinematic pan completes. Date: 2026-05-21 |
+
+| MP-FIX-ROUNDACTIVE-PLAYERID-001 | DONE | src/app/compete/[gameId]/page.tsx | Investigation confirmed playerId is already correctly passed to RoundActiveSection on line 502. No change required. Validation: grep shows playerId at line 502 in RoundActiveSection JSX block. | 2026-05-21 |
+
+| MP-FIX-AUTOADVANCE-DISPLAY-001 | src/hooks/useCompeteTimer.ts | Added fallback to derive resultPhaseEndsAt from events array when server value absent |

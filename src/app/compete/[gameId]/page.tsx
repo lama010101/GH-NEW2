@@ -26,7 +26,6 @@ import { HintModal } from "@/components/HintModal";
 import type { HintPurchaseResult } from "@/components/HintModal";
 import { RoundResult, AllRoundResult } from "@/core/competeTypes";
 import {
-  shortId,
   getBadgeSoundPath
 } from "@/core/competeUtils";
 import BadgePopup from "@/components/compete/BadgePopup";
@@ -50,7 +49,6 @@ export default function CompeteGamePage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [localSubmitted, setLocalSubmitted] = useState(false);
-  const [submissionToasts, setSubmissionToasts] = useState<string[]>([]);
   const [timerClamped, setTimerClamped] = useState(false);
   const [hintModalOpen, setHintModalOpen] = useState(false);
   const [hintResult, setHintResult] = useState<HintPurchaseResult>({
@@ -121,7 +119,6 @@ export default function CompeteGamePage() {
     guessLngRef.current = null;
     setLocalSubmitted(false);
     setRoundResults(null);
-    setSubmissionToasts([]);
     setHintResult({ purchasedIds: [], accPenalty: 0, xpPenalty: 0, whereAccPenalty: 0, whenAccPenalty: 0 });
     submittedHintPenaltyRef.current = { accPenalty: 0, xpPenalty: 0, purchasedIds: [], whereAccPenalty: 0, whenAccPenalty: 0 };
   }, [snapshot?.currentRoundIndex]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -174,10 +171,7 @@ export default function CompeteGamePage() {
       setWsDisconnected(false);
       setSnapshot(newSnapshot);
     },
-    onPlayerSubmitted: (submittedPlayerId, playerName) => {
-      const isSelf = submittedPlayerId === playerId;
-      const label = isSelf ? 'You made a guess' : `${playerName} made a guess`;
-      setSubmissionToasts(prev => [...prev, label]);
+    onPlayerSubmitted: (submittedPlayerId, _playerName) => {
       if (submittedPlayerId !== playerId) {
         setTimerClamped(true);
         setTimeout(() => setTimerClamped(false), 600);
@@ -199,7 +193,7 @@ export default function CompeteGamePage() {
     onRoundResults: setRoundResults,
     onSetBusy: setBusy,
     onSetLocalSubmitted: setLocalSubmitted,
-    onClearSubmissionToasts: () => setSubmissionToasts([]),
+    onClearSubmissionToasts: () => {},
     onPlayAgain: (newGameId) => {
       router.push(`/compete/${newGameId}`);
     },
@@ -440,18 +434,10 @@ export default function CompeteGamePage() {
   }
 
   return (
-    <main className="app-shell" style={{ background: snapshot?.status === "SESSION_COMPLETE" ? "#000" : undefined }}>
+    <main className="app-shell" style={{ background: "#000000" }}>
       <div className="shell-grid">
         {/* Toast stack - top-center (hidden during ROUND_COMPLETE) */}
-        {snapshot.status !== "ROUND_COMPLETE" && (
-          <div style={{ position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', gap: '0.5rem', zIndex: 50, pointerEvents: 'none' }}>
-            {submissionToasts.map((label, i) => (
-              <div key={i} style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: 'white', fontSize: '0.875rem', padding: '0.5rem 1rem', borderRadius: '9999px', whiteSpace: 'nowrap' }}>
-                {label}
-              </div>
-            ))}
-          </div>
-        )}
+        {/* REMOVED: Duplicate notification - avatar-side toasts in RoundActiveSection.tsx handle this */}
 
         {/* Red flash overlay */}
         {timerClamped && (
@@ -460,36 +446,6 @@ export default function CompeteGamePage() {
           />
         )}
 
-        {snapshot.status !== "ROUND_COMPLETE" && snapshot.status !== "SESSION_COMPLETE" && (
-          <section className="hero">
-            <span className="badge">Compete · {snapshot.status}</span>
-            {snapshot.status !== "LOBBY" ? (
-              <h1>
-                Round {Math.min(snapshot.currentRoundIndex + 1, snapshot.config.totalRounds)} of{" "}
-                {snapshot.config.totalRounds}
-              </h1>
-            ) : (
-              <h1>Lobby</h1>
-            )}
-            <p className="small">
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Room code: </span>
-              <code style={{ fontSize: 16, fontWeight: 800, letterSpacing: '3px', color: '#fff', background: 'rgba(255,255,255,0.1)', padding: '3px 10px', borderRadius: 6 }}>
-                {snapshot.roomCode}
-              </code>
-              {viewer?.isHost ? (
-                <button
-                  type="button"
-                  className="button secondary"
-                  style={{ marginLeft: 8, padding: "2px 8px", fontSize: "0.8em" }}
-                  onClick={() => { navigator.clipboard.writeText(snapshot.roomCode); }}
-                >
-                  Copy
-                </button>
-              ) : null}
-              {viewer ? <> · You: {viewer.displayName || shortId(viewer.playerId)}</> : null}
-            </p>
-          </section>
-        )}
 
         {snapshot.status === "LOBBY" ? (
           <>

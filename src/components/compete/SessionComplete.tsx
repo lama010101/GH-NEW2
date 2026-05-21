@@ -56,6 +56,7 @@ export default function SessionComplete({
       }
       const data = await response.json();
       sendMessage({ type: "PLAY_AGAIN", playerId, newGameId: data.gameId });
+      await new Promise(resolve => setTimeout(resolve, 300));
       router.push(`/compete/${data.gameId}`);
     } catch (error) {
       console.error("Failed to create lobby:", error);

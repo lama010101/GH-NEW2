@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.sessions (
   created_at               TIMESTAMP    NULL DEFAULT now(),
   seed                     BIGINT       NOT NULL DEFAULT 0,
   room_code                VARCHAR(8)   NOT NULL,
-  results_auto_advance_sec INT          NOT NULL DEFAULT 10,
+  results_auto_advance_sec INT          NOT NULL DEFAULT 90,
   CONSTRAINT sessions_pkey PRIMARY KEY (game_id),
   CONSTRAINT sessions_room_code_key UNIQUE (room_code)
 );

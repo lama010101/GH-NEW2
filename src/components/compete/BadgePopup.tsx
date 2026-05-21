@@ -111,6 +111,7 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
 
   return (
     <div
+      onClick={onDismiss}
       style={{
         position: 'fixed',
         inset: 0,
@@ -166,6 +167,7 @@ export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopup
       {currentBadge && (
         <div
           ref={badgeCardRef}
+          onClick={(e) => e.stopPropagation()}
           style={{
             position: 'relative',
             display: 'flex',

@@ -144,6 +144,8 @@ export default function WhereCard({
                   avatarUrl: player?.avatarUrl ?? null,
                 };
               }) ?? undefined}
+            ownAvatarUrl={snapshotPlayers.find(p => p.playerId === playerId)?.avatarUrl ?? null}
+            ownLabel={snapshotPlayers.find(p => p.playerId === playerId)?.displayName ?? ""}
           />
         )}
       </div>

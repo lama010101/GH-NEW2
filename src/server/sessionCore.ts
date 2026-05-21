@@ -45,12 +45,21 @@ import type { TransitionEvent } from "@/server/engine/transition";
 // Compares existing logic events with centralized transition() output.
 // Does NOT drive logic — purely diagnostic.
 // ═════════════════════════════════════════════════════════════════════════════
+function normalizeForComparison(events: TransitionEvent[]): string {
+  return JSON.stringify(events.map(e => ({
+    ...e,
+    payload: e.type === "ROUND_COMPLETE"
+      ? { ...e.payload, resultPhaseStartedAt: "__timestamp__" }
+      : e.payload
+  })));
+}
+
 function compareTransitionEvents(
   operation: string,
   existing: TransitionEvent[],
   expected: TransitionEvent[]
 ): void {
-  if (JSON.stringify(existing) !== JSON.stringify(expected)) {
+  if (normalizeForComparison(existing) !== normalizeForComparison(expected)) {
     console.error(
       `[TRANSITION MISMATCH] ${operation}\n` +
       `  existing:  ${JSON.stringify(existing)}\n` +
@@ -488,7 +497,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   return snapshot;
 }
 
-const RESULTS_AUTO_ADVANCE_DEFAULT = 10;
+const RESULTS_AUTO_ADVANCE_DEFAULT = 90;
 const RESULTS_AUTO_ADVANCE_MIN = 0;
 const RESULTS_AUTO_ADVANCE_MAX = 300;
 
