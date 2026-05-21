@@ -56,8 +56,8 @@ function HomePageInner() {
   useEffect(() => {
     ;(async () => {
       try {
-        const { data } = await supabaseBrowser.from('images').select('image_url').limit(15)
-        if (data?.length) setMosaicUrls(data.map((r: { image_url: string }) => r.image_url))
+        const { data } = await supabaseBrowser.from('images').select('url').limit(15)
+        if (data?.length) setMosaicUrls(data.map((r: { url: string }) => r.url))
       } catch {}
     })()
   }, [])

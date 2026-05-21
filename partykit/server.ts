@@ -723,7 +723,7 @@ export default class GameServer {
     // Detect base URL from Origin header for production correctness
     if (!this.detectedBaseUrl && ctx.request) {
       const origin = ctx.request.headers.get("origin");
-      if (origin && (origin.includes("localhost") || origin.includes("vercel.app") || origin.includes(".partykit.dev"))) {
+      if (origin && (origin.includes("localhost") || origin.includes("vercel.app") || origin.includes(".partykit.dev") || origin.includes("guess-history.com"))) {
         this.detectedBaseUrl = origin;
         console.log(`[PartyKit] Detected base URL from origin: ${this.detectedBaseUrl}`);
       }
