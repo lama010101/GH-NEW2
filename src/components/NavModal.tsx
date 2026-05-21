@@ -53,6 +53,22 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
         }}
       />
 
+      {/* Close button - outside modal */}
+      <button
+        onClick={onClose}
+        style={{
+          position: 'fixed', top: 20, right: 20,
+          zIndex: 1002,
+          background: 'rgba(255,255,255,0.1)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: 12,
+          cursor: 'pointer',
+          color: '#fff', fontSize: 24, lineHeight: 1, padding: 10,
+          backdropFilter: 'blur(10px)',
+        }}
+        aria-label="Close"
+      >✕</button>
+
       {/* Modal panel */}
       <div style={{
         position: 'fixed', top: '50%', left: '50%',
@@ -65,17 +81,6 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
         boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}>
-
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute', top: 14, right: 14,
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#f97316', fontSize: 22, lineHeight: 1, padding: 4,
-          }}
-          aria-label="Close"
-        >✕</button>
 
         {/* Avatar */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 16 }}>
@@ -106,14 +111,29 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
             style={{
               display: 'flex', alignItems: 'center', gap: 16,
               width: '100%', padding: '14px 24px',
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#fff', fontSize: 16, fontWeight: 400,
+              background: label === 'Home' ? '#f97316' : 'none',
+              border: label === 'Home' ? 'none' : 'none',
+              cursor: 'pointer',
+              color: '#fff', fontSize: 16, fontWeight: label === 'Home' ? 600 : 400,
               textAlign: 'left',
+              borderRadius: label === 'Home' ? 8 : 0,
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            onMouseEnter={e => {
+              if (label !== 'Home') {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
+              } else {
+                e.currentTarget.style.background = '#ea580c'
+              }
+            }}
+            onMouseLeave={e => {
+              if (label !== 'Home') {
+                e.currentTarget.style.background = 'none'
+              } else {
+                e.currentTarget.style.background = '#f97316'
+              }
+            }}
           >
-            <span style={{ opacity: 0.75, flexShrink: 0 }}>{icon}</span>
+            <span style={{ opacity: label === 'Home' ? 1 : 0.75, flexShrink: 0 }}>{icon}</span>
             {label}
           </button>
         ))}
@@ -152,9 +172,8 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
 /* ── SVG icon constants ── */
 
 const HOME_ICON = (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
-    <path d="M9 21V12h6v9"/>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 3L2 12h3v9h6v-6h2v6h6v-9h3L12 3z"/>
   </svg>
 )
 

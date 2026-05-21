@@ -33,6 +33,7 @@ interface RoundActiveSectionProps {
 
 export default function RoundActiveSection({
   snapshot,
+  playerId,
   guessYear,
   guessLat,
   guessLng,
@@ -54,6 +55,7 @@ export default function RoundActiveSection({
       : null;
 
   const [panelVisible, setPanelVisible] = useState(false);
+  const [cinematicDone, setCinematicDone] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [yearEditActive, setYearEditActive] = useState(false);
@@ -80,6 +82,10 @@ export default function RoundActiveSection({
     }
     return true;
   });
+  const [submittedToasts, setSubmittedToasts] = useState<Record<string, boolean>>({});
+  const toastTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [guessHint, setGuessHint] = useState<string | null>(null);
+  const guessHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pan system refs
   const panX = useRef(0);
@@ -121,7 +127,11 @@ export default function RoundActiveSection({
         const t = Math.min(elapsed / DURATION, 1);
         const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
         applyPan(-max + ease * 2 * max);
-        if (t < 1) rafId = requestAnimationFrame(animate);
+        if (t < 1) {
+          rafId = requestAnimationFrame(animate);
+        } else {
+          setCinematicDone(true);
+        }
       };
       rafId = requestAnimationFrame(animate);
       return () => cancelAnimationFrame(rafId);
@@ -133,10 +143,20 @@ export default function RoundActiveSection({
     }
   }, []);
 
+  // Auto-open panel when cinematic pan finishes
+  useEffect(() => {
+    if (cinematicDone) {
+      setPanelVisible(true);
+    }
+  }, [cinematicDone]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (panRafId.current) cancelAnimationFrame(panRafId.current);
+      // Clear all toast timeouts
+      Object.values(toastTimeoutsRef.current).forEach(clearTimeout);
+      if (guessHintTimer.current) clearTimeout(guessHintTimer.current);
     };
   }, []);
 
@@ -154,6 +174,27 @@ export default function RoundActiveSection({
   useEffect(() => {
     localStorage.setItem('gh_vibrate', String(vibrateEnabled));
   }, [vibrateEnabled]);
+
+  // Watch for opponent submissions and show toasts
+  useEffect(() => {
+    if (!snapshot.players || !playerId) return;
+    
+    snapshot.players.forEach((p) => {
+      if (p.hasSubmitted && p.playerId !== playerId && !submittedToasts[p.playerId]) {
+        setSubmittedToasts(prev => ({ ...prev, [p.playerId]: true }));
+        
+        const timeoutId = setTimeout(() => {
+          setSubmittedToasts(prev => {
+            const next = { ...prev };
+            delete next[p.playerId];
+            return next;
+          });
+        }, 3000);
+        
+        toastTimeoutsRef.current[p.playerId] = timeoutId;
+      }
+    });
+  }, [snapshot.players, playerId, submittedToasts]);
 
   const handleMapSetLocation = (location: { lat: number; lng: number }) => {
     if (!isLocked) {
@@ -417,14 +458,97 @@ export default function RoundActiveSection({
         </div>
       )}
 
+        {/* Opponent avatars - fixed top-right */}
+      {snapshot.players && snapshot.players.length >= 2 && playerId && (
+        <div
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            zIndex: 200,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: 8,
+          }}
+        >
+          {snapshot.players
+            .filter((p) => p.playerId !== playerId)
+            .map((p) => {
+              const initials = (p.displayName ?? p.playerId ?? "?")[0].toUpperCase();
+              return (
+                <div
+                  key={p.playerId}
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  {submittedToasts[p.playerId] && (
+                    <div
+                      style={{
+                        background: "rgba(0,0,0,0.72)",
+                        backdropFilter: "blur(8px)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 20,
+                        padding: "4px 10px",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "rgba(255,255,255,0.85)",
+                        whiteSpace: "nowrap",
+                        animation: "fadeInOut 3s ease forwards",
+                      }}
+                    >
+                      {p.displayName ?? "Player"} guessed
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      border: p.hasSubmitted
+                        ? "2px solid #22c55e"
+                        : "2px solid rgba(255,255,255,0.20)",
+                      flexShrink: 0,
+                      background: "rgba(255,255,255,0.08)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: "rgba(255,255,255,0.7)",
+                    }}
+                  >
+                    {p.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.avatarUrl}
+                        alt={initials}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
       {mapFullscreen && (
         <div className={styles.mapFullscreenOverlay}>
           <div className={styles.mapFullscreenHeader}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fb923c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/badges/where.webp" alt="where" style={{ width: 20, height: 20, objectFit: "contain" }} />
               <span style={{ fontSize: 16, fontWeight: 700, color: "#fb923c" }}>Where?</span>
             </div>
             <button
@@ -488,38 +612,49 @@ export default function RoundActiveSection({
               justifyContent: "center",
               gap: 12,
               padding: "6px 16px",
-              pointerEvents: "none",
             }}
           >
             {guessLocation !== null && (
-              <span style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: "#fb923c",
-                background: "rgba(251,146,60,0.12)",
-                border: "1px solid rgba(251,146,60,0.25)",
-                borderRadius: 20,
-                padding: "3px 10px",
-                maxWidth: 140,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}>
-                📍 {locationNameLoading ? "…" : locationName ?? "Location set"}
-              </span>
+              <button
+                type="button"
+                onClick={() => setPanelVisible(true)}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#fb923c",
+                  background: "rgba(251,146,60,0.12)",
+                  border: "1px solid rgba(251,146,60,0.25)",
+                  borderRadius: 20,
+                  padding: "3px 10px",
+                  maxWidth: 140,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/badges/where.webp" alt="where" style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }} /> {locationNameLoading ? "…" : locationName ?? "Location set"}
+              </button>
             )}
             {guessYear !== null && (
-              <span style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: "#fb923c",
-                background: "rgba(251,146,60,0.12)",
-                border: "1px solid rgba(251,146,60,0.25)",
-                borderRadius: 20,
-                padding: "3px 10px",
-              }}>
-                📅 {guessYear}
-              </span>
+              <button
+                type="button"
+                onClick={() => setPanelVisible(true)}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#fb923c",
+                  background: "rgba(251,146,60,0.12)",
+                  border: "1px solid rgba(251,146,60,0.25)",
+                  borderRadius: 20,
+                  padding: "3px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/badges/when.webp" alt="when" style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }} /> {guessYear}
+              </button>
             )}
           </div>
         )}
@@ -549,6 +684,8 @@ export default function RoundActiveSection({
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/badges/where.webp" alt="where" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#fb923c" }}>Where?</span>
               </div>
               {!searchExpanded && (
@@ -732,8 +869,10 @@ export default function RoundActiveSection({
               WebkitBackdropFilter: "blur(18px)",
               borderLeft: "1px solid rgba(255,255,255,0.07)",
               borderRight: "1px solid rgba(255,255,255,0.07)",
-              borderBottom: "none",
+              borderBottom: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: "0 0 14px 14px",
               padding: "0 16px 0",
+              paddingBottom: 12,
             }}
           >
             {/* Header Row */}
@@ -747,6 +886,8 @@ export default function RoundActiveSection({
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/badges/when.webp" alt="when" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#fb923c" }}>When?</span>
               </div>
               {!yearEditActive ? (
@@ -831,193 +972,147 @@ export default function RoundActiveSection({
           </div>
         )}
 
-        {snapshot.players && snapshot.players.length >= 2 && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              padding: "6px 16px 2px",
-            }}
-          >
-            {snapshot.players.map((p) => {
-              const submitted = p.hasSubmitted;
-              const initials = (p.displayName ?? p.playerId ?? "?")
-                .split(" ")
-                .map((w: string) => w[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase();
-              return (
-                <div
-                  key={p.playerId}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 3,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      overflow: "hidden",
-                      border: submitted
-                        ? "2px solid #22c55e"
-                        : "2px solid rgba(255,255,255,0.20)",
-                      flexShrink: 0,
-                      background: "rgba(255,255,255,0.08)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: "rgba(255,255,255,0.7)",
-                    }}
-                  >
-                    {p.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={p.avatarUrl}
-                        alt={initials}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      initials
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+        {guessHint && (
+          <div style={{
+            textAlign: "center",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#fb923c",
+            padding: "4px 0 2px",
+          }}>
+            {guessHint}
           </div>
         )}
 
         {/* NAVBAR */}
-        <div
-          className={styles.navbar}
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            width: "100%",
-            gap: "8px",
-          }}
-        >
+        <div className={styles.navbar}>
+          {/* Left Column: Settings and Hints */}
+          <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+            {/* Settings */}
+            <button
+              type="button"
+              onClick={() => setSettingsModalOpen(true)}
+              style={{
+                width: 44, height: 44,
+                background: "rgba(255,255,255,0.18)",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+                borderRadius: "50%",
+                border: "1px solid rgba(255,255,255,0.20)",
+                cursor: "pointer", display: "flex",
+                alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}
+              aria-label="Settings"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+              </svg>
+            </button>
 
-          {/* Col 1: Settings */}
+            {/* Hints — positioned midway using flex center in remaining space */}
+            <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+              <button
+                type="button"
+                onClick={onOpenHints}
+                disabled={isLocked}
+                style={{
+                  width: 110,
+                  height: 44,
+                  background: "linear-gradient(135deg, #a8edbc, #7dd8f0, #c4b5f7)",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: isLocked ? "not-allowed" : "pointer",
+                  opacity: isLocked ? 0.4 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0 12px",
+                }}
+                aria-label="Hints"
+              >
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>
+                  Hints
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>
+                  {hintsUsedCount ?? 0}/14
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Center Column: Show/Hide Toggle */}
           <button
             type="button"
-            onClick={() => setSettingsModalOpen(true)}
-            style={{
-              width: 44, height: 44,
-              background: "rgba(255,255,255,0.10)",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-              borderRadius: "50%",
-              border: "1px solid rgba(255,255,255,0.14)",
-              cursor: "pointer", display: "flex",
-              alignItems: "center", justifyContent: "center",
-            }}
-            aria-label="Settings"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
-          </button>
-
-          {/* Col 2: Hints */}
-          <button
-            type="button"
-            onClick={onOpenHints}
-            disabled={isLocked}
-            style={{
-              width: "100%",
-              height: 44,
-              background: "linear-gradient(135deg, #a8edbc, #7dd8f0, #c4b5f7)",
-              border: "none",
-              borderRadius: "8px",
-              cursor: isLocked ? "not-allowed" : "pointer",
-              opacity: isLocked ? 0.4 : 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0 12px",
-            }}
-            aria-label="Hints"
-          >
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>
-              Hints
-            </span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>
-              {hintsUsedCount ?? 0}/14
-            </span>
-          </button>
-
-          {/* Col 3: Show/Hide toggle — larger, center prominence */}
-          <button
-            type="button"
-            className={(!panelVisible && !canSubmit) ? styles.shineBtn : ""}
-            onClick={() => setPanelVisible((v) => !v)}
-            aria-label={panelVisible ? "Hide panel" : "Show panel"}
+            onClick={() => setPanelVisible(!panelVisible)}
+            className={!panelVisible && !canSubmit ? styles.shineBtn : undefined}
             style={{
               width: 56,
               height: 56,
+              background: "linear-gradient(135deg, #c084fc, #fb923c)",
               borderRadius: "50%",
               border: "none",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "linear-gradient(135deg, #c084fc, #fb923c)",
-              boxShadow: "0 4px 16px rgba(192, 132, 252, 0.35), 0 2px 8px rgba(251, 146, 60, 0.25)",
-              position: "relative",
-              overflow: "hidden",
+              zIndex: 2,
             }}
+            aria-label={panelVisible ? "Hide panel" : "Show panel"}
           >
             {panelVisible ? (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
             ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
             )}
           </button>
 
-          {/* Col 4: Make Guess — primary CTA */}
+          {/* Right Column: Make Guess */}
           <button
             type="button"
-            onClick={onSubmit}
-            disabled={!canSubmit}
+            onClick={() => {
+              if (!canSubmit) {
+                const missing: string[] = [];
+                if (guessLocation === null) missing.push("a location");
+                if (guessYear === null) missing.push("a year");
+                setGuessHint("Select " + missing.join(" and ") + " first");
+                if (guessHintTimer.current) clearTimeout(guessHintTimer.current);
+                guessHintTimer.current = setTimeout(() => setGuessHint(null), 2500);
+                return;
+              }
+              onSubmit();
+            }}
             className={canSubmit ? styles.shineBtn : undefined}
             style={{
+              width: "100%",
+              minWidth: 0,
               height: 48,
               borderRadius: 999,
               border: "none",
               background: busy || hasSubmitted || localSubmitted
-                ? "rgba(255,255,255,0.10)"
+                ? "rgba(255,255,255,0.25)"
                 : canSubmit
                 ? "linear-gradient(135deg, #ff8a00, #ffae42)"
-                : "rgba(255,255,255,0.10)",
+                : "rgba(255,255,255,0.25)",
               color: busy || hasSubmitted || localSubmitted
-                ? "rgba(255,255,255,0.5)"
+                ? "rgba(255,255,255,0.85)"
                 : canSubmit
                 ? "#17110a"
-                : "rgba(255,255,255,0.28)",
+                : "rgba(255,255,255,0.85)",
               fontSize: 15,
               fontWeight: 700,
-              cursor: canSubmit ? "pointer" : "not-allowed",
+              cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: 7,
-              opacity: canSubmit ? 1.0 : 0.50,
-              minWidth: 120,
               padding: "0 16px",
             }}
           >
@@ -1029,7 +1124,6 @@ export default function RoundActiveSection({
             )}
             {busy ? "Submitting…" : hasSubmitted || localSubmitted ? "Submitted ✓" : "Make Guess"}
           </button>
-
         </div>
       </div>
 

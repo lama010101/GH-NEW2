@@ -87,6 +87,14 @@
   animation: pulse 1.8s ease-in-out infinite;
 }
 
+/* Toast fade in/out animation */
+@keyframes fadeInOut {
+  0%   { opacity: 0; transform: translateX(8px); }
+  15%  { opacity: 1; transform: translateX(0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* Responsive: on desktop show zoom controls */
 @media (min-width: 768px) {
   .mapNoZoom :global(.leaflet-control-zoom) {
@@ -100,9 +108,10 @@
   padding: 10px 16px;
   padding-bottom: calc(12px + env(safe-area-inset-bottom));
   display: grid;
-  grid-template-columns: 44px 1fr 56px minmax(120px, auto);
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  width: 100%;
 }
 
 /* Show/hide toggle button — big, centered, prominent */

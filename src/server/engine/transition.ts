@@ -98,7 +98,8 @@ function handleSubmitGuess(
     events.push({
       type: "ROUND_COMPLETE",
       payload: {
-        commitCount: commitCountAfter
+        commitCount: commitCountAfter,
+        resultPhaseStartedAt: "__timestamp__"
       },
       roundIndex: intent.roundIndex
     });

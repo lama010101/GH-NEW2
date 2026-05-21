@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
-import { getUsernameGradientStyle, shortId } from "@/core/competeUtils";
-import { supabaseBrowser } from "@/core/supabaseBrowser";
+import { getUsernameGradientStyle } from "@/core/competeUtils";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 
 interface LobbySectionProps {
@@ -74,34 +73,27 @@ export default function LobbySection({
     setResultsTimerValue(snapshot.config.resultsAutoAdvanceSec);
   }, [snapshot.config.resultsAutoAdvanceSec]);
 
-  /* ── Invite panel: friend list from Supabase profiles ── */
-  const [profiles, setProfiles] = useState<Array<{ id: string; display_name: string | null; avatar_url: string | null }>>([]);
-  const [friendSearch, setFriendSearch] = useState("");
-  const [inviteExpanded, setInviteExpanded] = useState(false);
+  /* ── Invite panel: recent invites from localStorage ── */
+  const [inviteExpanded, setInviteExpanded] = useState(true);
   const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    supabaseBrowser
-      .from("profiles")
-      .select("id, display_name, avatar_url")
-      .then(({ data }) => {
-        if (cancelled) return;
-        setProfiles(data ?? []);
-      });
-    return () => { cancelled = true; };
-  }, []);
-
-  const sessionPlayerIds = new Set(snapshot.players.map((p) => p.playerId));
-  const filteredFriends = profiles
-    .filter((p) => !sessionPlayerIds.has(p.id) && p.id !== (viewer?.playerId ?? ""))
-    .filter((p) => {
-      if (!friendSearch.trim()) return true;
-      const name = (p.display_name ?? "").toLowerCase();
-      return name.includes(friendSearch.trim().toLowerCase());
-    });
+  const recentInvites: Array<{ id: string; name: string; avatarUrl: string }> = (() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("gh_last_invited_players");
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.slice(0, 5).filter((p) =>
+        p && typeof p.id === "string" && typeof p.name === "string" && typeof p.avatarUrl === "string"
+      );
+    } catch {
+      return [];
+    }
+  })();
 
   const inviteLink = typeof window !== "undefined" ? window.location.href : "";
+  const truncatedInviteLink = inviteLink.length > 32 ? inviteLink.slice(0, 32) + "…" : inviteLink;
   const handleCopy = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -372,11 +364,11 @@ export default function LobbySection({
                   <span className="lobby-player-info">
                     <PlayerAvatar
                       avatarUrl={p.avatarUrl}
-                      displayName={p.displayName || shortId(p.playerId)}
+                      displayName={p.displayName || p.playerId.slice(0, 8)}
                       size={32}
                     />
                     <span style={getUsernameGradientStyle(p.playerId)}>
-                      {p.displayName || shortId(p.playerId)}
+                      {p.displayName || p.playerId.slice(0, 8)}
                     </span>
                   </span>
                   <span className="lobby-player-badges">
@@ -417,9 +409,49 @@ export default function LobbySection({
             </button>
           </div>
           <div className={`lobby-invite-body${!inviteExpanded ? " collapsed" : ""}`}>
+            {/* Invite Friends - recent from localStorage */}
+            <div className="lobby-invite-section">
+              <span className="lobby-invite-label">INVITE FRIENDS</span>
+              <div className="lobby-friend-list">
+                {recentInvites.length === 0 ? (
+                  <div className="lobby-friend-empty" style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, padding: "16px", textAlign: "center" }}>
+                    No recent invites
+                  </div>
+                ) : (
+                  recentInvites.map((friend) => (
+                    <div key={friend.id} className="lobby-friend-row">
+                      <span className="lobby-friend-info">
+                        <PlayerAvatar
+                          avatarUrl={friend.avatarUrl}
+                          displayName={friend.name}
+                          size={28}
+                        />
+                        <span style={getUsernameGradientStyle(friend.id)}>
+                          {friend.name}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        className="button secondary"
+                        style={{ padding: "4px 10px", fontSize: "0.75rem" }}
+                        onClick={() =>
+                          handleCopy(
+                            `Join my Guess-History game! Room code: ${roomCode} → ${inviteLink}`,
+                            "Invite copied!"
+                          )
+                        }
+                      >
+                        {copiedLabel === "Invite copied!" ? "Copied!" : "Invite"}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             {/* Room code */}
             <div className="lobby-invite-section">
-              <span className="lobby-invite-label">Room Code</span>
+              <span className="lobby-invite-label">ROOM CODE</span>
               <div className="lobby-room-code-row">
                 <code className="lobby-room-code">{roomCode}</code>
                 <button
@@ -435,10 +467,10 @@ export default function LobbySection({
 
             {/* Invite link */}
             <div className="lobby-invite-section">
-              <span className="lobby-invite-label">Invite Link</span>
+              <span className="lobby-invite-label">INVITE LINK</span>
               <div className="lobby-room-code-row">
                 <code className="lobby-room-code" style={{ fontSize: 12 }}>
-                  {inviteLink}
+                  {truncatedInviteLink}
                 </code>
                 <button
                   type="button"
@@ -449,55 +481,6 @@ export default function LobbySection({
                   {copiedLabel === "Link copied!" ? "Copied!" : "Copy"}
                 </button>
               </div>
-            </div>
-
-            {/* Friend search */}
-            <div className="lobby-invite-section">
-              <span className="lobby-invite-label">Invite Friends</span>
-              <input
-                type="text"
-                placeholder="Search friends..."
-                value={friendSearch}
-                onChange={(e) => setFriendSearch(e.target.value)}
-                className="lobby-friend-search"
-              />
-            </div>
-
-            {/* Friend list */}
-            <div className="lobby-friend-list">
-              {filteredFriends.length === 0 ? (
-                <div className="lobby-friend-empty">
-                  {friendSearch.trim() ? "No friends match your search." : "No friends to invite."}
-                </div>
-              ) : (
-                filteredFriends.map((friend) => (
-                  <div key={friend.id} className="lobby-friend-row">
-                    <span className="lobby-friend-info">
-                      <PlayerAvatar
-                        avatarUrl={friend.avatar_url}
-                        displayName={friend.display_name ?? shortId(friend.id)}
-                        size={28}
-                      />
-                      <span style={getUsernameGradientStyle(friend.id)}>
-                        {friend.display_name ?? shortId(friend.id)}
-                      </span>
-                    </span>
-                    <button
-                      type="button"
-                      className="button secondary"
-                      style={{ padding: "4px 10px", fontSize: "0.75rem" }}
-                      onClick={() =>
-                        handleCopy(
-                          `Join my Guess-History game! Room code: ${roomCode} → ${inviteLink}`,
-                          "Invite copied!"
-                        )
-                      }
-                    >
-                      {copiedLabel === "Invite copied!" ? "Copied!" : "Invite"}
-                    </button>
-                  </div>
-                ))
-              )}
             </div>
           </div>
         </div>

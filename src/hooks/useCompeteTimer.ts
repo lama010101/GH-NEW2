@@ -94,13 +94,35 @@ export default function useCompeteTimer({
 
   // Live countdown timer for RESULT phase
   useEffect(() => {
-    if (!snapshot || snapshot.status !== "ROUND_COMPLETE" || !snapshot.resultPhaseEndsAt) {
+    if (!snapshot || snapshot.status !== "ROUND_COMPLETE") {
+      setResultSecsLeft(null);
+      return;
+    }
+
+    // Fallback: derive resultPhaseEndsAt from events array if server value absent
+    let effectiveResultPhaseEndsAt = snapshot.resultPhaseEndsAt;
+
+    if (!effectiveResultPhaseEndsAt) {
+      const currentRoundIndex = snapshot.currentRoundIndex;
+      const events = (snapshot as Record<string, unknown>)["events"] as
+        Array<{ roundIndex: number | null; eventType: string; payload?: Record<string, unknown> }> | undefined;
+      const roundCompleteEvent = events
+        ?.filter(e => e.eventType === "ROUND_COMPLETE" && e.roundIndex === currentRoundIndex)
+        .pop();
+      const resultPhaseStartedAt = roundCompleteEvent?.payload?.["resultPhaseStartedAt"] as string | undefined;
+      const autoAdvanceSec = snapshot.config?.resultsAutoAdvanceSec ?? 90;
+      if (resultPhaseStartedAt) {
+        effectiveResultPhaseEndsAt = new Date(resultPhaseStartedAt).getTime() + autoAdvanceSec * 1000;
+      }
+    }
+
+    if (!effectiveResultPhaseEndsAt) {
       setResultSecsLeft(null);
       return;
     }
 
     const updateCountdown = () => {
-      const secsLeft = Math.max(0, Math.ceil((snapshot.resultPhaseEndsAt! - Date.now()) / 1000));
+      const secsLeft = Math.max(0, Math.ceil((effectiveResultPhaseEndsAt - Date.now()) / 1000));
       setResultSecsLeft(secsLeft);
     };
 
@@ -109,7 +131,7 @@ export default function useCompeteTimer({
 
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snapshot?.status, snapshot?.resultPhaseEndsAt]);
+  }, [snapshot?.status, snapshot?.resultPhaseEndsAt, snapshot?.events]);
 
   return { timeRemaining, resultSecsLeft };
 }

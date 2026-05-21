@@ -20,6 +20,8 @@ interface StaticResultMapProps {
   guessLat: number | null;
   guessLng: number | null;
   playerGuesses?: PlayerGuess[];
+  ownAvatarUrl?: string | null;
+  ownLabel?: string;
 }
 
 // Custom marker icons
@@ -40,7 +42,6 @@ const createIcon = (color: string) => {
 };
 
 const correctIcon = createIcon("#22C55E"); // Green
-const guessIcon = createIcon("#FF6B2B"); // Orange
 
 const createAvatarIcon = (avatarUrl: string | null | undefined, label: string | undefined): L.DivIcon => {
   const initial = label ? label.charAt(0).toUpperCase() : "?";
@@ -106,6 +107,8 @@ export function StaticResultMap({
   guessLat,
   guessLng,
   playerGuesses,
+  ownAvatarUrl,
+  ownLabel,
 }: StaticResultMapProps) {
   const hasGuess = guessLat !== null && guessLng !== null;
 
@@ -137,7 +140,10 @@ export function StaticResultMap({
 
       {/* Guess marker (only if player submitted a location) */}
       {hasGuess && (
-        <Marker position={[guessLat, guessLng]} icon={guessIcon} />
+        <Marker
+          position={[guessLat, guessLng]}
+          icon={createAvatarIcon(ownAvatarUrl ?? null, ownLabel ?? "")}
+        />
       )}
 
       {/* Dashed connecting line (only if both markers exist) */}
