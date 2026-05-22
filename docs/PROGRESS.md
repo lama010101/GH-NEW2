@@ -1441,3 +1441,10 @@ MP-FIX-RESULTS-MAP-002 | src/components/StaticResultMap.tsx, src/components/comp
 | MP-FIX-IMAGES-COL-001 | Fix images column name image_url→url in src/app/page.tsx | DONE | 2026-05-22 |
 | MP-FIX-ESLINT-BUILD-001 | Suppress pre-existing ESLint errors blocking Vercel build | DONE | 2026-05-22 |
 | MP-FIX-ROUTER-001 | Add missing useRouter to compete page.tsx | DONE | 2026-05-22 |
+| UI-FIX-ROUND-RESULTS-BG-001 | DONE | src/components/compete/SessionComplete.tsx | Changed .gh-final-mini-tile background from #1a1a1a to #333. All cards in round results pages now have background #333. Date: 2026-05-22
+| MP-FIX-AUTH-CALLBACK-001 | DONE | src/app/auth/callback/route.ts | Replaced browser createClient with createServerClient from @supabase/ssr so session cookies are written correctly after OAuth code exchange | 2026-05-22
+| MP-FIX-AUTH-PKCE-001 | DONE | src/core/supabaseBrowser.ts | Added flowType: 'pkce' to browser Supabase client constructor so OAuth redirects use PKCE flow and return ?code= instead of hash fragment | 2026-05-22 |
+| MP-INV-PROD-ROSTER-001 | DONE | READ ONLY | Investigated prod-only lobby guest visibility regression | 2026-05-22 |
+| MP-INV-PROD-ROSTER-002 | DONE | READ ONLY | Read getNextJsBaseUrl and prod NEXTJS_BASE_URL config | 2026-05-22 |
+2026-05-22 | MP-REFACTOR-LOBBY-001 | Extract LobbySection styles to CSS module | Completed | Created LobbySection.module.css, extracted <style> tag content, converted 23 inline styles to CSS classes, added global CSS import, removed <style> tag from TSX
+2026-05-22 | MP-UI-LOBBY-005 | Lobby card styles and invite compact layout | Completed | Changed card background to #300, muted text to #ffffff, reordered Invite card first, invite expanded by default, compact invite layout (removed URL display, single-row layouts), updated grid areas

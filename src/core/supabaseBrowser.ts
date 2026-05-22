@@ -15,7 +15,11 @@ function getSupabaseBrowserClient(): SupabaseClient {
     throw new Error("IDENTITY_VIOLATION: NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. Identity bootstrap cannot proceed.");
   }
 
-  _supabaseBrowserInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  _supabaseBrowserInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      flowType: 'pkce',
+    },
+  });
   return _supabaseBrowserInstance;
 }
 
