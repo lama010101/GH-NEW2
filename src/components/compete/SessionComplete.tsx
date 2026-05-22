@@ -465,7 +465,7 @@ export default function SessionComplete({
               }
               .gh-final-mini-tile {
                 min-width: 0;
-                background: #1a1a1a;
+                background: #333;
                 border-radius: 8px;
                 padding: 9px 4px 8px;
                 text-align: center;
