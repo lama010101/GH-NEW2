@@ -19,7 +19,7 @@
 // ============================================================================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import { useIdentity } from "@/hooks/useIdentity";
 import { HintModal } from "@/components/HintModal";
@@ -74,6 +74,8 @@ export default function CompeteGamePage() {
     whenAccPenalty: 0,
   });
   const badgePopupShownForRoundRef = useRef<number>(-1);
+
+  const router = useRouter();
 
   const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity();
   // Auto-submit on timer expiry using current input values.
@@ -171,6 +173,7 @@ export default function CompeteGamePage() {
       setWsDisconnected(false);
       setSnapshot(newSnapshot);
     },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onPlayerSubmitted: (submittedPlayerId, _playerName) => {
       if (submittedPlayerId !== playerId) {
         setTimerClamped(true);
