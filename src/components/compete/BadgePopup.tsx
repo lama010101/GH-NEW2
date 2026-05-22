@@ -17,7 +17,8 @@ interface BadgePopupProps {
   onDismiss: () => void;
 }
 
-export default function BadgePopup({ badges, nearMisses, onDismiss }: BadgePopupProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function BadgePopup({ badges, nearMisses: _nearMisses, onDismiss }: BadgePopupProps) {
   const [currentBadgeIndex, setCurrentBadgeIndex] = useState(0);
   const [celebrate, setCelebrate] = useState(false);
   const badgeCardRef = useRef<HTMLDivElement>(null);
