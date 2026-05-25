@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 
+const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -22,10 +24,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setLoading(true);
     setError(null);
 
+    const redirectBase = PUBLIC_SITE_URL || window.location.origin;
     const { error } = await supabaseBrowser.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+        redirectTo: `${redirectBase}/auth/callback?next=/`,
       },
     });
 
@@ -67,6 +70,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     if (result.error) {
       setError(result.error.message);
+      if (
+        mode === "signin" &&
+        /invalid login credentials/i.test(result.error.message)
+      ) {
+        console.error(
+          "[auth] sign-in failed. In production, verify Supabase Auth > URL Configuration includes the exact site URL and callback URL.",
+          {
+            currentOrigin: window.location.origin,
+            configuredSiteUrl: PUBLIC_SITE_URL ?? null,
+          }
+        );
+      }
     } else {
       onClose();
     }
