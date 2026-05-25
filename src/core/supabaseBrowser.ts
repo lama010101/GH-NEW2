@@ -17,7 +17,7 @@ function getSupabaseBrowserClient(): SupabaseClient {
 
   _supabaseBrowserInstance = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
-      flowType: 'pkce',
+      flowType: 'implicit',
     },
   });
   return _supabaseBrowserInstance;
