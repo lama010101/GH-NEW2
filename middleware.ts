@@ -1,42 +1,64 @@
-import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Routes that do NOT require authentication.
- * Everything else redirects to /login if no Supabase session cookie is present.
+ * Everything else redirects to /login if no Supabase session is present.
  */
 const PUBLIC_PATHS = ["/", "/login", "/auth/callback"];
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
-  // Next.js internals, static assets, API routes
   if (pathname.startsWith("/_next/")) return true;
   if (pathname.startsWith("/api/")) return true;
   if (pathname.startsWith("/favicon")) return true;
   return false;
 }
 
-function hasSupabaseSession(request: NextRequest): boolean {
-  // Supabase stores the session in a cookie whose name contains "auth-token"
-  const cookies = request.cookies.getAll();
-  return cookies.some(
-    (c) => c.name.includes("auth-token") && c.value.length > 0
-  );
-}
+export async function middleware(request: NextRequest) {
+  // Build a mutable response object that Supabase can write refreshed cookies onto.
+  let response = NextResponse.next({ request });
 
-export function middleware(request: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // IMPORTANT: getUser() triggers session refresh if the access token is stale.
+  // Do not remove or replace with getSession() — getSession() does not refresh.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
-    return NextResponse.next();
+    return response;
   }
 
-  if (!hasSupabaseSession(request)) {
+  if (!user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
