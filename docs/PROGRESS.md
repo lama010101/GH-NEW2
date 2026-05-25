@@ -7,6 +7,8 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 ## Log
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-FIX-GOOGLEAUTH-001 | DONE | src/core/supabaseBrowser.ts, src/app/auth/callback/route.ts, middleware.ts | Rebuilt browser client + callback route + middleware on @supabase/ssr canonical pattern. Removed Proxy wrapper, added use client directive. Callback uses next/headers cookies(). Middleware uses createServerClient + getUser() for session refresh. | 2026-05-25 |
+| MP-FIX-AUTH-PROD-001 | DONE | src/core/supabaseBrowser.ts | Switched browser client to @supabase/ssr createBrowserClient for cookie-based PKCE | 2026-05-25 |
 | UI-TAILWIND-POSTCSS-003 | DONE | postcss.config.mjs, package.json, package-lock.json | Installed and wired Tailwind v4 PostCSS compiler. Added @tailwindcss/postcss ^4.3.0 devDependency. Created postcss.config.mjs with exact content exporting default plugins object mapping "@tailwindcss/postcss" to empty options. Verified globals.css retains @import "tailwindcss" and @config "../../tailwind.config.ts". Build (next build --no-lint) exits 0. Compiled CSS now contains utility classes: .flex (line 453), .grid-cols-4 (line 679), .rounded-xl (line 766), .bg-white (line 1049) in .next/static/css/app/layout.css. Profile page JSX untouched (git diff returns empty). Inline style count in profile remains 4 dynamic-only matches (badge.color, item.color, era.percent width, century.opacity). Date: 2026-05-12 |
 | PROFILE-UI-NORM-001 | DONE | src/app/profile/page.tsx | Profile page Tailwind normalization. Removed local `C` color map and `STYLES` object (~270 lines). Removed gear icon (lines 498-518). Removed duplicated hero stat pills (lines 574-612). Converted all inline `style={{}}` to Tailwind utility classes. Avatar now uses shared `<img>` rendering behavior with `onError` matching `PlayerAvatar`. 4-card stat strip is sole authority for accuracy/XP. Typography uses Tailwind tokens (`text-sm`, `text-xl`, `text-2xl`, etc.) instead of raw pixel values. All sections wrapped in `max-w-[820px] mx-auto px-6` for consistent layout. Sign-out button uses `hover:bg-red-500/25` instead of mouse event handlers. Dynamic runtime `style={{}}` remains only for: badge colors, item colors, progress bar widths, century tile opacity. Validation: grep for STYLES.|C. returns 0 matches, grep for Avg accuracy returns 1 match, grep for Total XP returns 1 match, grep for gear returns 0 matches, tsc has only pre-existing docs/timeline year picker errors. Date: 2026-05-12 |
 | MP-LOBBY-SETTINGS-001 | DONE | src/core/types.ts, src/server/sessionCore.ts, src/components/compete/LobbySection.tsx | Updated lobby game settings UI. Timer slider range changed to 15–300 seconds (TIMER_MIN_SEC 5→15). Results Auto-Advance converted from preset dropdown to ON/OFF toggle switch; when ON, host sees a slider (15–300s) with formatted display. Removed Status, Rounds, and Mode rows from Game Settings card. Server-side clamp updated: RESULTS_AUTO_ADVANCE_MAX 30→300, preset comment removed. Non-host results display now uses formatTimerDisplay instead of raw seconds. Validation: grep for TIMER_MIN_SEC in types.ts returns 1 match with value 15, grep for Status|Rounds|Mode in LobbySection.tsx settings grid returns 0 matches, grep for select in LobbySection.tsx results section returns 0 matches, tsc has only pre-existing docs/timeline year picker errors. Date: 2026-05-12 |
@@ -1448,3 +1450,29 @@ MP-FIX-RESULTS-MAP-002 | src/components/StaticResultMap.tsx, src/components/comp
 | MP-INV-PROD-ROSTER-002 | DONE | READ ONLY | Read getNextJsBaseUrl and prod NEXTJS_BASE_URL config | 2026-05-22 |
 2026-05-22 | MP-REFACTOR-LOBBY-001 | Extract LobbySection styles to CSS module | Completed | Created LobbySection.module.css, extracted <style> tag content, converted 23 inline styles to CSS classes, added global CSS import, removed <style> tag from TSX
 2026-05-22 | MP-UI-LOBBY-005 | Lobby card styles and invite compact layout | Completed | Changed card background to #300, muted text to #ffffff, reordered Invite card first, invite expanded by default, compact invite layout (removed URL display, single-row layouts), updated grid areas
+| MP-INV-AUTH-PROD-001 | DONE | READ ONLY | Investigated Supabase auth client/server cookie mismatch | 2026-05-25 |
+| MP-FIX-AUTH-PROD-001 | DONE | src/core/supabaseBrowser.ts | Switched browser client to @supabase/ssr createBrowserClient for cookie-based PKCE | 2026-05-25 |
+
+# Task MP-FIX-LOBBY-CSS-001
+## Files Modified
+- src/components/compete/LobbySection.tsx
+- src/components/compete/LobbySection.module.css
+
+## Changes
+- Fixed CSS module import from side-effect to named import (styles)
+- Replaced all className strings with styles[] accessor for module classes
+- Fixed unitless pixel values in CSS (added px units)
+- Removed forEach call in player list render (was causing render bug)
+
+## Validation
+- All module classes now use styles[] accessor
+- Global classes (card, button, small) remain as plain strings
+- No unitless CSS values remain
+- No forEach calls in JSX
+- TypeScript compilation passes (0 errors)
+
+- Task ID: MP-FIX-LOBBY-AUTOADVANCE-SCHEMA-009
+- Date: 2026-05-25
+- File changed: partykit/server.ts (line 121)
+- Summary: Aligned SetResultsTimerSchema Zod bounds (15..300) with lobby slider and server clamp. Fixes guest UI not seeing host's auto-advance change above 120s, and auto-advance staying at default during the game.
+- Validation 4 status: PENDING LOLO BROWSER TEST
