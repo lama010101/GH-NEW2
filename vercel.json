@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "guess-history.com"
+        }
+      ],
+      "destination": "https://www.guess-history.com/$1",
+      "permanent": true
+    }
+  ]
+}
