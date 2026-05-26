@@ -4,7 +4,7 @@ import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
 import { getUsernameGradientStyle } from "@/core/competeUtils";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
-import './LobbySection.module.css';
+import styles from './LobbySection.module.css';
 
 interface LobbySectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -94,6 +94,7 @@ export default function LobbySection({
   })();
 
   const inviteLink = typeof window !== "undefined" ? window.location.href : "";
+  const truncatedInviteLink = inviteLink.length > 32 ? inviteLink.slice(0, 32) + "…" : inviteLink;
   const handleCopy = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -127,17 +128,17 @@ export default function LobbySection({
   });
 
   return (
-    <div className="lobby-shell">
+    <div className={styles['lobby-shell']}>
       {/* Title Bar */}
-      <div className="lobby-title-bar">
-        <button className="lobby-back-btn" onClick={() => router.push("/")}>
+      <div className={styles['lobby-title-bar']}>
+        <button className={styles['lobby-back-btn']} onClick={() => router.push("/")}>
           ←
         </button>
-        <div className="lobby-title-center">
-          <span className="lobby-title-text">Compete</span>
-          <span className="lobby-status-line">
+        <div className={styles['lobby-title-center']}>
+          <span className={styles['lobby-title-text']}>Compete</span>
+          <span className={styles['lobby-status-line']}>
             <span
-              className="lobby-connection-dot"
+              className={styles['lobby-connection-dot']}
               style={{
                 background: isConnected ? "#22d3ee" : "#ef4444",
                 boxShadow: isConnected
@@ -148,110 +149,25 @@ export default function LobbySection({
             Room {roomCode} · Status: {sessionStatus}
           </span>
         </div>
-        <span className="lobby-title-spacer" />
+        <span className={styles['lobby-title-spacer']} />
       </div>
 
       {/* Main Grid */}
-      <div className="lobby-grid">
-        {/* Invite Card */}
-        <div className="card lobby-card lobby-invite">
-          <div className="lobby-card-header">
-            <span className="lobby-accent-bar" />
-            <h3>Invite</h3>
-            <button
-              type="button"
-              className="lobby-invite-toggle"
-              onClick={() => setInviteExpanded((v) => !v)}
-              aria-label={inviteExpanded ? "Collapse invite panel" : "Expand invite panel"}
-            >
-              {inviteExpanded ? "−" : "+"}
-            </button>
-          </div>
-          <div className={`lobby-invite-body${!inviteExpanded ? " collapsed" : ""}`}>
-            {/* Invite Friends - recent from localStorage */}
-            <div className="lobby-invite-section">
-              <span className="lobby-invite-label">INVITE FRIENDS</span>
-              <div className="lobby-friend-list">
-                {recentInvites.length === 0 ? (
-                  <div className="lobby-friend-empty lobbyEmptyInvite">
-                    No recent invites
-                  </div>
-                ) : (
-                  recentInvites.map((friend) => (
-                    <div key={friend.id} className="lobby-friend-row">
-                      <span className="lobby-friend-info">
-                        <PlayerAvatar
-                          avatarUrl={friend.avatarUrl}
-                          displayName={friend.name}
-                          size={28}
-                        />
-                        <span style={getUsernameGradientStyle(friend.id)}>
-                          {friend.name}
-                        </span>
-                      </span>
-                      <button
-                        type="button"
-                        className="button secondary lobbyBtnSm"
-                        onClick={() =>
-                          handleCopy(
-                            `Join my Guess-History game! Room code: ${roomCode} → ${inviteLink}`,
-                            "Invite copied!"
-                          )
-                        }
-                      >
-                        {copiedLabel === "Invite copied!" ? "Copied!" : "Invite"}
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Room code */}
-            <div className="lobby-invite-section">
-              <span className="lobby-invite-label">ROOM CODE</span>
-              <div className="lobby-room-code-row">
-                <code className="lobby-room-code">{roomCode}</code>
-                <button
-                  type="button"
-                  className="button secondary lobbyBtnMd"
-                  onClick={() => handleCopy(roomCode, "Room code copied!")}
-                >
-                  {copiedLabel === "Room code copied!" ? "Copied!" : "Copy"}
-                </button>
-              </div>
-            </div>
-
-            {/* Invite link */}
-            <div className="lobby-invite-section">
-              <span className="lobby-invite-label">INVITE LINK</span>
-              <div className="lobby-room-code-row">
-                <button
-                  type="button"
-                  className="button secondary lobbyBtnMd"
-                  onClick={() => handleCopy(inviteLink, "Link copied!")}
-                >
-                  {copiedLabel === "Link copied!" ? "Copied!" : "Copy"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div className={styles['lobby-grid']}>
         {/* Settings Card */}
-        <div className="card lobby-card lobby-settings">
-          <div className="lobby-card-header">
-            <span className="lobby-accent-bar" />
+        <div className={`card ${styles['lobby-card']} ${styles['lobby-settings']}`}>
+          <div className={styles['lobby-card-header']}>
+            <span className={styles['lobby-accent-bar']} />
             <h3>Game Settings</h3>
           </div>
-          <div className="lobby-settings-grid">
-            <div className="lobby-setting-item lobbyRowWrap">
-              <span className="lobby-setting-label">Timer</span>
+          <div className={styles['lobby-settings-grid']}>
+            <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
+              <span className={styles['lobby-setting-label']}>Timer</span>
               {isHost ? (
-                <span className="lobbyRowLeft">
+                <span className={styles['lobbyRowLeft']}>
                   <input
                     type="range"
-                    className="lobby-timer-slider lobbySliderInput"
+                    className={`${styles['lobby-timer-slider']} ${styles['lobbySliderInput']}`}
                     min={TIMER_MIN_SEC}
                     max={TIMER_MAX_SEC}
                     step={5}
@@ -266,22 +182,22 @@ export default function LobbySection({
                       }, 400);
                     }}
                   />
-                  <span className="lobby-setting-value lobbyNoWrap">
+                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
                     {formatTimerDisplay(sliderValue)}
                   </span>
                 </span>
               ) : (
-                <span className="lobby-setting-value">{formatTimerDisplay(snapshot.config.roundTimerSec)}</span>
+                <span className={styles['lobby-setting-value']}>{formatTimerDisplay(snapshot.config.roundTimerSec)}</span>
               )}
             </div>
-            <div className="lobby-setting-item lobbyRowWrap">
-              <span className="lobby-setting-label">Year Range</span>
+            <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
+              <span className={styles['lobby-setting-label']}>Year Range</span>
               {isHost ? (
-                <span className="lobbyRowLeft">
-                  <span className="lobby-year-range-wrap">
-                    <div className="lobby-year-range-track" />
+                <span className={styles['lobbyRowLeft']}>
+                  <span className={styles['lobby-year-range-wrap']}>
+                    <div className={styles['lobby-year-range-track']} />
                     <div
-                      className="lobby-year-range-fill"
+                      className={styles['lobby-year-range-fill']}
                       style={{
                         left: `${((yearMinValue - YEAR_MIN_BOUND) / (YEAR_MAX_BOUND - YEAR_MIN_BOUND)) * 100}%`,
                         right: `${100 - ((yearMaxValue - YEAR_MIN_BOUND) / (YEAR_MAX_BOUND - YEAR_MIN_BOUND)) * 100}%`,
@@ -321,23 +237,23 @@ export default function LobbySection({
                           onSetYearRange?.(yearMinValue, val);
                         }, 400);
                       }}
-                      className="lobbyRangeInputTop"
+                      className={styles['lobbyRangeInputTop']}
                     />
                   </span>
-                  <span className="lobby-setting-value lobbyNoWrap">
+                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
                     {yearMinValue} – {yearMaxValue}
                   </span>
                 </span>
               ) : (
-                <span className="lobby-setting-value">
+                <span className={styles['lobby-setting-value']}>
                   {snapshot.config.yearMin} – {snapshot.config.yearMax}
                 </span>
               )}
             </div>
-            <div className="lobby-setting-item lobbyRowWrap">
-              <span className="lobby-setting-label">Results Auto-Advance</span>
+            <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
+              <span className={styles['lobby-setting-label']}>Results Auto-Advance</span>
               {isHost ? (
-                <span className="lobbyRowLeftWrap">
+                <span className={styles['lobbyRowLeftWrap']}>
                   <button
                     type="button"
                     onClick={() => {
@@ -349,24 +265,24 @@ export default function LobbySection({
                       }, 400);
                     }}
                     disabled={busy}
-                    className="lobbyToggleBtn"
+                    className={styles['lobbyToggleBtn']}
                     style={{
                       background: resultsTimerValue > 0 ? "#22d3ee" : "rgba(255,255,255,0.15)",
                       cursor: busy ? "not-allowed" : "pointer",
                     }}
                   >
                     <span
-                      className="lobbyToggleKnob"
+                      className={styles['lobbyToggleKnob']}
                       style={{
                         left: resultsTimerValue > 0 ? 22 : 2,
                       }}
                     />
                   </button>
                   {resultsTimerValue > 0 ? (
-                    <span className="lobbyRowLeft">
+                    <span className={styles['lobbyRowLeft']}>
                       <input
                         type="range"
-                        className="lobby-timer-slider lobbySliderInput"
+                        className={`${styles['lobby-timer-slider']} ${styles['lobbySliderInput']}`}
                         min={TIMER_MIN_SEC}
                         max={TIMER_MAX_SEC}
                         step={5}
@@ -381,18 +297,18 @@ export default function LobbySection({
                           }, 400);
                         }}
                       />
-                      <span className="lobby-setting-value lobbyNoWrap">
+                      <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
                         {formatTimerDisplay(resultsTimerValue)}
                       </span>
                     </span>
                   ) : (
-                    <span className="lobby-setting-value lobbyNoWrap">
+                    <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
                       OFF
                     </span>
                   )}
                 </span>
               ) : (
-                <span className="lobby-setting-value">
+                <span className={styles['lobby-setting-value']}>
                   {snapshot.config.resultsAutoAdvanceSec === 0 ? "OFF" : formatTimerDisplay(snapshot.config.resultsAutoAdvanceSec)}
                 </span>
               )}
@@ -401,30 +317,21 @@ export default function LobbySection({
         </div>
 
         {/* Players Card */}
-        <div className="card lobby-card lobby-players">
-          <div className="lobby-card-header">
-            <span className="lobby-accent-bar" />
+        <div className={`card ${styles['lobby-card']} ${styles['lobby-players']}`}>
+          <div className={styles['lobby-card-header']}>
+            <span className={styles['lobby-accent-bar']} />
             <h3>Players ({totalPlayers})</h3>
           </div>
-          <div className="lobby-player-list">
+          <div className={styles['lobby-player-list']}>
             {activePlayers.length === 0 ? (
               <p className="small">No players yet.</p>
             ) : (
-              activePlayers.forEach((p, index) => {
-                console.log("[PLAYER_RENDER_ITEM]", {
-                  index,
-                  playerId: p?.playerId,
-                  displayName: p?.displayName,
-                  ready: p?.ready,
-                  isHost: p?.isHost,
-                });
-              }),
               activePlayers.map((p) => (
                 <div
                   key={p.playerId}
-                  className="lobby-player-row"
+                  className={styles['lobby-player-row']}
                 >
-                  <span className="lobby-player-info">
+                  <span className={styles['lobby-player-info']}>
                     <PlayerAvatar
                       avatarUrl={p.avatarUrl}
                       displayName={p.displayName || p.playerId.slice(0, 8)}
@@ -434,15 +341,15 @@ export default function LobbySection({
                       {p.displayName || p.playerId.slice(0, 8)}
                     </span>
                   </span>
-                  <span className="lobby-player-badges">
-                    {p.isHost ? <span className="lobby-host-badge">Host</span> : null}
-                    <span className={`lobby-ready-badge${p.ready ? " ready" : ""}`}>
+                  <span className={styles['lobby-player-badges']}>
+                    {p.isHost ? <span className={styles['lobby-host-badge']}>Host</span> : null}
+                    <span className={`${styles['lobby-ready-badge']}${p.ready ? ' ' + styles['ready'] : ''}`}>
                       {p.ready ? "Ready" : "Not ready"}
                     </span>
                     {isHost && !p.isHost ? (
                       <button
                         type="button"
-                        className="lobby-kick-btn"
+                        className={styles['lobby-kick-btn']}
                         onClick={() => onKickPlayer?.(p.playerId)}
                         disabled={busy}
                         title="Kick player"
@@ -456,15 +363,103 @@ export default function LobbySection({
             )}
           </div>
         </div>
+
+        {/* Invite Card */}
+        <div className={`card ${styles['lobby-card']} ${styles['lobby-invite']}`}>
+          <div className={styles['lobby-card-header']}>
+            <span className={styles['lobby-accent-bar']} />
+            <h3>Invite</h3>
+            <button
+              type="button"
+              className={styles['lobby-invite-toggle']}
+              onClick={() => setInviteExpanded((v) => !v)}
+              aria-label={inviteExpanded ? "Collapse invite panel" : "Expand invite panel"}
+            >
+              {inviteExpanded ? "−" : "+"}
+            </button>
+          </div>
+          <div className={`${styles['lobby-invite-body']}${!inviteExpanded ? ' ' + styles['collapsed'] : ''}`}>
+            {/* Invite Friends - recent from localStorage */}
+            <div className={styles['lobby-invite-section']}>
+              <span className={styles['lobby-invite-label']}>INVITE FRIENDS</span>
+              <div className={styles['lobby-friend-list']}>
+                {recentInvites.length === 0 ? (
+                  <div className={`${styles['lobby-friend-empty']} ${styles['lobbyEmptyInvite']}`}>
+                    No recent invites
+                  </div>
+                ) : (
+                  recentInvites.map((friend) => (
+                    <div key={friend.id} className={styles['lobby-friend-row']}>
+                      <span className={styles['lobby-friend-info']}>
+                        <PlayerAvatar
+                          avatarUrl={friend.avatarUrl}
+                          displayName={friend.name}
+                          size={28}
+                        />
+                        <span style={getUsernameGradientStyle(friend.id)}>
+                          {friend.name}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        className={`button secondary ${styles['lobbyBtnSm']}`}
+                        onClick={() =>
+                          handleCopy(
+                            `Join my Guess-History game! Room code: ${roomCode} → ${inviteLink}`,
+                            "Invite copied!"
+                          )
+                        }
+                      >
+                        {copiedLabel === "Invite copied!" ? "Copied!" : "Invite"}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Room code */}
+            <div className={styles['lobby-invite-section']}>
+              <span className={styles['lobby-invite-label']}>ROOM CODE</span>
+              <div className={styles['lobby-room-code-row']}>
+                <code className={styles['lobby-room-code']}>{roomCode}</code>
+                <button
+                  type="button"
+                  className={`button secondary ${styles['lobbyBtnMd']}`}
+                  onClick={() => handleCopy(roomCode, "Room code copied!")}
+                >
+                  {copiedLabel === "Room code copied!" ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+
+            {/* Invite link */}
+            <div className={styles['lobby-invite-section']}>
+              <span className={styles['lobby-invite-label']}>INVITE LINK</span>
+              <div className={styles['lobby-room-code-row']}>
+                <code className={`${styles['lobby-room-code']} ${styles['lobbyCode']}`}>
+                  {truncatedInviteLink}
+                </code>
+                <button
+                  type="button"
+                  className={`button secondary ${styles['lobbyBtnMd']}`}
+                  onClick={() => handleCopy(inviteLink, "Link copied!")}
+                >
+                  {copiedLabel === "Link copied!" ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Bottom Dock */}
-      <div className="lobby-dock">
-        <div className="lobby-dock-content">
-          <span className="lobby-ready-count">
+      <div className={styles['lobby-dock']}>
+        <div className={styles['lobby-dock-content']}>
+          <span className={styles['lobby-ready-count']}>
             {readyCount} / {totalPlayers} Ready
           </span>
-          <div className="lobby-dock-actions">
+          <div className={styles['lobby-dock-actions']}>
             <button
               type="button"
               className="button secondary"
@@ -489,7 +484,7 @@ export default function LobbySection({
         </div>
       </div>
 
-      {error ? <p className="lobbyError">{error}</p> : null}
+      {error ? <p className={styles['lobbyError']}>{error}</p> : null}
     </div>
   );
 }

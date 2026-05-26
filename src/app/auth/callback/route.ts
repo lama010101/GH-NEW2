@@ -3,12 +3,12 @@ import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const next = requestUrl.searchParams.get("next") ?? "/";
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=missing_code`);
+    return NextResponse.redirect(new URL(`/login?error=missing_code`, request.url));
   }
 
   const cookieStore = cookies();
@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[auth/callback] exchangeCodeForSession error:", error.message);
-    return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+    return NextResponse.redirect(new URL(`/?error=auth_failed`, request.url));
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return NextResponse.redirect(new URL(next, request.url));
 }

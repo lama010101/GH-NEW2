@@ -44,6 +44,8 @@ function isSessionConfig(value: unknown): value is SessionConfig {
     Number.isFinite(value.yearMin) &&
     typeof value.yearMax === "number" &&
     Number.isFinite(value.yearMax) &&
+    typeof value.resultsAutoAdvanceSec === "number" &&
+    Number.isFinite(value.resultsAutoAdvanceSec) &&
     (value.hostPlayerId === null || typeof value.hostPlayerId === "string") &&
     isIsoDateOrNull(value.sessionDeadline) &&
     isIsoDateOrNull(value.startedAt) &&

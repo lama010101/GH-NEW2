@@ -1476,3 +1476,18 @@ MP-FIX-RESULTS-MAP-002 | src/components/StaticResultMap.tsx, src/components/comp
 - File changed: partykit/server.ts (line 121)
 - Summary: Aligned SetResultsTimerSchema Zod bounds (15..300) with lobby slider and server clamp. Fixes guest UI not seeing host's auto-advance change above 120s, and auto-advance staying at default during the game.
 - Validation 4 status: PENDING LOLO BROWSER TEST
+
+- Task ID: MP-FIX-AUTH-PROD-002
+- Date: 2026-05-25
+- Files changed: src/app/auth/callback/route.ts
+- Summary: Simplified OAuth callback redirect to use Next.js native request.url resolution to prevent secure cookie dropping on Vercel Edge.
+
+- Task ID: MP-FIX-LOBBY-AUTOADVANCE-BROADCAST-011
+- Date: 2026-05-25
+- Files changed: src/core/competeApi.ts
+- Summary: Added validation for resultsAutoAdvanceSec to isSessionConfig to prevent snapshots with undefined auto-advance timers from passing validation.
+
+- Task ID: MP-FIX-LOBBY-AUTOADVANCE-BROADCAST-011
+- Date: 2026-05-25
+- Files changed: partykit/server.ts
+- Summary: Traced how broadcastStateUpdate sends the config. Currently logging the broadcast payload config.

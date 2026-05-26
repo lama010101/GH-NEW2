@@ -118,7 +118,7 @@ const SetYearRangeSchema = z.object({
 const SetResultsTimerSchema = z.object({
   type: z.literal("SET_RESULTS_TIMER"),
   playerId: z.string().uuid(),
-  resultsAutoAdvanceSec: z.number().int().min(5).max(120)
+  resultsAutoAdvanceSec: z.number().int().min(15).max(300)
 });
 
 const KickPlayerSchema = z.object({
@@ -699,6 +699,9 @@ export default class GameServer {
         viewerPlayerId: socketPlayerId ?? null,
         config
       };
+
+      console.log("[BROADCAST_PAYLOAD_CONFIG]", JSON.stringify(perSocketSnapshot.config));
+
       connection.send(JSON.stringify({
         type: "STATE_UPDATE",
         snapshot: perSocketSnapshot,
