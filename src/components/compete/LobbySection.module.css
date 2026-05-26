@@ -40,7 +40,7 @@
 .lobby-status-line {
   font-size: 11px;
   font-weight: 500;
-  color: #ffffff;
+  color: rgba(255,255,255,0.5);
   letter-spacing: 0.5px;
   display: flex;
   align-items: center;
@@ -61,12 +61,12 @@
   gap: 16px;
   grid-template-columns: 1fr 1fr;
   grid-template-areas:
-    "invite settings"
-    "invite players";
+    "settings invite"
+    "players  invite";
   align-items: start;
 }
 .lobby-card {
-  background: #300;
+  background: rgba(16, 24, 48, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 22px;
   padding: 20px;
@@ -117,7 +117,7 @@
 .lobby-setting-label {
   font-size: 13px;
   font-weight: 500;
-  color: #ffffff;
+  color: rgba(255,255,255,0.55);
   letter-spacing: 0.3px;
 }
 .lobby-setting-value {
@@ -175,7 +175,7 @@
   padding: 3px 10px;
   border-radius: 999px;
   background: rgba(255,255,255,0.06);
-  color: #ffffff;
+  color: rgba(255,255,255,0.5);
   border: 1px solid rgba(255,255,255,0.1);
   font-size: 11px;
   font-weight: 600;
@@ -255,14 +255,8 @@
 .lobby-room-code-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.lobby-invite-link-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 .lobby-room-code {
   font-size: 16px;
@@ -303,7 +297,7 @@
 .lobby-invite-label {
   font-size: 12px;
   font-weight: 600;
-  color: #ffffff;
+  color: rgba(255,255,255,0.45);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -319,7 +313,7 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .lobby-friend-search::placeholder {
-  color: #ffffff;
+  color: rgba(255,255,255,0.35);
 }
 .lobby-friend-search:focus {
   border-color: rgba(34, 211, 238, 0.5);
@@ -337,7 +331,7 @@
   width: 4px;
 }
 .lobby-friend-list::-webkit-scrollbar-thumb {
-  background: #ffffff;
+  background: rgba(255,255,255,0.15);
   border-radius: 2px;
 }
 .lobby-friend-row {
@@ -367,7 +361,7 @@
   text-align: center;
   padding: 24px 12px;
   font-size: 13px;
-  color: #ffffff;
+  color: rgba(255,255,255,0.35);
   background: rgba(255,255,255,0.02);
   border-radius: 12px;
   border: 1px dashed rgba(255,255,255,0.08);
@@ -595,9 +589,9 @@
   flex-wrap: wrap;
 }
 .lobbyToggleBtn {
-  width: 44;
-  height: 24;
-  border-radius: 12;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
   border: none;
   position: relative;
   cursor: pointer;
@@ -606,16 +600,16 @@
 }
 .lobbyToggleKnob {
   position: absolute;
-  top: 2;
-  width: 20;
-  height: 20;
+  top: 2px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #fff;
   transition: left 0.2s;
 }
 .lobbyEmptyInvite {
-  color: #ffffff;
-  font-size: 13;
+  color: rgba(255,255,255,0.4);
+  font-size: 13px;
   padding: 16px;
   text-align: center;
 }
@@ -628,10 +622,10 @@
   font-size: 0.8rem;
 }
 .lobbyCode {
-  font-size: 12;
+  font-size: 12px;
 }
 .lobbyError {
   color: #ff6b6b;
   margin: 0;
-  margin-top: 12;
+  margin-top: 12px;
 }
