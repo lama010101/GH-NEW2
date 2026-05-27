@@ -5,8 +5,5 @@
   "parties": {
     "lobby": "partykit/server.ts"
   },
-  "vars": {
-    "NEXTJS_BASE_URL": "http://localhost:3000",
-    "PARTYKIT_SECRET": "dev-internal-secret-changeme"
-  }
+  "vars": {}
 }

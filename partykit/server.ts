@@ -118,7 +118,7 @@ const SetYearRangeSchema = z.object({
 const SetResultsTimerSchema = z.object({
   type: z.literal("SET_RESULTS_TIMER"),
   playerId: z.string().uuid(),
-  resultsAutoAdvanceSec: z.number().int().min(15).max(300)
+  resultsAutoAdvanceSec: z.number().int().min(0).max(300)
 });
 
 const KickPlayerSchema = z.object({
@@ -445,16 +445,19 @@ export default class GameServer {
     if (!this.snapshot || !isRuntimeState(this.snapshot)) return;
 
     if (this.snapshot.status === "ROUND_COMPLETE" && this.snapshot.resultPhaseStartedAt) {
-      const autoAdvanceMs = (this.snapshot.resultsAutoAdvanceSec ?? 90) * 1000;
-      const delay = new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs - Date.now();
-      const expectedRoundIndex = this.snapshot.currentRoundIndex;
-      if (delay <= 0) {
-        this.triggerResultAutoAdvance(expectedRoundIndex);
-      } else {
-        this.resultTimerHandle = setTimeout(() => {
-          this.resultTimerHandle = null;
+      const autoAdvanceSec = this.snapshot.resultsAutoAdvanceSec ?? 90;
+      if (autoAdvanceSec > 0) {
+        const autoAdvanceMs = autoAdvanceSec * 1000;
+        const delay = new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs - Date.now();
+        const expectedRoundIndex = this.snapshot.currentRoundIndex;
+        if (delay <= 0) {
           this.triggerResultAutoAdvance(expectedRoundIndex);
-        }, delay);
+        } else {
+          this.resultTimerHandle = setTimeout(() => {
+            this.resultTimerHandle = null;
+            this.triggerResultAutoAdvance(expectedRoundIndex);
+          }, delay);
+        }
       }
       return;
     }
@@ -635,10 +638,13 @@ export default class GameServer {
       console.log("[PartyKit] Broadcasting to all, players:", this.snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
       console.log("[AUTOADVANCE_DIAG]", "status=" + this.snapshot.status, "resultPhaseStartedAt=" + this.snapshot.resultPhaseStartedAt, "resultsAutoAdvanceSec=" + this.snapshot.resultsAutoAdvanceSec);
       console.log("[AUTOADVANCE_DIAG]", "resultPhaseEndsAt will be=" + (this.snapshot.status === "ROUND_COMPLETE" && this.snapshot.resultPhaseStartedAt ? new Date(this.snapshot.resultPhaseStartedAt).getTime() + (this.snapshot.resultsAutoAdvanceSec ?? 90) * 1000 : "UNDEFINED"));
-      const autoAdvanceMs = (this.snapshot.resultsAutoAdvanceSec ?? 90) * 1000;
-      resultPhaseEndsAt = this.snapshot.status === "ROUND_COMPLETE" && this.snapshot.resultPhaseStartedAt
-        ? new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs
-        : undefined;
+      const autoAdvanceSec = this.snapshot.resultsAutoAdvanceSec ?? 90;
+      const autoAdvanceMs = autoAdvanceSec * 1000;
+      resultPhaseEndsAt = this.snapshot.status === "ROUND_COMPLETE" &&
+        this.snapshot.resultPhaseStartedAt &&
+        autoAdvanceSec > 0
+          ? new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs
+          : undefined;
       snapshotWithReadyState = {
         ...this.snapshot,
         readyForNext: [...this.readyForNext],
@@ -699,8 +705,6 @@ export default class GameServer {
         viewerPlayerId: socketPlayerId ?? null,
         config
       };
-
-      console.log("[BROADCAST_PAYLOAD_CONFIG]", JSON.stringify(perSocketSnapshot.config));
 
       connection.send(JSON.stringify({
         type: "STATE_UPDATE",
@@ -1316,6 +1320,7 @@ export default class GameServer {
             break;
           }
           const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/results-timer`;
+
           const response = await fetch(apiUrl, {
             method: "POST",
             headers: {

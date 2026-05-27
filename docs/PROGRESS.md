@@ -1491,3 +1491,39 @@ MP-FIX-RESULTS-MAP-002 | src/components/StaticResultMap.tsx, src/components/comp
 - Date: 2026-05-25
 - Files changed: partykit/server.ts
 - Summary: Traced how broadcastStateUpdate sends the config. Currently logging the broadcast payload config.
+
+- Task ID: MP-FIX-LOBBY-AUTOADVANCE-GETGAMESTATE-015
+- Date: 2026-05-27
+- File changed: src/server/getGameState.ts (session_data CTE SELECT)
+- Summary: Added results_auto_advance_sec to session_data CTE SELECT. This was the root cause: DB UPDATE ran correctly but SELECT omitted the column, causing ?? 90 fallback to silently discard the stored value on every snapshot reload.
+- Validation 4 status: PENDING LOLO BROWSER TEST
+
+- Task ID: MP-FIX-LOBBY-AUTOADVANCE-SCHEMA-016
+- Date: 2026-05-27
+- File changed: partykit/server.ts line 121
+- Summary: Lowered SetResultsTimerSchema Zod min from 15 to 0 to allow the OFF state (value 0) through validation. Fixes: host toggling auto-advance OFF not propagating to guest UI and game using 90s default instead of disabled behavior.
+- Validation 4 status: PENDING LOLO BROWSER TEST
+
+- Task ID: MP-FIX-LOBBY-AUTOADVANCE-ZERO-017
+- Date: 2026-05-27
+- File changed: partykit/server.ts (broadcastStateUpdate resultPhaseEndsAt computation)
+- Summary: Added autoAdvanceSec > 0 guard to resultPhaseEndsAt computation. When OFF (value 0), resultPhaseEndsAt is now undefined instead of a past timestamp, preventing immediate auto-advance on the result screen.
+- Validation 4 status: PENDING LOLO BROWSER TEST
+
+- Task ID: MP-FIX-LOBBY-AUTOADVANCE-CLIENT-018
+- Date: 2026-05-27
+- File changed: src/hooks/useCompeteTimer.ts (fallback resultPhaseEndsAt computation)
+- Summary: Added autoAdvanceSec > 0 guard to client-side fallback timer computation. When OFF (value 0), effectiveResultPhaseEndsAt is left undefined, preventing immediate auto-advance on the result screen.
+- Validation 4 status: PENDING LOLO BROWSER TEST
+
+- Task ID: MP-FIX-LOBBY-AUTOADVANCE-SERVER-SCHEDULER-019
+- Date: 2026-05-27
+- File changed: partykit/server.ts (scheduleRoundTimer autoAdvance computation)
+- Summary: Added autoAdvanceSec > 0 guard to scheduleRoundTimer logic on PartyKit server. When OFF (value 0), the server will no longer schedule an immediate timeout that auto-advances the round, fixing the issue where the result screen would still auto-advance despite being OFF.
+- Validation 4 status: PENDING LOLO BROWSER TEST
+
+- Task ID: MP-CLEANUP-AUTOADVANCE-DIAG-020
+- Date: 2026-05-27
+- Files changed: partykit/server.ts, results-timer/route.ts, sessionCore.ts
+- Summary: Removed all temporary [DIAG_AUTOADV_*] and [BROADCAST_PAYLOAD_CONFIG] diagnostic logs added during auto-advance investigation tasks 013–018.
+| MP-FIX-PARTYKIT-SECRET-001 | Fix PartyKit production env vars | partykit.json | DONE | 2026-05-27 |

@@ -222,7 +222,7 @@ export async function getGameState(
     `WITH
       session_data AS (
         SELECT game_id, mode, round_timer_sec, total_rounds, year_min, year_max,
-               session_deadline, created_at, seed, room_code
+               results_auto_advance_sec, session_deadline, created_at, seed, room_code
         FROM sessions
         WHERE game_id = $1
       ),
