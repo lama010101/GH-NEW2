@@ -1527,3 +1527,7 @@ MP-FIX-RESULTS-MAP-002 | src/components/StaticResultMap.tsx, src/components/comp
 - Files changed: partykit/server.ts, results-timer/route.ts, sessionCore.ts
 - Summary: Removed all temporary [DIAG_AUTOADV_*] and [BROADCAST_PAYLOAD_CONFIG] diagnostic logs added during auto-advance investigation tasks 013–018.
 | MP-FIX-PARTYKIT-SECRET-001 | Fix PartyKit production env vars | partykit.json | DONE | 2026-05-27 |
+
+| MP-FIX-WHEN-AVATAR-001 | 2026-05-27 | src/components/compete/WhenCard.tsx | Replaced timeline dot markers with PlayerAvatar component (22px size, 2px white border) |
+
+| MP-FIX-WHEN-AVATAR-002 | 2026-05-27 | src/components/compete/WhenCard.tsx | Fixed timeline avatar clipping (clamp [4,96]) and label overlap (top: 26, height: 108) |
