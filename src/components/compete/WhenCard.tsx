@@ -120,7 +120,7 @@ export default function WhenCard({
         <span style={{ color: "#f97316" }}>{correctYear}</span>
       </div>
       {/* Year timeline */}
-      <div style={{ width: "100%", height: 96, position: "relative", margin: "12px 0", background: "#1a1a2a", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
+      <div style={{ width: "100%", height: 108, position: "relative", margin: "12px 0", background: "#1a1a2a", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
         {/* Horizontal gradient bar */}
         <div style={{
           position: "absolute",
@@ -224,7 +224,7 @@ export default function WhenCard({
               {whenRows.map((row) => {
                 if (row.guessYear == null) return null;
                 const xPercent = ((row.guessYear - timelineMin) / timelineRange) * 100;
-                const clampedXPercent = Math.max(0, Math.min(100, xPercent));
+                const clampedXPercent = Math.max(4, Math.min(96, xPercent));
                 const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
                 const groupIndex = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
                 const verticalOffset = groupIndex * 22;
@@ -235,16 +235,16 @@ export default function WhenCard({
                     transform: `translate(-50%, calc(-50% - ${verticalOffset}px))`,
                     left: `${clampedXPercent}%`,
                   }}>
-                    <div style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: "50%",
-                      background: row.isMe ? "#f97316" : "#60a5fa",
-                      border: "2px solid #fff",
-                    }} />
+                    <div style={{ border: "2px solid #fff", borderRadius: "50%" }}>
+                      <PlayerAvatar
+                        avatarUrl={snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null}
+                        displayName={snapshotPlayers.find(p => p.playerId === row.playerId)?.displayName ?? row.playerId.slice(0, 2)}
+                        size={22}
+                      />
+                    </div>
                     <div style={{
                       position: "absolute",
-                      top: 18,
+                      top: 30,
                       left: "50%",
                       transform: "translateX(-50%)",
                       fontSize: 10,
