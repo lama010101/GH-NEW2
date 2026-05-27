@@ -111,7 +111,7 @@ export default function useCompeteTimer({
         .pop();
       const resultPhaseStartedAt = roundCompleteEvent?.payload?.["resultPhaseStartedAt"] as string | undefined;
       const autoAdvanceSec = snapshot.config?.resultsAutoAdvanceSec ?? 90;
-      if (resultPhaseStartedAt) {
+      if (resultPhaseStartedAt && autoAdvanceSec > 0) {
         effectiveResultPhaseEndsAt = new Date(resultPhaseStartedAt).getTime() + autoAdvanceSec * 1000;
       }
     }
