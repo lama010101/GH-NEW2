@@ -65,6 +65,7 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | MP-INV-PARTYKIT-SECRET-001 | DONE | — | Investigation only. Checked .dev.vars, partykit.json, partykit/server.ts, and API routes for shared secret between PartyKit and Next.js. .dev.vars contains no PARTYKIT_SECRET or similar. partykit.json references only NEXTJS_BASE_URL. All 10 fetch calls in partykit/server.ts set only Content-Type header, no authorization or secret headers. guess/route.ts and start/route.ts read no secret headers. No shared secret exists. Date: 2026-05-11 |
 | MP-INV-ROUTE-AUTH-001 | DONE | — | Investigation only. Read 5 API routes for authentication state. All 5 routes (guess, advance, join, ready, start) extract playerId from request body with no Supabase auth, JWT verification, or PartyKit caller check. No code changes made. Date: 2026-05-11 |
 | MP-FIX-ROOMCODE-RETRY-001 | DONE | src/server/sessionCore.ts | Added retry loop (max 5 attempts) around room code insert in createCompeteSession(). On Postgres unique violation error (code 23505) on room_code column, generates new code and retries. On 5th failure, throws error "Failed to generate unique room code after 5 attempts". Non-unique-violation errors re-thrown immediately. Validation: npm run typecheck exits 0, code shows while loop with catch on error code 23505. Date: 2026-05-11 |
+| MP-FIX-ROUNDACTIVE-005 | Icon sizes, card colors, map height, exit button, avatar z-index | src/components/compete/RoundActiveSection.tsx | DONE |
 | MP-FIX-RESULT-ROUTE-001 | DONE | src/hooks/useCompeteSocket.ts | Fixed round results fetch URL during ROUND_COMPLETE phase reconnect. Changed from `/api/compete/${gameId}/results?roundIndex=${snapshot.currentRoundIndex}` to `/api/compete/${gameId}/round/${snapshot.currentRoundIndex}/results`. Response handler already reads data.results correctly. Validation: grep for "results?roundIndex" returns 0 matches, grep for "/round/" shows corrected URL at line 123, npm run typecheck exits 0. Date: 2026-05-11 |
 | MP-FIX-ARTIFACTS-001 | DONE | .gitignore | Remove committed build artifacts (.next, .partykit) from git tracking. Added .next/ and .partykit/ to .gitignore, ran git rm -r --cached on both directories. Validation: git status shows artifacts deleted from tracking, tsc --noEmit exits code 0, npm run build completes without PageNotFoundError. Date: 2026-05-11 |
 | MP-FIX-BUILD-RESULTPHASE-001 | DONE | partykit/server.ts | Fixed TypeScript build error: Property 'resultPhaseEndsAt' does not exist on type 'RuntimeState'. Changed broadcastStateUpdate() to compute resultPhaseEndAt into a local variable before assigning to snapshotWithReadyState, then guard against this.snapshot instead of snapshotWithReadyState to avoid type-narrowing back to RuntimeState which lacks the broadcast-only field. Validation: tsc --noEmit exits code 0, grep for snapshotWithReadyState.resultPhaseEndsAt returns 0. Date: 2026-05-11 |
@@ -1539,3 +1540,35 @@ MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIde
 
 | MP-FIX-WHEN-SCALE-001 | src/components/compete/WhenCard.tsx | Fixed correct year marker to use computed position (correctXPercent) instead of hardcoded 50% |
 | MP-FIX-LEADERBOARD-SORT-001 | Fix leaderboard sort (accuracy% desc, XP tiebreaker) + replace rank-1 border with current-user avatar dot | SessionComplete.tsx | DONE |
+
+## MP-FIX-LEADERBOARD-PCT-001
+**Title:** Fix leaderboard percentage value color in RoundCompleteSection
+**File changed:** src/components/compete/RoundCompleteSection.tsx
+**Outcome:** Changed numeric value color from #ffffff to accColor on line 209. TypeScript validation passed (exit code 0).
+
+## MP-FIX-WHEREWHEN-PCT-001
+**Title:** Fix leaderboard percentage value color in WhereCard and WhenCard
+**Files changed:**
+- src/components/compete/WhereCard.tsx (line 207)
+- src/components/compete/WhenCard.tsx (line 315)
+**Outcome:** Changed numeric value color from #ffffff to locAccColor (WhereCard) and accColor (WhenCard). TypeScript validation passed (exit code 0). Grep confirms leaderboard row numeric spans no longer have hardcoded #ffffff.
+| MP-FIX-INGAME-UI-001a | Map square aspect-ratio 1:1 | DONE | 2026-05-28 |
+| MP-FIX-INGAME-UI-001b | Apple white glassy cards WHERE + WHEN | DONE | 2026-05-28 |
+| MP-SCHEMA-INVITE-001 | Create follows, game_invitations, notifications tables with RLS | Done |
+| MP-API-INVITE-001 | GET /api/friends/search route | Done |
+| MP-API-INVITE-002 | POST /api/invitations/send route | Done |
+| MP-API-INVITE-003 | GET+PATCH /api/notifications route | Done |
+| MP-UI-INVITE-001 | LobbySection friend search + invite flow | Done |
+| MP-UI-NOTIF-001 | NotificationBell component with polling and drawer | Done |
+| MP-UI-NOTIF-002 | NotificationBell wired into home page top bar | Done |
+| MP-FIX-YEARPICKER-002 | Replace YearPicker with 3-tier cascading rail | src/components/YearPicker.tsx | DONE |
+| MP-FIX-YEARPICKER-003 | Fix year picker contrast | src/components/YearPicker.tsx | DONE |
+| MP-FIX-GAMEMAP-001 | Restore avatar marker on guess map | src/components/GameMap.tsx | DONE |
+| MP-FIX-ROUNDACTIVE-004 | Fix icon sizes, WHEN card clip, fullscreen exit button | src/components/compete/RoundActiveSection.tsx | DONE |
+| MP-FIX-HINT-COUNTER-001 | Fix hint button counter | page.tsx + RoundActiveSection.tsx | Done |
+| MP-FIX-PULSE-002 | Replace scale pulse with expanding ring effect on buttons | src/components/compete/RoundActiveSection.module.css | DONE |
+| MP-FIX-ROUNDACTIVE-007 | Colors, icons, badges, fullscreen, map clip, year input | src/components/compete/RoundActiveSection.tsx | DONE |
+| MP-FIX-AVATAR-001 | Wire player avatar through to GameMap marker | page.tsx + RoundActiveSection.tsx + GameMap.tsx | DONE |
+| MP-FIX-ROUNDACTIVE-008 | Follow-up: fullscreen avatar, card separation, year input select, CSS aspect-ratio | RoundActiveSection.tsx + RoundActiveSection.module.css | DONE |
+| MP-FIX-ROUNDACTIVE-008 | Map height flex, opaque backgrounds on labels and rails | RoundActiveSection.tsx + module.css | DONE |
+| MP-FIX-ROUNDACTIVE-008 | Map height flex, opaque backgrounds on labels and rails | RoundActiveSection.tsx + module.css | DONE |

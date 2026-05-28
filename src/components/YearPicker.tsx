@@ -3,17 +3,10 @@ import React, {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
-import { animate } from 'framer-motion';
-import { useGesture } from '@use-gesture/react';
-import type { PinchState } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
-import { useSettingsStore } from '@/lib/useSettingsStore';
-import { useVibrate } from '@/hooks/useVibrate';
 
 export type YearPickerScale = 'century' | 'decade' | 'year';
 
@@ -28,490 +21,381 @@ export type YearPickerProps = {
   valueIsCommitted?: boolean;
 };
 
-type ViewportState = {
-  leftTick: number;
-  step: number;
-  count: number;
-};
-
 type YearPickerHandle = {
   centerOn: (year: number) => void;
   setScale: (scale: YearPickerScale) => void;
 };
 
-const SCALE_ORDER: YearPickerScale[] = ['century', 'decade', 'year'];
-const SCALE_BUTTON_ORDER: YearPickerScale[] = ['year', 'decade', 'century'];
-const SCALE_STEP: Record<YearPickerScale, number> = {
-  century: 100,
-  decade: 10,
-  year: 1,
-};
-
 const DEFAULT_MIN = -100;
 const DEFAULT_MAX = 2025;
-const TICK_COUNT = 11;
-const MOMENTUM_MULTIPLIER = 260;
-const WHEEL_THRESHOLD = 60;
-const PINCH_THRESHOLD = 0.04;
 
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
+const CENTURY_W = 72;
+const DECADE_W = 72;
+const YEAR_W = 64;
+const ITEM_H = 44;
+const FADE_W = 40;
 
-const floorToStep = (n: number, step: number) => {
-  if (step === 0) return n;
-  return Math.floor(n / step) * step;
-};
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-const roundToStep = (n: number, step: number) => {
-  if (step === 0) return n;
-  return Math.round(n / step) * step;
-};
+function yearToCentury(year: number): number {
+  if (year > 0) return Math.ceil(year / 100);
+  return Math.floor((year - 1) / 100);
+}
 
-const normalizeZeroYear = (year: number) => (year === 0 ? 1 : year);
+function centuryToYearRange(c: number): [number, number] {
+  if (c > 0) return [(c - 1) * 100 + 1, c * 100];
+  return [c * 100, c * 100 + 99];
+}
 
-const alignCenterToScale = (year: number, scale: YearPickerScale) => {
-  const step = SCALE_STEP[scale];
-  if (step <= 1) return year;
-  return roundToStep(year, step);
-};
+function decadeToYearRange(d: number): [number, number] {
+  if (d >= 0) return [d, d + 9];
+  return [d, d + 9];
+}
 
-const computeWindow = (
-  centerYear: number,
-  scale: YearPickerScale,
-  min: number,
-  max: number,
-): ViewportState => {
-  const step = SCALE_STEP[scale];
-  const half = Math.floor((TICK_COUNT - 1) / 2);
-  const normalized = normalizeZeroYear(clamp(centerYear, min, max));
-  const alignedCenter = alignCenterToScale(normalized, scale);
-  const left = alignedCenter - step * half;
-  return { leftTick: left, step, count: TICK_COUNT };
-};
+function centuryLabel(c: number): string {
+  if (c <= 0) {
+    const bc = Math.abs(c) + 1;
+    return `${bc} BC`;
+  }
+  const sfx = c === 1 ? 'st' : c === 2 ? 'nd' : c === 3 ? 'rd' : 'th';
+  return `${c}${sfx}`;
+}
 
-const getScaleIndex = (scale: YearPickerScale) => SCALE_ORDER.indexOf(scale);
+function decadeLabel(d: number): string {
+  if (d >= 0) return `${d}s`;
+  return `${d}s`;
+}
 
-const resolveNextScale = (current: YearPickerScale, direction: 1 | -1) => {
-  const next = getScaleIndex(current) + direction;
-  return SCALE_ORDER[clamp(next, 0, SCALE_ORDER.length - 1)] ?? current;
-};
+function yearLabel(y: number): string {
+  if (y > 0) return String(y);
+  return `${Math.abs(y) === 0 ? 1 : Math.abs(y)} BC`;
+}
 
-const useResizeObserver = (target: React.RefObject<HTMLElement>): number => {
-  const [width, setWidth] = useState(0);
-  useLayoutEffect(() => {
-    const el = target.current;
+function centuriesInRange(min: number, max: number): number[] {
+  const lo = yearToCentury(min);
+  const hi = yearToCentury(max);
+  const out: number[] = [];
+  for (let c = lo; c <= hi; c++) {
+    if (c === 0) continue;
+    out.push(c);
+  }
+  return out;
+}
+
+function decadesForCentury(c: number, min: number, max: number): number[] {
+  const [cLo, cHi] = centuryToYearRange(c);
+  const lo = clamp(cLo, min, max);
+  const hi = clamp(cHi, min, max);
+  const out: number[] = [];
+  const dStart = Math.floor(lo / 10) * 10;
+  for (let d = dStart; d <= hi; d += 10) {
+    if (d + 9 >= lo && d <= hi) out.push(d);
+  }
+  return out;
+}
+
+function yearsForDecade(d: number, min: number, max: number): number[] {
+  const [dLo, dHi] = decadeToYearRange(d);
+  const lo = clamp(dLo, min, max);
+  const hi = clamp(dHi, min, max);
+  const out: number[] = [];
+  for (let y = lo; y <= hi; y++) {
+    if (y === 0) continue;
+    out.push(y);
+  }
+  return out;
+}
+
+const INDICATOR_COLOR = 'rgba(0, 180, 255, 0.5)';
+const ACTIVE_BG = 'rgba(0, 180, 255, 0.18)';
+const ACTIVE_BORDER = '1.5px solid rgba(0, 180, 255, 0.6)';
+const ACTIVE_BG_COMMITTED = 'rgba(0, 220, 120, 0.18)';
+const ACTIVE_BORDER_COMMITTED = '1.5px solid rgba(0, 220, 120, 0.6)';
+const INACTIVE_COLOR = 'rgba(255,255,255,0.65)';
+const LABEL_COLOR = 'rgba(255,255,255,0.60)';
+const FADE_MASK = `linear-gradient(to right, transparent 0px, black ${FADE_W}px, black calc(100% - ${FADE_W}px), transparent 100%)`;
+
+interface RailProps {
+  items: number[];
+  selected: number;
+  itemWidth: number;
+  labelFn: (v: number) => string;
+  onSelect: (v: number) => void;
+  committed?: boolean;
+  tierLabel: string;
+}
+
+function Rail({ items, selected, itemWidth, labelFn, onSelect, committed, tierLabel }: RailProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const settledRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isScrollingProgrammatically = useRef(false);
+
+  const scrollToItem = useCallback((value: number, smooth: boolean) => {
+    const el = scrollRef.current;
     if (!el) return;
-    setWidth(el.clientWidth);
-    const observer = new ResizeObserver((entries) => {
-      if (!entries.length) return;
-      setWidth(entries[0]!.contentRect.width);
-    });
-    observer.observe(el);
-    return () => { observer.disconnect(); };
-  }, [target]);
-  return width;
-};
+    const idx = items.indexOf(value);
+    if (idx === -1) return;
+    const containerW = el.clientWidth;
+    const spacer = containerW / 2 - itemWidth / 2;
+    const itemLeft = spacer + idx * itemWidth;
+    const targetScroll = itemLeft - containerW / 2 + itemWidth / 2;
+    isScrollingProgrammatically.current = true;
+    el.scrollTo({ left: targetScroll, behavior: smooth ? 'smooth' : 'instant' });
+    setTimeout(() => { isScrollingProgrammatically.current = false; }, 400);
+  }, [items, itemWidth]);
+
+  useEffect(() => {
+    scrollToItem(selected, false);
+  }, [items, selected, scrollToItem]);
+
+  const handleScroll = useCallback(() => {
+    if (isScrollingProgrammatically.current) return;
+    if (settledRef.current) clearTimeout(settledRef.current);
+    settledRef.current = setTimeout(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const containerW = el.clientWidth;
+      const spacer = containerW / 2 - itemWidth / 2;
+      const scrollLeft = el.scrollLeft;
+      const centerX = scrollLeft + containerW / 2;
+      const idx = Math.round((centerX - spacer - itemWidth / 2) / itemWidth);
+      const clamped = clamp(idx, 0, items.length - 1);
+      const val = items[clamped];
+      if (val !== undefined && val !== selected) {
+        onSelect(val);
+      }
+    }, 120);
+  }, [items, itemWidth, selected, onSelect]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scrollend', handleScroll as EventListener);
+    el.addEventListener('scroll', handleScroll as EventListener, { passive: true });
+    return () => {
+      el.removeEventListener('scrollend', handleScroll as EventListener);
+      el.removeEventListener('scroll', handleScroll as EventListener);
+    };
+  }, [handleScroll]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{
+        fontSize: 11,
+        color: LABEL_COLOR,
+        letterSpacing: '1px',
+        textTransform: 'uppercase',
+        paddingLeft: 4,
+        userSelect: 'none',
+      }}>
+        {tierLabel}
+      </div>
+      <div style={{ position: 'relative' }}>
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            overflowX: 'scroll',
+            overflowY: 'hidden',
+            scrollSnapType: 'x mandatory',
+            height: ITEM_H,
+            WebkitOverflowScrolling: 'touch',
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
+            WebkitMaskImage: FADE_MASK,
+            maskImage: FADE_MASK,
+          } as React.CSSProperties}
+        >
+          <SpacerEl scrollRef={scrollRef} itemWidth={itemWidth} />
+          {items.map((v) => {
+            const isActive = v === selected;
+            const isConfirmed = isActive && committed;
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => {
+                  onSelect(v);
+                  scrollToItem(v, true);
+                }}
+                style={{
+                  flexShrink: 0,
+                  width: itemWidth,
+                  height: ITEM_H,
+                  scrollSnapAlign: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: isActive ? 500 : 400,
+                  color: isActive ? 'white' : INACTIVE_COLOR,
+                  background: isActive ? (isConfirmed ? ACTIVE_BG_COMMITTED : ACTIVE_BG) : 'transparent',
+                  border: isActive ? (isConfirmed ? ACTIVE_BORDER_COMMITTED : ACTIVE_BORDER) : 'none',
+                  transform: isActive ? 'scale(1.05)' : 'none',
+                  transition: 'transform 0.15s, background 0.15s, border 0.15s',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  userSelect: 'none',
+                } as React.CSSProperties}
+              >
+                {labelFn(v)}
+              </button>
+            );
+          })}
+          <SpacerEl scrollRef={scrollRef} itemWidth={itemWidth} />
+        </div>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 2,
+          background: INDICATOR_COLOR,
+          pointerEvents: 'none',
+          zIndex: 2,
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function SpacerEl({ scrollRef, itemWidth }: { scrollRef: React.RefObject<HTMLDivElement>; itemWidth: number }) {
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setW(Math.max(0, el.clientWidth / 2 - itemWidth / 2));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [scrollRef, itemWidth]);
+  return <div style={{ flexShrink: 0, width: w, height: ITEM_H }} />;
+}
 
 export const YearPicker = forwardRef<YearPickerHandle, YearPickerProps>(
   (
     {
       value,
       onChange,
-      defaultScale = 'century',
-      onScaleChange,
+      defaultScale,
+      onScaleChange: _onScaleChange,
       min = DEFAULT_MIN,
       max = DEFAULT_MAX,
       className,
-      valueIsCommitted = true,
+      valueIsCommitted = false,
     },
     ref,
   ) => {
-    const clampedInitialValue = clamp(value, min, max);
-    const initialValue = normalizeZeroYear(clampedInitialValue);
+    const clampedValue = clamp(value === 0 ? 1 : value, min === 0 ? 1 : min, max);
 
-    const [scale, setScaleState] = useState<YearPickerScale>(defaultScale);
-    const [viewport, setViewport] = useState<ViewportState>(() =>
-      computeWindow(initialValue, defaultScale, min, max),
-    );
-    const wheelDeltaRef = useRef(0);
-    const dragStartValueRef = useRef(initialValue);
-    const valueRef = useRef(initialValue);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const railRef = useRef<HTMLDivElement>(null);
-    const tickContainerRef = useRef<HTMLDivElement>(null);
-    const isDraggingRef = useRef(false);
-    const lastDragTickRef = useRef<number | null>(null);
-    const vibrateEnabled = useSettingsStore((state) => state.vibrateEnabled);
-    const vibrate = useVibrate();
-    const width = useResizeObserver(containerRef);
-    const ticks = useMemo(() => {
-      return Array.from({ length: viewport.count }, (_, index) => viewport.leftTick + viewport.step * index);
-    }, [viewport]);
+    const deriveState = useCallback((year: number) => {
+      const c = yearToCentury(year);
+      const decades = decadesForCentury(c, min, max);
+      const rawDecade = Math.floor(year / 10) * 10;
+      const selDec = decades.includes(rawDecade) ? rawDecade : (decades[Math.floor(decades.length / 2)] ?? rawDecade);
+      const years = yearsForDecade(selDec, min, max);
+      const selYr = years.includes(year) ? year : (years[Math.floor(years.length / 2)] ?? year);
+      return { selCentury: c, selDecade: selDec, selYear: selYr };
+    }, [min, max]);
+
+    const init = deriveState(clampedValue);
+    const [selCentury, setSelCentury] = useState(init.selCentury);
+    const [selDecade, setSelDecade] = useState(init.selDecade);
+    const [selYear, setSelYear] = useState(init.selYear);
+
+    const prevValueRef = useRef(clampedValue);
+
+    useEffect(() => {
+      if (value === prevValueRef.current) return;
+      prevValueRef.current = value;
+      const clamped = clamp(value === 0 ? 1 : value, min === 0 ? 1 : min, max);
+      const derived = deriveState(clamped);
+      setSelCentury(derived.selCentury);
+      setSelDecade(derived.selDecade);
+      setSelYear(derived.selYear);
+    }, [value, min, max, deriveState]);
+
+    const centuries = centuriesInRange(min, max);
+    const decades = decadesForCentury(selCentury, min, max);
+    const years = yearsForDecade(selDecade, min, max);
 
     const onChangeRef = useRef(onChange);
     useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
-    const timelineVisible = value >= min && value <= max;
-    const resolvedSelectedTick = useMemo(
-      () => normalizeZeroYear(alignCenterToScale(value, scale)),
-      [scale, value],
-    );
-    const snapToCurrentStep = useCallback(
-      (year: number) => {
-        const step = SCALE_STEP[scale];
-        if (step <= 1) return Math.round(year);
-        return roundToStep(year, step);
-      },
-      [scale],
-    );
+    const handleCenturySelect = useCallback((c: number) => {
+      const newDecades = decadesForCentury(c, min, max);
+      const midDecade = newDecades[Math.floor(newDecades.length / 2)] ?? newDecades[0];
+      if (midDecade === undefined) return;
+      const newYears = yearsForDecade(midDecade, min, max);
+      const midYear = newYears[Math.floor(newYears.length / 2)] ?? newYears[0];
+      if (midYear === undefined) return;
+      setSelCentury(c);
+      setSelDecade(midDecade);
+      setSelYear(midYear);
+      onChangeRef.current(midYear);
+    }, [min, max]);
 
-    const effectiveWidth = useMemo(() => Math.max(width - 48, 0), [width]);
+    const handleDecadeSelect = useCallback((d: number) => {
+      const newYears = yearsForDecade(d, min, max);
+      const preserved = newYears.includes(selYear) ? selYear : (newYears[Math.floor(newYears.length / 2)] ?? newYears[0]);
+      if (preserved === undefined) return;
+      setSelDecade(d);
+      setSelYear(preserved);
+      onChangeRef.current(preserved);
+    }, [min, max, selYear]);
 
-    const updateViewport = useCallback(
-      (year: number, activeScale = scale) => {
-        setViewport(computeWindow(year, activeScale, min, max));
-      },
-      [scale, min, max],
-    );
-
-    const emitChange = useCallback(
-      (year: number) => {
-        const snapped = snapToCurrentStep(year);
-        const clamped = clamp(snapped, min, max);
-        const sanitized = normalizeZeroYear(clamped);
-        valueRef.current = sanitized;
-        if (sanitized !== value) {
-          onChangeRef.current(sanitized);
-        }
-      },
-      [value, min, max, snapToCurrentStep],
-    );
-
-    const viewportCenter = useMemo(() => {
-      if (viewport.count <= 0) return valueRef.current ?? value;
-      const centerIndex = Math.floor((viewport.count - 1) / 2);
-      return viewport.leftTick + viewport.step * centerIndex;
-    }, [viewport.count, viewport.leftTick, viewport.step, value]);
-
-    const zoomTo = useCallback(
-      (nextScale: YearPickerScale, pivotYear?: number) => {
-        setScaleState((prev) => {
-          if (prev === nextScale) return prev;
-          onScaleChange?.(nextScale);
-          const resolvePivot = (): number => {
-            if (typeof pivotYear === 'number' && Number.isFinite(pivotYear)) return pivotYear;
-            const committedValue = Number.isFinite(valueRef.current) ? valueRef.current! : null;
-            const currentCenter = Number.isFinite(viewportCenter) ? viewportCenter! : null;
-            if (!valueIsCommitted) {
-              if (currentCenter != null) return currentCenter;
-              if (committedValue != null) return committedValue;
-            } else {
-              if (committedValue != null) return committedValue;
-              if (currentCenter != null) return currentCenter;
-            }
-            if (Number.isFinite(value)) return value;
-            return 0;
-          };
-          const nextStep = SCALE_STEP[nextScale];
-          const prevStep = SCALE_STEP[prev];
-          const pivotAligned = prevStep > 1 ? roundToStep(resolvePivot(), prevStep) : resolvePivot();
-          const snapped = (() => {
-            if (pivotYear != null) return floorToStep(pivotAligned, nextStep);
-            return roundToStep(pivotAligned, nextStep);
-          })();
-          const targetYear = clamp(snapped, min, max);
-          const sanitizedTarget = normalizeZeroYear(targetYear);
-          valueRef.current = sanitizedTarget;
-          updateViewport(sanitizedTarget, nextScale);
-          return nextScale;
-        });
-      },
-      [max, min, onScaleChange, updateViewport, value, valueIsCommitted, viewportCenter],
-    );
-
-    const zoomIn = useCallback(
-      (pivotYear?: number) => {
-        const next = resolveNextScale(scale, 1);
-        if (next !== scale) zoomTo(next, pivotYear);
-      },
-      [scale, zoomTo],
-    );
-
-    const zoomOut = useCallback(() => {
-      const next = resolveNextScale(scale, -1);
-      if (next !== scale) zoomTo(next);
-    }, [scale, zoomTo]);
-
-    useImperativeHandle(
-      ref,
-      () => ({
-        centerOn: (year: number) => {
-          const clamped = clamp(Math.round(year), min, max);
-          const sanitized = normalizeZeroYear(clamped);
-          valueRef.current = sanitized;
-          onChange(sanitized);
-          updateViewport(sanitized);
-        },
-        setScale: (next: YearPickerScale) => {
-          if (!SCALE_ORDER.includes(next)) return;
-          zoomTo(next);
-        },
-      }),
-      [min, max, onChange, updateViewport, zoomTo],
-    );
-
-    useEffect(() => {
-      const clamped = clamp(value, min, max);
-      const sanitized = normalizeZeroYear(clamped);
-      valueRef.current = sanitized;
-      updateViewport(sanitized);
-    }, [value, min, max, updateViewport]);
-
-    useEffect(() => {
-      momentumControls.current?.stop();
-      return () => { momentumControls.current?.stop(); };
+    const handleYearSelect = useCallback((y: number) => {
+      setSelYear(y);
+      onChangeRef.current(y);
     }, []);
 
-    const pixelsPerStep = useMemo(() => {
-      if (viewport.count <= 1 || effectiveWidth === 0) return 0;
-      return effectiveWidth / (viewport.count - 1);
-    }, [effectiveWidth, viewport.count]);
-
-    const yearsPerPixel = useMemo(() => {
-      if (pixelsPerStep === 0) return 0;
-      return viewport.step / pixelsPerStep;
-    }, [pixelsPerStep, viewport.step]);
-
-    const momentumControls = useRef<ReturnType<typeof animate> | null>(null);
-
-    const launchMomentum = useCallback(
-      (velocityPixels: number) => {
-        if (yearsPerPixel === 0) return;
-        if (SCALE_STEP[scale] > 1) return;
-        const velocityYears = -velocityPixels * yearsPerPixel;
-        if (Math.abs(velocityYears) < 0.01) return;
-        momentumControls.current?.stop();
-        const startValue = valueRef.current;
-        const target = startValue + velocityYears * MOMENTUM_MULTIPLIER * 0.01;
-        momentumControls.current = animate(startValue, target, {
-          type: 'inertia',
-          velocity: velocityYears,
-          min,
-          max,
-          power: 0.8,
-          timeConstant: 260,
-          bounceDamping: 30,
-          bounceStiffness: 200,
-          restDelta: 0.2,
-          onUpdate: (latest) => { emitChange(latest); },
-        });
+    useImperativeHandle(ref, () => ({
+      centerOn: (year: number) => {
+        const clamped = clamp(year === 0 ? 1 : year, min === 0 ? 1 : min, max);
+        const derived = deriveState(clamped);
+        setSelCentury(derived.selCentury);
+        setSelDecade(derived.selDecade);
+        setSelYear(derived.selYear);
+        onChangeRef.current(derived.selYear);
       },
-      [emitChange, max, min, yearsPerPixel, scale],
-    );
+      setScale: (_scale: YearPickerScale) => { /* no-op: all tiers always visible */ },
+    }), [min, max, deriveState]);
 
-    const gestureTarget = railRef;
-
-    useGesture(
-      {
-        onDragStart: () => {
-          isDraggingRef.current = true;
-          dragStartValueRef.current = snapToCurrentStep(valueRef.current);
-          lastDragTickRef.current = dragStartValueRef.current;
-          momentumControls.current?.stop();
-        },
-        onDrag: ({ movement: [mx], last, velocity: [vx], direction: [dirX] }) => {
-          if (yearsPerPixel === 0) return;
-          const deltaYears = -mx * yearsPerPixel;
-          const nextValue = dragStartValueRef.current + deltaYears;
-          const snapped = snapToCurrentStep(nextValue);
-          if (snapped !== lastDragTickRef.current) {
-            lastDragTickRef.current = snapped;
-            if (vibrateEnabled && vibrate) {
-              try { vibrate(25); } catch { /* ignore */ }
-            }
-          }
-          emitChange(nextValue);
-          if (last) {
-            isDraggingRef.current = false;
-            launchMomentum(vx * dirX * pixelsPerStep);
-          }
-        },
-        onWheel: ({ event, delta: [, dy] }) => {
-          event.preventDefault();
-          const next = wheelDeltaRef.current + dy;
-          if (Math.abs(next) > WHEEL_THRESHOLD) {
-            if (next > 0) zoomOut(); else zoomIn();
-            wheelDeltaRef.current = 0;
-          } else {
-            wheelDeltaRef.current = next;
-          }
-        },
-        onPinch: (state: PinchState) => {
-          const { offset: [distance], last, memo } = state;
-          const previous = (memo as number | undefined) ?? distance;
-          const delta = distance - previous;
-          if (!last) {
-            if (delta > PINCH_THRESHOLD) zoomIn();
-            else if (delta < -PINCH_THRESHOLD) zoomOut();
-          }
-          return distance;
-        },
-      },
-      {
-        target: gestureTarget,
-        eventOptions: { passive: false },
-        drag: { filterTaps: true, axis: 'x' },
-        wheel: { axis: 'y' },
-        pinch: { scaleBounds: { min: 0.5, max: 4 } },
-      },
-    );
-
-    const handleTimelineClick = useCallback(
-      (event: React.MouseEvent<HTMLDivElement>) => {
-        if (event.defaultPrevented) return;
-        if (event.detail > 1) return;
-        if (isDraggingRef.current) return;
-        if (vibrateEnabled && vibrate) {
-          try { vibrate(25); } catch { /* ignore */ }
-        }
-        const container = tickContainerRef.current ?? railRef.current;
-        if (!container || viewport.count <= 1) return;
-        const rect = container.getBoundingClientRect();
-        if (rect.width === 0) return;
-        momentumControls.current?.stop();
-        const relativeX = clamp((event.clientX - rect.left) / rect.width, 0, 1);
-        const range = viewport.step * (viewport.count - 1);
-        const targetYear = viewport.leftTick + relativeX * range;
-        emitChange(targetYear);
-      },
-      [emitChange, vibrate, vibrateEnabled, viewport.count, viewport.leftTick, viewport.step],
-    );
-
-    const onTimelineDoubleClick = useCallback(
-      (event: React.MouseEvent<HTMLDivElement>) => {
-        const nextScale = resolveNextScale(scale, 1);
-        if (nextScale === scale) return;
-        const container = tickContainerRef.current ?? railRef.current;
-        if (!container || viewport.count <= 1) return;
-        const rect = container.getBoundingClientRect();
-        if (rect.width === 0) return;
-        const relativeX = clamp((event.clientX - rect.left) / rect.width, 0, 1);
-        const range = viewport.step * (viewport.count - 1);
-        const targetYear = viewport.leftTick + relativeX * range;
-        zoomTo(nextScale, targetYear);
-      },
-      [scale, viewport.count, viewport.leftTick, viewport.step, zoomTo],
-    );
-
-    const tickLabelFormatter = useCallback((year: number) => String(year), []);
+    void defaultScale;
 
     return (
-      <div className={cn('relative flex flex-col gap-2', className)}>
-        <div
-          ref={containerRef}
-          className="relative h-[4.5rem] select-none overflow-hidden touch-none md:touch-pan-x"
-          onClick={handleTimelineClick}
-          onDoubleClick={onTimelineDoubleClick}
-        >
-          <div className="pointer-events-auto absolute inset-0 touch-none" ref={railRef}>
-            {timelineVisible ? (
-              <>
-                <div className="absolute left-0 right-0 top-4">
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                </div>
-                <div className="absolute left-0 top-1/2 flex h-full w-full -translate-y-1/2 flex-col">
-                  <div className="relative h-full">
-                    <div className="absolute inset-y-0 left-0 right-0 pointer-events-none" ref={tickContainerRef}>
-                      <div
-                        className="absolute left-0 right-0 pointer-events-none"
-                        style={{
-                          top: '0.01rem',
-                          bottom: '2.1rem',
-                          background: 'linear-gradient(90deg, #2a2a2a 0%, #47484aff 50%, #2a2a2a 100%)',
-                        }}
-                      />
-                      <div
-                        className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                        style={{ top: '0.01rem' }}
-                      />
-                      <div
-                        className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                        style={{ bottom: '2.1rem' }}
-                      />
-                      {(() => {
-                        const centerIndex = (ticks.length - 1) / 2;
-                        return ticks.map((tick, index) => {
-                          const isActive = tick === resolvedSelectedTick;
-                          const isSelectedTick = isActive && valueIsCommitted;
-                          const withinVisibleRange = tick >= min && tick <= max;
-                          const isYearZero = tick === 0;
-                          const positionPercent = ticks.length <= 1 ? 50 : (index / (ticks.length - 1)) * 100;
-                          const distanceFactor = centerIndex === 0 ? 0 : Math.min(Math.abs(index - centerIndex) / centerIndex, 1);
-                          const baseOpacity = isActive ? 1 : Math.max(0.35, 1 - distanceFactor * 0.6);
-                          const tickLineClasses = (() => {
-                            const base = 'h-[0.85rem] w-px rounded-full transition-all';
-                            if (!withinVisibleRange) return cn(base, 'bg-transparent opacity-0');
-                            if (isYearZero) return cn(base, 'bg-transparent border-l border-dotted', isActive ? 'border-[#ffae42]' : 'border-slate-400');
-                            return cn(base, isActive ? 'bg-[#ffae42] h-[0.9rem] w-[3px] -translate-y-0 transform' : 'bg-white');
-                          })();
-                          const labelClasses = cn(
-                            'text-xs transition-colors',
-                            withinVisibleRange
-                              ? isSelectedTick
-                                ? 'text-[#ffae42] font-semibold drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]'
-                                : 'text-white/80'
-                              : 'text-transparent',
-                          );
-                          const labelText = withinVisibleRange ? (isYearZero ? '' : tickLabelFormatter(tick)) : '';
-                          return (
-                            <div
-                              key={tick}
-                              className="absolute flex h-full flex-col items-center gap-1.5 pointer-events-none"
-                              style={{ left: `${positionPercent}%`, transform: 'translateX(-50%)' }}
-                            >
-                              <div className={tickLineClasses} style={{ opacity: baseOpacity }} />
-                              <div className={labelClasses} style={{ minWidth: '3ch', textAlign: 'center', opacity: isActive ? 1 : baseOpacity }}>
-                                {labelText}
-                              </div>
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </div>
-        {timelineVisible ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-0 z-10">
-            <div className="flex w-full items-center gap-[0.01rem] rounded-full border border-white/10 bg-white/5 px-2 py-1.5 text-[0.62rem] uppercase tracking-[0.2em] text-white/70 shadow-sm">
-              {SCALE_BUTTON_ORDER.map((option) => {
-                const isActive = option === scale;
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      zoomTo(option);
-                    }}
-                    className={cn(
-                      'pointer-events-auto flex-1 rounded-full px-2 py-0.5 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ffae42] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111]',
-                      isActive
-                        ? 'bg-[rgba(255,174,66,0.15)] text-[#ffae42] shadow-sm'
-                        : 'text-white/70 hover:bg-white/10 hover:text-white',
-                    )}
-                    aria-pressed={isActive}
-                    aria-label={`Zoom to ${option} view`}
-                  >
-                    {option.toUpperCase()}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
+      <div className={cn('flex flex-col gap-3', className)} style={{ userSelect: 'none' }}>
+        <Rail
+          items={centuries}
+          selected={selCentury}
+          itemWidth={CENTURY_W}
+          labelFn={centuryLabel}
+          onSelect={handleCenturySelect}
+          tierLabel="CENTURY"
+        />
+        <Rail
+          items={decades}
+          selected={selDecade}
+          itemWidth={DECADE_W}
+          labelFn={decadeLabel}
+          onSelect={handleDecadeSelect}
+          tierLabel="DECADE"
+        />
+        <Rail
+          items={years}
+          selected={selYear}
+          itemWidth={YEAR_W}
+          labelFn={yearLabel}
+          onSelect={handleYearSelect}
+          committed={valueIsCommitted}
+          tierLabel="YEAR"
+        />
       </div>
     );
   },

@@ -13,6 +13,7 @@
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 0;
+  width: 100%;
 }
 
 .mapFullscreenBtn {
@@ -75,16 +76,30 @@
 }
 
 /* Pulse animation for buttons */
-@keyframes pulse {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.04); }
-  100% { transform: scale(1); }
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.1); opacity: 0; }
 }
 
 .shineBtn {
   position: relative;
-  overflow: hidden;
-  animation: pulse 1.8s ease-in-out infinite;
+  overflow: visible;
+}
+
+.shineBtn::before,
+.shineBtn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  animation: pulseRing 1.8s ease-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.shineBtn::after {
+  animation-delay: 0.9s;
 }
 
 /* Toast fade in/out animation */
@@ -112,6 +127,7 @@
   align-items: center;
   gap: 12px;
   width: 100%;
+  pointer-events: auto;
 }
 
 /* Show/hide toggle button — big, centered, prominent */

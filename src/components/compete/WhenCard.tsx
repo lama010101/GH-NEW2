@@ -312,7 +312,7 @@ export default function WhenCard({
                   <span style={{ background: "#2a2a2a", color: accColor, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 600 }}>
                     {row.acc != null ? (
                       <>
-                        <span style={{ color: "#ffffff", fontSize: "var(--font-base)" }}>{row.acc}</span>
+                        <span style={{ color: accColor, fontSize: "var(--font-base)" }}>{row.acc}</span>
                         <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "var(--font-xs)" }}>%</span>
                       </>
                     ) : "—"}

@@ -28,6 +28,8 @@ interface RoundActiveSectionProps {
   viewer: SessionPlayer | null;
   timeRemaining: number | null;
   hintsUsedCount?: number;
+  hintsTotalCount?: number;
+  localPlayerAvatarUrl?: string | null;
 }
 
 
@@ -46,7 +48,9 @@ export default function RoundActiveSection({
   onOpenHints,
   guessYearRef,
   timeRemaining,
+  hintsTotalCount,
   hintsUsedCount,
+  localPlayerAvatarUrl,
 }: RoundActiveSectionProps) {
   const currentEvent = snapshot.rounds?.[snapshot.currentRoundIndex];
   const guessLocation =
@@ -465,7 +469,7 @@ export default function RoundActiveSection({
             position: "absolute",
             top: 16,
             right: 16,
-            zIndex: 200,
+            zIndex: 1,
             display: "flex",
             flexDirection: "column",
             alignItems: "flex-end",
@@ -548,16 +552,17 @@ export default function RoundActiveSection({
           <div className={styles.mapFullscreenHeader}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/where.webp" alt="where" style={{ width: 20, height: 20, objectFit: "contain" }} />
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#fb923c" }}>Where?</span>
+              <img src="/badges/where.webp" alt="where" style={{ width: 48, height: 48, objectFit: "contain", overflow: "visible", flexShrink: 0 }} />
+              <span style={{ fontSize: 16, fontWeight: 700, color: "#22c55e" }}>Where?</span>
             </div>
             <button
               type="button"
               className={styles.mapFullscreenClose}
               onClick={() => setMapFullscreen(false)}
               aria-label="Close fullscreen map"
+              style={{ position: 'absolute', top: 16, right: 16, zIndex: 9999, width: 44, height: 44, background: '#22c55e', borderRadius: 12, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
                 <line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -566,8 +571,9 @@ export default function RoundActiveSection({
           <div className={styles.mapFullscreenBody}>
             <GameMap
               guessLocation={guessLocation}
-              onSetLocation={(loc) => { handleMapSetLocation(loc); setMapFullscreen(false); }}
+              onSetLocation={(loc) => { handleMapSetLocation(loc); }}
               flyToTarget={flyToTarget}
+              localPlayerAvatarUrl={localPlayerAvatarUrl}
             />
             {guessLocation !== null && (
               <div style={{
@@ -596,6 +602,12 @@ export default function RoundActiveSection({
       {/* NEW BOTTOM PANEL */}
       <div
         style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          paddingTop: 80,
+          pointerEvents: "none",
+          justifyContent: "flex-end",
           position: "absolute",
           bottom: 0,
           left: 0,
@@ -612,6 +624,7 @@ export default function RoundActiveSection({
               justifyContent: "center",
               gap: 12,
               padding: "6px 16px",
+              pointerEvents: "auto",
             }}
           >
             {guessLocation !== null && (
@@ -619,22 +632,25 @@ export default function RoundActiveSection({
                 type="button"
                 onClick={() => setPanelVisible(true)}
                 style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "#fb923c",
-                  background: "rgba(251,146,60,0.12)",
-                  border: "1px solid rgba(251,146,60,0.25)",
-                  borderRadius: 20,
-                  padding: "3px 10px",
-                  maxWidth: 140,
+                  fontSize: 15,
+                  fontWeight: 500,
+                  color: "#fff",
+                  background: "rgba(34, 197, 94, 0.8)",
+                  border: "none",
+                  borderRadius: 999,
+                  padding: "8px 16px",
+                  maxWidth: 180,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
                   cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/where.webp" alt="where" style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }} /> {locationNameLoading ? "…" : locationName ?? "Location set"}
+                <img src="/badges/where.webp" alt="where" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} /> {locationNameLoading ? "…" : locationName ?? "Location set"}
               </button>
             )}
             {guessYear !== null && (
@@ -642,18 +658,21 @@ export default function RoundActiveSection({
                 type="button"
                 onClick={() => setPanelVisible(true)}
                 style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "#fb923c",
-                  background: "rgba(251,146,60,0.12)",
-                  border: "1px solid rgba(251,146,60,0.25)",
-                  borderRadius: 20,
-                  padding: "3px 10px",
+                  fontSize: 15,
+                  fontWeight: 500,
+                  color: "#fff",
+                  background: "rgba(56, 189, 248, 0.8)",
+                  border: "none",
+                  borderRadius: 999,
+                  padding: "8px 16px",
                   cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/when.webp" alt="when" style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }} /> {guessYear}
+                <img src="/badges/when.webp" alt="when" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} /> {guessYear}
               </button>
             )}
           </div>
@@ -663,15 +682,18 @@ export default function RoundActiveSection({
         {panelVisible && (
           <div
             style={{
-              background: "rgba(10,8,6,0.55)",
-              backdropFilter: "blur(18px)",
-              WebkitBackdropFilter: "blur(18px)",
-              borderTop: "1px solid rgba(255,255,255,0.10)",
-              borderLeft: "1px solid rgba(255,255,255,0.07)",
-              borderRight: "1px solid rgba(255,255,255,0.07)",
-              borderBottom: "none",
-              borderRadius: "14px 14px 0 0",
-              padding: "12px 16px 0",
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              background: "rgba(255,255,255,0.10)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              border: "1px solid rgba(255,255,255,0.20)",
+              borderTop: "1px solid rgba(255,255,255,0.30)",
+              borderRadius: "14px",
+              padding: "12px 16px 12px",
+              marginBottom: "8px",
+              pointerEvents: "auto",
             }}
           >
             {/* Header Row */}
@@ -681,12 +703,15 @@ export default function RoundActiveSection({
                 alignItems: "center",
                 justifyContent: "space-between",
                 marginBottom: 8,
+                backgroundColor: 'rgba(0,0,0,0.55)',
+                borderRadius: 10,
+                padding: '6px 12px',
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/where.webp" alt="where" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#fb923c" }}>Where?</span>
+                <img src="/badges/where.webp" alt="where" style={{ width: 48, height: 48, objectFit: "contain", overflow: "visible", flexShrink: 0 }} />
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#22c55e" }}>Where?</span>
               </div>
               {!searchExpanded && (
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -718,7 +743,7 @@ export default function RoundActiveSection({
                       background: "none",
                       border: "none",
                       padding: 0,
-                      color: guessLocation !== null ? "#fb923c" : "#fb923c",
+                      color: "#22c55e",
                       fontSize: guessLocation !== null ? 18 : 18,
                       fontWeight: 700,
                       cursor: isLocked ? "default" : "pointer",
@@ -833,13 +858,14 @@ export default function RoundActiveSection({
             )}
 
             {/* Map */}
-            <div className={styles.mapWrapper} style={{ height: 180 }}>
+            <div className={styles.mapWrapper} style={{ flex: 1, minHeight: 120 }}>
               <div className={styles.mapNoZoom} style={{ width: "100%", height: "100%" }}>
                 <GameMap
                   guessLocation={guessLocation}
                   onSetLocation={handleMapSetLocation}
                   hideZoomControls={true}
                   flyToTarget={flyToTarget}
+                  localPlayerAvatarUrl={localPlayerAvatarUrl}
                 />
               </div>
               <button
@@ -864,15 +890,14 @@ export default function RoundActiveSection({
         {panelVisible && (
           <div
             style={{
-              background: "rgba(10,8,6,0.55)",
-              backdropFilter: "blur(18px)",
-              WebkitBackdropFilter: "blur(18px)",
-              borderLeft: "1px solid rgba(255,255,255,0.07)",
-              borderRight: "1px solid rgba(255,255,255,0.07)",
-              borderBottom: "1px solid rgba(255,255,255,0.10)",
-              borderRadius: "0 0 14px 14px",
-              padding: "0 16px 0",
-              paddingBottom: 12,
+              background: "rgba(255,255,255,0.10)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              border: "1px solid rgba(255,255,255,0.20)",
+              borderTop: "1px solid rgba(255,255,255,0.30)",
+              borderRadius: "14px",
+              padding: "12px 16px",
+              pointerEvents: "auto",
             }}
           >
             {/* Header Row */}
@@ -882,23 +907,29 @@ export default function RoundActiveSection({
                 alignItems: "center",
                 justifyContent: "space-between",
                 marginBottom: 8,
-                paddingTop: 12,
+                backgroundColor: 'rgba(0,0,0,0.55)',
+                borderRadius: 10,
+                padding: '6px 12px',
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/when.webp" alt="when" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#fb923c" }}>When?</span>
+                <img src="/badges/when.webp" alt="when" style={{ width: 48, height: 48, objectFit: "contain", overflow: "visible", flexShrink: 0 }} />
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#38bdf8" }}>When?</span>
               </div>
               {!yearEditActive ? (
                 <button
                   type="button"
-                  onClick={() => !isLocked && setYearEditActive(true)}
+                  onClick={() => {
+                    if (isLocked) return;
+                    setYearEditValue(guessYear !== null ? String(guessYear) : "");
+                    setYearEditActive(true);
+                  }}
                   style={{
                     background: "none",
                     border: "none",
                     padding: 0,
-                    color: "#fb923c",
+                    color: "#38bdf8",
                     fontSize: 18,
                     fontWeight: 700,
                     fontVariantNumeric: "tabular-nums",
@@ -934,6 +965,10 @@ export default function RoundActiveSection({
                       setYearEditActive(false);
                     }
                   }}
+                  onFocus={(e) => {
+                    // Slight delay ensures the selection happens after browser default focus behavior
+                    setTimeout(() => e.target.select(), 10);
+                  }}
                   autoFocus={true}
                   min={yearMin}
                   max={yearMax}
@@ -943,7 +978,7 @@ export default function RoundActiveSection({
                     background: "rgba(255,255,255,0.10)",
                     border: "1.5px solid #fb923c",
                     borderRadius: 8,
-                    color: "#fb923c",
+                    color: "#38bdf8",
                     fontSize: 18,
                     fontWeight: 700,
                     textAlign: "center",
@@ -957,18 +992,20 @@ export default function RoundActiveSection({
             </div>
 
             {/* Year Picker */}
-            <YearPicker
-              value={guessYear ?? Math.round((yearMin + yearMax) / 2)}
-              onChange={(year) => {
-                onSetYear(year);
-                guessYearRef.current = year;
-              }}
-              min={yearMin}
-              max={yearMax}
-              defaultScale="century"
-              valueIsCommitted={guessYear !== null}
-              className="w-full"
-            />
+            <div style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12, padding: '8px 0' }}>
+              <YearPicker
+                value={guessYear ?? Math.round((yearMin + yearMax) / 2)}
+                onChange={(year) => {
+                  onSetYear(year);
+                  guessYearRef.current = year;
+                }}
+                min={yearMin}
+                max={yearMax}
+                defaultScale="century"
+                valueIsCommitted={guessYear !== null}
+                className="w-full"
+              />
+            </div>
           </div>
         )}
 
@@ -1036,7 +1073,7 @@ export default function RoundActiveSection({
                   Hints
                 </span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>
-                  {hintsUsedCount ?? 0}/14
+                  {hintsUsedCount ?? 0}/{hintsTotalCount ?? 14}
                 </span>
               </button>
             </div>
