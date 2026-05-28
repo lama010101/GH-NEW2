@@ -1531,3 +1531,6 @@ MP-FIX-RESULTS-MAP-002 | src/components/StaticResultMap.tsx, src/components/comp
 | MP-FIX-WHEN-AVATAR-001 | 2026-05-27 | src/components/compete/WhenCard.tsx | Replaced timeline dot markers with PlayerAvatar component (22px size, 2px white border) |
 
 | MP-FIX-WHEN-AVATAR-002 | 2026-05-27 | src/components/compete/WhenCard.tsx | Fixed timeline avatar clipping (clamp [4,96]) and label overlap (top: 26, height: 108) |
+| MP-SEC-AUTH-001 | Add PartyKit secret guard to /complete route | complete/route.ts | Done |
+| MP-SEC-AUTH-002 | Add PartyKit secret guard to /leave route | leave/route.ts | Done |
+MP-FIX-AUTH-MODAL-001 | Fix Google redirectTo hardcoded origin + email reload after sign-in | src/components/AuthModal.tsx | done

@@ -25,7 +25,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const { error } = await supabaseBrowser.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+        redirectTo: `https://guess-history.com/auth/callback?next=/`,
       },
     });
 
@@ -69,6 +69,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setError(result.error.message);
     } else {
       onClose();
+      window.location.reload();
     }
   }
 
