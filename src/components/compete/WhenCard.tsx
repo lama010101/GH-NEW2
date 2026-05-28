@@ -62,6 +62,28 @@ export default function WhenCard({
       return b.acc - a.acc;
     });
 
+  // Compute timeline variables
+  const allYears = [correctYear, ...whenRows.map(r => r.guessYear).filter((y): y is number => y != null)];
+  const maxDelta = allYears.reduce((max, y) => Math.max(max, Math.abs(y - correctYear)), 0);
+  const minSpread = maxDelta === 0 ? 20 : maxDelta;
+  const padding = Math.max(10, Math.ceil(minSpread / 10) * 10 - minSpread + 10);
+  const timelineMin = Math.floor((Math.min(...allYears) - padding) / 10) * 10;
+  const timelineMax = Math.ceil((Math.max(...allYears) + padding) / 10) * 10;
+  const timelineRange = timelineMax - timelineMin;
+  const correctXPercent = ((correctYear - timelineMin) / timelineRange) * 100;
+  const yearCounts = new Map<number, number>();
+  // Decade tick marks
+  const ticks: { year: number; isMajor: boolean; xPercent: number }[] = [];
+  for (let year = timelineMin; year <= timelineMax; year += 10) {
+    const xPercent = ((year - timelineMin) / timelineRange) * 100;
+    ticks.push({ year, isMajor: year % 50 === 0, xPercent });
+  }
+  whenRows.forEach(row => {
+    if (row.guessYear != null) {
+      yearCounts.set(row.guessYear, (yearCounts.get(row.guessYear) || 0) + 1);
+    }
+  });
+
   return (
     <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
       <div
@@ -141,12 +163,12 @@ export default function WhenCard({
           height: 32,
           background: "#f97316",
           borderRadius: 2,
-          left: "50%",
+          left: `${correctXPercent}%`,
         }}>
           <div style={{
             position: "absolute",
             top: -20,
-            left: "50%",
+            left: `${correctXPercent}%`,
             transform: "translateX(-50%)",
             fontSize: 9,
             color: "#888",
@@ -158,7 +180,7 @@ export default function WhenCard({
           <div style={{
             position: "absolute",
             top: 32,
-            left: "50%",
+            left: `${correctXPercent}%`,
             transform: "translateX(-50%)",
             fontSize: 10,
             color: "#f97316",
@@ -168,98 +190,72 @@ export default function WhenCard({
             {correctYear}
           </div>
         </div>
-        {/* Player guess markers */}
-        {(() => {
-          const allYears = [correctYear, ...whenRows.map(r => r.guessYear).filter((y): y is number => y != null)];
-          const maxDelta = allYears.reduce((max, y) => Math.max(max, Math.abs(y - correctYear)), 0);
-          const minSpread = maxDelta === 0 ? 20 : maxDelta;
-          const padding = Math.max(10, Math.ceil(minSpread / 10) * 10 - minSpread + 10);
-          const timelineMin = Math.floor((Math.min(...allYears) - padding) / 10) * 10;
-          const timelineMax = Math.ceil((Math.max(...allYears) + padding) / 10) * 10;
-          const timelineRange = timelineMax - timelineMin;
-          const yearCounts = new Map<number, number>();
-          // Decade tick marks
-          const ticks: { year: number; isMajor: boolean; xPercent: number }[] = [];
-          for (let year = timelineMin; year <= timelineMax; year += 10) {
-            const xPercent = ((year - timelineMin) / timelineRange) * 100;
-            ticks.push({ year, isMajor: year % 50 === 0, xPercent });
-          }
-          whenRows.forEach(row => {
-            if (row.guessYear != null) {
-              yearCounts.set(row.guessYear, (yearCounts.get(row.guessYear) || 0) + 1);
-            }
-          });
+        {/* Decade tick marks */}
+        {ticks.map((tick) => {
+          const isNearCorrect = Math.abs(tick.xPercent - 50) < 8;
           return (
-            <>
-              {/* Decade tick marks */}
-              {ticks.map((tick) => {
-                const isNearCorrect = Math.abs(tick.xPercent - 50) < 8;
-                return (
-                  <div key={tick.year} style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: `${tick.xPercent}%`,
-                    width: 2,
-                    height: tick.isMajor ? 14 : 8,
-                    background: "#aaa",
-                    transform: "translateY(-50%)",
-                  }}>
-                    {tick.isMajor && !isNearCorrect && (
-                      <div style={{
-                        position: "absolute",
-                        top: 18,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        fontSize: 8,
-                        color: "#999",
-                        whiteSpace: "nowrap",
-                      }}>
-                        {tick.year}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              {/* Player guess markers */}
-              {whenRows.map((row) => {
-                if (row.guessYear == null) return null;
-                const xPercent = ((row.guessYear - timelineMin) / timelineRange) * 100;
-                const clampedXPercent = Math.max(4, Math.min(96, xPercent));
-                const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
-                const groupIndex = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
-                const verticalOffset = groupIndex * 22;
-                return (
-                  <div key={row.playerId} style={{
-                    position: "absolute",
-                    top: "50%",
-                    transform: `translate(-50%, calc(-50% - ${verticalOffset}px))`,
-                    left: `${clampedXPercent}%`,
-                  }}>
-                    <div style={{ border: "2px solid #fff", borderRadius: "50%" }}>
-                      <PlayerAvatar
-                        avatarUrl={snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null}
-                        displayName={snapshotPlayers.find(p => p.playerId === row.playerId)?.displayName ?? row.playerId.slice(0, 2)}
-                        size={22}
-                      />
-                    </div>
-                    <div style={{
-                      position: "absolute",
-                      top: 30,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      fontSize: 10,
-                      color: row.isMe ? "#f97316" : "#60a5fa",
-                      whiteSpace: "nowrap",
-                      textAlign: "center",
-                    }}>
-                      {row.guessYear}
-                    </div>
-                  </div>
-                );
-              })}
-            </>
+            <div key={tick.year} style={{
+              position: "absolute",
+              top: "50%",
+              left: `${tick.xPercent}%`,
+              width: 2,
+              height: tick.isMajor ? 14 : 8,
+              background: "#aaa",
+              transform: "translateY(-50%)",
+            }}>
+              {tick.isMajor && !isNearCorrect && (
+                <div style={{
+                  position: "absolute",
+                  top: 18,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  fontSize: 8,
+                  color: "#999",
+                  whiteSpace: "nowrap",
+                }}>
+                  {tick.year}
+                </div>
+              )}
+            </div>
           );
-        })()}
+        })}
+        {/* Player guess markers */}
+        {whenRows.map((row) => {
+          if (row.guessYear == null) return null;
+          const xPercent = ((row.guessYear - timelineMin) / timelineRange) * 100;
+          const clampedXPercent = Math.max(4, Math.min(96, xPercent));
+          const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
+          const groupIndex = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
+          const verticalOffset = groupIndex * 22;
+          return (
+            <div key={row.playerId} style={{
+              position: "absolute",
+              top: "50%",
+              transform: `translate(-50%, calc(-50% - ${verticalOffset}px))`,
+              left: `${clampedXPercent}%`,
+            }}>
+              <div style={{ border: "2px solid #fff", borderRadius: "50%" }}>
+                <PlayerAvatar
+                  avatarUrl={snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null}
+                  displayName={snapshotPlayers.find(p => p.playerId === row.playerId)?.displayName ?? row.playerId.slice(0, 2)}
+                  size={22}
+                />
+              </div>
+              <div style={{
+                position: "absolute",
+                top: 30,
+                left: "50%",
+                transform: "translateX(-50%)",
+                fontSize: 10,
+                color: row.isMe ? "#f97316" : "#60a5fa",
+                whiteSpace: "nowrap",
+                textAlign: "center",
+              }}>
+                {row.guessYear}
+              </div>
+            </div>
+          );
+        })}
       </div>
       <div style={{ marginTop: 10, background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
         <div

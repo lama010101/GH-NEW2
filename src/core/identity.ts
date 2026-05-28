@@ -31,24 +31,24 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
   bootstrapped = true;
 
   try {
-    const { data: { session }, error: sessionError } =
-      await supabaseBrowser.auth.getSession();
+    const { data: { user }, error: sessionError } =
+      await supabaseBrowser.auth.getUser();
 
     if (sessionError) {
       cachedState = { status: "error", error: `Session check failed: ${sessionError.message}` };
       return cachedState;
     }
 
-    if (session?.user?.id) {
-      const isAnonymous = session.user.is_anonymous ?? false;
-      const displayName = await fetchDisplayName(session.user.id);
+    if (user?.id) {
+      const isAnonymous = user.is_anonymous ?? false;
+      const displayName = await fetchDisplayName(user.id);
       cachedState = {
         status: "ready",
-        playerId: session.user.id,
+        playerId: user.id,
         isAnonymous,
         displayName
       };
-      resolveReady?.(session.user.id);
+      resolveReady?.(user.id);
       return cachedState;
     }
 

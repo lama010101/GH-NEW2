@@ -1535,3 +1535,6 @@ MP-FIX-RESULTS-MAP-002 | src/components/StaticResultMap.tsx, src/components/comp
 | MP-SEC-AUTH-002 | Add PartyKit secret guard to /leave route | leave/route.ts | Done |
 MP-FIX-AUTH-MODAL-001 | Fix Google redirectTo hardcoded origin + email reload after sign-in | src/components/AuthModal.tsx | done
 | MP-FIX-AUTH-PKCE-001 | Add flowType pkce to createBrowserClient | src/core/supabaseBrowser.ts | done |
+MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIdentity | src/core/identity.ts | done
+
+| MP-FIX-WHEN-SCALE-001 | src/components/compete/WhenCard.tsx | Fixed correct year marker to use computed position (correctXPercent) instead of hardcoded 50% |
