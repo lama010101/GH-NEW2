@@ -629,3 +629,30 @@
   margin: 0;
   margin-top: 12px;
 }
+.friendSearchInput {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 8px;
+}
+.friendSearchInput:focus {
+  border-color: rgba(255,255,255,0.28);
+}
+.friendSearchStatus {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  padding: 4px 0;
+}
+.inLobbyPill {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(34,197,94,0.18);
+  color: #4ade80;
+  font-weight: 600;
+}

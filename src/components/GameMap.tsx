@@ -154,9 +154,11 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
                 position={[this.props.guessLocation.lat, this.props.guessLocation.lng]}
                 icon={L.divIcon({
                   className: "",
-                  html: '<div style="width:12px;height:12px;background:#ff8a00;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
-                  iconSize: [12, 12],
-                  iconAnchor: [6, 6],
+                  html: this.props.localPlayerAvatarUrl
+                    ? `<img src="${this.props.localPlayerAvatarUrl}" style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);object-fit:cover;" />`
+                    : '<div style="width:12px;height:12px;background:#888;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
+                  iconSize: this.props.localPlayerAvatarUrl ? [32, 32] : [12, 12],
+                  iconAnchor: this.props.localPlayerAvatarUrl ? [16, 16] : [6, 6],
                 })}
               />
             )}
@@ -167,9 +169,11 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
                   position={[marker.location.lat, marker.location.lng]}
                   icon={L.divIcon({
                     className: "",
-                    html: '<div style="width:12px;height:12px;background:#ff8a00;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
-                    iconSize: [12, 12],
-                    iconAnchor: [6, 6],
+                    html: marker.avatarUrl
+                      ? `<img src="${marker.avatarUrl}" style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);object-fit:cover;" />`
+                      : '<div style="width:12px;height:12px;background:#888;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
+                    iconSize: marker.avatarUrl ? [32, 32] : [12, 12],
+                    iconAnchor: marker.avatarUrl ? [16, 16] : [6, 6],
                   })}
                 />
               ))}

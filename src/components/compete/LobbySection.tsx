@@ -74,24 +74,73 @@ export default function LobbySection({
     setResultsTimerValue(snapshot.config.resultsAutoAdvanceSec);
   }, [snapshot.config.resultsAutoAdvanceSec]);
 
-  /* ── Invite panel: recent invites from localStorage ── */
+  /* ── Invite panel: friend search ── */
   const [inviteExpanded, setInviteExpanded] = useState(true);
   const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
+  const [friendQuery, setFriendQuery] = useState('');
+  const [friendResults, setFriendResults] = useState<Array<{id: string; display_name: string; avatar_url: string | null}>>([]);
+  const [friendSearchLoading, setFriendSearchLoading] = useState(false);
+  const [friendSearchError, setFriendSearchError] = useState(false);
+  const [inviteStates, setInviteStates] = useState<Record<string, 'idle' | 'pending' | 'sent' | 'error'>>({});
+  const friendSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const recentInvites: Array<{ id: string; name: string; avatarUrl: string }> = (() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const stored = localStorage.getItem("gh_last_invited_players");
-      if (!stored) return [];
-      const parsed = JSON.parse(stored);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.slice(0, 5).filter((p) =>
-        p && typeof p.id === "string" && typeof p.name === "string" && typeof p.avatarUrl === "string"
-      );
-    } catch {
-      return [];
+  // Friend search debounce
+  useEffect(() => {
+    if (friendSearchDebounceRef.current) {
+      clearTimeout(friendSearchDebounceRef.current);
     }
-  })();
+    if (friendQuery.length < 2) {
+      setFriendResults([]);
+      setFriendSearchError(false);
+      return;
+    }
+    setFriendSearchLoading(true);
+    setFriendSearchError(false);
+    friendSearchDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/friends/search?q=${encodeURIComponent(friendQuery)}`);
+        const data = await res.json();
+        if (res.ok) {
+          setFriendResults(data.players ?? []);
+        } else {
+          setFriendSearchError(true);
+        }
+      } catch {
+        setFriendSearchError(true);
+      } finally {
+        setFriendSearchLoading(false);
+      }
+    }, 400);
+    return () => {
+      if (friendSearchDebounceRef.current) {
+        clearTimeout(friendSearchDebounceRef.current);
+      }
+    };
+  }, [friendQuery]);
+
+  const handleSendInvite = async (playerId: string) => {
+    setInviteStates(prev => ({ ...prev, [playerId]: 'pending' }));
+    try {
+      const res = await fetch('/api/invitations/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game_id: snapshot.gameId, invitee_id: playerId }),
+      });
+      if (res.ok) {
+        setInviteStates(prev => ({ ...prev, [playerId]: 'sent' }));
+      } else {
+        setInviteStates(prev => ({ ...prev, [playerId]: 'error' }));
+        setTimeout(() => {
+          setInviteStates(prev => ({ ...prev, [playerId]: 'idle' }));
+        }, 2000);
+      }
+    } catch {
+      setInviteStates(prev => ({ ...prev, [playerId]: 'error' }));
+      setTimeout(() => {
+        setInviteStates(prev => ({ ...prev, [playerId]: 'idle' }));
+      }, 2000);
+    }
+  };
 
   const inviteLink = typeof window !== "undefined" ? window.location.href : "";
   const truncatedInviteLink = inviteLink.length > 32 ? inviteLink.slice(0, 32) + "…" : inviteLink;
@@ -379,41 +428,62 @@ export default function LobbySection({
             </button>
           </div>
           <div className={`${styles['lobby-invite-body']}${!inviteExpanded ? ' ' + styles['collapsed'] : ''}`}>
-            {/* Invite Friends - recent from localStorage */}
+            {/* Invite Friends - search */}
             <div className={styles['lobby-invite-section']}>
               <span className={styles['lobby-invite-label']}>INVITE FRIENDS</span>
+              <input
+                type="text"
+                className={styles['friendSearchInput']}
+                placeholder="Search players..."
+                value={friendQuery}
+                onChange={(e) => setFriendQuery(e.target.value)}
+              />
+              {friendSearchLoading && (
+                <div className={styles['friendSearchStatus']}>Searching...</div>
+              )}
+              {friendSearchError && (
+                <div className={styles['friendSearchStatus']}>Search failed</div>
+              )}
               <div className={styles['lobby-friend-list']}>
-                {recentInvites.length === 0 ? (
+                {friendQuery.length < 2 ? (
                   <div className={`${styles['lobby-friend-empty']} ${styles['lobbyEmptyInvite']}`}>
-                    No recent invites
+                    Type to search players
+                  </div>
+                ) : friendResults.length === 0 && !friendSearchLoading && !friendSearchError ? (
+                  <div className={`${styles['lobby-friend-empty']} ${styles['lobbyEmptyInvite']}`}>
+                    No players found
                   </div>
                 ) : (
-                  recentInvites.map((friend) => (
-                    <div key={friend.id} className={styles['lobby-friend-row']}>
-                      <span className={styles['lobby-friend-info']}>
-                        <PlayerAvatar
-                          avatarUrl={friend.avatarUrl}
-                          displayName={friend.name}
-                          size={28}
-                        />
-                        <span style={getUsernameGradientStyle(friend.id)}>
-                          {friend.name}
+                  friendResults.map((player) => {
+                    const isInLobby = snapshot.players.some((p) => p.playerId === player.id);
+                    const inviteState = inviteStates[player.id] || 'idle';
+                    return (
+                      <div key={player.id} className={styles['lobby-friend-row']}>
+                        <span className={styles['lobby-friend-info']}>
+                          <PlayerAvatar
+                            avatarUrl={player.avatar_url}
+                            displayName={player.display_name}
+                            size={28}
+                          />
+                          <span style={getUsernameGradientStyle(player.id)}>
+                            {player.display_name}
+                          </span>
                         </span>
-                      </span>
-                      <button
-                        type="button"
-                        className={`button secondary ${styles['lobbyBtnSm']}`}
-                        onClick={() =>
-                          handleCopy(
-                            `Join my Guess-History game! Room code: ${roomCode} → ${inviteLink}`,
-                            "Invite copied!"
-                          )
-                        }
-                      >
-                        {copiedLabel === "Invite copied!" ? "Copied!" : "Invite"}
-                      </button>
-                    </div>
-                  ))
+                        {isInLobby ? (
+                          <span className={styles['inLobbyPill']}>In lobby</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`button secondary ${styles['lobbyBtnSm']}`}
+                            onClick={() => handleSendInvite(player.id)}
+                            disabled={inviteState !== 'idle'}
+                          >
+                            {inviteState === 'pending' ? '...' : inviteState === 'sent' ? 'Sent ✓' : inviteState === 'error' ? 'Failed' : 'Invite'}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

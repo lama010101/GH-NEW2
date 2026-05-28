@@ -204,7 +204,7 @@ export default function WhereCard({
                     </span>
                     {locationAcc != null && (
                       <span style={{ background: "#2a2a2a", color: locAccColor, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 600 }}>
-                        <span style={{ color: "#ffffff", fontSize: "var(--font-base)" }}>{locationAcc}</span>
+                        <span style={{ color: locAccColor, fontSize: "var(--font-base)" }}>{locationAcc}</span>
                         <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "var(--font-xs)" }}>%</span>
                       </span>
                     )}

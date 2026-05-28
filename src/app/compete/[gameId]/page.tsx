@@ -298,6 +298,9 @@ export default function CompeteGamePage() {
   // Authoritative: derived from snapshot.players[].hasSubmitted (DB → snapshot).
   const hasSubmitted = viewer?.hasSubmitted ?? false;
 
+  // Current player avatar for map marker
+  const localPlayerAvatarUrl = snapshot?.players?.find(p => p.playerId === playerId)?.avatarUrl ?? null;
+
   const handleSetLocation = useCallback((location: { lat: number; lng: number }) => {
     guessLatRef.current = location.lat;
     guessLngRef.current = location.lng;
@@ -499,7 +502,7 @@ export default function CompeteGamePage() {
           </>
         ) : null}
 
-        {snapshot.status === "ROUND_ACTIVE" ? (
+  {snapshot.status === "ROUND_ACTIVE" ? (
           <RoundActiveSection
             snapshot={snapshot}
             playerId={playerId}
@@ -514,8 +517,11 @@ export default function CompeteGamePage() {
             onSetYear={handleSetYear}
             onSubmit={handleSubmitGuess}
             onOpenHints={() => setHintModalOpen(true)}
+            hintsUsedCount={hintResult.purchasedIds.length}
+            hintsTotalCount={(snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []).length || 14}
             guessYearRef={guessYearRef}
             viewer={viewer}
+            localPlayerAvatarUrl={localPlayerAvatarUrl}
           />
         ) : null}
 
