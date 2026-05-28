@@ -147,7 +147,10 @@ export default function SessionComplete({
               wonRounds,
             };
           })
-          .sort((a, b) => b.totalScore - a.totalScore);
+          .sort((a, b) => {
+            if (b.avgAccuracy !== a.avgAccuracy) return b.avgAccuracy - a.avgAccuracy;
+            return b.totalScore - a.totalScore;
+          });
 
         return (
           <>
@@ -665,19 +668,35 @@ export default function SessionComplete({
                       key={player.playerId}
                       className="gh-final-rank-row"
                       style={{
-                        borderLeftColor: index === 0 ? "#f59e0b" : "transparent",
+                        borderLeftColor: "transparent",
                       }}
                     >
                       <div className="gh-final-rank-number">{index + 1}</div>
-                      <div className="gh-final-rank-avatar">
-                        {playerData?.avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={playerData.avatarUrl}
-                            alt={displayName}
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                          />
-                        ) : firstLetter}
+                      <div style={{ position: "relative", display: "inline-block", flexShrink: 0 }}>
+                        <div className="gh-final-rank-avatar">
+                          {playerData?.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={playerData.avatarUrl}
+                              alt={displayName}
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                          ) : firstLetter}
+                        </div>
+                        {isCurrentPlayer && (
+                          <span style={{
+                            position: "absolute",
+                            bottom: 1,
+                            right: 1,
+                            width: 9,
+                            height: 9,
+                            borderRadius: "50%",
+                            backgroundColor: "#f59e0b",
+                            border: "1.5px solid #111",
+                            display: "block",
+                            zIndex: 2,
+                          }} />
+                        )}
                       </div>
                       <div className="gh-final-rank-main">
                         <div className="gh-final-rank-name-line">

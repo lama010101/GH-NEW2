@@ -1538,3 +1538,4 @@ MP-FIX-AUTH-MODAL-001 | Fix Google redirectTo hardcoded origin + email reload af
 MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIdentity | src/core/identity.ts | done
 
 | MP-FIX-WHEN-SCALE-001 | src/components/compete/WhenCard.tsx | Fixed correct year marker to use computed position (correctXPercent) instead of hardcoded 50% |
+| MP-FIX-LEADERBOARD-SORT-001 | Fix leaderboard sort (accuracy% desc, XP tiebreaker) + replace rank-1 border with current-user avatar dot | SessionComplete.tsx | DONE |
