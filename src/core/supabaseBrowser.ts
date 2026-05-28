@@ -15,5 +15,10 @@ if (!SUPABASE_ANON_KEY) {
 
 export const supabaseBrowser: SupabaseClient = createBrowserClient(
   SUPABASE_URL,
-  SUPABASE_ANON_KEY
+  SUPABASE_ANON_KEY,
+  {
+    auth: {
+      flowType: 'pkce',
+    },
+  }
 );

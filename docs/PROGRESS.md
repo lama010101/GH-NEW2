@@ -1534,3 +1534,4 @@ MP-FIX-RESULTS-MAP-002 | src/components/StaticResultMap.tsx, src/components/comp
 | MP-SEC-AUTH-001 | Add PartyKit secret guard to /complete route | complete/route.ts | Done |
 | MP-SEC-AUTH-002 | Add PartyKit secret guard to /leave route | leave/route.ts | Done |
 MP-FIX-AUTH-MODAL-001 | Fix Google redirectTo hardcoded origin + email reload after sign-in | src/components/AuthModal.tsx | done
+| MP-FIX-AUTH-PKCE-001 | Add flowType pkce to createBrowserClient | src/core/supabaseBrowser.ts | done |
