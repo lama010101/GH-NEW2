@@ -1,4 +1,7 @@
+'use client'
+
 import { useState, useEffect } from 'react'
+import styles from '@/app/home.module.css'
 
 export function DailyPanel({ onPlay }: { onPlay: () => void }) {
   const getCountdown = () => {
@@ -17,14 +20,25 @@ export function DailyPanel({ onPlay }: { onPlay: () => void }) {
     return () => clearInterval(t)
   }, [])
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', display: 'inline-block', animation: 'pulse 1.5s infinite', flexShrink: 0 }} />
-        Today&apos;s challenge resets in <strong style={{ color: '#fca5a5' }}>{countdown ?? "--h --m"}</strong>
+    <>
+      {/* Middle sub-panel */}
+      <div className={styles['card-sub-panel']}>
+        <div className={styles['card-sub-panel-row']}>
+          <span style={{ fontSize: 20 }}>🔥</span>
+          <span className={styles['card-sub-panel-text']}>Start your streak today!</span>
+        </div>
+        <div className={styles['card-sub-panel-muted']}>
+          New challenge in <span style={{ color: '#fb923c' }}>🕐</span> {countdown ?? "--h --m"}
+        </div>
       </div>
-      <button onClick={onPlay} style={{ width: '100%', maxWidth: 320, padding: '12px 32px', background: 'linear-gradient(135deg,#991b1b,#dc2626)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-        Play Today&apos;s Challenge
+
+      {/* CTA button */}
+      <button
+        onClick={onPlay}
+        className={`${styles['card-cta-btn']} ${styles['card-cta-btn-white-red']}`}
+      >
+        PLAY NOW
       </button>
-    </div>
+    </>
   )
 }

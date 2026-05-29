@@ -1,3 +1,6 @@
+// LEGACY COMPONENT - Not used in vertical card layout (MP-UI-HOME-008)
+// Kept for reference only
+
 import Image from 'next/image'
 import { CARD_GRADIENT, CARD_NAME, CARD_SUB, type Mode } from './types'
 import styles from '@/app/home.module.css'

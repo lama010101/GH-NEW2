@@ -34,6 +34,7 @@ export async function POST(
     return NextResponse.json(snapshot);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to start compete session";
+    console.error(`[START_GAME_ERROR] ${message}`, error);
     const status = message.includes("Session not found") ? 404 : 400;
     return NextResponse.json({ error: message }, { status });
   }

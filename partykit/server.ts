@@ -645,10 +645,15 @@ export default class GameServer {
         autoAdvanceSec > 0
           ? new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs
           : undefined;
+      const allPlayersReady =
+        this.snapshot.players.length >= 2 &&
+        this.snapshot.players.every(p => p.ready === true);
+
       snapshotWithReadyState = {
         ...this.snapshot,
         readyForNext: [...this.readyForNext],
-        resultPhaseEndsAt
+        resultPhaseEndsAt,
+        allPlayersReady
       };
     }
     // Add readyForNext and resultPhaseEndsAt to snapshot before broadcasting
@@ -956,6 +961,7 @@ export default class GameServer {
           }
           this.startInFlight = true;
           try {
+            const hostPlayerId = this.connections.get(sender.id);
             const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/start`;
             const response = await fetch(apiUrl, {
               method: "POST",
@@ -964,7 +970,7 @@ export default class GameServer {
                 "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
               },
               body: JSON.stringify({
-                playerId: data.playerId
+                playerId: hostPlayerId
               })
             });
             if (!response.ok) {
