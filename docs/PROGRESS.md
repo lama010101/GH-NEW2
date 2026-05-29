@@ -1601,3 +1601,4 @@ MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIde
 | MP-FIX-MINICARDS-003d | Scale labels fontSize 11→8 in YearPicker | YearPicker.tsx | DONE | 2026-05-29 |
 | MP-FEAT-COMPETE-INVITES-001 | Compete card — pending invitations in sub-panel | DONE | 2026-05-29 |
 | 2026-05-29 | MP-UI-HOME-018 | Swap Compete card button order | DONE | Swapped button order in CompetePanel: JOIN GAME (outline) on left, CREATE GAME (white/blue) on right. Validation: tsc --noEmit exits 0. |
+| MP-FIX-COMPETE-INVITES-REALTIME-001 | Compete card invitations — real-time subscription | DONE | 2026-05-29 |

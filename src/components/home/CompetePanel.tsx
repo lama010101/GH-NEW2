@@ -25,55 +25,71 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   }>>([])
   const [invitesLoading, setInvitesLoading] = useState(true)
 
+  const fetchInvites = async () => {
+    try {
+      const { data: invitations, error: inviteError } = await supabaseBrowser
+        .from('game_invitations')
+        .select('id, game_id, inviter_id, created_at, expires_at')
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (inviteError) throw inviteError
+
+      if (!invitations || invitations.length === 0) {
+        setInvites([])
+        setInvitesLoading(false)
+        return
+      }
+
+      const invitesWithNames = await Promise.all(
+        invitations.map(async (invite) => {
+          const { data: profile } = await supabaseBrowser
+            .from('profiles')
+            .select('display_name, avatar_url')
+            .eq('id', invite.inviter_id)
+            .single()
+
+          return {
+            ...invite,
+            inviter_name: profile?.display_name || 'Unknown',
+            avatar_url: profile?.avatar_url,
+          }
+        })
+      )
+
+      setInvites(invitesWithNames)
+    } catch (e) {
+      console.error('Error fetching invitations:', e)
+    } finally {
+      setInvitesLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!playerId) {
       setInvitesLoading(false)
       return
     }
 
-    const fetchInvites = async () => {
-      try {
-        const { data: invitations, error: inviteError } = await supabaseBrowser
-          .from('game_invitations')
-          .select('id, game_id, inviter_id, created_at, expires_at')
-          .eq('status', 'pending')
-          .gt('expires_at', new Date().toISOString())
-          .order('created_at', { ascending: false })
-          .limit(5)
-
-        if (inviteError) throw inviteError
-
-        if (!invitations || invitations.length === 0) {
-          setInvites([])
-          setInvitesLoading(false)
-          return
-        }
-
-        const invitesWithNames = await Promise.all(
-          invitations.map(async (invite) => {
-            const { data: profile } = await supabaseBrowser
-              .from('profiles')
-              .select('display_name, avatar_url')
-              .eq('id', invite.inviter_id)
-              .single()
-
-            return {
-              ...invite,
-              inviter_name: profile?.display_name || 'Unknown',
-              avatar_url: profile?.avatar_url,
-            }
-          })
-        )
-
-        setInvites(invitesWithNames)
-      } catch (e) {
-        console.error('Error fetching invitations:', e)
-      } finally {
-        setInvitesLoading(false)
-      }
-    }
-
     fetchInvites()
+
+    const channel = supabaseBrowser
+      .channel('pending-invites-' + playerId)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'game_invitations',
+          filter: `invitee_id=eq.${playerId}`,
+        },
+        () => { fetchInvites() }
+      )
+      .subscribe()
+
+    return () => { supabaseBrowser.removeChannel(channel) }
   }, [playerId])
 
   const handleCreate = async () => {
