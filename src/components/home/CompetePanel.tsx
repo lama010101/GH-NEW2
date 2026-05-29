@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styles from '@/app/home.module.css'
+import { supabaseBrowser } from '@/core/supabaseBrowser'
 
 export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: {
   onLobby: (gameId: string) => void
@@ -13,6 +14,67 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string|null>(null)
+  const [invites, setInvites] = useState<Array<{
+    id: string
+    game_id: string
+    inviter_id: string
+    inviter_name: string
+    avatar_url?: string
+    created_at: string
+    expires_at: string
+  }>>([])
+  const [invitesLoading, setInvitesLoading] = useState(true)
+
+  useEffect(() => {
+    if (!playerId) {
+      setInvitesLoading(false)
+      return
+    }
+
+    const fetchInvites = async () => {
+      try {
+        const { data: invitations, error: inviteError } = await supabaseBrowser
+          .from('game_invitations')
+          .select('id, game_id, inviter_id, created_at, expires_at')
+          .eq('status', 'pending')
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false })
+          .limit(5)
+
+        if (inviteError) throw inviteError
+
+        if (!invitations || invitations.length === 0) {
+          setInvites([])
+          setInvitesLoading(false)
+          return
+        }
+
+        const invitesWithNames = await Promise.all(
+          invitations.map(async (invite) => {
+            const { data: profile } = await supabaseBrowser
+              .from('profiles')
+              .select('display_name, avatar_url')
+              .eq('id', invite.inviter_id)
+              .single()
+
+            return {
+              ...invite,
+              inviter_name: profile?.display_name || 'Unknown',
+              avatar_url: profile?.avatar_url,
+            }
+          })
+        )
+
+        setInvites(invitesWithNames)
+      } catch (e) {
+        console.error('Error fetching invitations:', e)
+      } finally {
+        setInvitesLoading(false)
+      }
+    }
+
+    fetchInvites()
+  }, [playerId])
 
   const handleCreate = async () => {
     if (!playerId) { onRequireAuth(); return }
@@ -71,19 +133,88 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     handleJoin()
   }
 
+  const handleAccept = async (inviteId: string, gameId: string) => {
+    await supabaseBrowser
+      .from('game_invitations')
+      .update({ status: 'accepted' })
+      .eq('id', inviteId)
+    onLobby(gameId)
+  }
+
+  const handleDecline = async (inviteId: string) => {
+    await supabaseBrowser
+      .from('game_invitations')
+      .update({ status: 'declined' })
+      .eq('id', inviteId)
+    setInvites(prev => prev.filter(i => i.id !== inviteId))
+  }
+
   return (
     <>
       {/* Middle sub-panel */}
       <div className={styles['card-sub-panel']}>
-        <div className={styles['card-sub-panel-row-stack']}>
-          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <CrossedSwordsIcon />
+        {invitesLoading ? (
+          <div className={styles['card-sub-panel-row-stack']}>
+            <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#00adc1', animation: 'spin 1s linear infinite' }} />
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Looking for invitations…</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span className={styles['card-sub-panel-text']}>No games yet</span>
-            <span className={styles['card-sub-panel-muted']}>Challenge others or join a game to get started!</span>
+        ) : invites.length === 0 ? (
+          <div className={styles['card-sub-panel-row-stack']}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <CrossedSwordsIcon />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span className={styles['card-sub-panel-text']}>No games yet</span>
+              <span className={styles['card-sub-panel-muted']}>Challenge others or join a game to get started!</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {invites.slice(0, 3).map((invite, index) => (
+              <div key={invite.id}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+                  {invite.avatar_url ? (
+                    <img
+                      src={invite.avatar_url}
+                      alt=""
+                      style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,173,193,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>
+                      {invite.inviter_name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ color: 'white', fontSize: '13px', fontWeight: 'bold' }}>{invite.inviter_name}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>invited you to play</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => handleAccept(invite.id, invite.game_id)}
+                      style={{ background: '#00adc1', color: 'white', fontSize: '11px', padding: '5px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
+                    >
+                      Join
+                    </button>
+                    <button
+                      onClick={() => handleDecline(invite.id)}
+                      style={{ background: 'transparent', color: 'white', fontSize: '11px', padding: '5px 8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+                {index < Math.min(invites.length, 3) - 1 && (
+                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+                )}
+              </div>
+            ))}
+            {invites.length > 3 && (
+              <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '11px', paddingTop: '8px' }}>
+                + {invites.length - 3} more invitations
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Join code input (shown when JOIN GAME clicked) */}
@@ -101,18 +232,18 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       {/* CTA buttons */}
       <div className={styles['card-cta-row']}>
         <button
-          onClick={handleCreate}
-          disabled={loading}
-          className={`${styles['card-cta-btn']} ${styles['card-cta-btn-blue']}`}
-        >
-          <PlusIcon /> CREATE GAME
-        </button>
-        <button
           onClick={handleJoinClick}
           disabled={loading || (showJoinInput && !code)}
           className={`${styles['card-cta-btn']} ${styles['card-cta-btn-outline']}`}
         >
           {showJoinInput ? <><PeopleIcon /> GO TO LOBBY</> : <><PeopleIcon /> JOIN GAME</>}
+        </button>
+        <button
+          onClick={handleCreate}
+          disabled={loading}
+          className={`${styles['card-cta-btn']} ${styles['card-cta-btn-blue']}`}
+        >
+          <PlusIcon /> CREATE GAME
         </button>
       </div>
 
