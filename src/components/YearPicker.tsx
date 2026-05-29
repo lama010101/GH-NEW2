@@ -284,7 +284,7 @@ export const YearPicker = forwardRef<YearPickerHandle, YearPickerProps>(
       value,
       onChange,
       defaultScale,
-      onScaleChange: _onScaleChange,
+      onScaleChange: _onScaleChange, // eslint-disable-line @typescript-eslint/no-unused-vars
       min = DEFAULT_MIN,
       max = DEFAULT_MAX,
       className,
@@ -364,6 +364,7 @@ export const YearPicker = forwardRef<YearPickerHandle, YearPickerProps>(
         setSelYear(derived.selYear);
         onChangeRef.current(derived.selYear);
       },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       setScale: (_scale: YearPickerScale) => { /* no-op: all tiers always visible */ },
     }), [min, max, deriveState]);
 

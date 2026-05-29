@@ -20,6 +20,33 @@ interface LobbySectionProps {
   onKickPlayer?: (targetPlayerId: string) => void;
 }
 
+type LastInvitedPlayer = { id: string; displayName: string; avatarUrl: string | null };
+type PendingInvite = { id: string; displayName: string; avatarUrl: string | null };
+
+const LS_KEY = "gh_last_invited_players";
+const LS_MAX = 10;
+
+function readLastInvited(): LastInvitedPlayer[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? (JSON.parse(raw) as LastInvitedPlayer[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLastInvited(player: LastInvitedPlayer): void {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = readLastInvited().filter((p) => p.id !== player.id);
+    const updated = [player, ...existing].slice(0, LS_MAX);
+    localStorage.setItem(LS_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+}
+
 function formatTimerDisplay(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
@@ -74,81 +101,64 @@ export default function LobbySection({
     setResultsTimerValue(snapshot.config.resultsAutoAdvanceSec);
   }, [snapshot.config.resultsAutoAdvanceSec]);
 
-  /* ── Invite panel: friend search ── */
-  const [inviteExpanded, setInviteExpanded] = useState(true);
-  const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
-  const [friendQuery, setFriendQuery] = useState('');
-  const [friendResults, setFriendResults] = useState<Array<{id: string; display_name: string; avatar_url: string | null}>>([]);
-  const [friendSearchLoading, setFriendSearchLoading] = useState(false);
-  const [friendSearchError, setFriendSearchError] = useState(false);
+  /* ── Invite panel ── */
+  const [linkCopiedToast, setLinkCopiedToast] = useState(false);
+  const [lastInvited, setLastInvited] = useState<LastInvitedPlayer[]>([]);
   const [inviteStates, setInviteStates] = useState<Record<string, 'idle' | 'pending' | 'sent' | 'error'>>({});
-  const friendSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Friend search debounce
+  // Load last-invited from localStorage on mount
   useEffect(() => {
-    if (friendSearchDebounceRef.current) {
-      clearTimeout(friendSearchDebounceRef.current);
-    }
-    if (friendQuery.length < 2) {
-      setFriendResults([]);
-      setFriendSearchError(false);
-      return;
-    }
-    setFriendSearchLoading(true);
-    setFriendSearchError(false);
-    friendSearchDebounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/friends/search?q=${encodeURIComponent(friendQuery)}`);
-        const data = await res.json();
-        if (res.ok) {
-          setFriendResults(data.players ?? []);
-        } else {
-          setFriendSearchError(true);
-        }
-      } catch {
-        setFriendSearchError(true);
-      } finally {
-        setFriendSearchLoading(false);
-      }
-    }, 400);
-    return () => {
-      if (friendSearchDebounceRef.current) {
-        clearTimeout(friendSearchDebounceRef.current);
-      }
-    };
-  }, [friendQuery]);
+    setLastInvited(readLastInvited());
+  }, []);
 
-  const handleSendInvite = async (playerId: string) => {
-    setInviteStates(prev => ({ ...prev, [playerId]: 'pending' }));
+  /* ── Pending invites (invited but not yet joined) ── */
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+
+  // Remove pending invites for players who have now joined
+  useEffect(() => {
+    const joinedIds = new Set(snapshot.players.map((p) => p.playerId));
+    setPendingInvites((prev) => prev.filter((p) => !joinedIds.has(p.id)));
+  }, [snapshot.players]);
+
+  const handleSendInvite = async (player: LastInvitedPlayer) => {
+    setInviteStates(prev => ({ ...prev, [player.id]: 'pending' }));
     try {
       const res = await fetch('/api/invitations/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game_id: snapshot.gameId, invitee_id: playerId }),
+        body: JSON.stringify({ game_id: snapshot.gameId, invitee_id: player.id }),
       });
       if (res.ok) {
-        setInviteStates(prev => ({ ...prev, [playerId]: 'sent' }));
-      } else {
-        setInviteStates(prev => ({ ...prev, [playerId]: 'error' }));
+        setInviteStates(prev => ({ ...prev, [player.id]: 'sent' }));
+        writeLastInvited(player);
+        setLastInvited(readLastInvited());
+        setPendingInvites((prev) => {
+          if (prev.some((p) => p.id === player.id)) return prev;
+          return [...prev, { id: player.id, displayName: player.displayName, avatarUrl: player.avatarUrl }];
+        });
         setTimeout(() => {
-          setInviteStates(prev => ({ ...prev, [playerId]: 'idle' }));
-        }, 2000);
+          setInviteStates(prev => ({ ...prev, [player.id]: 'idle' }));
+        }, 3000);
+      } else {
+        setInviteStates(prev => ({ ...prev, [player.id]: 'error' }));
+        setTimeout(() => {
+          setInviteStates(prev => ({ ...prev, [player.id]: 'idle' }));
+        }, 3000);
       }
     } catch {
-      setInviteStates(prev => ({ ...prev, [playerId]: 'error' }));
+      setInviteStates(prev => ({ ...prev, [player.id]: 'error' }));
       setTimeout(() => {
-        setInviteStates(prev => ({ ...prev, [playerId]: 'idle' }));
-      }, 2000);
+        setInviteStates(prev => ({ ...prev, [player.id]: 'idle' }));
+      }, 3000);
     }
   };
 
-  const inviteLink = typeof window !== "undefined" ? window.location.href : "";
-  const truncatedInviteLink = inviteLink.length > 32 ? inviteLink.slice(0, 32) + "…" : inviteLink;
-  const handleCopy = async (text: string, label: string) => {
+  const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopiedLabel(label);
-      setTimeout(() => setCopiedLabel(null), 1500);
+      const link = typeof window !== "undefined" ? window.location.href : "";
+      await navigator.clipboard.writeText(link);
+      setLinkCopiedToast(true);
+      setTimeout(() => setLinkCopiedToast(false), 2000);
     } catch {
       // ignore
     }
@@ -163,10 +173,26 @@ export default function LobbySection({
   const activePlayers   = snapshot.players.filter((p) => p.leftAt === null);
   const totalPlayers    = activePlayers.length;
   const readyCount      = activePlayers.filter((p) => p.ready).length;
-  const allReady        = snapshot.allPlayersReady;
-  const isHost          = viewer?.isHost ?? false;
   const isReady         = viewer?.ready ?? false;
-  const canStart        = isHost && allReady && !busy;
+  const isHost          = viewer?.isHost ?? false;
+
+  /* ── Auto-start: fire onStartGame once when all players are ready and >= 2 players ── */
+  const autoStartFiredRef = useRef(false);
+  useEffect(() => {
+    if (
+      !autoStartFiredRef.current &&
+      snapshot.players.length >= 2 &&
+      snapshot.allPlayersReady &&
+      !busy
+    ) {
+      autoStartFiredRef.current = true;
+      onStartGame();
+    }
+    // Reset guard if conditions no longer met (player un-readied)
+    if (!snapshot.allPlayersReady) {
+      autoStartFiredRef.current = false;
+    }
+  }, [snapshot.allPlayersReady, snapshot.players.length, busy, onStartGame]);
 
   console.log("[PLAYERS_RENDER]", {
     totalPlayers: snapshot.players?.length ?? null,
@@ -203,12 +229,128 @@ export default function LobbySection({
 
       {/* Main Grid */}
       <div className={styles['lobby-grid']}>
-        {/* Settings Card */}
+
+        {/* ── Invite + Roster Card (merged) ── */}
+        <div className={`card ${styles['lobby-card']} ${styles['lobby-roster-card']}`}>
+
+          {/* Sub-section A: Invite Players */}
+          <div className={styles['lobby-subsection']}>
+            <div className={styles['lobby-subsection-header']}>
+              <span className={styles['lobby-subsection-title']}>Invite Players</span>
+              <button
+                type="button"
+                className={styles['lobbyLinkBtn']}
+                onClick={handleCopyLink}
+              >
+                Invite via link or code
+              </button>
+            </div>
+            {linkCopiedToast && (
+              <span className={styles['lobbyCopiedToast']}>Copied!</span>
+            )}
+            <div className={styles['lobbyRail']}>
+              {lastInvited.length === 0 ? (
+                <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
+                  <span className={styles['lobbyEmptyRailText']}>No recent invites</span>
+                </div>
+              ) : (
+                lastInvited.map((player) => {
+                  const isInLobby = snapshot.players.some((p) => p.playerId === player.id);
+                  const inviteState = inviteStates[player.id] ?? 'idle';
+                  return (
+                    <div key={player.id} className={styles['lobbyPlayerCard']}>
+                      <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                      <span className={styles['lobbyPlayerCardName']} style={getUsernameGradientStyle(player.id)}>
+                        {player.displayName}
+                      </span>
+                      {isInLobby ? (
+                        <span className={styles['lobbyStatusPillGreen']}>In lobby</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className={styles['lobbyInviteBtn']}
+                          onClick={() => handleSendInvite(player)}
+                          disabled={inviteState !== 'idle'}
+                        >
+                          {inviteState === 'pending'
+                            ? '…'
+                            : inviteState === 'sent'
+                            ? 'Sent ✓'
+                            : inviteState === 'error'
+                            ? 'Failed'
+                            : 'Invite'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Sub-section B: Players roster */}
+          <div className={styles['lobby-subsection']}>
+            <div className={styles['lobby-subsection-header']}>
+              <span className={styles['lobby-subsection-title']}>
+                Players ({totalPlayers}/{totalPlayers + pendingInvites.length})
+              </span>
+              <span className={styles['lobbyReadyIndicator']}>
+                <span
+                  className={styles['lobbyReadyDot']}
+                  style={{ background: readyCount > 0 ? "#4ade80" : "rgba(255,255,255,0.25)" }}
+                />
+                {readyCount} ready
+              </span>
+            </div>
+            <div className={styles['lobbyRail']}>
+              {activePlayers.map((p) => (
+                <div key={p.playerId} className={styles['lobbyPlayerCard']}>
+                  {p.isHost && <span className={styles['lobbyCrownIcon']}>♛</span>}
+                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} size={40} />
+                  <span className={styles['lobbyPlayerCardName']} style={getUsernameGradientStyle(p.playerId)}>
+                    {p.displayName || p.playerId.slice(0, 8)}
+                  </span>
+                  <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
+                    {p.ready ? "READY" : "NOT READY"}
+                  </span>
+                  {isHost && !p.isHost && (
+                    <button
+                      type="button"
+                      className={styles['lobby-kick-btn']}
+                      onClick={() => onKickPlayer?.(p.playerId)}
+                      disabled={busy}
+                      title="Kick player"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              {pendingInvites.map((p) => (
+                <div key={p.id} className={styles['lobbyPlayerCard']}>
+                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
+                  <span className={styles['lobbyPlayerCardName']}>
+                    {p.displayName}
+                  </span>
+                  <span className={styles['lobbyStatusPillAmber']}>PENDING</span>
+                </div>
+              ))}
+              {activePlayers.length === 0 && pendingInvites.length === 0 && (
+                <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
+                  <span className={styles['lobbyEmptyRailText']}>No players yet</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Game Settings Card ── */}
         <div className={`card ${styles['lobby-card']} ${styles['lobby-settings']}`}>
           <div className={styles['lobby-card-header']}>
             <span className={styles['lobby-accent-bar']} />
             <h3>Game Settings</h3>
           </div>
+          <span className={styles['lobbyRelaxLabel']}>RELAX MODE</span>
           <div className={styles['lobby-settings-grid']}>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
               <span className={styles['lobby-setting-label']}>Timer</span>
@@ -314,17 +456,11 @@ export default function LobbySection({
                       }, 400);
                     }}
                     disabled={busy}
-                    className={styles['lobbyToggleBtn']}
-                    style={{
-                      background: resultsTimerValue > 0 ? "#22d3ee" : "rgba(255,255,255,0.15)",
-                      cursor: busy ? "not-allowed" : "pointer",
-                    }}
+                    className={resultsTimerValue > 0 ? styles['lobbyToggleBtnOn'] : styles['lobbyToggleBtnOff']}
                   >
                     <span
                       className={styles['lobbyToggleKnob']}
-                      style={{
-                        left: resultsTimerValue > 0 ? 22 : 2,
-                      }}
+                      style={{ left: resultsTimerValue > 0 ? 22 : 2 }}
                     />
                   </button>
                   {resultsTimerValue > 0 ? (
@@ -365,192 +501,22 @@ export default function LobbySection({
           </div>
         </div>
 
-        {/* Players Card */}
-        <div className={`card ${styles['lobby-card']} ${styles['lobby-players']}`}>
-          <div className={styles['lobby-card-header']}>
-            <span className={styles['lobby-accent-bar']} />
-            <h3>Players ({totalPlayers})</h3>
-          </div>
-          <div className={styles['lobby-player-list']}>
-            {activePlayers.length === 0 ? (
-              <p className="small">No players yet.</p>
-            ) : (
-              activePlayers.map((p) => (
-                <div
-                  key={p.playerId}
-                  className={styles['lobby-player-row']}
-                >
-                  <span className={styles['lobby-player-info']}>
-                    <PlayerAvatar
-                      avatarUrl={p.avatarUrl}
-                      displayName={p.displayName || p.playerId.slice(0, 8)}
-                      size={32}
-                    />
-                    <span style={getUsernameGradientStyle(p.playerId)}>
-                      {p.displayName || p.playerId.slice(0, 8)}
-                    </span>
-                  </span>
-                  <span className={styles['lobby-player-badges']}>
-                    {p.isHost ? <span className={styles['lobby-host-badge']}>Host</span> : null}
-                    <span className={`${styles['lobby-ready-badge']}${p.ready ? ' ' + styles['ready'] : ''}`}>
-                      {p.ready ? "Ready" : "Not ready"}
-                    </span>
-                    {isHost && !p.isHost ? (
-                      <button
-                        type="button"
-                        className={styles['lobby-kick-btn']}
-                        onClick={() => onKickPlayer?.(p.playerId)}
-                        disabled={busy}
-                        title="Kick player"
-                      >
-                        ×
-                      </button>
-                    ) : null}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Invite Card */}
-        <div className={`card ${styles['lobby-card']} ${styles['lobby-invite']}`}>
-          <div className={styles['lobby-card-header']}>
-            <span className={styles['lobby-accent-bar']} />
-            <h3>Invite</h3>
-            <button
-              type="button"
-              className={styles['lobby-invite-toggle']}
-              onClick={() => setInviteExpanded((v) => !v)}
-              aria-label={inviteExpanded ? "Collapse invite panel" : "Expand invite panel"}
-            >
-              {inviteExpanded ? "−" : "+"}
-            </button>
-          </div>
-          <div className={`${styles['lobby-invite-body']}${!inviteExpanded ? ' ' + styles['collapsed'] : ''}`}>
-            {/* Invite Friends - search */}
-            <div className={styles['lobby-invite-section']}>
-              <span className={styles['lobby-invite-label']}>INVITE FRIENDS</span>
-              <input
-                type="text"
-                className={styles['friendSearchInput']}
-                placeholder="Search players..."
-                value={friendQuery}
-                onChange={(e) => setFriendQuery(e.target.value)}
-              />
-              {friendSearchLoading && (
-                <div className={styles['friendSearchStatus']}>Searching...</div>
-              )}
-              {friendSearchError && (
-                <div className={styles['friendSearchStatus']}>Search failed</div>
-              )}
-              <div className={styles['lobby-friend-list']}>
-                {friendQuery.length < 2 ? (
-                  <div className={`${styles['lobby-friend-empty']} ${styles['lobbyEmptyInvite']}`}>
-                    Type to search players
-                  </div>
-                ) : friendResults.length === 0 && !friendSearchLoading && !friendSearchError ? (
-                  <div className={`${styles['lobby-friend-empty']} ${styles['lobbyEmptyInvite']}`}>
-                    No players found
-                  </div>
-                ) : (
-                  friendResults.map((player) => {
-                    const isInLobby = snapshot.players.some((p) => p.playerId === player.id);
-                    const inviteState = inviteStates[player.id] || 'idle';
-                    return (
-                      <div key={player.id} className={styles['lobby-friend-row']}>
-                        <span className={styles['lobby-friend-info']}>
-                          <PlayerAvatar
-                            avatarUrl={player.avatar_url}
-                            displayName={player.display_name}
-                            size={28}
-                          />
-                          <span style={getUsernameGradientStyle(player.id)}>
-                            {player.display_name}
-                          </span>
-                        </span>
-                        {isInLobby ? (
-                          <span className={styles['inLobbyPill']}>In lobby</span>
-                        ) : (
-                          <button
-                            type="button"
-                            className={`button secondary ${styles['lobbyBtnSm']}`}
-                            onClick={() => handleSendInvite(player.id)}
-                            disabled={inviteState !== 'idle'}
-                          >
-                            {inviteState === 'pending' ? '...' : inviteState === 'sent' ? 'Sent ✓' : inviteState === 'error' ? 'Failed' : 'Invite'}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Room code */}
-            <div className={styles['lobby-invite-section']}>
-              <span className={styles['lobby-invite-label']}>ROOM CODE</span>
-              <div className={styles['lobby-room-code-row']}>
-                <code className={styles['lobby-room-code']}>{roomCode}</code>
-                <button
-                  type="button"
-                  className={`button secondary ${styles['lobbyBtnMd']}`}
-                  onClick={() => handleCopy(roomCode, "Room code copied!")}
-                >
-                  {copiedLabel === "Room code copied!" ? "Copied!" : "Copy"}
-                </button>
-              </div>
-            </div>
-
-            {/* Invite link */}
-            <div className={styles['lobby-invite-section']}>
-              <span className={styles['lobby-invite-label']}>INVITE LINK</span>
-              <div className={styles['lobby-room-code-row']}>
-                <code className={`${styles['lobby-room-code']} ${styles['lobbyCode']}`}>
-                  {truncatedInviteLink}
-                </code>
-                <button
-                  type="button"
-                  className={`button secondary ${styles['lobbyBtnMd']}`}
-                  onClick={() => handleCopy(inviteLink, "Link copied!")}
-                >
-                  {copiedLabel === "Link copied!" ? "Copied!" : "Copy"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Bottom Dock */}
+      {/* Bottom Dock — single READY CTA */}
       <div className={styles['lobby-dock']}>
         <div className={styles['lobby-dock-content']}>
+          <button
+            type="button"
+            className={isReady ? styles['lobbyReadyBtnOff'] : styles['lobbyReadyBtnOn']}
+            onClick={onToggleReady}
+            disabled={busy}
+          >
+            {isReady ? "NOT READY" : "READY"}
+          </button>
           <span className={styles['lobby-ready-count']}>
-            {readyCount} / {totalPlayers} Ready
+            ({readyCount}/{totalPlayers} players ready)
           </span>
-          <div className={styles['lobby-dock-actions']}>
-            <button
-              type="button"
-              className="button secondary"
-              onClick={onToggleReady}
-              disabled={busy || isReady}
-            >
-              {isReady ? "Ready ✓" : "Ready Up"}
-            </button>
-            {isHost ? (
-              <button
-                type="button"
-                className="button"
-                onClick={onStartGame}
-                disabled={!canStart}
-              >
-                {busy ? "Starting..." : "Start Game"}
-              </button>
-            ) : (
-              <span className="small">{busy ? "Starting..." : "Waiting for host…"}</span>
-            )}
-          </div>
         </div>
       </div>
 

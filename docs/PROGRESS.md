@@ -1572,3 +1572,5 @@ MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIde
 | MP-FIX-ROUNDACTIVE-008 | Follow-up: fullscreen avatar, card separation, year input select, CSS aspect-ratio | RoundActiveSection.tsx + RoundActiveSection.module.css | DONE |
 | MP-FIX-ROUNDACTIVE-008 | Map height flex, opaque backgrounds on labels and rails | RoundActiveSection.tsx + module.css | DONE |
 | MP-FIX-ROUNDACTIVE-008 | Map height flex, opaque backgrounds on labels and rails | RoundActiveSection.tsx + module.css | DONE |
+| MP-FIX-BUILD-001 | Fix ESLint unused vars blocking build | DONE | 2026-05-29 |
+| MP-UI-LOBBY-006 | Full lobby UIX redesign — horizontal roster rail, pending invites, single Ready CTA | LobbySection.tsx + LobbySection.module.css | DONE | 2026-05-29 | Merged Invite+Players into one card with horizontal rails; localStorage last-invited; pending invite state; auto-start on allPlayersReady+>=2; single READY/NOT READY dock button; RELAX MODE static label; friend search removed; tsc --noEmit zero errors |
