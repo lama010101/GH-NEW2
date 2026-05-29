@@ -22,6 +22,7 @@ interface LobbySectionProps {
 
 type LastInvitedPlayer = { id: string; displayName: string; avatarUrl: string | null };
 type PendingInvite = { id: string; displayName: string; avatarUrl: string | null };
+type PlayerPoolEntry = { id: string; displayName: string; avatarUrl: string | null };
 
 const LS_KEY = "gh_last_invited_players";
 const LS_MAX = 10;
@@ -102,13 +103,41 @@ export default function LobbySection({
   }, [snapshot.config.resultsAutoAdvanceSec]);
 
   /* ── Invite panel ── */
-  const [linkCopiedToast, setLinkCopiedToast] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [lastInvited, setLastInvited] = useState<LastInvitedPlayer[]>([]);
   const [inviteStates, setInviteStates] = useState<Record<string, 'idle' | 'pending' | 'sent' | 'error'>>({});
+  const [playerPool, setPlayerPool] = useState<PlayerPoolEntry[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAllModal, setShowAllModal] = useState(false);
 
   // Load last-invited from localStorage on mount
   useEffect(() => {
     setLastInvited(readLastInvited());
+  }, []);
+
+  // Fetch player pool on mount (parallel: friends/search?q=a + players/recent)
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPool() {
+      const [friendsRes, recentRes] = await Promise.allSettled([
+        fetch('/api/friends/search?q=a').then((r) => r.ok ? r.json() : { players: [] }),
+        fetch('/api/players/recent').then((r) => r.ok ? r.json() : { players: [] }),
+      ]);
+      if (cancelled) return;
+      const friendsPlayers: PlayerPoolEntry[] =
+        friendsRes.status === 'fulfilled' ? (friendsRes.value.players ?? []).map((p: { id: string; display_name: string; avatar_url: string | null }) => ({ id: p.id, displayName: p.display_name, avatarUrl: p.avatar_url })) : [];
+      const recentPlayers: PlayerPoolEntry[] =
+        recentRes.status === 'fulfilled' ? (recentRes.value.players ?? []).map((p: { id: string; display_name: string; avatar_url: string | null }) => ({ id: p.id, displayName: p.display_name, avatarUrl: p.avatar_url })) : [];
+      const seen = new Set<string>();
+      const merged: PlayerPoolEntry[] = [];
+      for (const p of [...friendsPlayers, ...recentPlayers]) {
+        if (!seen.has(p.id)) { seen.add(p.id); merged.push(p); }
+      }
+      setPlayerPool(merged);
+    }
+    fetchPool();
+    return () => { cancelled = true; };
   }, []);
 
   /* ── Pending invites (invited but not yet joined) ── */
@@ -120,7 +149,24 @@ export default function LobbySection({
     setPendingInvites((prev) => prev.filter((p) => !joinedIds.has(p.id)));
   }, [snapshot.players]);
 
-  const handleSendInvite = async (player: LastInvitedPlayer) => {
+  // Build priority display list
+  const inLobbyIds = new Set(snapshot.players.map((p) => p.playerId));
+  const viewerId = viewer?.playerId ?? null;
+  const lastInvitedFiltered = lastInvited.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId);
+  const lastInvitedIds = new Set(lastInvitedFiltered.map((p) => p.id));
+  const poolRemainder = playerPool.filter((p) => !lastInvitedIds.has(p.id) && !inLobbyIds.has(p.id) && p.id !== viewerId);
+  const priorityList: PlayerPoolEntry[] = [
+    ...lastInvitedFiltered.map((p) => ({ id: p.id, displayName: p.displayName, avatarUrl: p.avatarUrl })),
+    ...poolRemainder,
+  ].filter(p => !pendingInvites.some(pi => pi.id === p.id));
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const displayList: PlayerPoolEntry[] = trimmedQuery.length >= 1
+    ? priorityList.filter((p) => p.displayName.toLowerCase().includes(trimmedQuery)).slice(0, 20)
+    : priorityList.slice(0, 10);
+  const hasMore = trimmedQuery.length === 0 && priorityList.length > 10;
+
+  const handleSendInvite = async (player: PlayerPoolEntry) => {
     setInviteStates(prev => ({ ...prev, [player.id]: 'pending' }));
     try {
       const res = await fetch('/api/invitations/send', {
@@ -157,8 +203,18 @@ export default function LobbySection({
     try {
       const link = typeof window !== "undefined" ? window.location.href : "";
       await navigator.clipboard.writeText(link);
-      setLinkCopiedToast(true);
-      setTimeout(() => setLinkCopiedToast(false), 2000);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(snapshot.roomCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
     } catch {
       // ignore
     }
@@ -234,38 +290,101 @@ export default function LobbySection({
         <div className={`card ${styles['lobby-card']} ${styles['lobby-roster-card']}`}>
 
           {/* Sub-section A: Invite Players */}
+          {viewer?.isHost && (
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
               <span className={styles['lobby-subsection-title']}>Invite Players</span>
-              <button
-                type="button"
-                className={styles['lobbyLinkBtn']}
-                onClick={handleCopyLink}
-              >
-                Invite via link or code
-              </button>
+              <div className={styles['lobbyShareBtnGroup']}>
+                <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyLink}>
+                  Copy Link
+                </button>
+                <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyCode}>
+                  Copy Code
+                </button>
+              </div>
             </div>
-            {linkCopiedToast && (
-              <span className={styles['lobbyCopiedToast']}>Copied!</span>
+            {(linkCopied || codeCopied) && (
+              <span className={styles['lobbyCopiedToast']}>
+                {linkCopied ? 'Link copied!' : 'Code copied!'}
+              </span>
             )}
+            <input
+              type="text"
+              className={styles['lobbyInviteSearch']}
+              placeholder="Search players..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
             <div className={styles['lobbyRail']}>
-              {lastInvited.length === 0 ? (
+              {displayList.length === 0 ? (
                 <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
-                  <span className={styles['lobbyEmptyRailText']}>No recent invites</span>
+                  <span className={styles['lobbyEmptyRailText']}>No players found</span>
                 </div>
               ) : (
-                lastInvited.map((player) => {
-                  const isInLobby = snapshot.players.some((p) => p.playerId === player.id);
+                displayList.map((player) => {
                   const inviteState = inviteStates[player.id] ?? 'idle';
+                  const nameParts = player.displayName.split(' ');
+                  const firstName = nameParts[0];
+                  const lastName = nameParts.slice(1).join(' ');
                   return (
                     <div key={player.id} className={styles['lobbyPlayerCard']}>
                       <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
-                      <span className={styles['lobbyPlayerCardName']} style={getUsernameGradientStyle(player.id)}>
-                        {player.displayName}
-                      </span>
-                      {isInLobby ? (
-                        <span className={styles['lobbyStatusPillGreen']}>In lobby</span>
-                      ) : (
+                      <div style={getUsernameGradientStyle(player.id)}>
+                        <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
+                        {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                      </div>
+                      <button
+                        type="button"
+                        className={styles['lobbyInviteBtn']}
+                        onClick={() => handleSendInvite(player)}
+                        disabled={inviteState !== 'idle'}
+                      >
+                        {inviteState === 'pending'
+                          ? '…'
+                          : inviteState === 'sent'
+                          ? 'Sent ✓'
+                          : inviteState === 'error'
+                          ? 'Failed'
+                          : 'Invite'}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+              {hasMore && (
+                <div
+                  className={`${styles['lobbyPlayerCard']} ${styles['lobbyViewAllCard']}`}
+                  onClick={() => setShowAllModal(true)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setShowAllModal(true)}
+                >
+                  <span className={styles['lobbyViewAllText']}>View all ({priorityList.length})</span>
+                </div>
+              )}
+            </div>
+          </div>
+          )}
+
+          {/* All-players modal */}
+          {showAllModal && (
+            <div className={styles['lobbyAllModal']} onClick={() => setShowAllModal(false)}>
+              <div className={styles['lobbyAllModalInner']} onClick={(e) => e.stopPropagation()}>
+                <button type="button" className={styles['lobbyAllModalClose']} onClick={() => setShowAllModal(false)}>×</button>
+                <span className={styles['lobby-subsection-title']}>All Players ({priorityList.length})</span>
+                <div className={styles['lobbyAllModalList']}>
+                  {priorityList.map((player) => {
+                    const inviteState = inviteStates[player.id] ?? 'idle';
+                    const nameParts = player.displayName.split(' ');
+                    const firstName = nameParts[0];
+                    const lastName = nameParts.slice(1).join(' ');
+                    return (
+                      <div key={player.id} className={styles['lobbyPlayerCard']}>
+                        <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                        <div style={getUsernameGradientStyle(player.id)}>
+                          <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
+                          {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                        </div>
                         <button
                           type="button"
                           className={styles['lobbyInviteBtn']}
@@ -280,13 +399,13 @@ export default function LobbySection({
                             ? 'Failed'
                             : 'Invite'}
                         </button>
-                      )}
-                    </div>
-                  );
-                })
-              )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Sub-section B: Players roster */}
           <div className={styles['lobby-subsection']}>
@@ -303,13 +422,24 @@ export default function LobbySection({
               </span>
             </div>
             <div className={styles['lobbyRail']}>
-              {activePlayers.map((p) => (
+              {activePlayers.map((p) => {
+                const displayName = p.displayName || p.playerId.slice(0, 8);
+                const nameParts = displayName.split(' ');
+                const firstName = nameParts[0];
+                const lastName = nameParts.slice(1).join(' ');
+                return (
                 <div key={p.playerId} className={styles['lobbyPlayerCard']}>
-                  {p.isHost && <span className={styles['lobbyCrownIcon']}>♛</span>}
-                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} size={40} />
-                  <span className={styles['lobbyPlayerCardName']} style={getUsernameGradientStyle(p.playerId)}>
-                    {p.displayName || p.playerId.slice(0, 8)}
-                  </span>
+                  {p.isHost && (
+                    <div className={styles['lobbyHostBadge']}>
+                      <span className={styles['lobbyHostIcon']}>♛</span>
+                      <span className={styles['lobbyHostLabel']}>Host</span>
+                    </div>
+                  )}
+                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
+                  <div style={getUsernameGradientStyle(p.playerId)}>
+                    <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
+                    {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                  </div>
                   <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
                     {p.ready ? "READY" : "NOT READY"}
                   </span>
@@ -325,16 +455,33 @@ export default function LobbySection({
                     </button>
                   )}
                 </div>
-              ))}
-              {pendingInvites.map((p) => (
+                );
+              })}
+              {pendingInvites.map((p) => {
+                const nameParts = p.displayName.split(' ');
+                const firstName = nameParts[0];
+                const lastName = nameParts.slice(1).join(' ');
+                return (
                 <div key={p.id} className={styles['lobbyPlayerCard']}>
+                  {viewer?.isHost && (
+                    <button
+                      type="button"
+                      className={styles['lobbyCardRemoveBtn']}
+                      onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))}
+                      title="Remove invite"
+                    >
+                      ×
+                    </button>
+                  )}
                   <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
-                  <span className={styles['lobbyPlayerCardName']}>
-                    {p.displayName}
-                  </span>
-                  <span className={styles['lobbyStatusPillAmber']}>PENDING</span>
+                  <div>
+                    <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
+                    {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                  </div>
+                  <span className={styles['lobbyStatusPillAmber']}>INVITED</span>
                 </div>
-              ))}
+                );
+              })}
               {activePlayers.length === 0 && pendingInvites.length === 0 && (
                 <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
                   <span className={styles['lobbyEmptyRailText']}>No players yet</span>
@@ -508,11 +655,11 @@ export default function LobbySection({
         <div className={styles['lobby-dock-content']}>
           <button
             type="button"
-            className={isReady ? styles['lobbyReadyBtnOff'] : styles['lobbyReadyBtnOn']}
+            className={isReady ? styles['lobbyReadyBtnIsReady'] : styles['lobbyReadyBtnNotReady']}
             onClick={onToggleReady}
             disabled={busy}
           >
-            {isReady ? "NOT READY" : "READY"}
+            {isReady ? "READY!" : "READY?"}
           </button>
           <span className={styles['lobby-ready-count']}>
             ({readyCount}/{totalPlayers} players ready)

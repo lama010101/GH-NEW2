@@ -1,4 +1,7 @@
+'use client'
+
 import { useState } from 'react'
+import styles from '@/app/home.module.css'
 
 export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: {
   onLobby: (gameId: string) => void
@@ -6,11 +9,10 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   displayName: string
   onRequireAuth: () => void
 }) {
-  const [cmode, setCmode] = useState<'create'|'join'>('create')
+  const [showJoinInput, setShowJoinInput] = useState(false)
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string|null>(null)
-  const [isFocused, setIsFocused] = useState(false)
 
   const handleCreate = async () => {
     if (!playerId) { onRequireAuth(); return }
@@ -61,65 +63,81 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     }
   }
 
+  const handleJoinClick = () => {
+    if (!showJoinInput) {
+      setShowJoinInput(true)
+      return
+    }
+    handleJoin()
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 8 }}>
-        {(['create', 'join'] as const).map(m => (
-          <button key={m} onClick={() => { setCmode(m); setCode(''); setError(null) }}
-            style={{ flex: 1, padding: '10px 8px', borderRadius: 10, cursor: 'pointer',
-              border: cmode===m ? '2px solid #00adc1' : '1px solid rgba(255,255,255,0.15)',
-              background: cmode===m ? 'rgba(0,173,193,0.2)' : 'rgba(255,255,255,0.05)' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>
-              {m === 'create' ? 'New Game' : 'Join with code'}
-            </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>
-              {m === 'create' ? 'Create a lobby' : 'Enter room code'}
-            </div>
-          </button>
-        ))}
+    <>
+      {/* Middle sub-panel */}
+      <div className={styles['card-sub-panel']}>
+        <div className={styles['card-sub-panel-row']}>
+          <CrossedSwordsIcon />
+          <span className={styles['card-sub-panel-text']}>Challenge others or join a game to get started!</span>
+        </div>
       </div>
 
-      {cmode === 'join' && (
+      {/* Join code input (shown when JOIN GAME clicked) */}
+      {showJoinInput && (
         <input
           value={code}
           onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
           placeholder="ABCD12"
           maxLength={6}
-          style={{ width: '100%', padding: '11px 14px',
-            background: isFocused ? 'rgba(0,173,193,0.22)' : 'rgba(0,173,193,0.12)',
-            border: isFocused ? '1px solid rgba(0,173,193,0.85)' : '1px solid rgba(0,173,193,0.55)',
-            borderRadius: 10, color: '#fff',
-            fontSize: 18, fontWeight: 700, letterSpacing: '4px', textAlign: 'center',
-            outline: 'none', boxSizing: 'border-box',
-            boxShadow: isFocused ? '0 0 0 3px rgba(0,173,193,0.25)' : '0 0 8px rgba(0,173,193,0.15)',
-            transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s' }}
+          className={styles['join-code-input']}
+          autoFocus
         />
       )}
 
-      <button
-        onClick={cmode === 'create' ? handleCreate : handleJoin}
-        disabled={loading || (cmode === 'join' && code.length === 0)}
-        style={{ width: '100%', padding: 13, borderRadius: 12, fontSize: 15, fontWeight: 700,
-          border: 'none', letterSpacing: '0.3px',
-          cursor: loading || (cmode === 'join' && !code) ? 'not-allowed' : 'pointer',
-          background: loading || (cmode === 'join' && !code)
-            ? 'rgba(255,255,255,0.08)'
-            : 'linear-gradient(135deg,#008b9a,#00adc1)',
-          color: loading || (cmode === 'join' && !code)
-            ? 'rgba(255,255,255,0.3)'
-            : '#fff' }}>
-        {loading
-          ? (cmode === 'create' ? 'Creating...' : 'Joining...')
-          : (cmode === 'create' ? 'Create Game' : 'Go to Lobby')}
-      </button>
+      {/* CTA buttons */}
+      <div className={styles['card-cta-row']}>
+        <button
+          onClick={handleCreate}
+          disabled={loading}
+          className={`${styles['card-cta-btn']} ${styles['card-cta-btn-blue']}`}
+        >
+          <PlusIcon /> CREATE GAME
+        </button>
+        <button
+          onClick={handleJoinClick}
+          disabled={loading || (showJoinInput && !code)}
+          className={`${styles['card-cta-btn']} ${styles['card-cta-btn-outline']}`}
+        >
+          {showJoinInput ? 'GO TO LOBBY' : 'JOIN GAME'}
+        </button>
+      </div>
 
       {error && (
-        <div style={{ fontSize: 12, color: '#f87171', textAlign: 'center', marginTop: 2 }}>
+        <div className={styles['error-text']}>
           {error}
         </div>
       )}
-    </div>
+    </>
+  )
+}
+
+function CrossedSwordsIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14.5 17.5L3 6V3h3l11.5 11.5" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M13 19l6-6" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M16 16l4 4" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M19 21l2-2" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M9.5 6.5L21 18v3h-3L6.5 9.5" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M6 9L3 12" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M3 9l3 3" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
   )
 }

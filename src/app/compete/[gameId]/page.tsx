@@ -155,6 +155,7 @@ export default function CompeteGamePage() {
     snapshot,
     roundResults,
     onStateUpdate: (newSnapshot) => {
+      setBusy(false);
       console.log("[CLIENT_STATE_UPDATE]", {
         roundEndsAt: newSnapshot.roundEndsAt,
         status: newSnapshot.status,

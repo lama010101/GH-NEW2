@@ -18,8 +18,10 @@
 
 .mapFullscreenBtn {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  right: unset;
   z-index: 1000;
   width: 32px;
   height: 32px;

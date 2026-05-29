@@ -109,3 +109,197 @@
     scroll-snap-align: center;
   }
 }
+
+/* ============================================================
+   NEW VERTICAL CARD LAYOUT CLASSES (MP-UI-HOME-008)
+   ============================================================ */
+
+.page-scroll {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 100vh;
+  overflow-y: auto;
+  padding-top: 80px;
+  padding-bottom: 24px;
+}
+
+.cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.mode-card {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.card-inner {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.card-title-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.card-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.card-icon-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.card-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-sub-panel {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-sub-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-sub-panel-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.card-sub-panel-muted {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.card-cta-row {
+  display: flex;
+  gap: 12px;
+}
+
+.card-cta-btn {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: opacity 0.15s;
+}
+
+.card-cta-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.card-cta-btn-blue {
+  background: linear-gradient(135deg, #1d6fe8, #2563eb);
+  color: #fff;
+}
+
+.card-cta-btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.card-cta-btn-white-red {
+  background: #fff;
+  color: #dc2626;
+}
+
+.card-cta-btn-white-purple {
+  background: #fff;
+  color: #7c3aed;
+}
+
+.card-cta-btn-white-orange {
+  background: #fff;
+  color: #ea580c;
+}
+
+.join-code-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(0, 100, 150, 0.25);
+  border: 1px solid rgba(0, 173, 193, 0.6);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-align: center;
+  outline: none;
+  box-sizing: border-box;
+  text-transform: uppercase;
+}
+
+.join-code-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.error-text {
+  font-size: 12px;
+  color: #f87171;
+  text-align: center;
+}

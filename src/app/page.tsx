@@ -6,12 +6,11 @@ import { useRouter } from 'next/navigation'
 import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { AuthModal } from '@/components/AuthModal'
-import { CardItem } from '@/components/home/CardItem'
 import { DailyPanel } from '@/components/home/DailyPanel'
 import { PracticePanel } from '@/components/home/PracticePanel'
 import { LevelUpPanel } from '@/components/home/LevelUpPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
-import { MODES, type Mode } from '@/components/home/types'
+import { MODE_CARD_GRADIENT, MODE_CARD_TITLE, MODE_CARD_SUBTITLE, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import styles from './home.module.css'
 import { NavModal } from '@/components/NavModal'
 import NotificationBell from '@/components/NotificationBell'
@@ -63,32 +62,24 @@ function HomePageInner() {
     })()
   }, [])
 
-  const [cardState, setCardState] = useState<{ mode: Mode; panelVisible: boolean }>({ mode: 'daily', panelVisible: true })
   const [showNavModal, setShowNavModal] = useState(false)
-
-
-
-  const selectCard = (mode: Mode) => {
-    if (identity.status !== 'ready') { setShowAuthModal(true); return }
-    setCardState({ mode, panelVisible: false })
-    requestAnimationFrame(() => {
-      setCardState({ mode, panelVisible: true })
-    })
-  }
 
   const handleNav = (path: string) => {
     if (identity.status !== 'ready') { setShowAuthModal(true); return }
     router.push(path)
   }
 
+  const playerId = (identity as { status: string; playerId: string; displayName: string }).playerId ?? ''
+  const displayName = (identity as { status: string; playerId: string; displayName: string }).displayName ?? 'Player'
+
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: '#0a0a0a' }}>
 
-
+      {/* Background */}
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'url(/home_background.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-
       <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0,0,0,0.8)' }} />
 
+      {/* Top bar - unchanged */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 16px', pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '6px 14px' }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{accuracy}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 2 }}>%</span></span>
@@ -109,10 +100,10 @@ function HomePageInner() {
         </div>
       </div>
 
-      <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 0.8 }}>
-
-        {/* padded inner — logo only */}
-        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', marginBottom: 0.1, textAlign: 'center' }}>
+      {/* Scrollable content area */}
+      <div className={styles['page-scroll']}>
+        {/* Logo and tagline */}
+        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto 32px', textAlign: 'center' }}>
           <div style={{ position: 'relative', width: 280, height: 72, margin: '0 auto' }}>
             <Image
               src="/icons/logo.webp"
@@ -125,32 +116,24 @@ function HomePageInner() {
           </div>
         </div>
 
-        <div style={{ width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 16, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 100, padding: '0 24px', boxSizing: 'border-box' }}>
+        <div style={{ width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 16, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 32, padding: '0 24px', boxSizing: 'border-box' }}>
           Where and when did it happen?
         </div>
 
-        {/* cards — full width, no padding constraint */}
-        <div className={styles['cards-container']} style={{ marginTop: -50 }}>
-          {MODES.map(mode => (
-            <CardItem key={mode} mode={mode} selected={cardState.mode === mode} onSelect={selectCard} />
+        {/* Vertical card stack */}
+        <div className={styles['cards-stack']}>
+          {VERTICAL_CARD_ORDER.map(mode => (
+            <ModeCard
+              key={mode}
+              mode={mode}
+              playerId={playerId}
+              displayName={displayName}
+              onRequireAuth={() => setShowAuthModal(true)}
+              onNavigate={handleNav}
+              onLobby={(gameId) => router.push(`/compete/${gameId}`)}
+            />
           ))}
         </div>
-
-        {/* info panel — padded */}
-        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto', maxHeight: cardState.panelVisible ? 320 : 0, opacity: cardState.panelVisible ? 1 : 0, overflow: 'hidden', transition: 'max-height 0.3s ease, opacity 0.22s ease', marginTop: cardState.panelVisible ? 14 : 0 }}>
-          {cardState.mode === 'daily' && <DailyPanel onPlay={() => handleNav('/daily')} />}
-          {cardState.mode === 'practice' && <PracticePanel onStart={() => handleNav('/practice')} />}
-          {cardState.mode === 'levelup' && <LevelUpPanel onStart={() => handleNav('/levelup')} />}
-          {cardState.mode === 'compete' && (
-            <CompetePanel
-              playerId={(identity as { status: string; playerId: string; displayName: string }).playerId ?? ''}
-              displayName={(identity as { status: string; playerId: string; displayName: string }).displayName ?? 'Player'}
-              onLobby={(gameId) => router.push(`/compete/${gameId}`)}
-              onRequireAuth={() => setShowAuthModal(true)}
-            />
-          )}
-        </div>
-
       </div>
 
       <NavModal
@@ -161,6 +144,81 @@ function HomePageInner() {
         displayName={(identity as { status: string; playerId: string; displayName: string }).displayName ?? initials}
       />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+    </div>
+  )
+}
+
+function ModeCard({
+  mode,
+  playerId,
+  displayName,
+  onRequireAuth,
+  onNavigate,
+  onLobby
+}: {
+  mode: Mode
+  playerId: string
+  displayName: string
+  onRequireAuth: () => void
+  onNavigate: (path: string) => void
+  onLobby: (gameId: string) => void
+}) {
+  const gradient = MODE_CARD_GRADIENT[mode]
+  const title = MODE_CARD_TITLE[mode]
+  const subtitle = MODE_CARD_SUBTITLE[mode]
+
+  const getIconSrc = () => {
+    switch (mode) {
+      case 'compete': return '/icons/compete_large.webp'
+      case 'daily': return '/icons/daily_large.webp'
+      case 'levelup': return '/icons/levels_large.webp'
+      case 'practice': return '/icons/practice_large.webp'
+      default: return '/icons/daily_large.webp'
+    }
+  }
+
+  return (
+    <div className={styles['mode-card']} style={{ background: gradient }}>
+      <div className={styles['card-inner']}>
+        {/* Header with title and icon */}
+        <div className={styles['card-header']}>
+          <div className={styles['card-title-section']}>
+            <h2 className={styles['card-title']}>{title}</h2>
+            <p className={styles['card-subtitle']}>{subtitle}</p>
+          </div>
+          <div className={styles['card-icon-wrap']}>
+            <Image
+              src={getIconSrc()}
+              alt={title}
+              fill
+              style={{ objectFit: 'contain' }}
+              sizes="80px"
+            />
+            {mode === 'daily' && (
+              <span className={styles['card-badge']}>LIVE</span>
+            )}
+          </div>
+        </div>
+
+        {/* Mode-specific panel content */}
+        {mode === 'compete' && (
+          <CompetePanel
+            playerId={playerId}
+            displayName={displayName}
+            onLobby={onLobby}
+            onRequireAuth={onRequireAuth}
+          />
+        )}
+        {mode === 'daily' && (
+          <DailyPanel onPlay={() => onNavigate('/daily')} />
+        )}
+        {mode === 'levelup' && (
+          <LevelUpPanel onStart={() => onNavigate('/levelup')} />
+        )}
+        {mode === 'practice' && (
+          <PracticePanel onStart={() => onNavigate('/practice')} />
+        )}
+      </div>
     </div>
   )
 }

@@ -65,7 +65,7 @@
   align-items: start;
 }
 .lobby-card {
-  background: rgba(16, 24, 48, 0.88);
+  background: #333;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 22px;
   padding: 20px;
@@ -144,7 +144,8 @@
   gap: 4px;
   width: 80px;
   flex-shrink: 0;
-  background: #333;
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.10);
   border-radius: 10px;
   padding: 8px;
   position: relative;
@@ -159,6 +160,23 @@
   font-size: 11px;
   color: rgba(255,255,255,0.35);
   text-align: center;
+}
+.lobbyCardNameFirst,
+.lobbyCardNameLast {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.lobbyCardNameFirst {
+  color: inherit;
+}
+.lobbyCardNameLast {
+  color: rgba(255,255,255,0.65);
 }
 .lobbyPlayerCardName {
   font-size: 11px;
@@ -394,50 +412,50 @@
 }
 
 /* ── Single READY CTA ── */
-.lobbyReadyBtnOn {
+.lobbyReadyBtnNotReady {
   width: 100%;
-  padding: 14px;
+  height: 52px;
   border-radius: 12px;
-  border: none;
-  background: #22d3ee;
-  color: #000;
+  border: 2px solid #ef4444;
+  background: #ef4444;
+  color: #ffffff;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 1px;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.1s;
 }
-.lobbyReadyBtnOn:hover:not(:disabled) {
+.lobbyReadyBtnNotReady:hover:not(:disabled) {
   opacity: 0.88;
 }
-.lobbyReadyBtnOn:active:not(:disabled) {
+.lobbyReadyBtnNotReady:active:not(:disabled) {
   transform: scale(0.98);
 }
-.lobbyReadyBtnOn:disabled {
-  opacity: 0.4;
+.lobbyReadyBtnNotReady:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
-.lobbyReadyBtnOff {
+.lobbyReadyBtnIsReady {
   width: 100%;
-  padding: 14px;
+  height: 52px;
   border-radius: 12px;
-  border: none;
-  background: rgba(255,255,255,0.12);
-  color: #fff;
+  border: 2px solid #22c55e;
+  background: #22c55e;
+  color: #ffffff;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 1px;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.1s;
 }
-.lobbyReadyBtnOff:hover:not(:disabled) {
-  background: rgba(255,255,255,0.18);
+.lobbyReadyBtnIsReady:hover:not(:disabled) {
+  opacity: 0.88;
 }
-.lobbyReadyBtnOff:active:not(:disabled) {
+.lobbyReadyBtnIsReady:active:not(:disabled) {
   transform: scale(0.98);
 }
-.lobbyReadyBtnOff:disabled {
-  opacity: 0.4;
+.lobbyReadyBtnIsReady:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 .lobby-year-range-wrap {
@@ -646,4 +664,155 @@
   color: #ff6b6b;
   margin: 0;
   margin-top: 12px;
+}
+
+/* ── Share buttons (Copy Link / Copy Code) ── */
+.lobbyShareBtnGroup {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.lobbyShareBtn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #22d3ee;
+  color: #22d3ee;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.lobbyShareBtn:hover {
+  background: rgba(34,211,238,0.12);
+}
+
+/* ── Invite search input ── */
+.lobbyInviteSearch {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.lobbyInviteSearch::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+.lobbyInviteSearch:focus {
+  border-color: #22d3ee;
+}
+
+/* ── View all card ── */
+.lobbyViewAllCard {
+  justify-content: center;
+  cursor: pointer;
+  border: 1px dashed rgba(34,211,238,0.4);
+  background: rgba(34,211,238,0.05);
+}
+.lobbyViewAllCard:hover {
+  background: rgba(34,211,238,0.1);
+}
+.lobbyViewAllText {
+  font-size: 11px;
+  font-weight: 600;
+  color: #22d3ee;
+  text-align: center;
+}
+
+/* ── All-players modal ── */
+.lobbyAllModal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lobbyAllModalInner {
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 18px;
+  padding: 20px;
+  width: min(480px, 90vw);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+.lobbyAllModalClose {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+.lobbyAllModalClose:hover {
+  color: #fff;
+}
+.lobbyAllModalList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+/* ── Host badge ── */
+.lobbyHostBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.lobbyHostIcon {
+  font-size: 20px;
+  color: #f59e0b;
+  line-height: 1;
+}
+.lobbyHostLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #f59e0b;
+  line-height: 1;
+}
+
+/* ── Remove button for pending invites ── */
+.lobbyCardRemoveBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s;
+}
+.lobbyCardRemoveBtn:hover {
+  background: rgba(255,255,255,0.2);
 }
