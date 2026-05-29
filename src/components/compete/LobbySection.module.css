@@ -1,7 +1,8 @@
+/* ── Shell ── */
 .lobby-shell {
   display: grid;
   gap: 16px;
-  padding-bottom: 80px;
+  padding-bottom: 96px;
 }
 .lobby-title-bar {
   position: relative;
@@ -60,9 +61,7 @@
   display: grid;
   gap: 16px;
   grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    "settings invite"
-    "players  invite";
+  grid-template-areas: "roster settings";
   align-items: start;
 }
 .lobby-card {
@@ -77,9 +76,8 @@
   border-color: rgba(255, 255, 255, 0.18);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
+.lobby-roster-card { grid-area: roster; }
 .lobby-settings { grid-area: settings; }
-.lobby-players { grid-area: players; }
-.lobby-invite { grid-area: invite; }
 .lobby-card-header {
   display: flex;
   align-items: center;
@@ -99,6 +97,205 @@
   font-weight: 600;
   color: #fff;
 }
+/* ── Subsection (invite / roster) ── */
+.lobby-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 18px;
+}
+.lobby-subsection:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.lobby-subsection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.lobby-subsection-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ── Horizontal rail ── */
+.lobbyRail {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px;
+  scrollbar-width: none;
+}
+.lobbyRail::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Player card ── */
+.lobbyPlayerCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 80px;
+  flex-shrink: 0;
+  background: #333;
+  border-radius: 10px;
+  padding: 8px;
+  position: relative;
+}
+.lobbyPlayerCardEmpty {
+  justify-content: center;
+  min-height: 110px;
+  background: rgba(255,255,255,0.04);
+  border: 1px dashed rgba(255,255,255,0.1);
+}
+.lobbyEmptyRailText {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+}
+.lobbyPlayerCardName {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  color: #fff;
+  width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  margin-top: 4px;
+}
+
+/* ── Crown icon for host ── */
+.lobbyCrownIcon {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #facc15;
+  line-height: 1;
+}
+
+/* ── Status pills ── */
+.lobbyStatusPillGreen {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(74, 222, 128, 0.18);
+  color: #4ade80;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.lobbyStatusPillGrey {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.lobbyStatusPillAmber {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(251,191,36,0.18);
+  color: #fbbf24;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Invite button on player card ── */
+.lobbyInviteBtn {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #22d3ee;
+  color: #22d3ee;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.lobbyInviteBtn:hover:not(:disabled) {
+  background: rgba(34,211,238,0.12);
+}
+.lobbyInviteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Copy link button ── */
+.lobbyLinkBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #22d3ee;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.lobbyLinkBtn:hover {
+  opacity: 0.8;
+}
+
+/* ── Copied toast ── */
+.lobbyCopiedToast {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4ade80;
+  display: block;
+  margin-top: -4px;
+}
+
+/* ── Ready dot indicator ── */
+.lobbyReadyIndicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+}
+.lobbyReadyDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background 0.3s;
+}
+
+/* ── RELAX MODE label ── */
+.lobbyRelaxLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 8px;
+}
+
 .lobby-settings-grid {
   display: grid;
   gap: 0;
@@ -125,66 +322,6 @@
   font-weight: 700;
   color: #22d3ee;
   font-variant-numeric: tabular-nums;
-}
-.lobby-player-list {
-  display: grid;
-  gap: 10px;
-}
-.lobby-player-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px 12px;
-  background: rgba(255,255,255,0.04);
-  border-radius: 14px;
-  border: 1px solid transparent;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
-}
-.lobby-player-row:hover {
-  background: rgba(255,255,255,0.07);
-  border-color: rgba(255,255,255,0.08);
-}
-.lobby-player-info {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  min-width: 0;
-  overflow: hidden;
-}
-.lobby-player-badges {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.lobby-host-badge {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(34, 211, 238, 0.12);
-  color: #22d3ee;
-  border: 1px solid rgba(34, 211, 238, 0.25);
-  font-size: 11px;
-  font-weight: 600;
-  transition: background 0.2s, box-shadow 0.2s;
-}
-.lobby-ready-badge {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.5);
-  border: 1px solid rgba(255,255,255,0.1);
-  font-size: 11px;
-  font-weight: 600;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-.lobby-ready-badge.ready {
-  background: rgba(34, 211, 238, 0.12);
-  color: #22d3ee;
-  border-color: rgba(34, 211, 238, 0.25);
 }
 .lobby-kick-btn {
   background: rgba(239, 68, 68, 0.12);
@@ -215,156 +352,18 @@
   cursor: not-allowed;
   transform: none;
 }
-@keyframes lobbyPlayerEnter {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes lobbySkeletonShimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.lobby-player-row {
-  animation: lobbyPlayerEnter 0.25s ease-out;
-}
 @media (prefers-reduced-motion: reduce) {
-  .lobby-player-row {
-    animation: none;
-  }
   .lobby-card {
     transition: none;
   }
-  .lobby-player-row,
   .lobby-setting-item,
-  .lobby-host-badge,
-  .lobby-ready-badge,
   .lobby-kick-btn,
-  .lobby-room-code,
-  .lobby-friend-search,
-  .lobby-friend-row,
   .lobby-timer-slider::-webkit-slider-thumb,
   .lobby-timer-slider::-moz-range-thumb,
   .lobby-year-range-wrap input[type="range"]::-webkit-slider-thumb,
   .lobby-year-range-wrap input[type="range"]::-moz-range-thumb {
     transition: none;
   }
-}
-.lobby-invite-body {
-  display: grid;
-  gap: 8px;
-}
-.lobby-room-code-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.lobby-room-code {
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 3px;
-  color: #fff;
-  background: rgba(255,255,255,0.08);
-  padding: 8px 14px;
-  border-radius: 10px;
-  word-break: break-all;
-  flex: 1;
-  min-width: 0;
-  transition: background 0.2s;
-}
-.lobby-room-code:hover {
-  background: rgba(255,255,255,0.12);
-}
-.lobby-invite-toggle {
-  display: none;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: #fff;
-  border-radius: 8px;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  margin-left: auto;
-}
-.lobby-invite-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.lobby-invite-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.45);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.lobby-friend-search {
-  width: 100%;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  padding: 8px 12px;
-  color: #fff;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.lobby-friend-search::placeholder {
-  color: rgba(255,255,255,0.35);
-}
-.lobby-friend-search:focus {
-  border-color: rgba(34, 211, 238, 0.5);
-  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
-}
-.lobby-friend-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-.lobby-friend-list::-webkit-scrollbar {
-  width: 4px;
-}
-.lobby-friend-list::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-  border-radius: 2px;
-}
-.lobby-friend-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  transition: background 0.15s, border-color 0.15s;
-}
-.lobby-friend-row:hover {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(255,255,255,0.1);
-}
-.lobby-friend-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 500;
-}
-.lobby-friend-empty {
-  text-align: center;
-  padding: 24px 12px;
-  font-size: 13px;
-  color: rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.02);
-  border-radius: 12px;
-  border: 1px dashed rgba(255,255,255,0.08);
 }
 .lobby-dock {
   position: fixed;
@@ -382,22 +381,64 @@
   margin: 0 auto;
   padding: 12px 16px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
 }
 .lobby-ready-count {
-  font-size: 14px;
-  font-weight: 600;
-  color: #22d3ee;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
   white-space: nowrap;
 }
-.lobby-dock-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+
+/* ── Single READY CTA ── */
+.lobbyReadyBtnOn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: #22d3ee;
+  color: #000;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.lobbyReadyBtnOn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.lobbyReadyBtnOn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.lobbyReadyBtnOn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.lobbyReadyBtnOff {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.lobbyReadyBtnOff:hover:not(:disabled) {
+  background: rgba(255,255,255,0.18);
+}
+.lobbyReadyBtnOff:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.lobbyReadyBtnOff:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .lobby-year-range-wrap {
   position: relative;
@@ -504,9 +545,8 @@
   .lobby-grid {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "settings"
-      "invite"
-      "players";
+      "roster"
+      "settings";
     gap: 12px;
   }
   .lobby-title-text {
@@ -514,21 +554,6 @@
   }
   .lobby-dock-content {
     padding: 10px 12px;
-  }
-  .lobby-room-code-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .lobby-invite-toggle {
-    display: flex;
-  }
-  .lobby-invite-body.collapsed {
-    display: none;
-  }
-  .lobby-invite-body {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
   }
   .lobby-setting-item {
     padding: 10px 0;
@@ -543,13 +568,6 @@
     padding: 14px;
     border-radius: 18px;
   }
-  .lobby-player-row {
-    padding: 8px;
-  }
-  .lobby-dock-actions .button {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
   .lobby-setting-label {
     font-size: 12px;
   }
@@ -558,7 +576,7 @@
   }
 }
 
-/* Classes extracted from inline styles */
+/* ── Utility classes (settings sliders) ── */
 .lobbyRowWrap {
   flex-wrap: wrap;
 }
@@ -588,15 +606,32 @@
   min-width: 0;
   flex-wrap: wrap;
 }
-.lobbyToggleBtn {
+.lobbyToggleBtnOn {
   width: 44px;
   height: 24px;
   border-radius: 12px;
   border: none;
   position: relative;
   cursor: pointer;
+  background: #22d3ee;
   transition: background 0.2s;
   flex-shrink: 0;
+}
+.lobbyToggleBtnOff {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  position: relative;
+  cursor: pointer;
+  background: rgba(255,255,255,0.15);
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.lobbyToggleBtnOn:disabled,
+.lobbyToggleBtnOff:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .lobbyToggleKnob {
   position: absolute;
@@ -607,52 +642,8 @@
   background: #fff;
   transition: left 0.2s;
 }
-.lobbyEmptyInvite {
-  color: rgba(255,255,255,0.4);
-  font-size: 13px;
-  padding: 16px;
-  text-align: center;
-}
-.lobbyBtnSm {
-  padding: 4px 10px;
-  font-size: 0.75rem;
-}
-.lobbyBtnMd {
-  padding: 6px 12px;
-  font-size: 0.8rem;
-}
-.lobbyCode {
-  font-size: 12px;
-}
 .lobbyError {
   color: #ff6b6b;
   margin: 0;
   margin-top: 12px;
-}
-.friendSearchInput {
-  width: 100%;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px;
-  padding: 8px 12px;
-  color: #fff;
-  font-size: 13px;
-  outline: none;
-  margin-bottom: 8px;
-}
-.friendSearchInput:focus {
-  border-color: rgba(255,255,255,0.28);
-}
-.friendSearchStatus {
-  font-size: 12px;
-  color: rgba(255,255,255,0.4);
-  padding: 4px 0;
-}
-.inLobbyPill {
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 12px;
-  background: rgba(34,197,94,0.18);
-  color: #4ade80;
-  font-weight: 600;
 }

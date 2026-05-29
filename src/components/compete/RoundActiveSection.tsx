@@ -622,7 +622,7 @@ export default function RoundActiveSection({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 12,
+              gap: 10,
               padding: "6px 16px",
               pointerEvents: "auto",
             }}
@@ -630,49 +630,66 @@ export default function RoundActiveSection({
             {guessLocation !== null && (
               <button
                 type="button"
-                onClick={() => setPanelVisible(true)}
+                onClick={() => setSearchExpanded(true)}
                 style={{
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: "#fff",
-                  background: "rgba(34, 197, 94, 0.8)",
-                  border: "none",
-                  borderRadius: 999,
-                  padding: "8px 16px",
-                  maxWidth: 180,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  cursor: "pointer",
                   display: "flex",
-                  alignItems: "center",
-                  gap: 6,
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 2,
+                  background: "rgba(0,0,0,0.80)",
+                  border: "1.5px solid rgba(34,197,94,0.55)",
+                  boxShadow: "0 0 10px rgba(34,197,94,0.25)",
+                  borderRadius: 12,
+                  padding: "7px 12px",
+                  minWidth: 130,
+                  maxWidth: 180,
+                  cursor: "pointer",
+                  pointerEvents: "auto",
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/where.webp" alt="where" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} /> {locationNameLoading ? "…" : locationName ?? "Location set"}
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                    <circle cx="12" cy="9" r="2.5"/>
+                  </svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", color: "#22c55e", textTransform: "uppercase" }}>Where</span>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 500, color: "#fff", maxWidth: 156, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {locationNameLoading ? "…" : locationName ?? "Location set"}
+                </span>
               </button>
             )}
             {guessYear !== null && (
               <button
                 type="button"
-                onClick={() => setPanelVisible(true)}
+                onClick={() => setYearEditActive(true)}
                 style={{
-                  fontSize: 15,
-                  fontWeight: 500,
-                  color: "#fff",
-                  background: "rgba(56, 189, 248, 0.8)",
-                  border: "none",
-                  borderRadius: 999,
-                  padding: "8px 16px",
-                  cursor: "pointer",
                   display: "flex",
-                  alignItems: "center",
-                  gap: 6,
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 2,
+                  background: "rgba(0,0,0,0.80)",
+                  border: "1.5px solid rgba(56,189,248,0.55)",
+                  boxShadow: "0 0 10px rgba(56,189,248,0.25)",
+                  borderRadius: 12,
+                  padding: "7px 12px",
+                  minWidth: 100,
+                  cursor: "pointer",
+                  pointerEvents: "auto",
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/when.webp" alt="when" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} /> {guessYear}
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", color: "#38bdf8", textTransform: "uppercase" }}>When</span>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 500, color: "#fff" }}>
+                  {guessYear}
+                </span>
               </button>
             )}
           </div>
@@ -685,11 +702,11 @@ export default function RoundActiveSection({
               display: "flex",
               flexDirection: "column",
               flex: 1,
-              background: "rgba(255,255,255,0.10)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
-              border: "1px solid rgba(255,255,255,0.20)",
-              borderTop: "1px solid rgba(255,255,255,0.30)",
+              background: "rgba(0,0,0,0.72)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderTop: "1px solid rgba(255,255,255,0.14)",
               borderRadius: "14px",
               padding: "12px 16px 12px",
               marginBottom: "8px",
@@ -703,7 +720,6 @@ export default function RoundActiveSection({
                 alignItems: "center",
                 justifyContent: "space-between",
                 marginBottom: 8,
-                backgroundColor: 'rgba(0,0,0,0.55)',
                 borderRadius: 10,
                 padding: '6px 12px',
               }}
@@ -890,11 +906,11 @@ export default function RoundActiveSection({
         {panelVisible && (
           <div
             style={{
-              background: "rgba(255,255,255,0.10)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
-              border: "1px solid rgba(255,255,255,0.20)",
-              borderTop: "1px solid rgba(255,255,255,0.30)",
+              background: "rgba(0,0,0,0.72)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderTop: "1px solid rgba(255,255,255,0.14)",
               borderRadius: "14px",
               padding: "12px 16px",
               pointerEvents: "auto",
@@ -907,7 +923,6 @@ export default function RoundActiveSection({
                 alignItems: "center",
                 justifyContent: "space-between",
                 marginBottom: 8,
-                backgroundColor: 'rgba(0,0,0,0.55)',
                 borderRadius: 10,
                 padding: '6px 12px',
               }}
@@ -992,7 +1007,7 @@ export default function RoundActiveSection({
             </div>
 
             {/* Year Picker */}
-            <div style={{ backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12, padding: '8px 0' }}>
+            <div>
               <YearPicker
                 value={guessYear ?? Math.round((yearMin + yearMax) / 2)}
                 onChange={(year) => {
