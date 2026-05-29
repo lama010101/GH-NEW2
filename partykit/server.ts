@@ -954,6 +954,15 @@ export default class GameServer {
             this.sendError(sender, "START_GAME only allowed in LOBBY phase");
             break;
           }
+
+          // Validate: only the host can start the game
+          const senderPlayerId = this.connections.get(sender.id);
+          const senderPlayer = this.snapshot.players.find(p => p.playerId === senderPlayerId);
+          if (!senderPlayer || !senderPlayer.isHost) {
+            console.log(`[PartyKit] START_GAME ignored — sender ${senderPlayerId?.slice(0, 8)} is not the host`);
+            break;
+          }
+
           // Prevent double-start: reject if another start is already in flight
           if (this.startInFlight) {
             console.log("[PartyKit] START_GAME ignored — start already in flight");
@@ -961,7 +970,6 @@ export default class GameServer {
           }
           this.startInFlight = true;
           try {
-            const hostPlayerId = this.connections.get(sender.id);
             const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/start`;
             const response = await fetch(apiUrl, {
               method: "POST",
@@ -970,7 +978,7 @@ export default class GameServer {
                 "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
               },
               body: JSON.stringify({
-                playerId: hostPlayerId
+                playerId: senderPlayerId
               })
             });
             if (!response.ok) {

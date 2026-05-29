@@ -73,7 +73,7 @@ function HomePageInner() {
   const displayName = (identity as { status: string; playerId: string; displayName: string }).displayName ?? 'Player'
 
   return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: '#0a0a0a' }}>
+    <div style={{ width: '100vw', minHeight: '100vh', position: 'relative', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: '#0a0a0a' }}>
 
       {/* Background */}
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'url(/home_background.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
@@ -103,8 +103,8 @@ function HomePageInner() {
       {/* Scrollable content area */}
       <div className={styles['page-scroll']}>
         {/* Logo and tagline */}
-        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto 32px', textAlign: 'center' }}>
-          <div style={{ position: 'relative', width: 280, height: 72, margin: '0 auto' }}>
+        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto 8px', textAlign: 'center' }}>
+          <div style={{ position: 'relative', width: 280, height: 40, margin: '0 auto' }}>
             <Image
               src="/icons/logo.webp"
               alt="Guess-History"
@@ -116,7 +116,7 @@ function HomePageInner() {
           </div>
         </div>
 
-        <div style={{ width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 16, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 32, padding: '0 24px', boxSizing: 'border-box' }}>
+        <div style={{ width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 15, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 20, padding: '0 24px', boxSizing: 'border-box' }}>
           Where and when did it happen?
         </div>
 
@@ -178,46 +178,48 @@ function ModeCard({
   }
 
   return (
-    <div className={styles['mode-card']} style={{ background: gradient }}>
-      <div className={styles['card-inner']}>
-        {/* Header with title and icon */}
-        <div className={styles['card-header']}>
-          <div className={styles['card-title-section']}>
-            <h2 className={styles['card-title']}>{title}</h2>
-            <p className={styles['card-subtitle']}>{subtitle}</p>
+    <div className={styles['mode-card']}>
+      {/* Card background with clip */}
+      <div className={styles['card-bg']} style={{ background: gradient }}>
+        <div className={styles['card-inner']}>
+          {/* Header: title only */}
+          <div className={styles['card-header']}>
+            <div className={styles['card-title-section']}>
+              <h2 className={styles['card-title']}>{title}</h2>
+              <p className={styles['card-subtitle']}>{subtitle}</p>
+            </div>
           </div>
-          <div className={styles['card-icon-wrap']}>
-            <Image
-              src={getIconSrc()}
-              alt={title}
-              fill
-              style={{ objectFit: 'contain' }}
-              sizes="80px"
-            />
-            {mode === 'daily' && (
-              <span className={styles['card-badge']}>LIVE</span>
-            )}
-          </div>
-        </div>
 
-        {/* Mode-specific panel content */}
-        {mode === 'compete' && (
-          <CompetePanel
-            playerId={playerId}
-            displayName={displayName}
-            onLobby={onLobby}
-            onRequireAuth={onRequireAuth}
-          />
-        )}
-        {mode === 'daily' && (
-          <DailyPanel onPlay={() => onNavigate('/daily')} />
-        )}
-        {mode === 'levelup' && (
-          <LevelUpPanel onStart={() => onNavigate('/levelup')} />
-        )}
-        {mode === 'practice' && (
-          <PracticePanel onStart={() => onNavigate('/practice')} />
-        )}
+          {/* Mode-specific panel content */}
+          {mode === 'compete' && (
+            <CompetePanel
+              playerId={playerId}
+              displayName={displayName}
+              onLobby={onLobby}
+              onRequireAuth={onRequireAuth}
+            />
+          )}
+          {mode === 'daily' && (
+            <DailyPanel onPlay={() => onNavigate('/daily')} />
+          )}
+          {mode === 'levelup' && (
+            <LevelUpPanel onStart={() => onNavigate('/levelup')} />
+          )}
+          {mode === 'practice' && (
+            <PracticePanel onStart={() => onNavigate('/practice')} />
+          )}
+        </div>
+      </div>
+
+      {/* Icon floats above, outside clip */}
+      <div className={styles['card-icon-wrap']}>
+        <Image
+          src={getIconSrc()}
+          alt={title}
+          fill
+          style={{ objectFit: 'contain' }}
+          sizes="180px"
+        />
       </div>
     </div>
   )
