@@ -181,7 +181,7 @@ function Rail({ items, selected, itemWidth, labelFn, onSelect, committed, tierLa
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <div style={{
-        fontSize: 11,
+        fontSize: 8,
         color: LABEL_COLOR,
         letterSpacing: '1px',
         textTransform: 'uppercase',

@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   const cookieStore = cookies();
 
   const supabase = createServerClient(

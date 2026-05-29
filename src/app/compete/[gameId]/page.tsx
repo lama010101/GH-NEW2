@@ -423,20 +423,30 @@ export default function CompeteGamePage() {
 
   if (!snapshot) {
     return (
-      <main className="app-shell">
-        <div className="shell-grid">
-          <section className="hero">
-            <span className="badge">Compete</span>
-            <h1>Loading session…</h1>
-            <p className="small">Game ID: {gameId}</p>
-          </section>
-          {error ? (
-            <section className="card">
-              <p style={{ color: "#ff6b6b", margin: 0 }}>{error}</p>
-            </section>
-          ) : null}
-        </div>
-      </main>
+      <div style={{
+        minHeight: '100vh',
+        background: '#0a0a0a',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 16,
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: '50%',
+          border: '3px solid rgba(255,255,255,0.1)',
+          borderTopColor: '#00adc1',
+          animation: 'spin 0.8s linear infinite'
+        }} />
+        <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>
+          Joining room…
+        </span>
+        {error && (
+          <span style={{ color: '#f87171', fontSize: 13 }}>{error}</span>
+        )}
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
     );
   }
 

@@ -75,9 +75,14 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     <>
       {/* Middle sub-panel */}
       <div className={styles['card-sub-panel']}>
-        <div className={styles['card-sub-panel-row']}>
-          <CrossedSwordsIcon />
-          <span className={styles['card-sub-panel-text']}>Challenge others or join a game to get started!</span>
+        <div className={styles['card-sub-panel-row-stack']}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <CrossedSwordsIcon />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span className={styles['card-sub-panel-text']}>No games yet</span>
+            <span className={styles['card-sub-panel-muted']}>Challenge others or join a game to get started!</span>
+          </div>
         </div>
       </div>
 
@@ -107,7 +112,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
           disabled={loading || (showJoinInput && !code)}
           className={`${styles['card-cta-btn']} ${styles['card-cta-btn-outline']}`}
         >
-          {showJoinInput ? 'GO TO LOBBY' : 'JOIN GAME'}
+          {showJoinInput ? <><PeopleIcon /> GO TO LOBBY</> : <><PeopleIcon /> JOIN GAME</>}
         </button>
       </div>
 
@@ -136,8 +141,18 @@ function CrossedSwordsIcon() {
 
 function PlusIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+function PeopleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
 }

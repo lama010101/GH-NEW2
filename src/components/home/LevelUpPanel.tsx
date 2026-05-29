@@ -4,10 +4,9 @@ import styles from '@/app/home.module.css'
 
 export function LevelUpPanel({ onStart }: { onStart: () => void }) {
   return (
-    <>
-      {/* Middle sub-panel */}
-      <div className={styles['card-sub-panel']}>
-        <div className={styles['card-sub-panel-row']}>
+    <div className={`${styles['card-sub-panel']} ${styles['card-sub-panel-horizontal']}`}>
+      <div className={styles['card-sub-panel-left']}>
+        <div className={styles['card-sub-panel-row-stack']}>
           <ChartIcon />
           <span className={styles['card-sub-panel-text']}>Start your journey</span>
         </div>
@@ -15,15 +14,13 @@ export function LevelUpPanel({ onStart }: { onStart: () => void }) {
           Climb the ranks and grow your history knowledge.
         </div>
       </div>
-
-      {/* CTA button */}
       <button
         onClick={onStart}
         className={`${styles['card-cta-btn']} ${styles['card-cta-btn-white-purple']}`}
       >
         PLAY NOW
       </button>
-    </>
+    </div>
   )
 }
 
