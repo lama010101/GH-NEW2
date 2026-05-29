@@ -1595,7 +1595,9 @@ MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIde
 | 2026-05-29 | MP-UI-HOME-013 | Reduce logo-tagline spacing by half | DONE | Reduced logo section margin-bottom from 16px to 8px. Validation: tsc --noEmit exits 0. |
 | 2026-05-29 | MP-UI-HOME-014 | Remove dead space in cards by floating icon | DONE | Split mode-card into outer shell + card-bg wrapper with overflow:hidden. Icon moved outside clip wrapper, absolutely positioned at top:-20px right:8px, no longer affects card height. Validation: tsc --noEmit exits 0. |
 | 2026-05-29 | MP-UI-HOME-015 | Move card icons 10px up | DONE | Changed card-icon-wrap top from -10px to -20px. Validation: tsc --noEmit exits 0. |
-| 2026-05-29 | MP-UI-HOME-016 | Match CREATE GAME button color to lobby | DONE | Changed card-cta-btn-blue gradient from #1d6fe8,#2563eb to #22d3ee,#0891b2 (cyan) to match lobby page buttons. Validation: tsc --noEmit exits 0. |
-| 2026-05-29 | MP-UI-HOME-017 | Change COMPETE card to blue gradient | DONE | Changed MODE_CARD_GRADIENT compete from teal/green #0a3a4a,#0d5060,#0a6070 to blue #1e3a8a,#1d4ed8,#2563eb. Validation: tsc --noEmit exits 0. |
+| 2026-05-29 | MP-UI-HOME-016 | Change CREATE GAME button to white with blue text | DONE | Changed card-cta-btn-blue from cyan gradient to white background #fff with blue text #0891b2 (similar to PLAY NOW buttons). Validation: tsc --noEmit exits 0. |
+| 2026-05-29 | MP-UI-HOME-017 | Change COMPETE card to match CREATE GAME button gradient | DONE | Changed MODE_CARD_GRADIENT compete to cyan gradient #22d3ee,#0891b2 (same colors as CREATE GAME button). Validation: tsc --noEmit exits 0. |
 | MP-FIX-LOBBY-LOADING-001 | Replace bare loading screen with styled spinner | DONE | 2026-05-29 |
 | MP-FIX-MINICARDS-003d | Scale labels fontSize 11→8 in YearPicker | YearPicker.tsx | DONE | 2026-05-29 |
+| MP-FEAT-COMPETE-INVITES-001 | Compete card — pending invitations in sub-panel | DONE | 2026-05-29 |
+| 2026-05-29 | MP-UI-HOME-018 | Swap Compete card button order | DONE | Swapped button order in CompetePanel: JOIN GAME (outline) on left, CREATE GAME (white/blue) on right. Validation: tsc --noEmit exits 0. |

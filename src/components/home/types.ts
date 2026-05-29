@@ -16,7 +16,7 @@ export type Mode = typeof MODES[number]
 
 // New vertical card layout exports (MP-UI-HOME-008)
 export const MODE_CARD_GRADIENT: Record<string, string> = {
-  compete:  'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%)',
+  compete:  'linear-gradient(135deg, #22d3ee 0%, #0891b2 100%)',
   daily:    'linear-gradient(135deg, #7a0a0a 0%, #b01010 50%, #c81818 100%)',
   levelup:  'linear-gradient(135deg, #2d1060 0%, #5b21b6 50%, #7c3aed 100%)',
   practice: 'linear-gradient(135deg, #7c3008 0%, #c05010 50%, #ea6820 100%)',
