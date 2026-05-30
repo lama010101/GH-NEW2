@@ -41,7 +41,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       const { invitations } = await res.json()
       setInvites(invitations ?? [])
       setInvitesLoading(false)
-    } catch (e) {
+    } catch (_e) {
       setInvites([])
       setInvitesLoading(false)
     }

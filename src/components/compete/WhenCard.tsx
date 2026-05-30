@@ -135,7 +135,7 @@ export default function WhenCard({
       )}
       <div style={{ fontSize: 13, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
         <span>Correct:</span>
-        <span style={{ color: "#fff", fontSize: 2, fontWeight: 500 }}>{correctYear}</span>
+        <span style={{ color: "#fff", fontSize: 17, fontWeight: 700 }}>{correctYear}</span>
       </div>
       {/* Year timeline */}
       <div style={{ width: "100%", height: 108, position: "relative", margin: "12px 0", background: "#1a1a2a", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
