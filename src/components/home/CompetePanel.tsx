@@ -26,43 +26,23 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   const [invitesLoading, setInvitesLoading] = useState(true)
 
   const fetchInvites = async () => {
+    if (!playerId) {
+      setInvites([])
+      setInvitesLoading(false)
+      return
+    }
     try {
-      const { data: invitations, error: inviteError } = await supabaseBrowser
-        .from('game_invitations')
-        .select('id, game_id, inviter_id, created_at, expires_at')
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(5)
-
-      if (inviteError) throw inviteError
-
-      if (!invitations || invitations.length === 0) {
+      const res = await fetch('/api/invitations/pending')
+      if (!res.ok) {
         setInvites([])
         setInvitesLoading(false)
         return
       }
-
-      const invitesWithNames = await Promise.all(
-        invitations.map(async (invite) => {
-          const { data: profile } = await supabaseBrowser
-            .from('profiles')
-            .select('display_name, avatar_url')
-            .eq('id', invite.inviter_id)
-            .single()
-
-          return {
-            ...invite,
-            inviter_name: profile?.display_name || 'Unknown',
-            avatar_url: profile?.avatar_url,
-          }
-        })
-      )
-
-      setInvites(invitesWithNames)
+      const { invitations } = await res.json()
+      setInvites(invitations ?? [])
+      setInvitesLoading(false)
     } catch (e) {
-      console.error('Error fetching invitations:', e)
-    } finally {
+      setInvites([])
       setInvitesLoading(false)
     }
   }
@@ -162,6 +142,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       .from('game_invitations')
       .update({ status: 'declined' })
       .eq('id', inviteId)
+      .eq('invitee_id', playerId)
     setInvites(prev => prev.filter(i => i.id !== inviteId))
   }
 
@@ -197,11 +178,11 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     />
                   ) : (
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,173,193,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>
-                      {invite.inviter_name.slice(0, 2).toUpperCase()}
+                      {(invite.inviter_name ?? 'Unknown').slice(0, 2).toUpperCase()}
                     </div>
                   )}
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ color: 'white', fontSize: '13px', fontWeight: 'bold' }}>{invite.inviter_name}</span>
+                    <span style={{ color: 'white', fontSize: '13px', fontWeight: 'bold' }}>{invite.inviter_name ?? 'Unknown'}</span>
                     <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>invited you to play</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>

@@ -224,26 +224,28 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
     <>
       <style>{`
         .hint-modal-root {
-          --modal-bg: #111;
-          --modal-surface: #1a1a1a;
-          --modal-surface2: #141414;
-          --modal-surface3: #1e1e1e;
-          --modal-border: #1e1e1e;
-          --modal-border-md: #252525;
-          --modal-border-hi: #333;
-          --modal-text: #fff;
-          --modal-text-dim: #bbb;
-          --modal-text-muted: #666;
-          --modal-g: #7ed957;
-          --modal-y: #e8c022;
-          --modal-o: #E87722;
-          --modal-r: #e84422;
+          --modal-bg: rgba(255,255,255,0.82);
+          --modal-surface: rgba(255,255,255,0.60);
+          --modal-surface2: rgba(255,255,255,0.50);
+          --modal-surface3: rgba(255,255,255,0.65);
+          --modal-border: rgba(0,0,0,0.07);
+          --modal-border-md: rgba(0,0,0,0.10);
+          --modal-border-hi: rgba(0,0,0,0.16);
+          --modal-text: #111;
+          --modal-text-dim: #444;
+          --modal-text-muted: #888;
+          --modal-g: #16a34a;
+          --modal-y: #b45309;
+          --modal-o: #c2410c;
+          --modal-r: #dc2626;
         }
         /* TODO: light theme — add .light class overrides when theme system is implemented */
         .hint-modal-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.7);
+          background: rgba(255,255,255,0.35);
+          backdrop-filter: blur(18px) saturate(1.6);
+          -webkit-backdrop-filter: blur(18px) saturate(1.6);
           z-index: 1000;
           display: flex;
           align-items: center;
@@ -253,9 +255,12 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
         .hint-modal {
           width: 100%;
           max-width: 460px;
-          background: var(--modal-bg);
-          border-radius: 16px;
-          border: 0.5px solid var(--modal-border-md);
+          background: rgba(255,255,255,0.78);
+          backdrop-filter: blur(28px) saturate(1.8);
+          -webkit-backdrop-filter: blur(28px) saturate(1.8);
+          border-radius: 20px;
+          border: 0.5px solid rgba(255,255,255,0.90);
+          box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 0 rgba(255,255,255,0.9) inset;
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -281,8 +286,8 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
           width: 26px;
           height: 26px;
           border-radius: 50%;
-          background: #2a2a2a;
-          border: 0.5px solid #444;
+          background: rgba(0,0,0,0.08);
+          border: 0.5px solid rgba(0,0,0,0.12);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -369,7 +374,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
         .hint-axis-track {
           width: 56px;
           height: 2px;
-          background: #1e1e1e;
+          background: rgba(0,0,0,0.10);
           border-radius: 2px;
           overflow: hidden;
           margin-top: 3px;
@@ -388,7 +393,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
           border-radius: 0;
           padding: 0;
           border: none;
-          border-bottom: 0.5px solid #2a2a2a;
+          border-bottom: 0.5px solid rgba(0,0,0,0.10);
         }
         .hint-tab-btn {
           padding: 9px 0;
@@ -401,32 +406,41 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
           align-items: center;
           justify-content: center;
           gap: 6px;
-          transition: color 0.15s;
+          transition: color 0.15s, border-color 0.15s;
         }
-        .hint-tab-btn.active {
-          background: transparent;
-          border: none;
-          border-bottom: 2px solid #f97316;
-          border-radius: 0;
+        .hint-tab-btn--when.active {
+          border-bottom: 2.5px solid #0ea5e9;
+        }
+        .hint-tab-btn--where.active {
+          border-bottom: 2.5px solid #22c55e;
         }
         .hint-tab-lbl {
           font-size: 13px;
           font-weight: 500;
-          color: #666;
+          color: rgba(0,0,0,0.40);
         }
-        .hint-tab-btn.active .hint-tab-lbl {
-          color: #f97316;
-          font-weight: 600;
+        .hint-tab-btn--when.active .hint-tab-lbl {
+          color: #0284c7;
+          font-weight: 700;
         }
-        .hint-tab-btn svg path,
-        .hint-tab-btn svg rect,
-        .hint-tab-btn svg circle {
-          stroke: #666;
+        .hint-tab-btn--where.active .hint-tab-lbl {
+          color: #16a34a;
+          font-weight: 700;
         }
-        .hint-tab-btn.active svg path,
-        .hint-tab-btn.active svg rect,
-        .hint-tab-btn.active svg circle {
-          stroke: #f97316;
+        .hint-tab-icon {
+          width: 22px;
+          height: 22px;
+          object-fit: contain;
+          opacity: 0.45;
+          transition: opacity 0.15s, filter 0.15s;
+        }
+        .hint-tab-btn--when.active .hint-tab-icon {
+          opacity: 1;
+          filter: drop-shadow(0 0 3px rgba(14,165,233,0.5));
+        }
+        .hint-tab-btn--where.active .hint-tab-icon {
+          opacity: 1;
+          filter: drop-shadow(0 0 3px rgba(34,197,94,0.5));
         }
         .hint-tab-badge {
           margin-left: 2px;
@@ -455,12 +469,12 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
           width: 2px;
         }
         .hint-hints-panel::-webkit-scrollbar-thumb {
-          background: #222;
+          background: rgba(0,0,0,0.15);
           border-radius: 2px;
         }
         .hint-btn {
-          background: #2a2a2a;
-          border: 0.5px solid #383838;
+          background: rgba(0,0,0,0.05);
+          border: 0.5px solid rgba(0,0,0,0.10);
           border-radius: 10px;
           padding: 10px 12px;
           display: flex;
@@ -474,8 +488,8 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
           width: 100%;
         }
         .hint-btn:hover:not(.revealed) {
-          background: #333;
-          border-color: #444;
+          background: rgba(0,0,0,0.09);
+          border-color: rgba(0,0,0,0.18);
           transform: translateY(-1px);
         }
         .hint-btn:active:not(.revealed) {
@@ -503,8 +517,8 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          background: #333;
-          border: 0.5px solid #444;
+          background: rgba(0,0,0,0.08);
+          border: 0.5px solid rgba(0,0,0,0.12);
           transition: background 0.12s;
         }
         .hint-icon svg {
@@ -512,7 +526,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
           height: 13px;
         }
         .hint-btn:hover:not(.revealed) .hint-icon {
-          background: #222;
+          background: rgba(0,0,0,0.13);
         }
         .hint-body {
           flex: 1;
@@ -661,25 +675,22 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
           {/* Tabs */}
           <div className="hint-tab-row">
             <button
-              className={`hint-tab-btn ${activeTab === "when" ? "active" : ""}`}
+              className={`hint-tab-btn hint-tab-btn--when ${activeTab === "when" ? "active" : ""}`}
               onClick={() => setActiveTab("when")}
             >
-              <svg viewBox="0 0 12 12" fill="none" width="12" height="12">
-                <rect x="1.5" y="2" width="9" height="9" rx="1.5" strokeWidth="1.2" />
-                <path d="M4 1v2M8 1v2M1.5 5h9" strokeWidth="1.2" strokeLinecap="round" />
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/badges/when.webp" alt="" className="hint-tab-icon" />
               <span className="hint-tab-lbl">When</span>
               {getPurchasedCount("when") > 0 && (
                 <div className="hint-tab-badge">{getPurchasedCount("when")}</div>
               )}
             </button>
             <button
-              className={`hint-tab-btn ${activeTab === "where" ? "active" : ""}`}
+              className={`hint-tab-btn hint-tab-btn--where ${activeTab === "where" ? "active" : ""}`}
               onClick={() => setActiveTab("where")}
             >
-              <svg viewBox="0 0 12 12" fill="none" width="12" height="12">
-                <path d="M6 1C4.34 1 3 2.34 3 4c0 2.25 3 7 3 7s3-4.75 3-7c0-1.66-1.34-3-3-3zm0 4a1 1 0 110-2 1 1 0 010 2z" strokeWidth="1.2" />
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/badges/where.webp" alt="" className="hint-tab-icon" />
               <span className="hint-tab-lbl">Where</span>
               {getPurchasedCount("where") > 0 && (
                 <div className="hint-tab-badge">{getPurchasedCount("where")}</div>

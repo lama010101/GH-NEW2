@@ -90,13 +90,13 @@ export default function WhenCard({
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
             <line x1="16" y1="2" x2="16" y2="6" />
             <line x1="8" y1="2" x2="8" y2="6" />
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
-          <span style={{ fontSize: 18, fontWeight: 700, color: "#f97316" }}>When</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "#3b82f6" }}>When</span>
         </div>
         {(() => {
           const myWhenRow = whenRows.find(r => r.isMe);
@@ -139,7 +139,7 @@ export default function WhenCard({
       )}
       <div style={{ fontSize: 13, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
         <span>Correct:</span>
-        <span style={{ color: "#f97316" }}>{correctYear}</span>
+        <span style={{ color: "#3b82f6" }}>{correctYear}</span>
       </div>
       {/* Year timeline */}
       <div style={{ width: "100%", height: 108, position: "relative", margin: "12px 0", background: "#1a1a2a", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
@@ -247,7 +247,7 @@ export default function WhenCard({
                 left: "50%",
                 transform: "translateX(-50%)",
                 fontSize: 10,
-                color: row.isMe ? "#f97316" : "#60a5fa",
+                color: row.isMe ? "#3b82f6" : "#60a5fa",
                 whiteSpace: "nowrap",
                 textAlign: "center",
               }}>
@@ -333,7 +333,7 @@ export default function WhenCard({
               {whenCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
             <span style={{ fontSize: 11, fontWeight: 600, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Clues
+              Hints
             </span>
           </div>
           {(() => {
@@ -366,12 +366,9 @@ export default function WhenCard({
                   padding: "8px 0",
                   borderBottom: idx < whenHints.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                  <div style={{ marginBottom: 3 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                       {labelMap[hint.tier] ?? `Tier ${hint.tier}`}
-                    </span>
-                    <span style={{ fontSize: 10, color: "#e84422", fontWeight: 600 }}>
-                      -{[0,10,20,30,40,50][hint.tier] ?? 0}%
                     </span>
                   </div>
                   <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.4 }}>

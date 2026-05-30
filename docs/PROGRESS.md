@@ -1602,3 +1602,19 @@ MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIde
 | MP-FEAT-COMPETE-INVITES-001 | Compete card — pending invitations in sub-panel | DONE | 2026-05-29 |
 | 2026-05-29 | MP-UI-HOME-018 | Swap Compete card button order | DONE | Swapped button order in CompetePanel: JOIN GAME (outline) on left, CREATE GAME (white/blue) on right. Validation: tsc --noEmit exits 0. |
 | MP-FIX-COMPETE-INVITES-REALTIME-001 | Compete card invitations — real-time subscription | DONE | 2026-05-29 |
+| MP-UI-GAMEROUND-001 | Refactor bottom nav: 4-button row (Hints/Where/When/Submit), Settings moved to top bar | DONE |
+| MP-FIX-INVITE-DECLINE-001 | Fix invite decline persistence + fetch scope | CompetePanel.tsx | DONE | 2026-05-30 |
+| MP-INV-SOLO-START-001 | Verify solo lobby auto-start deployment | 2026-05-30 | COMPLETED |
+| MP-FIX-GAMEROUND-002 | Fix panel toggle (where/when independent), remove collapsed summary, add dismiss backdrop, fix button opacity | DONE |
+| MP-FIX-READY-BROADCAST-001 | Broadcast STATE_UPDATE after TOGGLE_READY | 2026-05-30 | DONE |
+| MP-FIX-INVITE-SESSION-RACE-001 | Fix invite list empty on first load (session race) | CompetePanel.tsx | DONE | 2026-05-30 |
+| MP-FIX-INVITE-API-002 | Update CompetePanel to fetch invites via API route | CompetePanel.tsx | DONE | 2026-05-30 |
+| MP-FIX-READY-BROADCAST-001b | Fix allPlayersReady >= 2 in broadcastStateUpdate (partykit/server.ts:649) | 2026-05-30 | DONE |
+| MP-FIX-START-MIN-PLAYERS-001 | Remove 2-player minimum from start route | 2026-05-30 | DONE |
+| MP-FIX-GAMEROUND-003 | Disable cinematic auto-open; move search below map; move year input below slider; simplify card headers | DONE |
+| MP-FIX-INVITE-REALTIME-001 | Fix CompetePanel notif updates using polling/focus like bell | CompetePanel.tsx | DONE | 2026-05-30 |
+| MP-FIX-GAMEROUND-004 | Navbar polish (hints gradient, badge images, dark bg), fullscreen map full-screen, HUD visibility, timer progress ring | RoundActiveSection.tsx, RoundActiveSection.module.css | DONE | 2026-05-30 |
+| MP-FIX-GAMEROUND-005 | Timer size/alignment, glow submit, semi-transparent hints, where/when defaults, no card borders, input visibility, map no radius, urgency effects | RoundActiveSection.tsx, RoundActiveSection.module.css | DONE | 2026-05-30 |
+| MP-FIX-INVITE-API-003 | Create pending invitations API route | src/app/api/invitations/pending/route.ts | DONE | 2026-05-30 |
+| MP-FIX-INVITE-RENDER-001 | Fix TypeError inviter_name undefined on invite render | CompetePanel.tsx | DONE | 2026-05-30 |
+| MP-FIX-INVITE-RENDER-002 | Enrich pending invitations API route with inviter_name + avatar_url | src/app/api/invitations/pending/route.ts | DONE | 2026-05-30 |

@@ -10,7 +10,7 @@
 /* Fullscreen button overlay on map */
 .mapWrapper {
   position: relative;
-  border-radius: 12px;
+  border-radius: 0;
   overflow: hidden;
   margin-bottom: 0;
   width: 100%;
@@ -23,18 +23,19 @@
   transform: translateX(-50%);
   right: unset;
   z-index: 1000;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   background: rgba(20, 18, 16, 0.82);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
 
 .mapFullscreenBtn:hover {
@@ -75,33 +76,8 @@
 .mapFullscreenBody {
   flex: 1;
   min-height: 0;
-}
-
-/* Pulse animation for buttons */
-@keyframes pulseRing {
-  0% { transform: scale(1); opacity: 0.55; }
-  100% { transform: scale(2.1); opacity: 0; }
-}
-
-.shineBtn {
   position: relative;
-  overflow: visible;
-}
-
-.shineBtn::before,
-.shineBtn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 2px solid currentColor;
-  animation: pulseRing 1.8s ease-out infinite;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.shineBtn::after {
-  animation-delay: 0.9s;
+  border-radius: 0;
 }
 
 /* Toast fade in/out animation */
@@ -119,20 +95,40 @@
   }
 }
 
-/* Navbar layout with centered show/hide */
+/* Navbar layout with 4-button row */
 .navbar {
   background: transparent;
-  padding: 10px 16px;
+  padding: 8px 12px;
   padding-bottom: calc(12px + env(safe-area-inset-bottom));
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
   pointer-events: auto;
 }
 
 /* Show/hide toggle button — big, centered, prominent */
+/* Glow pulse animation for submit button when active */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(255, 138, 0, 0.5); }
+  50%       { box-shadow: 0 0 20px 6px rgba(255, 174, 66, 0.85); }
+}
+
+.submitActive {
+  animation: glowPulse 1.6s ease-in-out infinite;
+}
+
+/* Timer flash animation for urgent countdown */
+@keyframes timerFlash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.timerUrgent {
+  animation: timerFlash 0.6s ease-in-out infinite;
+}
+
 .toggleBtn {
   width: 44px;
   height: 44px;

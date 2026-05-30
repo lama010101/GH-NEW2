@@ -232,12 +232,12 @@ export default function LobbySection({
   const isReady         = viewer?.ready ?? false;
   const isHost          = viewer?.isHost ?? false;
 
-  /* ── Auto-start: fire onStartGame once when all players are ready and >= 2 players ── */
+  /* ── Auto-start: fire onStartGame once when all players are ready and >= 1 players ── */
   const autoStartFiredRef = useRef(false);
   useEffect(() => {
     if (
       !autoStartFiredRef.current &&
-      snapshot.players.length >= 2 &&
+      snapshot.players.length >= 1 &&
       snapshot.allPlayersReady &&
       !busy
     ) {

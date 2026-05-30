@@ -337,19 +337,23 @@ export default function RoundCompleteSection({
                 </div>
               );
             })()}
-            {resultSecsLeft !== null && resultSecsLeft > 0 && (
-              <div style={{ textAlign: "center", padding: "12px 0 4px", fontSize: 13, color: "#6b7280" }}>
-                Auto-advancing in {resultSecsLeft}s
+            {(resultSecsLeft !== null && resultSecsLeft > 0) || (snapshot.readyForNext && snapshot.readyForNext.length > 0) ? (
+              <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
+                {resultSecsLeft !== null && resultSecsLeft > 0 && (
+                  <div style={{ textAlign: "center", fontSize: 13, color: "#9ca3af", marginBottom: snapshot.readyForNext && snapshot.readyForNext.length > 0 ? 8 : 0 }}>
+                    Auto-advancing in {resultSecsLeft}s
+                  </div>
+                )}
+                {snapshot.readyForNext && snapshot.readyForNext.length > 0 && (
+                  <div style={{ textAlign: "center", fontSize: 13, color: "#9ca3af" }}>
+                    {snapshot.readyForNext.map(pid => {
+                      const name = snapshot.players.find(p => p.playerId === pid)?.displayName ?? pid.slice(0, 8);
+                      return <span key={pid} style={{ marginRight: 6 }}><span style={getUsernameGradientStyle(pid)}>{name}</span> ✓</span>;
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-            {snapshot.readyForNext && snapshot.readyForNext.length > 0 && (
-              <div style={{ textAlign: "center", fontSize: 13, color: "#9ca3af", paddingBottom: 8 }}>
-                {snapshot.readyForNext.map(pid => {
-                  const name = snapshot.players.find(p => p.playerId === pid)?.displayName ?? pid.slice(0, 8);
-                  return <span key={pid} style={{ marginRight: 6 }}><span style={getUsernameGradientStyle(pid)}>{name}</span> ✓</span>;
-                })}
-              </div>
-            )}
+            ) : null}
             {/* FIXED BOTTOM BAR */}
             <div className="round-complete-desktop-bottom" style={{
               position: "fixed",
