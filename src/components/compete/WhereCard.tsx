@@ -62,11 +62,11 @@ export default function WhereCard({
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
             <circle cx="12" cy="10" r="3" />
           </svg>
-          <span style={{ fontSize: 18, fontWeight: 700, color: "#f97316" }}>Where</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "#22c55e" }}>Where</span>
         </div>
         {(() => {
           if (myResult == null || !myResult.didSubmit) {
@@ -104,7 +104,7 @@ export default function WhereCard({
       )}
       <div style={{ fontSize: 15, color: "#fff", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
         <span>Correct:</span>
-        <span style={{ color: "#f97316" }}>{correctName}</span>
+        <span style={{ color: "#22c55e" }}>{correctName}</span>
       </div>
       {(() => {
         if (myResult == null || !myResult.didSubmit) {
@@ -117,7 +117,7 @@ export default function WhereCard({
         if (myDistanceKm != null) {
           return (
             <div style={{ marginBottom: 8 }}>
-              <span style={{ fontSize: 15, color: "#fff" }}>{Math.round(myDistanceKm)} km away</span>
+              <span style={{ fontSize: 15, color: "#22c55e" }}>{Math.round(myDistanceKm)} km away</span>
             </div>
           );
         }
@@ -224,7 +224,7 @@ export default function WhereCard({
               {whereCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
             <span style={{ fontSize: 11, fontWeight: 600, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Clues
+              Hints
             </span>
           </div>
           {(() => {
@@ -257,12 +257,9 @@ export default function WhereCard({
                   padding: "8px 0",
                   borderBottom: idx < whereHints.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                  <div style={{ marginBottom: 3 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                       {labelMap[hint.tier] ?? `Tier ${hint.tier}`}
-                    </span>
-                    <span style={{ fontSize: 10, color: "#e84422", fontWeight: 600 }}>
-                      -{[0,10,20,30,40,50][hint.tier] ?? 0}%
                     </span>
                   </div>
                   <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.4 }}>

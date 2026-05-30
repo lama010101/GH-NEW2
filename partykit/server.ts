@@ -646,7 +646,7 @@ export default class GameServer {
           ? new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs
           : undefined;
       const allPlayersReady =
-        this.snapshot.players.length >= 2 &&
+        this.snapshot.players.length >= 1 &&
         this.snapshot.players.every(p => p.ready === true);
 
       snapshotWithReadyState = {

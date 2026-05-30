@@ -529,7 +529,6 @@ export default function CompeteGamePage() {
             onSubmit={handleSubmitGuess}
             onOpenHints={() => setHintModalOpen(true)}
             hintsUsedCount={hintResult.purchasedIds.length}
-            hintsTotalCount={(snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []).length || 14}
             guessYearRef={guessYearRef}
             viewer={viewer}
             localPlayerAvatarUrl={localPlayerAvatarUrl}

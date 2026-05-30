@@ -136,7 +136,7 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
 
     return (
       <GameMapErrorBoundary>
-        <div style={{ width: "100%", height: "100%", borderRadius: "20px", overflow: "hidden" }}>
+        <div style={{ width: "100%", height: "100%", borderRadius: 0, overflow: "hidden" }}>
           <MapContainer
             center={[20, 0]}
             zoom={2}
