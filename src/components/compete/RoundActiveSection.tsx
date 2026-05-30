@@ -753,9 +753,9 @@ export default function RoundActiveSection({
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#22c55e" }}>Where?</span>
               </div>
               <span style={{
-                fontSize: 13,
+                fontSize: 17,
                 fontWeight: 600,
-                color: guessLocation !== null ? "#22c55e" : "rgba(255,255,255,0.35)",
+                color: "#ffffff",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -890,9 +890,9 @@ export default function RoundActiveSection({
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#38bdf8" }}>When?</span>
               </div>
               <span style={{
-                fontSize: 13,
+                fontSize: 20,
                 fontWeight: 600,
-                color: guessYear !== null ? "#38bdf8" : "rgba(255,255,255,0.35)",
+                color: "#ffffff",
                 fontVariantNumeric: "tabular-nums",
               }}>
                 {guessYear !== null ? String(guessYear) : "No year set"}
@@ -1036,30 +1036,32 @@ export default function RoundActiveSection({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/badges/where.webp" alt="where" style={{ width: 36, height: 36, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 3px rgba(34,197,94,0.5))" }} />
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
-              <span style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: "rgba(255,255,255,0.55)",
-                textTransform: "uppercase" as const,
-                letterSpacing: "0.08em",
-                lineHeight: 1.1,
-              }}>
-                Where
-              </span>
-              <span style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: guessLocation !== null ? "#4ade80" : "rgba(255,255,255,0.45)",
-                maxWidth: 84,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap" as const,
-                lineHeight: 1.25,
-              }}>
-                {guessLocation !== null
-                  ? (locationNameLoading ? "…" : (locationName ?? "Set ✓").split(",")[0].trim())
-                  : "Tap to set"}
-              </span>
+              {guessLocation === null && (
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  textTransform: "uppercase" as const,
+                  letterSpacing: "0.08em",
+                  lineHeight: 1.1,
+                }}>
+                  Where
+                </span>
+              )}
+              {guessLocation !== null && (
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  maxWidth: 84,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap" as const,
+                  lineHeight: 1.25,
+                }}>
+                  {locationNameLoading ? "…" : (locationName ?? "Set ✓").split(",")[0].trim()}
+                </span>
+              )}
             </div>
           </button>
 
@@ -1094,25 +1096,29 @@ export default function RoundActiveSection({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/badges/when.webp" alt="when" style={{ width: 36, height: 36, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 3px rgba(56,189,248,0.5))" }} />
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
-              <span style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: "rgba(255,255,255,0.55)",
-                textTransform: "uppercase" as const,
-                letterSpacing: "0.08em",
-                lineHeight: 1.1,
-              }}>
-                When
-              </span>
-              <span style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: guessYear !== null ? "#7dd3fc" : "rgba(255,255,255,0.45)",
-                fontVariantNumeric: "tabular-nums",
-                lineHeight: 1.25,
-              }}>
-                {guessYear !== null ? String(guessYear) : "Tap to set"}
-              </span>
+              {guessYear === null && (
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  textTransform: "uppercase" as const,
+                  letterSpacing: "0.08em",
+                  lineHeight: 1.1,
+                }}>
+                  When
+                </span>
+              )}
+              {guessYear !== null && (
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  fontVariantNumeric: "tabular-nums",
+                  lineHeight: 1.25,
+                }}>
+                  {String(guessYear)}
+                </span>
+              )}
             </div>
           </button>
 
@@ -1177,42 +1183,64 @@ export default function RoundActiveSection({
             position: 'fixed',
             inset: 0,
             zIndex: 10000,
-            background: 'rgba(0,0,0,0.75)',
+            background: 'rgba(255,255,255,0.35)',
+            backdropFilter: 'blur(18px) saturate(1.6)',
+            WebkitBackdropFilter: 'blur(18px) saturate(1.6)',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            padding: 16,
           }}
         >
+          {/* Close button — outside modal, above it */}
+          <button
+            type="button"
+            onClick={() => setSettingsModalOpen(false)}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'rgba(0,0,0,0.12)',
+              border: '0.5px solid rgba(0,0,0,0.18)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              marginBottom: 12,
+              flexShrink: 0,
+            }}
+          >
+            <svg viewBox="0 0 10 10" fill="none" width="12" height="12">
+              <path d="M2 2l6 6M8 2L2 8" stroke="#333" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          </button>
+
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#1a1714',
-              borderRadius: 16,
+              background: 'rgba(255,255,255,0.78)',
+              backdropFilter: 'blur(28px) saturate(1.8)',
+              WebkitBackdropFilter: 'blur(28px) saturate(1.8)',
+              borderRadius: 20,
+              border: '0.5px solid rgba(255,255,255,0.90)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.18), 0 1.5px 0 rgba(255,255,255,0.9) inset',
               padding: 24,
-              width: '90%',
+              width: '100%',
               maxWidth: 320,
-              position: 'relative',
             }}
           >
-            {/* Close button */}
-            <button
-              type="button"
-              onClick={() => setSettingsModalOpen(false)}
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 12,
-                background: 'none',
-                border: 'none',
-                color: 'rgba(255,255,255,0.6)',
-                fontSize: 24,
-                cursor: 'pointer',
-                padding: 4,
-                lineHeight: 1,
-              }}
-            >
-              ×
-            </button>
+            {/* Header */}
+            <div style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: '#111',
+              textTransform: 'uppercase' as const,
+              letterSpacing: '0.06em',
+              marginBottom: 20,
+            }}>
+              Settings
+            </div>
 
             {/* Row 1: Sound toggle */}
             <div
@@ -1223,7 +1251,7 @@ export default function RoundActiveSection({
                 marginBottom: 16,
               }}
             >
-              <span style={{ color: 'white', fontSize: 15 }}>Sound</span>
+              <span style={{ color: '#111', fontSize: 15 }}>Sound</span>
               <button
                 type="button"
                 onClick={() => setSoundEnabled(!soundEnabled)}
@@ -1232,7 +1260,7 @@ export default function RoundActiveSection({
                   height: 28,
                   borderRadius: 14,
                   border: 'none',
-                  background: soundEnabled ? '#fb923c' : 'rgba(255,255,255,0.2)',
+                  background: soundEnabled ? '#fb923c' : 'rgba(0,0,0,0.15)',
                   cursor: 'pointer',
                   position: 'relative',
                 }}
@@ -1241,7 +1269,7 @@ export default function RoundActiveSection({
                   style={{
                     position: 'absolute',
                     top: 2,
-                    left: soundEnabled ? 24 : 2,
+                    left: soundEnabled ? 22 : 2,
                     width: 24,
                     height: 24,
                     borderRadius: '50%',
@@ -1258,10 +1286,10 @@ export default function RoundActiveSection({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: 16,
+                marginBottom: 20,
               }}
             >
-              <span style={{ color: 'white', fontSize: 15 }}>Vibrate</span>
+              <span style={{ color: '#111', fontSize: 15 }}>Vibrate</span>
               <button
                 type="button"
                 onClick={() => setVibrateEnabled(!vibrateEnabled)}
@@ -1270,7 +1298,7 @@ export default function RoundActiveSection({
                   height: 28,
                   borderRadius: 14,
                   border: 'none',
-                  background: vibrateEnabled ? '#fb923c' : 'rgba(255,255,255,0.2)',
+                  background: vibrateEnabled ? '#fb923c' : 'rgba(0,0,0,0.15)',
                   cursor: 'pointer',
                   position: 'relative',
                 }}
@@ -1279,7 +1307,7 @@ export default function RoundActiveSection({
                   style={{
                     position: 'absolute',
                     top: 2,
-                    left: vibrateEnabled ? 24 : 2,
+                    left: vibrateEnabled ? 22 : 2,
                     width: 24,
                     height: 24,
                     borderRadius: '50%',
@@ -1299,10 +1327,10 @@ export default function RoundActiveSection({
                 height: 44,
                 borderRadius: 999,
                 border: 'none',
-                background: 'rgba(255,255,255,0.1)',
+                background: '#fb923c',
                 color: 'white',
                 fontSize: 15,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
               }}
             >
