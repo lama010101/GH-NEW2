@@ -102,7 +102,7 @@ export default function WhereCard({
       )}
       <div style={{ fontSize: 15, color: "#fff", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
         <span>Correct:</span>
-        <span style={{ color: "#fff" }}>{correctName}</span>
+        <span style={{ color: "#fff", fontSize: 17, fontWeight: 700 }}>{correctName}</span>
       </div>
       {(() => {
         if (myResult == null || !myResult.didSubmit) {
@@ -115,7 +115,7 @@ export default function WhereCard({
         if (myDistanceKm != null) {
           return (
             <div style={{ marginBottom: 8 }}>
-              <span style={{ fontSize: 20, color: "#fff" }}>{Math.round(myDistanceKm)} km away</span>
+              <span style={{ fontSize: 14, color: "#fff" }}>{Math.round(myDistanceKm)} km away</span>
             </div>
           );
         }
