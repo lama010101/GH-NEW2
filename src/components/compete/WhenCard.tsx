@@ -90,12 +90,8 @@ export default function WhenCard({
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/badges/when.webp" alt="when" width={36} height={36} style={{ objectFit: "contain" }} />
           <span style={{ fontSize: 18, fontWeight: 700, color: "#3b82f6" }}>When</span>
         </div>
         {(() => {
@@ -116,8 +112,8 @@ export default function WhenCard({
             return (
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                  <span style={{ fontSize: 19, fontWeight: 700, color: whenColor }}>{whenScore}</span>
-                  <span style={{ fontSize: 7, fontWeight: 600, color: "#ffffff" }}>%</span>
+                  <span style={{ fontSize: 25, fontWeight: 700, color: whenColor }}>{whenScore}</span>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>%</span>
                 </div>
               </div>
             );
@@ -139,7 +135,7 @@ export default function WhenCard({
       )}
       <div style={{ fontSize: 13, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
         <span>Correct:</span>
-        <span style={{ color: "#3b82f6" }}>{correctYear}</span>
+        <span style={{ color: "#fff", fontSize: 2, fontWeight: 500 }}>{correctYear}</span>
       </div>
       {/* Year timeline */}
       <div style={{ width: "100%", height: 108, position: "relative", margin: "12px 0", background: "#1a1a2a", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
@@ -246,10 +242,11 @@ export default function WhenCard({
                 top: 30,
                 left: "50%",
                 transform: "translateX(-50%)",
-                fontSize: 10,
-                color: row.isMe ? "#3b82f6" : "#60a5fa",
+                fontSize: row.isMe ? 15 : 10,
+                color: "#ffffff",
                 whiteSpace: "nowrap",
                 textAlign: "center",
+                fontWeight: row.isMe ? 700 : 400,
               }}>
                 {row.guessYear}
               </div>
@@ -336,15 +333,7 @@ export default function WhenCard({
               Hints
             </span>
           </div>
-          {(() => {
-            const myResult = roundResults?.find(r => r.playerId === playerId);
-            const xp = myResult?.timeScore ?? null;
-            return xp != null ? (
-              <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600 }}>
-                {xp} XP
-              </span>
-            ) : null;
-          })()}
+          {null}
         </div>
         {whenCluesExpanded && (
           <div style={{ padding: "0 12px 12px" }}>

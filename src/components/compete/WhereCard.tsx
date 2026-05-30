@@ -62,10 +62,8 @@ export default function WhereCard({
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/badges/where.webp" alt="where" width={36} height={36} style={{ objectFit: "contain" }} />
           <span style={{ fontSize: 18, fontWeight: 700, color: "#22c55e" }}>Where</span>
         </div>
         {(() => {
@@ -82,8 +80,8 @@ export default function WhereCard({
           return (
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                <span style={{ fontSize: 19, fontWeight: 700, color: locColor }}>{locScore}</span>
-                <span style={{ fontSize: 7, fontWeight: 600, color: "#ffffff" }}>%</span>
+                <span style={{ fontSize: 25, fontWeight: 700, color: locColor }}>{locScore}</span>
+                <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>%</span>
               </div>
             </div>
           );
@@ -104,7 +102,7 @@ export default function WhereCard({
       )}
       <div style={{ fontSize: 15, color: "#fff", marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
         <span>Correct:</span>
-        <span style={{ color: "#22c55e" }}>{correctName}</span>
+        <span style={{ color: "#fff" }}>{correctName}</span>
       </div>
       {(() => {
         if (myResult == null || !myResult.didSubmit) {
@@ -117,7 +115,7 @@ export default function WhereCard({
         if (myDistanceKm != null) {
           return (
             <div style={{ marginBottom: 8 }}>
-              <span style={{ fontSize: 15, color: "#22c55e" }}>{Math.round(myDistanceKm)} km away</span>
+              <span style={{ fontSize: 20, color: "#fff" }}>{Math.round(myDistanceKm)} km away</span>
             </div>
           );
         }
@@ -227,15 +225,7 @@ export default function WhereCard({
               Hints
             </span>
           </div>
-          {(() => {
-            const myResult = roundResults?.find(r => r.playerId === playerId);
-            const xp = myResult?.locationScore ?? null;
-            return xp != null ? (
-              <span style={{ fontSize: 11, color: "#a78bfa", fontWeight: 600 }}>
-                {xp} XP
-              </span>
-            ) : null;
-          })()}
+          {null}
         </div>
         {whereCluesExpanded && (
           <div style={{ padding: "0 12px 12px" }}>
