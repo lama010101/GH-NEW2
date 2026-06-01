@@ -34,6 +34,7 @@ interface RoundCompleteSectionProps {
   setWhenCluesExpanded: (v: boolean) => void;
   resultSecsLeft: number | null;
   onAdvanceRound: () => void;
+  setFullscreenImg: (url: string | null) => void;
 }
 
 export default function RoundCompleteSection({
@@ -55,6 +56,7 @@ export default function RoundCompleteSection({
   setWhenCluesExpanded,
   resultSecsLeft,
   onAdvanceRound,
+  setFullscreenImg,
 }: RoundCompleteSectionProps) {
   const router = useRouter();
 
@@ -111,13 +113,18 @@ export default function RoundCompleteSection({
                 {round.title}
               </div>
               {round.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={round.imageUrl}
-                  alt={round.title}
-                  style={{ width: "100%", height: "180px", objectFit: "cover", display: "block" }}
-                  className="round-complete-event-image"
-                />
+                <div
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setFullscreenImg(round.imageUrl)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={round.imageUrl}
+                    alt={round.title}
+                    style={{ width: "100%", height: "180px", objectFit: "cover", display: "block" }}
+                    className="round-complete-event-image"
+                  />
+                </div>
               ) : (
                 <div style={{ width: "100%", height: "180px", background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 12 }}>
                   No image available
