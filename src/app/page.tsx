@@ -80,7 +80,7 @@ function HomePageInner() {
       <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0,0,0,0.8)' }} />
 
       {/* Top bar */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(0,0,0,0.6)' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Image src="/icons/logo.webp" alt="Guess-History" width={120} height={32} style={{ objectFit: 'contain' }} priority />
         </div>
@@ -103,28 +103,25 @@ function HomePageInner() {
         </div>
       </div>
 
-      {/* Tagline */}
-      <div style={{
-        position: 'fixed',
-        top: 56,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 9,
-        textAlign: 'center',
-        color: 'rgba(255,255,255,0.65)',
-        fontSize: 13,
-        fontWeight: 500,
-        letterSpacing: '0.4px',
-        padding: '4px 0 6px',
-        width: '100%',
-        maxWidth: 480,
-        boxSizing: 'border-box' as const,
-      }}>
-        Where and when did it happen?
-      </div>
-
       {/* Scrollable content area */}
       <div className={styles['page-scroll']}>
+        {/* Tagline */}
+        <div style={{
+          width: '100%',
+          maxWidth: 480,
+          padding: '0px 16px 12px',
+          boxSizing: 'border-box' as const,
+          textAlign: 'center',
+          color: '#ffffff',
+          fontSize: 22,
+          fontWeight: 500,
+          letterSpacing: '0.1px',
+          lineHeight: 1.2,
+          margin: '0 auto',
+        }}>
+          Where and when did it happen?
+        </div>
+
         {/* Vertical card stack */}
         <div className={styles['cards-stack']}>
           {VERTICAL_CARD_ORDER.map(mode => (

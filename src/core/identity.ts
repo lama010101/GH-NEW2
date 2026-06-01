@@ -7,6 +7,11 @@ export type IdentityState =
   | { status: "error"; error: string };
 
 let cachedState: IdentityState = { status: "loading" };
+
+export function getCachedIdentityState(): IdentityState {
+  return cachedState;
+}
+
 let resolveReady: ((playerId: string) => void) | null = null;
 const readyPromise = new Promise<string>((resolve) => {
   resolveReady = resolve;

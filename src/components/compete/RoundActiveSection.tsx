@@ -212,7 +212,7 @@ export default function RoundActiveSection({
             delete next[p.playerId];
             return next;
           });
-        }, 3000);
+        }, 2000);
         
         toastTimeoutsRef.current[p.playerId] = timeoutId;
       }
@@ -583,10 +583,10 @@ export default function RoundActiveSection({
                         fontWeight: 600,
                         color: "rgba(255,255,255,0.85)",
                         whiteSpace: "nowrap",
-                        animation: "fadeInOut 3s ease forwards",
+                        animation: "fadeInOut 2s ease forwards",
                       }}
                     >
-                      {p.displayName ?? "Player"} guessed
+                      Guessed
                     </div>
                   )}
                   <div

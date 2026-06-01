@@ -138,21 +138,9 @@ export default function RoundCompleteSection({
                   fontSize: 15,
                   color: "#d1d5db",
                   lineHeight: 1.6,
-                  display: descriptionExpanded ? "block" : "-webkit-box",
-                  WebkitLineClamp: descriptionExpanded ? undefined : 3,
-                  WebkitBoxOrient: "vertical" as const,
-                  overflow: "hidden",
                 }}>
                   {round.description ?? "No description available"}
                 </div>
-                {!descriptionExpanded && (round.description?.length ?? 0) > 0 && (
-                  <button
-                    onClick={() => setDescriptionExpanded(true)}
-                    style={{ background: "none", border: "none", color: "#9ca3af", fontSize: 13, textDecoration: "underline", cursor: "pointer", padding: 0, marginTop: 4, display: "block" }}
-                  >
-                    more
-                  </button>
-                )}
               </div>
               {(round as unknown as { sourceUrl?: string }).sourceUrl && (
                 <div style={{ padding: "0 16px 16px" }}>

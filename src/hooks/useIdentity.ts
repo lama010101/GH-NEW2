@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   bootstrapIdentity,
   subscribeToIdentityChanges,
+  getCachedIdentityState,
   type IdentityState
 } from "@/core/identity";
 
@@ -17,7 +18,7 @@ export type UseIdentityReturn = {
 };
 
 export function useIdentity(): UseIdentityReturn {
-  const [state, setState] = useState<IdentityState>({ status: "loading" });
+  const [state, setState] = useState<IdentityState>(getCachedIdentityState);
   const bootstrapped = useRef(false);
 
   useEffect(() => {
