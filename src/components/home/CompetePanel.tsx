@@ -14,6 +14,14 @@ type ActiveGame = {
   status: 'your_turn' | 'waiting' | 'completed'
   score_you?: number
   score_them?: number
+  accuracy_you?: number
+}
+
+function getAccuracyColor(pct: number): string {
+  if (pct >= 85) return '#22c55e'
+  if (pct >= 60) return '#eab308'
+  if (pct >= 40) return '#fb923c'
+  return '#ef4444'
 }
 
 export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: {
@@ -94,7 +102,14 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       )
       .subscribe()
 
-    return () => { supabaseBrowser.removeChannel(channel) }
+    const interval = setInterval(() => {
+      fetchInvites()
+    }, 15000)
+
+    return () => {
+      supabaseBrowser.removeChannel(channel)
+      clearInterval(interval)
+    }
   }, [playerId])
 
   const handleCreate = async () => {
@@ -159,6 +174,21 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       .from('game_invitations')
       .update({ status: 'accepted' })
       .eq('id', inviteId)
+    const res = await fetch('/api/notifications')
+    if (res.ok) {
+      const data = await res.json()
+      const match = (data.notifications ?? []).find(
+        (n: { payload?: { game_id?: string }; id: string }) =>
+          n.payload?.game_id === gameId
+      )
+      if (match) {
+        await fetch('/api/notifications', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: [match.id] })
+        })
+      }
+    }
     onLobby(gameId)
   }
 
@@ -319,11 +349,51 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{game.opponent_name}</span>
                     <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Round {game.round_current} / {game.round_total}</span>
                   </div>
-                  <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>
-                    {game.score_you != null && game.score_them != null
-                      ? `${game.score_you} – ${game.score_them}`
-                      : 'Completed'}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {game.score_you != null && game.score_them != null ? (
+                      <>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '1px 7px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: 'white',
+                            marginRight: 6,
+                            background:
+                              game.score_you > game.score_them
+                                ? '#22c55e'
+                                : game.score_you < game.score_them
+                                  ? '#ef4444'
+                                  : '#6b7280',
+                          }}
+                        >
+                          {game.score_you > game.score_them ? 'W' : game.score_you < game.score_them ? 'L' : 'D'}
+                        </span>
+                        <span
+                          style={{
+                            color: getAccuracyColor(game.accuracy_you ?? 0),
+                            fontWeight: 600,
+                            fontSize: 13,
+                          }}
+                        >
+                          {game.accuracy_you ?? 0}%
+                        </span>
+                        <span
+                          style={{
+                            color: '#ffffff8c',
+                            fontSize: 12,
+                            marginLeft: 4,
+                          }}
+                        >
+                          {game.score_you} XP
+                        </span>
+                      </>
+                    ) : (
+                      <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>Completed</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

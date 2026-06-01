@@ -1630,3 +1630,14 @@ MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIde
 MP-FIX-HAVERSINE-001: Fixed antimeridian wrap in haversineDistanceKm (rules.ts)
 | MP-UI-HOME-FIXES-002 | Tagline width, invite icon, remove CTA buttons, Daily card content | DONE | 2026-06-01 |
 MP-FIX-HAVERSINE-002: Fixed antimeridian wrap in haversineKm (competeUtils.ts)
+| MP-UI-HOME-FIXES-003 | Tagline width and size matching card container | DONE | 2026-06-01 |
+| MP-UI-HOME-FIXES-004 | Tagline 24px bold centered | DONE | 2026-06-01 |
+| MP-FIX-PLAYAGAIN-004 | Fix identity bootstrap race in useIdentity | src/hooks/useIdentity.ts + src/core/identity.ts | DONE |
+| MP-FIX-HOME-INVITE-POLL-001 | DONE | src/components/home/CompetePanel.tsx | Added 15-second polling to refresh pending invitations | 2026-06-01 |
+| MP-FIX-COMPETE-ACTIVE-GAMES-001 | DONE | src/app/api/compete/active-games/route.ts | Created GET endpoint for active/completed games list used by CompetePanel home page tabs | 2026-06-01 |
+| MP-FIX-COMPETE-ACTIVE-GAMES-001 | DONE | src/app/api/compete/active-games/route.ts | Created /api/compete/active-games API route for active games list | 2026-06-01 |
+| MP-FIX-WS-LOCAL-001 | Fix localhost WS port + suppress premature error display | .env.local + competeWebSocket.ts | DONE |
+| MP-UI-LOBBY-READY-001 | Lobby Ready button text and color changes | LobbySection.tsx + LobbySection.module.css | DONE | 2026-06-01 | Changed button text: "READY?" → "I'm ready" (not ready), "READY!" → "Ready - Waiting for others" (ready). Changed not-ready button color from red (#ef4444) to grey (#6b7280). Button remains toggleable via onToggleReady. |
+| MP-UI-COMPLETED-ROW-001 | DONE | src/app/api/compete/active-games/route.ts, src/components/home/CompetePanel.tsx | Completed rows show W/L/D badge + player accuracy% (color-coded) + XP | 2026-06-01 |
+| MP-FIX-YOUR-TURN-MODE-001 | DONE | src/app/api/compete/active-games/route.ts | your_turn status restricted to async sessions only | 2026-06-01 |
+| MP-FIX-NOTIF-DISMISS-001 | Dismiss bell notification on invite accept + filter read notifs from bell drawer | CompetePanel.tsx, NotificationBell.tsx | DONE | 2026-06-01 |

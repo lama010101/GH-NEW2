@@ -659,7 +659,7 @@ export default function LobbySection({
             onClick={onToggleReady}
             disabled={busy}
           >
-            {isReady ? "READY!" : "READY?"}
+            {isReady ? "Ready - Waiting for others" : "I'm ready"}
           </button>
           <span className={styles['lobby-ready-count']}>
             ({readyCount}/{totalPlayers} players ready)

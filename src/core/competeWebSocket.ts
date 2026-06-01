@@ -94,7 +94,9 @@ export class CompeteWebSocket {
     };
 
     this.ws.onerror = () => {
-      this.callbacks.onError?.("WebSocket error");
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        this.callbacks.onError?.("WebSocket error");
+      }
     };
   }
 

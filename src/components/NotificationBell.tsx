@@ -166,10 +166,10 @@ export default function NotificationBell({ className }: NotificationBellProps) {
             </button>
           </div>
           <div className={styles.drawerList}>
-            {notifications.length === 0 && (
+            {notifications.filter(n => !n.read).length === 0 && (
               <div className={styles.empty}>No notifications</div>
             )}
-            {notifications.map((n) => (
+            {notifications.filter(n => !n.read).map((n) => (
               <NotificationItem key={n.id} notification={n} onClose={() => setOpen(false)} />
             ))}
           </div>
