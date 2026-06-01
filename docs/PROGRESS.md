@@ -1618,3 +1618,7 @@ MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIde
 | MP-FIX-INVITE-API-003 | Create pending invitations API route | src/app/api/invitations/pending/route.ts | DONE | 2026-05-30 |
 | MP-FIX-INVITE-RENDER-001 | Fix TypeError inviter_name undefined on invite render | CompetePanel.tsx | DONE | 2026-05-30 |
 | MP-FIX-INVITE-RENDER-002 | Enrich pending invitations API route with inviter_name + avatar_url | src/app/api/invitations/pending/route.ts | DONE | 2026-05-30 |
+| MP-FIX-FULLSCREEN-SESSION-002 | Fix fullscreen overlay for 21:9 + close button | DONE | 2026-06-01 |
+| MP-FIX-FULLSCREEN-SESSION-002 | Fix fullscreen overlay for 21:9 + close button | DONE | 2026-06-01 |
+| MP-FIX-FULLSCREEN-ROUND-001 | Add clickable fullscreen image in RoundCompleteSection | DONE | 2026-06-01 |
+| MP-FIX-SESSION-COMPLETE-UI-003 | NavModal avatar + guest Play Again button in SessionComplete | DONE | 2026-06-01 |

@@ -6,6 +6,7 @@ import RainbowRing from "@/components/compete/RainbowRing";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
+import { NavModal } from "@/components/NavModal";
 
 interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
@@ -25,6 +26,7 @@ export default function SessionComplete({
   const router = useRouter();
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
+  const [navModalOpen, setNavModalOpen] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isHost = snapshot.players?.find((p: any) => p.playerId === playerId)?.isHost ?? false;
@@ -599,23 +601,30 @@ export default function SessionComplete({
             `}</style>
             <div className="gh-final-topbar">
               <div className="gh-final-title">Guess History</div>
-              <details className="gh-final-profile">
-                <summary aria-label="Open profile menu">
-                  <span className="gh-final-avatar-button">
-                    {currentPlayerData?.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={currentPlayerData.avatarUrl}
-                        alt={currentDisplayName}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                    ) : currentInitial}
-                  </span>
-                </summary>
-                <div className="gh-final-profile-menu">
-                  <button type="button">Sign Out</button>
-                </div>
-              </details>
+              <>
+                <button
+                  type="button"
+                  className="gh-final-avatar-button"
+                  onClick={() => setNavModalOpen(true)}
+                  aria-label="Open profile menu"
+                >
+                  {currentPlayerData?.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={currentPlayerData.avatarUrl}
+                      alt={currentDisplayName}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : currentInitial}
+                </button>
+                <NavModal
+                  isOpen={navModalOpen}
+                  onClose={() => setNavModalOpen(false)}
+                  avatarUrl={currentPlayerData?.avatarUrl ?? null}
+                  initials={currentInitial}
+                  displayName={currentDisplayName}
+                />
+              </>
             </div>
 
             <div className="session-complete-content">
@@ -841,14 +850,7 @@ export default function SessionComplete({
                     {isCreatingLobby ? "Creating lobby..." : "Play Again"}
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    className="gh-final-play"
-                    disabled
-                    style={{ opacity: 0.5, cursor: "not-allowed" }}
-                  >
-                    Waiting for host...
-                  </button>
+                  <GuestPlayAgainButton />
                 )}
                 {lobbyError && (
                   <div style={{ color: "#ef4444", fontSize: "12px", marginTop: "8px", gridColumn: "1 / -1", textAlign: "center" }}>
@@ -861,5 +863,20 @@ export default function SessionComplete({
         );
       })()}
     </section>
+  );
+}
+
+function GuestPlayAgainButton() {
+  const [waiting, setWaiting] = useState(false);
+  return (
+    <button
+      type="button"
+      className="gh-final-play"
+      onClick={() => setWaiting(true)}
+      disabled={waiting}
+      style={waiting ? { opacity: 0.6, cursor: "not-allowed" } : undefined}
+    >
+      {waiting ? "Waiting for Host…" : "Play Again"}
+    </button>
   );
 }
