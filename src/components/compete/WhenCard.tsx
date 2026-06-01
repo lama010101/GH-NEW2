@@ -85,14 +85,14 @@ export default function WhenCard({
   });
 
   return (
-    <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
+    <div style={{ background: "rgba(8,145,178,0.15)", borderRadius: 12, padding: 16, marginBottom: "10px", border: "1px solid rgba(34,211,238,0.25)" }}>
       <div
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/badges/when.webp" alt="when" width={36} height={36} style={{ objectFit: "contain" }} />
-          <span style={{ fontSize: 18, fontWeight: 700, color: "#3b82f6" }}>When</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "#22d3ee" }}>When</span>
         </div>
         {(() => {
           const myWhenRow = whenRows.find(r => r.isMe);
@@ -138,7 +138,7 @@ export default function WhenCard({
         <span style={{ color: "#fff", fontSize: 17, fontWeight: 700 }}>{correctYear}</span>
       </div>
       {/* Year timeline */}
-      <div style={{ width: "100%", height: 108, position: "relative", margin: "12px 0", background: "#1a1a2a", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
+      <div style={{ width: "100%", height: 108, position: "relative", margin: "12px 0", background: "rgba(8,145,178,0.2)", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
         {/* Horizontal gradient bar */}
         <div style={{
           position: "absolute",
@@ -254,7 +254,7 @@ export default function WhenCard({
           );
         })}
       </div>
-      <div style={{ marginTop: 10, background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+      <div style={{ marginTop: 10, background: "rgba(34,211,238,0.06)", borderRadius: 8 }}>
         <div
           onClick={() => setWhenLbExpanded(!whenLbExpanded)}
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
@@ -320,16 +320,16 @@ export default function WhenCard({
           </div>
         )}
       </div>
-      <div style={{ marginTop: 6, background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+      <div style={{ marginTop: 6, background: "rgba(34,211,238,0.06)", borderRadius: 8 }}>
         <div
           onClick={() => setWhenCluesExpanded(!whenCluesExpanded)}
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#67e8f9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {whenCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#67e8f9", textTransform: "uppercase", letterSpacing: "0.08em" }}>
               Hints
             </span>
           </div>
@@ -356,7 +356,7 @@ export default function WhenCard({
                   borderBottom: idx < whenHints.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
                 }}>
                   <div style={{ marginBottom: 3 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#67e8f9", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                       {labelMap[hint.tier] ?? `Tier ${hint.tier}`}
                     </span>
                   </div>

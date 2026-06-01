@@ -1622,3 +1622,11 @@ MP-FIX-IDENTITY-GETSESSION-001 | Replace getSession with getUser in bootstrapIde
 | MP-FIX-FULLSCREEN-SESSION-002 | Fix fullscreen overlay for 21:9 + close button | DONE | 2026-06-01 |
 | MP-FIX-FULLSCREEN-ROUND-001 | Add clickable fullscreen image in RoundCompleteSection | DONE | 2026-06-01 |
 | MP-FIX-SESSION-COMPLETE-UI-003 | NavModal avatar + guest Play Again button in SessionComplete | DONE | 2026-06-01 |
+| MP-FIX-PROFILE-DISCRIMINATOR-001 | handle_new_user trigger now appends #XXXX discriminator to display_name | DONE |
+| MP-UI-HOME-COMPETE-001 | Home top bar logo + tagline + Compete panel tabs | DONE | 2026-06-01 |
+| MP-UI-RESULTS-TEAL-001 | Teal palette on WHERE/WHEN result cards | DONE | 2026-06-01 |
+| MP-UI-HOME-FIXES-001 | Fix tagline width, button color, swords icon, remove sub-panels | DONE | 2026-06-01 |
+
+MP-FIX-HAVERSINE-001: Fixed antimeridian wrap in haversineDistanceKm (rules.ts)
+| MP-UI-HOME-FIXES-002 | Tagline width, invite icon, remove CTA buttons, Daily card content | DONE | 2026-06-01 |
+MP-FIX-HAVERSINE-002: Fixed antimeridian wrap in haversineKm (competeUtils.ts)

@@ -120,7 +120,7 @@
   width: 100%;
   min-height: 100vh;
   overflow-y: auto;
-  padding-top: 60px;
+  padding-top: 88px;
   padding-bottom: 24px;
 }
 
@@ -286,7 +286,7 @@
 }
 
 .card-cta-btn-blue {
-  background: #fff;
+  background: #ffffff;
   color: #0891b2;
   border: none;
 }
