@@ -4,6 +4,18 @@ import { useState, useEffect } from 'react'
 import styles from '@/app/home.module.css'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 
+type ActiveGame = {
+  id: string
+  game_id: string
+  opponent_name: string
+  opponent_avatar?: string
+  round_current: number
+  round_total: number
+  status: 'your_turn' | 'waiting' | 'completed'
+  score_you?: number
+  score_them?: number
+}
+
 export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: {
   onLobby: (gameId: string) => void
   playerId: string
@@ -24,6 +36,8 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     expires_at: string
   }>>([])
   const [invitesLoading, setInvitesLoading] = useState(true)
+  const [tab, setTab] = useState<'invitations'|'your_turn'|'completed'>('invitations')
+  const [activeGames, setActiveGames] = useState<ActiveGame[]>([])
 
   const fetchInvites = async () => {
     if (!playerId) {
@@ -47,6 +61,16 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     }
   }
 
+  const fetchActiveGames = async () => {
+    if (!playerId) return
+    try {
+      const res = await fetch('/api/compete/active-games')
+      if (!res.ok) return
+      const { games } = await res.json()
+      setActiveGames(games ?? [])
+    } catch {}
+  }
+
   useEffect(() => {
     if (!playerId) {
       setInvitesLoading(false)
@@ -54,6 +78,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     }
 
     fetchInvites()
+    fetchActiveGames()
 
     const channel = supabaseBrowser
       .channel('pending-invites-' + playerId)
@@ -146,71 +171,163 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     setInvites(prev => prev.filter(i => i.id !== inviteId))
   }
 
+  const yourTurnGames = activeGames.filter(g => g.status === 'your_turn')
+  const completedGames = activeGames.filter(g => g.status === 'completed')
+
+  const tabs: Array<{ key: typeof tab; label: string; count: number }> = [
+    { key: 'invitations', label: 'INVITATIONS', count: invites.length },
+    { key: 'your_turn', label: 'YOUR TURN', count: yourTurnGames.length },
+    { key: 'completed', label: 'COMPLETED', count: completedGames.length },
+  ]
+
   return (
     <>
-      {/* Middle sub-panel */}
+      {/* Tab bar */}
       <div className={styles['card-sub-panel']}>
-        {invitesLoading ? (
-          <div className={styles['card-sub-panel-row-stack']}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#00adc1', animation: 'spin 1s linear infinite' }} />
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Looking for invitations…</span>
-          </div>
-        ) : invites.length === 0 ? (
-          <div className={styles['card-sub-panel-row-stack']}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <CrossedSwordsIcon />
+        <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+          {tabs.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              style={{
+                background: tab === t.key ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.3)',
+                borderRadius: 8,
+                padding: '7px 0',
+                flex: 1,
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+                color: tab === t.key ? '#fff' : 'rgba(255,255,255,0.45)',
+                textAlign: 'center',
+              }}
+            >
+              {t.label}
+              {t.count > 0 && (
+                <span style={{ background: '#ef4444', color: '#fff', borderRadius: 999, fontSize: 9, fontWeight: 700, padding: '1px 5px', marginLeft: 4 }}>
+                  {t.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Invitations tab */}
+        {tab === 'invitations' && (
+          invitesLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+              <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#00adc1', animation: 'spin 1s linear infinite' }} />
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Looking for invitations…</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span className={styles['card-sub-panel-text']}>No games yet</span>
-              <span className={styles['card-sub-panel-muted']}>Challenge others or join a game to get started!</span>
+          ) : invites.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0' }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <InviteIcon />
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>No pending invitations</span>
             </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {invites.slice(0, 3).map((invite, index) => (
-              <div key={invite.id}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {invites.map(invite => (
+                <div
+                  key={invite.id}
+                  onClick={() => handleAccept(invite.id, invite.game_id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(0,0,0,0.25)', marginBottom: 6, cursor: 'pointer' }}
+                >
                   {invite.avatar_url ? (
-                    <img
-                      src={invite.avatar_url}
-                      alt=""
-                      style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
-                    />
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={invite.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
                   ) : (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,173,193,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,173,193,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700 }}>
                       {(invite.inviter_name ?? 'Unknown').slice(0, 2).toUpperCase()}
                     </div>
                   )}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ color: 'white', fontSize: '13px', fontWeight: 'bold' }}>{invite.inviter_name ?? 'Unknown'}</span>
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>invited you to play</span>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{invite.inviter_name ?? 'Unknown'}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Invited you to a game</span>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      onClick={() => handleAccept(invite.id, invite.game_id)}
-                      style={{ background: '#00adc1', color: 'white', fontSize: '11px', padding: '5px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
-                    >
-                      Join
-                    </button>
-                    <button
-                      onClick={() => handleDecline(invite.id)}
-                      style={{ background: 'transparent', color: 'white', fontSize: '11px', padding: '5px 8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer' }}
-                    >
-                      ✕
-                    </button>
-                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDecline(invite.id) }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 16, cursor: 'pointer', padding: '0 4px' }}
+                  >
+                    ✕
+                  </button>
                 </div>
-                {index < Math.min(invites.length, 3) - 1 && (
-                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)' }} />
-                )}
-              </div>
-            ))}
-            {invites.length > 3 && (
-              <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '11px', paddingTop: '8px' }}>
-                + {invites.length - 3} more invitations
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )
+        )}
+
+        {/* Your Turn tab */}
+        {tab === 'your_turn' && (
+          yourTurnGames.length === 0 ? (
+            <div style={{ padding: '12px 0', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
+              No games waiting for your turn
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {yourTurnGames.map(game => (
+                <div
+                  key={game.id}
+                  onClick={() => onLobby(game.game_id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(0,0,0,0.25)', marginBottom: 6, cursor: 'pointer' }}
+                >
+                  {game.opponent_avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={game.opponent_avatar} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,173,193,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700 }}>
+                      {(game.opponent_name ?? '??').slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{game.opponent_name}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Round {game.round_current} / {game.round_total}</span>
+                  </div>
+                  <span style={{ background: '#0891b2', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 999, border: 'none' }}>
+                    PLAY
+                  </span>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+
+        {/* Completed tab */}
+        {tab === 'completed' && (
+          completedGames.length === 0 ? (
+            <div style={{ padding: '12px 0', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
+              No completed games yet
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {completedGames.map(game => (
+                <div
+                  key={game.id}
+                  onClick={() => onLobby(game.game_id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(0,0,0,0.25)', marginBottom: 6, cursor: 'pointer' }}
+                >
+                  {game.opponent_avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={game.opponent_avatar} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,173,193,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700 }}>
+                      {(game.opponent_name ?? '??').slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{game.opponent_name}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Round {game.round_current} / {game.round_total}</span>
+                  </div>
+                  <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>
+                    {game.score_you != null && game.score_them != null
+                      ? `${game.score_you} – ${game.score_them}`
+                      : 'Completed'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
 
@@ -253,16 +370,13 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   )
 }
 
-function CrossedSwordsIcon() {
+function InviteIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14.5 17.5L3 6V3h3l11.5 11.5" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M13 19l6-6" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M16 16l4 4" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M19 21l2-2" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M9.5 6.5L21 18v3h-3L6.5 9.5" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M6 9L3 12" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M3 9l3 3" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="10" cy="8" r="4" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round"/>
+      <path d="M2 20c0-4 3.6-7 8-7" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="19" y1="13" x2="19" y2="21" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round"/>
+      <line x1="15" y1="17" x2="23" y2="17" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round"/>
     </svg>
   )
 }

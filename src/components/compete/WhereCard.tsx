@@ -57,14 +57,14 @@ export default function WhereCard({
   const myResult = roundResults?.find(r => r.playerId === playerId);
 
   return (
-    <div style={{ background: "#333", borderRadius: 12, padding: 16, marginBottom: "10px" }}>
+    <div style={{ background: "rgba(8,145,178,0.15)", borderRadius: 12, padding: 16, marginBottom: "10px", border: "1px solid rgba(34,211,238,0.25)" }}>
       <div
         style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/badges/where.webp" alt="where" width={36} height={36} style={{ objectFit: "contain" }} />
-          <span style={{ fontSize: 18, fontWeight: 700, color: "#22c55e" }}>Where</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "#22d3ee" }}>Where</span>
         </div>
         {(() => {
           if (myResult == null || !myResult.didSubmit) {
@@ -147,7 +147,7 @@ export default function WhereCard({
           />
         )}
       </div>
-      <div style={{ marginTop: 10, background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+      <div style={{ marginTop: 10, background: "rgba(34,211,238,0.06)", borderRadius: 8 }}>
         <div
           onClick={() => setWhereLbExpanded(!whereLbExpanded)}
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
@@ -212,16 +212,16 @@ export default function WhereCard({
           </div>
         )}
       </div>
-      <div style={{ marginTop: 6, background: "rgba(255,255,255,0.04)", borderRadius: 8 }}>
+      <div style={{ marginTop: 6, background: "rgba(34,211,238,0.06)", borderRadius: 8 }}>
         <div
           onClick={() => setWhereCluesExpanded(!whereCluesExpanded)}
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#67e8f9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               {whereCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#67e8f9", textTransform: "uppercase", letterSpacing: "0.08em" }}>
               Hints
             </span>
           </div>
@@ -248,7 +248,7 @@ export default function WhereCard({
                   borderBottom: idx < whereHints.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
                 }}>
                   <div style={{ marginBottom: 3 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#67e8f9", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                       {labelMap[hint.tier] ?? `Tier ${hint.tier}`}
                     </span>
                   </div>

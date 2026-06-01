@@ -11,7 +11,9 @@ export function haversineDistanceKm(a: LatLng, b: LatLng): number {
   const toRad = (degrees: number) => (degrees * Math.PI) / 180;
   const radius = 6371;
   const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
+  let dLng = toRad(b.lng - a.lng);
+  if (dLng > Math.PI) dLng -= 2 * Math.PI;
+  else if (dLng < -Math.PI) dLng += 2 * Math.PI;
   const lat1 = toRad(a.lat);
   const lat2 = toRad(b.lat);
   const haversine =

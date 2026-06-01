@@ -79,14 +79,17 @@ function HomePageInner() {
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'url(/home_background.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0,0,0,0.8)' }} />
 
-      {/* Top bar - unchanged */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 16px', pointerEvents: 'none' }}>
-        <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '6px 14px' }}>
+      {/* Top bar */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Image src="/icons/logo.webp" alt="Guess-History" width={120} height={32} style={{ objectFit: 'contain' }} priority />
+        </div>
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '6px 14px' }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{accuracy}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 2 }}>%</span></span>
           <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>|</span>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#f0c060' }}>{xp}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 2 }}>XP</span></span>
         </div>
-        <div style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: 12, pointerEvents: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <NotificationBell />
           <button onClick={() => { if (identity.status !== 'ready') { setShowAuthModal(true); return } setShowNavModal(true) }} style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.4)', background: 'linear-gradient(135deg,#c45,#89b)', cursor: 'pointer', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {avatarUrl
@@ -100,26 +103,28 @@ function HomePageInner() {
         </div>
       </div>
 
+      {/* Tagline */}
+      <div style={{
+        position: 'fixed',
+        top: 56,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 9,
+        textAlign: 'center',
+        color: 'rgba(255,255,255,0.65)',
+        fontSize: 13,
+        fontWeight: 500,
+        letterSpacing: '0.4px',
+        padding: '4px 0 6px',
+        width: '100%',
+        maxWidth: 480,
+        boxSizing: 'border-box' as const,
+      }}>
+        Where and when did it happen?
+      </div>
+
       {/* Scrollable content area */}
       <div className={styles['page-scroll']}>
-        {/* Logo and tagline */}
-        <div style={{ width: '100%', maxWidth: 860, padding: '0 24px', boxSizing: 'border-box', margin: '0 auto 8px', textAlign: 'center' }}>
-          <div style={{ position: 'relative', width: 280, height: 40, margin: '0 auto' }}>
-            <Image
-              src="/icons/logo.webp"
-              alt="Guess-History"
-              fill
-              style={{ objectFit: 'contain' }}
-              sizes="280px"
-              priority
-            />
-          </div>
-        </div>
-
-        <div style={{ width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 15, fontWeight: 500, letterSpacing: '0.5px', marginBottom: 20, padding: '0 24px', boxSizing: 'border-box' }}>
-          Where and when did it happen?
-        </div>
-
         {/* Vertical card stack */}
         <div className={styles['cards-stack']}>
           {VERTICAL_CARD_ORDER.map(mode => (
