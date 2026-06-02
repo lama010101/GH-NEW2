@@ -85,9 +85,7 @@ export default function useCompeteTimer({
       guessYearRef.current,
       guessLatRef.current,
       guessLngRef.current,
-      hintResult.purchasedIds,
-      hintResult.accPenalty,
-      hintResult.xpPenalty
+      hintResult.purchasedIds
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, localSubmitted, playerId, hintResult]);

@@ -514,7 +514,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   const mode = input.mode ?? "sync";
   const roundTimerSec = clampRoundTimer(input.roundTimerSec);
   const totalRounds = normalizeTotalRounds(input.totalRounds);
-  const yearMin = normalizeYearBoundary(input.yearMin, -100, "yearMin");
+  const yearMin = normalizeYearBoundary(input.yearMin, -400, "yearMin");
   const yearMax = normalizeYearBoundary(input.yearMax, 2026, "yearMax");
   const resultsAutoAdvanceSec = clampResultsAutoAdvanceSec(input.resultsAutoAdvanceSec);
 
@@ -1088,8 +1088,6 @@ export type SubmitGuessInput = {
   yearGuess: number | null;
   locationGuess: LatLng | null;
   hintsUsed: string[];
-  accPenalty?: number;
-  xpPenalty?: number;
   _executionContext?: "partykit" | "api";
 };
 

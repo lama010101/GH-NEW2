@@ -48,6 +48,7 @@
     "jsdom": "^25.0.1",
     "partykit": "^0.0.115",
     "postcss": "^8.5.14",
+    "supabase": "^2.104.0",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.3",

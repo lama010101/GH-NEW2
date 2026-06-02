@@ -54,7 +54,7 @@ function formatTimerDisplay(sec: number): string {
   return `${m}m ${s.toString().padStart(2, "0")}s`;
 }
 
-const YEAR_MIN_BOUND = -100;
+const YEAR_MIN_BOUND = -400;
 const YEAR_MAX_BOUND = new Date().getFullYear();
 
 export default function LobbySection({

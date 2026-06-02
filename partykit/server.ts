@@ -84,9 +84,7 @@ const SubmitGuessSchema = z.object({
   year: z.number().int().nullable(),
   lat: z.number().nullable(),
   lng: z.number().nullable(),
-  hintsUsed: z.array(z.string()),
-  accPenalty: z.number().int().min(0).optional(),
-  xpPenalty: z.number().int().min(0).optional()
+  hintsUsed: z.array(z.string())
 });
 
 const AdvanceRoundSchema = z.object({
@@ -681,7 +679,7 @@ export default class GameServer {
         mode: (configRecord?.["mode"] as "practice" | "sync" | "async") ?? "sync",
         roundTimerSec: (configRecord?.["roundTimerSec"] as number) ?? (snapshotRecord["roundTimerSec"] as number) ?? 60,
         totalRounds: (configRecord?.["totalRounds"] as number) ?? 5,
-        yearMin: (configRecord?.["yearMin"] as number) ?? (snapshotRecord["yearMin"] as number) ?? -100,
+        yearMin: (configRecord?.["yearMin"] as number) ?? (snapshotRecord["yearMin"] as number) ?? -400,
         yearMax: (configRecord?.["yearMax"] as number) ?? (snapshotRecord["yearMax"] as number) ?? new Date().getFullYear(),
         resultsAutoAdvanceSec: (configRecord?.["resultsAutoAdvanceSec"] as number) ?? (snapshotRecord["resultsAutoAdvanceSec"] as number) ?? 90,
         hostPlayerId: hostPlayer?.playerId ?? null,
@@ -994,8 +992,6 @@ export default class GameServer {
                 lat: data.lat ?? null,
                 lng: data.lng ?? null,
                 hintsUsed: Array.isArray(data.hintsUsed) ? data.hintsUsed : [],
-                accPenalty: data.accPenalty ?? 0,
-                xpPenalty: data.xpPenalty ?? 0
               })
             });
             if (!response.ok) {
