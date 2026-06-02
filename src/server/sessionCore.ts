@@ -74,6 +74,8 @@ export const PRACTICE_PLAYER_NAME = "Practice Player";
 export const PRESSURE_CLAMP_SECONDS = 20;
 export const RESULTS_COUNTDOWN_SECONDS = 30;
 
+const TIER_PENALTY: Record<number, number> = { 1: 10, 2: 20, 3: 30, 4: 40, 5: 50 };
+
 export type DbExecutor = Pick<Pool, "query">;
 export type DbTransactionClient = DbExecutor & { release(): void };
 type TransactionCapablePool = DbExecutor & { connect(): Promise<DbTransactionClient> };
@@ -1235,21 +1237,30 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     event = await fetchEventById(eventIds[roundIndex]);
     if (!event) throw new Error("Could not load event");
 
-    const accPenaltyValue = typeof input.accPenalty === "number"
-      ? Math.max(0, Math.min(100, input.accPenalty))
-      : 0;
-    const xpPenaltyValue = typeof input.xpPenalty === "number"
-      ? Math.max(0, Math.min(200, input.xpPenalty))
-      : 0;
+    const hintRows = hintsUsed.length > 0
+      ? (await client.query<{ id: string; type: string; tier: number }>(
+          `SELECT id, type, tier FROM hints WHERE id = ANY($1::uuid[])`,
+          [hintsUsed]
+        )).rows
+      : [];
+
+    let whenPenalty = 0;
+    let wherePenalty = 0;
+    for (const h of hintRows) {
+      const p = TIER_PENALTY[h.tier] ?? 0;
+      if (h.type === 'when')  whenPenalty  += p;
+      if (h.type === 'where') wherePenalty += p;
+    }
+    whenPenalty  = Math.min(whenPenalty,  100);
+    wherePenalty = Math.min(wherePenalty, 100);
 
     const result = evaluateRound(
       event,
       { year: yearGuess, location: locationGuess },
       roundIndex,
       false,
-      { accuracy: accPenaltyValue, xp: xpPenaltyValue },
-      session.year_min ?? 0,
-      session.year_max ?? 2025
+      whenPenalty,
+      wherePenalty
     );
 
     const score = result.roundXp;
@@ -1259,8 +1270,9 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     const insertResult = await client.query(
       `INSERT INTO round_commits
          (game_id, player_id, round_index, submitted_at, year_guess,
-          location_lat, location_lng, hints_used, score, acc_penalty, verification_token)
-       VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10)
+          location_lat, location_lng, hints_used, score,
+          acc_penalty, acc_penalty_when, acc_penalty_where, verification_token)
+       VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10, $11, $12)
        ON CONFLICT (game_id, player_id, round_index) DO NOTHING`,
       [
         gameId,
@@ -1271,7 +1283,9 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         locationGuess?.lng ?? null,
         hintsUsedCount,
         score,
-        accPenaltyValue,
+        whenPenalty + wherePenalty,
+        whenPenalty,
+        wherePenalty,
         commitToken
       ]
     );
@@ -1957,12 +1971,6 @@ async function computeAndWriteRoundResults(
   roundIndex: number,
   executor: DbTransactionClient
 ): Promise<string> {
-  const sessionRow = await executor.query<{ year_min: number; year_max: number }>(
-    `SELECT year_min, year_max FROM sessions WHERE game_id = $1 LIMIT 1`,
-    [gameId]
-  );
-  const yearMin = sessionRow.rows[0]?.year_min ?? 0;
-  const yearMax = sessionRow.rows[0]?.year_max ?? 2025;
   const commits = await executor.query<{
     player_id: string;
     score: number | null;
@@ -1970,8 +1978,11 @@ async function computeAndWriteRoundResults(
     location_lat: number | null;
     location_lng: number | null;
     acc_penalty: number | null;
+    acc_penalty_when: number | null;
+    acc_penalty_where: number | null;
   }>(
-    `SELECT player_id, score, year_guess, location_lat, location_lng, acc_penalty
+    `SELECT player_id, score, year_guess, location_lat, location_lng,
+            acc_penalty, acc_penalty_when, acc_penalty_where
      FROM round_commits
      WHERE game_id = $1 AND round_index = $2
      ORDER BY score DESC NULLS LAST`,
@@ -2014,17 +2025,9 @@ async function computeAndWriteRoundResults(
       guessState,
       roundIndex,
       false,
-      { accuracy: row.acc_penalty ?? 0, xp: 0 },
-      yearMin,
-      yearMax
+      row.acc_penalty_when ?? 0,
+      row.acc_penalty_where ?? 0
     );
-
-    // Apply acc_penalty proportionally to location and year axes
-    const rawLocationAccuracy = evaluation.locationAccuracy;
-    const rawYearAccuracy = evaluation.yearAccuracy;
-    const penaltyPerAxis = Math.round((row.acc_penalty ?? 0) / 2);
-    const penalizedLocationScore = Math.max(0, rawLocationAccuracy - penaltyPerAxis);
-    const penalizedYearScore = Math.max(0, rawYearAccuracy - penaltyPerAxis);
 
     // Insert with all replay fields and verification token
     await executor.query(
@@ -2040,8 +2043,8 @@ async function computeAndWriteRoundResults(
         i + 1,
         evaluation.distanceKm,
         evaluation.yearDiff,
-        penalizedLocationScore,
-        penalizedYearScore,
+        evaluation.locationAccuracy,
+        evaluation.yearAccuracy,
         roundResultsToken
       ]
     );

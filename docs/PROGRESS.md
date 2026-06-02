@@ -1641,3 +1641,13 @@ MP-FIX-HAVERSINE-002: Fixed antimeridian wrap in haversineKm (competeUtils.ts)
 | MP-UI-COMPLETED-ROW-001 | DONE | src/app/api/compete/active-games/route.ts, src/components/home/CompetePanel.tsx | Completed rows show W/L/D badge + player accuracy% (color-coded) + XP | 2026-06-01 |
 | MP-FIX-YOUR-TURN-MODE-001 | DONE | src/app/api/compete/active-games/route.ts | your_turn status restricted to async sessions only | 2026-06-01 |
 | MP-FIX-NOTIF-DISMISS-001 | Dismiss bell notification on invite accept + filter read notifs from bell drawer | CompetePanel.tsx, NotificationBell.tsx | DONE | 2026-06-01 |
+| MP-FIX-DO-VIOLATIONS-001 | DONE | partykit/server.ts | Deleted timer preservation override block in applySnapshotAndBroadcast() that overrode DB-sourced roundEndsAt with DO memory value. Fix B blocked: /leave returned {ok:true} not snapshot. | 2026-06-02 |
+| MP-FIX-DO-VIOLATIONS-002 | DONE | src/app/api/compete/[gameId]/leave/route.ts, partykit/server.ts | leave/route.ts now returns full CompeteSessionSnapshot (both success paths). onClose re-fetch pattern removed: single fetch to /leave, response used directly as snapshot. READY_NEXT fire-and-forget replaced with awaited try/catch. | 2026-06-02 |
+| MP-SCORING-MIGRATION-001 | Add per-axis acc_penalty columns to round_commits | DONE |
+| MP-SCORING-RULES-001 | Era-based year accuracy formula + per-axis penalties in evaluateRound | DONE |
+| MP-SCORING-CORE-001 | Server-side per-axis hint penalty computation in submitGuess and computeAndWriteRoundResults | DONE |
+| MP-SCORING-FIX-DB-001 | Fix evaluateRound signature in db.ts | DONE |
+| MP-SCORING-FIX-ZTEXEC-001 | Fix evaluateRound signature in zeroTrust.execution.integration.test.ts | DONE |
+| MP-SCORING-FIX-ZT-001 | Fix evaluateRound signature in zeroTrust.integration.test.ts | DONE |
+| MP-FIX-BUILD-001 | DONE | src/components/compete/RoundCompleteSection.tsx, src/app/compete/[gameId]/page.tsx | Removed unused descriptionExpanded/setDescriptionExpanded from component interface, destructure, useState declaration, and call site. next build exit 0. | 2026-06-02 |
+| MP-SCORING-FIX-RCS-002 | Remove stale descriptionExpanded props from page.tsx | DONE |

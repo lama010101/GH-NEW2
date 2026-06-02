@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getTransactionClient } from "@/server/sessionCore";
+import { getTransactionClient, loadCompeteSessionSnapshot } from "@/server/sessionCore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +41,9 @@ export async function POST(
 
       if (result.rows.length === 0) {
         await client.query("COMMIT");
-        return NextResponse.json({ ok: true, updated: false });
+        const snapshot = await loadCompeteSessionSnapshot(gameId, body.playerId);
+        if (!snapshot) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+        return NextResponse.json(snapshot);
       }
 
       // 2. If leaving player was host, reassign to earliest-joined active player
@@ -85,7 +87,9 @@ export async function POST(
       client.release();
     }
 
-    return NextResponse.json({ ok: true, updated: true });
+    const snapshot = await loadCompeteSessionSnapshot(gameId, body.playerId as string);
+    if (!snapshot) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    return NextResponse.json(snapshot);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to record disconnect";
     console.error("[/api/compete/:gameId/leave]", message);

@@ -242,7 +242,8 @@ async function createTestRoundCommit(
     guessState,
     roundIndex,
     false,
-    { accuracy: 0, xp: 0 }
+    0,
+    0
   );
 
   const client = await getNewPoolConnection();
@@ -322,7 +323,8 @@ async function createTestRoundResults(
         guessState,
         roundIndex,
         false,
-        { accuracy: 0, xp: 0 }
+        0,
+        0
       );
 
       await client.query(
@@ -1011,7 +1013,8 @@ describe.skipIf(skipIntegration)("MP-CORE-LOOP-004: Real DB Execution Proof Harn
         guessState,
         0,
         false,
-        { accuracy: 0, xp: 0 }
+        0,
+        0
       );
 
       return {

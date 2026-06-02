@@ -59,7 +59,6 @@ export default function CompeteGamePage() {
     whenAccPenalty: 0,
   });
   const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [whereLbExpanded, setWhereLbExpanded] = useState(false);
   const [whenLbExpanded, setWhenLbExpanded] = useState(false);
   const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
@@ -543,8 +542,6 @@ export default function CompeteGamePage() {
             guessLat={guessLat}
             guessLng={guessLng}
             submittedHintPenaltyRef={submittedHintPenaltyRef}
-            descriptionExpanded={descriptionExpanded}
-            setDescriptionExpanded={setDescriptionExpanded}
             whereLbExpanded={whereLbExpanded}
             setWhereLbExpanded={setWhereLbExpanded}
             whenLbExpanded={whenLbExpanded}
