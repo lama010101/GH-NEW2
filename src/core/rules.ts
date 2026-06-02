@@ -34,7 +34,7 @@ function getEventCoordinates(event: EventRecord): LatLng {
 }
 
 export function calculateLocationAccuracy(distanceKm: number): number {
-  return Math.round(clamp(100 * Math.exp(-distanceKm / 1500), 0, 100));
+  return distanceKm === 0 ? 100 : Math.floor(clamp(100 * Math.exp(-distanceKm / 1500), 0, 100));
 }
 
 export function calculateYearAccuracy(yearDiff: number, eventYear: number): number {
@@ -42,7 +42,7 @@ export function calculateYearAccuracy(yearDiff: number, eventYear: number): numb
   const age = Math.max(50, CURRENT_YEAR - eventYear);
   const eraScale = Math.sqrt(age / 50);
   const effectiveDiff = Math.abs(yearDiff) / eraScale;
-  return Math.round(clamp(100 * Math.exp(-effectiveDiff / 40), 0, 100));
+  return effectiveDiff === 0 ? 100 : Math.floor(clamp(100 * Math.exp(-effectiveDiff / 40), 0, 100));
 }
 
 export function calculateBadges(round: Pick<import("./types").RoundResult, "yearAccuracy" | "locationAccuracy" | "comboAccuracy">): Badge[] {

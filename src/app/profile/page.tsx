@@ -29,6 +29,11 @@ export default function ProfilePage() {
     avgAccuracy: number | null;
     totalXp: number | null;
     roundsPlayed: number | null;
+    gamesPlayed: number | null;
+    dailyAvgAccuracy: number | null;
+    dailyGamesPlayed: number | null;
+    levelUpCurrentLevel: number | null;
+    levelUpBestAccuracy: number | null;
     historicalAvatar: ProfileHistoricalAvatar | null;
   }>({
     displayName: null,
@@ -38,6 +43,11 @@ export default function ProfilePage() {
     avgAccuracy: null,
     totalXp: null,
     roundsPlayed: null,
+    gamesPlayed: null,
+    dailyAvgAccuracy: null,
+    dailyGamesPlayed: null,
+    levelUpCurrentLevel: null,
+    levelUpBestAccuracy: null,
     historicalAvatar: null,
   });
 
@@ -59,7 +69,22 @@ export default function ProfilePage() {
 
         const { data: statsResult } = await supabaseBrowser
           .from('player_global_stats')
-          .select('avg_accuracy, total_xp, rounds_played')
+          .select('avg_accuracy, total_xp, rounds_played, games_played')
+          .eq('player_id', playerId)
+          .limit(1)
+          .single();
+
+        // Leaderboard positions
+        const { data: dailyAlltimeResult } = await supabaseBrowser
+          .from('leaderboard_daily_alltime')
+          .select('avg_accuracy, games_played, total_xp')
+          .eq('player_id', playerId)
+          .limit(1)
+          .single();
+
+        const { data: levelupResult } = await supabaseBrowser
+          .from('leaderboard_levelup')
+          .select('current_level, best_accuracy')
           .eq('player_id', playerId)
           .limit(1)
           .single();
@@ -118,6 +143,11 @@ export default function ProfilePage() {
           avgAccuracy: statsResult?.avg_accuracy ?? null,
           totalXp: statsResult?.total_xp ?? null,
           roundsPlayed: statsResult?.rounds_played ?? null,
+          gamesPlayed: statsResult?.games_played ?? null,
+          dailyAvgAccuracy: dailyAlltimeResult?.avg_accuracy ?? null,
+          dailyGamesPlayed: dailyAlltimeResult?.games_played ?? null,
+          levelUpCurrentLevel: levelupResult?.current_level ?? null,
+          levelUpBestAccuracy: levelupResult?.best_accuracy ?? null,
           historicalAvatar,
         });
       } catch (error) {
@@ -246,8 +276,10 @@ export default function ProfilePage() {
             color: 'text-[#f0c060]'
           },
           {
-            value: '—',
-            label: 'Games played (coming soon)',
+            value: profileData.gamesPlayed === null
+              ? '...'
+              : profileData.gamesPlayed.toLocaleString(),
+            label: 'Games played',
             color: 'text-[#c084fc]'
           },
           {
@@ -356,8 +388,25 @@ export default function ProfilePage() {
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
           <h3 className={`${syne.className} text-sm font-bold mb-4`}>Leaderboard positions</h3>
-          <div className="flex flex-col items-center gap-2 py-6">
-            <div className="text-sm text-white/35">Coming soon</div>
+          <div className="flex flex-col gap-3">
+            {/* Daily */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-white/60">Daily (all-time)</span>
+              <span className={`${syne.className} text-sm font-bold text-blue-400`}>
+                {profileData.dailyAvgAccuracy === null
+                  ? '—'
+                  : `${Math.round(Number(profileData.dailyAvgAccuracy))}% · ${profileData.dailyGamesPlayed ?? 0} games`}
+              </span>
+            </div>
+            {/* Level Up */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-white/60">Level Up</span>
+              <span className={`${syne.className} text-sm font-bold text-[#c084fc]`}>
+                {profileData.levelUpCurrentLevel === null
+                  ? '—'
+                  : `Level ${profileData.levelUpCurrentLevel} · ${profileData.levelUpBestAccuracy ?? 0}% best`}
+              </span>
+            </div>
           </div>
         </div>
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">

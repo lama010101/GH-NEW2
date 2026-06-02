@@ -724,10 +724,10 @@ export default function RoundActiveSection({
               display: "flex",
               flexDirection: "column",
               flex: 1,
-              background: "rgba(0,0,0,0.72)",
+              background: "rgba(8,145,178,0.15)",
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              border: "1px solid rgba(34,211,238,0.25)",
               borderRadius: "14px",
               padding: "12px 16px 12px",
               marginBottom: "8px",
@@ -744,22 +744,23 @@ export default function RoundActiveSection({
                 justifyContent: "space-between",
                 marginBottom: 8,
                 borderRadius: 10,
-                padding: '6px 12px',
+                padding: '6px 0',
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/where.webp" alt="where" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#22c55e" }}>Where?</span>
+                <img src="/badges/where.webp" alt="where" style={{ width: 56, height: 56, objectFit: "contain", flexShrink: 0 }} />
+                <span style={{ fontSize: 16, fontWeight: 600, color: "#22c55e", textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5)" }}>Where?</span>
               </div>
               <span style={{
-                fontSize: 17,
+                fontSize: 20,
                 fontWeight: 600,
                 color: "#ffffff",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
-                maxWidth: 180,
+                maxWidth: "75%",
+                textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5)",
               }}>
                 {guessLocation !== null
                   ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
@@ -862,10 +863,10 @@ export default function RoundActiveSection({
         {activePanel === 'when' && (
           <div
             style={{
-              background: "rgba(0,0,0,0.72)",
+              background: "rgba(8,145,178,0.15)",
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              border: "1px solid rgba(34,211,238,0.25)",
               borderRadius: "14px",
               padding: "12px 16px",
               pointerEvents: "auto",
@@ -881,19 +882,20 @@ export default function RoundActiveSection({
                 justifyContent: "space-between",
                 marginBottom: 8,
                 borderRadius: 10,
-                padding: '6px 12px',
+                padding: '6px 0',
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/when.webp" alt="when" style={{ width: 28, height: 28, objectFit: "contain", flexShrink: 0 }} />
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#38bdf8" }}>When?</span>
+                <img src="/badges/when.webp" alt="when" style={{ width: 56, height: 56, objectFit: "contain", flexShrink: 0 }} />
+                <span style={{ fontSize: 16, fontWeight: 600, color: "#38bdf8", textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5)" }}>When?</span>
               </div>
               <span style={{
                 fontSize: 20,
                 fontWeight: 600,
                 color: "#ffffff",
                 fontVariantNumeric: "tabular-nums",
+                textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5)",
               }}>
                 {guessYear !== null ? String(guessYear) : "No year set"}
               </span>
@@ -988,15 +990,15 @@ export default function RoundActiveSection({
               cursor: isLocked ? "not-allowed" : "pointer",
               opacity: isLocked ? 0.4 : 1,
               display: "flex",
-              flexDirection: "column",
+              flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              gap: 2,
-              padding: "4px 8px",
+              gap: 6,
+              padding: "0 10px",
             }}
             aria-label="Hints"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9.663 17h4.673M12 3v1m0 16v1M4.22 4.22l.707.707M19.778 19.778l-.707-.707M3 12h1m16 0h1M4.22 19.778l.707-.707M19.778 4.22l-.707.707M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/>
             </svg>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>
@@ -1013,9 +1015,7 @@ export default function RoundActiveSection({
             style={{
               flex: 1,
               height: 48,
-              background: activePanel === 'where'
-                ? "linear-gradient(135deg, rgba(34,197,94,0.42), rgba(34,197,94,0.22))"
-                : "linear-gradient(135deg, rgba(34,197,94,0.16), rgba(0,0,0,0.45))",
+              background: "linear-gradient(135deg, rgba(34,197,94,0.42), rgba(34,197,94,0.22))",
               border: activePanel === 'where'
                 ? "1.5px solid rgba(34,197,94,0.85)"
                 : "1.5px solid rgba(34,197,94,0.40)",
@@ -1025,16 +1025,17 @@ export default function RoundActiveSection({
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
+              gap: 4,
               padding: "0 10px",
               position: "relative",
               overflow: "hidden" as const,
-              transition: "background 0.2s ease, border-color 0.2s ease",
+              opacity: 1.0,
+              transition: "background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease",
             }}
             aria-label="Where"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/badges/where.webp" alt="where" style={{ width: 36, height: 36, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 3px rgba(34,197,94,0.5))" }} />
+            <img src="/badges/where.webp" alt="where" style={{ width: 54, height: 54, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 3px rgba(34,197,94,0.5))" }} />
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
               {guessLocation === null && (
                 <span style={{
@@ -1053,7 +1054,7 @@ export default function RoundActiveSection({
                   fontSize: 12,
                   fontWeight: 700,
                   color: "#ffffff",
-                  maxWidth: 84,
+                  maxWidth: 70,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap" as const,
@@ -1074,9 +1075,7 @@ export default function RoundActiveSection({
             style={{
               flex: 1,
               height: 48,
-              background: activePanel === 'when'
-                ? "linear-gradient(135deg, rgba(56,189,248,0.42), rgba(56,189,248,0.22))"
-                : "linear-gradient(135deg, rgba(56,189,248,0.16), rgba(0,0,0,0.45))",
+              background: "linear-gradient(135deg, rgba(56,189,248,0.42), rgba(56,189,248,0.22))",
               border: activePanel === 'when'
                 ? "1.5px solid rgba(56,189,248,0.85)"
                 : "1.5px solid rgba(56,189,248,0.40)",
@@ -1086,15 +1085,16 @@ export default function RoundActiveSection({
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
+              gap: 4,
               padding: "0 10px",
               overflow: "hidden" as const,
-              transition: "background 0.2s ease, border-color 0.2s ease",
+              opacity: 1.0,
+              transition: "background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease",
             }}
             aria-label="When"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/badges/when.webp" alt="when" style={{ width: 36, height: 36, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 3px rgba(56,189,248,0.5))" }} />
+            <img src="/badges/when.webp" alt="when" style={{ width: 54, height: 54, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 3px rgba(56,189,248,0.5))" }} />
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
               {guessYear === null && (
                 <span style={{
@@ -1113,6 +1113,10 @@ export default function RoundActiveSection({
                   fontSize: 12,
                   fontWeight: 700,
                   color: "#ffffff",
+                  maxWidth: 70,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap" as const,
                   fontVariantNumeric: "tabular-nums",
                   lineHeight: 1.25,
                 }}>
@@ -1145,26 +1149,30 @@ export default function RoundActiveSection({
               background: busy || hasSubmitted || localSubmitted
                 ? "rgba(255,255,255,0.15)"
                 : canSubmit
-                ? "linear-gradient(135deg, #ff8a00, #ffae42)"
-                : "rgba(0,0,0,0.55)",
+                ? "linear-gradient(135deg, rgba(249,115,22,0.42), rgba(249,115,22,0.22))"
+                : "linear-gradient(135deg, rgba(249,115,22,0.16), rgba(0,0,0,0.45))",
               border: busy || hasSubmitted || localSubmitted
                 ? "1.5px solid rgba(255,255,255,0.20)"
                 : canSubmit
-                ? "none"
-                : "1.5px solid rgba(255,165,0,0.35)",
+                ? "1.5px solid rgba(249,115,22,0.85)"
+                : "1.5px solid rgba(249,115,22,0.40)",
               color: "rgba(255,255,255,0.90)",
               fontSize: 14,
               fontWeight: 700,
               cursor: "pointer",
               display: "flex",
-              flexDirection: "column",
+              flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              gap: 2,
-              padding: "4px 8px",
+              gap: 6,
+              padding: "0 10px",
+              position: "relative",
+              overflow: "hidden" as const,
+              opacity: canSubmit && !busy && !hasSubmitted && !localSubmitted ? 1.0 : 0.9,
+              transition: "background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease",
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/>
               <polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>

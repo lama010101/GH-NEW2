@@ -503,23 +503,32 @@ export default function LobbySection({
               <span className={styles['lobby-setting-label']}>Timer</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeft']}>
-                  <input
-                    type="range"
-                    className={`${styles['lobby-timer-slider']} ${styles['lobbySliderInput']}`}
-                    min={TIMER_MIN_SEC}
-                    max={TIMER_MAX_SEC}
-                    step={5}
-                    value={sliderValue}
-                    disabled={busy}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setSliderValue(val);
-                      if (timerDebounceRef.current) clearTimeout(timerDebounceRef.current);
-                      timerDebounceRef.current = setTimeout(() => {
-                        onSetTimer?.(val);
-                      }, 400);
-                    }}
-                  />
+                  <span className={styles['lobby-timer-slider-wrap']}>
+                    <div className={styles['lobby-timer-slider-track']} />
+                    <div
+                      className={styles['lobby-timer-slider-fill']}
+                      style={{
+                        width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%`,
+                      }}
+                    />
+                    <input
+                      type="range"
+                      className={styles['lobby-timer-slider']}
+                      min={TIMER_MIN_SEC}
+                      max={TIMER_MAX_SEC}
+                      step={5}
+                      value={sliderValue}
+                      disabled={busy}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setSliderValue(val);
+                        if (timerDebounceRef.current) clearTimeout(timerDebounceRef.current);
+                        timerDebounceRef.current = setTimeout(() => {
+                          onSetTimer?.(val);
+                        }, 400);
+                      }}
+                    />
+                  </span>
                   <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
                     {formatTimerDisplay(sliderValue)}
                   </span>
@@ -612,23 +621,32 @@ export default function LobbySection({
                   </button>
                   {resultsTimerValue > 0 ? (
                     <span className={styles['lobbyRowLeft']}>
-                      <input
-                        type="range"
-                        className={`${styles['lobby-timer-slider']} ${styles['lobbySliderInput']}`}
-                        min={TIMER_MIN_SEC}
-                        max={TIMER_MAX_SEC}
-                        step={5}
-                        value={resultsTimerValue}
-                        disabled={busy}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          setResultsTimerValue(val);
-                          if (resultsDebounceRef.current) clearTimeout(resultsDebounceRef.current);
-                          resultsDebounceRef.current = setTimeout(() => {
-                            onSetResultsTimer?.(val);
-                          }, 400);
-                        }}
-                      />
+                      <span className={styles['lobby-timer-slider-wrap']}>
+                        <div className={styles['lobby-timer-slider-track']} />
+                        <div
+                          className={styles['lobby-timer-slider-fill']}
+                          style={{
+                            width: `${((resultsTimerValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%`,
+                          }}
+                        />
+                        <input
+                          type="range"
+                          className={styles['lobby-timer-slider']}
+                          min={TIMER_MIN_SEC}
+                          max={TIMER_MAX_SEC}
+                          step={5}
+                          value={resultsTimerValue}
+                          disabled={busy}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setResultsTimerValue(val);
+                            if (resultsDebounceRef.current) clearTimeout(resultsDebounceRef.current);
+                            resultsDebounceRef.current = setTimeout(() => {
+                              onSetResultsTimer?.(val);
+                            }, 400);
+                          }}
+                        />
+                      </span>
                       <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
                         {formatTimerDisplay(resultsTimerValue)}
                       </span>

@@ -1651,3 +1651,10 @@ MP-FIX-HAVERSINE-002: Fixed antimeridian wrap in haversineKm (competeUtils.ts)
 | MP-SCORING-FIX-ZT-001 | Fix evaluateRound signature in zeroTrust.integration.test.ts | DONE |
 | MP-FIX-BUILD-001 | DONE | src/components/compete/RoundCompleteSection.tsx, src/app/compete/[gameId]/page.tsx | Removed unused descriptionExpanded/setDescriptionExpanded from component interface, destructure, useState declaration, and call site. next build exit 0. | 2026-06-02 |
 | MP-SCORING-FIX-RCS-002 | Remove stale descriptionExpanded props from page.tsx | DONE |
+| MP-SCORING-FIX-FLOOR-001 | Math.floor in accuracy functions — exact match only returns 100 | DONE |
+| MP-SCORING-FIX-TESTS-001 | Rewrite rules.test.ts for new evaluateRound signature and era formula | DONE |
+| MP-FEAT-LEADERBOARD-001 | Create leaderboard migrations 033–035 | DONE |
+| MP-FEAT-LEADERBOARD-002 | Wire leaderboard write triggers at SESSION_COMPLETE | DONE |
+| MP-UI-CARDS-001 | DONE | src/components/compete/RoundActiveSection.tsx | Applied distinctive blue background from round results page to where/when cards (rgba(8,145,178,0.15) with cyan border). Added text shadows to guessed answers, titles, and labels for legibility. Increased where card guessed answer width to 75% and text size to 20px to match when card. Updated submit button to match where/when button gradient style but in orange. Increased where/when label font size from 15 to 16px. Increased where/when icon size by 50% from 36x36 to 54x54. | 2026-06-02 |
+| MP-FEAT-ROUND-HINTS-PERSIST-001 | DONE | src/server/sessionCore.ts | Persist hint IDs to round_hints table inside submitGuess transaction. Added INSERT block after hintRows query/penalty computation and before INSERT round_commits. Uses client.query with parameterized VALUES and ON CONFLICT DO NOTHING. | 2026-06-02 |
+| MP-FEAT-ROUND-HINTS-MIGRATION-001 | DONE | supabase/migrations/028_create_round_hints.sql | Created round_hints table with id, game_id, player_id, round_index, hint_id, revealed_at columns. Added index on (game_id, player_id, round_index). Enabled RLS with SELECT policy for authenticated users. | 2026-06-02 |

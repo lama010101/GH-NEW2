@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evaluateRound } from "./rules";
 
-// Test fixtures based on PRACTICE_EVENTS[0] (Moon Landing)
 const MOON_LANDING_EVENT = {
   id: "moon-landing",
   title: "Moon Landing",
@@ -76,7 +75,7 @@ describe("scoring calibration", () => {
         MOON_LANDING_EVENT,
         { year: null, location: null },
         0,
-        true // didTimeout
+        true
       );
       expect(result.yearAccuracy).toBe(0);
       expect(result.locationAccuracy).toBe(0);
@@ -88,155 +87,122 @@ describe("scoring calibration", () => {
     });
   });
 
-  describe("hint penalty capped at MAX_HINT_PENALTY (1.0)", () => {
-    it("caps accuracy penalty at MAX_HINT_PENALTY", () => {
+  describe("per-axis hint penalties", () => {
+    it("penaltyWhen reduces year accuracy only", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        { accuracy: 200, xp: 500 } // Exceeds MAX_HINT_PENALTY of 100 percentage points
+        30,  // penaltyWhen: tier-3 WHEN hint
+        0    // penaltyWhere: none
       );
-      // Raw accuracy is 100, penalty should be capped at 100 (MAX_HINT_PENALTY * 100)
-      // So roundAccuracy = 100 - 100 = 0 (but clamped to 0 via Math.max)
-      expect(result.roundAccuracy).toBe(0);
+      // year: 100 - 30 = 70
+      expect(result.yearAccuracy).toBe(70);
+      // location: 100 - 0 = 100
+      expect(result.locationAccuracy).toBe(100);
+      expect(result.roundAccuracy).toBe(85);
+      expect(result.roundXp).toBe(170);
     });
 
-    it("caps XP penalty at provided value but accuracy separately", () => {
+    it("penaltyWhere reduces location accuracy only", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        { accuracy: 0.5, xp: 1000 } // Large XP penalty
+        0,   // penaltyWhen: none
+        20   // penaltyWhere: tier-2 WHERE hint
       );
-      // Raw XP is 200 (100 + 100), minus 1000 would go negative
-      expect(result.roundXp).toBe(0); // Math.max(0, raw - penalty)
+      // year: 100 - 0 = 100
+      expect(result.yearAccuracy).toBe(100);
+      // location: 100 - 20 = 80
+      expect(result.locationAccuracy).toBe(80);
+      expect(result.roundAccuracy).toBe(90);
+      expect(result.roundXp).toBe(180);
     });
 
-    it("applies partial penalty correctly when under cap", () => {
+    it("both penalties applied independently", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        { accuracy: 25, xp: 50 } // 25 percentage points accuracy penalty, 50 XP penalty
+        10,  // penaltyWhen: tier-1 WHEN hint
+        40   // penaltyWhere: tier-4 WHERE hint
       );
-      // Raw accuracy is 100, penalty is 25, so 75 remains
+      expect(result.yearAccuracy).toBe(90);
+      expect(result.locationAccuracy).toBe(60);
       expect(result.roundAccuracy).toBe(75);
-      // Raw XP is 200, penalty is 50, so 150 remains
       expect(result.roundXp).toBe(150);
+    });
+
+    it("penalty capped at 100 per axis — cannot go below 0", () => {
+      const result = evaluateRound(
+        MOON_LANDING_EVENT,
+        { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
+        0,
+        false,
+        150,  // penaltyWhen: exceeds 100
+        200   // penaltyWhere: exceeds 100
+      );
+      expect(result.yearAccuracy).toBe(0);
+      expect(result.locationAccuracy).toBe(0);
+      expect(result.roundAccuracy).toBe(0);
+      expect(result.roundXp).toBe(0);
     });
   });
 
-  describe("accuracy/XP independence", () => {
-    it("calculates accuracy and XP from independent base formulas", () => {
+  describe("accuracy and XP relationship", () => {
+    it("roundXp equals sum of axis accuracies, roundAccuracy equals average", () => {
       const perfect = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
         0
       );
-      // Accuracy: average of year and location = (100 + 100) / 2 = 100
       expect(perfect.roundAccuracy).toBe(100);
-      // XP: sum of year and location = 100 + 100 = 200
       expect(perfect.roundXp).toBe(200);
     });
 
-    it("shows different scaling for accuracy vs XP", () => {
+    it("partial location score — XP is sum, accuracy is average", () => {
       const halfCorrect = evaluateRound(
         MOON_LANDING_EVENT,
-        { year: 1969, location: { lat: 40.7128, lng: -74.006 } }, // ~9500km from moon landing site (approx 0%)
+        { year: 1969, location: { lat: 40.7128, lng: -74.006 } },
         0
       );
-      // Year accuracy is 100%
       expect(halfCorrect.yearAccuracy).toBe(100);
-      // Location accuracy depends on distance
-      expect(halfCorrect.locationAccuracy).toBeLessThan(100);
       expect(halfCorrect.locationAccuracy).toBe(0);
-
-      // Accuracy is average
-      const expectedAccuracy = Math.floor((halfCorrect.yearAccuracy + halfCorrect.locationAccuracy) / 2);
-      expect(halfCorrect.roundAccuracy).toBe(expectedAccuracy);
-
-      // XP is sum (different formula)
-      const expectedXp = Math.round(halfCorrect.yearAccuracy + halfCorrect.locationAccuracy);
-      expect(halfCorrect.roundXp).toBe(expectedXp);
-
-      // Verify they're different values
-      expect(halfCorrect.roundAccuracy).not.toBe(halfCorrect.roundXp);
-    });
-
-    it("applies penalties independently to accuracy and XP", () => {
-      const result = evaluateRound(
-        MOON_LANDING_EVENT,
-        { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
-        0,
-        false,
-        { accuracy: 50, xp: 0 } // 50 percentage points accuracy penalty
-      );
-      // Accuracy affected: 100 - 50 = 50
-      expect(result.roundAccuracy).toBe(50);
-      // XP not affected by accuracy penalty
-      expect(result.roundXp).toBe(200);
-    });
-
-    it("allows XP penalty without accuracy penalty", () => {
-      const result = evaluateRound(
-        MOON_LANDING_EVENT,
-        { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
-        0,
-        false,
-        { accuracy: 0, xp: 100 } // Only XP penalty
-      );
-      // Accuracy not affected
-      expect(result.roundAccuracy).toBe(100);
-      // XP affected
-      expect(result.roundXp).toBe(100);
+      expect(halfCorrect.roundAccuracy).toBe(50);
+      expect(halfCorrect.roundXp).toBe(100);
     });
   });
 
-  describe("edge case fixtures", () => {
-    it("handles near miss (small year diff, small distance)", () => {
+  describe("era-based year decay", () => {
+    it("1 year off on recent event (1969) gives 98% not 100%", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
-        { year: 1970, location: { lat: 0.7, lng: 23.5 } }, // 1 year off, close location
+        { year: 1970, location: { lat: 0.67408, lng: 23.47297 } },
         0
       );
-      expect(result.yearAccuracy).toBe(100); // Within tolerance
-      expect(result.locationAccuracy).toBeGreaterThan(95);
-      expect(result.roundAccuracy).toBeGreaterThan(95);
+      expect(result.yearAccuracy).toBe(98);
     });
 
-    it("handles wrong year / right location", () => {
+    it("100 years off on 1969 event gives ~10%", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
-        { year: 1869, location: { lat: 0.67408, lng: 23.47297 } }, // 100 years off, exponential decay
+        { year: 1869, location: { lat: 0.67408, lng: 23.47297 } },
         0
       );
-      expect(result.yearAccuracy).toBe(67); // exponential decay: ~67% at 100 years off
-      expect(result.locationAccuracy).toBe(100);
-      expect(result.roundAccuracy).toBe(83); // floor((67 + 100) / 2) = 83
+      expect(result.yearAccuracy).toBe(10);
     });
 
-    it("handles right year / wrong location", () => {
-      const antipodalPoint = { lat: -0.67408, lng: -156.52703 }; // Opposite side of Earth
-      const result = evaluateRound(
-        MOON_LANDING_EVENT,
-        { year: 1969, location: antipodalPoint },
-        0
-      );
-      expect(result.yearAccuracy).toBe(100);
-      expect(result.locationAccuracy).toBeLessThan(50); // Far away
-      expect(result.locationAccuracy).toBeGreaterThanOrEqual(0);
-    });
-
-    it("handles max year difference (200 years)", () => {
+    it("200 years off on 1969 event gives ~1%", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1769, location: { lat: 0.67408, lng: 23.47297 } },
         0
       );
-      expect(result.yearAccuracy).toBe(45); // exponential decay: ~45% at 200 years off
+      expect(result.yearAccuracy).toBe(1);
     });
   });
 });

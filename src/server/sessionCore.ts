@@ -1266,6 +1266,23 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     const score = result.roundXp;
     const hintsUsedCount = hintsUsed.length;
 
+    // Persist hint IDs to round_hints table (MP-FEAT-ROUND-HINTS-PERSIST-001)
+    if (hintRows.length > 0) {
+      const hintValues = hintRows.map((_, i) => {
+        const base = i * 4;
+        return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`;
+      }).join(', ');
+
+      const hintParams = hintRows.flatMap(h => [gameId, playerId, roundIndex, h.id]);
+
+      await client.query(
+        `INSERT INTO round_hints (game_id, player_id, round_index, hint_id)
+         VALUES ${hintValues}
+         ON CONFLICT DO NOTHING`,
+        hintParams
+      );
+    }
+
     verifyLog("INSERT", "round_commits", "OK", `player_id=${playerId} round=${roundIndex} score=${score} token=${commitToken.slice(0, 8)}... — executing`);
     const insertResult = await client.query(
       `INSERT INTO round_commits
@@ -1660,12 +1677,13 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
 
       // Upsert
       await dbPool.query(
-        `INSERT INTO player_global_stats (player_id, rounds_played, avg_accuracy, total_xp, updated_at)
-         VALUES ($1, $2, $3, $4, now())
+        `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, updated_at)
+         VALUES ($1, $2, 1, $3, $4, now())
          ON CONFLICT (player_id) DO UPDATE SET
            avg_accuracy = $3,
            total_xp = player_global_stats.total_xp + $4,
            rounds_played = $2,
+           games_played = player_global_stats.games_played + 1,
            updated_at = now()`,
         [playerId, runningCount, runningAvg, data.session_total_xp]
       );
@@ -1673,6 +1691,136 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
   } catch (error) {
     console.error('[updatePlayerGlobalStats]', error);
     // Do NOT throw — stats write failure must not crash the session
+  }
+}
+
+async function updateLeaderboardDaily(gameId: string, mode: string): Promise<void> {
+  // Only runs for daily mode
+  if (mode !== 'daily') return;
+
+  try {
+    // Fetch all round_results for this game grouped by player
+    const roundResults = await dbPool.query<{
+      player_id: string;
+      location_score: number;
+      time_score: number;
+    }>(
+      `SELECT player_id, location_score, time_score
+       FROM round_results
+       WHERE game_id = $1`,
+      [gameId]
+    );
+
+    // Group by player_id
+    const playerMap = new Map<string, { total_xp: number; accuracy_sum: number; round_count: number }>();
+    for (const row of roundResults.rows) {
+      const xp = row.location_score + row.time_score;
+      const accuracy = (row.location_score + row.time_score) / 2;
+      const entry = playerMap.get(row.player_id) ?? { total_xp: 0, accuracy_sum: 0, round_count: 0 };
+      entry.total_xp += xp;
+      entry.accuracy_sum += accuracy;
+      entry.round_count += 1;
+      playerMap.set(row.player_id, entry);
+    }
+
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+
+    for (const [playerId, data] of playerMap.entries()) {
+      if (data.round_count === 0) continue;
+      const avgAccuracy = data.accuracy_sum / data.round_count;
+      const totalXp = Math.min(data.total_xp, 1000);
+
+      // Step 1: Insert today's record (no-op on duplicate — one attempt per day)
+      const insertResult = await dbPool.query(
+        `INSERT INTO leaderboard_daily (date, player_id, avg_accuracy, total_xp, completed_at)
+         VALUES ($1, $2, $3, $4, now())
+         ON CONFLICT (date, player_id) DO NOTHING`,
+        [today, playerId, avgAccuracy, totalXp]
+      );
+
+      // Step 2: Only update all-time if today's insert succeeded (rowCount === 1)
+      if (((insertResult as unknown as { rowCount: number | null }).rowCount ?? 0) === 1) {
+        await dbPool.query(
+          `INSERT INTO leaderboard_daily_alltime (player_id, games_played, avg_accuracy, total_xp, updated_at)
+           VALUES ($1, 1, $2, $3, now())
+           ON CONFLICT (player_id) DO UPDATE SET
+             avg_accuracy = (leaderboard_daily_alltime.avg_accuracy * leaderboard_daily_alltime.games_played + EXCLUDED.avg_accuracy) / (leaderboard_daily_alltime.games_played + 1),
+             total_xp     = leaderboard_daily_alltime.total_xp + EXCLUDED.total_xp,
+             games_played = leaderboard_daily_alltime.games_played + 1,
+             updated_at   = now()`,
+          [playerId, avgAccuracy, totalXp]
+        );
+      }
+    }
+  } catch (error) {
+    console.error('[updateLeaderboardDaily]', error);
+    // Do NOT throw — leaderboard write failure must not crash the session
+  }
+}
+
+async function updateLeaderboardLevelUp(gameId: string, mode: string): Promise<void> {
+  // Only runs for levelup mode
+  if (mode !== 'levelup') return;
+
+  try {
+    // Fetch session to get level number (stored in sessions table — check for a level or factor field)
+    // The sessions table has a `factor_id` column. Level Up uses a different mechanism.
+    // Fetch avg accuracy from round_results for this game, grouped by player.
+    const roundResults = await dbPool.query<{
+      player_id: string;
+      location_score: number;
+      time_score: number;
+    }>(
+      `SELECT player_id, location_score, time_score
+       FROM round_results
+       WHERE game_id = $1`,
+      [gameId]
+    );
+
+    // Also fetch the session to get any level metadata
+    const sessionRow = await dbPool.query<{
+      year_min: number;
+      year_max: number;
+      mode: string;
+    }>(
+      `SELECT year_min, year_max, mode FROM sessions WHERE game_id = $1`,
+      [gameId]
+    );
+
+    if (sessionRow.rows.length === 0) return;
+
+    // Group by player_id
+    const playerMap = new Map<string, { accuracy_sum: number; round_count: number }>();
+    for (const row of roundResults.rows) {
+      const accuracy = (row.location_score + row.time_score) / 2;
+      const entry = playerMap.get(row.player_id) ?? { accuracy_sum: 0, round_count: 0 };
+      entry.accuracy_sum += accuracy;
+      entry.round_count += 1;
+      playerMap.set(row.player_id, entry);
+    }
+
+    for (const [playerId, data] of playerMap.entries()) {
+      if (data.round_count === 0) continue;
+      const avgAccuracy = Math.round(data.accuracy_sum / data.round_count);
+
+      // We don't have level number directly in sessions — use best_accuracy upsert only.
+      // current_level defaults to 1 if not known. The Level Up feature will update this
+      // properly once the Level Up mode session schema stores the level number.
+      // For now: upsert with current_level = 1 only if no row exists; otherwise only
+      // update best_accuracy if it improves (never overwrite a higher level).
+      await dbPool.query(
+        `INSERT INTO leaderboard_levelup (player_id, current_level, best_accuracy, updated_at)
+         VALUES ($1, 1, $2, now())
+         ON CONFLICT (player_id) DO UPDATE SET
+           best_accuracy = GREATEST(leaderboard_levelup.best_accuracy, EXCLUDED.best_accuracy),
+           updated_at = now()
+         WHERE EXCLUDED.best_accuracy > leaderboard_levelup.best_accuracy`,
+        [playerId, avgAccuracy]
+      );
+    }
+  } catch (error) {
+    console.error('[updateLeaderboardLevelUp]', error);
+    // Do NOT throw — leaderboard write failure must not crash the session
   }
 }
 
@@ -1822,10 +1970,16 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     client.release();
   }
 
-  // Fire-and-forget: update player_global_stats after SESSION_COMPLETE
-  if (nextRoundIndex >= session.total_rounds) {
-    updatePlayerGlobalStats(gameId, session.mode).catch((err) =>
+  // Fire-and-forget: update stats and leaderboards after SESSION_COMPLETE
+  if (nextRoundIndex >= session!.total_rounds) {
+    updatePlayerGlobalStats(gameId, session!.mode).catch((err) =>
       console.error('[advanceRound] updatePlayerGlobalStats fire-and-forget error:', err)
+    );
+    updateLeaderboardDaily(gameId, session!.mode).catch((err) =>
+      console.error('[advanceRound] updateLeaderboardDaily fire-and-forget error:', err)
+    );
+    updateLeaderboardLevelUp(gameId, session!.mode).catch((err) =>
+      console.error('[advanceRound] updateLeaderboardLevelUp fire-and-forget error:', err)
     );
   }
 
