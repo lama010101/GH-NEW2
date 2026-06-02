@@ -365,21 +365,6 @@ export default class GameServer {
         status: snapshot.status,
         roundIndex: snapshot.currentRoundIndex,
       });
-      if (
-        isRuntimeState(this.snapshot) &&
-        this.snapshot.status === "ROUND_ACTIVE" &&
-        snapshot.status === "ROUND_ACTIVE" &&
-        this.snapshot.currentRoundIndex === snapshot.currentRoundIndex &&
-        this.snapshot.roundEndsAt &&
-        snapshot.roundEndsAt &&
-        new Date(this.snapshot.roundEndsAt).getTime() < new Date(snapshot.roundEndsAt).getTime()
-      ) {
-        console.log("[APPLY_SNAPSHOT_PRESERVED_OLD_TIMER]", {
-          preserved: this.snapshot.roundEndsAt,
-          rejected: snapshot.roundEndsAt,
-        });
-        snapshot.roundEndsAt = this.snapshot.roundEndsAt;
-      }
       console.log("[PartyKit] Applying snapshot, players:", snapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
       // Reset readyForNext when transitioning from ROUND_COMPLETE to ROUND_ACTIVE (new round started)
       if (isRuntimeState(this.snapshot) &&
@@ -833,18 +818,11 @@ export default class GameServer {
         if (!leaveRes.ok) {
           const text = await leaveRes.text();
           console.error(`[onClose] leave API error ${leaveRes.status}: ${text}`);
+          this.broadcastStateUpdate();
+          return;
         }
-        // Reload and broadcast updated snapshot
-        const snapUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}`;
-        const snapRes = await fetch(snapUrl, {
-          headers: {
-            "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
-          }
-        });
-        if (snapRes.ok) {
-          const snapshot = await snapRes.json();
-          this.applySnapshotAndBroadcast(snapshot);
-        }
+        const snapshot = await leaveRes.json();
+        this.applySnapshotAndBroadcast(snapshot);
       } catch (err) {
         console.error("[PartyKit] Failed to persist disconnect:", err instanceof Error ? err.message : err);
         this.broadcastStateUpdate();
@@ -1198,19 +1176,27 @@ export default class GameServer {
           // Add playerId to readyForNext set
           this.readyForNext.add(data.playerId);
           console.log(`[PartyKit] READY_NEXT: player ${data.playerId.slice(0, 8)} ready for next round, total ready: ${this.readyForNext.size}/${this.snapshot.players.filter(p => p.leftAt === null).length}`);
-          // Persist READY_NEXT event to DB (fire-and-forget)
-          fetch(`${this.getNextJsBaseUrl()}/api/compete/${gameId}/ready-next`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
-            },
-            body: JSON.stringify({
-              playerId: data.playerId,
-              roundIndex: this.snapshot.currentRoundIndex,
-              _executionContext: "partykit"
-            })
-          }).catch(err => console.error("[PartyKit] READY_NEXT persist failed:", err));
+          // Persist READY_NEXT event to DB
+          try {
+            const readyNextRes = await fetch(`${this.getNextJsBaseUrl()}/api/compete/${gameId}/ready-next`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+              },
+              body: JSON.stringify({
+                playerId: data.playerId,
+                roundIndex: this.snapshot.currentRoundIndex,
+                _executionContext: "partykit"
+              })
+            });
+            if (!readyNextRes.ok) {
+              const text = await readyNextRes.text();
+              console.error("[PartyKit] READY_NEXT persist failed:", readyNextRes.status, text);
+            }
+          } catch (err) {
+            console.error("[PartyKit] READY_NEXT persist threw:", err instanceof Error ? err.message : err);
+          }
           // Broadcast STATE_UPDATE with updated readyForNext array
           this.broadcastStateUpdate();
           // If all active players are ready, cancel result timer and advance

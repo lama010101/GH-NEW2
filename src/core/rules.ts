@@ -1,4 +1,4 @@
-import { Badge, EventRecord, GuessState, LatLng, MAX_HINT_PENALTY, SessionSummary } from "./types";
+import { Badge, EventRecord, GuessState, LatLng, SessionSummary } from "./types";
 
 const MAX_DISTANCE_KM = 20000;
 const MAX_YEAR_DIFF = 200;
@@ -37,33 +37,12 @@ export function calculateLocationAccuracy(distanceKm: number): number {
   return Math.round(clamp(100 * Math.exp(-distanceKm / 1500), 0, 100));
 }
 
-export function calculateYearAccuracy(
-  yearDiff: number,
-  yearMin: number,
-  yearMax: number
-): number {
-  const rangeWidth = Math.max(1, yearMax - yearMin);
-  const Ky = rangeWidth / 8;
-
-  const absDiff = Math.abs(yearDiff);
-
-  let gracePeriod: number;
-  if (yearMax >= 1950) {
-    gracePeriod = 0;
-  } else if (yearMax >= 1800) {
-    gracePeriod = 1;
-  } else if (yearMax >= 1400) {
-    gracePeriod = 5;
-  } else if (yearMax >= 500) {
-    gracePeriod = 15;
-  } else {
-    gracePeriod = 50;
-  }
-
-  if (absDiff <= gracePeriod) return 100;
-
-  const adjustedDiff = absDiff - gracePeriod;
-  return Math.round(clamp(100 * Math.exp(-adjustedDiff / Ky), 0, 100));
+export function calculateYearAccuracy(yearDiff: number, eventYear: number): number {
+  const CURRENT_YEAR = 2025;
+  const age = Math.max(50, CURRENT_YEAR - eventYear);
+  const eraScale = Math.sqrt(age / 50);
+  const effectiveDiff = Math.abs(yearDiff) / eraScale;
+  return Math.round(clamp(100 * Math.exp(-effectiveDiff / 40), 0, 100));
 }
 
 export function calculateBadges(round: Pick<import("./types").RoundResult, "yearAccuracy" | "locationAccuracy" | "comboAccuracy">): Badge[] {
@@ -115,9 +94,8 @@ export function evaluateRound(
   guess: GuessState,
   roundIndex: number,
   didTimeout = false,
-  penalty: { accuracy: number; xp: number } = { accuracy: 0, xp: 0 },
-  yearMin = 0,
-  yearMax = 2025
+  penaltyWhen: number = 0,
+  penaltyWhere: number = 0
 ) {
   const fallbackGuess: GuessState = {
     year: guess.year,
@@ -148,15 +126,14 @@ export function evaluateRound(
 
   const yearAccuracy = fallbackGuess.year === null
     ? 0
-    : calculateYearAccuracy(yearDiff, yearMin, yearMax);
+    : calculateYearAccuracy(yearDiff, event.year);
   const locationAccuracy = calculateLocationAccuracy(distanceKm);
-  const comboAccuracy = Math.floor((yearAccuracy + locationAccuracy) / 2);
 
-  const rawRoundAccuracy = Math.floor((yearAccuracy + locationAccuracy) / 2);
-  const rawRoundXp = Math.round(yearAccuracy + locationAccuracy);
-
-  const roundAccuracy = Math.max(0, rawRoundAccuracy - Math.round(clamp(penalty.accuracy, 0, MAX_HINT_PENALTY * 100)));
-  const roundXp = Math.max(0, rawRoundXp - Math.round(clamp(penalty.xp, 0, Number.MAX_SAFE_INTEGER)));
+  const yearAccuracyFinal   = Math.max(0, yearAccuracy - penaltyWhen);
+  const locationAccuracyFinal = Math.max(0, locationAccuracy - penaltyWhere);
+  const comboAccuracy = Math.min(yearAccuracyFinal, locationAccuracyFinal);
+  const roundAccuracy = Math.round((yearAccuracyFinal + locationAccuracyFinal) / 2);
+  const roundXp       = yearAccuracyFinal + locationAccuracyFinal;
 
   const result = {
     roundIndex,
@@ -164,8 +141,8 @@ export function evaluateRound(
     guess: fallbackGuess,
     distanceKm,
     yearDiff: Math.abs(yearDiff),
-    yearAccuracy,
-    locationAccuracy,
+    yearAccuracy: yearAccuracyFinal,
+    locationAccuracy: locationAccuracyFinal,
     comboAccuracy,
     roundAccuracy,
     roundXp,

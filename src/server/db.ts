@@ -1039,7 +1039,8 @@ export async function verifyFullReplay(
         guessState,
         roundIndex,
         false,
-        { accuracy: 0, xp: 0 }
+        0,
+        0
       );
 
       // Find stored result

@@ -1,0 +1,3 @@
+ALTER TABLE round_commits
+  ADD COLUMN IF NOT EXISTS acc_penalty_when  INT NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS acc_penalty_where INT NOT NULL DEFAULT 0;

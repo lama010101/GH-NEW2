@@ -379,7 +379,8 @@ describe.skipIf(skipIntegration)("ZERO-TRUST VERIFICATION TEST SUITE", () => {
           { year: guessYear, location: { lat: guessLat, lng: guessLng } },
           0,
           false,
-          { accuracy: 0, xp: 0 }
+          0,
+          0
         );
 
         await dbPool.query(
@@ -467,7 +468,8 @@ describe.skipIf(skipIntegration)("ZERO-TRUST VERIFICATION TEST SUITE", () => {
           { year: 1505, location: { lat: 40.8, lng: -74.1 } },
           0,
           false,
-          { accuracy: 0, xp: 0 }
+          0,
+          0
         );
 
         await dbPool.query(

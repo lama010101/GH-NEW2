@@ -22,8 +22,6 @@ interface RoundCompleteSectionProps {
     whereAccPenalty: number;
     whenAccPenalty: number;
   }>;
-  descriptionExpanded: boolean;
-  setDescriptionExpanded: (v: boolean) => void;
   whereLbExpanded: boolean;
   setWhereLbExpanded: (v: boolean) => void;
   whenLbExpanded: boolean;
@@ -44,8 +42,6 @@ export default function RoundCompleteSection({
   guessLat,
   guessLng,
   submittedHintPenaltyRef,
-  descriptionExpanded,
-  setDescriptionExpanded,
   whereLbExpanded,
   setWhereLbExpanded,
   whenLbExpanded,
