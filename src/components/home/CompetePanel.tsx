@@ -126,7 +126,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
           mode: 'sync',
           roundTimerSec: 120,
           totalRounds: 5,
-          yearMin: -100,
+          yearMin: -400,
           yearMax: 2025,
         }),
       })

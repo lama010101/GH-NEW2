@@ -154,12 +154,10 @@ export default function useCompeteSocket({
     year: number | null,
     lat: number | null,
     lng: number | null,
-    hintsUsed: string[],
-    accPenalty: number,
-    xpPenalty: number
+    hintsUsed: string[]
   ) => {
     if (!playerId || !wsRef.current) return;
-    wsRef.current.submitGuess(roundIndex, year, lat, lng, hintsUsed, accPenalty, xpPenalty);
+    wsRef.current.submitGuess(roundIndex, year, lat, lng, hintsUsed);
   };
 
   const readyNext = (roundIndex: number) => {

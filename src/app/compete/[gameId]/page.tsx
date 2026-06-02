@@ -384,9 +384,7 @@ export default function CompeteGamePage() {
       guessYear,
       guessLat,
       guessLng,
-      hintResult.purchasedIds,
-      hintResult.accPenalty,
-      hintResult.xpPenalty
+      hintResult.purchasedIds
     );
   }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult, submitGuess]);
 

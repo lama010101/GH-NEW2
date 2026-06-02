@@ -21,8 +21,6 @@ export async function POST(
       lat?: number | null;
       lng?: number | null;
       hintsUsed?: string[];
-      accPenalty?: number;
-      xpPenalty?: number;
     };
 
     if (gameId.length === 0) {
@@ -47,8 +45,6 @@ export async function POST(
           ? { lat: body.lat, lng: body.lng }
           : null,
       hintsUsed: Array.isArray(body.hintsUsed) ? body.hintsUsed : [],
-      accPenalty: typeof body.accPenalty === "number" ? body.accPenalty : 0,
-      xpPenalty: typeof body.xpPenalty === "number" ? body.xpPenalty : 0,
       _executionContext: "api"
     });
 
