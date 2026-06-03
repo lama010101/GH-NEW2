@@ -15,6 +15,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [forgotSent, setForgotSent] = useState(false);
 
   if (!isOpen) return null;
 
@@ -59,6 +61,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     let result;
     if (mode === "signin") {
       result = await supabaseBrowser.auth.signInWithPassword({ email, password });
+      if (!result.error && !rememberMe) {
+        // User wants session-only (no persist): remove localStorage entry after sign-in
+        // so the session is cleared when the tab closes.
+        // Supabase stores the session under a key prefixed with "sb-"
+        const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (storageKey) {
+          const raw = localStorage.getItem(storageKey);
+          localStorage.removeItem(storageKey);
+          // Store in sessionStorage so the tab stays authenticated until closed
+          if (raw) sessionStorage.setItem(storageKey, raw);
+        }
+      }
     } else {
       result = await supabaseBrowser.auth.signUp({ email, password });
     }
@@ -70,6 +84,24 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     } else {
       onClose();
       window.location.reload();
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!email) {
+      setError("Enter your email address first, then click Forgot password.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const { error } = await supabaseBrowser.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://guess-history.com/auth/callback?next=/account",
+    });
+    setLoading(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      setForgotSent(true);
     }
   }
 
@@ -249,6 +281,56 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             />
           </div>
 
+          {mode === "signin" && (
+            <>
+              {forgotSent ? (
+                <p style={{ color: "#4ade80", fontSize: 14, margin: 0 }}>
+                  Password reset email sent. Check your inbox.
+                </p>
+              ) : (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: -4 }}>
+                    <input
+                      type="checkbox"
+                      id="remember-me"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      disabled={loading}
+                    />
+                    <label
+                      htmlFor="remember-me"
+                      style={{
+                        color: "#9ca3af",
+                        fontSize: 14,
+                        cursor: loading ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      Remember me
+                    </label>
+                  </div>
+                  <button
+                    onClick={handleForgotPassword}
+                    disabled={loading}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#a78bfa",
+                      fontSize: 13,
+                      cursor: loading ? "not-allowed" : "pointer",
+                      padding: 0,
+                      textDecoration: "underline",
+                      display: "block",
+                      width: "100%",
+                      textAlign: "right",
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                </>
+              )}
+            </>
+          )}
+
           {mode === "signup" && (
             <div>
               <label
@@ -314,7 +396,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <>
                 Don&apos;t have an account?{" "}
                 <button
-                  onClick={() => { setMode("signup"); setError(null); }}
+                  onClick={() => { setMode("signup"); setError(null); setForgotSent(false); }}
                   disabled={loading}
                   style={{
                     background: "none",
@@ -333,7 +415,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <>
                 Already have an account?{" "}
                 <button
-                  onClick={() => { setMode("signin"); setError(null); }}
+                  onClick={() => { setMode("signin"); setError(null); setForgotSent(false); }}
                   disabled={loading}
                   style={{
                     background: "none",

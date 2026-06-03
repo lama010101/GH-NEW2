@@ -4,6 +4,7 @@ import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import { getUsernameGradientStyle } from "@/core/competeUtils";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
+import styles from "./WhenCard.module.css";
 
 interface Hint {
   id: string;
@@ -85,137 +86,80 @@ export default function WhenCard({
   });
 
   return (
-    <div style={{ background: "rgba(8,145,178,0.15)", borderRadius: 12, padding: 16, marginBottom: "10px", border: "1px solid rgba(34,211,238,0.25)" }}>
-      <div
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className={styles.card}>
+      {/* Header */}
+      <div className={styles.header}>
+        <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/badges/when.webp" alt="when" width={36} height={36} style={{ objectFit: "contain" }} />
-          <span style={{ fontSize: 18, fontWeight: 700, color: "#22d3ee" }}>When</span>
+          <img src="/badges/when.webp" alt="when" width={36} height={36} className={styles.titleIcon} />
+          <span className={styles.titleText}>When</span>
         </div>
         {(() => {
           const myWhenRow = whenRows.find(r => r.isMe);
           const myWhenAcc = myWhenRow?.acc ?? null;
           const myResult = roundResults?.find(r => r.playerId === playerId);
           if (myResult == null || !myResult.didSubmit) {
-            return (
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ fontSize: 19, fontWeight: 700, color: "#666" }}>—</span>
-              </div>
-            );
+            return <span className={styles.noScore}>—</span>;
           }
           return myWhenAcc != null ? (() => {
             const whenScore = Math.round(myWhenAcc);
             const whenHue = Math.round((Math.max(0, Math.min(100, whenScore)) / 100) * 120);
             const whenColor = `hsl(${whenHue}, 100%, 50%)`;
             return (
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-                  <span style={{ fontSize: 25, fontWeight: 700, color: whenColor }}>{whenScore}</span>
-                  <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>%</span>
-                </div>
+              <div className={styles.scoreGroup}>
+                <span style={{ fontSize: 25, fontWeight: 700, color: whenColor }}>{whenScore}</span>
+                <span className={styles.scoreSuffix}>%</span>
               </div>
             );
           })() : null;
         })()}
       </div>
+
+      {/* Hint penalty */}
       {whenAccPenalty > 0 && (
-        <div style={{ marginBottom: 6 }}>
-          <span style={{
-            display: "inline-flex", alignItems: "center",
-            fontSize: 10, color: "#fca5a5", fontWeight: 600,
-            background: "#7f1d1d",
-            borderRadius: 999,
-            padding: "2px 8px",
-          }}>
-            −{Math.round(whenAccPenalty)}<span style={{ fontSize: "50%", color: "#ffffff" }}>%</span> hints
+        <div>
+          <span className={styles.hintPenalty}>
+            −{Math.round(whenAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> hints
           </span>
         </div>
       )}
-      <div style={{ fontSize: 13, color: "#fff", marginBottom: 10, display: "flex", justifyContent: "space-between" }}>
+
+      {/* Correct year */}
+      <div className={styles.correctRow}>
         <span>Correct:</span>
-        <span style={{ color: "#fff", fontSize: 17, fontWeight: 700 }}>{correctYear}</span>
+        <span className={styles.correctValue}>{correctYear}</span>
       </div>
-      {/* Year timeline */}
-      <div style={{ width: "100%", height: 108, position: "relative", margin: "12px 0", background: "rgba(8,145,178,0.2)", borderRadius: 8, padding: "0 16px", boxSizing: "border-box" }}>
-        {/* Horizontal gradient bar */}
-        <div style={{
-          position: "absolute",
-          top: "50%",
-          height: 4,
-          left: 16,
-          right: 16,
-          background: "#555555",
-          borderRadius: 3,
-          transform: "translateY(-50%)",
-        }} />
+
+      {/* Timeline */}
+      <div className={styles.timeline}>
+        <div className={styles.timelineBar} />
+
         {/* Correct year marker */}
-        <div style={{
-          position: "absolute",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 4,
-          height: 32,
-          background: "#f97316",
-          borderRadius: 2,
-          left: `${correctXPercent}%`,
-        }}>
-          <div style={{
-            position: "absolute",
-            top: -20,
-            left: `${correctXPercent}%`,
-            transform: "translateX(-50%)",
-            fontSize: 9,
-            color: "#888",
-            whiteSpace: "nowrap",
-            textAlign: "center",
-          }}>
-            Correct
-          </div>
-          <div style={{
-            position: "absolute",
-            top: 32,
-            left: `${correctXPercent}%`,
-            transform: "translateX(-50%)",
-            fontSize: 10,
-            color: "#f97316",
-            whiteSpace: "nowrap",
-            textAlign: "center",
-          }}>
-            {correctYear}
-          </div>
+        <div
+          className={styles.correctMarker}
+          style={{ left: `${correctXPercent}%` }}
+        >
+          <div className={styles.correctLabel}>Correct</div>
+          <div className={styles.correctYear}>{correctYear}</div>
         </div>
-        {/* Decade tick marks */}
+
+        {/* Decade ticks */}
         {ticks.map((tick) => {
           const isNearCorrect = Math.abs(tick.xPercent - 50) < 8;
           return (
-            <div key={tick.year} style={{
-              position: "absolute",
-              top: "50%",
-              left: `${tick.xPercent}%`,
-              width: 2,
-              height: tick.isMajor ? 14 : 8,
-              background: "#aaa",
-              transform: "translateY(-50%)",
-            }}>
+            <div
+              key={tick.year}
+              className={styles.tick}
+              style={{ left: `${tick.xPercent}%`, height: tick.isMajor ? 14 : 8 }}
+            >
               {tick.isMajor && !isNearCorrect && (
-                <div style={{
-                  position: "absolute",
-                  top: 18,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  fontSize: 8,
-                  color: "#999",
-                  whiteSpace: "nowrap",
-                }}>
-                  {tick.year}
-                </div>
+                <div className={styles.tickLabel}>{tick.year}</div>
               )}
             </div>
           );
         })}
-        {/* Player guess markers */}
+
+        {/* Player markers */}
         {whenRows.map((row) => {
           if (row.guessYear == null) return null;
           const xPercent = ((row.guessYear - timelineMin) / timelineRange) * 100;
@@ -224,93 +168,76 @@ export default function WhenCard({
           const groupIndex = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
           const verticalOffset = groupIndex * 22;
           return (
-            <div key={row.playerId} style={{
-              position: "absolute",
-              top: "50%",
-              transform: `translate(-50%, calc(-50% - ${verticalOffset}px))`,
-              left: `${clampedXPercent}%`,
-            }}>
-              <div style={{ border: "2px solid #fff", borderRadius: "50%" }}>
+            <div
+              key={row.playerId}
+              className={styles.playerMarker}
+              style={{
+                left: `${clampedXPercent}%`,
+                transform: `translate(-50%, calc(-50% - ${verticalOffset}px))`,
+              }}
+            >
+              <div className={styles.playerAvatarRing}>
                 <PlayerAvatar
                   avatarUrl={snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null}
                   displayName={snapshotPlayers.find(p => p.playerId === row.playerId)?.displayName ?? row.playerId.slice(0, 2)}
                   size={22}
                 />
               </div>
-              <div style={{
-                position: "absolute",
-                top: 30,
-                left: "50%",
-                transform: "translateX(-50%)",
-                fontSize: row.isMe ? 15 : 10,
-                color: "#ffffff",
-                whiteSpace: "nowrap",
-                textAlign: "center",
-                fontWeight: row.isMe ? 700 : 400,
-              }}>
+              <div
+                className={styles.playerYearLabel}
+                style={{ fontSize: row.isMe ? 15 : 10, fontWeight: row.isMe ? 700 : 400 }}
+              >
                 {row.guessYear}
               </div>
             </div>
           );
         })}
       </div>
-      <div style={{ marginTop: 10, background: "rgba(34,211,238,0.06)", borderRadius: 8 }}>
-        <div
-          onClick={() => setWhenLbExpanded(!whenLbExpanded)}
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
+      {/* Leaderboard expandable */}
+      <div className={styles.expandSection}>
+        <div className={styles.expandHeader} onClick={() => setWhenLbExpanded(!whenLbExpanded)}>
+          <div className={styles.expandTitleGroup}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--gh-text-muted)" }}>
               {whenLbExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Leaderboard
-            </span>
+            <span className={styles.expandLabel}>Leaderboard</span>
           </div>
           {(() => {
             const myRank = roundResults?.find(r => r.playerId === playerId)?.rank ?? null;
-            return myRank != null ? (
-              <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>
-                #{myRank}
-              </span>
-            ) : null;
+            return myRank != null ? <span className={styles.expandRank}>#{myRank}</span> : null;
           })()}
         </div>
         {whenLbExpanded && (
-          <div style={{ padding: "0 4px 8px" }}>
+          <div className={styles.lbList}>
             {whenRows.map((row, idx) => {
               const hue = row.acc != null ? Math.round((row.acc / 100) * 120) : null;
-              const accColor = hue != null ? `hsl(${hue}, 100%, 50%)` : "#888";
+              const accColor = hue != null ? `hsl(${hue}, 100%, 50%)` : "var(--gh-text-muted)";
               const resultRow = roundResults?.find(r => r.playerId === row.playerId);
               const rank = resultRow?.rank ?? null;
               const avatarUrl = snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
+              const isLast = idx === whenRows.length - 1;
               return (
-                <div key={row.playerId} style={{
-                  display: "flex", alignItems: "center", padding: "7px 8px", gap: 6,
-                  borderRadius: 6,
-                  background: row.isMe ? "rgba(255,255,255,0.06)" : "transparent",
-                  borderBottom: idx < whenRows.length - 1 ? "1px solid #333" : "none",
-                }}>
-                  <span style={{ minWidth: 20, color: "#888", fontSize: 13, fontWeight: 600 }}>
-                    {rank ?? "—"}
-                  </span>
-                  <span style={{ flex: 1, fontSize: 15 }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                      <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
-                      <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
-                        {row.displayName}
-                      </span>
+                <div
+                  key={row.playerId}
+                  className={`${styles.lbRow} ${row.isMe ? styles.lbRowSelf : ""} ${!isLast ? styles.lbRowDivider : ""}`}
+                >
+                  <span className={styles.lbRank}>{rank ?? "—"}</span>
+                  <span className={styles.lbNameGroup}>
+                    <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
+                    <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
+                      {row.displayName}
                     </span>
-                    {row.isMe && <span style={{ color: "#555", fontSize: 11, marginLeft: 4 }}>(you)</span>}
+                    {row.isMe && <span className={styles.lbYouTag}>(you)</span>}
                   </span>
-                  <span style={{ color: "#bbb", fontSize: 11, fontWeight: 600 }}>
+                  <span className={styles.lbYearsOff}>
                     {row.diff != null ? `${row.diff} yrs off` : "—"}
                   </span>
-                  <span style={{ background: "#2a2a2a", color: accColor, borderRadius: 999, padding: "2px 8px", fontSize: 13, fontWeight: 600 }}>
+                  <span className={styles.lbAccPill}>
                     {row.acc != null ? (
                       <>
-                        <span style={{ color: accColor, fontSize: "var(--font-base)" }}>{row.acc}</span>
-                        <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "var(--font-xs)" }}>%</span>
+                        <span style={{ color: accColor, fontSize: "var(--gh-font-base)" }}>{row.acc}</span>
+                        <span className={styles.lbAccSuffix}>%</span>
                       </>
                     ) : "—"}
                   </span>
@@ -320,49 +247,37 @@ export default function WhenCard({
           </div>
         )}
       </div>
-      <div style={{ marginTop: 6, background: "rgba(34,211,238,0.06)", borderRadius: 8 }}>
-        <div
-          onClick={() => setWhenCluesExpanded(!whenCluesExpanded)}
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", cursor: "pointer", userSelect: "none" }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#67e8f9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
+      {/* Hints expandable */}
+      <div className={styles.expandSection}>
+        <div className={styles.expandHeader} onClick={() => setWhenCluesExpanded(!whenCluesExpanded)}>
+          <div className={styles.expandTitleGroup}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--gh-violet)" }}>
               {whenCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#67e8f9", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Hints
-            </span>
+            <span className={styles.expandLabelAccent}>Hints</span>
           </div>
-          {null}
         </div>
         {whenCluesExpanded && (
-          <div style={{ padding: "0 12px 12px" }}>
+          <div className={styles.hintsList}>
             {(() => {
               const whenHints = (roundHints ?? [])
                 .filter(h => h.type === "when")
                 .sort((a, b) => a.tier - b.tier);
               if (whenHints.length === 0) return (
-                <div style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>
-                  No time clues available for this event.
-                </div>
+                <div className={styles.emptyHints}>No time clues available for this event.</div>
               );
               const labelMap: Record<number, string> = {
                 1: "Century", 2: "Historical Event", 3: "Decade",
                 4: "Contemporary Event", 5: "Visual Clues"
               };
               return whenHints.map((hint, idx) => (
-                <div key={hint.id} style={{
-                  padding: "8px 0",
-                  borderBottom: idx < whenHints.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
-                }}>
-                  <div style={{ marginBottom: 3 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#67e8f9", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                      {labelMap[hint.tier] ?? `Tier ${hint.tier}`}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.4 }}>
-                    {hint.content}
-                  </div>
+                <div
+                  key={hint.id}
+                  className={`${styles.hintRow} ${idx < whenHints.length - 1 ? styles.hintRowDivider : ""}`}
+                >
+                  <div className={styles.hintLabel}>{labelMap[hint.tier] ?? `Tier ${hint.tier}`}</div>
+                  <div className={styles.hintContent}>{hint.content}</div>
                 </div>
               ));
             })()}

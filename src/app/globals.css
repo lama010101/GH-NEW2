@@ -22,16 +22,18 @@
   box-sizing: border-box;
 }
 
-html,
-body {
+html {
   margin: 0;
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--text);
 }
 
 body {
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  background-color: var(--gh-bg-base);
+  color: var(--gh-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  margin: 0;
 }
 
 button,
@@ -292,4 +294,97 @@ a {
   --color-green:   #16a34a;
   --color-cyan:    #0891b2;
   --color-red:     #dc2626;
+}
+
+/* ============================================================
+   GLASS DESIGN SYSTEM — ambient glow + glassmorphism
+   Orange = actions/CTAs. Blue = passive containers/surfaces.
+   ============================================================ */
+:root {
+  /* --- Page background --- */
+  --gh-bg:              #080c14;
+  --gh-bg-glow:         radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30, 64, 175, 0.18) 0%, transparent 70%);
+
+  /* --- Glass surfaces (passive / containers) --- */
+  --gh-glass-bg:        rgba(15, 25, 50, 0.60);
+  --gh-glass-bg-hover:  rgba(20, 35, 70, 0.75);
+  --gh-glass-border:    rgba(99, 155, 255, 0.18);
+  --gh-glass-border-hover: rgba(99, 155, 255, 0.35);
+  --gh-glass-shadow:    0 4px 24px rgba(0, 0, 0, 0.45);
+  --gh-glass-blur:      blur(12px);
+  --gh-glass-radius:    14px;
+
+  /* --- Blue ambient glow (passive/informational elements) --- */
+  --gh-glow-blue:       rgba(59, 130, 246, 0.20);
+  --gh-glow-blue-strong: rgba(59, 130, 246, 0.40);
+
+  /* --- Orange action glow (CTAs, buttons, submit) --- */
+  --gh-glow-orange:     rgba(251, 146, 60, 0.25);
+  --gh-glow-orange-strong: rgba(251, 146, 60, 0.50);
+
+  /* --- Action button (orange) --- */
+  --gh-btn-action-bg:   linear-gradient(135deg, #fb923c, #f97316);
+  --gh-btn-action-glow: 0 0 16px rgba(251, 146, 60, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35);
+  --gh-btn-action-text: #0f0f0f;
+
+  /* --- Outline button (cyan/blue tint — lobby secondary actions) --- */
+  --gh-btn-outline-bg:      transparent;
+  --gh-btn-outline-border:  rgba(34, 211, 238, 0.55);
+  --gh-btn-outline-text:    #22d3ee;
+  --gh-btn-outline-glow:    0 0 10px rgba(34, 211, 238, 0.20);
+  --gh-btn-outline-hover-bg: rgba(34, 211, 238, 0.10);
+
+  /* --- Friend card (invite carousel) --- */
+  --gh-friend-card-bg:      rgba(12, 22, 48, 0.70);
+  --gh-friend-card-border:  rgba(59, 130, 246, 0.22);
+  --gh-friend-card-border-hover: rgba(59, 130, 246, 0.50);
+  --gh-friend-card-shadow:  0 2px 16px rgba(0, 0, 0, 0.50);
+  --gh-friend-card-glow-hover: 0 0 18px rgba(59, 130, 246, 0.18);
+  --gh-friend-card-radius:  12px;
+  --gh-friend-card-width:   110px;
+
+  /* --- Typography in glass context --- */
+  --gh-text-primary:    #ffffff;
+  --gh-text-secondary:  rgba(255, 255, 255, 0.60);
+  --gh-text-dim:        rgba(255, 255, 255, 0.35);
+  --gh-text-tag:        rgba(255, 255, 255, 0.62);
+}
+
+/* ============================================================
+   UNIFIED GH DESIGN TOKENS — authoritative palette for all new code
+   ============================================================ */
+:root {
+  /* --- Semantic colors --- */
+  --gh-orange:   #fb923c;
+  --gh-blue:     #3b82f6;
+  --gh-violet:   #8b5cf6;
+  --gh-gold:     #f0c060;
+  --gh-teal:     #22d3ee;
+  --gh-success:  #22c55e;
+  --gh-danger:   #ef4444;
+
+  /* --- Backgrounds --- */
+  --gh-bg-base:     #080c14;
+  --gh-bg-surface:  rgba(15, 25, 50, 0.60);
+  --gh-bg-elevated: rgba(20, 35, 70, 0.75);
+  --gh-bg-input:    rgba(0, 0, 0, 0.18);
+
+  /* --- Text --- */
+  --gh-text-primary:   #ffffff;
+  --gh-text-secondary: rgba(255, 255, 255, 0.60);
+  --gh-text-muted:     rgba(255, 255, 255, 0.35);
+
+  /* --- Badge metals --- */
+  --gh-badge-gold:   #ffd700;
+  --gh-badge-silver: #c0c0c0;
+  --gh-badge-bronze: #cd7f32;
+}
+
+/* ============================================================
+   FONT UTILITIES
+   ============================================================ */
+.font-bebas,
+.font-display {
+  font-family: var(--font-bebas), sans-serif;
+  letter-spacing: 0.02em;
 }

@@ -5,6 +5,7 @@ export const REPEAT_PROTECTION_BUFFER = 500;
 export const AUTOPAN_DURATION_SEC = 5;
 export const TIMER_MIN_SEC = 15;
 export const TIMER_MAX_SEC = 300;
+export const TIMER_DISABLED = 0;
 export const HINT_TOTAL = 12;
 export const MAX_HINT_PENALTY = 1;
 
