@@ -737,35 +737,41 @@ export default function RoundActiveSection({
             }}
           >
             {/* Header Row */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 8,
-                borderRadius: 10,
-                padding: '6px 0',
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/where.webp" alt="where" style={{ width: 56, height: 56, objectFit: "contain", flexShrink: 0 }} />
-                <span style={{ fontSize: 16, fontWeight: 600, color: "#22c55e", textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5)" }}>Where?</span>
+            <div style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginBottom: 8,
+              padding: "6px 0",
+            }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                <img src="/badges/where.webp" alt="where"
+                     style={{ width: 56, height: 56, objectFit: "contain", flexShrink: 0 }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "1.2px",
+                    textTransform: "uppercase",
+                    color: "#c084fc",
+                  }}>WHERE</span>
+                  <span style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: "#ffffff",
+                    lineHeight: 1.3,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+                  } as React.CSSProperties}>
+                    {guessLocation !== null
+                      ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
+                      : "No location set"}
+                  </span>
+                </div>
               </div>
-              <span style={{
-                fontSize: 20,
-                fontWeight: 600,
-                color: "#ffffff",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                maxWidth: "75%",
-                textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5)",
-              }}>
-                {guessLocation !== null
-                  ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
-                  : "No location set"}
-              </span>
             </div>
 
             {/* Map */}
@@ -875,30 +881,36 @@ export default function RoundActiveSection({
             }}
           >
             {/* Header Row */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 8,
-                borderRadius: 10,
-                padding: '6px 0',
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/when.webp" alt="when" style={{ width: 56, height: 56, objectFit: "contain", flexShrink: 0 }} />
-                <span style={{ fontSize: 16, fontWeight: 600, color: "#38bdf8", textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5)" }}>When?</span>
+            <div style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginBottom: 8,
+              padding: "6px 0",
+            }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                <img src="/badges/when.webp" alt="when"
+                     style={{ width: 56, height: 56, objectFit: "contain", flexShrink: 0 }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "1.2px",
+                    textTransform: "uppercase",
+                    color: "#22d3ee",
+                  }}>WHEN</span>
+                  <span style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: "#ffffff",
+                    lineHeight: 1.3,
+                    fontVariantNumeric: "tabular-nums",
+                    textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+                  }}>
+                    {guessYear !== null ? String(guessYear) : "No year set"}
+                  </span>
+                </div>
               </div>
-              <span style={{
-                fontSize: 20,
-                fontWeight: 600,
-                color: "#ffffff",
-                fontVariantNumeric: "tabular-nums",
-                textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.5)",
-              }}>
-                {guessYear !== null ? String(guessYear) : "No year set"}
-              </span>
             </div>
 
             {/* Year Picker */}

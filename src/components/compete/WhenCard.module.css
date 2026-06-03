@@ -1,0 +1,323 @@
+/* WhenCard — uses tokens from gh-card--when set in globals.css */
+
+.card {
+  background: rgba(139, 92, 246, 0.10);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: var(--gh-radius-md);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titleIcon {
+  object-fit: contain;
+}
+
+.titleText {
+  font-size: var(--gh-font-lg);
+  font-weight: 700;
+  color: var(--gh-violet);
+}
+
+.hintPenalty {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fca5a5;
+  background: #7f1d1d;
+  border-radius: var(--gh-radius-pill);
+  padding: 2px 8px;
+  margin-bottom: 6px;
+}
+
+.hintPenaltySuffix {
+  font-size: 50%;
+  color: #ffffff;
+}
+
+.correctRow {
+  font-size: 13px;
+  color: var(--gh-text-primary);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.correctValue {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
+/* ── Timeline ── */
+
+.timeline {
+  width: 100%;
+  height: 108px;
+  position: relative;
+  margin: 12px 0;
+  background: rgba(139, 92, 246, 0.12);
+  border-radius: 8px;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.timelineBar {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  left: 16px;
+  right: 16px;
+  background: #555555;
+  border-radius: 3px;
+  transform: translateY(-50%);
+}
+
+.correctMarker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 32px;
+  background: var(--gh-orange);
+  border-radius: 2px;
+}
+
+.correctLabel {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: var(--gh-text-muted);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.correctYear {
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--gh-orange);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.tick {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  background: #aaa;
+}
+
+.tickLabel {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: #999;
+  white-space: nowrap;
+}
+
+.playerMarker {
+  position: absolute;
+  top: 50%;
+}
+
+.playerAvatarRing {
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.playerYearLabel {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  text-align: center;
+  color: #ffffff;
+}
+
+/* ── Expandable sections ── */
+
+.expandSection {
+  margin-top: 10px;
+  background: rgba(139, 92, 246, 0.06);
+  border-radius: 8px;
+}
+
+.expandSection + .expandSection {
+  margin-top: 6px;
+}
+
+.expandHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.expandTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.expandLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.expandLabelAccent {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gh-violet);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.expandRank {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gh-text-muted);
+}
+
+/* ── Leaderboard rows ── */
+
+.lbList {
+  padding: 0 4px 8px;
+}
+
+.lbRow {
+  display: flex;
+  align-items: center;
+  padding: 7px 8px;
+  gap: 6px;
+  border-radius: 6px;
+}
+
+.lbRowSelf {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lbRowDivider {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lbRank {
+  min-width: 20px;
+  color: var(--gh-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lbNameGroup {
+  flex: 1;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.lbYouTag {
+  color: var(--gh-text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.lbYearsOff {
+  color: #bbb;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.lbAccPill {
+  background: var(--gh-bg-input);
+  border-radius: var(--gh-radius-pill);
+  padding: 2px 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lbAccSuffix {
+  color: var(--gh-text-secondary);
+  font-size: var(--gh-font-xs);
+}
+
+/* ── Hints ── */
+
+.hintsList {
+  padding: 0 12px 12px;
+}
+
+.hintRow {
+  padding: 8px 0;
+}
+
+.hintRowDivider {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hintLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gh-violet);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 3px;
+}
+
+.hintContent {
+  font-size: 13px;
+  color: #ccc;
+  line-height: 1.4;
+}
+
+.emptyHints {
+  font-size: 12px;
+  color: var(--gh-text-muted);
+  font-style: italic;
+}
+
+/* ── Score ── */
+
+.scoreGroup {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.scoreSuffix {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--gh-text-secondary);
+}
+
+.noScore {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--gh-text-muted);
+}

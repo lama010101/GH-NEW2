@@ -32,7 +32,13 @@ function HomePageInner() {
   const [initials, setInitials] = useState('?')
 
   useEffect(() => {
-    if (identity.status !== 'ready') return
+    if (identity.status !== 'ready') {
+      setAvatarUrl(null)
+      setInitials('?')
+      setAccuracy('--')
+      setXp('--')
+      return
+    }
     const pid = (identity as { status: string; playerId?: string }).playerId
     ;(async () => {
       try {

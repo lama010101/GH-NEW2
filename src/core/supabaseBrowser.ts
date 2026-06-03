@@ -22,3 +22,11 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
     },
   }
 );
+
+export function createSupabaseBrowserClient(persistSession: boolean) {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession } }
+  );
+}

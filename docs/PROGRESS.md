@@ -1663,3 +1663,52 @@ MP-FIX-HAVERSINE-002: Fixed antimeridian wrap in haversineKm (competeUtils.ts)
 | MP-UI-CARDS-001 | DONE | src/components/compete/RoundActiveSection.tsx | Applied distinctive blue background from round results page to where/when cards (rgba(8,145,178,0.15) with cyan border). Added text shadows to guessed answers, titles, and labels for legibility. Increased where card guessed answer width to 75% and text size to 20px to match when card. Updated submit button to match where/when button gradient style but in orange. Increased where/when label font size from 15 to 16px. Increased where/when icon size by 50% from 36x36 to 54x54. | 2026-06-02 |
 | MP-FEAT-ROUND-HINTS-PERSIST-001 | DONE | src/server/sessionCore.ts | Persist hint IDs to round_hints table inside submitGuess transaction. Added INSERT block after hintRows query/penalty computation and before INSERT round_commits. Uses client.query with parameterized VALUES and ON CONFLICT DO NOTHING. | 2026-06-02 |
 | MP-FEAT-ROUND-HINTS-MIGRATION-001 | DONE | supabase/migrations/028_create_round_hints.sql | Created round_hints table with id, game_id, player_id, round_index, hint_id, revealed_at columns. Added index on (game_id, player_id, round_index). Enabled RLS with SELECT policy for authenticated users. | 2026-06-02 |
+| MP-FIX-WHEREWHENPANEL-001 | Fix WHERE/WHEN panel header — two-line stack, correct colors | DONE |
+
+## MP-FIX-LOBBY-INVITE-NAME-COLOR-002
+**Date:** 2026-06-03
+**Files Modified:** src/core/competeUtils.ts
+**Description:** Replaced gradient player name coloring with flat neutral white. Removed USERNAME_GRADIENT_PAIRS constant and simplified getUsernameGradientStyle function.
+| MP-FIX-YEARPICKER-RAIL-001 | YearPicker — distinct background per rail | DONE |
+
+## MP-FIX-DESIGN-TOKENS-001
+**Date:** 2026-06-03
+**Files Modified:** src/app/globals.css
+**Description:** Extended globals.css with glassmorphism design system tokens for ambient glow, glass surfaces, action buttons, outline buttons, friend cards, and typography in glass context.
+| MP-FIX-GUESSPANELS-001 | Guess panels — Where/When header fix + rail label repositioning | DONE |
+
+## MP-FIX-LOBBY-INVITE-CARD-GLASS-001
+- **File Modified**: src/components/compete/LobbySection.module.css
+- **Changes**: Applied glassmorphism design tokens to friend invite cards (.lobbyPlayerCard, .lobbyCardNameFirst, .lobbyCardNameLast, .lobbyInviteBtn)
+
+## MP-FIX-LOBBY-TIMER-TOGGLE-001 (2026-06-03)
+- Modified: src/core/types.ts (added TIMER_DISABLED = 0 constant)
+- Modified: partykit/server.ts (SetTimerSchema min(0) instead of min(10))
+- Modified: src/server/sessionCore.ts (clampRoundTimer allows 0 as disabled state)
+- Validation: TypeScript clean (npx tsc --noEmit)
+- Validation: No min(10) found in partykit/server.ts
+- Validation: roundTimerSec === 0 check present in sessionCore.ts
+
+## MP-FIX-LOBBY-INVITE-TAG-OPACITY-001
+- **File Modified**: src/app/globals.css
+- **Changes**: Increased --gh-text-tag opacity from 0.38 to 0.62 for better discriminator legibility
+
+## MP-FIX-LOBBY-TIMER-TOGGLE-002 (2026-06-03)
+- Modified: src/components/compete/LobbySection.tsx (added timer ON/OFF toggle)
+- Pattern: Mirrored Results Auto-Advance toggle (0 = OFF, >0 = ON with slider)
+- Validation: TypeScript clean (npx tsc --noEmit)
+
+## MP-FIX-LOBBY-TIMER-TOGGLE-003 (2026-06-03)
+- Modified: src/components/compete/LobbySection.tsx (formatTimerDisplay guard for 0)
+- Change: Added 'if (sec === 0) return "OFF"' as first line of function
+- Validation: TypeScript clean (npx tsc --noEmit)
+- Call sites reviewed: All 4 sites safe with guard (2 had redundant ternary guards)
+| MP-FIX-AUTH-MODAL-003 | DONE | src/components/AuthModal.tsx | Added Remember me checkbox (checked by default, UI only - persistSession not supported by Supabase API) and Forgot password link (calls resetPasswordForEmail, shows success state) to sign-in mode only. |
+| MP-FIX-AUTH-MODAL-004 | DONE | src/core/supabaseBrowser.ts, src/components/AuthModal.tsx | Wired Remember me checkbox to real persistSession via createSupabaseBrowserClient factory. |
+| MP-STYLE-FONTS-001 | Load Bebas Neue globally and remove rogue Syne import | layout.tsx + profile/page.tsx | DONE | 2026-06-03 |
+| MP-STYLE-BASE-001 | Add base typography and background rules | globals.css | DONE | 2026-06-03 |
+| MP-FIX-AUTH-STATE-001 | DONE | src/components/AuthModal.tsx | Fixed sign-in to use singleton supabaseBrowser instead of createSupabaseBrowserClient. Removed second client instance. Remember me now moves token to sessionStorage when unchecked. |
+| MP-FIX-AUTH-SIGNOUT-001 | DONE | src/components/NavModal.tsx | Fixed sign-out to use identity.signOut() via dynamic import. Removed router.push/router.refresh from sign-out handler — onAuthStateChange subscription in page.tsx handles UI update reactively. |
+| MP-STYLE-WHEN-001 | Migrate WhenCard.tsx inline styles to CSS module | WhenCard.module.css + WhenCard.tsx | DONE | 2026-06-03 |
+| MP-FIX-AUTH-STATE-002 | DONE | src/app/page.tsx | Clear avatarUrl, initials, accuracy, xp on sign-out by resetting state when identity is not ready. |
+| MP-STYLE-WHEN-001 | Migrate WhenCard.tsx inline styles to CSS module | WhenCard.module.css + WhenCard.tsx | DONE | 2026-06-03 |

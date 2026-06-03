@@ -144,11 +144,9 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
         {/* Sign out */}
         <button
           onClick={async () => {
-            const sb = (await import('@/core/supabaseBrowser')).supabaseBrowser
-            await sb.auth.signOut()
+            const { signOut } = await import('@/core/identity')
+            await signOut()
             onClose()
-            router.push('/')
-            router.refresh()
           }}
           style={{
             display: 'flex', alignItems: 'center', gap: 16,

@@ -103,7 +103,7 @@ const ReadyNextSchema = z.object({
 const SetTimerSchema = z.object({
   type: z.literal("SET_TIMER"),
   playerId: z.string().uuid(),
-  roundTimerSec: z.number().int().min(10).max(300)
+  roundTimerSec: z.number().int().min(0).max(300)
 });
 
 const SetYearRangeSchema = z.object({

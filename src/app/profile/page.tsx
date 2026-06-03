@@ -1,13 +1,12 @@
 'use client';
 
-import { Syne, DM_Sans } from 'next/font/google';
+import { DM_Sans } from 'next/font/google';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useIdentity } from '@/hooks/useIdentity';
 import { signOut } from '@/core/identity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 
-const syne = Syne({ subsets: ['latin'], weight: ['400', '700', '800'] });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] });
 
 type ProfileHistoricalAvatar = {
@@ -192,7 +191,7 @@ export default function ProfilePage() {
           <span>Back</span>
         </button>
         <button
-          className={`${syne.className} px-4 py-2 rounded-full text-xs uppercase font-bold tracking-wider bg-white/[0.04] text-white/45 border border-white/[0.09] cursor-pointer`}
+          className={`font-bebas px-4 py-2 rounded-full text-xs uppercase font-bold tracking-wider bg-white/[0.04] text-white/45 border border-white/[0.09] cursor-pointer`}
         >
           Edit Profile
         </button>
@@ -212,7 +211,7 @@ export default function ProfilePage() {
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
             ) : (
-              <span className={`${syne.className} text-4xl font-extrabold text-[#f5f0e8]`}>
+              <span className={`font-bebas text-4xl font-extrabold text-[#f5f0e8]`}>
                 {getInitials(profileData.displayName)}
               </span>
             )}
@@ -220,7 +219,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Username */}
-        <h2 className={`${syne.className} text-xl font-bold mb-1 bg-gradient-to-r from-pink-300 to-yellow-300 bg-clip-text text-transparent`}>
+        <h2 className={`font-bebas text-xl font-bold mb-1 bg-gradient-to-r from-pink-300 to-yellow-300 bg-clip-text text-transparent`}>
           {profileData.displayName ?? ''}
         </h2>
 
@@ -232,7 +231,7 @@ export default function ProfilePage() {
         {/* Historical Avatar Card */}
         {profileData.historicalAvatar && (
           <div className="bg-white/[0.08] rounded-2xl py-5 px-6 w-full max-w-[400px] text-center">
-            <h3 className={`${syne.className} text-lg font-bold mb-2 text-[#f5f0e8]`}>
+            <h3 className={`font-bebas text-lg font-bold mb-2 text-[#f5f0e8]`}>
               {profileData.historicalAvatar.avatarName}
             </h3>
             {profileData.historicalAvatar.avatarDescription && (
@@ -296,7 +295,7 @@ export default function ProfilePage() {
             key={i}
             className="bg-white/[0.04] border border-white/[0.09] rounded-xl py-3.5 px-4 text-center"
           >
-            <div className={`${syne.className} text-2xl font-extrabold ${stat.color}`}>
+            <div className={`font-bebas text-2xl font-extrabold ${stat.color}`}>
               {stat.value}
             </div>
             <div className="text-xs mt-1 text-white/45">
@@ -310,7 +309,7 @@ export default function ProfilePage() {
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
         {/* Left: Accuracy breakdown */}
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Accuracy breakdown</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>Accuracy breakdown</h3>
           <div className="flex flex-col items-center gap-2 py-6">
             <div className="text-sm text-white/35">—</div>
             <div className="text-xs text-white/35">Coming soon</div>
@@ -319,7 +318,7 @@ export default function ProfilePage() {
         
         {/* Right: Badge collection */}
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Badge collection</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>Badge collection</h3>
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: 'Gold', count: null, color: '#f0c060' },
@@ -333,7 +332,7 @@ export default function ProfilePage() {
                 key={i}
                 className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]"
               >
-                <div className={`${syne.className} text-lg font-bold`} style={{ color: badge.color }}>
+                <div className={`font-bebas text-lg font-bold`} style={{ color: badge.color }}>
                   {badge.count ?? '—'}
                 </div>
                 <div className="text-[10px] mt-1 text-white/45">
@@ -349,12 +348,12 @@ export default function ProfilePage() {
       {/* 6. FULL-WIDTH PANEL - Performance by mode */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Performance by mode</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>Performance by mode</h3>
           <div className="grid grid-cols-3 gap-[10px]">
             {/* Daily */}
             <div className="p-4 rounded-xl relative overflow-hidden bg-blue-900/40 border border-blue-500/30">
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500" />
-              <div className={`${syne.className} text-lg font-bold mb-2`}>Daily</div>
+              <div className={`font-bebas text-lg font-bold mb-2`}>Daily</div>
               <div className="flex flex-col gap-1 items-center py-4">
                 <div className="text-sm text-white/35">—</div>
                 <div className="text-xs text-white/35">Coming soon</div>
@@ -364,7 +363,7 @@ export default function ProfilePage() {
             {/* Level Up */}
             <div className="p-4 rounded-xl relative overflow-hidden bg-purple-900/30 border border-purple-400/30">
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#c084fc]" />
-              <div className={`${syne.className} text-lg font-bold mb-2`}>Level Up</div>
+              <div className={`font-bebas text-lg font-bold mb-2`}>Level Up</div>
               <div className="flex flex-col gap-1 items-center py-4">
                 <div className="text-sm text-white/35">—</div>
                 <div className="text-xs text-white/35">Coming soon</div>
@@ -374,7 +373,7 @@ export default function ProfilePage() {
             {/* Compete */}
             <div className="p-4 rounded-xl relative overflow-hidden bg-teal-500/25 border border-teal-500/30">
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#14b8a6]" />
-              <div className={`${syne.className} text-lg font-bold mb-2`}>Compete</div>
+              <div className={`font-bebas text-lg font-bold mb-2`}>Compete</div>
               <div className="flex flex-col gap-1 items-center py-4">
                 <div className="text-sm text-white/35">—</div>
                 <div className="text-xs text-white/35">Coming soon</div>
@@ -387,12 +386,12 @@ export default function ProfilePage() {
       {/* 7. TWO-COLUMN ROW */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Leaderboard positions</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>Leaderboard positions</h3>
           <div className="flex flex-col gap-3">
             {/* Daily */}
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/60">Daily (all-time)</span>
-              <span className={`${syne.className} text-sm font-bold text-blue-400`}>
+              <span className={`font-bebas text-sm font-bold text-blue-400`}>
                 {profileData.dailyAvgAccuracy === null
                   ? '—'
                   : `${Math.round(Number(profileData.dailyAvgAccuracy))}% · ${profileData.dailyGamesPlayed ?? 0} games`}
@@ -401,7 +400,7 @@ export default function ProfilePage() {
             {/* Level Up */}
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/60">Level Up</span>
-              <span className={`${syne.className} text-sm font-bold text-[#c084fc]`}>
+              <span className={`font-bebas text-sm font-bold text-[#c084fc]`}>
                 {profileData.levelUpCurrentLevel === null
                   ? '—'
                   : `Level ${profileData.levelUpCurrentLevel} · ${profileData.levelUpBestAccuracy ?? 0}% best`}
@@ -410,7 +409,7 @@ export default function ProfilePage() {
           </div>
         </div>
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Score distribution</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>Score distribution</h3>
           <div className="flex flex-col items-center gap-2 py-6">
             <div className="text-sm text-white/35">Coming soon</div>
           </div>
@@ -420,7 +419,7 @@ export default function ProfilePage() {
       {/* 8. FULL-WIDTH PANEL - History collection */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`${syne.className} text-sm font-bold mb-4`}>History collection</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>History collection</h3>
           <div className="grid grid-cols-4 gap-3 mb-6">
             {[
               { label: 'Events seen', value: null, color: '#fb923c' },
@@ -432,7 +431,7 @@ export default function ProfilePage() {
                 key={i}
                 className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]"
               >
-                <div className={`${syne.className} text-xl font-bold`} style={{ color: item.color }}>
+                <div className={`font-bebas text-xl font-bold`} style={{ color: item.color }}>
                   {item.value ?? '—'}
                 </div>
                 <div className="text-[10px] mt-1 text-white/45">
@@ -472,7 +471,7 @@ export default function ProfilePage() {
       {/* 9. FULL-WIDTH PANEL - Accuracy by century */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Accuracy by century</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>Accuracy by century</h3>
           <div className="flex flex-wrap gap-2">
             {[
               { label: '1900s', percent: null, opacity: 1 },
@@ -487,7 +486,7 @@ export default function ProfilePage() {
                 className="py-3 px-3 rounded-lg text-center bg-[rgba(251,146,60,0.1)] border border-[rgba(251,146,60,0.2)]"
                 style={{ opacity: century.opacity }}
               >
-                <div className={`${syne.className} text-sm font-bold text-[#fb923c]`}>
+                <div className={`font-bebas text-sm font-bold text-[#fb923c]`}>
                   {century.label}
                 </div>
                 <div className="text-xs mt-0.5 text-white/45">
@@ -502,7 +501,7 @@ export default function ProfilePage() {
       {/* 10. ACCOUNT SECTION */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`${syne.className} text-sm font-bold mb-4`}>Account</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>Account</h3>
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <span className="text-sm text-white/70">Email</span>

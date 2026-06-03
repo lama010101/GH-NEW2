@@ -1,35 +1,11 @@
 import type { SessionPlayer } from "./types";
 
-const USERNAME_GRADIENT_PAIRS: [string, string][] = [
-  ["#93c5fd", "#fb923c"], // blue → orange
-  ["#93c5fd", "#c084fc"], // blue → purple
-  ["#93c5fd", "#2dd4bf"], // blue → teal
-  ["#fb923c", "#93c5fd"], // orange → blue
-  ["#fb923c", "#c084fc"], // orange → purple
-  ["#fb923c", "#2dd4bf"], // orange → teal
-  ["#c084fc", "#93c5fd"], // purple → blue
-  ["#c084fc", "#fb923c"], // purple → orange
-  ["#c084fc", "#2dd4bf"], // purple → teal
-  ["#2dd4bf", "#93c5fd"], // teal → blue
-  ["#2dd4bf", "#fb923c"], // teal → orange
-  ["#2dd4bf", "#c084fc"], // teal → purple
-];
-
-export { USERNAME_GRADIENT_PAIRS };
-
-export function getUsernameGradientStyle(playerId: string): React.CSSProperties {
-  let hash = 0;
-  for (let i = 0; i < playerId.length; i++) {
-    hash = (hash * 31 + playerId.charCodeAt(i)) >>> 0;
-  }
-  const [from, to] = USERNAME_GRADIENT_PAIRS[hash % USERNAME_GRADIENT_PAIRS.length];
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function getUsernameGradientStyle(_playerId: string): React.CSSProperties {
   return {
-    background: `linear-gradient(90deg, ${from}, ${to})`,
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    backgroundClip: "text",
+    color: 'rgba(255, 255, 255, 0.90)',
     fontWeight: 500,
-    display: "inline",
+    display: 'inline',
   };
 }
 

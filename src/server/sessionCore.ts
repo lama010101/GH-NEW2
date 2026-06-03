@@ -145,6 +145,10 @@ function clampRoundTimer(roundTimerSec: number | undefined): number {
     throw new Error("roundTimerSec must be a finite integer");
   }
 
+  if (roundTimerSec === 0) {
+    return 0; // 0 = timer disabled
+  }
+
   return Math.max(TIMER_MIN_SEC, Math.min(TIMER_MAX_SEC, roundTimerSec));
 }
 

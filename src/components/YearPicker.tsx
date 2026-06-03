@@ -179,18 +179,24 @@ function Rail({ items, selected, itemWidth, labelFn, onSelect, committed, tierLa
   }, [handleScroll]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{
-        fontSize: 8,
+        fontSize: 9,
+        fontWeight: 700,
         color: LABEL_COLOR,
         letterSpacing: '1px',
         textTransform: 'uppercase',
-        paddingLeft: 4,
+        paddingLeft: 6,
         userSelect: 'none',
       }}>
         {tierLabel}
       </div>
-      <div style={{ position: 'relative' }}>
+      <div style={{
+        background: 'rgba(0,0,0,0.28)',
+        borderRadius: 8,
+        padding: '4px 0',
+      }}>
+        <div style={{ position: 'relative' }}>
         <div
           ref={scrollRef}
           onScroll={handleScroll}
@@ -259,6 +265,7 @@ function Rail({ items, selected, itemWidth, labelFn, onSelect, committed, tierLa
           pointerEvents: 'none',
           zIndex: 2,
         }} />
+      </div>
       </div>
     </div>
   );
