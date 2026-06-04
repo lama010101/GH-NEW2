@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
+import styles from "./AuthModal.module.css";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -107,73 +108,29 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   return (
     <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        background: "rgba(0, 0, 0, 0.7)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
+      className={styles.overlay}
       onClick={onClose}
     >
       <div
-        style={{
-          position: "relative",
-          background: "#1a1a2e",
-          borderRadius: 12,
-          padding: 32,
-          width: "100%",
-          maxWidth: 400,
-          boxSizing: "border-box",
-        }}
+        className={styles.card}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          style={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            background: "none",
-            border: "none",
-            color: "#9ca3af",
-            fontSize: 24,
-            cursor: "pointer",
-            lineHeight: 1,
-            padding: 0,
-          }}
+          className={styles.closeButton}
         >
           ×
         </button>
 
         <h2
-          style={{
-            fontSize: 24,
-            fontWeight: 700,
-            color: "#fff",
-            marginBottom: 8,
-            marginTop: 0,
-          }}
+          className={styles.title}
         >
           Sign in to Guess-History
         </h2>
 
         {error && (
           <p
-            style={{
-              color: "#f87171",
-              fontSize: 14,
-              marginBottom: 16,
-              background: "#450a0a",
-              border: "1px solid #7f1d1d",
-              borderRadius: 8,
-              padding: "8px 16px",
-            }}
+            className={styles.error}
           >
             {error}
           </p>
@@ -182,23 +139,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <button
           onClick={handleGoogleSignIn}
           disabled={loading}
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-            background: "#fff",
-            color: "#111827",
-            fontWeight: 600,
-            padding: "12px 16px",
-            borderRadius: 12,
-            border: "none",
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.5 : 1,
-            marginBottom: 24,
-            fontSize: 15,
-          }}
+          className={styles.googleButton}
         >
           <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -210,21 +151,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {loading ? "Redirecting…" : "Continue with Google"}
         </button>
 
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
-          <div style={{ flex: 1, borderTop: "1px solid #374151" }}></div>
-          <span style={{ padding: "0 16px", color: "#6b7280", fontSize: 14 }}>or</span>
-          <div style={{ flex: 1, borderTop: "1px solid #374151" }}></div>
+        <div className={styles.divider}>
+          <div className={styles.dividerLine}></div>
+          <span className={styles.dividerText}>or</span>
+          <div className={styles.dividerLine}></div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className={styles.form}>
           <div>
             <label
-              style={{
-                display: "block",
-                color: "#9ca3af",
-                fontSize: 14,
-                marginBottom: 8,
-              }}
+              className={styles.label}
             >
               Email
             </label>
@@ -233,30 +169,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
-              style={{
-                width: "100%",
-                background: "#1f2937",
-                border: "1px solid #374151",
-                borderRadius: 8,
-                padding: "12px 16px",
-                color: "#fff",
-                outline: "none",
-                fontSize: 15,
-                boxSizing: "border-box",
-                opacity: loading ? 0.5 : 1,
-              }}
+              className={styles.input}
               placeholder="you@example.com"
             />
           </div>
 
           <div>
             <label
-              style={{
-                display: "block",
-                color: "#9ca3af",
-                fontSize: 14,
-                marginBottom: 8,
-              }}
+              className={styles.label}
             >
               Password
             </label>
@@ -265,18 +185,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              style={{
-                width: "100%",
-                background: "#1f2937",
-                border: "1px solid #374151",
-                borderRadius: 8,
-                padding: "12px 16px",
-                color: "#fff",
-                outline: "none",
-                fontSize: 15,
-                boxSizing: "border-box",
-                opacity: loading ? 0.5 : 1,
-              }}
+              className={styles.input}
               placeholder="••••••••"
             />
           </div>
@@ -284,12 +193,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {mode === "signin" && (
             <>
               {forgotSent ? (
-                <p style={{ color: "#4ade80", fontSize: 14, margin: 0 }}>
+                <p className={styles.successMessage}>
                   Password reset email sent. Check your inbox.
                 </p>
               ) : (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: -4 }}>
+                  <div className={styles.rememberMeContainer}>
                     <input
                       type="checkbox"
                       id="remember-me"
@@ -299,11 +208,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     />
                     <label
                       htmlFor="remember-me"
-                      style={{
-                        color: "#9ca3af",
-                        fontSize: 14,
-                        cursor: loading ? "not-allowed" : "pointer",
-                      }}
+                      className={styles.rememberMeLabel}
                     >
                       Remember me
                     </label>
@@ -311,18 +216,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   <button
                     onClick={handleForgotPassword}
                     disabled={loading}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#a78bfa",
-                      fontSize: 13,
-                      cursor: loading ? "not-allowed" : "pointer",
-                      padding: 0,
-                      textDecoration: "underline",
-                      display: "block",
-                      width: "100%",
-                      textAlign: "right",
-                    }}
+                    className={styles.forgotPasswordButton}
                   >
                     Forgot password?
                   </button>
@@ -334,12 +228,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {mode === "signup" && (
             <div>
               <label
-                style={{
-                  display: "block",
-                  color: "#9ca3af",
-                  fontSize: 14,
-                  marginBottom: 8,
-                }}
+                className={styles.label}
               >
                 Confirm Password
               </label>
@@ -348,18 +237,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={loading}
-                style={{
-                  width: "100%",
-                  background: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: 8,
-                  padding: "12px 16px",
-                  color: "#fff",
-                  outline: "none",
-                  fontSize: 15,
-                  boxSizing: "border-box",
-                  opacity: loading ? 0.5 : 1,
-                }}
+                className={styles.input}
                 placeholder="••••••••"
               />
             </div>
@@ -368,29 +246,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <button
             onClick={handleEmailAuth}
             disabled={loading}
-            style={{
-              width: "100%",
-              background: "#7c3aed",
-              color: "#fff",
-              fontWeight: 600,
-              padding: "12px 16px",
-              borderRadius: 12,
-              border: "none",
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.5 : 1,
-              fontSize: 15,
-            }}
+            className={styles.submitButton}
           >
             {loading ? "Processing…" : mode === "signin" ? "Sign in" : "Sign up"}
           </button>
 
           <p
-            style={{
-              color: "#6b7280",
-              fontSize: 14,
-              textAlign: "center",
-              margin: 0,
-            }}
+            className={styles.switchModeText}
           >
             {mode === "signin" ? (
               <>
@@ -398,15 +260,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <button
                   onClick={() => { setMode("signup"); setError(null); setForgotSent(false); }}
                   disabled={loading}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#a78bfa",
-                    cursor: "pointer",
-                    fontSize: 14,
-                    padding: 0,
-                    textDecoration: "underline",
-                  }}
+                  className={styles.switchModeButton}
                 >
                   Sign up
                 </button>
@@ -417,15 +271,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 <button
                   onClick={() => { setMode("signin"); setError(null); setForgotSent(false); }}
                   disabled={loading}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#a78bfa",
-                    cursor: "pointer",
-                    fontSize: 14,
-                    padding: 0,
-                    textDecoration: "underline",
-                  }}
+                  className={styles.switchModeButton}
                 >
                   Sign in
                 </button>

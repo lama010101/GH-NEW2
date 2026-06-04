@@ -154,6 +154,7 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | MP-ROOM-CODE-006 | DONE | src/app/api/compete/join/route.ts | Room Code: Fix join route returning room_code instead of gameId. Verified line 33 already uses correct snake_case access `data.game_id`. Added debug log before return to confirm gameId resolution. TypeScript validation passed (exit code 0). Date: 2026-05-11 |
 | MP-ROOM-CODE-005 | DONE | src/app/compete/[gameId]/page.tsx | Room Code: Display room code in lobby instead of UUID. Replaced Game ID display (line 379) with styled room code display using snapshot.roomCode with bold letter-spacing styling. Updated copy button (line 388) to copy snapshot.roomCode instead of snapshot.gameId. TypeScript validation passed (exit code 0). Date: 2026-05-11 |
 | MP-FIX-BREAKDOWN-001 | DONE | src/app/compete/[gameId]/page.tsx | Fixed missing rounds in final session breakdown: (1) Removed `&& r.didSubmit` filter from computeRoundStats (line 553), (2) Changed empty round results to return zeroed stats object instead of null (lines 554-556), (3) Guarded bestPlayer computation against empty array (lines 564-566), (4) Removed `if (!roundStats) return null` from round breakdown rendering (line 2185), (5) Added fallback zeroed stats when computeRoundStats returns null (lines 2184-2187), (6) Updated bestPlayerName/isCurrentBestPlayer to handle null bestPlayerId (lines 2188-2189), (7) Conditionally render best player section only when bestPlayerName is not null (line 2244). All rounds now appear in breakdown including rounds with no submissions (show zero stats, no best player). TypeScript validation passed (exit code 0). Date: 2026-05-09 |
+| MP-STYLE-ROUNDCOMPLETE-001 | DONE | src/components/compete/RoundCompleteSection.module.css (new), src/components/compete/RoundCompleteSection.tsx | Migrated all inline styles and embedded `<style>` tag to CSS module. Created RoundCompleteSection.module.css with all classes (container, eventCard, eventTitle, eventImage, accuracyCard, leaderboard rows, hintsCard, countdownCard, bottomBar, progressDot with CSS custom properties, nextButton, etc.) and responsive @media (min-width: 768px) overrides. Added import in RoundCompleteSection.tsx. Removed embedded style tag (lines 61-81). Replaced entire return block: all structural styles now use styles.* class names. Retained 4 permitted dynamic inline styles: getUsernameGradientStyle() spreads (3 occurrences), color: accColor on accuracy value span (1 occurrence), --dot-bg/--dot-opacity CSS custom properties on progress dots (1 style object). Validation: grep for style={{ returns exactly 4 matches (lines 145, 152, 167, 293), grep for <style> returns 0 matches, tsc --noEmit exits 0. Date: 2026-06-04 |
 | MP-FIX-COLLAPSE-002 | DONE | src/app/compete/[gameId]/page.tsx | Fixed WHERE/WHEN card default expand state: changed round-change useEffect from setWhereExpanded(false)/setWhenExpanded(false) to setWhereExpanded(true)/setWhenExpanded(true) so cards are expanded by default on each new round. Initial useState values already true (no change). TypeScript validation passed (exit code 0). Date: 2026-05-09 |
 | MP-FIX-RESULTS-UI-001 | DONE | src/app/compete/[gameId]/page.tsx | Fixed 5 UI issues on compete result screen: (1) Chevron icon opacity increased from 70% to 100% for better visibility on WHERE/WHEN cards, (2) Restructured WHERE/WHEN collapse behavior to merge separate expanded blocks into single block each, (3) WHERE and WHEN icons already white (no change needed), (4) Applied percentage styling (numeric value color unchanged, % in white at 50% font-size) to all inline occurrences, (5) Verified non-submitting players see map and correct answer (StaticResultMap always renders correct location marker). TypeScript validation passed (exit code 0). Date: 2026-05-09 |
 | MP-FIX-CLIENT-GUARDS-001 | COMPLETE | src/app/compete/[gameId]/page.tsx | Added client phase guards for SUBMIT_GUESS and READY_NEXT handlers; narrowed auto-submit effect dependency from full snapshot to snapshot.status and snapshot.currentRoundIndex. Date: 2026-05-09 |
@@ -1712,3 +1713,25 @@ MP-FIX-HAVERSINE-002: Fixed antimeridian wrap in haversineKm (competeUtils.ts)
 | MP-STYLE-WHEN-001 | Migrate WhenCard.tsx inline styles to CSS module | WhenCard.module.css + WhenCard.tsx | DONE | 2026-06-03 |
 | MP-FIX-AUTH-STATE-002 | DONE | src/app/page.tsx | Clear avatarUrl, initials, accuracy, xp on sign-out by resetting state when identity is not ready. |
 | MP-STYLE-WHEN-001 | Migrate WhenCard.tsx inline styles to CSS module | WhenCard.module.css + WhenCard.tsx | DONE | 2026-06-03 |
+
+| MP-BUILD-PROGRESS-API-001 | Create /api/progress/route.ts with era + continent accuracy JOINs | src/app/api/progress/route.ts | COMPLETE | 2026-06-04 |
+
+| MP-BUILD-PROFILE-WIRE-001 | Wire /api/progress data into profile page — replace coming-soon sections | src/app/profile/page.tsx | COMPLETE | 2026-06-04 |
+
+| MP-FIX-PROGRESS-REDIRECT-001 | Redirect /progress to /profile | src/app/progress/page.tsx | COMPLETE | 2026-06-04 |
+
+| MP-BUILD-ACCOUNT-001 | Build account page — display name edit, avatar display, sign out | src/app/account/page.tsx | COMPLETE | 2026-06-04 |
+
+| MP-FIX-PROFILE-EDIT-BTN-001 | Wire Edit Profile button → /account | src/app/profile/page.tsx | COMPLETE | 2026-06-04 |
+
+| MP-STYLE-ROUNDACTIVE-001 | Migrate RoundActiveSection.tsx inline styles to CSS module + semantic color fix | RoundActiveSection.module.css + RoundActiveSection.tsx | DONE | 2026-06-04 |
+
+| MP-FIX-LINT-001 | Fix pre-existing unused variable lint error in progress route | src/app/api/progress/route.ts | DONE | 2026-06-04 |
+
+TASK ID: MP-STYLE-COMPETEPANEL-001
+FILES MODIFIED:
+- src/components/home/CompetePanel.tsx
+- src/components/home/CompetePanel.module.css (created)
+
+MP-UI-BADGE-INLINE-001 | Add inline badge chips to accuracy card, WhereCard, and WhenCard | Modified: RoundCompleteSection.tsx, WhereCard.tsx, WhenCard.tsx | Added badge chip JSX components for combo, location, and year dimensions
+| MP-STYLE-AUTHMODAL-001 | Migrate AuthModal.tsx inline styles to CSS module | AuthModal.module.css + AuthModal.tsx | DONE | 2026-06-04 |

@@ -1,0 +1,402 @@
+/* RoundCompleteSection — design tokens from globals.css */
+
+/* ── Outer container ── */
+
+.container {
+  padding: 0 12px;
+  padding-bottom: 72px;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Event card ── */
+
+.eventCard {
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-subtle);
+  border-radius: var(--gh-radius-md);
+  overflow: hidden;
+  margin-bottom: 10px;
+  min-height: 50vh;
+}
+
+.eventTitle {
+  font-size: var(--gh-font-base);
+  font-weight: 600;
+  color: var(--gh-text-primary);
+  text-align: center;
+  padding: 14px 16px 10px;
+}
+
+.eventImageWrap {
+  cursor: pointer;
+}
+
+.eventImage {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.eventImagePlaceholder {
+  width: 100%;
+  height: 180px;
+  background: var(--gh-bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gh-text-muted);
+  font-size: 12px;
+}
+
+.eventMeta {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gh-orange);
+  text-align: center;
+  padding: 8px 16px;
+}
+
+.eventDescriptionWrap {
+  padding: 0 16px 8px;
+}
+
+.eventDescription {
+  font-size: 15px;
+  color: #d1d5db;
+  line-height: 1.6;
+}
+
+.sourceButtonWrap {
+  padding: 0 16px 16px;
+}
+
+.sourceButton {
+  background: transparent;
+  border: 1px solid var(--gh-border-default);
+  color: var(--gh-text-secondary);
+  font-size: 12px;
+  border-radius: var(--gh-radius-sm);
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.sourceButton:hover {
+  border-color: var(--gh-border-strong);
+  color: var(--gh-text-primary);
+}
+
+/* ── Accuracy ring card ── */
+
+.accuracyCard {
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-subtle);
+  border-radius: var(--gh-radius-md);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+.accuracyRingWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accuracyXp {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 15px;
+  color: var(--gh-text-secondary);
+}
+
+.hintPenaltyBadge {
+  text-align: center;
+  margin-top: 4px;
+}
+
+.hintPenaltyBadgeInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #7f1d1d;
+  border-radius: var(--gh-radius-pill);
+  padding: 2px 8px;
+  font-size: 10px;
+  color: #fca5a5;
+  font-weight: 600;
+}
+
+/* ── Round leaderboard card ── */
+
+.leaderboardCard {
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-subtle);
+  border-radius: var(--gh-radius-md);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+.leaderboardTitle {
+  font-size: var(--gh-font-base);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+  margin-bottom: 10px;
+}
+
+.lbRow {
+  display: flex;
+  align-items: center;
+  padding: 7px 8px;
+  border-radius: 8px;
+  margin-bottom: 3px;
+  gap: 6px;
+}
+
+.lbRowSelf {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lbRank {
+  font-size: 11px;
+  color: var(--gh-text-muted);
+  min-width: 14px;
+}
+
+.lbNameCell {
+  flex: 1;
+  font-size: 15px;
+}
+
+.lbNameInner {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.lbYouTag {
+  color: var(--gh-text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.lbNoGuessTag {
+  color: var(--gh-text-muted);
+  font-size: 11px;
+  font-style: italic;
+  margin-left: 4px;
+}
+
+.lbAccPill {
+  background: var(--gh-bg-input);
+  border-radius: var(--gh-radius-pill);
+  padding: 2px 9px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lbAccSuffix {
+  color: var(--gh-text-secondary);
+  font-size: var(--gh-font-xs);
+}
+
+.lbAccEmpty {
+  background: var(--gh-bg-input);
+  color: var(--gh-text-muted);
+  border-radius: var(--gh-radius-pill);
+  padding: 2px 9px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Where/When grid ── */
+
+.cardsGrid {
+  /* mobile: single column, stacked — default flow */
+}
+
+/* ── Hints used card ── */
+
+.hintsCard {
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-subtle);
+  border-radius: var(--gh-radius-md);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+.hintsTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gh-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.hintRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.hintRowDivider {
+  border-bottom: 1px solid var(--gh-border-subtle);
+}
+
+.hintInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.hintTypeLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: #ccc;
+}
+
+.hintRevealedText {
+  font-size: 11px;
+  color: var(--gh-text-secondary);
+  font-style: italic;
+  margin-top: 1px;
+}
+
+.hintPenaltyPill {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(232, 68, 34, 0.12);
+  border: 0.5px solid rgba(232, 68, 34, 0.35);
+  border-radius: var(--gh-radius-pill);
+  padding: 2px 7px;
+  font-size: 10px;
+  color: #e84422;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.hintPenaltySuffix {
+  font-size: 50%;
+  color: #ffffff;
+}
+
+/* ── Countdown / ready card ── */
+
+.countdownCard {
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-subtle);
+  border-radius: var(--gh-radius-md);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+.countdownText {
+  text-align: center;
+  font-size: 13px;
+  color: var(--gh-text-secondary);
+}
+
+.countdownTextWithMargin {
+  text-align: center;
+  font-size: 13px;
+  color: var(--gh-text-secondary);
+  margin-bottom: 8px;
+}
+
+.readyText {
+  text-align: center;
+  font-size: 13px;
+  color: var(--gh-text-secondary);
+}
+
+.readyName {
+  margin-right: 6px;
+}
+
+/* ── Fixed bottom bar ── */
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--gh-bg-base);
+  border-top: 1px solid var(--gh-border-subtle);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 1000;
+}
+
+.homeButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.progressDots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progressDot {
+  height: 4px;
+  width: 28px;
+  border-radius: 2px;
+  background: var(--dot-bg, #374151);
+  opacity: var(--dot-opacity, 1);
+}
+
+.roundLabel {
+  font-size: 12px;
+  color: var(--gh-text-secondary);
+  white-space: nowrap;
+}
+
+.nextButton {
+  background: var(--gh-orange);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.nextButtonDisabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ── Responsive overrides ── */
+
+@media (min-width: 768px) {
+  .cardsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .bottomBar {
+    position: static;
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 0;
+    background: transparent;
+    border: none;
+    height: auto;
+  }
+
+  .eventImage {
+    height: 240px;
+  }
+}

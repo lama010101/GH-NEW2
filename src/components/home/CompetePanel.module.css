@@ -1,0 +1,211 @@
+/* CompetePanel — tokens from globals.css */
+
+/* ── Tab bar ── */
+
+.tabBar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tab {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 7px 0;
+  flex: 1;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tabActive {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.tabBadge {
+  background: var(--gh-danger);
+  color: #fff;
+  border-radius: var(--gh-radius-pill);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  margin-left: 4px;
+}
+
+/* ── Empty states ── */
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+}
+
+.emptyStateCenter {
+  padding: 12px 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+}
+
+.emptyIconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Loading spinner ── */
+
+.loadingRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--gh-blue);
+  animation: spin 1s linear infinite;
+}
+
+.loadingText {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+}
+
+/* ── Game / invite rows ── */
+
+.gameList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.gameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.avatarImg {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatarFallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gh-blue-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.gameInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.gameName {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.gameSub {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+}
+
+.declineBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* ── Play badge ── */
+
+.playBadge {
+  background: var(--gh-blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--gh-radius-pill);
+}
+
+/* ── Completed game score ── */
+
+.scoreWrap {
+  display: flex;
+  align-items: center;
+}
+
+.resultBadge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  margin-right: 6px;
+}
+
+.resultWin  { background: var(--gh-success); }
+.resultLoss { background: var(--gh-danger); }
+.resultDraw { background: #6b7280; }
+
+.accuracyValue {
+  font-weight: 600;
+  font-size: 13px;
+  /* color set inline via getAccuracyColor() */
+}
+
+.xpValue {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.completedLabel {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}

@@ -78,11 +78,35 @@ export default function WhereCard({
           const locHue = Math.round((Math.max(0, Math.min(100, locScore)) / 100) * 120);
           const locColor = `hsl(${locHue}, 100%, 50%)`;
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
                 <span style={{ fontSize: 25, fontWeight: 700, color: locColor }}>{locScore}</span>
                 <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.65)" }}>%</span>
               </div>
+              {/* LOCATION BADGE CHIP — dimension = 'location' */}
+              {(() => {
+                const badge = myResult?.badges?.find(b => b.dimension === 'location');
+                const near  = myResult?.nearMisses?.find(n => n.dimension === 'location');
+                if (!badge && !near) return null;
+                const tierColors: Record<string, { bg: string; border: string; color: string }> = {
+                  gold:   { bg: 'rgba(255,190,0,0.15)',   border: 'rgba(255,190,0,0.4)',   color: '#ffcc44' },
+                  silver: { bg: 'rgba(180,195,215,0.12)', border: 'rgba(180,195,215,0.4)', color: '#b4bece' },
+                  bronze: { bg: 'rgba(180,120,60,0.15)',  border: 'rgba(180,120,60,0.4)',  color: '#cd9a5a' },
+                };
+                if (badge) {
+                  const c = tierColors[badge.tier] ?? tierColors.bronze;
+                  return (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: c.bg, border: `0.5px solid ${c.border}`, color: c.color }}>
+                      {badge.tier.charAt(0).toUpperCase() + badge.tier.slice(1)}
+                    </span>
+                  );
+                }
+                return (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 999, fontSize: 11, fontStyle: 'italic', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.28)' }}>
+                    Near miss
+                  </span>
+                );
+              })()}
             </div>
           );
         })()}
