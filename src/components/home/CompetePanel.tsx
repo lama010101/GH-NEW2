@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import styles from '@/app/home.module.css'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
+import cpStyles from "./CompetePanel.module.css";
 
 type ActiveGame = {
   id: string
@@ -214,29 +215,16 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     <>
       {/* Tab bar */}
       <div className={styles['card-sub-panel']}>
-        <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+        <div className={cpStyles.tabBar}>
           {tabs.map(t => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              style={{
-                background: tab === t.key ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.3)',
-                borderRadius: 8,
-                padding: '7px 0',
-                flex: 1,
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: 600,
-                color: tab === t.key ? '#fff' : 'rgba(255,255,255,0.45)',
-                textAlign: 'center',
-              }}
+              className={`${cpStyles.tab} ${tab === t.key ? cpStyles.tabActive : ""}`}
             >
               {t.label}
               {t.count > 0 && (
-                <span style={{ background: '#ef4444', color: '#fff', borderRadius: 999, fontSize: 9, fontWeight: 700, padding: '1px 5px', marginLeft: 4 }}>
-                  {t.count}
-                </span>
+                <span className={cpStyles.tabBadge}>{t.count}</span>
               )}
             </button>
           ))}
@@ -245,40 +233,40 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         {/* Invitations tab */}
         {tab === 'invitations' && (
           invitesLoading ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-              <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#00adc1', animation: 'spin 1s linear infinite' }} />
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Looking for invitations…</span>
+            <div className={cpStyles.loadingRow}>
+              <div className={cpStyles.spinner} />
+              <span className={cpStyles.loadingText}>Looking for invitations…</span>
             </div>
           ) : invites.length === 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0' }}>
-              <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div className={cpStyles.emptyState}>
+              <div className={cpStyles.emptyIconWrap}>
                 <InviteIcon />
               </div>
-              <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>No pending invitations</span>
+              <span>No pending invitations</span>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div className={cpStyles.gameList}>
               {invites.map(invite => (
                 <div
                   key={invite.id}
                   onClick={() => handleAccept(invite.id, invite.game_id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(0,0,0,0.25)', marginBottom: 6, cursor: 'pointer' }}
+                  className={cpStyles.gameRow}
                 >
                   {invite.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={invite.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                    <img src={invite.avatar_url} alt="" className={cpStyles.avatarImg} />
                   ) : (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,173,193,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700 }}>
+                    <div className={cpStyles.avatarFallback}>
                       {(invite.inviter_name ?? 'Unknown').slice(0, 2).toUpperCase()}
                     </div>
                   )}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{invite.inviter_name ?? 'Unknown'}</span>
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Invited you to a game</span>
+                  <div className={cpStyles.gameInfo}>
+                    <span className={cpStyles.gameName}>{invite.inviter_name ?? 'Unknown'}</span>
+                    <span className={cpStyles.gameSub}>Invited you to a game</span>
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDecline(invite.id) }}
-                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 16, cursor: 'pointer', padding: '0 4px' }}
+                    className={cpStyles.declineBtn}
                   >
                     ✕
                   </button>
@@ -291,32 +279,28 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         {/* Your Turn tab */}
         {tab === 'your_turn' && (
           yourTurnGames.length === 0 ? (
-            <div style={{ padding: '12px 0', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
-              No games waiting for your turn
-            </div>
+            <div className={cpStyles.emptyStateCenter}>No games waiting for your turn</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div className={cpStyles.gameList}>
               {yourTurnGames.map(game => (
                 <div
                   key={game.id}
                   onClick={() => onLobby(game.game_id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(0,0,0,0.25)', marginBottom: 6, cursor: 'pointer' }}
+                  className={cpStyles.gameRow}
                 >
                   {game.opponent_avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={game.opponent_avatar} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                    <img src={game.opponent_avatar} alt="" className={cpStyles.avatarImg} />
                   ) : (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,173,193,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700 }}>
+                    <div className={cpStyles.avatarFallback}>
                       {(game.opponent_name ?? '??').slice(0, 2).toUpperCase()}
                     </div>
                   )}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{game.opponent_name}</span>
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Round {game.round_current} / {game.round_total}</span>
+                  <div className={cpStyles.gameInfo}>
+                    <span className={cpStyles.gameName}>{game.opponent_name}</span>
+                    <span className={cpStyles.gameSub}>Round {game.round_current} / {game.round_total}</span>
                   </div>
-                  <span style={{ background: '#0891b2', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 999, border: 'none' }}>
-                    PLAY
-                  </span>
+                  <span className={cpStyles.playBadge}>PLAY</span>
                 </div>
               ))}
             </div>
@@ -326,72 +310,49 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         {/* Completed tab */}
         {tab === 'completed' && (
           completedGames.length === 0 ? (
-            <div style={{ padding: '12px 0', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
-              No completed games yet
-            </div>
+            <div className={cpStyles.emptyStateCenter}>No completed games yet</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div className={cpStyles.gameList}>
               {completedGames.map(game => (
                 <div
                   key={game.id}
                   onClick={() => onLobby(game.game_id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(0,0,0,0.25)', marginBottom: 6, cursor: 'pointer' }}
+                  className={cpStyles.gameRow}
                 >
                   {game.opponent_avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={game.opponent_avatar} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                    <img src={game.opponent_avatar} alt="" className={cpStyles.avatarImg} />
                   ) : (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,173,193,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700 }}>
+                    <div className={cpStyles.avatarFallback}>
                       {(game.opponent_name ?? '??').slice(0, 2).toUpperCase()}
                     </div>
                   )}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{game.opponent_name}</span>
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Round {game.round_current} / {game.round_total}</span>
+                  <div className={cpStyles.gameInfo}>
+                    <span className={cpStyles.gameName}>{game.opponent_name}</span>
+                    <span className={cpStyles.gameSub}>Round {game.round_current} / {game.round_total}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <div className={cpStyles.scoreWrap}>
                     {game.score_you != null && game.score_them != null ? (
                       <>
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            padding: '1px 7px',
-                            borderRadius: 6,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: 'white',
-                            marginRight: 6,
-                            background:
-                              game.score_you > game.score_them
-                                ? '#22c55e'
-                                : game.score_you < game.score_them
-                                  ? '#ef4444'
-                                  : '#6b7280',
-                          }}
-                        >
+                        <span className={`${cpStyles.resultBadge} ${
+                          game.score_you > game.score_them
+                            ? cpStyles.resultWin
+                            : game.score_you < game.score_them
+                            ? cpStyles.resultLoss
+                            : cpStyles.resultDraw
+                        }`}>
                           {game.score_you > game.score_them ? 'W' : game.score_you < game.score_them ? 'L' : 'D'}
                         </span>
                         <span
-                          style={{
-                            color: getAccuracyColor(game.accuracy_you ?? 0),
-                            fontWeight: 600,
-                            fontSize: 13,
-                          }}
+                          className={cpStyles.accuracyValue}
+                          style={{ color: getAccuracyColor(game.accuracy_you ?? 0) }}
                         >
                           {game.accuracy_you ?? 0}%
                         </span>
-                        <span
-                          style={{
-                            color: '#ffffff8c',
-                            fontSize: 12,
-                            marginLeft: 4,
-                          }}
-                        >
-                          {game.score_you} XP
-                        </span>
+                        <span className={cpStyles.xpValue}>{game.score_you} XP</span>
                       </>
                     ) : (
-                      <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>Completed</span>
+                      <span className={cpStyles.completedLabel}>Completed</span>
                     )}
                   </div>
                 </div>
@@ -401,7 +362,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         )}
       </div>
 
-      {/* Join code input (shown when JOIN GAME clicked) */}
+      {/* Join code input */}
       {showJoinInput && (
         <input
           value={code}
@@ -432,12 +393,10 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       </div>
 
       {error && (
-        <div className={styles['error-text']}>
-          {error}
-        </div>
+        <div className={styles['error-text']}>{error}</div>
       )}
     </>
-  )
+  );
 }
 
 function InviteIcon() {

@@ -20,6 +20,12 @@ type ProfileHistoricalAvatar = {
 export default function ProfilePage() {
   const router = useRouter();
   const { playerId } = useIdentity();
+  const [progressData, setProgressData] = useState<{
+    byCentury: Array<{ century: string; avgAccuracy: number; roundCount: number }>
+    byContinent: Array<{ continent: string; avgAccuracy: number; roundCount: number }>
+    eventsSeenCount: number
+  } | null>(null);
+
   const [profileData, setProfileData] = useState<{
     displayName: string | null;
     avatarUrl: string | null;
@@ -149,6 +155,12 @@ export default function ProfilePage() {
           levelUpBestAccuracy: levelupResult?.best_accuracy ?? null,
           historicalAvatar,
         });
+
+        const progressRes = await fetch('/api/progress')
+        if (progressRes.ok) {
+          const json = await progressRes.json()
+          setProgressData(json)
+        }
       } catch (error) {
         console.error('Error fetching profile data:', error);
       }
@@ -191,6 +203,7 @@ export default function ProfilePage() {
           <span>Back</span>
         </button>
         <button
+          onClick={() => router.push('/account')}
           className={`font-bebas px-4 py-2 rounded-full text-xs uppercase font-bold tracking-wider bg-white/[0.04] text-white/45 border border-white/[0.09] cursor-pointer`}
         >
           Edit Profile
@@ -310,10 +323,29 @@ export default function ProfilePage() {
         {/* Left: Accuracy breakdown */}
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>Accuracy breakdown</h3>
-          <div className="flex flex-col items-center gap-2 py-6">
-            <div className="text-sm text-white/35">—</div>
-            <div className="text-xs text-white/35">Coming soon</div>
-          </div>
+          {progressData && progressData.byContinent.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {progressData.byContinent.map((item) => (
+                <div key={item.continent}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-white/70">{item.continent}</span>
+                    <span className="text-white/45">{item.avgAccuracy}%</span>
+                  </div>
+                  <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#c084fc]"
+                      style={{ width: `${item.avgAccuracy}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 py-6">
+              <div className="text-sm text-white/35">—</div>
+              <div className="text-xs text-white/35">{progressData === null ? 'Loading…' : 'No data yet'}</div>
+            </div>
+          )}
         </div>
         
         {/* Right: Badge collection */}
@@ -421,48 +453,49 @@ export default function ProfilePage() {
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>History collection</h3>
           <div className="grid grid-cols-4 gap-3 mb-6">
+            <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
+              <div className="font-bebas text-xl font-bold" style={{ color: '#fb923c' }}>
+                {progressData?.eventsSeenCount?.toLocaleString() ?? '—'}
+              </div>
+              <div className="text-[10px] mt-1 text-white/45">Events seen</div>
+            </div>
             {[
-              { label: 'Events seen', value: null, color: '#fb923c' },
-              { label: 'Rated', value: null, color: '#c084fc' },
-              { label: 'Regions', value: null, color: '#14b8a6' },
-              { label: 'Countries', value: null, color: '#f0c060' }
+              { label: 'Rated', color: '#c084fc' },
+              { label: 'Regions', color: '#14b8a6' },
+              { label: 'Countries', color: '#f0c060' }
             ].map((item, i) => (
-              <div 
+              <div
                 key={i}
                 className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]"
               >
-                <div className={`font-bebas text-xl font-bold`} style={{ color: item.color }}>
-                  {item.value ?? '—'}
-                </div>
-                <div className="text-[10px] mt-1 text-white/45">
-                  {item.label}
-                </div>
+                <div className="font-bebas text-xl font-bold" style={{ color: item.color }}>—</div>
+                <div className="text-[10px] mt-1 text-white/45">{item.label}</div>
               </div>
             ))}
           </div>
           <div className="mt-6">
-            <h4 className="text-xs font-bold mb-3 text-white/70">By era</h4>
+            <h4 className="text-xs font-bold mb-3 text-white/70">By century</h4>
             <div className="flex flex-col gap-2">
-              {[
-                { label: 'Contemporary', count: null, percent: 0 },
-                { label: 'Modern', count: null, percent: 0 },
-                { label: 'Early Modern', count: null, percent: 0 },
-                { label: 'Medieval', count: null, percent: 0 },
-                { label: 'Ancient', count: null, percent: 0 }
-              ].map((era, i) => (
-                <div key={i}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-white/70">{era.label}</span>
-                    <span className="text-white/45">{era.count ?? '—'} ({era.percent}%)</span>
+              {progressData && progressData.byCentury.length > 0 ? (
+                progressData.byCentury.map((item) => (
+                  <div key={item.century}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-white/70">{item.century}</span>
+                      <span className="text-white/45">{item.roundCount} rounds · {item.avgAccuracy}%</span>
+                    </div>
+                    <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#fb923c]"
+                        style={{ width: `${item.avgAccuracy}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-white/20"
-                      style={{ width: `${era.percent}%` }}
-                    />
-                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-white/35 py-2">
+                  {progressData === null ? 'Loading…' : 'No data yet'}
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -473,27 +506,31 @@ export default function ProfilePage() {
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>Accuracy by century</h3>
           <div className="flex flex-wrap gap-2">
-            {[
-              { label: '1900s', percent: null, opacity: 1 },
-              { label: '1800s', percent: null, opacity: 0.85 },
-              { label: '2000s', percent: null, opacity: 0.7 },
-              { label: '1700s', percent: null, opacity: 0.55 },
-              { label: '1500s', percent: null, opacity: 0.4 },
-              { label: 'pre-1500', percent: null, opacity: 0.25 }
-            ].map((century, i) => (
-              <div
-                key={i}
-                className="py-3 px-3 rounded-lg text-center bg-[rgba(251,146,60,0.1)] border border-[rgba(251,146,60,0.2)]"
-                style={{ opacity: century.opacity }}
-              >
-                <div className={`font-bebas text-sm font-bold text-[#fb923c]`}>
-                  {century.label}
+            {progressData && progressData.byCentury.length > 0 ? (
+              progressData.byCentury.map((item) => (
+                <div
+                  key={item.century}
+                  className="py-3 px-3 rounded-lg text-center bg-[rgba(251,146,60,0.1)] border border-[rgba(251,146,60,0.2)]"
+                >
+                  <div className="font-bebas text-sm font-bold text-[#fb923c]">
+                    {item.century}
+                  </div>
+                  <div className="text-xs mt-0.5 text-white/45">
+                    {item.avgAccuracy}%
+                  </div>
                 </div>
-                <div className="text-xs mt-0.5 text-white/45">
-                  {century.percent ?? '—'}
+              ))
+            ) : (
+              ['2000s', '1900s', '1800s', '1700s', '1500s', 'pre-1500'].map((label) => (
+                <div
+                  key={label}
+                  className="py-3 px-3 rounded-lg text-center bg-[rgba(251,146,60,0.1)] border border-[rgba(251,146,60,0.2)]"
+                >
+                  <div className="font-bebas text-sm font-bold text-[#fb923c]">{label}</div>
+                  <div className="text-xs mt-0.5 text-white/45">—</div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

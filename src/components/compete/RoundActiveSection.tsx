@@ -378,31 +378,12 @@ export default function RoundActiveSection({
   };
 
   return (
-    <section
-      style={{
-        height: "100dvh",
-        width: "100vw",
-        background: "#111",
-        overflow: "hidden",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        zIndex: 30,
-      }}
-    >
-      <style>{`
-      `}</style>
+    <section className={styles.section}>
 
-      {/* IMAGE CONTAINER — full section size, clips overflow */}
+      {/* IMAGE CONTAINER */}
       <div
         ref={imgContainerRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          overflow: "hidden",
-          touchAction: "none",
-          cursor: "grab",
-        }}
+        className={styles.imgContainer}
         onPointerDown={handlePanStart}
         onPointerMove={handlePanMove}
         onPointerUp={handlePanEnd}
@@ -415,24 +396,14 @@ export default function RoundActiveSection({
             src={currentEvent.imageUrl}
             alt="Historical event"
             draggable={false}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
-              height: "100%",
-              width: "auto",
-              minWidth: "100%",
-              maxWidth: "none",
-              userSelect: "none",
-              pointerEvents: "none",
-            }}
+            className={styles.eventImg}
           />
         ) : (
-          <div style={{ position: "absolute", inset: 0, background: "#222" }} />
+          <div className={styles.imgPlaceholder} />
         )}
       </div>
 
+      {/* TIMER */}
       {timeRemaining !== null && (() => {
         const totalSec: number = (snapshot.config as { roundTimerSec?: number }).roundTimerSec ?? 120;
         const radius = 26;
@@ -442,35 +413,19 @@ export default function RoundActiveSection({
         const isUrgent = timeRemaining <= 10;
         const ringColor = isUrgent ? "#ef4444" : timeRemaining <= 30 ? "#f97316" : "#22c55e";
         return (
-          <div
-            className={isUrgent ? styles.timerUrgent : undefined}
-            style={{
-              position: "absolute",
-              top: 6,
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 15,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 72,
-              height: 72,
-            }}
-          >
+          <div className={`${styles.timerWrapper} ${isUrgent ? styles.timerUrgent : ""}`}>
             <svg
               width="72"
               height="72"
               viewBox="0 0 72 72"
-              style={{ position: "absolute", top: 0, left: 0, transformOrigin: "36px 36px", transform: "rotate(-90deg)" }}
+              className={styles.timerSvg}
             >
-              {/* Background track */}
               <circle
                 cx="36" cy="36" r={radius}
                 fill="rgba(0,0,0,0.55)"
                 stroke="rgba(255,255,255,0.12)"
                 strokeWidth="3"
               />
-              {/* Progress arc */}
               <circle
                 cx="36" cy="36" r={radius}
                 fill="none"
@@ -479,59 +434,23 @@ export default function RoundActiveSection({
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 strokeLinecap="round"
-                style={{ transition: "stroke-dashoffset 1s linear, stroke 0.5s ease" }}
+                className={styles.timerArc}
               />
             </svg>
-            <span style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: isUrgent ? "#ef4444" : "#ffffff",
-              fontVariantNumeric: "tabular-nums",
-              zIndex: 1,
-              lineHeight: 1,
-            }}>
+            <span className={`${styles.timerText} ${isUrgent ? styles.timerTextUrgent : ""}`}>
               {formatTime(timeRemaining)}
             </span>
           </div>
         );
       })()}
 
+      {/* ROUND PILL */}
       {snapshot.currentRoundIndex !== undefined && snapshot.config?.totalRounds !== undefined && (
-        <div
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 12,
-            zIndex: 15,
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            borderRadius: 999,
-            padding: "6px 12px",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 14,
-            fontWeight: 700,
-            color: "#ffffff",
-            fontVariantNumeric: "tabular-nums",
-            border: "1px solid rgba(255,255,255,0.35)",
-            background: "rgba(0,0,0,0.55)",
-          }}
-        >
+        <div className={styles.roundPill}>
           <button
             type="button"
             onClick={() => setSettingsModalOpen(true)}
-            style={{
-              width: 32, height: 32,
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: "50%",
-              border: "1px solid rgba(255,255,255,0.15)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
+            className={styles.settingsBtn}
             aria-label="Settings"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -543,77 +462,25 @@ export default function RoundActiveSection({
         </div>
       )}
 
-        {/* Opponent avatars - fixed top-right */}
+      {/* OPPONENT AVATARS */}
       {snapshot.players && snapshot.players.length >= 2 && playerId && (
-        <div
-          style={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            zIndex: 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: 8,
-          }}
-        >
+        <div className={styles.opponentList}>
           {snapshot.players
             .filter((p) => p.playerId !== playerId)
             .map((p) => {
               const initials = (p.displayName ?? p.playerId ?? "?")[0].toUpperCase();
               return (
-                <div
-                  key={p.playerId}
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
+                <div key={p.playerId} className={styles.opponentRow}>
                   {submittedToasts[p.playerId] && (
-                    <div
-                      style={{
-                        background: "rgba(0,0,0,0.72)",
-                        backdropFilter: "blur(8px)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        borderRadius: 20,
-                        padding: "4px 10px",
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "rgba(255,255,255,0.85)",
-                        whiteSpace: "nowrap",
-                        animation: "fadeInOut 2s ease forwards",
-                      }}
-                    >
-                      Guessed
-                    </div>
+                    <div className={styles.submittedToast}>Guessed</div>
                   )}
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: "50%",
-                      overflow: "hidden",
-                      border: p.hasSubmitted
-                        ? "2px solid #22c55e"
-                        : "2px solid rgba(255,255,255,0.20)",
-                      flexShrink: 0,
-                      background: "rgba(255,255,255,0.08)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: "rgba(255,255,255,0.7)",
-                    }}
-                  >
+                  <div className={`${styles.opponentAvatar} ${p.hasSubmitted ? styles.opponentAvatarSubmitted : ""}`}>
                     {p.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={p.avatarUrl}
                         alt={initials}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        className={styles.opponentAvatarImg}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).style.display = "none";
                         }}
@@ -628,6 +495,7 @@ export default function RoundActiveSection({
         </div>
       )}
 
+      {/* FULLSCREEN MAP OVERLAY */}
       {mapFullscreen && (
         <div className={styles.mapFullscreenOverlay}>
           <div className={styles.mapFullscreenBody}>
@@ -638,46 +506,14 @@ export default function RoundActiveSection({
               localPlayerAvatarUrl={localPlayerAvatarUrl}
             />
             {guessLocation !== null && (
-              <div style={{
-                position: "absolute",
-                bottom: 16,
-                left: 16,
-                padding: "4px 10px",
-                borderRadius: 12,
-                fontSize: 18,
-                fontWeight: 700,
-                color: "#fb923c",
-              }}>
-                {locationNameLoading
-                  ? "…"
-                  : locationName
-                  ? locationName
-                  : "Location set ✓"}
+              <div className={styles.mapLocationLabel}>
+                {locationNameLoading ? "…" : locationName ? locationName : "Location set ✓"}
               </div>
             )}
             <button
               type="button"
               onClick={() => setMapFullscreen(false)}
-              style={{
-                position: "absolute",
-                bottom: 24,
-                left: "50%",
-                transform: "translateX(-50%)",
-                zIndex: 1000,
-                width: 60,
-                height: 60,
-                borderRadius: "50%",
-                background: "rgba(20,18,16,0.88)",
-                border: "1.5px solid rgba(255,255,255,0.25)",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "rgba(255,255,255,0.9)",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
-              }}
+              className={styles.mapCloseBtn}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -688,84 +524,22 @@ export default function RoundActiveSection({
         </div>
       )}
 
-
-      {/* NEW BOTTOM PANEL */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100%",
-          paddingTop: 80,
-          pointerEvents: "none",
-          justifyContent: "flex-end",
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 20,
-        }}
-      >
+      {/* BOTTOM PANEL */}
+      <div className={styles.bottomPanel}>
         {activePanel !== null && (
-          <div
-            onClick={() => setActivePanel(null)}
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 0,
-              pointerEvents: "auto",
-            }}
-          />
+          <div className={styles.panelDismiss} onClick={() => setActivePanel(null)} />
         )}
 
-        {/* WHERE CARD */}
+        {/* WHERE PANEL */}
         {activePanel === 'where' && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              flex: 1,
-              background: "rgba(8,145,178,0.15)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(34,211,238,0.25)",
-              borderRadius: "14px",
-              padding: "12px 16px 12px",
-              marginBottom: "8px",
-              pointerEvents: "auto",
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            {/* Header Row */}
-            <div style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              marginBottom: 8,
-              padding: "6px 0",
-            }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                <img src="/badges/where.webp" alt="where"
-                     style={{ width: 56, height: 56, objectFit: "contain", flexShrink: 0 }} />
-                <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: "1.2px",
-                    textTransform: "uppercase",
-                    color: "#c084fc",
-                  }}>WHERE</span>
-                  <span style={{
-                    fontSize: 15,
-                    fontWeight: 600,
-                    color: "#ffffff",
-                    lineHeight: 1.3,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                    textShadow: "0 1px 3px rgba(0,0,0,0.8)",
-                  } as React.CSSProperties}>
+          <div className={styles.wherePanel}>
+            <div className={styles.panelHeader}>
+              <div className={styles.panelTitleGroup}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/badges/where.webp" alt="where" className={styles.panelIcon} />
+                <div className={styles.panelMeta}>
+                  <span className={styles.panelLabelWhere}>WHERE</span>
+                  <span className={styles.panelValue}>
                     {guessLocation !== null
                       ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
                       : "No location set"}
@@ -774,9 +548,8 @@ export default function RoundActiveSection({
               </div>
             </div>
 
-            {/* Map */}
-            <div className={styles.mapWrapper} style={{ flex: 1, minHeight: 120, borderRadius: 0 }}>
-              <div className={styles.mapNoZoom} style={{ width: "100%", height: "100%" }}>
+            <div className={`${styles.mapWrapper} ${styles.mapWrapperFlex}`}>
+              <div className={`${styles.mapNoZoom} ${styles.mapNoZoomInner}`}>
                 <GameMap
                   guessLocation={guessLocation}
                   onSetLocation={handleMapSetLocation}
@@ -790,7 +563,6 @@ export default function RoundActiveSection({
                 className={styles.mapFullscreenBtn}
                 onClick={() => setMapFullscreen(true)}
                 aria-label="Fullscreen map"
-                style={{}}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <polyline points="15 3 21 3 21 9"/>
@@ -801,59 +573,29 @@ export default function RoundActiveSection({
               </button>
             </div>
 
-            {/* Search input — below map */}
             {!isLocked && (
-              <div style={{ marginTop: 8 }}>
-                <div style={{ display: "flex", gap: 8 }}>
+              <div className={styles.searchWrap}>
+                <div className={styles.searchRow}>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     placeholder="Search a place (city, country)…"
                     disabled={isLocked}
-                    style={{
-                      flex: 1,
-                      background: "rgba(255,255,255,0.12)",
-                      border: "1.5px solid rgba(255,255,255,0.35)",
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                      color: "#ffffff",
-                      fontSize: 14,
-                      outline: "none",
-                      boxSizing: "border-box" as const,
-                    }}
+                    className={styles.searchInput}
                   />
                 </div>
                 {(searchResults.length > 0 || searchLoading) && (
-                  <div style={{
-                    background: "#222",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 10,
-                    marginTop: 4,
-                    overflow: "hidden",
-                  }}>
+                  <div className={styles.searchDropdown}>
                     {searchLoading && (
-                      <div style={{ padding: "10px 14px", fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
-                        Searching…
-                      </div>
+                      <div className={styles.searchLoading}>Searching…</div>
                     )}
                     {searchResults.map((r, i) => (
                       <button
                         key={i}
                         type="button"
                         onMouseDown={() => selectSearchResult(r)}
-                        style={{
-                          width: "100%",
-                          padding: "10px 14px",
-                          background: "transparent",
-                          border: "none",
-                          borderTop: i > 0 ? "1px solid rgba(255,255,255,0.07)" : "none",
-                          color: "rgba(255,255,255,0.85)",
-                          fontSize: 13,
-                          textAlign: "left" as const,
-                          cursor: "pointer",
-                          display: "block",
-                        }}
+                        className={`${styles.searchResultBtn} ${i > 0 ? styles.searchResultBtnBorder : ""}`}
                       >
                         {r.displayName}
                       </button>
@@ -865,55 +607,22 @@ export default function RoundActiveSection({
           </div>
         )}
 
-        {/* WHEN CARD */}
+        {/* WHEN PANEL */}
         {activePanel === 'when' && (
-          <div
-            style={{
-              background: "rgba(8,145,178,0.15)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(34,211,238,0.25)",
-              borderRadius: "14px",
-              padding: "12px 16px",
-              pointerEvents: "auto",
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            {/* Header Row */}
-            <div style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              marginBottom: 8,
-              padding: "6px 0",
-            }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                <img src="/badges/when.webp" alt="when"
-                     style={{ width: 56, height: 56, objectFit: "contain", flexShrink: 0 }} />
-                <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: "1.2px",
-                    textTransform: "uppercase",
-                    color: "#22d3ee",
-                  }}>WHEN</span>
-                  <span style={{
-                    fontSize: 15,
-                    fontWeight: 600,
-                    color: "#ffffff",
-                    lineHeight: 1.3,
-                    fontVariantNumeric: "tabular-nums",
-                    textShadow: "0 1px 3px rgba(0,0,0,0.8)",
-                  }}>
+          <div className={styles.whenPanel}>
+            <div className={styles.panelHeader}>
+              <div className={styles.panelTitleGroup}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/badges/when.webp" alt="when" className={styles.panelIcon} />
+                <div className={styles.panelMeta}>
+                  <span className={styles.panelLabelWhen}>WHEN</span>
+                  <span className={styles.panelValueNumeric}>
                     {guessYear !== null ? String(guessYear) : "No year set"}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Year Picker */}
             <div>
               <YearPicker
                 value={guessYear ?? Math.round((yearMin + yearMax) / 2)}
@@ -929,9 +638,8 @@ export default function RoundActiveSection({
               />
             </div>
 
-            {/* Year direct input — below slider */}
             {!isLocked && (
-              <div style={{ marginTop: 8 }}>
+              <div className={styles.yearInputWrap}>
                 <input
                   type="number"
                   value={yearEditValue}
@@ -951,194 +659,78 @@ export default function RoundActiveSection({
                   placeholder={`Enter year (${yearMin}–${yearMax})`}
                   min={yearMin}
                   max={yearMax}
-                  style={{
-                    width: "100%",
-                    height: "40px",
-                    background: "rgba(255,255,255,0.12)",
-                    border: "1.5px solid rgba(56,189,248,0.60)",
-                    borderRadius: 10,
-                    color: "#ffffff",
-                    fontSize: 15,
-                    fontWeight: 600,
-                    textAlign: "center" as const,
-                    outline: "none",
-                    padding: "0 12px",
-                    boxSizing: "border-box" as const,
-                    MozAppearance: "textfield",
-                    WebkitAppearance: "none",
-                  } as React.CSSProperties}
+                  className={styles.yearInput}
                 />
               </div>
             )}
           </div>
         )}
 
+        {/* GUESS HINT */}
         {guessHint && (
-          <div style={{
-            textAlign: "center",
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#fb923c",
-            padding: "4px 0 2px",
-          }}>
-            {guessHint}
-          </div>
+          <div className={styles.guessHint}>{guessHint}</div>
         )}
 
         {/* NAVBAR */}
         <div className={styles.navbar}>
-          {/* Hints Button */}
+
+          {/* Hints button */}
           <button
             type="button"
             onClick={onOpenHints}
             disabled={isLocked}
-            style={{
-              width: 56,
-              height: 48,
-              flexShrink: 0,
-              background: "linear-gradient(135deg, rgba(192,132,252,0.55), rgba(249,115,22,0.55))",
-              border: "1.5px solid rgba(192,132,252,0.50)",
-              borderRadius: 12,
-              cursor: isLocked ? "not-allowed" : "pointer",
-              opacity: isLocked ? 0.4 : 1,
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              padding: "0 10px",
-            }}
+            className={`${styles.hintsBtn} ${isLocked ? styles.hintsBtnLocked : ""}`}
             aria-label="Hints"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9.663 17h4.673M12 3v1m0 16v1M4.22 4.22l.707.707M19.778 19.778l-.707-.707M3 12h1m16 0h1M4.22 19.778l.707-.707M19.778 4.22l-.707.707M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/>
             </svg>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>
-              {hintsUsedCount ?? 0}
-            </span>
+            <span className={styles.hintsCount}>{hintsUsedCount ?? 0}</span>
           </button>
 
-          {/* Where Button */}
+          {/* Where button */}
           <button
             type="button"
-            onClick={() => {
-              setActivePanel(prev => prev === 'where' ? null : 'where');
-            }}
-            style={{
-              flex: 1,
-              height: 48,
-              background: "linear-gradient(135deg, rgba(34,197,94,0.42), rgba(34,197,94,0.22))",
-              border: activePanel === 'where'
-                ? "1.5px solid rgba(34,197,94,0.85)"
-                : "1.5px solid rgba(34,197,94,0.40)",
-              borderRadius: 12,
-              cursor: "pointer",
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 4,
-              padding: "0 10px",
-              position: "relative",
-              overflow: "hidden" as const,
-              opacity: 1.0,
-              transition: "background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease",
-            }}
+            onClick={() => setActivePanel(prev => prev === 'where' ? null : 'where')}
+            className={`${styles.whereBtn} ${activePanel === 'where' ? styles.whereBtnActive : ""}`}
             aria-label="Where"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/badges/where.webp" alt="where" style={{ width: 54, height: 54, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 3px rgba(34,197,94,0.5))" }} />
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
+            <img src="/badges/where.webp" alt="where" className={`${styles.navBtnIcon} ${styles.navBtnIconWhere}`} />
+            <div className={styles.navBtnLabel}>
               {guessLocation === null && (
-                <span style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#ffffff",
-                  textTransform: "uppercase" as const,
-                  letterSpacing: "0.08em",
-                  lineHeight: 1.1,
-                }}>
-                  Where
-                </span>
+                <span className={styles.navBtnText}>Where</span>
               )}
               {guessLocation !== null && (
-                <span style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#ffffff",
-                  maxWidth: 70,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap" as const,
-                  lineHeight: 1.25,
-                }}>
+                <span className={styles.navBtnValue}>
                   {locationNameLoading ? "…" : (locationName ?? "Set ✓").split(",")[0].trim()}
                 </span>
               )}
             </div>
           </button>
 
-          {/* When Button */}
+          {/* When button */}
           <button
             type="button"
-            onClick={() => {
-              setActivePanel(prev => prev === 'when' ? null : 'when');
-            }}
-            style={{
-              flex: 1,
-              height: 48,
-              background: "linear-gradient(135deg, rgba(56,189,248,0.42), rgba(56,189,248,0.22))",
-              border: activePanel === 'when'
-                ? "1.5px solid rgba(56,189,248,0.85)"
-                : "1.5px solid rgba(56,189,248,0.40)",
-              borderRadius: 12,
-              cursor: "pointer",
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 4,
-              padding: "0 10px",
-              overflow: "hidden" as const,
-              opacity: 1.0,
-              transition: "background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease",
-            }}
+            onClick={() => setActivePanel(prev => prev === 'when' ? null : 'when')}
+            className={`${styles.whenBtn} ${activePanel === 'when' ? styles.whenBtnActive : ""}`}
             aria-label="When"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/badges/when.webp" alt="when" style={{ width: 54, height: 54, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 3px rgba(56,189,248,0.5))" }} />
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
+            <img src="/badges/when.webp" alt="when" className={`${styles.navBtnIcon} ${styles.navBtnIconWhen}`} />
+            <div className={styles.navBtnLabel}>
               {guessYear === null && (
-                <span style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#ffffff",
-                  textTransform: "uppercase" as const,
-                  letterSpacing: "0.08em",
-                  lineHeight: 1.1,
-                }}>
-                  When
-                </span>
+                <span className={styles.navBtnText}>When</span>
               )}
               {guessYear !== null && (
-                <span style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#ffffff",
-                  maxWidth: 70,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap" as const,
-                  fontVariantNumeric: "tabular-nums",
-                  lineHeight: 1.25,
-                }}>
+                <span className={`${styles.navBtnValue} ${styles.navBtnValueNumeric}`}>
                   {String(guessYear)}
                 </span>
               )}
             </div>
           </button>
 
-          {/* Submit Button */}
+          {/* Submit button */}
           <button
             type="button"
             onClick={() => {
@@ -1153,36 +745,13 @@ export default function RoundActiveSection({
               }
               onSubmit();
             }}
-            className={canSubmit ? styles.submitActive : undefined}
-            style={{
-              flex: 1,
-              height: 48,
-              borderRadius: 12,
-              background: busy || hasSubmitted || localSubmitted
-                ? "rgba(255,255,255,0.15)"
+            className={`${styles.submitBtn} ${
+              busy || hasSubmitted || localSubmitted
+                ? styles.submitBtnSubmitted
                 : canSubmit
-                ? "linear-gradient(135deg, rgba(249,115,22,0.42), rgba(249,115,22,0.22))"
-                : "linear-gradient(135deg, rgba(249,115,22,0.16), rgba(0,0,0,0.45))",
-              border: busy || hasSubmitted || localSubmitted
-                ? "1.5px solid rgba(255,255,255,0.20)"
-                : canSubmit
-                ? "1.5px solid rgba(249,115,22,0.85)"
-                : "1.5px solid rgba(249,115,22,0.40)",
-              color: "rgba(255,255,255,0.90)",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              padding: "0 10px",
-              position: "relative",
-              overflow: "hidden" as const,
-              opacity: canSubmit && !busy && !hasSubmitted && !localSubmitted ? 1.0 : 0.9,
-              transition: "background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease",
-            }}
+                ? `${styles.submitBtnReady} ${styles.submitActive}`
+                : ""
+            }`}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/>
@@ -1192,173 +761,67 @@ export default function RoundActiveSection({
               {busy ? "Submitting…" : hasSubmitted || localSubmitted ? "Submitted ✓" : "Submit"}
             </span>
           </button>
+
         </div>
       </div>
 
-      {/* Settings Modal */}
+      {/* SETTINGS MODAL */}
       {settingsModalOpen && (
-        <div
-          onClick={() => setSettingsModalOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 10000,
-            background: 'rgba(255,255,255,0.35)',
-            backdropFilter: 'blur(18px) saturate(1.6)',
-            WebkitBackdropFilter: 'blur(18px) saturate(1.6)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-          }}
-        >
-          {/* Close button — outside modal, above it */}
+        <div className={styles.settingsOverlay} onClick={() => setSettingsModalOpen(false)}>
           <button
             type="button"
             onClick={() => setSettingsModalOpen(false)}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: 'rgba(0,0,0,0.12)',
-              border: '0.5px solid rgba(0,0,0,0.18)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              marginBottom: 12,
-              flexShrink: 0,
-            }}
+            className={styles.settingsCloseBtn}
           >
             <svg viewBox="0 0 10 10" fill="none" width="12" height="12">
               <path d="M2 2l6 6M8 2L2 8" stroke="#333" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </button>
 
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'rgba(255,255,255,0.78)',
-              backdropFilter: 'blur(28px) saturate(1.8)',
-              WebkitBackdropFilter: 'blur(28px) saturate(1.8)',
-              borderRadius: 20,
-              border: '0.5px solid rgba(255,255,255,0.90)',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.18), 0 1.5px 0 rgba(255,255,255,0.9) inset',
-              padding: 24,
-              width: '100%',
-              maxWidth: 320,
-            }}
-          >
-            {/* Header */}
-            <div style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: '#111',
-              textTransform: 'uppercase' as const,
-              letterSpacing: '0.06em',
-              marginBottom: 20,
-            }}>
-              Settings
-            </div>
+          <div className={styles.settingsCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.settingsTitle}>Settings</div>
 
-            {/* Row 1: Sound toggle */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 16,
-              }}
-            >
-              <span style={{ color: '#111', fontSize: 15 }}>Sound</span>
+            <div className={styles.settingsRow}>
+              <span className={styles.settingsLabel}>Sound</span>
               <button
                 type="button"
                 onClick={() => setSoundEnabled(!soundEnabled)}
+                className={styles.toggle}
                 style={{
-                  width: 48,
-                  height: 28,
-                  borderRadius: 14,
-                  border: 'none',
-                  background: soundEnabled ? '#fb923c' : 'rgba(0,0,0,0.15)',
-                  cursor: 'pointer',
-                  position: 'relative',
-                }}
+                  "--toggle-bg": soundEnabled ? "var(--gh-orange)" : "rgba(0,0,0,0.15)",
+                  "--toggle-left": soundEnabled ? "22px" : "2px",
+                } as React.CSSProperties}
               >
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    left: soundEnabled ? 22 : 2,
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: 'white',
-                    transition: 'left 0.2s',
-                  }}
-                />
+                <div className={styles.toggleKnob} />
               </button>
             </div>
 
-            {/* Row 2: Vibrate toggle */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 20,
-              }}
-            >
-              <span style={{ color: '#111', fontSize: 15 }}>Vibrate</span>
+            <div className={styles.settingsRowLast}>
+              <span className={styles.settingsLabel}>Vibrate</span>
               <button
                 type="button"
                 onClick={() => setVibrateEnabled(!vibrateEnabled)}
+                className={styles.toggle}
                 style={{
-                  width: 48,
-                  height: 28,
-                  borderRadius: 14,
-                  border: 'none',
-                  background: vibrateEnabled ? '#fb923c' : 'rgba(0,0,0,0.15)',
-                  cursor: 'pointer',
-                  position: 'relative',
-                }}
+                  "--toggle-bg": vibrateEnabled ? "var(--gh-orange)" : "rgba(0,0,0,0.15)",
+                  "--toggle-left": vibrateEnabled ? "22px" : "2px",
+                } as React.CSSProperties}
               >
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    left: vibrateEnabled ? 22 : 2,
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: 'white',
-                    transition: 'left 0.2s',
-                  }}
-                />
+                <div className={styles.toggleKnob} />
               </button>
             </div>
 
-            {/* Row 3: Home button */}
             <button
               type="button"
               onClick={() => window.location.href = '/'}
-              style={{
-                width: '100%',
-                height: 44,
-                borderRadius: 999,
-                border: 'none',
-                background: '#fb923c',
-                color: 'white',
-                fontSize: 15,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              className={styles.settingsHomeBtn}
             >
               Home
             </button>
           </div>
         </div>
       )}
+
     </section>
   );
 }
