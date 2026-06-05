@@ -45,7 +45,7 @@ export type AdvanceRoundContext = {
   roundIndex: number;
   nextRoundEventId: string | null;
   startedAt: string;
-  phaseEndsAt: string;
+  phaseEndsAt: string | null;
 };
 
 export type Intent =

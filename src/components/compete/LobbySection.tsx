@@ -322,13 +322,6 @@ export default function LobbySection({
     }
   }, [snapshot.allPlayersReady, snapshot.players.length, busy, onStartGame]);
 
-  console.log("[PLAYERS_RENDER]", {
-    totalPlayers: snapshot.players?.length ?? null,
-    players: snapshot.players?.map((p) => ({
-      playerId: p.playerId,
-      displayName: p.displayName,
-    })),
-  });
 
   return (
     <div className={styles['lobby-shell']}>
@@ -359,7 +352,7 @@ export default function LobbySection({
       <div className={styles['lobby-grid']}>
 
         {/* ── Invite + Roster Card (merged) ── */}
-        <div className={`card ${styles['lobby-card']} ${styles['lobby-roster-card']}`}>
+        <div className={`${styles['lobby-card']} ${styles['lobby-roster-card']}`}>
 
           {/* Sub-section A: Invite Players */}
           {viewer?.isHost && (
@@ -586,7 +579,7 @@ export default function LobbySection({
         </div>
 
         {/* ── Game Settings Card ── */}
-        <div className={`card ${styles['lobby-card']} ${styles['lobby-settings']}`}>
+        <div className={`${styles['lobby-card']} ${styles['lobby-settings']}`}>
           <div className={styles['lobby-card-header']}>
             <span className={styles['lobby-accent-bar']} />
             <h3>Game Settings</h3>

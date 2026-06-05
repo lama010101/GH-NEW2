@@ -21,7 +21,7 @@ type ActiveGame = {
 function getAccuracyColor(pct: number): string {
   if (pct >= 85) return '#22c55e'
   if (pct >= 60) return '#eab308'
-  if (pct >= 40) return '#fb923c'
+  if (pct >= 40) return 'var(--gh-orange)'
   return '#ef4444'
 }
 

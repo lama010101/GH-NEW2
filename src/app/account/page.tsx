@@ -212,7 +212,7 @@ export default function AccountPage() {
               style={{
                 marginTop: 10,
                 width: '100%',
-                background: isSaveDisabled ? 'rgba(251,146,60,0.4)' : '#fb923c',
+                background: isSaveDisabled ? 'rgba(251,146,60,0.4)' : 'var(--gh-orange)',
                 color: '#0f0e0c',
                 fontWeight: 700,
                 borderRadius: 8,
