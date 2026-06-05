@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #000;
+  background: var(--gh-bg-base);
   border-radius: 16px;
   padding: 14px 18px;
   margin-bottom: 4px;
@@ -65,7 +65,7 @@
   align-items: start;
 }
 .lobby-card {
-  background: #333;
+  background: var(--gh-bg-elevated);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 22px;
   padding: 20px;
@@ -87,7 +87,7 @@
 .lobby-accent-bar {
   width: 4px;
   height: 22px;
-  background: linear-gradient(180deg, #22d3ee, #0891b2);
+  background: linear-gradient(180deg, var(--gh-blue), #0891b2);
   border-radius: 4px;
   flex-shrink: 0;
 }
@@ -265,18 +265,49 @@
 }
 .lobbyInviteBtn:hover:not(:disabled) {
   background: var(--gh-btn-outline-hover-bg);
-  box-shadow: var(--gh-btn-outline-glow), 0 0 14px rgba(34, 211, 238, 0.30);
+  box-shadow: var(--gh-btn-outline-glow), 0 0 14px rgba(6, 182, 212, 0.30);
 }
 .lobbyInviteBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
+/* ── Avatar wrap for star button positioning ── */
+.lobbyAvatarWrap {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ── Star button on player card ── */
+.lobbyStarBtn {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  z-index: 1;
+  transition: background 0.15s ease;
+}
+.lobbyStarBtn:hover {
+  background: rgba(0, 0, 0, 0.80);
+}
+
 /* ── Copy link button ── */
 .lobbyLinkBtn {
   font-size: 12px;
   font-weight: 600;
-  color: #22d3ee;
+  color: var(--gh-blue);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -352,7 +383,7 @@
 .lobby-setting-value {
   font-size: 14px;
   font-weight: 700;
-  color: #22d3ee;
+  color: var(--gh-blue);
   font-variant-numeric: tabular-nums;
 }
 .lobby-kick-btn {
@@ -403,10 +434,10 @@
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(34, 211, 238, 0.08);
+  background: rgba(6, 182, 212, 0.08);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(34, 211, 238, 0.25);
+  border-top: 1px solid rgba(6, 182, 212, 0.25);
 }
 .lobby-dock-content {
   max-width: 1320px;
@@ -492,7 +523,7 @@
   top: 50%;
   transform: translateY(-50%);
   height: 4px;
-  background: linear-gradient(90deg, #22d3ee, #0891b2);
+  background: linear-gradient(90deg, var(--gh-blue), #0891b2);
   border-radius: 2px;
 }
 .lobby-year-range-wrap input[type="range"] {
@@ -512,7 +543,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #22d3ee;
+  background: var(--gh-blue);
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
@@ -524,7 +555,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #22d3ee;
+  background: var(--gh-blue);
   cursor: pointer;
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.4);
@@ -551,7 +582,7 @@
   top: 50%;
   transform: translateY(-50%);
   height: 4px;
-  background: linear-gradient(90deg, #22d3ee, #0891b2);
+  background: linear-gradient(90deg, var(--gh-blue), #0891b2);
   border-radius: 2px;
   left: 0;
 }
@@ -573,32 +604,32 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #22d3ee;
+  background: var(--gh-blue);
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.4);
   cursor: pointer;
   transition: box-shadow 0.2s, transform 0.15s;
 }
 .lobby-timer-slider::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
   transform: scale(1.1);
 }
 .lobby-timer-slider::-webkit-slider-thumb:active {
   transform: scale(1.15);
-  box-shadow: 0 0 14px rgba(34, 211, 238, 0.6);
+  box-shadow: 0 0 14px rgba(6, 182, 212, 0.6);
 }
 .lobby-timer-slider::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #22d3ee;
+  background: var(--gh-blue);
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.4);
   cursor: pointer;
   transition: box-shadow 0.2s, transform 0.15s;
 }
 .lobby-timer-slider::-moz-range-thumb:hover {
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
   transform: scale(1.1);
 }
 
@@ -651,7 +682,7 @@
 .lobbySliderInput {
   flex: 1;
   min-width: 0;
-  accent-color: #22d3ee;
+  accent-color: var(--gh-blue);
 }
 .lobbyNoWrap {
   white-space: nowrap;
@@ -674,7 +705,7 @@
   border: none;
   position: relative;
   cursor: pointer;
-  background: #22d3ee;
+  background: var(--gh-blue);
   transition: background 0.2s;
   flex-shrink: 0;
 }
@@ -720,15 +751,15 @@
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 6px;
-  border: 1px solid #22d3ee;
-  color: #22d3ee;
+  border: 1px solid var(--gh-blue);
+  color: var(--gh-blue);
   background: transparent;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
 }
 .lobbyShareBtn:hover {
-  background: rgba(34,211,238,0.12);
+  background: rgba(6,182,212,0.12);
 }
 
 /* ── Invite search input ── */
@@ -748,23 +779,23 @@
   color: rgba(255,255,255,0.35);
 }
 .lobbyInviteSearch:focus {
-  border-color: #22d3ee;
+  border-color: var(--gh-blue);
 }
 
 /* ── View all card ── */
 .lobbyViewAllCard {
   justify-content: center;
   cursor: pointer;
-  border: 1px dashed rgba(34,211,238,0.4);
-  background: rgba(34,211,238,0.05);
+  border: 1px dashed rgba(6,182,212,0.4);
+  background: rgba(6,182,212,0.05);
 }
 .lobbyViewAllCard:hover {
-  background: rgba(34,211,238,0.1);
+  background: rgba(6,182,212,0.1);
 }
 .lobbyViewAllText {
   font-size: 11px;
   font-weight: 600;
-  color: #22d3ee;
+  color: var(--gh-blue);
   text-align: center;
 }
 
@@ -779,7 +810,7 @@
   justify-content: center;
 }
 .lobbyAllModalInner {
-  background: #1a1a1a;
+  background: var(--gh-bg-elevated);
   border: 1px solid rgba(255,255,255,0.15);
   border-radius: 18px;
   padding: 20px;

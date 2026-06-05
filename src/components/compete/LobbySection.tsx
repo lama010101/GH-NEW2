@@ -5,6 +5,7 @@ import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
 import { getUsernameGradientStyle } from "@/core/competeUtils";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import styles from './LobbySection.module.css';
+import { supabaseBrowser } from '@/core/supabaseBrowser';
 
 interface LobbySectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -144,6 +145,71 @@ export default function LobbySection({
   /* ── Pending invites (invited but not yet joined) ── */
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
 
+  /* ── Follow state ── */
+  const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
+
+  // Fetch followed players on mount
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchFollows() {
+      try {
+        const { data, error } = await supabaseBrowser
+          .from('player_follows')
+          .select('followed_id')
+          .order('created_at', { ascending: false });
+        if (error || cancelled) return;
+        setFollowedIds(new Set((data ?? []).map((r) => r.followed_id)));
+      } catch {
+        // silent
+      }
+    }
+    fetchFollows();
+    return () => { cancelled = true; };
+  }, []);
+
+  const toggleFollow = async (playerId: string) => {
+    const isFollowed = followedIds.has(playerId);
+    // Optimistic update
+    setFollowedIds((prev) => {
+      const next = new Set(prev);
+      if (isFollowed) {
+        next.delete(playerId);
+      } else {
+        next.add(playerId);
+      }
+      return next;
+    });
+    try {
+      if (isFollowed) {
+        await fetch('/api/players/follow', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ followed_id: playerId }),
+        });
+      } else {
+        await fetch('/api/players/follow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ followed_id: playerId }),
+        });
+      }
+    } catch (e) {
+      console.error('[LobbySection] Failed to toggle follow:', e);
+      // Revert optimistic update on error
+      setFollowedIds((prev) => {
+        const next = new Set(prev);
+        if (isFollowed) {
+          next.add(playerId);
+        } else {
+          next.delete(playerId);
+        }
+        return next;
+      });
+    }
+  };
+
   // Remove pending invites for players who have now joined
   useEffect(() => {
     const joinedIds = new Set(snapshot.players.map((p) => p.playerId));
@@ -162,9 +228,14 @@ export default function LobbySection({
   ].filter(p => !pendingInvites.some(pi => pi.id === p.id));
 
   const trimmedQuery = searchQuery.trim().toLowerCase();
-  const displayList: PlayerPoolEntry[] = trimmedQuery.length >= 1
+  const displayList: PlayerPoolEntry[] = (trimmedQuery.length >= 1
     ? priorityList.filter((p) => p.displayName.toLowerCase().includes(trimmedQuery)).slice(0, 20)
-    : priorityList.slice(0, 10);
+    : priorityList.slice(0, 10)
+  ).sort((a, b) => {
+    const aFav = followedIds.has(a.id) ? 0 : 1;
+    const bFav = followedIds.has(b.id) ? 0 : 1;
+    return aFav - bFav;
+  });
   const hasMore = trimmedQuery.length === 0 && priorityList.length > 10;
 
   const handleSendInvite = async (player: PlayerPoolEntry) => {
@@ -329,7 +400,18 @@ export default function LobbySection({
                   const lastName = nameParts.slice(1).join(' ');
                   return (
                     <div key={player.id} className={styles['lobbyPlayerCard']}>
-                      <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                      <div className={styles['lobbyAvatarWrap']}>
+                        <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                        <button
+                          className={styles['lobbyStarBtn']}
+                          onClick={() => toggleFollow(player.id)}
+                          aria-label={followedIds.has(player.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        >
+                          <span style={{ color: followedIds.has(player.id) ? '#f0c060' : 'rgba(255,255,255,0.5)' }}>
+                            {followedIds.has(player.id) ? '★' : '☆'}
+                          </span>
+                        </button>
+                      </div>
                       <div style={getUsernameGradientStyle(player.id)}>
                         <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
                         {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
@@ -381,7 +463,18 @@ export default function LobbySection({
                     const lastName = nameParts.slice(1).join(' ');
                     return (
                       <div key={player.id} className={styles['lobbyPlayerCard']}>
-                        <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                        <div className={styles['lobbyAvatarWrap']}>
+                          <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                          <button
+                            className={styles['lobbyStarBtn']}
+                            onClick={() => toggleFollow(player.id)}
+                            aria-label={followedIds.has(player.id) ? 'Remove from favorites' : 'Add to favorites'}
+                          >
+                            <span style={{ color: followedIds.has(player.id) ? '#f0c060' : 'rgba(255,255,255,0.5)' }}>
+                              {followedIds.has(player.id) ? '★' : '☆'}
+                            </span>
+                          </button>
+                        </div>
                         <div style={getUsernameGradientStyle(player.id)}>
                           <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
                           {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}

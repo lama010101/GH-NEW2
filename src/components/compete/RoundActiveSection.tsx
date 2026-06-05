@@ -404,8 +404,8 @@ export default function RoundActiveSection({
       </div>
 
       {/* TIMER */}
-      {timeRemaining !== null && (() => {
-        const totalSec: number = (snapshot.config as { roundTimerSec?: number }).roundTimerSec ?? 120;
+      {timeRemaining !== null && snapshot.config?.roundTimerSec !== 0 && (() => {
+        const totalSec: number = (snapshot.config as { roundTimerSec?: number }).roundTimerSec || 120;
         const radius = 26;
         const circumference = 2 * Math.PI * radius;
         const progress = Math.max(0, Math.min(1, timeRemaining / totalSec));
@@ -682,53 +682,61 @@ export default function RoundActiveSection({
             className={`${styles.hintsBtn} ${isLocked ? styles.hintsBtnLocked : ""}`}
             aria-label="Hints"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <span className={styles.hintsCount}>{hintsUsedCount ?? 0}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9.663 17h4.673M12 3v1m0 16v1M4.22 4.22l.707.707M19.778 19.778l-.707-.707M3 12h1m16 0h1M4.22 19.778l.707-.707M19.778 4.22l-.707.707M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/>
             </svg>
-            <span className={styles.hintsCount}>{hintsUsedCount ?? 0}</span>
           </button>
 
-          {/* Where button */}
-          <button
-            type="button"
-            onClick={() => setActivePanel(prev => prev === 'where' ? null : 'where')}
-            className={`${styles.whereBtn} ${activePanel === 'where' ? styles.whereBtnActive : ""}`}
-            aria-label="Where"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/badges/where.webp" alt="where" className={`${styles.navBtnIcon} ${styles.navBtnIconWhere}`} />
-            <div className={styles.navBtnLabel}>
-              {guessLocation === null && (
-                <span className={styles.navBtnText}>Where</span>
-              )}
-              {guessLocation !== null && (
-                <span className={styles.navBtnValue}>
-                  {locationNameLoading ? "…" : (locationName ?? "Set ✓").split(",")[0].trim()}
-                </span>
-              )}
-            </div>
-          </button>
+          {/* WHERE circle with overlay tag */}
+          <div className={styles.navBtnCircleWrap}>
+            <span className={`${styles.navBtnOverlayTag} ${styles.navBtnOverlayTagWhere} ${guessLocation !== null ? styles.navBtnOverlayTagAnswer : ""}`}>
+              {guessLocation !== null
+                ? (locationNameLoading ? "…" : (locationName ?? "✓").split(",")[0].trim())
+                : "WHERE"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setActivePanel(prev => prev === 'where' ? null : 'where')}
+              className={`${styles.whereBtn} ${
+                activePanel === 'where'
+                  ? styles.whereBtnActive
+                  : guessLocation === null && !isLocked
+                  ? styles.whereBtnUnanswered
+                  : ""
+              }`}
+              aria-label="Where"
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z"/>
+                <circle cx="12" cy="10" r="2.5"/>
+              </svg>
+            </button>
+          </div>
 
-          {/* When button */}
-          <button
-            type="button"
-            onClick={() => setActivePanel(prev => prev === 'when' ? null : 'when')}
-            className={`${styles.whenBtn} ${activePanel === 'when' ? styles.whenBtnActive : ""}`}
-            aria-label="When"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/badges/when.webp" alt="when" className={`${styles.navBtnIcon} ${styles.navBtnIconWhen}`} />
-            <div className={styles.navBtnLabel}>
-              {guessYear === null && (
-                <span className={styles.navBtnText}>When</span>
-              )}
-              {guessYear !== null && (
-                <span className={`${styles.navBtnValue} ${styles.navBtnValueNumeric}`}>
-                  {String(guessYear)}
-                </span>
-              )}
-            </div>
-          </button>
+          {/* WHEN circle with overlay tag */}
+          <div className={styles.navBtnCircleWrap}>
+            <span className={`${styles.navBtnOverlayTag} ${styles.navBtnOverlayTagWhen} ${guessYear !== null ? styles.navBtnOverlayTagAnswer : ""}`}>
+              {guessYear !== null ? String(guessYear) : "WHEN"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setActivePanel(prev => prev === 'when' ? null : 'when')}
+              className={`${styles.whenBtn} ${
+                activePanel === 'when'
+                  ? styles.whenBtnActive
+                  : guessYear === null && !isLocked
+                  ? styles.whenBtnUnanswered
+                  : ""
+              }`}
+              aria-label="When"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="4" y="5" width="16" height="15" rx="2"/>
+                <path d="M8 3v4M16 3v4M4 10h16"/>
+              </svg>
+            </button>
+          </div>
 
           {/* Submit button */}
           <button
@@ -749,7 +757,7 @@ export default function RoundActiveSection({
               busy || hasSubmitted || localSubmitted
                 ? styles.submitBtnSubmitted
                 : canSubmit
-                ? `${styles.submitBtnReady} ${styles.submitActive}`
+                ? `${styles.submitBtnReady} ${styles.submitActive}` 
                 : ""
             }`}
           >
@@ -757,9 +765,7 @@ export default function RoundActiveSection({
               <line x1="22" y1="2" x2="11" y2="13"/>
               <polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
-            <span>
-              {busy ? "Submitting…" : hasSubmitted || localSubmitted ? "Submitted ✓" : "Submit"}
-            </span>
+            <span>{busy ? "…" : hasSubmitted || localSubmitted ? "✓" : "Go"}</span>
           </button>
 
         </div>

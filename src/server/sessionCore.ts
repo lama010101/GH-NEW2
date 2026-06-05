@@ -1060,7 +1060,9 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
     }
     const startNow = new Date();
     const startStartedAt = startNow.toISOString();
-    const startPhaseEndsAt = new Date(startNow.getTime() + session.round_timer_sec * 1000).toISOString();
+    const startPhaseEndsAt = session.round_timer_sec === 0
+      ? null
+      : new Date(startNow.getTime() + session.round_timer_sec * 1000).toISOString();
     await appendEvent(client, gameId, "ROUND_STARTED", {
       roundIndex: 0,
       eventId: startEventIds[0],
@@ -1923,7 +1925,9 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
       }
       const advanceNow = new Date();
       advanceStartedAt = advanceNow.toISOString();
-      advancePhaseEndsAt = new Date(advanceNow.getTime() + session.round_timer_sec * 1000).toISOString();
+      advancePhaseEndsAt = session.round_timer_sec === 0
+        ? null
+        : new Date(advanceNow.getTime() + session.round_timer_sec * 1000).toISOString();
       const roundStartedPayload = {
         roundIndex: nextRoundIndex,
         eventId: advanceEventIds[nextRoundIndex],

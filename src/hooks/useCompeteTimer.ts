@@ -47,6 +47,10 @@ export default function useCompeteTimer({
       setTimeRemaining(null);
       return;
     }
+    if (!snapshot.roundEndsAt || snapshot.config?.roundTimerSec === 0) {
+      setTimeRemaining(null);
+      return;
+    }
     const tick = () => {
       console.log("[CLIENT_TIMER_COMPUTE]", {
         roundEndsAt: snapshot.roundEndsAt,
@@ -65,6 +69,7 @@ export default function useCompeteTimer({
   useEffect(() => {
     if (timeRemaining !== 0) return;
     if (snapshot?.status !== "ROUND_ACTIVE") return;
+    if (snapshot?.config?.roundTimerSec === 0) return;
     if (localSubmitted) return;
     if (!wsRef.current || !playerId) return;
 

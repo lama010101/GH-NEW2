@@ -1,0 +1,558 @@
+/* SessionComplete — tokens from globals.css
+   Migrated from the inline <style> block (lines 159-601 of original file).
+   Class name mapping: gh-final-* / session-complete-* → short module names. */
+
+/* ── Section shell ── */
+
+.section {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  background: #000000;
+  padding: 0 0 96px;
+  color: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.section * {
+  box-sizing: border-box;
+}
+
+/* ── Top bar ── */
+
+.topbar {
+  width: 100%;
+  min-height: 48px;
+  background: rgba(17, 24, 39, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+}
+
+.siteTitle {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.avatarBtn {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: #333333;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Content wrapper ── */
+
+.content {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 14px 12px 0;
+}
+
+/* ── Score grid (hero + stat cards) ── */
+
+.scoreGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.scoreHero {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 12px 18px;
+}
+
+.xp {
+  margin-top: 8px;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.card {
+  background: #333333;
+  border-radius: 14px;
+}
+
+/* ── WHERE / WHEN stat cards ── */
+
+.statGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.statCard {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 10px;
+  background: #333333;
+  border-radius: 14px;
+}
+
+.statIcon {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.percentLine {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statNumber {
+  font-size: 24px;
+}
+
+.statSymbol {
+  font-size: 12px;
+  margin-left: 1px;
+  color: #ffffff;
+}
+
+.statSub {
+  margin-top: 7px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+}
+
+/* ── Generic panel (leaderboard, etc.) ── */
+
+.panel {
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: #333333;
+  border-radius: 14px;
+}
+
+.panelHeading {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 13px 14px 10px;
+}
+
+/* ── Leaderboard rows ── */
+
+.rankRow {
+  display: grid;
+  grid-template-columns: 22px 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px;
+  border-left: 3px solid transparent;
+}
+
+.rankRow + .rankRow {
+  border-top: 1px solid #374151;
+}
+
+.rankNum {
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.avatarWrap {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.rankAvatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #1a1a1a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.youDot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  border: 1.5px solid #111;
+  display: block;
+  z-index: 2;
+}
+
+.rankMain {
+  min-width: 0;
+}
+
+.rankNameLine {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rankName {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.youTag {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 400;
+  flex: 0 0 auto;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 4px;
+  background: #1a1a1a;
+  border-radius: 999px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: #9ca3af;
+}
+
+.rankScore {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rankPercent {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+/* NOTE: fontSize 3.75px on the % symbol in rankPercent is preserved from the
+   original code as-is. This appears to be a bug (nearly invisible text) but is
+   out of scope for this styling migration task. */
+.rankPercentSymbol {
+  color: #ffffff;
+  font-size: 3.75px;
+}
+
+.rankXp {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 400;
+  margin-top: 4px;
+}
+
+/* ── Round breakdown ── */
+
+.rounds {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.roundCard {
+  overflow: hidden;
+  background: #333333;
+  border-radius: 14px;
+}
+
+.photo {
+  position: relative;
+  width: 100%;
+  height: 112px;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+
+.roundBadge {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 5px 8px;
+}
+
+.photoFallback {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.roundBody {
+  padding: 11px 12px 12px;
+}
+
+.roundTitle {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+/* ── Mini stat grid (per round) ── */
+
+.miniGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.miniTile {
+  min-width: 0;
+  background: #1a1a1a;
+  border-radius: 8px;
+  padding: 9px 4px 8px;
+  text-align: center;
+}
+
+.miniNumber {
+  font-size: 20px;
+}
+
+.miniSymbol {
+  font-size: 10px;
+  margin-left: 1px;
+  color: #ffffff;
+}
+
+.miniLabel {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.miniSub {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.15;
+  margin-top: 5px;
+}
+
+/* ── Best player row ── */
+
+.bestRow {
+  border-top: 1px solid #374151;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.bestLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.bestName {
+  min-width: 0;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bestNameHighlight {
+  color: var(--gh-orange);
+}
+
+/* ── Bottom CTA bar ── */
+
+.cta {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  background: #000000;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+}
+
+.cta button {
+  height: 46px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.homeBtn {
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid #374151;
+  color: #9ca3af;
+}
+
+.playBtn {
+  flex: 1.25;
+  background: var(--gh-orange);
+  border: 1px solid var(--gh-orange);
+  color: #ffffff;
+}
+
+.playBtnWaiting {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Lobby error ── */
+
+.lobbyError {
+  color: var(--gh-danger);
+  font-size: 12px;
+  margin-top: 8px;
+  grid-column: 1 / -1;
+  text-align: center;
+}
+
+/* ── Round breakdown section heading ── */
+
+.roundsHeading {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 13px 2px 10px;
+}
+
+/* ── Responsive ── */
+
+@media (min-width: 768px) {
+  .content {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .scoreHero {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 24px;
+    align-items: center;
+    min-height: 230px;
+  }
+
+  .section {
+    padding-bottom: 48px;
+  }
+
+  .topbar {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .scoreGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .statGrid {
+    height: 100%;
+    align-content: stretch;
+  }
+
+  .statCard {
+    min-height: 109px;
+  }
+
+  .cta {
+    position: static;
+    max-width: 680px;
+    margin: 18px auto 0;
+    padding: 0 12px;
+  }
+}

@@ -519,8 +519,8 @@
   padding-bottom: calc(12px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: row;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-end;
+  gap: 10px;
   width: 100%;
   pointer-events: auto;
 }
@@ -528,138 +528,157 @@
 /* Hints button */
 
 .hintsBtn {
-  width: 56px;
+  width: 48px;
   height: 48px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.55), rgba(249, 115, 22, 0.55));
-  border: 1.5px solid rgba(139, 92, 246, 0.50);
-  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(249, 115, 22, 0.9));
+  border: none;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 10px;
-  opacity: 1;
+  gap: 1px;
+  align-self: flex-end;
   transition: opacity 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .hintsBtnLocked {
   cursor: not-allowed;
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
 .hintsCount {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #fff;
+  line-height: 1;
 }
 
-/* Where nav button */
+/* WHERE circle button */
 
 .whereBtn {
-  flex: 1;
-  height: 48px;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.42), rgba(6, 182, 212, 0.22));
-  border: 1.5px solid rgba(6, 182, 212, 0.40);
-  border-radius: 12px;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  background: rgba(6, 182, 212, 0.95);
+  border: 2px solid rgba(6, 182, 212, 0.6);
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 0 10px;
-  position: relative;
-  overflow: hidden;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .whereBtnActive {
-  border-color: rgba(6, 182, 212, 0.85);
+  background: var(--gh-blue);
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.4), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* When nav button */
+@keyframes glowPulseBlue {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 10px 2px rgba(6, 182, 212, 0.5); }
+  50%       { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 22px 6px rgba(6, 182, 212, 0.8); }
+}
+
+.whereBtnUnanswered {
+  animation: glowPulseBlue 1.8s ease-in-out infinite;
+}
+
+/* WHEN circle button */
 
 .whenBtn {
-  flex: 1;
-  height: 48px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.42), rgba(139, 92, 246, 0.22));
-  border: 1.5px solid rgba(139, 92, 246, 0.40);
-  border-radius: 12px;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  background: rgba(139, 92, 246, 0.95);
+  border: 2px solid rgba(139, 92, 246, 0.6);
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 0 10px;
-  overflow: hidden;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .whenBtnActive {
-  border-color: rgba(139, 92, 246, 0.85);
+  background: var(--gh-violet);
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.4), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* Nav button icon */
-
-.navBtnIcon {
-  width: 54px;
-  height: 54px;
-  object-fit: contain;
-  flex-shrink: 0;
+@keyframes glowPulseViolet {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 10px 2px rgba(139, 92, 246, 0.5); }
+  50%       { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 22px 6px rgba(139, 92, 246, 0.8); }
 }
 
-.navBtnIconWhere {
-  filter: drop-shadow(0 0 3px rgba(6, 182, 212, 0.5));
+.whenBtnUnanswered {
+  animation: glowPulseViolet 1.8s ease-in-out infinite;
 }
 
-.navBtnIconWhen {
-  filter: drop-shadow(0 0 3px rgba(139, 92, 246, 0.5));
-}
+/* Tag overlaid at top of circle — shows label OR answer */
 
-.navBtnLabel {
+.navBtnCircleWrap {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin: 0 4px;
 }
 
-.navBtnText {
+.navBtnOverlayTag {
+  border-radius: 999px;
+  padding: 3px 10px;
   font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  line-height: 1.1;
-}
-
-.navBtnValue {
-  font-size: 12px;
-  font-weight: 700;
-  color: #ffffff;
-  max-width: 70px;
+  text-align: center;
+  line-height: 1.3;
+  width: 80px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  pointer-events: none;
 }
 
-.navBtnValueNumeric {
-  font-variant-numeric: tabular-nums;
+.navBtnOverlayTagWhere {
+  background: rgba(6, 182, 212, 0.92);
+  color: #fff;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.navBtnOverlayTagWhen {
+  background: rgba(139, 92, 246, 0.92);
+  color: #fff;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.navBtnOverlayTagAnswer {
+  text-transform: none;
+  letter-spacing: 0.2px;
+  font-size: 12px;
 }
 
 /* Submit button */
 
 .submitBtn {
   flex: 1;
-  height: 48px;
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.90);
+  height: 56px;
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.70);
   font-size: 14px;
   font-weight: 700;
+  font-style: italic;
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -667,27 +686,24 @@
   justify-content: center;
   gap: 6px;
   padding: 0 10px;
-  position: relative;
-  overflow: hidden;
-  border: 1.5px solid rgba(249, 115, 22, 0.40);
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.16), rgba(0, 0, 0, 0.45));
-  opacity: 0.9;
-  transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  border: 1.5px solid rgba(249, 115, 22, 0.55);
+  background: rgba(249, 115, 22, 0.25);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  align-self: flex-end;
 }
 
 .submitBtnReady {
-  border-color: rgba(249, 115, 22, 0.85);
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.42), rgba(249, 115, 22, 0.22));
-  opacity: 1;
+  border-color: var(--gh-orange);
+  background: var(--gh-orange);
+  color: #ffffff;
 }
 
 .submitBtnSubmitted {
   border-color: rgba(255, 255, 255, 0.20);
-  background: rgba(255, 255, 255, 0.15);
-  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.55);
 }
 
-/* Glow pulse animation for submit when ready */
 @keyframes glowPulse {
   0%, 100% { box-shadow: 0 0 8px 2px rgba(255, 138, 0, 0.5); }
   50%       { box-shadow: 0 0 20px 6px rgba(255, 174, 66, 0.85); }

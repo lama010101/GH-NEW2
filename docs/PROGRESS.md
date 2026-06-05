@@ -76,6 +76,7 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | MP-FIX-BUILD-RESULTPHASE-001 | DONE | partykit/server.ts | Fixed TypeScript build error: Property 'resultPhaseEndsAt' does not exist on type 'RuntimeState'. Changed broadcastStateUpdate() to compute resultPhaseEndAt into a local variable before assigning to snapshotWithReadyState, then guard against this.snapshot instead of snapshotWithReadyState to avoid type-narrowing back to RuntimeState which lacks the broadcast-only field. Validation: tsc --noEmit exits code 0, grep for snapshotWithReadyState.resultPhaseEndsAt returns 0. Date: 2026-05-11 |
 | MP-FIX-ADVANCE-002 | DONE | partykit/server.ts | Add ROUND_COMPLETE broadcast invariant guard. Added assertion in broadcastStateUpdate() to log error if resultPhaseEndsAt is not set when broadcasting ROUND_COMPLETE snapshot. Guard is placed after snapshotWithReadyState construction and before JSON.stringify. Does not throw or block broadcast. Validation: grep shows exactly 1 match for "INVARIANT VIOLATION" inside broadcastStateUpdate(). Date: 2026-05-11 |
 | MP-FIX-ADVANCE-001 | DONE | partykit/server.ts | Fix resultPhaseStartAt presence check. Replaced transition guard (this.snapshot.status !== "ROUND_COMPLETE" check) with presence check (resultPhaseStartAt === null) in applySnapshotAndBroadcast. Removed duplicate manual set in triggerRoundExpiry. Validation: grep shows resultPhaseStartAt only in applySnapshotAndBroadcast (set + clear), loadFromDB (restore), class property, and broadcastStateUpdate (usage). No line in triggerRoundExpiry. Date: 2026-05-11 |
+| MP-STYLE-SESSIONCOMPLETE-001 | DONE | src/components/compete/SessionComplete.module.css (new), src/components/compete/SessionComplete.tsx | Migrated 440-line injected <style> block and all inline style={{}} occurrences to CSS module. Import added line 10. Return block (lines 110-867) and GuestPlayAgainButton (lines 869-882) replaced with module-class versions. 8 permitted dynamic inline styles remain (HSL color computations, getUsernameGradientStyle spread, progress fill width). Zero <style> tags remain. tsc exits 0. Date: 2026-06-04 |
 | MP-FIX-NOGUESS-001 | DONE | src/components/compete/WhereCard.tsx, src/components/compete/WhenCard.tsx | Show "No guess" in WHERE and WHEN cards when player did not submit. WHERE card: replaced accuracy % with "—" in muted color #666, replaced distance with "No guess" in muted color #666, excluded current player from map markers. WHEN card: replaced accuracy % with "—" in muted color #666, excluded current player from timeline markers. Validation: npx next build exits code 0. Date: 2026-05-11 |
 | MP-FIX-AUTOSUBMIT-001 | DONE | src/app/compete/[gameId]/page.tsx | Fixed auto-submit regression by adding ref resets to round reset useEffect. Added guessYearRef.current = null after setGuessYear(null), guessLatRef.current = null after setGuessLat(null), guessLngRef.current = null after setGuessLng(null). This prevents stale ref values from previous round being used in auto-submit. Validation: grep confirms all three ref resets present in round reset effect, npx next build exits code 0 with zero errors. Date: 2026-05-11 |
 | MP-FIX-BUILD-PERMANENT | DONE | src/app/page.tsx, src/hooks/useCompeteSocket.ts, src/hooks/useCompeteTimer.ts, src/app/compete/[gameId]/page.tsx, src/components/compete/BadgePopup.tsx, src/components/compete/PlayerAvatar.tsx, src/components/compete/RoundCompleteSection.tsx, src/components/compete/SessionComplete.tsx, src/app/profile/page.tsx | Permanently fixed Vercel build by fixing actual errors and suppressing acceptable warnings. PART 1: Fixed 2 `any` type errors in page.tsx lines 572-573 by replacing with proper type cast (identity as { status: string; playerId: string; displayName: string }). PART 2: Added eslint-disable-next-line comments to suppress persistent warnings: react-hooks/exhaustive-deps in useCompeteSocket.ts (lines 112, 137) and useCompeteTimer.ts (lines 87, 105); @next/next/no-img-element in page.tsx (lines 511, 537), BadgePopup.tsx (lines 142, 154, 182), PlayerAvatar.tsx (line 30), RoundCompleteSection.tsx (line 114), SessionComplete.tsx (lines 557, 627, 684), profile/page.tsx (line 405), and compete/[gameId]/page.tsx (line 488). Build validation: npx next build exits code 0 with "✓ Compiled successfully" and zero errors. Date: 2026-05-11 |
@@ -1735,3 +1736,32 @@ FILES MODIFIED:
 
 MP-UI-BADGE-INLINE-001 | Add inline badge chips to accuracy card, WhereCard, and WhenCard | Modified: RoundCompleteSection.tsx, WhereCard.tsx, WhenCard.tsx | Added badge chip JSX components for combo, location, and year dimensions
 | MP-STYLE-AUTHMODAL-001 | Migrate AuthModal.tsx inline styles to CSS module | AuthModal.module.css + AuthModal.tsx | DONE | 2026-06-04 |
+| MP-FEAT-FRIENDS-001 | Create player_follows table + follow/unfollow API routes | supabase/migrations/037_create_player_follows.sql, src/app/api/players/follow/route.ts | DONE | 2026-06-04 |
+| MP-FEAT-FRIENDS-002 | Add follow/unfollow star button to lobby player search results | src/components/compete/LobbySection.tsx, src/components/compete/LobbySection.module.css | DONE | 2026-06-04 |
+| MP-FIX-FRIENDS-003 | Fix follow state persistence and sort favorites first in lobby search | src/components/compete/LobbySection.tsx | DONE | 2026-06-04 |
+
+| MP-FIX-FRIENDS-004 | Diagnose and fix follow persistence + move star to avatar top-right | DONE | 2026-06-04 |
+| MP-STYLE-HOMEPAGE-001 | DONE | home.module.css + page.tsx | Migrate home page.tsx inline styles to home.module.css | 2026-06-04 |
+
+| MP-FIX-FRIENDS-005 | Fix GET /api/players/follow returning empty due to missing credentials in fetch | DONE | 2026-06-04 |
+| MP-FIX-LINT-002 | DONE | src/app/api/players/follow/route.ts | Fix pre-existing ESLint errors in players/follow/route.ts | 2026-06-04 |
+| MP-FIX-FRIENDS-006 | Diagnose auth failure in GET /api/players/follow and fix + resize stars | DONE | 2026-06-05 |
+| MP-FIX-FRIENDS-007 | Replace GET /api/players/follow with direct Supabase client query in LobbySection | DONE | 2026-06-05 |
+
+| MP-STYLE-NAVMODAL-001 | DONE | NavModal.module.css + NavModal.tsx | Migrate NavModal.tsx inline styles to CSS module | 2026-06-05 |
+
+| MP-STYLE-LOBBY-TOKENS-001 | DONE | LobbySection.module.css | Replace hardcoded hex colors with design tokens in LobbySection.module.css | 2026-06-05 |
+
+| MP-UI-NAVBAR-REDESIGN-001 | Redesign WHERE/WHEN navbar buttons as large CTA with always-visible labels | RoundActiveSection.module.css + RoundActiveSection.tsx | DONE | 2026-06-05 |
+| MP-UI-NAVBAR-FIX-001 | Fix navbar — opaque circles, floating labels, SVG icons, hints count | RoundActiveSection.module.css + RoundActiveSection.tsx | DONE | 2026-06-05 |
+| MP-FIX-AUTH-MODAL-HANG-001 | DONE | src/components/AuthModal.tsx, src/app/page.tsx | Fixed Google OAuth modal hang (missing setLoading reset on isOpen=false). Wired subscribeToIdentityChanges in page.tsx to call setShowAuthModal(false) on SIGNED_IN — modal now closes reactively regardless of auth path. |
+| MP-UI-NAVBAR-FIX-002 | Fix navbar label visibility and answer placement | RoundActiveSection.module.css + RoundActiveSection.tsx | DONE | 2026-06-05 |
+| MP-UI-NAVBAR-FIX-003 | Increase answer tag font, improve inactive submit visibility | RoundActiveSection.module.css | DONE | 2026-06-05 |
+| MP-UI-NAVBAR-FIX-004 | Fix answer tag overlapping circle — stacked layout | RoundActiveSection.module.css | DONE | 2026-06-05 |
+| MP-UI-NAVBAR-FIX-005 | Fix navbar alignment and cap answer tag overflow | RoundActiveSection.module.css | DONE | 2026-06-05 |
+
+# MP-FIX-BADGE-GETSTATE-001
+- **File Modified**: src/server/getGameState.ts
+- **Result**: Added badges and nearMisses to ResultState type and construction. Import calculateBadges and evaluateNearMisses from @/core/rules. Extended results parsing to compute badges/nearMisses using accuracy scores.
+| MP-FIX-TIMER-OFF-002 | src/hooks/useCompeteTimer.ts | disable timer hook when roundTimerSec=0 | DONE
+| MP-FIX-TIMER-OFF-003 | src/components/compete/RoundActiveSection.tsx | hide timer display and fix division-by-zero when roundTimerSec=0 | DONE
