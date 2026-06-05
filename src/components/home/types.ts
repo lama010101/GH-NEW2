@@ -30,8 +30,8 @@ export const MODE_CARD_TITLE: Record<string, string> = {
 }
 
 export const MODE_CARD_SUBTITLE: Record<string, string> = {
-  compete:  'Asynchronous history duels.\nPlay against real people, on your time.',
-  daily:    'A new challenge every day.\nCan you keep your streak alive?',
+  compete:  'Play against your friends.\nLive Blitz or turn-based Relax modes.\nGroups of up to 12 or more friends',
+  daily:    'A new challenge every day.\nSame events for everyone\nClimb the leaderboard',
   levelup:  'Progressive runs.\nBeat levels and earn XP.\nUnlock new challenges.',
   practice: 'Solo warm-up.\nHone your skills with\nunlimited practice games.',
 }

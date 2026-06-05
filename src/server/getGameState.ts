@@ -17,6 +17,7 @@ import {
   type RoundEvent
 } from "./eventStream";
 import type { RoundEventContent, EventHint } from "@/core/types";
+import { calculateBadges, evaluateNearMisses } from "@/core/rules";
 
 // Re-export for backwards compatibility
 export { VALID_PHASE_TRANSITIONS, deriveStateFromEventStream, type RoundEvent };
@@ -74,6 +75,9 @@ export type ResultState = {
   yearDiff: number | null;
   locationScore: number | null;
   timeScore: number | null;
+  didSubmit: boolean;
+  badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>;
+  nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>;
 };
 
 /** Round state with all DB-derived data */
@@ -327,6 +331,11 @@ export async function getGameState(
   // ───────────────────────────────────────────────────────────────────────────
   const resultsByRound = new Map<number, ResultState[]>();
   for (const r of resultsJson) {
+    const locationAccuracy = Math.round((r.location_score as number | null) ?? 0);
+    const yearAccuracy = Math.round((r.time_score as number | null) ?? 0);
+    const comboAccuracy = Math.min(locationAccuracy, yearAccuracy);
+    const badges = calculateBadges({ yearAccuracy, locationAccuracy, comboAccuracy });
+    const nearMisses = evaluateNearMisses(yearAccuracy, locationAccuracy, comboAccuracy, badges);
     const resultState: ResultState = {
       playerId: r.player_id as string,
       score: r.score as number,
@@ -334,7 +343,10 @@ export async function getGameState(
       distanceKm: r.distance_km as number | null,
       yearDiff: r.year_diff as number | null,
       locationScore: r.location_score as number | null,
-      timeScore: r.time_score as number | null
+      timeScore: r.time_score as number | null,
+      didSubmit: (r.year_diff as number | null) !== null,
+      badges,
+      nearMisses,
     };
     const roundIndex = r.round_index as number;
     if (!resultsByRound.has(roundIndex)) {

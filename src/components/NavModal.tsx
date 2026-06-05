@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import styles from './NavModal.module.css'
 
 interface NavModalProps {
   isOpen: boolean
@@ -43,122 +44,53 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 1000,
-          background: 'rgba(0,0,0,0.55)',
-          backdropFilter: 'blur(3px)',
-        }}
-      />
+      <div className={styles.backdrop} onClick={onClose} />
 
-      {/* Close button - outside modal */}
       <button
         onClick={onClose}
-        style={{
-          position: 'fixed', top: 20, right: 20,
-          zIndex: 1002,
-          background: 'rgba(255,255,255,0.1)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: 12,
-          cursor: 'pointer',
-          color: '#fff', fontSize: 24, lineHeight: 1, padding: 10,
-          backdropFilter: 'blur(10px)',
-        }}
+        className={styles.closeBtn}
         aria-label="Close"
       >✕</button>
 
-      {/* Modal panel */}
-      <div style={{
-        position: 'fixed', top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 1001,
-        width: 'min(340px, 90vw)',
-        background: '#111',
-        borderRadius: 18,
-        padding: '28px 0 8px',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.7)',
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}>
+      <div className={styles.panel}>
 
-        {/* Avatar */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: '50%', overflow: 'hidden',
-            border: '2.5px solid rgba(180,140,255,0.6)',
-            background: 'linear-gradient(135deg,#c45,#89b)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: 12,
-          }}>
+        <div className={styles.avatarSection}>
+          <div className={styles.avatarRing}>
             {avatarUrl
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <span style={{ color: '#fff', fontSize: 26, fontWeight: 700 }}>{initials.slice(0, 2)}</span>
+              ? <img src={avatarUrl} alt="" className={styles.avatarImg} />
+              : <span className={styles.avatarInitials}>{initials.slice(0, 2)}</span>
             }
           </div>
-          <span style={{ color: '#c084fc', fontSize: 17, fontWeight: 600 }}>{displayName}</span>
+          <span className={styles.displayName}>{displayName}</span>
         </div>
 
-        {/* Divider */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 0 6px' }} />
+        <div className={styles.divider} />
 
-        {/* Menu items */}
         {ITEMS.map(({ label, icon, action }) => (
           <button
             key={label}
             onClick={action}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 16,
-              width: '100%', padding: '14px 24px',
-              background: label === 'Home' ? '#f97316' : 'none',
-              border: label === 'Home' ? 'none' : 'none',
-              cursor: 'pointer',
-              color: '#fff', fontSize: 16, fontWeight: label === 'Home' ? 600 : 400,
-              textAlign: 'left',
-              borderRadius: label === 'Home' ? 8 : 0,
-            }}
-            onMouseEnter={e => {
-              if (label !== 'Home') {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
-              } else {
-                e.currentTarget.style.background = '#ea580c'
-              }
-            }}
-            onMouseLeave={e => {
-              if (label !== 'Home') {
-                e.currentTarget.style.background = 'none'
-              } else {
-                e.currentTarget.style.background = '#f97316'
-              }
-            }}
+            className={`${styles.menuItem} ${label === 'Home' ? styles.menuItemHome : ""}`}
           >
-            <span style={{ opacity: label === 'Home' ? 1 : 0.75, flexShrink: 0 }}>{icon}</span>
+            <span className={label === 'Home' ? styles.menuItemIconHome : styles.menuItemIcon}>
+              {icon}
+            </span>
             {label}
           </button>
         ))}
 
-        {/* Divider */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '6px 0' }} />
+        <div className={styles.dividerBottom} />
 
-        {/* Sign out */}
         <button
+          className={styles.signOutBtn}
           onClick={async () => {
             const { signOut } = await import('@/core/identity')
             await signOut()
             onClose()
           }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 16,
-            width: '100%', padding: '14px 24px',
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#ef4444', fontSize: 16, fontWeight: 500,
-            textAlign: 'left',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.08)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
         >
-          <span style={{ opacity: 0.85, flexShrink: 0 }}>{SIGNOUT_ICON}</span>
+          <span className={styles.signOutIcon}>{SIGNOUT_ICON}</span>
           Sign Out
         </button>
 

@@ -33,9 +33,6 @@ export function DailyPanel({ onPlay }: { onPlay: () => void }) {
           New challenge in <span style={{ color: '#fb923c' }}>{countdown}</span>
         </span>
       </div>
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5, padding: '0 2px' }}>
-        Same events for everyone · Global leaderboard
-      </div>
     </div>
   )
 }

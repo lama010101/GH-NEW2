@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import styles from "./AuthModal.module.css";
 
@@ -19,6 +19,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotSent, setForgotSent] = useState(false);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setLoading(false);
+      setError(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   async function handleGoogleSignIn() {
@@ -36,6 +43,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setError(error.message);
       setLoading(false);
     }
+    // On success: browser redirects to Google. Loading stays true intentionally
+    // until the redirect happens. The overlay click handler (onClose) and the
+    // useEffect below in page.tsx will recover if the user returns without completing.
   }
 
   async function handleEmailAuth() {

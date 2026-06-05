@@ -22,7 +22,12 @@ function HomePageInner() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   useEffect(() => {
     bootstrapIdentity().then(setIdentity)
-    return subscribeToIdentityChanges(setIdentity)
+    return subscribeToIdentityChanges((state) => {
+      setIdentity(state);
+      if (state.status === 'ready') {
+        setShowAuthModal(false);
+      }
+    });
   }, [])
 
   const [accuracy, setAccuracy] = useState('--')
@@ -79,31 +84,34 @@ function HomePageInner() {
   const displayName = (identity as { status: string; playerId: string; displayName: string }).displayName ?? 'Player'
 
   return (
-    <div style={{ width: '100vw', minHeight: '100vh', position: 'relative', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: '#0a0a0a' }}>
+    <div className={styles.pageRoot}>
 
       {/* Background */}
-      <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'url(/home_background.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0,0,0,0.8)' }} />
+      <div aria-hidden="true" className={styles.bgImage} />
+      <div className={styles.bgOverlay} />
 
       {/* Top bar */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(0,0,0,0.6)' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Image src="/icons/logo.webp" alt="Guess-History" width={120} height={32} style={{ objectFit: 'contain' }} priority />
+      <div className={styles.topbar}>
+        <div className={styles.topbarLeft}>
+          <Image src="/icons/logo.webp" alt="Guess-History" width={120} height={32} className={styles.logoImg} priority />
         </div>
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '6px 14px' }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{accuracy}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 2 }}>%</span></span>
-          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>|</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#f0c060' }}>{xp}<span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 2 }}>XP</span></span>
+        <div className={styles.xpPill}>
+          <span className={styles.xpPillAccuracy}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
+          <span className={styles.xpPillDivider}>|</span>
+          <span className={styles.xpPillXp}>{xp}<span className={styles.xpPillSuffix}>XP</span></span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className={styles.topbarRight}>
           <NotificationBell />
-          <button onClick={() => { if (identity.status !== 'ready') { setShowAuthModal(true); return } setShowNavModal(true) }} style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.4)', background: 'linear-gradient(135deg,#c45,#89b)', cursor: 'pointer', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button
+            onClick={() => { if (identity.status !== 'ready') { setShowAuthModal(true); return } setShowNavModal(true) }}
+            className={styles.avatarBtn}
+          >
             {avatarUrl
               ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <img src={avatarUrl} alt="" className={styles.avatarBtnImg} />
               )
-              : <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{initials.slice(0,2)}</span>
+              : <span className={styles.avatarBtnInitials}>{initials.slice(0,2)}</span>
             }
           </button>
         </div>
@@ -112,19 +120,7 @@ function HomePageInner() {
       {/* Scrollable content area */}
       <div className={styles['page-scroll']}>
         {/* Tagline */}
-        <div style={{
-          width: '100%',
-          maxWidth: 480,
-          padding: '0px 16px 12px',
-          boxSizing: 'border-box' as const,
-          textAlign: 'center',
-          color: '#ffffff',
-          fontSize: 22,
-          fontWeight: 500,
-          letterSpacing: '0.1px',
-          lineHeight: 1.2,
-          margin: '0 auto',
-        }}>
+        <div className={styles.tagline}>
           Where and when did it happen?
         </div>
 
@@ -225,7 +221,7 @@ function ModeCard({
           src={getIconSrc()}
           alt={title}
           fill
-          style={{ objectFit: 'contain' }}
+          className={styles.cardIconImg}
           sizes="180px"
         />
       </div>
