@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useIdentity } from '@/hooks/useIdentity';
 import { signOut } from '@/core/identity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
+import styles from './profile.module.css';
 
 
 type ProfileHistoricalAvatar = {
@@ -186,13 +187,13 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen pb-[60px] relative" style={{ background: 'var(--gh-bg-base)', color: 'var(--gh-text-primary)' }}>
+    <div className={`min-h-screen pb-[60px] relative ${styles.page}`}>
 
       {/* 1. HERO BACKGROUND */}
-      <div className="absolute top-0 left-0 right-0 h-[280px] bg-gradient-to-b from-[#0d1530] to-[#09090b] z-0" />
+      <div className={`absolute top-0 left-0 right-0 h-[280px] bg-gradient-to-b z-0 ${styles.heroBg}`} />
 
       {/* 2. TOP BAR */}
-      <div className="fixed top-0 left-0 right-0 px-6 py-4 flex items-center justify-between z-[100] bg-[#09090b]">
+      <div className={`fixed top-0 left-0 right-0 px-6 py-4 flex items-center justify-between z-[100] ${styles.topBar}`}>
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-sm bg-transparent border-none cursor-pointer font-semibold text-white"
@@ -274,7 +275,7 @@ export default function ProfilePage() {
                 ? Math.round(Number(profileData.avgAccuracy)) + '%'
                 : '—',
             label: 'Avg accuracy',
-            color: 'text-[color:var(--gh-orange)]'
+            color: styles.statColorOrange
           },
           {
             value: profileData.totalXp === null
@@ -283,14 +284,14 @@ export default function ProfilePage() {
                 ? profileData.totalXp.toLocaleString() + ' XP'
                 : '—',
             label: 'Total XP',
-            color: 'text-[#f0c060]'
+            color: styles.statColorGold
           },
           {
             value: profileData.gamesPlayed === null
               ? '...'
               : profileData.gamesPlayed.toLocaleString(),
             label: 'Games played',
-            color: 'text-[#c084fc]'
+            color: styles.statColorViolet
           },
           {
             value: profileData.roundsPlayed === null
@@ -299,14 +300,14 @@ export default function ProfilePage() {
                 ? profileData.roundsPlayed.toLocaleString()
                 : '—',
             label: 'Rounds played',
-            color: 'text-[#14b8a6]'
+            color: styles.statColorTeal
           }
         ].map((stat, i) => (
           <div
             key={i}
             className="bg-white/[0.04] border border-white/[0.09] rounded-xl py-3.5 px-4 text-center"
           >
-            <div className={`font-bebas text-2xl font-extrabold ${stat.color}`}>
+            <div className={`font-bebas text-2xl font-extrabold ${stat.color ?? ''}`}>
               {stat.value}
             </div>
             <div className="text-xs mt-1 text-white/45">
@@ -331,7 +332,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-[#c084fc]"
+                      className={`h-full rounded-full ${styles.barFillViolet}`}
                       style={{ width: `${item.avgAccuracy}%` }}
                     />
                   </div>
@@ -351,18 +352,18 @@ export default function ProfilePage() {
           <h3 className={`font-bebas text-sm font-bold mb-4`}>Badge collection</h3>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: 'Gold', count: null, color: '#f0c060' },
-              { label: 'Silver', count: null, color: '#94a3b8' },
-              { label: 'Bronze', count: null, color: '#cd7c4a' },
-              { label: 'Year', count: null, color: '#f0c060', sub: 'gold' },
-              { label: 'Location', count: null, color: '#f0c060', sub: 'gold' },
-              { label: 'Combo', count: null, color: '#f0c060', sub: 'gold' }
+              { label: 'Gold', count: null, colorClass: styles.badgeColorGold },
+              { label: 'Silver', count: null, colorClass: styles.badgeColorSilver },
+              { label: 'Bronze', count: null, colorClass: styles.badgeColorBronze },
+              { label: 'Year', count: null, colorClass: styles.badgeColorGold, sub: 'gold' },
+              { label: 'Location', count: null, colorClass: styles.badgeColorGold, sub: 'gold' },
+              { label: 'Combo', count: null, colorClass: styles.badgeColorGold, sub: 'gold' }
             ].map((badge, i) => (
               <div 
                 key={i}
                 className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]"
               >
-                <div className={`font-bebas text-lg font-bold`} style={{ color: badge.color }}>
+                <div className={`font-bebas text-lg font-bold ${badge.colorClass}`}>
                   {badge.count ?? '—'}
                 </div>
                 <div className="text-[10px] mt-1 text-white/45">
@@ -392,7 +393,7 @@ export default function ProfilePage() {
             
             {/* Level Up */}
             <div className="p-4 rounded-xl relative overflow-hidden bg-purple-900/30 border border-purple-400/30">
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#c084fc]" />
+              <div className={`absolute top-0 left-0 right-0 h-0.5 ${styles.accentBarViolet}`} />
               <div className={`font-bebas text-lg font-bold mb-2`}>Level Up</div>
               <div className="flex flex-col gap-1 items-center py-4">
                 <div className="text-sm text-white/35">—</div>
@@ -402,7 +403,7 @@ export default function ProfilePage() {
             
             {/* Compete */}
             <div className="p-4 rounded-xl relative overflow-hidden bg-teal-500/25 border border-teal-500/30">
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#14b8a6]" />
+              <div className={`absolute top-0 left-0 right-0 h-0.5 ${styles.accentBarTeal}`} />
               <div className={`font-bebas text-lg font-bold mb-2`}>Compete</div>
               <div className="flex flex-col gap-1 items-center py-4">
                 <div className="text-sm text-white/35">—</div>
@@ -430,7 +431,7 @@ export default function ProfilePage() {
             {/* Level Up */}
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/60">Level Up</span>
-              <span className={`font-bebas text-sm font-bold text-[#c084fc]`}>
+              <span className={`font-bebas text-sm font-bold ${styles.leaderboardViolet}`}>
                 {profileData.levelUpCurrentLevel === null
                   ? '—'
                   : `Level ${profileData.levelUpCurrentLevel} · ${profileData.levelUpBestAccuracy ?? 0}% best`}
@@ -452,21 +453,21 @@ export default function ProfilePage() {
           <h3 className={`font-bebas text-sm font-bold mb-4`}>History collection</h3>
           <div className="grid grid-cols-4 gap-3 mb-6">
             <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
-              <div className="font-bebas text-xl font-bold" style={{ color: 'var(--gh-orange)' }}>
+              <div className={`font-bebas text-xl font-bold ${styles.historyColorOrange}`}>
                 {progressData?.eventsSeenCount?.toLocaleString() ?? '—'}
               </div>
               <div className="text-[10px] mt-1 text-white/45">Events seen</div>
             </div>
             {[
-              { label: 'Rated', color: '#c084fc' },
-              { label: 'Regions', color: '#14b8a6' },
-              { label: 'Countries', color: '#f0c060' }
+              { label: 'Rated', colorClass: styles.historyColorViolet },
+              { label: 'Regions', colorClass: styles.historyColorTeal },
+              { label: 'Countries', colorClass: styles.historyColorGold }
             ].map((item, i) => (
               <div
                 key={i}
                 className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]"
               >
-                <div className="font-bebas text-xl font-bold" style={{ color: item.color }}>—</div>
+                <div className={`font-bebas text-xl font-bold ${item.colorClass}`}>—</div>
                 <div className="text-[10px] mt-1 text-white/45">{item.label}</div>
               </div>
             ))}
@@ -483,7 +484,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[color:var(--gh-orange)]"
+                        className={`h-full rounded-full ${styles.barFillOrange}`}
                         style={{ width: `${item.avgAccuracy}%` }}
                       />
                     </div>
@@ -508,9 +509,9 @@ export default function ProfilePage() {
               progressData.byCentury.map((item) => (
                 <div
                   key={item.century}
-                  className="py-3 px-3 rounded-lg text-center bg-[rgba(251,146,60,0.1)] border border-[rgba(251,146,60,0.2)]"
+                  className={`py-3 px-3 rounded-lg text-center border ${styles.centuryChip}`}
                 >
-                  <div className="font-bebas text-sm font-bold text-[color:var(--gh-orange)]">
+                  <div className={`font-bebas text-sm font-bold ${styles.historyColorOrange}`}>
                     {item.century}
                   </div>
                   <div className="text-xs mt-0.5 text-white/45">
@@ -522,9 +523,9 @@ export default function ProfilePage() {
               ['2000s', '1900s', '1800s', '1700s', '1500s', 'pre-1500'].map((label) => (
                 <div
                   key={label}
-                  className="py-3 px-3 rounded-lg text-center bg-[rgba(251,146,60,0.1)] border border-[rgba(251,146,60,0.2)]"
+                  className={`py-3 px-3 rounded-lg text-center border ${styles.centuryChip}`}
                 >
-                  <div className="font-bebas text-sm font-bold text-[color:var(--gh-orange)]">{label}</div>
+                  <div className={`font-bebas text-sm font-bold ${styles.historyColorOrange}`}>{label}</div>
                   <div className="text-xs mt-0.5 text-white/45">—</div>
                 </div>
               ))

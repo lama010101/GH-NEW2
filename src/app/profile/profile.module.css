@@ -1,0 +1,81 @@
+.page {
+  background: var(--gh-bg-base);
+  color: var(--gh-text-primary);
+}
+
+.heroBg {
+  background: linear-gradient(to bottom, #0d1530, #09090b);
+}
+
+.topBar {
+  background: #09090b;
+}
+
+.statColorOrange {
+  color: var(--gh-orange);
+}
+
+.statColorGold {
+  color: var(--gh-gold);
+}
+
+.statColorViolet {
+  color: var(--gh-violet);
+}
+
+.statColorTeal {
+  color: var(--gh-teal);
+}
+
+.barFillViolet {
+  background: var(--gh-violet);
+}
+
+.barFillOrange {
+  background: var(--gh-orange);
+}
+
+.badgeColorGold {
+  color: var(--gh-badge-gold);
+}
+
+.badgeColorSilver {
+  color: var(--gh-badge-silver);
+}
+
+.badgeColorBronze {
+  color: var(--gh-badge-bronze);
+}
+
+.accentBarViolet {
+  background: var(--gh-violet);
+}
+
+.accentBarTeal {
+  background: var(--gh-teal);
+}
+
+.leaderboardViolet {
+  color: var(--gh-violet);
+}
+
+.centuryChip {
+  background: rgba(251, 146, 60, 0.1);
+  border-color: rgba(251, 146, 60, 0.2);
+}
+
+.historyColorOrange {
+  color: var(--gh-orange);
+}
+
+.historyColorViolet {
+  color: var(--gh-violet);
+}
+
+.historyColorTeal {
+  color: var(--gh-teal);
+}
+
+.historyColorGold {
+  color: var(--gh-gold);
+}

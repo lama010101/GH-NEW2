@@ -1776,6 +1776,8 @@ MP-UI-BADGE-INLINE-001 | Add inline badge chips to accuracy card, WhereCard, and
 - **File Modified**: src/components/compete/RoundCompleteSection.tsx
 - **Result**: Added debug console.log at line 66 to verify playerId match and roundResults state in RoundCompleteSection.
 
+| MP-INV-STYLE-003 | Phase 2 primitive components audit — button, input, card, modal inventory | N/A (audit only) | DONE | 2026-06-05 |
+
 # MP-DEBUG-BADGE-003
 - **File Modified**: src/components/compete/RoundCompleteSection.tsx
 - **Result**: Expanded DEBUG_MYRESULT log at line 66 to include badges, nearMisses, locationScore, and timeScore fields.
@@ -1792,6 +1794,13 @@ MP-UI-BADGE-INLINE-001 | Add inline badge chips to accuracy card, WhereCard, and
 | MP-FIX-VERCEL-BUILD-001 | src/server/sessionCore.ts | Fix TypeScript error: Type 'string | null' is not assignable to type 'string'. Changed advancePhaseEndsAt from string | null to string, using empty string "" instead of null when round_timer_sec === 0. Updated declaration and removed redundant nullish coalescing fallback. | DONE | 2026-06-05 |
 MP-INV-STYLE-001 IN PROGRESS
 MP-REFACTOR-STYLE-001 DONE
+
+| MP-REFACTOR-STYLE-002 | Migrate account/page.tsx inline styles to CSS module | src/app/account/page.tsx, src/app/account/account.module.css | DONE | 2026-06-05 |
+| MP-REFACTOR-STYLE-003 | Migrate profile/page.tsx remaining inline styles to CSS module | src/app/profile/page.tsx, src/app/profile/profile.module.css | DONE | 2026-06-05 |
+| MP-REFACTOR-STYLE-004 | Migrate WhereCard.tsx and WhenCard.tsx inline styles to CSS modules | WhereCard.tsx, WhenCard.tsx, WhereCard.module.css (created), WhenCard.module.css (updated) | DONE | 2026-06-05 |
+| MP-REFACTOR-STYLE-005 | Migrate HintModal.tsx inline styles to CSS module | HintModal.tsx, HintModal.module.css (created) | DONE | 2026-06-05 |
+| MP-REFACTOR-STYLE-006 | Fix CompetePanel.tsx cross-layer CSS import | CompetePanel.tsx, CompetePanel.module.css | DONE | 2026-06-05 |
+| MP-INV-STYLE-002 | Post-refactor style audit — verification grep | — | DONE | 2026-06-05 |
 
 # MP-FEAT-BADGE-VIEWPORT-001
 - **Task Title**: Trigger badge popup via IntersectionObserver when relevant cards enter viewport

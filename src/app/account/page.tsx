@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useIdentity } from '@/hooks/useIdentity'
 import { signOut } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
+import styles from './account.module.css'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
 
@@ -117,150 +118,103 @@ export default function AccountPage() {
   const isSaveDisabled = displayName.trim() === savedName.trim() || saving
 
   return (
-    <div className={dmSans.className} style={{ minHeight: '100vh', background: '#0f0e0c', color: '#f5f0e8' }}>
+    <div className={`${dmSans.className} ${styles.page}`}>
 
       {/* Top bar */}
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        background: '#0f0e0c',
-        padding: '16px 20px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-      }}>
+      <div className={styles.topBar}>
         <button
           onClick={() => router.back()}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f5f0e8', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
+          className={styles.backBtn}
         >
-          <span style={{ fontSize: 18 }}>←</span> Back
+          <span className={styles.backArrow}>←</span> Back
         </button>
-        <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: 0.5 }}>Account</span>
-        <div style={{ width: 60 }} />
+        <span className={styles.topBarTitle}>Account</span>
+        <div className={styles.topBarSpacer} />
       </div>
 
       {/* Avatar card */}
       {avatarInfo && (
-        <div style={{ maxWidth: 400, margin: '24px auto 0', padding: '0 20px' }}>
-          <div style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.09)',
-            borderRadius: 16,
-            padding: 20,
-            textAlign: 'center',
-          }}>
+        <div className={styles.avatarSection}>
+          <div className={styles.card}>
             {avatarInfo.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={avatarInfo.imageUrl}
                 alt={avatarInfo.name}
-                style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.15)', margin: '0 auto 12px' }}
+                className={styles.avatarImg}
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
               />
             ) : (
-              <div style={{ width: 96, height: 96, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 32, fontWeight: 700, background: 'rgba(255,255,255,0.08)' }}>
+              <div className={styles.avatarInitials}>
                 {getInitials(avatarInfo.name)}
               </div>
             )}
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#f5f0e8', marginBottom: 6 }}>{avatarInfo.name}</div>
+            <div className={styles.avatarName}>{avatarInfo.name}</div>
             {avatarInfo.description && (
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+              <div className={styles.avatarDescription}>
                 {avatarInfo.description}
               </div>
             )}
             {avatarInfo.bornLabel && (
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>{avatarInfo.bornLabel}</div>
+              <div className={styles.avatarMeta}>{avatarInfo.bornLabel}</div>
             )}
             {avatarInfo.diedLabel && (
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{avatarInfo.diedLabel}</div>
+              <div className={styles.avatarMetaLast}>{avatarInfo.diedLabel}</div>
             )}
           </div>
         </div>
       )}
 
       {/* Settings card */}
-      <div style={{ maxWidth: 400, margin: '16px auto 0', padding: '0 20px' }}>
-        <div style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: 16,
-          padding: 20,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 20,
-        }}>
+      <div className={styles.settingsSection}>
+        <div className={styles.settingsCard}>
           {/* Row 1 — Display name */}
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Username</div>
+            <div className={styles.fieldLabel}>Username</div>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'rgba(255,255,255,0.07)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: 8,
-                padding: '10px 14px',
-                color: '#f5f0e8',
-                fontSize: 15,
-                boxSizing: 'border-box',
-                outline: 'none',
-              }}
+              className={styles.input}
             />
             <button
               onClick={handleSave}
               disabled={isSaveDisabled}
+              className={styles.saveBtn}
               style={{
-                marginTop: 10,
-                width: '100%',
                 background: isSaveDisabled ? 'rgba(251,146,60,0.4)' : 'var(--gh-orange)',
-                color: '#0f0e0c',
-                fontWeight: 700,
-                borderRadius: 8,
-                padding: 10,
-                border: 'none',
-                fontSize: 15,
                 cursor: isSaveDisabled ? 'not-allowed' : 'pointer',
               }}
             >
               {saving ? 'Saving…' : 'Save'}
             </button>
             {saveResult === 'success' && (
-              <div style={{ marginTop: 6, fontSize: 13, color: '#22c55e' }}>✓ Saved</div>
+              <div className={styles.saveFeedbackSuccess}>✓ Saved</div>
             )}
             {saveResult === 'error' && (
-              <div style={{ marginTop: 6, fontSize: 13, color: '#ef4444' }}>Failed to save. Try again.</div>
+              <div className={styles.saveFeedbackError}>Failed to save. Try again.</div>
             )}
           </div>
 
           {/* Row 2 — Email */}
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Email</div>
-            <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>{email ?? '—'}</div>
+            <div className={styles.fieldLabelSmall}>Email</div>
+            <div className={styles.fieldValueItalic}>{email ?? '—'}</div>
           </div>
 
           {/* Row 3 — Member since */}
           <div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Member since</div>
-            <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)' }}>{formatDate(createdAt)}</div>
+            <div className={styles.fieldLabelSmall}>Member since</div>
+            <div className={styles.fieldValue}>{formatDate(createdAt)}</div>
           </div>
         </div>
       </div>
 
       {/* Sign out */}
-      <div style={{ maxWidth: 400, margin: '12px auto 0', padding: '0 20px 40px' }}>
+      <div className={styles.signOutSection}>
         <button
           onClick={handleSignOut}
-          style={{
-            width: '100%',
-            background: 'rgba(239,68,68,0.12)',
-            color: '#ef4444',
-            border: '1px solid rgba(239,68,68,0.3)',
-            borderRadius: 12,
-            padding: 14,
-            fontWeight: 600,
-            fontSize: 15,
-            cursor: 'pointer',
-          }}
+          className={styles.signOutBtn}
         >
           Sign out
         </button>

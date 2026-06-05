@@ -209,3 +209,77 @@
   font-size: 13px;
   font-weight: 700;
 }
+
+/* ── Copied from home.module.css — used by CompetePanel ── */
+
+.cardSubPanel {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.joinCodeInput {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(0, 100, 150, 0.25);
+  border: 1px solid rgba(0, 173, 193, 0.6);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-align: center;
+  outline: none;
+  box-sizing: border-box;
+  text-transform: uppercase;
+}
+
+.joinCodeInput::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.cardCtaRow {
+  display: flex;
+  gap: 12px;
+}
+
+.cardCtaBtn {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: opacity 0.15s;
+}
+
+.cardCtaBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cardCtaBtnBlue {
+  background: #ffffff;
+  color: #0891b2;
+  border: none;
+}
+
+.cardCtaBtnOutline {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.errorText {
+  font-size: 12px;
+  color: #f87171;
+  text-align: center;
+}

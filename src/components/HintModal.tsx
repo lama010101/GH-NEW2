@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import type { EventHint } from "@/core/types";
+import styles from "./HintModal.module.css";
 
 export type HintPurchaseResult = {
   purchasedIds: string[];
@@ -29,16 +30,16 @@ const TIER_PENALTIES = {
 
 // Icon SVG strings (from reference HTML)
 const ICONS = {
-  calendar: `<svg viewBox="0 0 13 13" fill="none"><rect x="1.2" y="2" width="10.6" height="10" rx="1.5" stroke="#888" stroke-width="1.1"/><path d="M4.3 1v2M8.7 1v2M1.2 5.3h10.6" stroke="#888" stroke-width="1.1" stroke-linecap="round"/></svg>`,
-  clock: `<svg viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#888" stroke-width="1.1"/><path d="M6.5 3.5v3l2 1.5" stroke="#888" stroke-width="1.1" stroke-linecap="round"/></svg>`,
-  trend: `<svg viewBox="0 0 13 13" fill="none"><path d="M2 9.5l3-4 2.5 2 4-5" stroke="#888" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-  ruler: `<svg viewBox="0 0 13 13" fill="none"><rect x="1" y="5" width="11" height="3" rx="1" stroke="#888" stroke-width="1.1"/><path d="M3.5 5V3.5M6.5 5V4M9.5 5V3.5" stroke="#888" stroke-width="1.1" stroke-linecap="round"/></svg>`,
-  tag: `<svg viewBox="0 0 13 13" fill="none"><path d="M2 2h5l4.5 4.5a1 1 0 010 1.4l-3.1 3.1a1 1 0 01-1.4 0L2.5 6.5V2H2z" stroke="#888" stroke-width="1.1"/><circle cx="4.5" cy="4.5" r=".8" fill="#888"/></svg>`,
-  globe: `<svg viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#888" stroke-width="1.1"/><path d="M1.5 6.5h10M6.5 1.5c-2 2-2 8 0 10M6.5 1.5c2 2-2 8 0 10" stroke="#888" stroke-width="1.1"/></svg>`,
-  mountain: `<svg viewBox="0 0 13 13" fill="none"><path d="M1.5 10.5l4-7 2.5 4 1.5-2 3 5H1.5z" stroke="#888" stroke-width="1.1" stroke-linejoin="round"/></svg>`,
-  flag: `<svg viewBox="0 0 13 13" fill="none"><path d="M3 11V2M3 2h7.5L8.5 5.5 10.5 9H3" stroke="#888" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-  lock: `<svg viewBox="0 0 10 10" fill="none"><rect x="1.5" y="4.5" width="7" height="5" rx="1" stroke="#888" stroke-width="1.1"/><path d="M3 4.5V3a2 2 0 014 0v1.5" stroke="#888" stroke-width="1.1"/></svg>`,
-  check: `<svg viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5l2.5 2.5 4-5" stroke="#7ed957" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  calendar: `<svg viewBox="0 0 13 13" fill="none"><rect x="1.2" y="2" width="10.6" height="10" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M4.3 1v2M8.7 1v2M1.2 5.3h10.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>`,
+  clock: `<svg viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.1"/><path d="M6.5 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>`,
+  trend: `<svg viewBox="0 0 13 13" fill="none"><path d="M2 9.5l3-4 2.5 2 4-5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  ruler: `<svg viewBox="0 0 13 13" fill="none"><rect x="1" y="5" width="11" height="3" rx="1" stroke="currentColor" stroke-width="1.1"/><path d="M3.5 5V3.5M6.5 5V4M9.5 5V3.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>`,
+  tag: `<svg viewBox="0 0 13 13" fill="none"><path d="M2 2h5l4.5 4.5a1 1 0 010 1.4l-3.1 3.1a1 1 0 01-1.4 0L2.5 6.5V2H2z" stroke="currentColor" stroke-width="1.1"/><circle cx="4.5" cy="4.5" r=".8" fill="currentColor"/></svg>`,
+  globe: `<svg viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.1"/><path d="M1.5 6.5h10M6.5 1.5c-2 2-2 8 0 10M6.5 1.5c2 2-2 8 0 10" stroke="currentColor" stroke-width="1.1"/></svg>`,
+  mountain: `<svg viewBox="0 0 13 13" fill="none"><path d="M1.5 10.5l4-7 2.5 4 1.5-2 3 5H1.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>`,
+  flag: `<svg viewBox="0 0 13 13" fill="none"><path d="M3 11V2M3 2h7.5L8.5 5.5 10.5 9H3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  lock: `<svg viewBox="0 0 10 10" fill="none"><rect x="1.5" y="4.5" width="7" height="5" rx="1" stroke="currentColor" stroke-width="1.1"/><path d="M3 4.5V3a2 2 0 014 0v1.5" stroke="currentColor" stroke-width="1.1"/></svg>`,
+  check: `<svg viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5l2.5 2.5 4-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 } as const;
 
 type TabType = "when" | "where";
@@ -62,7 +63,7 @@ function getHintLabel(hint: EventHint): string {
 }
 
 function penaltyBorderColor(pct: number): string {
-  if (pct === 0) return "#2a2a2a";
+  if (pct === 0) return "transparent";
   if (pct <= 20) return "rgba(126,217,87,0.4)";
   if (pct <= 40) return "rgba(232,192,34,0.4)";
   if (pct <= 60) return "rgba(232,119,34,0.4)";
@@ -141,21 +142,21 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
     }
   }, [isOpen, purchasedIds]);
 
-  // Get cost pill color class
+  // Get cost pill CSS module class
   const getCostClass = (tier: number): string => {
-    if (tier === 1) return "hint-cost-g";
-    if (tier === 2) return "hint-cost-y";
-    if (tier <= 4) return "hint-cost-o";
-    return "hint-cost-r";
+    if (tier === 1) return styles.costG;
+    if (tier === 2) return styles.costY;
+    if (tier <= 4) return styles.costO;
+    return styles.costR;
   };
 
-  // Get penalty color class
+  // Get penalty color CSS module class
   const getPenaltyColor = (pct: number): string => {
-    if (pct === 0) return "zero";
-    if (pct <= 20) return "g";
-    if (pct <= 40) return "y";
-    if (pct <= 60) return "o";
-    return "r";
+    if (pct === 0) return styles.zero;
+    if (pct <= 20) return styles.g;
+    if (pct <= 40) return styles.y;
+    if (pct <= 60) return styles.o;
+    return styles.r;
   };
 
   // Calculate penalties
@@ -222,484 +223,98 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
 
   return (
     <>
-      <style>{`
-        .hint-modal-root {
-          --modal-bg: rgba(255,255,255,0.82);
-          --modal-surface: rgba(255,255,255,0.60);
-          --modal-surface2: rgba(255,255,255,0.50);
-          --modal-surface3: rgba(255,255,255,0.65);
-          --modal-border: rgba(0,0,0,0.07);
-          --modal-border-md: rgba(0,0,0,0.10);
-          --modal-border-hi: rgba(0,0,0,0.16);
-          --modal-text: #111;
-          --modal-text-dim: #444;
-          --modal-text-muted: #888;
-          --modal-g: #16a34a;
-          --modal-y: #b45309;
-          --modal-o: #c2410c;
-          --modal-r: #dc2626;
-        }
-        /* TODO: light theme — add .light class overrides when theme system is implemented */
-        .hint-modal-backdrop {
-          position: fixed;
-          inset: 0;
-          background: rgba(255,255,255,0.35);
-          backdrop-filter: blur(18px) saturate(1.6);
-          -webkit-backdrop-filter: blur(18px) saturate(1.6);
-          z-index: 1000;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 16px;
-        }
-        .hint-modal {
-          width: 100%;
-          max-width: 460px;
-          background: rgba(255,255,255,0.78);
-          backdrop-filter: blur(28px) saturate(1.8);
-          -webkit-backdrop-filter: blur(28px) saturate(1.8);
-          border-radius: 20px;
-          border: 0.5px solid rgba(255,255,255,0.90);
-          box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 0 rgba(255,255,255,0.9) inset;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-          color: var(--modal-text);
-        }
-        .hint-modal-header {
-          padding: 14px 16px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 0.5px solid var(--modal-border);
-        }
-        .hint-modal-title {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-          font-weight: 700;
-          font-size: 14px;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          color: var(--modal-text);
-        }
-        .hint-modal-close {
-          width: 26px;
-          height: 26px;
-          border-radius: 50%;
-          background: rgba(0,0,0,0.08);
-          border: 0.5px solid rgba(0,0,0,0.12);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-        }
-        .hint-modal-close svg {
-          width: 10px;
-          height: 10px;
-        }
-        .hint-total-strip {
-          padding: 16px 18px 14px;
-          border-bottom: 0.5px solid var(--modal-border);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-        }
-        .hint-total-left {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-        .hint-total-lbl {
-          font-size: 10px;
-          font-weight: 500;
-          color: #999;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
-        .hint-total-big {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-          font-weight: 800;
-          font-size: 38px;
-          line-height: 1;
-          color: var(--modal-g);
-        }
-        .hint-total-big.y { color: var(--modal-y); }
-        .hint-total-big.o { color: var(--modal-o); }
-        .hint-total-big.r { color: var(--modal-r); }
-        .hint-total-big.zero { color: #333; }
-        .hint-total-right {
-          display: flex;
-          gap: 10px;
-        }
-        .hint-axis-pen {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 3px;
-          background: transparent;
-          border: 0.5px solid transparent;
-          border-radius: 10px;
-          padding: 8px 12px;
-        }
-        .hint-axis-icon {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-        .hint-axis-icon svg {
-          width: 10px;
-          height: 10px;
-          flex-shrink: 0;
-        }
-        .hint-axis-lbl {
-          font-size: 9px;
-          font-weight: 500;
-          color: #999;
-          text-transform: uppercase;
-          letter-spacing: 0.07em;
-        }
-        .hint-axis-val {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-          font-weight: 700;
-          font-size: 15px;
-          line-height: 1;
-          color: var(--modal-text);
-        }
-        .hint-axis-val--zero { color: #333; }
-        .hint-axis-val--g { color: #7ed957; }
-        .hint-axis-val--y { color: #e8c022; }
-        .hint-axis-val--o { color: #E87722; }
-        .hint-axis-val--r { color: #e84422; }
-        .hint-axis-track {
-          width: 56px;
-          height: 2px;
-          background: rgba(0,0,0,0.10);
-          border-radius: 2px;
-          overflow: hidden;
-          margin-top: 3px;
-        }
-        .hint-axis-fill {
-          height: 100%;
-          border-radius: 2px;
-          background: #fff;
-          transition: width 0.25s ease;
-        }
-        .hint-tab-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          margin: 12px 14px 0;
-          background: transparent;
-          border-radius: 0;
-          padding: 0;
-          border: none;
-          border-bottom: 0.5px solid rgba(0,0,0,0.10);
-        }
-        .hint-tab-btn {
-          padding: 9px 0;
-          border-radius: 0;
-          border: none;
-          border-bottom: 2px solid transparent;
-          background: transparent;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          transition: color 0.15s, border-color 0.15s;
-        }
-        .hint-tab-btn--when.active {
-          border-bottom: 2.5px solid #0ea5e9;
-        }
-        .hint-tab-btn--where.active {
-          border-bottom: 2.5px solid #22c55e;
-        }
-        .hint-tab-lbl {
-          font-size: 13px;
-          font-weight: 500;
-          color: rgba(0,0,0,0.40);
-        }
-        .hint-tab-btn--when.active .hint-tab-lbl {
-          color: #0284c7;
-          font-weight: 700;
-        }
-        .hint-tab-btn--where.active .hint-tab-lbl {
-          color: #16a34a;
-          font-weight: 700;
-        }
-        .hint-tab-icon {
-          width: 22px;
-          height: 22px;
-          object-fit: contain;
-          opacity: 0.45;
-          transition: opacity 0.15s, filter 0.15s;
-        }
-        .hint-tab-btn--when.active .hint-tab-icon {
-          opacity: 1;
-          filter: drop-shadow(0 0 3px rgba(14,165,233,0.5));
-        }
-        .hint-tab-btn--where.active .hint-tab-icon {
-          opacity: 1;
-          filter: drop-shadow(0 0 3px rgba(34,197,94,0.5));
-        }
-        .hint-tab-badge {
-          margin-left: 2px;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: var(--modal-surface);
-          border: 0.5px solid var(--modal-border-md);
-          font-size: 9px;
-          font-weight: 700;
-          color: var(--modal-text-muted);
-          display: none;
-          align-items: center;
-          justify-content: center;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-        }
-        .hint-hints-panel {
-          padding: 10px 12px 14px;
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-          max-height: 380px;
-          overflow-y: auto;
-        }
-        .hint-hints-panel::-webkit-scrollbar {
-          width: 2px;
-        }
-        .hint-hints-panel::-webkit-scrollbar-thumb {
-          background: rgba(0,0,0,0.15);
-          border-radius: 2px;
-        }
-        .hint-btn {
-          background: rgba(0,0,0,0.05);
-          border: 0.5px solid rgba(0,0,0,0.10);
-          border-radius: 10px;
-          padding: 10px 12px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          cursor: pointer;
-          transition: border-color 0.12s, background 0.12s, transform 0.08s;
-          position: relative;
-          overflow: hidden;
-          text-align: left;
-          width: 100%;
-        }
-        .hint-btn:hover:not(.revealed) {
-          background: rgba(0,0,0,0.09);
-          border-color: rgba(0,0,0,0.18);
-          transform: translateY(-1px);
-        }
-        .hint-btn:active:not(.revealed) {
-          transform: translateY(0);
-        }
-        .hint-btn.revealed {
-          border-color: rgba(126, 217, 87, 0.25);
-          background: rgba(126, 217, 87, 0.06);
-          cursor: default;
-        }
-        .hint-btn.revealed::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: 3px;
-          background: #7ed957;
-        }
-        .hint-icon {
-          width: 30px;
-          height: 30px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          background: rgba(0,0,0,0.08);
-          border: 0.5px solid rgba(0,0,0,0.12);
-          transition: background 0.12s;
-        }
-        .hint-icon svg {
-          width: 13px;
-          height: 13px;
-        }
-        .hint-btn:hover:not(.revealed) .hint-icon {
-          background: rgba(0,0,0,0.13);
-        }
-        .hint-body {
-          flex: 1;
-          min-width: 0;
-        }
-        .hint-name {
-          font-size: 13px;
-          font-weight: 500;
-          color: var(--modal-text);
-          margin-bottom: 2px;
-          line-height: 1.3;
-        }
-        .hint-btn.revealed .hint-name {
-          color: #fff;
-        }
-        .hint-sub {
-          font-size: 11px;
-          color: #999;
-          line-height: 1.4;
-        }
-        .hint-answer {
-          font-size: 12px;
-          color: var(--modal-text-dim);
-          line-height: 1.45;
-          font-style: italic;
-          margin-top: 2px;
-        }
-        .hint-right {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 3px;
-          flex-shrink: 0;
-        }
-        .hint-cost-pill {
-          display: flex;
-          align-items: center;
-          padding: 3px 8px;
-          border-radius: 20px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-          font-weight: 700;
-          font-size: 11px;
-          border: 0.5px solid;
-          letter-spacing: 0.02em;
-          transition: opacity 0.12s;
-        }
-        .hint-cost-g {
-          background: rgba(126, 217, 87, 0.10);
-          border-color: rgba(126, 217, 87, 0.3);
-          color: var(--modal-g);
-        }
-        .hint-cost-y {
-          background: rgba(232, 192, 34, 0.10);
-          border-color: rgba(232, 192, 34, 0.3);
-          color: var(--modal-y);
-        }
-        .hint-cost-o {
-          background: rgba(232, 119, 34, 0.10);
-          border-color: rgba(232, 119, 34, 0.3);
-          color: var(--modal-o);
-        }
-        .hint-cost-r {
-          background: rgba(232, 68, 34, 0.10);
-          border-color: rgba(232, 68, 34, 0.3);
-          color: var(--modal-r);
-        }
-        .hint-check-dot {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: rgba(126, 217, 87, 0.15);
-          border: 0.5px solid rgba(126, 217, 87, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .hint-check-dot svg {
-          width: 9px;
-          height: 9px;
-        }
-      `}</style>
-      <div className="hint-modal-backdrop" onClick={handleClose}>
+      <div className={styles.backdrop} onClick={handleClose}>
         <div
-          className="hint-modal hint-modal-root"
+          className={`${styles.modal} ${styles.root}`}
           role="dialog"
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="hint-modal-header">
-            <div className="hint-modal-title">Hints</div>
+          <div className={styles.header}>
+            <div className={styles.title}>Hints</div>
             <button
-              className="hint-modal-close"
+              className={styles.closeBtn}
               onClick={handleClose}
               aria-label="Close hints"
             >
               <svg viewBox="0 0 10 10" fill="none">
-                <path d="M2 2l6 6M8 2L2 8" stroke="#aaa" />
+                <path d="M2 2l6 6M8 2L2 8" stroke="currentColor" />
               </svg>
             </button>
           </div>
 
           {/* Total Penalty Strip */}
-          <div className="hint-total-strip">
-            <div className="hint-total-left">
-              <div className="hint-total-lbl">Total penalty</div>
-              <div className={`hint-total-big ${getPenaltyColor(penalties.totalAcc)}`}>
+          <div className={styles.totalStrip}>
+            <div className={styles.totalLeft}>
+              <div className={styles.totalLbl}>Total penalty</div>
+              <div className={`${styles.totalBig} ${getPenaltyColor(penalties.totalAcc)}`}>
                 −{penalties.totalAcc}%
               </div>
             </div>
-            <div className="hint-total-right">
+            <div className={styles.totalRight}>
               {/* When Axis */}
-              <div className="hint-axis-pen" style={{ borderColor: penaltyBorderColor(penalties.whenAcc) }}>
-                <div className="hint-axis-icon">
+              <div className={styles.axisPen} style={{ borderColor: penaltyBorderColor(penalties.whenAcc) }}>
+                <div className={styles.axisIcon}>
                   <svg viewBox="0 0 10 10" fill="none">
-                    <rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="#555" strokeWidth="1.1" />
-                    <path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="#555" strokeWidth="1.1" strokeLinecap="round" />
+                    <rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="currentColor" strokeWidth="1.1" />
+                    <path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
                   </svg>
-                  <span className="hint-axis-lbl">When</span>
+                  <span className={styles.axisLbl}>When</span>
                 </div>
-                <div className={`hint-axis-val hint-axis-val--${getPenaltyColor(penalties.whenAcc)}`}>
+                <div className={`${styles.axisVal} ${getPenaltyColor(penalties.whenAcc)}`}>
                   −{penalties.whenAcc}%
                 </div>
-                <div className="hint-axis-track">
-                  <div className="hint-axis-fill" style={{ width: `${penalties.whenAcc}%` }} />
+                <div className={styles.axisTrack}>
+                  <div className={styles.axisFill} style={{ width: `${penalties.whenAcc}%` }} />
                 </div>
               </div>
               {/* Where Axis */}
-              <div className="hint-axis-pen" style={{ borderColor: penaltyBorderColor(penalties.whereAcc) }}>
-                <div className="hint-axis-icon">
+              <div className={styles.axisPen} style={{ borderColor: penaltyBorderColor(penalties.whereAcc) }}>
+                <div className={styles.axisIcon}>
                   <svg viewBox="0 0 10 10" fill="none">
-                    <path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="#555" />
+                    <path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="currentColor" />
                   </svg>
-                  <span className="hint-axis-lbl">Where</span>
+                  <span className={styles.axisLbl}>Where</span>
                 </div>
-                <div className={`hint-axis-val hint-axis-val--${getPenaltyColor(penalties.whereAcc)}`}>
+                <div className={`${styles.axisVal} ${getPenaltyColor(penalties.whereAcc)}`}>
                   −{penalties.whereAcc}%
                 </div>
-                <div className="hint-axis-track">
-                  <div className="hint-axis-fill" style={{ width: `${penalties.whereAcc}%` }} />
+                <div className={styles.axisTrack}>
+                  <div className={styles.axisFill} style={{ width: `${penalties.whereAcc}%` }} />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="hint-tab-row">
+          <div className={styles.tabRow}>
             <button
-              className={`hint-tab-btn hint-tab-btn--when ${activeTab === "when" ? "active" : ""}`}
+              className={`${styles.tabBtn} ${styles.tabBtnWhen} ${activeTab === "when" ? styles.active : ""}`}
               onClick={() => setActiveTab("when")}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/when.webp" alt="" className="hint-tab-icon" />
-              <span className="hint-tab-lbl">When</span>
+              <img src="/badges/when.webp" alt="" className={styles.tabIcon} />
+              <span className={styles.tabLbl}>When</span>
               {getPurchasedCount("when") > 0 && (
-                <div className="hint-tab-badge">{getPurchasedCount("when")}</div>
+                <div className={styles.tabBadge}>{getPurchasedCount("when")}</div>
               )}
             </button>
             <button
-              className={`hint-tab-btn hint-tab-btn--where ${activeTab === "where" ? "active" : ""}`}
+              className={`${styles.tabBtn} ${styles.tabBtnWhere} ${activeTab === "where" ? styles.active : ""}`}
               onClick={() => setActiveTab("where")}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/where.webp" alt="" className="hint-tab-icon" />
-              <span className="hint-tab-lbl">Where</span>
+              <img src="/badges/where.webp" alt="" className={styles.tabIcon} />
+              <span className={styles.tabLbl}>Where</span>
               {getPurchasedCount("where") > 0 && (
-                <div className="hint-tab-badge">{getPurchasedCount("where")}</div>
+                <div className={styles.tabBadge}>{getPurchasedCount("where")}</div>
               )}
             </button>
           </div>
 
           {/* Hints List */}
-          <div className="hint-hints-panel">
+          <div className={styles.hintsPanel}>
             {activeHints.map((hint) => {
               const owned = purchased.has(hint.id);
               const tierPenalty = TIER_PENALTIES[hint.tier as keyof typeof TIER_PENALTIES];
@@ -707,30 +322,30 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
               return (
                 <button
                   key={hint.id}
-                  className={`hint-btn ${owned ? "revealed" : ""}`}
+                  className={`${styles.hintBtn} ${owned ? styles.revealed : ""}`}
                   onClick={() => !owned && handlePurchase(hint.id)}
                   disabled={owned}
                   aria-pressed={owned}
                 >
                   {/* Icon */}
-                  <div className="hint-icon" dangerouslySetInnerHTML={{ __html: getIcon(hint) }} />
+                  <div className={styles.hintIcon} dangerouslySetInnerHTML={{ __html: getIcon(hint) }} />
 
                   {/* Body */}
-                  <div className="hint-body">
-                    <div className="hint-name">{getHintLabel(hint)}</div>
+                  <div className={styles.hintBody}>
+                    <div className={styles.hintName}>{getHintLabel(hint)}</div>
                     {owned ? (
-                      <div className="hint-answer">{getRevealedText(hint)}</div>
+                      <div className={styles.hintAnswer}>{getRevealedText(hint)}</div>
                     ) : (
-                      <div className="hint-sub">{getHintDescription(hint)}</div>
+                      <div className={styles.hintSub}>{getHintDescription(hint)}</div>
                     )}
                   </div>
 
                   {/* Right side */}
-                  <div className="hint-right">
+                  <div className={styles.hintRight}>
                     {owned ? (
-                      <div className="hint-check-dot" dangerouslySetInnerHTML={{ __html: ICONS.check }} />
+                      <div className={styles.checkDot} dangerouslySetInnerHTML={{ __html: ICONS.check }} />
                     ) : (
-                      <div className={`hint-cost-pill ${getCostClass(hint.tier)}`}>
+                      <div className={`${styles.costPill} ${getCostClass(hint.tier)}`}>
                         −{tierPenalty.acc}%
                       </div>
                     )}
