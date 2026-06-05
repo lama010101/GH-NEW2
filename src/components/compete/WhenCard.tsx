@@ -106,7 +106,7 @@ export default function WhenCard({
             const whenHue = Math.round((Math.max(0, Math.min(100, whenScore)) / 100) * 120);
             const whenColor = `hsl(${whenHue}, 100%, 50%)`;
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+              <div className={styles.scoreColFlex}>
                 <div className={styles.scoreGroup}>
                   <span style={{ fontSize: 25, fontWeight: 700, color: whenColor }}>{whenScore}</span>
                   <span className={styles.scoreSuffix}>%</span>
@@ -116,21 +116,21 @@ export default function WhenCard({
                   const badge = myResult?.badges?.find(b => b.dimension === 'year');
                   const near  = myResult?.nearMisses?.find(n => n.dimension === 'year');
                   if (!badge && !near) return null;
-                  const tierColors: Record<string, { bg: string; border: string; color: string }> = {
-                    gold:   { bg: 'rgba(255,190,0,0.15)',   border: 'rgba(255,190,0,0.4)',   color: '#ffcc44' },
-                    silver: { bg: 'rgba(180,195,215,0.12)', border: 'rgba(180,195,215,0.4)', color: '#b4bece' },
-                    bronze: { bg: 'rgba(180,120,60,0.15)',  border: 'rgba(180,120,60,0.4)',  color: '#cd9a5a' },
+                  const tierChipClass: Record<string, string> = {
+                    gold:   styles.badgeChipGold,
+                    silver: styles.badgeChipSilver,
+                    bronze: styles.badgeChipBronze,
                   };
                   if (badge) {
-                    const c = tierColors[badge.tier] ?? tierColors.bronze;
+                    const chipClass = tierChipClass[badge.tier] ?? styles.badgeChipBronze;
                     return (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: c.bg, border: `0.5px solid ${c.border}`, color: c.color }}>
+                      <span className={`${styles.badgeChip} ${chipClass}`}>
                         {badge.tier.charAt(0).toUpperCase() + badge.tier.slice(1)}
                       </span>
                     );
                   }
                   return (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 999, fontSize: 11, fontStyle: 'italic', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.28)' }}>
+                    <span className={styles.nearMissChip}>
                       Near miss
                     </span>
                   );
@@ -224,7 +224,7 @@ export default function WhenCard({
       <div className={styles.expandSection}>
         <div className={styles.expandHeader} onClick={() => setWhenLbExpanded(!whenLbExpanded)}>
           <div className={styles.expandTitleGroup}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--gh-text-muted)" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.svgMuted}>
               {whenLbExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
             <span className={styles.expandLabel}>Leaderboard</span>
@@ -278,7 +278,7 @@ export default function WhenCard({
       <div className={styles.expandSection}>
         <div className={styles.expandHeader} onClick={() => setWhenCluesExpanded(!whenCluesExpanded)}>
           <div className={styles.expandTitleGroup}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--gh-violet)" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.svgAccent}>
               {whenCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
             <span className={styles.expandLabelAccent}>Hints</span>

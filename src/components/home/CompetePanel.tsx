@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import styles from '@/app/home.module.css'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import cpStyles from "./CompetePanel.module.css";
 
@@ -214,7 +213,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   return (
     <>
       {/* Tab bar */}
-      <div className={styles['card-sub-panel']}>
+      <div className={cpStyles.cardSubPanel}>
         <div className={cpStyles.tabBar}>
           {tabs.map(t => (
             <button
@@ -369,31 +368,31 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
           onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
           placeholder="ABCD12"
           maxLength={6}
-          className={styles['join-code-input']}
+          className={cpStyles.joinCodeInput}
           autoFocus
         />
       )}
 
       {/* CTA buttons */}
-      <div className={styles['card-cta-row']}>
+      <div className={cpStyles.cardCtaRow}>
         <button
           onClick={handleJoinClick}
           disabled={loading || (showJoinInput && !code)}
-          className={`${styles['card-cta-btn']} ${styles['card-cta-btn-outline']}`}
+          className={`${cpStyles.cardCtaBtn} ${cpStyles.cardCtaBtnOutline}`}
         >
           {showJoinInput ? <><PeopleIcon /> GO TO LOBBY</> : <><PeopleIcon /> JOIN GAME</>}
         </button>
         <button
           onClick={handleCreate}
           disabled={loading}
-          className={`${styles['card-cta-btn']} ${styles['card-cta-btn-blue']}`}
+          className={`${cpStyles.cardCtaBtn} ${cpStyles.cardCtaBtnBlue}`}
         >
           <PlusIcon /> CREATE GAME
         </button>
       </div>
 
       {error && (
-        <div className={styles['error-text']}>{error}</div>
+        <div className={cpStyles.errorText}>{error}</div>
       )}
     </>
   );

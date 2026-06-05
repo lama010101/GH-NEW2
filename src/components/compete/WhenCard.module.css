@@ -36,8 +36,8 @@
   align-items: center;
   font-size: 10px;
   font-weight: 600;
-  color: #fca5a5;
-  background: #7f1d1d;
+  color: var(--gh-danger);
+  background: rgba(127, 29, 29, 1);
   border-radius: var(--gh-radius-pill);
   padding: 2px 8px;
   margin-bottom: 6px;
@@ -45,7 +45,7 @@
 
 .hintPenaltySuffix {
   font-size: 50%;
-  color: #ffffff;
+  color: var(--gh-text-primary);
 }
 
 .correctRow {
@@ -81,7 +81,7 @@
   height: 4px;
   left: 16px;
   right: 16px;
-  background: #555555;
+  background: var(--gh-text-muted);
   border-radius: 3px;
   transform: translateY(-50%);
 }
@@ -123,7 +123,7 @@
   top: 50%;
   transform: translateY(-50%);
   width: 2px;
-  background: #aaa;
+  background: var(--gh-text-secondary);
 }
 
 .tickLabel {
@@ -132,7 +132,7 @@
   left: 50%;
   transform: translateX(-50%);
   font-size: 8px;
-  color: #999;
+  color: var(--gh-text-muted);
   white-space: nowrap;
 }
 
@@ -142,7 +142,7 @@
 }
 
 .playerAvatarRing {
-  border: 2px solid #fff;
+  border: 2px solid var(--gh-text-primary);
   border-radius: 50%;
 }
 
@@ -153,7 +153,7 @@
   transform: translateX(-50%);
   white-space: nowrap;
   text-align: center;
-  color: #ffffff;
+  color: var(--gh-text-primary);
 }
 
 /* ── Expandable sections ── */
@@ -249,7 +249,7 @@
 }
 
 .lbYearsOff {
-  color: #bbb;
+  color: var(--gh-text-secondary);
   font-size: 11px;
   font-weight: 600;
 }
@@ -292,7 +292,7 @@
 
 .hintContent {
   font-size: 13px;
-  color: #ccc;
+  color: var(--gh-text-secondary);
   line-height: 1.4;
 }
 
@@ -300,6 +300,65 @@
   font-size: 12px;
   color: var(--gh-text-muted);
   font-style: italic;
+}
+
+/* ── Badge chips ── */
+
+.badgeChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--chip-bg);
+  border: 0.5px solid var(--chip-border);
+  color: var(--chip-color);
+}
+
+.badgeChipGold {
+  --chip-bg: rgba(255, 190, 0, 0.15);
+  --chip-border: rgba(255, 190, 0, 0.4);
+  --chip-color: var(--gh-badge-gold);
+}
+
+.badgeChipSilver {
+  --chip-bg: rgba(180, 195, 215, 0.12);
+  --chip-border: rgba(180, 195, 215, 0.4);
+  --chip-color: var(--gh-badge-silver);
+}
+
+.badgeChipBronze {
+  --chip-bg: rgba(180, 120, 60, 0.15);
+  --chip-border: rgba(180, 120, 60, 0.4);
+  --chip-color: var(--gh-badge-bronze);
+}
+
+.nearMissChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.scoreColFlex {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.svgMuted {
+  color: var(--gh-text-muted);
+}
+
+.svgAccent {
+  color: var(--gh-violet);
 }
 
 /* ── Score ── */

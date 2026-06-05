@@ -1,0 +1,299 @@
+/* WhereCard */
+
+.card {
+  background: rgba(8, 145, 178, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(34, 211, 238, 0.25);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titleIcon {
+  object-fit: contain;
+}
+
+.titleText {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gh-teal);
+}
+
+.noSubmit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.noSubmitDash {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--gh-text-muted);
+}
+
+.scoreCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.scoreRow {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.scoreSuffix {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--gh-text-secondary);
+}
+
+/* Badge chip — tier color injected via CSS custom properties */
+.badgeChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--chip-bg);
+  border: 0.5px solid var(--chip-border);
+  color: var(--chip-color);
+}
+
+.badgeChipGold {
+  --chip-bg: rgba(255, 190, 0, 0.15);
+  --chip-border: rgba(255, 190, 0, 0.4);
+  --chip-color: var(--gh-badge-gold);
+}
+
+.badgeChipSilver {
+  --chip-bg: rgba(180, 195, 215, 0.12);
+  --chip-border: rgba(180, 195, 215, 0.4);
+  --chip-color: var(--gh-badge-silver);
+}
+
+.badgeChipBronze {
+  --chip-bg: rgba(180, 120, 60, 0.15);
+  --chip-border: rgba(180, 120, 60, 0.4);
+  --chip-color: var(--gh-badge-bronze);
+}
+
+.nearMissChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.28);
+}
+
+/* Hint penalty */
+.hintPenaltyWrap {
+  margin-bottom: 6px;
+}
+
+.hintPenalty {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  color: var(--gh-danger);
+  font-weight: 600;
+  background: rgba(127, 29, 29, 1);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.hintPenaltySuffix {
+  font-size: 50%;
+  color: var(--gh-text-primary);
+}
+
+/* Correct row */
+.correctRow {
+  font-size: 15px;
+  color: var(--gh-text-primary);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.correctName {
+  color: var(--gh-text-primary);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* No guess / distance */
+.noGuessWrap {
+  margin-bottom: 8px;
+}
+
+.noGuessText {
+  font-size: 15px;
+  color: var(--gh-text-muted);
+}
+
+.distanceWrap {
+  margin-bottom: 8px;
+}
+
+.distanceText {
+  font-size: 14px;
+  color: var(--gh-text-primary);
+}
+
+/* Map container */
+.mapContainer {
+  border-radius: 8px;
+  overflow: hidden;
+  height: 200px;
+}
+
+/* Expandable sections */
+.expandSection {
+  margin-top: 10px;
+  background: rgba(34, 211, 238, 0.06);
+  border-radius: 8px;
+}
+
+.expandSection + .expandSection {
+  margin-top: 6px;
+}
+
+.expandHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.expandTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.expandLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.expandLabelAccent {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gh-teal);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.expandRank {
+  font-size: 11px;
+  color: var(--gh-text-muted);
+  font-weight: 600;
+}
+
+/* Leaderboard rows */
+.lbList {
+  padding: 0 4px 8px;
+}
+
+.lbRow {
+  display: flex;
+  align-items: center;
+  padding: 7px 8px;
+  gap: 6px;
+  border-radius: 6px;
+}
+
+.lbRank {
+  min-width: 20px;
+  color: var(--gh-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lbName {
+  flex: 1;
+  font-size: 15px;
+}
+
+.lbYouTag {
+  color: var(--gh-text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.lbDistance {
+  color: var(--gh-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lbAccPill {
+  background: var(--gh-bg-input);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lbAccSuffix {
+  color: var(--gh-text-secondary);
+  font-size: var(--gh-font-xs);
+}
+
+/* Hints section */
+.hintsList {
+  padding: 0 12px 12px;
+}
+
+.hintRow {
+  padding: 8px 0;
+}
+
+.hintTierLabel {
+  margin-bottom: 3px;
+}
+
+.hintTierText {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gh-teal);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hintContent {
+  font-size: 13px;
+  color: var(--gh-text-secondary);
+  line-height: 1.4;
+}
+
+.emptyHints {
+  font-size: 12px;
+  color: var(--gh-text-muted);
+  font-style: italic;
+}
