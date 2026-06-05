@@ -1,13 +1,11 @@
 'use client';
 
-import { DM_Sans } from 'next/font/google';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useIdentity } from '@/hooks/useIdentity';
 import { signOut } from '@/core/identity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 
-const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] });
 
 type ProfileHistoricalAvatar = {
   avatarName: string;
@@ -188,16 +186,16 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className={`${dmSans.className} min-h-screen bg-[#0f0e0c] text-[#f5f0e8] pb-[60px] relative`}>
+    <div className="min-h-screen pb-[60px] relative" style={{ background: 'var(--gh-bg-base)', color: 'var(--gh-text-primary)' }}>
 
       {/* 1. HERO BACKGROUND */}
-      <div className="absolute top-0 left-0 right-0 h-[280px] bg-gradient-to-b from-[#1a1a2e] to-[#0f0e0c] z-0" />
+      <div className="absolute top-0 left-0 right-0 h-[280px] bg-gradient-to-b from-[#0d1530] to-[#09090b] z-0" />
 
       {/* 2. TOP BAR */}
-      <div className="fixed top-0 left-0 right-0 px-6 py-4 flex items-center justify-between z-[100] bg-[#0f0e0c]">
+      <div className="fixed top-0 left-0 right-0 px-6 py-4 flex items-center justify-between z-[100] bg-[#09090b]">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm bg-transparent border-none cursor-pointer font-semibold text-[#f5f0e8]"
+          className="flex items-center gap-2 text-sm bg-transparent border-none cursor-pointer font-semibold text-white"
         >
           <span className="text-lg">←</span>
           <span>Back</span>
@@ -224,7 +222,7 @@ export default function ProfilePage() {
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
             ) : (
-              <span className={`font-bebas text-4xl font-extrabold text-[#f5f0e8]`}>
+              <span className={`font-bebas text-4xl font-extrabold text-white`}>
                 {getInitials(profileData.displayName)}
               </span>
             )}
@@ -244,7 +242,7 @@ export default function ProfilePage() {
         {/* Historical Avatar Card */}
         {profileData.historicalAvatar && (
           <div className="bg-white/[0.08] rounded-2xl py-5 px-6 w-full max-w-[400px] text-center">
-            <h3 className={`font-bebas text-lg font-bold mb-2 text-[#f5f0e8]`}>
+            <h3 className={`font-bebas text-lg font-bold mb-2 text-white`}>
               {profileData.historicalAvatar.avatarName}
             </h3>
             {profileData.historicalAvatar.avatarDescription && (
@@ -276,7 +274,7 @@ export default function ProfilePage() {
                 ? Math.round(Number(profileData.avgAccuracy)) + '%'
                 : '—',
             label: 'Avg accuracy',
-            color: 'text-[#fb923c]'
+            color: 'text-[color:var(--gh-orange)]'
           },
           {
             value: profileData.totalXp === null
@@ -454,7 +452,7 @@ export default function ProfilePage() {
           <h3 className={`font-bebas text-sm font-bold mb-4`}>History collection</h3>
           <div className="grid grid-cols-4 gap-3 mb-6">
             <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
-              <div className="font-bebas text-xl font-bold" style={{ color: '#fb923c' }}>
+              <div className="font-bebas text-xl font-bold" style={{ color: 'var(--gh-orange)' }}>
                 {progressData?.eventsSeenCount?.toLocaleString() ?? '—'}
               </div>
               <div className="text-[10px] mt-1 text-white/45">Events seen</div>
@@ -485,7 +483,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[#fb923c]"
+                        className="h-full rounded-full bg-[color:var(--gh-orange)]"
                         style={{ width: `${item.avgAccuracy}%` }}
                       />
                     </div>
@@ -512,7 +510,7 @@ export default function ProfilePage() {
                   key={item.century}
                   className="py-3 px-3 rounded-lg text-center bg-[rgba(251,146,60,0.1)] border border-[rgba(251,146,60,0.2)]"
                 >
-                  <div className="font-bebas text-sm font-bold text-[#fb923c]">
+                  <div className="font-bebas text-sm font-bold text-[color:var(--gh-orange)]">
                     {item.century}
                   </div>
                   <div className="text-xs mt-0.5 text-white/45">
@@ -526,7 +524,7 @@ export default function ProfilePage() {
                   key={label}
                   className="py-3 px-3 rounded-lg text-center bg-[rgba(251,146,60,0.1)] border border-[rgba(251,146,60,0.2)]"
                 >
-                  <div className="font-bebas text-sm font-bold text-[#fb923c]">{label}</div>
+                  <div className="font-bebas text-sm font-bold text-[color:var(--gh-orange)]">{label}</div>
                   <div className="text-xs mt-0.5 text-white/45">—</div>
                 </div>
               ))

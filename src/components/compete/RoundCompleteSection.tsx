@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import RainbowRing from "@/components/compete/RainbowRing";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
@@ -34,6 +35,9 @@ interface RoundCompleteSectionProps {
   resultSecsLeft: number | null;
   onAdvanceRound: () => void;
   setFullscreenImg: (url: string | null) => void;
+  onAccuracyCardVisible?: () => void;
+  onWhereCardVisible?: () => void;
+  onWhenCardVisible?: () => void;
 }
 
 export default function RoundCompleteSection({
@@ -54,8 +58,39 @@ export default function RoundCompleteSection({
   resultSecsLeft,
   onAdvanceRound,
   setFullscreenImg,
+  onAccuracyCardVisible,
+  onWhereCardVisible,
+  onWhenCardVisible,
 }: RoundCompleteSectionProps) {
   const router = useRouter();
+
+  const accuracyCardRef = useRef<HTMLDivElement>(null);
+  const whereCardRef = useRef<HTMLDivElement>(null);
+  const whenCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = accuracyCardRef.current;
+    if (!el || !onAccuracyCardVisible) return;
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { onAccuracyCardVisible(); obs.disconnect(); } }, { threshold: 0.5 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [onAccuracyCardVisible]);
+
+  useEffect(() => {
+    const el = whereCardRef.current;
+    if (!el || !onWhereCardVisible) return;
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { onWhereCardVisible(); obs.disconnect(); } }, { threshold: 0.5 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [onWhereCardVisible]);
+
+  useEffect(() => {
+    const el = whenCardRef.current;
+    if (!el || !onWhenCardVisible) return;
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { onWhenCardVisible(); obs.disconnect(); } }, { threshold: 0.5 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [onWhenCardVisible]);
 
   return (
     <div className={styles.container}>
@@ -117,7 +152,7 @@ export default function RoundCompleteSection({
             </div>
 
             {/* ACCURACY RING CARD */}
-            <div className={styles.accuracyCard}>
+            <div ref={accuracyCardRef} className={styles.accuracyCard}>
               <div className={styles.accuracyRingWrap}>
                 <RainbowRing value={accuracy} />
               </div>
@@ -203,7 +238,7 @@ export default function RoundCompleteSection({
 
             {/* WHERE + WHEN CARDS */}
             <div className={styles.cardsGrid}>
-              <WhereCard
+              <div ref={whereCardRef}><WhereCard
                 roundResults={roundResults}
                 playerId={playerId}
                 correctLat={correctLat}
@@ -220,8 +255,8 @@ export default function RoundCompleteSection({
                 roundHints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
                 snapshotPlayers={snapshot.players}
                 currentRoundIndex={snapshot.currentRoundIndex}
-              />
-              <WhenCard
+              /></div>
+              <div ref={whenCardRef}><WhenCard
                 roundResults={roundResults}
                 playerId={playerId}
                 correctYear={correctYear}
@@ -232,7 +267,7 @@ export default function RoundCompleteSection({
                 setWhenCluesExpanded={setWhenCluesExpanded}
                 roundHints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
                 snapshotPlayers={snapshot.players}
-              />
+              /></div>
             </div>
 
             {/* HINTS USED CARD */}
@@ -314,7 +349,7 @@ export default function RoundCompleteSection({
                       key={i}
                       className={styles.progressDot}
                       style={{
-                        "--dot-bg": isDone ? "#f97316" : isCurrent ? "#fb923c" : "#374151",
+                        "--dot-bg": isDone ? "#f97316" : isCurrent ? "var(--gh-orange)" : "#374151",
                         "--dot-opacity": isCurrent ? 0.7 : 1,
                       } as React.CSSProperties}
                     />

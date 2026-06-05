@@ -46,7 +46,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #fb923c;
+  background: var(--gh-orange);
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
@@ -59,7 +59,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #fb923c;
+  background: var(--gh-orange);
   cursor: pointer;
   border: 2px solid #fff;
 }
@@ -79,7 +79,7 @@
   top: 50%;
   transform: translateY(-50%);
   height: 4px;
-  background: #fb923c;
+  background: var(--gh-orange);
   border-radius: 2px;
 }
 

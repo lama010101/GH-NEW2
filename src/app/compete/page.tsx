@@ -148,7 +148,7 @@ export default function CompeteEntryPage() {
                   disabled={blocked || loading}
                   style={{ width: "100%" }}
                 />
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--color-text-secondary)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--gh-text-muted)" }}>
                   <span>5s</span>
                   <span>5m</span>
                 </div>

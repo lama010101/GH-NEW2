@@ -1765,3 +1765,35 @@ MP-UI-BADGE-INLINE-001 | Add inline badge chips to accuracy card, WhereCard, and
 - **Result**: Added badges and nearMisses to ResultState type and construction. Import calculateBadges and evaluateNearMisses from @/core/rules. Extended results parsing to compute badges/nearMisses using accuracy scores.
 | MP-FIX-TIMER-OFF-002 | src/hooks/useCompeteTimer.ts | disable timer hook when roundTimerSec=0 | DONE
 | MP-FIX-TIMER-OFF-003 | src/components/compete/RoundActiveSection.tsx | hide timer display and fix division-by-zero when roundTimerSec=0 | DONE
+| MP-FIX-TIMER-OFF-001 | src/server/sessionCore.ts | phaseEndsAt null guard for timer-off | DONE
+
+# MP-DEBUG-BADGE-001
+- **File Modified**: src/hooks/useCompeteSocket.ts
+- **Result**: Added debug console.log statements at line 69 (WS snapshot path) and line 123 (REST fetch fallback) to trace badges and nearMisses in results arriving at client.
+| MP-STYLE-SESSIONCOMPLETE-TOKENS-001 | Replace hardcoded backgrounds with tokens in SessionComplete.module.css | SessionComplete.module.css | DONE | 2026-06-05 |
+
+# MP-DEBUG-BADGE-002
+- **File Modified**: src/components/compete/RoundCompleteSection.tsx
+- **Result**: Added debug console.log at line 66 to verify playerId match and roundResults state in RoundCompleteSection.
+
+# MP-DEBUG-BADGE-003
+- **File Modified**: src/components/compete/RoundCompleteSection.tsx
+- **Result**: Expanded DEBUG_MYRESULT log at line 66 to include badges, nearMisses, locationScore, and timeScore fields.
+
+# MP-DEBUG-BADGE-004
+- **Files Modified**: src/app/compete/[gameId]/page.tsx, src/components/compete/RoundCompleteSection.tsx
+- **Result**: Added debug log at line 122 in page.tsx before setRoundResults(null) to trace snapshot status. Expanded DEBUG_MYRESULT log in RoundCompleteSection.tsx at line 66 to use string concatenation for better console visibility.
+| MP-STYLE-PROFILE-001 | Fix profile page rogue font import and non-token colors | profile/page.tsx | DONE | 2026-06-05 |
+| MP-STYLE-LOBBY-CLEANUP-001 | Remove undefined global class and debug console.log from LobbySection.tsx | LobbySection.tsx | DONE | 2026-06-05 |
+
+# MP-CLEANUP-BADGE-001
+- **Files Modified**: src/hooks/useCompeteSocket.ts, src/app/compete/[gameId]/page.tsx, src/components/compete/RoundCompleteSection.tsx
+- **Result**: Removed all debug console.log statements (DEBUG_BADGES, DEBUG_MYRESULT, DEBUG_RESET). Grep confirms zero matches. TypeScript compilation passes.
+| MP-FIX-VERCEL-BUILD-001 | src/server/sessionCore.ts | Fix TypeScript error: Type 'string | null' is not assignable to type 'string'. Changed advancePhaseEndsAt from string | null to string, using empty string "" instead of null when round_timer_sec === 0. Updated declaration and removed redundant nullish coalescing fallback. | DONE | 2026-06-05 |
+MP-INV-STYLE-001 IN PROGRESS
+MP-REFACTOR-STYLE-001 DONE
+
+# MP-FEAT-BADGE-VIEWPORT-001
+- **Task Title**: Trigger badge popup via IntersectionObserver when relevant cards enter viewport
+- **Files Modified**: src/app/compete/[gameId]/page.tsx, src/components/compete/RoundCompleteSection.tsx
+- **Result**: Removed old setTimeout(600ms) badge popup useEffect and sound useEffect. Added whereCardSeenRef/whenCardSeenRef, reset effect on ROUND_ACTIVE, maybeShowBadgePopup useCallback with dimension-aware readiness logic, three handler callbacks. RoundCompleteSection gains three optional viewport callbacks, three IntersectionObserver useEffects, three refs attached to accuracyCard/whereCard/whenCard divs. TSC exits 0. getBadgeSoundPath import removed (orphaned). 3 IntersectionObserver matches confirmed.

@@ -25,9 +25,6 @@ import { useIdentity } from "@/hooks/useIdentity";
 import { HintModal } from "@/components/HintModal";
 import type { HintPurchaseResult } from "@/components/HintModal";
 import { RoundResult, AllRoundResult } from "@/core/competeTypes";
-import {
-  getBadgeSoundPath
-} from "@/core/competeUtils";
 import BadgePopup from "@/components/compete/BadgePopup";
 import SessionComplete from "@/components/compete/SessionComplete";
 import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
@@ -73,6 +70,8 @@ export default function CompeteGamePage() {
     whenAccPenalty: 0,
   });
   const badgePopupShownForRoundRef = useRef<number>(-1);
+  const whereCardSeenRef = useRef(false);
+  const whenCardSeenRef = useRef(false);
 
   const router = useRouter();
 
@@ -251,44 +250,49 @@ export default function CompeteGamePage() {
     img.src = nextImageUrl;
   }, [snapshot?.currentRoundIndex, snapshot?.status, snapshot?.rounds]);
 
-  // Auto-open badge popup on ROUND_COMPLETE when badges or near-misses exist
   useEffect(() => {
-    if (snapshot?.status === "ROUND_COMPLETE") {
-      const currentRound = snapshot?.currentRoundIndex ?? -1;
-      const myResult = roundResults?.find(r => r.playerId === playerId);
-      if (
-        myResult &&
-        ((myResult.badges?.length ?? 0) > 0 || (myResult.nearMisses?.length ?? 0) > 0) &&
-        badgePopupShownForRoundRef.current !== currentRound
-      ) {
-        badgePopupShownForRoundRef.current = currentRound;
-        // Delay 600ms to allow accuracy ring animation to start first
-        setTimeout(() => setShowBadgePopup(true), 600);
-      }
-    }
-    // Reset popup on round change so it doesn't re-open on reconnect
-    // Do NOT reset badgePopupShownForRoundRef — it must persist to prevent re-trigger on same round
     if (snapshot?.status === "ROUND_ACTIVE") {
+      whereCardSeenRef.current = false;
+      whenCardSeenRef.current = false;
       setShowBadgePopup(false);
     }
-  }, [snapshot?.status, snapshot?.currentRoundIndex, roundResults, playerId]);
+  }, [snapshot?.status, snapshot?.currentRoundIndex]);
 
-  useEffect(() => {
-    if (!showBadgePopup) return;
+  const maybeShowBadgePopup = useCallback(() => {
+    if (badgePopupShownForRoundRef.current === (snapshot?.currentRoundIndex ?? -1)) return;
     const myResult = roundResults?.find(r => r.playerId === playerId);
-    const badges = myResult?.badges ?? [];
-    badges.forEach((badge, i) => {
-      setTimeout(() => {
-        try {
-          const soundPath = getBadgeSoundPath(badge.tier, badge.dimension);
-          const audio = new Audio(soundPath);
-          audio.volume = 0.5;
-          audio.play().catch(() => {});
-        } catch { /* silent */ }
-      }, i * 220 + 100);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showBadgePopup]);
+    if (!myResult) return;
+    const badges = myResult.badges ?? [];
+    const nearMisses = myResult.nearMisses ?? [];
+    if (badges.length === 0 && nearMisses.length === 0) return;
+
+    const needsWhere = badges.some(b => b.dimension === 'location') || nearMisses.some(n => n.dimension === 'location');
+    const needsWhen = badges.some(b => b.dimension === 'year') || nearMisses.some(n => n.dimension === 'year');
+    const needsCombo = badges.some(b => b.dimension === 'combo') || nearMisses.some(n => n.dimension === 'combo');
+
+    const comboReady = !needsCombo || (whereCardSeenRef.current && whenCardSeenRef.current);
+    const whereReady = !needsWhere || whereCardSeenRef.current;
+    const whenReady = !needsWhen || whenCardSeenRef.current;
+
+    if (whereReady && whenReady && comboReady) {
+      badgePopupShownForRoundRef.current = snapshot?.currentRoundIndex ?? -1;
+      setTimeout(() => setShowBadgePopup(true), 300);
+    }
+  }, [snapshot?.currentRoundIndex, roundResults, playerId]);
+
+  const handleAccuracyCardVisible = useCallback(() => {
+    maybeShowBadgePopup();
+  }, [maybeShowBadgePopup]);
+
+  const handleWhereCardVisible = useCallback(() => {
+    whereCardSeenRef.current = true;
+    maybeShowBadgePopup();
+  }, [maybeShowBadgePopup]);
+
+  const handleWhenCardVisible = useCallback(() => {
+    whenCardSeenRef.current = true;
+    maybeShowBadgePopup();
+  }, [maybeShowBadgePopup]);
 
   const viewer = useMemo(() => {
     if (!snapshot || !playerId) return null;
@@ -551,6 +555,9 @@ export default function CompeteGamePage() {
             resultSecsLeft={resultSecsLeft}
             onAdvanceRound={handleAdvanceRound}
             setFullscreenImg={setFullscreenImg}
+            onAccuracyCardVisible={handleAccuracyCardVisible}
+            onWhereCardVisible={handleWhereCardVisible}
+            onWhenCardVisible={handleWhenCardVisible}
           />
         ) : null}
 

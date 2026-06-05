@@ -1926,7 +1926,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
       const advanceNow = new Date();
       advanceStartedAt = advanceNow.toISOString();
       advancePhaseEndsAt = session.round_timer_sec === 0
-        ? null
+        ? ""
         : new Date(advanceNow.getTime() + session.round_timer_sec * 1000).toISOString();
       const roundStartedPayload = {
         roundIndex: nextRoundIndex,
@@ -1962,7 +1962,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
             ? advanceEventIds?.[nextRoundIndex] ?? null
             : null,
           startedAt: advanceStartedAt ?? "",
-          phaseEndsAt: advancePhaseEndsAt ?? ""
+          phaseEndsAt: advancePhaseEndsAt
         }
       }
     );

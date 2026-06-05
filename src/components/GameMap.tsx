@@ -52,7 +52,7 @@ class GameMapErrorBoundary extends Component<{ children: ReactNode }, { hasError
             justifyContent: "center",
             background: "rgba(239, 68, 68, 0.08)",
             borderRadius: "20px",
-            border: "1px solid var(--border)",
+            border: "1px solid var(--gh-border-default)",
             color: "var(--danger)",
             padding: "20px",
             textAlign: "center"
