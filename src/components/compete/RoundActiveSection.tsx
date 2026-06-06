@@ -87,6 +87,12 @@ export default function RoundActiveSection({
   const [guessHint, setGuessHint] = useState<string | null>(null);
   const guessHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Sheet state
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [sheetDrag, setSheetDrag] = useState(0);
+  const sheetDragStartY = useRef<number | null>(null);
+  const sheetRawDy = useRef(0);
+
   // Pan system refs
   const panX = useRef(0);
   const panVelX = useRef(0);
@@ -303,6 +309,45 @@ export default function RoundActiveSection({
     setLocationName(result.displayName);
     setSearchQuery("");
     setSearchResults([]);
+  };
+
+  const closeSheet = () => {
+    setActivePanel(null);
+    setSheetExpanded(false);
+    setSheetDrag(0);
+    sheetDragStartY.current = null;
+    setSearchQuery("");
+    setSearchResults([]);
+  };
+
+  const onSheetHandleDown = (e: React.PointerEvent) => {
+    sheetDragStartY.current = e.clientY;
+    sheetRawDy.current = 0;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const onSheetHandleMove = (e: React.PointerEvent) => {
+    if (sheetDragStartY.current === null) return;
+    const dy = e.clientY - sheetDragStartY.current;
+    sheetRawDy.current = dy;
+    setSheetDrag(Math.max(0, dy));
+  };
+
+  const onSheetHandleUp = () => {
+    if (sheetDragStartY.current === null) return;
+    const dy = sheetRawDy.current;
+    const canExpand = activePanel === "where";
+
+    if (canExpand && !sheetExpanded && dy < -70) {
+      setSheetExpanded(true);
+    } else if (canExpand && sheetExpanded && dy > 120) {
+      setSheetExpanded(false);
+    } else if (!sheetExpanded && dy > 140) {
+      closeSheet();
+    }
+    sheetDragStartY.current = null;
+    sheetRawDy.current = 0;
+    setSheetDrag(0);
   };
 
   const formatTime = (s: number) => {
@@ -526,146 +571,6 @@ export default function RoundActiveSection({
 
       {/* BOTTOM PANEL */}
       <div className={styles.bottomPanel}>
-        {activePanel !== null && (
-          <div className={styles.panelDismiss} onClick={() => setActivePanel(null)} />
-        )}
-
-        {/* WHERE PANEL */}
-        {activePanel === 'where' && (
-          <div className={styles.wherePanel}>
-            <div className={styles.panelHeader}>
-              <div className={styles.panelTitleGroup}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/where.webp" alt="where" className={styles.panelIcon} />
-                <div className={styles.panelMeta}>
-                  <span className={styles.panelLabelWhere}>WHERE</span>
-                  <span className={styles.panelValue}>
-                    {guessLocation !== null
-                      ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
-                      : "No location set"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className={`${styles.mapWrapper} ${styles.mapWrapperFlex}`}>
-              <div className={`${styles.mapNoZoom} ${styles.mapNoZoomInner}`}>
-                <GameMap
-                  guessLocation={guessLocation}
-                  onSetLocation={handleMapSetLocation}
-                  hideZoomControls={true}
-                  flyToTarget={flyToTarget}
-                  localPlayerAvatarUrl={localPlayerAvatarUrl}
-                />
-              </div>
-              <button
-                type="button"
-                className={styles.mapFullscreenBtn}
-                onClick={() => setMapFullscreen(true)}
-                aria-label="Fullscreen map"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <polyline points="15 3 21 3 21 9"/>
-                  <polyline points="9 21 3 21 3 15"/>
-                  <line x1="21" y1="3" x2="14" y2="10"/>
-                  <line x1="3" y1="21" x2="10" y2="14"/>
-                </svg>
-              </button>
-            </div>
-
-            {!isLocked && (
-              <div className={styles.searchWrap}>
-                <div className={styles.searchRow}>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    placeholder="Search a place (city, country)…"
-                    disabled={isLocked}
-                    className={styles.searchInput}
-                  />
-                </div>
-                {(searchResults.length > 0 || searchLoading) && (
-                  <div className={styles.searchDropdown}>
-                    {searchLoading && (
-                      <div className={styles.searchLoading}>Searching…</div>
-                    )}
-                    {searchResults.map((r, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onMouseDown={() => selectSearchResult(r)}
-                        className={`${styles.searchResultBtn} ${i > 0 ? styles.searchResultBtnBorder : ""}`}
-                      >
-                        {r.displayName}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* WHEN PANEL */}
-        {activePanel === 'when' && (
-          <div className={styles.whenPanel}>
-            <div className={styles.panelHeader}>
-              <div className={styles.panelTitleGroup}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/badges/when.webp" alt="when" className={styles.panelIcon} />
-                <div className={styles.panelMeta}>
-                  <span className={styles.panelLabelWhen}>WHEN</span>
-                  <span className={styles.panelValueNumeric}>
-                    {guessYear !== null ? String(guessYear) : "No year set"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <YearPicker
-                value={guessYear ?? Math.round((yearMin + yearMax) / 2)}
-                onChange={(year) => {
-                  onSetYear(year);
-                  guessYearRef.current = year;
-                }}
-                min={yearMin}
-                max={yearMax}
-                defaultScale="century"
-                valueIsCommitted={guessYear !== null}
-                className="w-full"
-              />
-            </div>
-
-            {!isLocked && (
-              <div className={styles.yearInputWrap}>
-                <input
-                  type="number"
-                  value={yearEditValue}
-                  onChange={(e) => {
-                    setYearEditValue(e.target.value);
-                    const parsed = parseInt(e.target.value, 10);
-                    if (!isNaN(parsed)) {
-                      const clamped = Math.max(yearMin, Math.min(yearMax, parsed));
-                      onSetYear(clamped);
-                      guessYearRef.current = clamped;
-                    }
-                  }}
-                  onFocus={(e) => {
-                    setYearEditValue(guessYear !== null ? String(guessYear) : "");
-                    setTimeout(() => e.target.select(), 10);
-                  }}
-                  placeholder={`Enter year (${yearMin}–${yearMax})`}
-                  min={yearMin}
-                  max={yearMax}
-                  className={styles.yearInput}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
         {/* GUESS HINT */}
         {guessHint && (
           <div className={styles.guessHint}>{guessHint}</div>
@@ -674,71 +579,85 @@ export default function RoundActiveSection({
         {/* NAVBAR */}
         <div className={styles.navbar}>
 
-          {/* Hints button */}
+          {/* Hints */}
           <button
             type="button"
             onClick={onOpenHints}
             disabled={isLocked}
-            className={`${styles.hintsBtn} ${isLocked ? styles.hintsBtnLocked : ""}`}
+            className={`${styles.circleBtn} ${styles.hintsBtn} ${isLocked ? styles.hintsBtnLocked : ""}`}
             aria-label="Hints"
           >
             <span className={styles.hintsCount}>{hintsUsedCount ?? 0}</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9.663 17h4.673M12 3v1m0 16v1M4.22 4.22l.707.707M19.778 19.778l-.707-.707M3 12h1m16 0h1M4.22 19.778l.707-.707M19.778 4.22l-.707.707M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/>
+              <path d="M9.663 17h4.673M12 3v1m0 16v1M4.22 4.22l.707.707M19.778 19.778l-.707-.707M3 12h1m16 0h1M4.22 19.778l.707-.707M19.778 4.22l-.707.707M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
             </svg>
           </button>
 
-          {/* WHERE circle with overlay tag */}
-          <div className={styles.navBtnCircleWrap}>
-            <span className={`${styles.navBtnOverlayTag} ${styles.navBtnOverlayTagWhere} ${guessLocation !== null ? styles.navBtnOverlayTagAnswer : ""}`}>
+          {/* WHEN — left of WHERE */}
+          <div className={styles.circleWrap}>
+            <span className={`${styles.overlayTag} ${styles.overlayTagWhen} ${guessYear !== null ? styles.overlayTagAnswer : ""}`}>
+              {guessYear !== null ? String(guessYear) : "WHEN"}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (activePanel === 'when') {
+                  closeSheet();
+                } else {
+                  setActivePanel('when');
+                  setSheetExpanded(false);
+                  setSheetDrag(0);
+                }
+              }}
+              disabled={isLocked}
+              className={`${styles.circleBtn} ${styles.whenBtn} ${
+                activePanel === 'when'
+                  ? styles.btnActive
+                  : guessYear === null && !isLocked
+                  ? styles.whenBtnGlow
+                  : ""
+              }`}
+              aria-label="When"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/badges/when.webp" alt="When" className={styles.btnIcon} />
+            </button>
+          </div>
+
+          {/* WHERE — right of WHEN */}
+          <div className={styles.circleWrap}>
+            <span className={`${styles.overlayTag} ${styles.overlayTagWhere} ${guessLocation !== null ? styles.overlayTagWhereAnswer : ""}`}>
               {guessLocation !== null
                 ? (locationNameLoading ? "…" : (locationName ?? "✓").split(",")[0].trim())
                 : "WHERE"}
             </span>
             <button
               type="button"
-              onClick={() => setActivePanel(prev => prev === 'where' ? null : 'where')}
-              className={`${styles.whereBtn} ${
+              onClick={() => {
+                if (activePanel === 'where') {
+                  closeSheet();
+                } else {
+                  setActivePanel('where');
+                  setSheetExpanded(false);
+                  setSheetDrag(0);
+                }
+              }}
+              disabled={isLocked}
+              className={`${styles.circleBtn} ${styles.whereBtn} ${
                 activePanel === 'where'
-                  ? styles.whereBtnActive
+                  ? styles.btnActive
                   : guessLocation === null && !isLocked
-                  ? styles.whereBtnUnanswered
+                  ? styles.whereBtnGlow
                   : ""
               }`}
               aria-label="Where"
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z"/>
-                <circle cx="12" cy="10" r="2.5"/>
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/badges/where.webp" alt="Where" className={styles.btnIcon} />
             </button>
           </div>
 
-          {/* WHEN circle with overlay tag */}
-          <div className={styles.navBtnCircleWrap}>
-            <span className={`${styles.navBtnOverlayTag} ${styles.navBtnOverlayTagWhen} ${guessYear !== null ? styles.navBtnOverlayTagAnswer : ""}`}>
-              {guessYear !== null ? String(guessYear) : "WHEN"}
-            </span>
-            <button
-              type="button"
-              onClick={() => setActivePanel(prev => prev === 'when' ? null : 'when')}
-              className={`${styles.whenBtn} ${
-                activePanel === 'when'
-                  ? styles.whenBtnActive
-                  : guessYear === null && !isLocked
-                  ? styles.whenBtnUnanswered
-                  : ""
-              }`}
-              aria-label="When"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4" y="5" width="16" height="15" rx="2"/>
-                <path d="M8 3v4M16 3v4M4 10h16"/>
-              </svg>
-            </button>
-          </div>
-
-          {/* Submit button */}
+          {/* Submit */}
           <button
             type="button"
             onClick={() => {
@@ -753,23 +672,194 @@ export default function RoundActiveSection({
               }
               onSubmit();
             }}
-            className={`${styles.submitBtn} ${
+            className={`${styles.circleBtn} ${styles.submitBtn} ${
               busy || hasSubmitted || localSubmitted
                 ? styles.submitBtnSubmitted
                 : canSubmit
-                ? `${styles.submitBtnReady} ${styles.submitActive}` 
+                ? styles.submitBtnReady
                 : ""
             }`}
+            aria-label="Submit"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
-            <span>{busy ? "…" : hasSubmitted || localSubmitted ? "✓" : "Go"}</span>
           </button>
 
         </div>
       </div>
+
+      {/* ════ BOTTOM SHEET ════ */}
+      {activePanel !== null && (
+        <>
+          <div className={styles.sheetBackdrop} onClick={closeSheet} />
+          <div
+            className={`${styles.sheet} ${activePanel === 'where' && sheetExpanded ? styles.sheetFull : ""}`}
+            style={{ "--sheet-drag": `${sheetDrag}px` } as React.CSSProperties}
+          >
+            {/* Drag handle — only element that controls sheet drag */}
+            <div
+              className={styles.dragZone}
+              onPointerDown={onSheetHandleDown}
+              onPointerMove={onSheetHandleMove}
+              onPointerUp={onSheetHandleUp}
+              onPointerCancel={onSheetHandleUp}
+            >
+              <div className={styles.dragHandle} />
+            </div>
+
+            {/* WHERE sheet */}
+            {activePanel === 'where' && (
+              <>
+                <div className={styles.sheetHeader}>
+                  <div className={styles.sheetHeaderLeft}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/badges/where.webp" alt="" className={styles.sheetHeaderIcon} />
+                    <div className={styles.sheetHeaderMeta}>
+                      <span className={styles.sheetHeaderValue}>
+                        {guessLocation !== null
+                          ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
+                          : "No location set"}
+                      </span>
+                    </div>
+                  </div>
+                  <button type="button" className={styles.sheetCloseBtn} onClick={closeSheet} aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className={styles.sheetMap}>
+                  <GameMap
+                    guessLocation={guessLocation}
+                    onSetLocation={handleMapSetLocation}
+                    hideZoomControls={true}
+                    flyToTarget={flyToTarget}
+                    localPlayerAvatarUrl={localPlayerAvatarUrl}
+                  />
+                </div>
+
+                {!isLocked && (
+                  <div className={styles.sheetFieldWrap}>
+                    <svg className={styles.sheetFieldIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <circle cx="11" cy="11" r="7" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      placeholder="Search a place (city, country)…"
+                      disabled={isLocked}
+                      className={`${styles.sheetField} ${styles.sheetFieldWithIcon}`}
+                    />
+                    {(searchResults.length > 0 || searchLoading) && (
+                      <div className={styles.sheetSearchDropdown}>
+                        {searchLoading && <div className={styles.sheetSearchLoading}>Searching…</div>}
+                        {searchResults.map((r, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onMouseDown={() => selectSearchResult(r)}
+                            className={`${styles.sheetSearchResultBtn} ${i > 0 ? styles.sheetSearchResultBorder : ""}`}
+                          >
+                            {r.displayName}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className={`${styles.sheetConfirmBtn} ${styles.sheetConfirmWhere} ${guessLocation !== null ? styles.sheetConfirmReady : ""}`}
+                  onClick={closeSheet}
+                  disabled={guessLocation === null}
+                >
+                  {guessLocation !== null ? "Confirm location" : "Tap the map to set a location"}
+                </button>
+              </>
+            )}
+
+            {/* WHEN sheet */}
+            {activePanel === 'when' && (
+              <>
+                <div className={styles.sheetHeader}>
+                  <div className={styles.sheetHeaderLeft}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/badges/when.webp" alt="" className={styles.sheetHeaderIcon} />
+                    <div className={styles.sheetHeaderMeta}>
+                      <span className={styles.sheetHeaderValue}>
+                        {guessYear !== null ? String(guessYear) : "No year set"}
+                      </span>
+                    </div>
+                  </div>
+                  <button type="button" className={styles.sheetCloseBtn} onClick={closeSheet} aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className={styles.sheetPickerWrap}>
+                  <YearPicker
+                    value={guessYear ?? Math.round((yearMin + yearMax) / 2)}
+                    onChange={(year) => {
+                      onSetYear(year);
+                      guessYearRef.current = year;
+                    }}
+                    min={yearMin}
+                    max={yearMax}
+                    defaultScale="century"
+                    valueIsCommitted={guessYear !== null}
+                    className="w-full"
+                  />
+                </div>
+
+                {!isLocked && (
+                  <div className={styles.sheetFieldWrap}>
+                    <input
+                      type="number"
+                      value={yearEditValue}
+                      onChange={(e) => {
+                        setYearEditValue(e.target.value);
+                        const parsed = parseInt(e.target.value, 10);
+                        if (!isNaN(parsed)) {
+                          const clamped = Math.max(yearMin, Math.min(yearMax, parsed));
+                          onSetYear(clamped);
+                          guessYearRef.current = clamped;
+                        }
+                      }}
+                      onFocus={(e) => {
+                        setYearEditValue(guessYear !== null ? String(guessYear) : "");
+                        setTimeout(() => e.target.select(), 10);
+                      }}
+                      placeholder={`Enter year (${yearMin}–${yearMax})`}
+                      min={yearMin}
+                      max={yearMax}
+                      className={styles.sheetField}
+                    />
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className={`${styles.sheetConfirmBtn} ${styles.sheetConfirmWhen} ${guessYear !== null ? styles.sheetConfirmReady : ""}`}
+                  onClick={closeSheet}
+                  disabled={guessYear === null}
+                >
+                  {guessYear !== null ? "Confirm year" : "Pick a year to continue"}
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
 
       {/* SETTINGS MODAL */}
       {settingsModalOpen && (

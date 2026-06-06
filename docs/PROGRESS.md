@@ -1806,3 +1806,59 @@ MP-REFACTOR-STYLE-001 DONE
 - **Task Title**: Trigger badge popup via IntersectionObserver when relevant cards enter viewport
 - **Files Modified**: src/app/compete/[gameId]/page.tsx, src/components/compete/RoundCompleteSection.tsx
 - **Result**: Removed old setTimeout(600ms) badge popup useEffect and sound useEffect. Added whereCardSeenRef/whenCardSeenRef, reset effect on ROUND_ACTIVE, maybeShowBadgePopup useCallback with dimension-aware readiness logic, three handler callbacks. RoundCompleteSection gains three optional viewport callbacks, three IntersectionObserver useEffects, three refs attached to accuracyCard/whereCard/whenCard divs. TSC exits 0. getBadgeSoundPath import removed (orphaned). 3 IntersectionObserver matches confirmed.
+
+# MP-REFACTOR-STYLE-008
+- **Task Title**: Create src/components/ui/ directory with shared Button CSS module
+- **Files Modified**: src/components/ui/Button.module.css (created), src/app/globals.css, src/app/compete/page.tsx, src/app/compete/[gameId]/page.tsx
+- **Result**: Created Button.module.css with .btn, .primary, .secondary variants. Removed .button, .button.secondary, .button:disabled from globals.css. Migrated 3 className="button" consumers to btnStyles.btn + btnStyles.primary. grep -n ".button" globals.css → 0 results. grep -rn 'className="button"' src/ → 0 results. tsc --noEmit → exit 0.
+
+# MP-REFACTOR-STYLE-009
+- **Task Title**: Remove globals.css legacy card/hero/panel classes
+- **Files Modified**: src/app/globals.css
+- **Result**: Audited all TSX consumers. .panel removed from shared rule, heading rule, paragraph rule (zero bare className="panel" consumers). .select removed from .input/.select rule (zero consumers). .hero kept (3 consumers in compete pages). .card kept (1 consumer in [gameId]/page.tsx). .input kept (1 consumer in compete/page.tsx). tsc --noEmit → exit 0.
+
+# MP-REFACTOR-STYLE-010
+- **Task Title**: Consolidate AuthModal overlay pattern into shared modal CSS
+- **Files Modified**: src/components/ui/Modal.module.css (created), src/components/AuthModal.module.css
+- **Result**: Created Modal.module.css with .overlay and .modal base classes using confirmed tokens (--gh-bg-surface, --gh-border-default, --radius-lg). AuthModal.module.css .overlay: replaced top/left/width/height with inset:0, rgba(0,0,0,0.7)→rgba(0,0,0,0.72). HintModal untouched. tsc --noEmit → exit 0.
+
+# MP-FEAT-LEADERBOARD-001
+- **Task Title**: Implement /leaderboard page — Daily + Level Up tabs with real data
+- **Files Modified**: src/app/leaderboard/page.tsx (created), src/app/leaderboard/leaderboard.module.css (created)
+- **Result**: Leaderboard page with Daily tab (Today/All-time sub-tabs) and Level Up tab. Uses useIdentity hook for auth, supabaseBrowser for DB reads. All 3 data queries implemented (leaderboard_daily, leaderboard_daily_alltime, leaderboard_levelup). CSS module only, no Tailwind classes, no inline styles. Dark theme with orange/purple accents. Current player row highlighted. Medal emojis for top 3 ranks. Responsive mobile-first design. tsc --noEmit → exit 0, grep for "style={{" returns 0 matches.
+
+# MP-FEAT-LEADERBOARD-002
+- **Task Title**: Add Overall tab to /leaderboard page with player_global_stats data
+- **Files Modified**: src/app/leaderboard/page.tsx
+- **Result**: Added 'overall' to LeaderboardTab union type. Created OverallRow type and added rounds_played to LeaderboardEntry. Added overallData state and fetchOverallData function querying player_global_stats table. Wired into fetchData, getCurrentData, and handleRetry. Added Overall tab button (third tab). Added table columns for Overall tab (Avg Accuracy, Total XP, Games). Added URL query param support with useSearchParams to allow /leaderboard?tab=overall. Wrapped component in Suspense boundary as required by Next.js 14 App Router. tsc --noEmit → exit 0, grep for "overall" returns 16 matches, grep for "useSearchParams" returns 2 matches, grep for "Suspense" returns 3 matches.
+
+# MP-FEAT-LEADERBOARD-003
+- **Task Title**: Wire Leaderboard menu item in NavModal to /leaderboard route
+- **Files Modified**: src/components/NavModal.tsx
+- **Result**: Changed Leaderboard menu item action from `comingSoon('Leaderboard')` to `navigate('/leaderboard')`. Leaderboard is now accessible from the navigation menu. tsc --noEmit → exit 0, grep for "comingSoon('Leaderboard')" returns 0 matches, grep for "navigate('/leaderboard')" returns 1 match at line 39.
+
+# MP-FEAT-LEADERBOARD-004
+- **Task Title**: Make xpPill on home page clickable — navigates to /leaderboard?tab=overall
+- **Files Modified**: src/app/page.tsx, src/app/home.module.css
+- **Result**: Changed xpPill from `<div>` to `<button>` with onClick navigating to `/leaderboard?tab=overall`. Added `cursor: pointer` and `font-family: inherit` to .xpPill CSS class. tsc --noEmit → exit 0, git diff shows both files, grep for "xpPill" in page.tsx shows button element, grep for "leaderboard" returns 1 match at line 99.
+# MP-INV-STYLE-004
+- **Task Title**: TopBar and AppShell audit — per-page chrome inventory
+- **Result**: Complete inventory of chrome elements across all pages. layout.tsx: No chrome, only root HTML wrapper. page.tsx (home): Full topbar with logo, xpPill (accuracy|XP), NotificationBell, avatarBtn. profile/page.tsx: Custom topbar with Back button, Edit Profile button. account/page.tsx: Custom topbar with Back button, Account title. compete/page.tsx: Redirects to home, no chrome. compete/[gameId]/page.tsx: No topbar chrome. No shared TopBar/AppShell component exists. home.module.css defines .topbar, .xpPill, .avatarBtn styles.
+- **Files Modified**: None (audit only)
+- **Task Title**: Extract TopBar into shared component
+- **Files Modified**: src/components/layout/TopBar.tsx (created), src/components/layout/TopBar.module.css (created), src/app/page.tsx, src/app/home.module.css
+# MP-REFACTOR-STYLE-011
+- **Result**: Extracted TopBar from page.tsx into reusable component with props (accuracy, xp, avatarUrl, initials, onAvatarClick). Moved CSS classes to TopBar.module.css. Removed duplicate classes from home.module.css. page.tsx now imports and uses TopBar component. tsc --noEmit → exit 0. grep for topbar/xpPill/avatarBtn in home.module.css returns 0 matches. grep for TopBar in page.tsx shows 1 import + 1 usage.
+# MP-REFACTOR-STYLE-012
+- **Task Title**: Add TopBar to profile and account pages
+- **Files Modified**: src/app/profile/page.tsx, src/app/account/page.tsx
+- **Result**: Added TopBar component to both profile and account pages. Added accuracy and xp state with fetch from player_global_stats table. Derived initials from display_name (fallback '??'). profile page: onAvatarClick navigates to /account. account page: onAvatarClick is no-op. Both pages now render TopBar as first element in root div. tsc --noEmit → exit 0. grep for TopBar shows 1 import + 1 usage in each file.
+
+## MP-UI-BOTTOMBAR-002 - 2026-06-06
+- Files modified: src/components/compete/RoundActiveSection.tsx, src/components/compete/RoundActiveSection.module.css
+- Replaced navbar and WHERE/WHEN panels with prototype bottom-sheet UI
+- Added new state: sheetExpanded, sheetDrag, sheetDragStartY, sheetRawDy
+- Added drag handlers: onSheetHandleDown, onSheetHandleMove, onSheetHandleUp
+- Added closeSheet function for unified sheet dismissal
+- New button order: Hints → WHEN → WHERE → Submit
+- CSS: Removed old panel/navbar classes, added sheet and circle button classes

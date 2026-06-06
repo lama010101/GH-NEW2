@@ -6,6 +6,7 @@ import { useIdentity } from '@/hooks/useIdentity';
 import { signOut } from '@/core/identity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import styles from './profile.module.css';
+import TopBar from '@/components/layout/TopBar';
 
 
 type ProfileHistoricalAvatar = {
@@ -19,6 +20,8 @@ type ProfileHistoricalAvatar = {
 export default function ProfilePage() {
   const router = useRouter();
   const { playerId } = useIdentity();
+  const [accuracy, setAccuracy] = useState('--');
+  const [xp, setXp] = useState('--');
   const [progressData, setProgressData] = useState<{
     byCentury: Array<{ century: string; avgAccuracy: number; roundCount: number }>
     byContinent: Array<{ continent: string; avgAccuracy: number; roundCount: number }>
@@ -77,6 +80,11 @@ export default function ProfilePage() {
           .eq('player_id', playerId)
           .limit(1)
           .single();
+
+        if (statsResult) {
+          setAccuracy(String(Math.round(Number(statsResult.avg_accuracy))));
+          setXp(Number(statsResult.total_xp).toLocaleString('fr-FR'));
+        }
 
         // Leaderboard positions
         const { data: dailyAlltimeResult } = await supabaseBrowser
@@ -174,7 +182,7 @@ export default function ProfilePage() {
   };
 
   const getInitials = (name: string | null): string => {
-    if (!name) return '?';
+    if (!name) return '??';
     const words = name.trim().split(/\s+/);
     const initials = words.map(w => w[0]).join('').toUpperCase();
     return initials.slice(0, 2);
@@ -193,21 +201,13 @@ export default function ProfilePage() {
       <div className={`absolute top-0 left-0 right-0 h-[280px] bg-gradient-to-b z-0 ${styles.heroBg}`} />
 
       {/* 2. TOP BAR */}
-      <div className={`fixed top-0 left-0 right-0 px-6 py-4 flex items-center justify-between z-[100] ${styles.topBar}`}>
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm bg-transparent border-none cursor-pointer font-semibold text-white"
-        >
-          <span className="text-lg">←</span>
-          <span>Back</span>
-        </button>
-        <button
-          onClick={() => router.push('/account')}
-          className={`font-bebas px-4 py-2 rounded-full text-xs uppercase font-bold tracking-wider bg-white/[0.04] text-white/45 border border-white/[0.09] cursor-pointer`}
-        >
-          Edit Profile
-        </button>
-      </div>
+      <TopBar
+        accuracy={accuracy}
+        xp={xp}
+        avatarUrl={profileData.avatarUrl}
+        initials={getInitials(profileData.displayName)}
+        onAvatarClick={() => router.push('/account')}
+      />
 
       {/* 3. HERO SECTION */}
       <div className="relative z-10 max-w-[820px] mx-auto pt-20 px-6 flex flex-col items-center text-center">

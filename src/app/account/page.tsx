@@ -7,6 +7,7 @@ import { useIdentity } from '@/hooks/useIdentity'
 import { signOut } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import styles from './account.module.css'
+import TopBar from '@/components/layout/TopBar'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
 
@@ -22,6 +23,8 @@ export default function AccountPage() {
   const router = useRouter()
   const { playerId } = useIdentity()
 
+  const [accuracy, setAccuracy] = useState('--')
+  const [xp, setXp] = useState('--')
   const [displayName, setDisplayName] = useState<string>('')
   const [savedName, setSavedName] = useState<string>('')
   const [email, setEmail] = useState<string | null>(null)
@@ -43,6 +46,17 @@ export default function AccountPage() {
       const { data: sessionData } = await supabaseBrowser.auth.getSession()
       const userEmail = sessionData.session?.user?.email ?? null
       const userCreatedAt = sessionData.session?.user?.created_at ?? null
+
+      const { data: stats } = await supabaseBrowser
+        .from('player_global_stats')
+        .select('avg_accuracy,total_xp')
+        .eq('player_id', playerId)
+        .single()
+
+      if (stats) {
+        setAccuracy(String(Math.round(Number(stats.avg_accuracy))))
+        setXp(Number(stats.total_xp).toLocaleString('fr-FR'))
+      }
 
       if (profile?.avatar_url) {
         let { data: av } = await supabaseBrowser
@@ -106,8 +120,9 @@ export default function AccountPage() {
   }
 
   const getInitials = (name: string): string => {
+    if (!name) return '??'
     const words = name.trim().split(/\s+/)
-    return words.map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
+    return words.map(w => w[0]).join('').toUpperCase().slice(0, 2)
   }
 
   const formatDate = (dateStr: string | null): string => {
@@ -121,16 +136,13 @@ export default function AccountPage() {
     <div className={`${dmSans.className} ${styles.page}`}>
 
       {/* Top bar */}
-      <div className={styles.topBar}>
-        <button
-          onClick={() => router.back()}
-          className={styles.backBtn}
-        >
-          <span className={styles.backArrow}>←</span> Back
-        </button>
-        <span className={styles.topBarTitle}>Account</span>
-        <div className={styles.topBarSpacer} />
-      </div>
+      <TopBar
+        accuracy={accuracy}
+        xp={xp}
+        avatarUrl={avatarInfo?.imageUrl ?? null}
+        initials={getInitials(displayName)}
+        onAvatarClick={() => {}}
+      />
 
       {/* Avatar card */}
       {avatarInfo && (

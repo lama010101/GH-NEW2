@@ -254,50 +254,6 @@
   display: none !important;
 }
 
-.mapWrapper {
-  position: relative;
-  border-radius: 0;
-  overflow: hidden;
-  margin-bottom: 0;
-  width: 100%;
-}
-
-.mapWrapperFlex {
-  flex: 1;
-  min-height: 120px;
-}
-
-.mapNoZoomInner {
-  width: 100%;
-  height: 100%;
-}
-
-.mapFullscreenBtn {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  right: unset;
-  z-index: 1000;
-  width: 40px;
-  height: 40px;
-  background: rgba(20, 18, 16, 0.82);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-}
-
-.mapFullscreenBtn:hover {
-  background: rgba(40, 36, 30, 0.92);
-}
-
 /* ── Bottom panel ── */
 
 .bottomPanel {
@@ -314,193 +270,6 @@
   z-index: 20;
 }
 
-.panelDismiss {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: auto;
-}
-
-/* ── WHERE active panel ── */
-
-.wherePanel {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  background: rgba(6, 182, 212, 0.10);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(6, 182, 212, 0.28);
-  border-radius: 14px;
-  padding: 12px 16px;
-  margin-bottom: 8px;
-  pointer-events: auto;
-  position: relative;
-  z-index: 1;
-}
-
-/* ── WHEN active panel ── */
-
-.whenPanel {
-  background: rgba(139, 92, 246, 0.10);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(139, 92, 246, 0.28);
-  border-radius: 14px;
-  padding: 12px 16px;
-  pointer-events: auto;
-  position: relative;
-  z-index: 1;
-}
-
-/* ── Panel header (shared) ── */
-
-.panelHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding: 6px 0;
-}
-
-.panelTitleGroup {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.panelIcon {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.panelMeta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.panelLabelWhere {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: var(--gh-blue);
-}
-
-.panelLabelWhen {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: var(--gh-violet);
-}
-
-.panelValue {
-  font-size: 15px;
-  font-weight: 600;
-  color: #ffffff;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-}
-
-.panelValueNumeric {
-  font-size: 15px;
-  font-weight: 600;
-  color: #ffffff;
-  line-height: 1.3;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-}
-
-/* ── Search ── */
-
-.searchWrap {
-  margin-top: 8px;
-}
-
-.searchRow {
-  display: flex;
-  gap: 8px;
-}
-
-.searchInput {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
-  border-radius: 10px;
-  padding: 10px 14px;
-  color: #ffffff;
-  font-size: 14px;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.searchDropdown {
-  background: var(--gh-bg-elevated);
-  border: 1px solid var(--gh-border-default);
-  border-radius: 10px;
-  margin-top: 4px;
-  overflow: hidden;
-}
-
-.searchLoading {
-  padding: 10px 14px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.searchResultBtn {
-  width: 100%;
-  padding: 10px 14px;
-  background: transparent;
-  border: none;
-  border-top: none;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
-  text-align: left;
-  cursor: pointer;
-  display: block;
-}
-
-.searchResultBtnBorder {
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.searchResultBtn:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* ── Year input ── */
-
-.yearInputWrap {
-  margin-top: 8px;
-}
-
-.yearInput {
-  width: 100%;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1.5px solid rgba(139, 92, 246, 0.60);
-  border-radius: 10px;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 600;
-  text-align: center;
-  outline: none;
-  padding: 0 12px;
-  box-sizing: border-box;
-  -moz-appearance: textfield;
-  -webkit-appearance: none;
-}
-
 /* ── Guess hint ── */
 
 .guessHint {
@@ -514,35 +283,37 @@
 /* ── Navbar ── */
 
 .navbar {
-  background: transparent;
-  padding: 8px 12px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
   display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  gap: 10px;
-  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
   pointer-events: auto;
 }
 
-/* Hints button */
-
-.hintsBtn {
-  width: 48px;
-  height: 48px;
+/* ── Base circle button ── */
+.circleBtn {
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 1), rgba(249, 115, 22, 0.9));
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  align-self: flex-end;
-  transition: opacity 0.2s ease;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(30, 30, 34, 0.85);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  position: relative;
+}
+
+/* ── Hints button ── */
+.hintsBtn {
+  width: 52px;
+  height: 52px;
 }
 
 .hintsBtnLocked {
@@ -551,166 +322,386 @@
 }
 
 .hintsCount {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--gh-orange, #f59e0b);
+  color: #000;
   font-size: 11px;
   font-weight: 700;
-  color: #fff;
-  line-height: 1;
-}
-
-/* WHERE circle button */
-
-.whereBtn {
-  flex-shrink: 0;
-  width: 64px;
-  height: 64px;
-  background: rgba(6, 182, 212, 0.95);
-  border: 2px solid rgba(6, 182, 212, 0.6);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-.whereBtnActive {
-  background: var(--gh-blue);
-  border-color: #fff;
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.4), 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-@keyframes glowPulseBlue {
-  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 10px 2px rgba(6, 182, 212, 0.5); }
-  50%       { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 22px 6px rgba(6, 182, 212, 0.8); }
-}
-
-.whereBtnUnanswered {
-  animation: glowPulseBlue 1.8s ease-in-out infinite;
-}
-
-/* WHEN circle button */
-
-.whenBtn {
-  flex-shrink: 0;
-  width: 64px;
-  height: 64px;
-  background: rgba(139, 92, 246, 0.95);
-  border: 2px solid rgba(139, 92, 246, 0.6);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-.whenBtnActive {
-  background: var(--gh-violet);
-  border-color: #fff;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.4), 0 2px 8px rgba(0, 0, 0, 0.4);
-}
-
-@keyframes glowPulseViolet {
-  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 10px 2px rgba(139, 92, 246, 0.5); }
-  50%       { box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 22px 6px rgba(139, 92, 246, 0.8); }
-}
-
-.whenBtnUnanswered {
-  animation: glowPulseViolet 1.8s ease-in-out infinite;
-}
-
-/* Tag overlaid at top of circle — shows label OR answer */
-
-.navBtnCircleWrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  margin: 0 4px;
-}
-
-.navBtnOverlayTag {
+  min-width: 18px;
+  height: 18px;
   border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  text-align: center;
-  line-height: 1.3;
-  width: 80px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  pointer-events: none;
-}
-
-.navBtnOverlayTagWhere {
-  background: rgba(6, 182, 212, 0.92);
-  color: #fff;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-.navBtnOverlayTagWhen {
-  background: rgba(139, 92, 246, 0.92);
-  color: #fff;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-.navBtnOverlayTagAnswer {
-  text-transform: none;
-  letter-spacing: 0.2px;
-  font-size: 12px;
-}
-
-/* Submit button */
-
-.submitBtn {
-  flex: 1;
-  height: 56px;
-  border-radius: 14px;
-  color: rgba(255, 255, 255, 0.70);
-  font-size: 14px;
-  font-weight: 700;
-  font-style: italic;
-  cursor: pointer;
   display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 10px;
-  border: 1.5px solid rgba(249, 115, 22, 0.55);
-  background: rgba(249, 115, 22, 0.25);
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  align-self: flex-end;
+}
+
+/* ── WHERE button ── */
+.whereBtn {
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  background: #06b6d4;
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── WHEN button ── */
+.whenBtn {
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  background: #8b5cf6;
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Submit button ── */
+.submitBtn {
+  width: 52px;
+  height: 52px;
+  color: #fff;
 }
 
 .submitBtnReady {
-  border-color: var(--gh-orange);
-  background: var(--gh-orange);
-  color: #ffffff;
+  background: var(--gh-orange, #f59e0b);
+  color: #000;
+  border-color: rgba(255, 255, 255, 0.85);
+  animation: ripplePulse 1.6s ease-in-out infinite;
 }
 
 .submitBtnSubmitted {
-  border-color: rgba(255, 255, 255, 0.20);
+  border-color: rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.55);
 }
 
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 8px 2px rgba(255, 138, 0, 0.5); }
-  50%       { box-shadow: 0 0 20px 6px rgba(255, 174, 66, 0.85); }
+@keyframes ripplePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55); }
+  50%       { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
 }
 
-.submitActive {
-  animation: glowPulse 1.6s ease-in-out infinite;
+/* ── Active state (panel open) ── */
+.btnActive {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Glow animations (unanswered) ── */
+.whereBtnGlow {
+  animation: glowBlue 1.8s ease-in-out infinite;
+}
+
+.whenBtnGlow {
+  animation: glowViolet 1.8s ease-in-out infinite;
+}
+
+@keyframes glowBlue {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 0 rgba(6, 182, 212, 0.55); }
+  50%       { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 10px rgba(6, 182, 212, 0); }
+}
+
+@keyframes glowViolet {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 0 rgba(139, 92, 246, 0.55); }
+  50%       { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 10px rgba(139, 92, 246, 0); }
+}
+
+/* ── Button icon image ── */
+.btnIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* ── Circle wrap (overlay tag container) ── */
+.circleWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+/* ── Overlay tags ── */
+.overlayTag {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overlayTagWhere {
+  background: rgba(6, 182, 212, 0.95);
+  color: #fff;
+}
+
+.overlayTagWhen {
+  background: rgba(139, 92, 246, 0.95);
+  color: #fff;
+}
+
+.overlayTagAnswer {
+  letter-spacing: 0.2px;
+  text-transform: none;
+}
+
+/* WHERE answer tag anchors to button left edge, extends rightward */
+.overlayTagWhereAnswer {
+  left: 0;
+  transform: none;
+  right: auto;
+  max-width: 200px;
+  letter-spacing: 0.2px;
+  text-transform: none;
+}
+
+/* ── Sheet backdrop ── */
+.sheetBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.45);
+  animation: fadeInBackdrop 0.2s ease;
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Bottom sheet ── */
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  height: 72vh;
+  background: #121214;
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+  padding: 0 16px 20px;
+  transform: translateY(var(--sheet-drag, 0px));
+  animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sheetFull {
+  height: 100vh;
+  height: 100dvh;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  padding-top: env(safe-area-inset-top);
+}
+
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(var(--sheet-drag, 0px)); }
+}
+
+/* ── Drag zone ── */
+.dragZone {
+  padding: 12px 0 8px;
+  display: flex;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+.dragZone:active {
+  cursor: grabbing;
+}
+
+.dragHandle {
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Sheet header ── */
+.sheetHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sheetHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sheetHeaderIcon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.sheetHeaderMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sheetHeaderValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sheetCloseBtn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* ── Sheet map ── */
+.sheetMap {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ── Sheet year picker ── */
+.sheetPickerWrap {
+  margin-top: 18px;
+}
+
+/* ── Sheet field (search + year input — shared) ── */
+.sheetFieldWrap {
+  position: relative;
+  margin-top: 16px;
+}
+
+.sheetField {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  padding: 12px 14px;
+  outline: none;
+}
+
+.sheetField::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sheetFieldWithIcon {
+  padding-left: 42px;
+}
+
+.sheetFieldIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+
+/* Search dropdown opens UPWARD (field is at the bottom) */
+.sheetSearchDropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  background: #16161a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 5;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+
+.sheetSearchLoading {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sheetSearchResultBtn {
+  width: 100%;
+  text-align: left;
+  padding: 11px 14px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: block;
+}
+
+.sheetSearchResultBorder {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.sheetSearchResultBtn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Sheet confirm button ── */
+.sheetConfirmBtn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: not-allowed;
+}
+
+.sheetConfirmReady {
+  color: #fff;
+  cursor: pointer;
+}
+
+.sheetConfirmWhere.sheetConfirmReady {
+  background: #06b6d4;
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.4);
+}
+
+.sheetConfirmWhen.sheetConfirmReady {
+  background: #8b5cf6;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
 }
 
 /* ── Settings modal ── */

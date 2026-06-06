@@ -6,6 +6,7 @@ import {
   createCompeteSessionRequest
 } from "@/core/competeApi";
 import { useIdentity } from "@/hooks/useIdentity";
+import btnStyles from "@/components/ui/Button.module.css";
 
 type Mode = "create" | "join";
 
@@ -155,7 +156,7 @@ export default function CompeteEntryPage() {
               </div>
               <button
                 type="button"
-                className="button"
+                className={`${btnStyles.btn} ${btnStyles.primary}`}
                 onClick={handleCreate}
                 disabled={blocked || loading}
               >
@@ -178,7 +179,7 @@ export default function CompeteEntryPage() {
               </div>
               <button
                 type="button"
-                className="button"
+                className={`${btnStyles.btn} ${btnStyles.primary}`}
                 onClick={handleJoin}
                 disabled={blocked || loading}
               >

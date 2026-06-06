@@ -32,6 +32,7 @@ import LobbySection from "@/components/compete/LobbySection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import useCompeteTimer from "@/hooks/useCompeteTimer";
 import useCompeteSocket from "@/hooks/useCompeteSocket";
+import btnStyles from "@/components/ui/Button.module.css";
 
 export default function CompeteGamePage() {
   const params = useParams<{ gameId: string }>();
@@ -488,7 +489,7 @@ export default function CompeteGamePage() {
                 </p>
                 <button
                   type="button"
-                  className="button"
+                  className={`${btnStyles.btn} ${btnStyles.primary}`}
                   onClick={() => {
                     setWsDisconnected(false);
                     wsRef.current?.reconnect();
