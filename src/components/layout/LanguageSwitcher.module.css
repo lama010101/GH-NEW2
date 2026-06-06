@@ -1,0 +1,35 @@
+.container {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 2px;
+}
+
+.pill {
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.pillActive {
+  background: white;
+  color: var(--color-text-primary, #1a1a1a);
+  font-weight: 600;
+}
+
+.pillInactive {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 400;
+}
+
+.disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
