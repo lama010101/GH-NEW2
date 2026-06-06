@@ -42,7 +42,6 @@ a {
 }
 
 .hero,
-.panel,
 .card {
   background: var(--gh-bg-surface);
   border: 1px solid var(--gh-border-default);
@@ -57,14 +56,12 @@ a {
 }
 
 .hero h1,
-.card h2,
-.panel h3 {
+.card h2 {
   margin: 0;
 }
 
 .hero p,
 .card p,
-.panel p,
 .small {
   color: var(--gh-text-muted);
 }
@@ -96,26 +93,6 @@ a {
   font-size: 0.85rem;
 }
 
-.button {
-  border: 0;
-  border-radius: 999px;
-  padding: 12px 18px;
-  background: linear-gradient(135deg, var(--gh-orange), #f97316);
-  color: #17110a;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.button.secondary {
-  background: transparent;
-  color: var(--gh-text-primary);
-  border: 1px solid var(--gh-border-default);
-}
-
-.button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
 
 .card {
   padding: 14px;
@@ -157,8 +134,7 @@ a {
   font-size: 0.9rem;
 }
 
-.input,
-.select {
+.input {
   width: 100%;
   border-radius: 14px;
   border: 1px solid var(--gh-border-default);

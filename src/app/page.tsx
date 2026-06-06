@@ -13,7 +13,7 @@ import { CompetePanel } from '@/components/home/CompetePanel'
 import { MODE_CARD_GRADIENT, MODE_CARD_TITLE, MODE_CARD_SUBTITLE, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import styles from './home.module.css'
 import { NavModal } from '@/components/NavModal'
-import NotificationBell from '@/components/NotificationBell'
+import TopBar from '@/components/layout/TopBar'
 
 function HomePageInner() {
   const router = useRouter()
@@ -91,31 +91,13 @@ function HomePageInner() {
       <div className={styles.bgOverlay} />
 
       {/* Top bar */}
-      <div className={styles.topbar}>
-        <div className={styles.topbarLeft}>
-          <Image src="/icons/logo.webp" alt="Guess-History" width={120} height={32} className={styles.logoImg} priority />
-        </div>
-        <div className={styles.xpPill}>
-          <span className={styles.xpPillAccuracy}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
-          <span className={styles.xpPillDivider}>|</span>
-          <span className={styles.xpPillXp}>{xp}<span className={styles.xpPillSuffix}>XP</span></span>
-        </div>
-        <div className={styles.topbarRight}>
-          <NotificationBell />
-          <button
-            onClick={() => { if (identity.status !== 'ready') { setShowAuthModal(true); return } setShowNavModal(true) }}
-            className={styles.avatarBtn}
-          >
-            {avatarUrl
-              ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="" className={styles.avatarBtnImg} />
-              )
-              : <span className={styles.avatarBtnInitials}>{initials.slice(0,2)}</span>
-            }
-          </button>
-        </div>
-      </div>
+      <TopBar
+        accuracy={accuracy}
+        xp={xp}
+        avatarUrl={avatarUrl}
+        initials={initials}
+        onAvatarClick={() => { if (identity.status !== 'ready') { setShowAuthModal(true); return } setShowNavModal(true) }}
+      />
 
       {/* Scrollable content area */}
       <div className={styles['page-scroll']}>

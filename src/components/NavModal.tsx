@@ -36,7 +36,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
   const ITEMS = [
     { label: 'Home',            icon: HOME_ICON,          action: () => navigate('/') },
     { label: 'Friends',         icon: FRIENDS_ICON,       action: () => comingSoon('Friends') },
-    { label: 'Leaderboard',     icon: LEADERBOARD_ICON,   action: () => comingSoon('Leaderboard') },
+    { label: 'Leaderboard',     icon: LEADERBOARD_ICON,   action: () => navigate('/leaderboard') },
     { label: 'Profile & Stats', icon: PROFILE_ICON,       action: () => navigate('/progress') },
     { label: 'Account',         icon: ACCOUNT_ICON,       action: () => navigate('/account') },
     { label: 'Help',            icon: HELP_ICON,          action: () => comingSoon('Help') },

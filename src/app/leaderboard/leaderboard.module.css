@@ -1,0 +1,369 @@
+.container {
+  min-height: 100vh;
+  background: var(--gh-bg-base);
+  color: var(--gh-text-primary);
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-top: 8px;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--gh-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.backArrow {
+  font-size: 18px;
+}
+
+.title {
+  font-family: var(--font-bebas), sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin: 0;
+  color: var(--gh-text-primary);
+}
+
+.headerSpacer {
+  width: 60px;
+}
+
+/* Tabs */
+.tabRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab {
+  font-family: var(--font-bebas), sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.tabActive {
+  color: var(--gh-orange);
+}
+
+.tabActive::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gh-orange);
+}
+
+/* Sub Tabs */
+.subTabRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.subTab {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.subTab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.subTabActive {
+  background: rgba(251, 146, 60, 0.15);
+  border-color: rgba(251, 146, 60, 0.3);
+  color: var(--gh-orange);
+}
+
+/* Content */
+.content {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Spinner */
+.spinnerContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--gh-orange);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+}
+
+/* Error State */
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.errorState p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  margin: 0;
+}
+
+.retryBtn {
+  padding: 10px 20px;
+  background: rgba(251, 146, 60, 0.15);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  border-radius: 8px;
+  color: var(--gh-orange);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.retryBtn:hover {
+  background: rgba(251, 146, 60, 0.25);
+}
+
+/* Table */
+.tableWrapper {
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.th {
+  text-align: left;
+  padding: 12px 8px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.th:first-child {
+  padding-left: 0;
+  width: 40px;
+}
+
+.th:last-child {
+  padding-right: 0;
+}
+
+.row {
+  transition: background 0.15s ease;
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.row td {
+  padding: 14px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+}
+
+.row td:first-child {
+  padding-left: 0;
+}
+
+.row td:last-child {
+  padding-right: 0;
+}
+
+.rowHighlight {
+  background: rgba(251, 146, 60, 0.12);
+  border-left: 2px solid #fb923c;
+}
+
+.rowHighlight td {
+  border-bottom: 1px solid rgba(251, 146, 60, 0.2);
+}
+
+.rowHighlight:hover {
+  background: rgba(251, 146, 60, 0.18);
+}
+
+/* Rank Cell */
+.rankCell {
+  width: 40px;
+  text-align: center;
+}
+
+.medalGold,
+.medalSilver,
+.medalBronze {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.rankNumber {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Player Cell */
+.playerCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatarInitials {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-bebas), sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--gh-text-primary);
+  flex-shrink: 0;
+}
+
+.playerName {
+  color: var(--gh-text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* Value Cells */
+.accuracyCell {
+  white-space: nowrap;
+}
+
+.accuracyValue {
+  color: var(--gh-orange);
+  font-weight: 600;
+}
+
+.xpCell {
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.gamesCell {
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.levelCell {
+  white-space: nowrap;
+}
+
+.levelValue {
+  color: #c084fc;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+  .title {
+    font-size: 20px;
+  }
+  
+  .tab {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  
+  .playerName {
+    max-width: 100px;
+  }
+}
+
+@media (max-width: 360px) {
+  .thGames,
+  .gamesCellDesktop {
+    display: none;
+  }
+}
