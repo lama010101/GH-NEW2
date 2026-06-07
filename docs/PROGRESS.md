@@ -1873,3 +1873,5 @@ MP-UI-LOBBY-001B | Apply prototype UI to LobbySection (full file write) | LobbyS
 | MP-FEAT-I18N-006 | Add all missing translation keys to en.json and fr.json | DONE | 2026-06-07 |
 | MP-FEAT-I18N-007 | Wire useTranslations into NavModal | DONE | 2026-06-07 |
 | MP-FEAT-I18N-008 | Wire translations into RoundActiveSection settings modal | DONE | 2026-06-07 |
+MP-FIX-LOBBY-I18N-001 | Add missing lobby.invite i18n key | en.json + fr.json
+MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert) — committed | LobbySection.tsx + LobbySection.module.css
