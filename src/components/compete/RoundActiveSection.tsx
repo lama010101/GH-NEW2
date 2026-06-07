@@ -3,7 +3,9 @@
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import { YearPicker } from "@/components/YearPicker";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import styles from "./RoundActiveSection.module.css";
 
 const GameMap = dynamic(
@@ -50,6 +52,7 @@ export default function RoundActiveSection({
   hintsUsedCount,
   localPlayerAvatarUrl,
 }: RoundActiveSectionProps) {
+  const t = useTranslations();
   const currentEvent = snapshot.rounds?.[snapshot.currentRoundIndex];
   const guessLocation =
     guessLat !== null && guessLng !== null
@@ -875,10 +878,10 @@ export default function RoundActiveSection({
           </button>
 
           <div className={styles.settingsCard} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.settingsTitle}>Settings</div>
+            <div className={styles.settingsTitle}>{t('game.settings')}</div>
 
             <div className={styles.settingsRow}>
-              <span className={styles.settingsLabel}>Sound</span>
+              <span className={styles.settingsLabel}>{t('game.sound')}</span>
               <button
                 type="button"
                 onClick={() => setSoundEnabled(!soundEnabled)}
@@ -893,7 +896,7 @@ export default function RoundActiveSection({
             </div>
 
             <div className={styles.settingsRowLast}>
-              <span className={styles.settingsLabel}>Vibrate</span>
+              <span className={styles.settingsLabel}>{t('game.vibrate')}</span>
               <button
                 type="button"
                 onClick={() => setVibrateEnabled(!vibrateEnabled)}
@@ -907,12 +910,21 @@ export default function RoundActiveSection({
               </button>
             </div>
 
+            <div style={{ marginTop: '4px', paddingTop: '16px', borderTop: '0.5px solid rgba(0,0,0,0.1)' }}>
+              <div style={{ fontSize: '13px', color: '#555', marginBottom: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('nav.language')}</div>
+              <LanguageSwitcher initialLocale={
+                (typeof document !== 'undefined'
+                  ? document.cookie.split(';').find(c => c.trim().startsWith('gh_locale='))?.split('=')[1]
+                  : undefined) ?? 'en'
+              } />
+            </div>
+
             <button
               type="button"
               onClick={() => window.location.href = '/'}
               className={styles.settingsHomeBtn}
             >
-              Home
+              {t('nav.home')}
             </button>
           </div>
         </div>
