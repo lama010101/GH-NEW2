@@ -237,7 +237,7 @@ function LeaderboardPageInner() {
           await fetchLevelupData();
         }
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load data. Please try again.');
     } finally {
       setLoading(false);
