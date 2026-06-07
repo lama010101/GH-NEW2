@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from 'next-intl';
 import RainbowRing from "@/components/compete/RainbowRing";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
@@ -25,6 +26,7 @@ export default function SessionComplete({
   sendMessage,
 }: SessionCompleteProps) {
   const router = useRouter();
+  const t = useTranslations();
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [navModalOpen, setNavModalOpen] = useState(false);
@@ -318,7 +320,7 @@ export default function SessionComplete({
                               <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgLocationScore}</span>
                               <span className={styles.miniSymbol}>%</span>
                             </div>
-                            <div className={styles.miniLabel}>Where</div>
+                            <div className={styles.miniLabel}>{t('game.where')}</div>
                             <div className={styles.miniSub}>avg {Math.round(roundStats.avgDistanceKm)} km</div>
                           </div>
 
@@ -327,7 +329,7 @@ export default function SessionComplete({
                               <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgTimeScore}</span>
                               <span className={styles.miniSymbol}>%</span>
                             </div>
-                            <div className={styles.miniLabel}>When</div>
+                            <div className={styles.miniLabel}>{t('game.when')}</div>
                             <div className={styles.miniSub}>avg {Math.round(roundStats.avgYearDiff)} yrs</div>
                           </div>
                         </div>
@@ -362,7 +364,7 @@ export default function SessionComplete({
                   className={styles.homeBtn}
                   onClick={() => router.push("/")}
                 >
-                  Home
+                  {t('game.home')}
                 </button>
                 {isHost ? (
                   <button
@@ -371,7 +373,7 @@ export default function SessionComplete({
                     onClick={handlePlayAgain}
                     disabled={isCreatingLobby}
                   >
-                    {isCreatingLobby ? "Creating lobby..." : "Play Again"}
+                    {isCreatingLobby ? "Creating lobby..." : t('game.play_again')}
                   </button>
                 ) : (
                   <GuestPlayAgainButton styles={styles} />
@@ -389,6 +391,7 @@ export default function SessionComplete({
 }
 
 function GuestPlayAgainButton({ styles }: { styles: Record<string, string> }) {
+  const t = useTranslations();
   const [waiting, setWaiting] = useState(false);
   return (
     <button
@@ -397,7 +400,7 @@ function GuestPlayAgainButton({ styles }: { styles: Record<string, string> }) {
       onClick={() => setWaiting(true)}
       disabled={waiting}
     >
-      {waiting ? "Waiting for Host…" : "Play Again"}
+      {waiting ? "Waiting for Host…" : t('game.play_again')}
     </button>
   );
 }
