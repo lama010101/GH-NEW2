@@ -60,6 +60,16 @@ function formatTimerDisplay(sec: number): string {
 const YEAR_MIN_BOUND = -400;
 const YEAR_MAX_BOUND = new Date().getFullYear();
 
+type EraId = 'prehistoric' | 'ancient' | 'medieval' | 'earlymodern' | 'modern' | 'contemporary';
+const ERAS: { id: EraId; label: string; span: string }[] = [
+  { id: 'prehistoric', label: 'Prehistoric', span: '3000–800 BCE' },
+  { id: 'ancient',     label: 'Ancient',     span: '800 BCE–500 CE' },
+  { id: 'medieval',    label: 'Medieval',    span: '500–1500' },
+  { id: 'earlymodern', label: 'Early Modern',span: '1500–1800' },
+  { id: 'modern',      label: 'Modern',      span: '1800–1950' },
+  { id: 'contemporary',label: 'Contemporary',span: '1950–today' },
+];
+
 export default function LobbySection({
   snapshot,
   viewer,
@@ -118,6 +128,27 @@ export default function LobbySection({
   /* ── Settings tab UI state ── */
   const [settingsTab, setSettingsTab] = useState<'realtime' | 'turnturn'>('realtime');
   const [maxTurnDays, setMaxTurnDays] = useState(3);
+  const [selectedEras, setSelectedEras] = useState<Set<EraId>>(new Set(ERAS.map(e => e.id)));
+
+  const toggleEra = (id: EraId) => {
+    setSelectedEras(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        if (next.size > 1) next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const allErasSelected = selectedEras.size === ERAS.length;
+  const toggleAllEras = () => {
+    setSelectedEras(allErasSelected
+      ? new Set([ERAS[ERAS.length - 1].id])
+      : new Set(ERAS.map(e => e.id))
+    );
+  };
 
   // Load last-invited from localStorage on mount
   useEffect(() => {
@@ -756,8 +787,40 @@ export default function LobbySection({
                 </span>
               )}
             </div>
+            <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
+              <div className={styles['lobbySettingRowHead']}>
+                <span className={styles['lobby-setting-label']}>Era Presets</span>
+                {isHost && (
+                  <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
+                    {allErasSelected ? 'Deselect all' : 'Select all'}
+                  </button>
+                )}
+              </div>
+              <div className={styles['lobbyEraGrid']}>
+                {ERAS.map(era => {
+                  const on = selectedEras.has(era.id);
+                  return (
+                    <button
+                      key={era.id}
+                      data-era={era.id}
+                      type="button"
+                      className={`${styles['lobbyEraBtn']} ${on ? styles['lobbyEraBtnOn'] : styles['lobbyEraBtnOff']}`}
+                      onClick={() => isHost && toggleEra(era.id)}
+                      disabled={!isHost}
+                      aria-pressed={on}
+                    >
+                      <span className={styles['lobbyEraCheck']}>{on ? '✓' : ''}</span>
+                      <span className={styles['lobbyEraText']}>
+                        <span className={styles['lobbyEraLabel']}>{era.label}</span>
+                        <span className={styles['lobbyEraSpan']}>{era.span}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             </>)}
-            {settingsTab === 'turnturn' && (
+            {settingsTab === 'turnturn' && (<>
               <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
                 <span className={styles['lobby-setting-label']}>{t('lobby.max_time_per_turn')}</span>
                 <span className={styles['lobbyRowLeft']}>
@@ -769,7 +832,39 @@ export default function LobbySection({
                   <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
                 </span>
               </div>
-            )}
+            <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
+              <div className={styles['lobbySettingRowHead']}>
+                <span className={styles['lobby-setting-label']}>Era Presets</span>
+                {isHost && (
+                  <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
+                    {allErasSelected ? 'Deselect all' : 'Select all'}
+                  </button>
+                )}
+              </div>
+              <div className={styles['lobbyEraGrid']}>
+                {ERAS.map(era => {
+                  const on = selectedEras.has(era.id);
+                  return (
+                    <button
+                      key={era.id}
+                      data-era={era.id}
+                      type="button"
+                      className={`${styles['lobbyEraBtn']} ${on ? styles['lobbyEraBtnOn'] : styles['lobbyEraBtnOff']}`}
+                      onClick={() => isHost && toggleEra(era.id)}
+                      disabled={!isHost}
+                      aria-pressed={on}
+                    >
+                      <span className={styles['lobbyEraCheck']}>{on ? '✓' : ''}</span>
+                      <span className={styles['lobbyEraText']}>
+                        <span className={styles['lobbyEraLabel']}>{era.label}</span>
+                        <span className={styles['lobbyEraSpan']}>{era.span}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            </>)}
           </div>
         </div>
 
