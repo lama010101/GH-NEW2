@@ -184,6 +184,7 @@ export default function RoundResultsPrototypePage() {
   const me = RESULTS.find((r) => r.isMe)!;
   const ranked = [...RESULTS].sort((a, b) => b.score - a.score);
   const myRank = ranked.findIndex((r) => r.isMe) + 1;
+  const rankSuffix = (n: number) => (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th");
 
   const whereRows = [...RESULTS].sort((a, b) => b.locationScore - a.locationScore);
   const whenRows = [...RESULTS].sort((a, b) => b.timeScore - a.timeScore);
@@ -215,11 +216,16 @@ export default function RoundResultsPrototypePage() {
 
       <div className="scroll">
         {/* ── Round banner ── */}
-        <div className="roundBanner">
-          <span className="roundChip">ROUND {CURRENT_ROUND + 1} / {TOTAL_ROUNDS}</span>
-          <span className="rankChip">
-            <span className="rankBig">#{myRank}</span> this round
-          </span>
+        <div className="banner">
+          <span className="bannerKicker">ROUND {CURRENT_ROUND + 1} / {TOTAL_ROUNDS}</span>
+          <h1 className="bannerTitle">
+            You placed <span className="bannerRank">{myRank}{rankSuffix(myRank)}</span>
+          </h1>
+          <div className="bannerStats">
+            <span>+{me.score.toLocaleString()} XP</span>
+            <span className="bannerDot">·</span>
+            <span>{me.accuracy}% accuracy</span>
+          </div>
         </div>
 
         {/* ── Event card ── */}
@@ -433,15 +439,18 @@ export default function RoundResultsPrototypePage() {
           max-width: 560px; margin: 0 auto; box-sizing: border-box;
         }
 
-        /* ── Round banner ── */
-        .roundBanner { display: flex; align-items: center; justify-content: space-between; padding: 6px 2px 0; }
-        .roundChip {
-          font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: rgba(255,255,255,0.7);
-          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-          padding: 4px 11px; border-radius: 999px;
+        /* ── Banner ── */
+        .banner { text-align: center; padding: 14px 8px 4px; }
+        .bannerKicker {
+          font-size: 11px; font-weight: 800; letter-spacing: 2.5px; color: #22d3ee;
         }
-        .rankChip { font-size: 13px; color: rgba(255,255,255,0.7); display: inline-flex; align-items: baseline; gap: 6px; }
-        .rankBig { font-size: 22px; font-weight: 800; color: #fff; }
+        .bannerTitle { font-size: 30px; font-weight: 800; margin: 8px 0 0; letter-spacing: -0.5px; }
+        .bannerRank {
+          background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+          -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .bannerStats { margin-top: 8px; font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); display: flex; gap: 10px; justify-content: center; }
+        .bannerDot { color: rgba(255,255,255,0.3); }
 
         /* ── Cards ── */
         .card {

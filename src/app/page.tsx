@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { AuthModal } from '@/components/AuthModal'
@@ -10,13 +11,14 @@ import { DailyPanel } from '@/components/home/DailyPanel'
 import { PracticePanel } from '@/components/home/PracticePanel'
 import { LevelUpPanel } from '@/components/home/LevelUpPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
-import { MODE_CARD_GRADIENT, MODE_CARD_TITLE, MODE_CARD_SUBTITLE, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
+import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import styles from './home.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
 
 function HomePageInner() {
   const router = useRouter()
+  const t = useTranslations()
 
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -103,7 +105,7 @@ function HomePageInner() {
       <div className={styles['page-scroll']}>
         {/* Tagline */}
         <div className={styles.tagline}>
-          Where and when did it happen?
+          {t('home.tagline')}
         </div>
 
         {/* Vertical card stack */}
@@ -149,9 +151,10 @@ function ModeCard({
   onNavigate: (path: string) => void
   onLobby: (gameId: string) => void
 }) {
+  const t = useTranslations()
   const gradient = MODE_CARD_GRADIENT[mode]
-  const title = MODE_CARD_TITLE[mode]
-  const subtitle = MODE_CARD_SUBTITLE[mode]
+  const title = t(`home.${mode}_name`)
+  const subtitle = t(`home.${mode}_subtitle`)
 
   const getIconSrc = () => {
     switch (mode) {
