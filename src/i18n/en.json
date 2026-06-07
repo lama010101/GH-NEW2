@@ -1,7 +1,16 @@
 {
   "nav": {
     "notifications": "Notifications",
-    "profile": "Profile"
+    "profile": "Profile",
+    "home": "Home",
+    "friends": "Friends",
+    "leaderboard": "Leaderboard",
+    "profile_stats": "Profile & Stats",
+    "account": "Account",
+    "help": "Help",
+    "sign_out": "Sign Out",
+    "language": "Language",
+    "coming_soon": "{label} — coming soon!"
   },
   "home": {
     "logo_guess": "GUESS-",
@@ -66,6 +75,48 @@
     "start_game": "Start Game",
     "room_code": "Room code",
     "copy_link": "Copy link",
-    "kick": "Kick"
+    "kick": "Kick",
+    "round_timer": "Round Timer",
+    "year_range": "Year Range",
+    "results_timer": "Results Timer",
+    "invite_friends": "Invite Friends",
+    "host": "Host",
+    "you": "You",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  },
+  "game": {
+    "sound": "Sound",
+    "vibrate": "Vibrate",
+    "settings": "Settings",
+    "submit": "Submit",
+    "next_round": "Next Round",
+    "play_again": "Play Again",
+    "where": "WHERE",
+    "when": "WHEN",
+    "accuracy": "ACCURACY",
+    "experience": "EXPERIENCE",
+    "correct_location": "Correct",
+    "your_guess": "Your guess",
+    "years_off": "{n} years off",
+    "km_away": "{n} km away",
+    "round_label": "Round {current} / {total}",
+    "loading": "Loading...",
+    "session_complete": "Game Over",
+    "final_scores": "Final Scores",
+    "total_score": "Total Score",
+    "winner": "Winner",
+    "home": "Home",
+    "sign_in": "Sign In",
+    "sign_up": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "continue": "Continue",
+    "or": "or",
+    "distance_label": "{km} km away",
+    "year_diff_label": "{n} years off",
+    "results_timer_label": "Next round in {n}s",
+    "submitted": "Submitted",
+    "waiting_players": "Waiting for other players..."
   }
 }

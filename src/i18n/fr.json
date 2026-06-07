@@ -1,7 +1,16 @@
 {
   "nav": {
     "notifications": "Notifications",
-    "profile": "Profil"
+    "profile": "Profil",
+    "home": "Accueil",
+    "friends": "Amis",
+    "leaderboard": "Classement",
+    "profile_stats": "Profil & Stats",
+    "account": "Compte",
+    "help": "Aide",
+    "sign_out": "Se déconnecter",
+    "language": "Langue",
+    "coming_soon": "{label} — bientôt disponible !"
   },
   "home": {
     "logo_guess": "GUESS-",
@@ -66,6 +75,48 @@
     "start_game": "Lancer la partie",
     "room_code": "Code de salle",
     "copy_link": "Copier le lien",
-    "kick": "Exclure"
+    "kick": "Exclure",
+    "round_timer": "Minuteur de manche",
+    "year_range": "Plage d'années",
+    "results_timer": "Minuteur des résultats",
+    "invite_friends": "Inviter des amis",
+    "host": "Hôte",
+    "you": "Vous",
+    "connected": "Connecté",
+    "disconnected": "Déconnecté"
+  },
+  "game": {
+    "sound": "Son",
+    "vibrate": "Vibration",
+    "settings": "Paramètres",
+    "submit": "Valider",
+    "next_round": "Manche suivante",
+    "play_again": "Rejouer",
+    "where": "OÙ",
+    "when": "QUAND",
+    "accuracy": "PRÉCISION",
+    "experience": "EXPÉRIENCE",
+    "correct_location": "Correct",
+    "your_guess": "Votre réponse",
+    "years_off": "{n} ans d'écart",
+    "km_away": "{n} km",
+    "round_label": "Manche {current} / {total}",
+    "loading": "Chargement...",
+    "session_complete": "Partie terminée",
+    "final_scores": "Scores finaux",
+    "total_score": "Score total",
+    "winner": "Gagnant",
+    "home": "Accueil",
+    "sign_in": "Se connecter",
+    "sign_up": "S'inscrire",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "continue": "Continuer",
+    "or": "ou",
+    "distance_label": "{km} km",
+    "year_diff_label": "{n} ans d'écart",
+    "results_timer_label": "Prochaine manche dans {n}s",
+    "submitted": "Soumis",
+    "waiting_players": "En attente des autres joueurs..."
   }
 }
