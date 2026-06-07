@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
 export function DailyPanel({ onPlay }: { onPlay: () => void }) {
+  const t = useTranslations()
   void onPlay
   const getCountdown = () => {
     const now = new Date()
@@ -30,7 +32,7 @@ export function DailyPanel({ onPlay }: { onPlay: () => void }) {
           <path d="M12 7v5l3 3" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round"/>
         </svg>
         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
-          New challenge in <span style={{ color: 'var(--gh-orange)' }}>{countdown}</span>
+          {t('home.daily_new_challenge')} <span style={{ color: 'var(--gh-orange)' }}>{countdown}</span>
         </span>
       </div>
     </div>

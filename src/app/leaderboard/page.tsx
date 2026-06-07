@@ -62,7 +62,7 @@ function LeaderboardPageInner() {
   const searchParams = useSearchParams();
   const { playerId } = useIdentity();
   
-  const [activeTab, setActiveTab] = useState<LeaderboardTab>('daily');
+  const [activeTab, setActiveTab] = useState<LeaderboardTab>('overall');
   const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
   
   const [todayData, setTodayData] = useState<LeaderboardEntry[] | null>(null);
@@ -331,6 +331,12 @@ function LeaderboardPageInner() {
       {/* Main Tabs */}
       <div className={styles.tabRow}>
         <button
+          onClick={() => setActiveTab('overall')}
+          className={`${styles.tab} ${activeTab === 'overall' ? styles.tabActive : ''}`}
+        >
+          Overall
+        </button>
+        <button
           onClick={() => setActiveTab('daily')}
           className={`${styles.tab} ${activeTab === 'daily' ? styles.tabActive : ''}`}
         >
@@ -341,12 +347,6 @@ function LeaderboardPageInner() {
           className={`${styles.tab} ${activeTab === 'levelup' ? styles.tabActive : ''}`}
         >
           Level Up
-        </button>
-        <button
-          onClick={() => setActiveTab('overall')}
-          className={`${styles.tab} ${activeTab === 'overall' ? styles.tabActive : ''}`}
-        >
-          Overall
         </button>
       </div>
 

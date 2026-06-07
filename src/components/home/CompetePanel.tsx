@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import cpStyles from "./CompetePanel.module.css";
 
@@ -30,6 +31,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   displayName: string
   onRequireAuth: () => void
 }) {
+  const t = useTranslations()
   const [showJoinInput, setShowJoinInput] = useState(false)
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -205,9 +207,9 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   const completedGames = activeGames.filter(g => g.status === 'completed')
 
   const tabs: Array<{ key: typeof tab; label: string; count: number }> = [
-    { key: 'invitations', label: 'INVITATIONS', count: invites.length },
-    { key: 'your_turn', label: 'YOUR TURN', count: yourTurnGames.length },
-    { key: 'completed', label: 'COMPLETED', count: completedGames.length },
+    { key: 'invitations', label: t('home.compete_tab_invitations'), count: invites.length },
+    { key: 'your_turn', label: t('home.compete_tab_your_turn'), count: yourTurnGames.length },
+    { key: 'completed', label: t('home.compete_tab_completed'), count: completedGames.length },
   ]
 
   return (
@@ -234,14 +236,14 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
           invitesLoading ? (
             <div className={cpStyles.loadingRow}>
               <div className={cpStyles.spinner} />
-              <span className={cpStyles.loadingText}>Looking for invitations…</span>
+              <span className={cpStyles.loadingText}>{t('home.compete_loading_invites')}</span>
             </div>
           ) : invites.length === 0 ? (
             <div className={cpStyles.emptyState}>
               <div className={cpStyles.emptyIconWrap}>
                 <InviteIcon />
               </div>
-              <span>No pending invitations</span>
+              <span>{t('home.compete_no_invitations')}</span>
             </div>
           ) : (
             <div className={cpStyles.gameList}>
@@ -261,7 +263,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                   )}
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>{invite.inviter_name ?? 'Unknown'}</span>
-                    <span className={cpStyles.gameSub}>Invited you to a game</span>
+                    <span className={cpStyles.gameSub}>{t('home.compete_invited_you')}</span>
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDecline(invite.id) }}
@@ -278,7 +280,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         {/* Your Turn tab */}
         {tab === 'your_turn' && (
           yourTurnGames.length === 0 ? (
-            <div className={cpStyles.emptyStateCenter}>No games waiting for your turn</div>
+            <div className={cpStyles.emptyStateCenter}>{t('home.compete_no_your_turn')}</div>
           ) : (
             <div className={cpStyles.gameList}>
               {yourTurnGames.map(game => (
@@ -299,7 +301,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     <span className={cpStyles.gameName}>{game.opponent_name}</span>
                     <span className={cpStyles.gameSub}>Round {game.round_current} / {game.round_total}</span>
                   </div>
-                  <span className={cpStyles.playBadge}>PLAY</span>
+                  <span className={cpStyles.playBadge}>{t('home.compete_play')}</span>
                 </div>
               ))}
             </div>
@@ -309,7 +311,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         {/* Completed tab */}
         {tab === 'completed' && (
           completedGames.length === 0 ? (
-            <div className={cpStyles.emptyStateCenter}>No completed games yet</div>
+            <div className={cpStyles.emptyStateCenter}>{t('home.compete_no_completed')}</div>
           ) : (
             <div className={cpStyles.gameList}>
               {completedGames.map(game => (
@@ -328,7 +330,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                   )}
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>{game.opponent_name}</span>
-                    <span className={cpStyles.gameSub}>Round {game.round_current} / {game.round_total}</span>
+                    <span className={cpStyles.gameSub}>{t('home.compete_round_label', { current: game.round_current, total: game.round_total })}</span>
                   </div>
                   <div className={cpStyles.scoreWrap}>
                     {game.score_you != null && game.score_them != null ? (
@@ -351,7 +353,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                         <span className={cpStyles.xpValue}>{game.score_you} XP</span>
                       </>
                     ) : (
-                      <span className={cpStyles.completedLabel}>Completed</span>
+                      <span className={cpStyles.completedLabel}>{t('home.compete_completed')}</span>
                     )}
                   </div>
                 </div>
@@ -366,7 +368,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         <input
           value={code}
           onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-          placeholder="ABCD12"
+          placeholder={t('home.compete_code_placeholder')}
           maxLength={6}
           className={cpStyles.joinCodeInput}
           autoFocus
@@ -380,14 +382,14 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
           disabled={loading || (showJoinInput && !code)}
           className={`${cpStyles.cardCtaBtn} ${cpStyles.cardCtaBtnOutline}`}
         >
-          {showJoinInput ? <><PeopleIcon /> GO TO LOBBY</> : <><PeopleIcon /> JOIN GAME</>}
+          {showJoinInput ? <><PeopleIcon /> {t('home.compete_go')}</> : <><PeopleIcon /> {t('home.compete_join_game')}</>}
         </button>
         <button
           onClick={handleCreate}
           disabled={loading}
           className={`${cpStyles.cardCtaBtn} ${cpStyles.cardCtaBtnBlue}`}
         >
-          <PlusIcon /> CREATE GAME
+          <PlusIcon /> {t('home.compete_create_game')}
         </button>
       </div>
 

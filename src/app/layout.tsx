@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Bebas_Neue } from "next/font/google";
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
+import { cookies } from 'next/headers';
+import { defaultLocale, LOCALE_COOKIE, locales, type Locale } from '@/i18n/config';
 import "./globals.css";
 
 const bebasNeue = Bebas_Neue({
@@ -15,10 +19,22 @@ export const metadata: Metadata = {
   description: "Deterministic historical guessing game"
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(LOCALE_COOKIE)?.value;
+  const locale: Locale =
+    raw && (locales as readonly string[]).includes(raw)
+      ? (raw as Locale)
+      : defaultLocale;
+  const messages = await getMessages();
+
   return (
-    <html lang="en" suppressHydrationWarning className={bebasNeue.variable}>
-      <body suppressHydrationWarning>{children}</body>
+    <html lang={locale} suppressHydrationWarning className={bebasNeue.variable}>
+      <body suppressHydrationWarning>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
     </html>
   );
 }

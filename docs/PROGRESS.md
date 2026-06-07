@@ -1862,3 +1862,7 @@ MP-REFACTOR-STYLE-001 DONE
 - Added closeSheet function for unified sheet dismissal
 - New button order: Hints → WHEN → WHERE → Submit
 - CSS: Removed old panel/navbar classes, added sheet and circle button classes
+| MP-FIX-I18N-003 | Insert LanguageSwitcher into RoundActiveSection settings modal | DONE | 2026-06-06 |
+| MP-FIX-I18N-002 | Insert LanguageSwitcher into NavModal | DONE | 2026-06-06 |
+| MP-FIX-MAP-ZINDEX-001 | DONE | src/components/compete/RoundActiveSection.module.css | Fixed z-index issue on game page where location search dropdown was hidden behind the Leaflet map. Increased z-index of .sheetFieldWrap from implicit to 1001 so it establishes a stacking context above the map layers. | 2026-06-06 |
+| MP-FEAT-I18N-005 | Wire translations into home page + mode rename | DONE | 2026-06-07 |
