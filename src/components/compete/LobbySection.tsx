@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
 import { getUsernameGradientStyle } from "@/core/competeUtils";
@@ -73,6 +74,7 @@ export default function LobbySection({
   onKickPlayer,
 }: LobbySectionProps) {
   const router = useRouter();
+  const t = useTranslations();
 
   /* Timer slider transient state — synced from snapshot on every update.
      Local value is ONLY for drag feedback; authority stays in snapshot. */
@@ -334,10 +336,10 @@ export default function LobbySection({
           <span className={styles['lobby-mode-badge']}>COMPETE</span>
           <span className={styles['lobby-status-chip']}>
             <span className={styles['lobby-status-dot']} />
-            Waiting for players
+            {t('lobby.waiting')}
           </span>
         </div>
-        <h1 className={styles['lobby-title-h1']}>Game Lobby</h1>
+        <h1 className={styles['lobby-title-h1']}>{t('lobby.game_lobby')}</h1>
       </header>
 
       {/* Main Grid */}
@@ -351,32 +353,32 @@ export default function LobbySection({
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
               <span className={styles['lobby-accent-bar-sm']} />
-              <span className={styles['lobby-subsection-title']}>Invite Players</span>
+              <span className={styles['lobby-subsection-title']}>{t('lobby.invite_players')}</span>
               <div className={styles['lobbyShareBtnGroup']}>
                 <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyLink}>
-                  Copy Link
+                  {t('lobby.copy_link')}
                 </button>
                 <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyCode}>
-                  Copy Code
+                  {t('lobby.copy_code')}
                 </button>
               </div>
             </div>
             {(linkCopied || codeCopied) && (
               <span className={styles['lobbyCopiedToast']}>
-                {linkCopied ? 'Link copied!' : 'Code copied!'}
+                {linkCopied ? t('lobby.link_copied') : t('lobby.code_copied')}
               </span>
             )}
             <input
               type="text"
               className={styles['lobbyInviteSearch']}
-              placeholder="Search players..."
+              placeholder={t('lobby.search_players')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             <div className={styles['lobbyRail']}>
               {displayList.length === 0 ? (
                 <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
-                  <span className={styles['lobbyEmptyRailText']}>No players found</span>
+                  <span className={styles['lobbyEmptyRailText']}>{t('lobby.no_players_found')}</span>
                 </div>
               ) : (
                 displayList.map((player) => {
@@ -414,7 +416,7 @@ export default function LobbySection({
                           ? 'Sent ✓'
                           : inviteState === 'error'
                           ? 'Failed'
-                          : 'Invite'}
+                          : t('lobby.invite')}
                       </button>
                     </div>
                   );
@@ -428,7 +430,7 @@ export default function LobbySection({
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && setShowAllModal(true)}
                 >
-                  <span className={styles['lobbyViewAllText']}>View all ({priorityList.length})</span>
+                  <span className={styles['lobbyViewAllText']}>{t('lobby.view_all', { count: priorityList.length })}</span>
                 </div>
               )}
             </div>
@@ -440,7 +442,7 @@ export default function LobbySection({
             <div className={styles['lobbyAllModal']} onClick={() => setShowAllModal(false)}>
               <div className={styles['lobbyAllModalInner']} onClick={(e) => e.stopPropagation()}>
                 <button type="button" className={styles['lobbyAllModalClose']} onClick={() => setShowAllModal(false)}>×</button>
-                <span className={styles['lobby-subsection-title']}>All Players ({priorityList.length})</span>
+                <span className={styles['lobby-subsection-title']}>{t('lobby.all_players', { count: priorityList.length })}</span>
                 <div className={styles['lobbyAllModalList']}>
                   {priorityList.map((player) => {
                     const inviteState = inviteStates[player.id] ?? 'idle';
@@ -477,7 +479,7 @@ export default function LobbySection({
                             ? 'Sent ✓'
                             : inviteState === 'error'
                             ? 'Failed'
-                            : 'Invite'}
+                            : t('lobby.invite')}
                         </button>
                       </div>
                     );
@@ -490,13 +492,13 @@ export default function LobbySection({
           {/* Sub-section B: Players roster */}
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>Players ({totalPlayers}/{totalPlayers + pendingInvites.length})</span>
+              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>{t('lobby.players', { current: totalPlayers, total: totalPlayers + pendingInvites.length })}</span>
               <span className={styles['lobbyReadyIndicator']}>
                 <span
                   className={styles['lobbyReadyDot']}
                   style={{ background: readyCount > 0 ? "#4ade80" : "rgba(255,255,255,0.25)" }}
                 />
-                {readyCount} ready
+                {t('lobby.ready_count', { count: readyCount })}
               </span>
             </div>
             <div className={styles['lobbyRosterList']}>
@@ -518,15 +520,15 @@ export default function LobbySection({
                     <div className={styles['lobbyRosterMeta']}>
                       <span className={styles['lobbyRosterName']}>
                         {displayName}
-                        {isViewerPlayer && <span className={styles['lobbyYouTag']}>You</span>}
+                        {isViewerPlayer && <span className={styles['lobbyYouTag']}>{t('lobby.you')}</span>}
                       </span>
-                      {p.isHost && <span className={styles['lobbyHostInline']}>♛ Host</span>}
+                      {p.isHost && <span className={styles['lobbyHostInline']}>♛ {t('lobby.host')}</span>}
                     </div>
                     <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
-                      {p.ready ? 'READY' : 'NOT READY'}
+                      {p.ready ? t('lobby.ready') : t('lobby.not_ready')}
                     </span>
                     {isHost && !p.isHost && (
-                      <button type="button" className={styles['lobby-kick-btn']} onClick={() => onKickPlayer?.(p.playerId)} disabled={busy} title="Kick player">×</button>
+                      <button type="button" className={styles['lobby-kick-btn']} onClick={() => onKickPlayer?.(p.playerId)} disabled={busy} title={t('lobby.kick_player')}>×</button>
                     )}
                   </div>
                 );
@@ -534,17 +536,17 @@ export default function LobbySection({
               {pendingInvites.map((p) => (
                 <div key={p.id} className={styles['lobbyRosterRow']}>
                   {viewer?.isHost && (
-                    <button type="button" className={styles['lobbyCardRemoveBtn']} onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))} title="Remove invite">×</button>
+                    <button type="button" className={styles['lobbyCardRemoveBtn']} onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))} title={t('lobby.remove_invite')}>×</button>
                   )}
                   <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
                   <div className={styles['lobbyRosterMeta']}>
                     <span className={styles['lobbyRosterName']}>{p.displayName}</span>
                   </div>
-                  <span className={styles['lobbyStatusPillAmber']}>INVITED</span>
+                  <span className={styles['lobbyStatusPillAmber']}>{t('lobby.invited')}</span>
                 </div>
               ))}
               {activePlayers.length === 0 && pendingInvites.length === 0 && (
-                <div className={styles['lobbyRosterEmpty']}>No players yet</div>
+                <div className={styles['lobbyRosterEmpty']}>{t('lobby.no_players_yet')}</div>
               )}
             </div>
           </div>
@@ -554,16 +556,16 @@ export default function LobbySection({
         <div className={`${styles['lobby-card']} ${styles['lobby-settings']}`}>
           <div className={styles['lobby-card-header']}>
             <span className={styles['lobby-accent-bar']} />
-            <h3>Game Settings</h3>
+            <h3>{t('lobby.game_settings')}</h3>
           </div>
           <div className={styles['lobbyTabRow']}>
-            <button className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`} onClick={() => setSettingsTab('realtime')}>Real-Time</button>
-            <button className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`} onClick={() => setSettingsTab('turnturn')}>Turn-by-Turn</button>
+            <button className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`} onClick={() => setSettingsTab('realtime')}>{t('lobby.realtime')}</button>
+            <button className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`} onClick={() => setSettingsTab('turnturn')}>{t('lobby.turn_by_turn')}</button>
           </div>
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}>Timer</span>
+              <span className={styles['lobby-setting-label']}>{t('lobby.round_timer')}</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
@@ -629,7 +631,7 @@ export default function LobbySection({
               )}
             </div>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}>Year Range</span>
+              <span className={styles['lobby-setting-label']}>{t('lobby.year_range')}</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeft']}>
                   <span className={styles['lobby-year-range-wrap']}>
@@ -689,7 +691,7 @@ export default function LobbySection({
               )}
             </div>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}>Results Auto-Advance</span>
+              <span className={styles['lobby-setting-label']}>{t('lobby.results_timer')}</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
@@ -757,14 +759,14 @@ export default function LobbySection({
             </>)}
             {settingsTab === 'turnturn' && (
               <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-                <span className={styles['lobby-setting-label']}>Max Time Per Turn</span>
+                <span className={styles['lobby-setting-label']}>{t('lobby.max_time_per_turn')}</span>
                 <span className={styles['lobbyRowLeft']}>
                   <span className={styles['lobby-timer-slider-wrap']}>
                     <div className={styles['lobby-timer-slider-track']} />
                     <div className={styles['lobby-timer-slider-fill']} style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }} />
                     <input type="range" className={styles['lobby-timer-slider']} min={1} max={14} step={1} value={maxTurnDays} onChange={(e) => setMaxTurnDays(Number(e.target.value))} />
                   </span>
-                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? '1 day' : `${maxTurnDays} days`}</span>
+                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
                 </span>
               </div>
             )}
@@ -782,10 +784,10 @@ export default function LobbySection({
             onClick={onToggleReady}
             disabled={busy}
           >
-            {isReady ? "Ready — waiting for others" : "I'm ready"}
+            {isReady ? t('lobby.ready_waiting') : t('lobby.im_ready')}
           </button>
           <span className={styles['lobby-ready-count']}>
-            ({readyCount}/{totalPlayers} players ready)
+            {t('lobby.players_ready', { ready: readyCount, total: totalPlayers })}
           </span>
         </div>
       </div>
