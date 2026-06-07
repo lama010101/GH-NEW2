@@ -353,6 +353,7 @@
 }
 
 .contactPrimary {
+  display: inline-block;
   background: var(--gh-btn-action-bg);
   color: var(--gh-btn-action-text);
   border: none;
@@ -362,9 +363,11 @@
   font-weight: 700;
   cursor: pointer;
   box-shadow: var(--gh-btn-action-glow);
+  text-decoration: none;
 }
 
 .contactSecondary {
+  display: inline-block;
   background: var(--gh-btn-outline-bg);
   color: var(--gh-btn-outline-text);
   border: 1px solid var(--gh-btn-outline-border);
@@ -373,10 +376,197 @@
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .contactSecondary:hover {
   background: var(--gh-btn-outline-hover-bg);
+}
+
+/* ---------- Game Modes ---------- */
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.modeCard {
+  padding: 24px 20px;
+  border-radius: var(--gh-glass-radius);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.18s ease;
+}
+
+.modeCard:hover {
+  transform: translateY(-3px);
+}
+
+.modeTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.modeSub {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.modeDesc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.modeFeatures {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.modeFeatures li {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.03em;
+}
+
+/* ---------- Getting Started Timeline ---------- */
+.gsTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gsStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: var(--gh-glass-radius);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
+}
+
+.gsNum {
+  flex: 0 0 auto;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--gh-orange);
+  opacity: 0.6;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.gsBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gsTitle {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.gsDesc {
+  font-size: 14px;
+  color: var(--gh-text-secondary);
+  line-height: 1.5;
+}
+
+/* ---------- Keyboard Shortcuts ---------- */
+.shortcutsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.shortcutItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--gh-glass-radius);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
+}
+
+.shortcutKey {
+  flex: 0 0 auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-default);
+  color: var(--gh-text-primary);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+}
+
+.shortcutAction {
+  font-size: 14px;
+  color: var(--gh-text-secondary);
+}
+
+/* ---------- Troubleshooting ---------- */
+.troubleList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.troubleItem {
+  padding: 20px 24px;
+  border-radius: var(--gh-glass-radius);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
+}
+
+.troubleProblem {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gh-orange);
+  margin-bottom: 8px;
+}
+
+.troubleSolution {
+  font-size: 14px;
+  color: var(--gh-text-secondary);
+  line-height: 1.6;
+}
+
+/* ---------- Back to Top ---------- */
+.backToTop {
+  display: block;
+  margin: 48px auto 0;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
+  color: var(--gh-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.backToTop:hover {
+  background: var(--gh-glass-bg-hover);
+  border-color: var(--gh-glass-border-hover);
+  color: var(--gh-text-primary);
 }
 
 /* ---------- Responsive ---------- */

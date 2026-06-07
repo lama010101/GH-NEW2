@@ -874,11 +874,11 @@ export default class GameServer {
     try {
       switch (data.type) {
         case "JOIN_ROOM": {
+          this.connections.set(sender.id, data.playerId);
           console.log("[DO_INSTANCE]", {
             room: this.room.id,
             location: "JOIN_ROOM"
           });
-          this.connections.set(sender.id, data.playerId);
           const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/join`;
           const response = await fetch(apiUrl, {
             method: "POST",
