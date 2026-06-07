@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import styles from './NavModal.module.css'
 
 interface NavModalProps {
@@ -14,6 +15,7 @@ interface NavModalProps {
 
 export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: NavModalProps) {
   const router = useRouter()
+  const t = useTranslations('nav')
 
   const [locale, setLocaleState] = React.useState<'en' | 'fr'>(() => {
     if (typeof document === 'undefined') return 'en'
@@ -46,12 +48,12 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
   }
 
   const ITEMS = [
-    { label: 'Home',            icon: HOME_ICON,          action: () => navigate('/') },
-    { label: 'Friends',         icon: FRIENDS_ICON,       action: () => comingSoon('Friends') },
-    { label: 'Leaderboard',     icon: LEADERBOARD_ICON,   action: () => navigate('/leaderboard') },
-    { label: 'Profile & Stats', icon: PROFILE_ICON,       action: () => navigate('/progress') },
-    { label: 'Account',         icon: ACCOUNT_ICON,       action: () => navigate('/account') },
-    { label: 'Help',            icon: HELP_ICON,          action: () => comingSoon('Help') },
+    { id: 'home',         label: t('home'),          icon: HOME_ICON,          action: () => navigate('/') },
+    { id: 'friends',      label: t('friends'),       icon: FRIENDS_ICON,       action: () => comingSoon(t('friends')) },
+    { id: 'leaderboard',  label: t('leaderboard'),   icon: LEADERBOARD_ICON,   action: () => navigate('/leaderboard') },
+    { id: 'profile_stats',label: t('profile_stats'), icon: PROFILE_ICON,       action: () => navigate('/progress') },
+    { id: 'account',      label: t('account'),       icon: ACCOUNT_ICON,       action: () => navigate('/account') },
+    { id: 'help',         label: t('help'),           icon: HELP_ICON,          action: () => comingSoon(t('help')) },
   ]
 
   return (
@@ -79,13 +81,13 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
 
         <div className={styles.divider} />
 
-        {ITEMS.map(({ label, icon, action }) => (
+        {ITEMS.map(({ id, label, icon, action }) => (
           <button
-            key={label}
+            key={id}
             onClick={action}
-            className={`${styles.menuItem} ${label === 'Home' ? styles.menuItemHome : ""}`}
+            className={`${styles.menuItem} ${id === 'home' ? styles.menuItemHome : ""}`}
           >
-            <span className={label === 'Home' ? styles.menuItemIconHome : styles.menuItemIcon}>
+            <span className={id === 'home' ? styles.menuItemIconHome : styles.menuItemIcon}>
               {icon}
             </span>
             {label}
@@ -96,7 +98,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
           <span className={styles.menuItemIcon}>
             {LANGUAGE_ICON}
           </span>
-          Language
+          {t('language')}
           <span style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
             <button
               onClick={() => handleLocale('en')}
@@ -140,7 +142,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
           }}
         >
           <span className={styles.signOutIcon}>{SIGNOUT_ICON}</span>
-          Sign Out
+          {t('sign_out')}
         </button>
 
       </div>
