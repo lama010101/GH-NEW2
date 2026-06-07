@@ -141,6 +141,15 @@
     "year_diff_label": "{n} years off",
     "results_timer_label": "Next round in {n}s",
     "submitted": "Submitted",
-    "waiting_players": "Waiting for other players..."
+    "waiting_players": "Waiting for other players...",
+    "final_rankings": "Final Rankings",
+    "you": "(you)",
+    "round_breakdown": "Round Breakdown",
+    "round_label_short": "ROUND {n}",
+    "total": "Total",
+    "best_player": "Best Player",
+    "creating_lobby": "Creating lobby...",
+    "waiting_for_host": "Waiting for Host…",
+    "guess_history": "Guess History"
   }
 }

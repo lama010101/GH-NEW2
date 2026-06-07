@@ -141,6 +141,15 @@
     "year_diff_label": "{n} ans d'écart",
     "results_timer_label": "Prochaine manche dans {n}s",
     "submitted": "Soumis",
-    "waiting_players": "En attente des autres joueurs..."
+    "waiting_players": "En attente des autres joueurs...",
+    "final_rankings": "Classement final",
+    "you": "(vous)",
+    "round_breakdown": "Détail des manches",
+    "round_label_short": "MANCHE {n}",
+    "total": "Total",
+    "best_player": "Meilleur joueur",
+    "creating_lobby": "Création du salon...",
+    "waiting_for_host": "En attente de l'hôte…",
+    "guess_history": "Guess History"
   }
 }

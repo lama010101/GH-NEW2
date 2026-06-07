@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useTranslations } from 'next-intl';
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
@@ -55,6 +56,7 @@ export default function WhereCard({
   snapshotPlayers,
   currentRoundIndex,
 }: WhereCardProps) {
+  const t = useTranslations();
   const myResult = roundResults?.find(r => r.playerId === playerId);
 
   return (
@@ -63,7 +65,7 @@ export default function WhereCard({
         <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/badges/where.webp" alt="where" width={36} height={36} className={styles.titleIcon} />
-          <span className={styles.titleText}>Where</span>
+          <span className={styles.titleText}>{t('game.where')}</span>
         </div>
         {(() => {
           if (myResult == null || !myResult.didSubmit) {
@@ -118,7 +120,7 @@ export default function WhereCard({
         </div>
       )}
       <div className={styles.correctRow}>
-        <span>Correct:</span>
+        <span>{t('game.correct_location')}:</span>
         <span className={styles.correctName}>{correctName}</span>
       </div>
       {(() => {
@@ -132,7 +134,7 @@ export default function WhereCard({
         if (myDistanceKm != null) {
           return (
             <div className={styles.distanceWrap}>
-              <span className={styles.distanceText}>{Math.round(myDistanceKm)} km away</span>
+              <span className={styles.distanceText}>{t('game.km_away', { n: Math.round(myDistanceKm) })}</span>
             </div>
           );
         }
@@ -210,10 +212,10 @@ export default function WhereCard({
                       <span style={{ ...getUsernameGradientStyle(r.playerId), fontWeight: r.playerId === playerId ? 600 : 400 }}>
                         {snapshotPlayers.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
                       </span>
-                      {r.playerId === playerId && <span className={styles.lbYouTag}>(you)</span>}
+                      {r.playerId === playerId && <span className={styles.lbYouTag}>({t('game.you')})</span>}
                     </span>
                     <span className={styles.lbDistance}>
-                      {distanceKm != null ? `${Math.round(distanceKm)} km away` : "—"}
+                      {distanceKm != null ? t('game.km_away', { n: Math.round(distanceKm) }) : "—"}
                     </span>
                     {locationAcc != null && (
                       <span className={styles.lbAccPill}>

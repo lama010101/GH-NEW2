@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from 'next-intl';
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import { getUsernameGradientStyle } from "@/core/competeUtils";
 import type { RoundResult } from "@/core/competeTypes";
@@ -38,6 +39,7 @@ export default function WhenCard({
   roundHints,
   snapshotPlayers,
 }: WhenCardProps) {
+  const t = useTranslations();
   // Compute whenRows
   const whenRows = snapshotPlayers
     .map(p => {
@@ -92,7 +94,7 @@ export default function WhenCard({
         <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/badges/when.webp" alt="when" width={36} height={36} className={styles.titleIcon} />
-          <span className={styles.titleText}>When</span>
+          <span className={styles.titleText}>{t('game.when')}</span>
         </div>
         {(() => {
           const myWhenRow = whenRows.find(r => r.isMe);
@@ -152,7 +154,7 @@ export default function WhenCard({
 
       {/* Correct year */}
       <div className={styles.correctRow}>
-        <span>Correct:</span>
+        <span>{t('game.correct_location')}:</span>
         <span className={styles.correctValue}>{correctYear}</span>
       </div>
 
@@ -165,7 +167,7 @@ export default function WhenCard({
           className={styles.correctMarker}
           style={{ left: `${correctXPercent}%` }}
         >
-          <div className={styles.correctLabel}>Correct</div>
+          <div className={styles.correctLabel}>{t('game.correct_location')}</div>
           <div className={styles.correctYear}>{correctYear}</div>
         </div>
 
@@ -254,10 +256,10 @@ export default function WhenCard({
                     <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
                       {row.displayName}
                     </span>
-                    {row.isMe && <span className={styles.lbYouTag}>(you)</span>}
+                    {row.isMe && <span className={styles.lbYouTag}>({t('game.you')})</span>}
                   </span>
                   <span className={styles.lbYearsOff}>
-                    {row.diff != null ? `${row.diff} yrs off` : "—"}
+                    {row.diff != null ? t('game.years_off', { n: row.diff }) : "—"}
                   </span>
                   <span className={styles.lbAccPill}>
                     {row.acc != null ? (
