@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './NavModal.module.css'
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
 
 interface NavModalProps {
   isOpen: boolean
@@ -66,6 +67,14 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
         </div>
 
         <div className={styles.divider} />
+
+        <div style={{ padding: '12px 24px 4px' }}>
+          <LanguageSwitcher initialLocale={
+            (typeof document !== 'undefined'
+              ? document.cookie.split(';').find(c => c.trim().startsWith('gh_locale='))?.split('=')[1]
+              : undefined) ?? 'en'
+          } />
+        </div>
 
         {ITEMS.map(({ label, icon, action }) => (
           <button

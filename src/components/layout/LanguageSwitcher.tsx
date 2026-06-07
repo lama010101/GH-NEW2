@@ -1,69 +1,66 @@
 'use client';
 
-import { useLocale } from 'next-intl';
-import { startTransition, useEffect, useState } from 'react';
+import { useState, useEffect, useTransition } from 'react';
+import { locales, defaultLocale, LOCALE_COOKIE, type Locale } from '@/i18n/config';
 import { setLocale } from '@/actions/setLocale';
-import { defaultLocale, LOCALE_COOKIE, type Locale } from '@/i18n/config';
 import styles from './LanguageSwitcher.module.css';
 
 interface LanguageSwitcherProps {
   initialLocale: string;
 }
 
+function readLocaleCookie(): Locale | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie
+    .split(';')
+    .find(c => c.trim().startsWith(LOCALE_COOKIE + '='));
+  const val = match?.split('=')[1]?.trim();
+  return val && (locales as readonly string[]).includes(val) ? (val as Locale) : null;
+}
+
 export function LanguageSwitcher({ initialLocale }: LanguageSwitcherProps) {
-  const locale = useLocale() as Locale;
-  const [isPending, setIsPending] = useState(false);
+  const resolved = (locales as readonly string[]).includes(initialLocale)
+    ? (initialLocale as Locale)
+    : defaultLocale;
+
+  const [current, setCurrent] = useState<Locale>(resolved);
+  const [isPending, startTransition] = useTransition();
   const [hasDetected, setHasDetected] = useState(false);
 
   useEffect(() => {
     if (hasDetected) return;
-
-    // Check if cookie is already set
-    const cookieExists = document.cookie.includes(`${LOCALE_COOKIE}=`);
-    
-    // If cookie doesn't exist and initialLocale is default, this is first visit
-    if (!cookieExists && initialLocale === defaultLocale) {
-      const browserLang = navigator.language.toLowerCase();
-      const detectedLocale: Locale = browserLang.startsWith('fr') ? 'fr' : 'en';
-      
-      if (detectedLocale !== defaultLocale) {
-        startTransition(async () => {
-          setIsPending(true);
-          await setLocale(detectedLocale);
-          setIsPending(false);
-        });
-      }
-    }
-    
     setHasDetected(true);
-  }, [initialLocale, hasDetected]);
+    const cookieVal = readLocaleCookie();
+    if (cookieVal) {
+      setCurrent(cookieVal);
+      return;
+    }
+    const browserLang = navigator.language?.toLowerCase() ?? '';
+    const detected: Locale = browserLang.startsWith('fr') ? 'fr' : 'en';
+    if (detected !== current) {
+      setCurrent(detected);
+      startTransition(() => { setLocale(detected); });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleLocaleChange = (newLocale: Locale) => {
-    if (newLocale === locale || isPending) return;
-    
-    startTransition(async () => {
-      setIsPending(true);
-      await setLocale(newLocale);
-      setIsPending(false);
-    });
+  const handleSwitch = (locale: Locale) => {
+    if (locale === current || isPending) return;
+    setCurrent(locale);
+    startTransition(() => { setLocale(locale); });
   };
 
   return (
     <div className={`${styles.container} ${isPending ? styles.disabled : ''}`}>
-      <button
-        className={`${styles.pill} ${locale === 'en' ? styles.pillActive : styles.pillInactive}`}
-        onClick={() => handleLocaleChange('en')}
-        disabled={isPending}
-      >
-        EN
-      </button>
-      <button
-        className={`${styles.pill} ${locale === 'fr' ? styles.pillActive : styles.pillInactive}`}
-        onClick={() => handleLocaleChange('fr')}
-        disabled={isPending}
-      >
-        FR
-      </button>
+      {locales.map(loc => (
+        <button
+          key={loc}
+          onClick={() => handleSwitch(loc)}
+          className={`${styles.pill} ${loc === current ? styles.pillActive : styles.pillInactive}`}
+          disabled={isPending}
+        >
+          {loc.toUpperCase()}
+        </button>
+      ))}
     </div>
   );
 }
