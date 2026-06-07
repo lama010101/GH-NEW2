@@ -155,6 +155,7 @@ function ModeCard({
   const gradient = MODE_CARD_GRADIENT[mode]
   const title = t(`home.${mode}_name`)
   const subtitle = t(`home.${mode}_subtitle`)
+  const desc = t(`home.${mode}_desc`)
 
   const getIconSrc = () => {
     switch (mode) {
@@ -176,6 +177,11 @@ function ModeCard({
             <div className={styles['card-title-section']}>
               <h2 className={styles['card-title']}>{title}</h2>
               <p className={styles['card-subtitle']}>{subtitle}</p>
+              <p className={styles['card-desc']}>
+                {desc.split('\n').map((line, i) => (
+                  <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
+                ))}
+              </p>
             </div>
           </div>
 
