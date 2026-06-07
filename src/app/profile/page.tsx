@@ -209,8 +209,21 @@ export default function ProfilePage() {
         onAvatarClick={() => router.push('/account')}
       />
 
-      {/* 3. HERO SECTION */}
-      <div className="relative z-10 max-w-[820px] mx-auto pt-20 px-6 flex flex-col items-center text-center">
+      {/* 3. BACK BUTTON */}
+      <div className="relative z-10 max-w-[820px] mx-auto pt-4 px-6">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors cursor-pointer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+          Back
+        </button>
+      </div>
+
+      {/* 4. HERO SECTION */}
+      <div className="relative z-10 max-w-[820px] mx-auto pt-16 px-6 flex flex-col items-center text-center">
         {/* Avatar with gradient border */}
         <div className="relative mb-4">
           <div className="w-[110px] h-[110px] rounded-full p-[3px] bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">
@@ -265,7 +278,7 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* 4. STAT STRIP */}
+      {/* 5. STAT STRIP */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-4 gap-[10px] mb-6">
         {[
           {
@@ -317,7 +330,7 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* 5. TWO-COLUMN ROW */}
+      {/* 6. TWO-COLUMN ROW */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
         {/* Left: Accuracy breakdown */}
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
@@ -376,7 +389,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 6. FULL-WIDTH PANEL - Performance by mode */}
+      {/* 7. FULL-WIDTH PANEL - Performance by mode */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>Performance by mode</h3>
@@ -414,7 +427,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 7. TWO-COLUMN ROW */}
+      {/* 8. TWO-COLUMN ROW */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>Leaderboard positions</h3>
@@ -447,7 +460,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 8. FULL-WIDTH PANEL - History collection */}
+      {/* 9. FULL-WIDTH PANEL - History collection */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>History collection</h3>
@@ -500,7 +513,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 9. FULL-WIDTH PANEL - Accuracy by century */}
+      {/* 10. FULL-WIDTH PANEL - Accuracy by century */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>Accuracy by century</h3>
@@ -534,7 +547,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 10. ACCOUNT SECTION */}
+      {/* 11. ACCOUNT SECTION */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>Account</h3>

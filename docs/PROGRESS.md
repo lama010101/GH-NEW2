@@ -1866,3 +1866,10 @@ MP-REFACTOR-STYLE-001 DONE
 | MP-FIX-I18N-002 | Insert LanguageSwitcher into NavModal | DONE | 2026-06-06 |
 | MP-FIX-MAP-ZINDEX-001 | DONE | src/components/compete/RoundActiveSection.module.css | Fixed z-index issue on game page where location search dropdown was hidden behind the Leaflet map. Increased z-index of .sheetFieldWrap from implicit to 1001 so it establishes a stacking context above the map layers. | 2026-06-06 |
 | MP-FEAT-I18N-005 | Wire translations into home page + mode rename | DONE | 2026-06-07 |
+| MP-UI-LOBBY-001B | Apply prototype UI to LobbySection (full file write) | DONE | LobbySection.tsx + LobbySection.module.css | New header (lobby-header/mode-badge/status-chip/title-h1), roster rail→row list (lobbyRosterRow), settings tab row (Real-Time/Turn-by-Turn), updated ready buttons, new CSS classes appended. tsc exits 0. | 2026-06-07 |
+| MP-FIX-LOBBY-ROOMCODE-001 | Restore roomCode derived constant in LobbySection.tsx | DONE | LobbySection.tsx | Restored const roomCode = snapshot.roomCode in derived constants block and updated handleCopyCode to use the constant instead of snapshot.roomCode. tsc exits 0. | 2026-06-07 |
+MP-UI-LOBBY-001B | Apply prototype UI to LobbySection (full file write) | LobbySection.tsx + LobbySection.module.css
+| MP-FIX-I18N-006 | Move language row to bottom of NavModal list | DONE | 2026-06-07 |
+| MP-FEAT-I18N-006 | Add all missing translation keys to en.json and fr.json | DONE | 2026-06-07 |
+| MP-FEAT-I18N-007 | Wire useTranslations into NavModal | DONE | 2026-06-07 |
+| MP-FEAT-I18N-008 | Wire translations into RoundActiveSection settings modal | DONE | 2026-06-07 |

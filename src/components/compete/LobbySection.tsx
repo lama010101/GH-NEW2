@@ -64,7 +64,7 @@ export default function LobbySection({
   viewer,
   busy,
   error,
-  isConnected = true,
+  // isConnected kept in props interface for future use
   onToggleReady,
   onStartGame,
   onSetTimer,
@@ -112,6 +112,10 @@ export default function LobbySection({
   const [playerPool, setPlayerPool] = useState<PlayerPoolEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllModal, setShowAllModal] = useState(false);
+
+  /* ── Settings tab UI state ── */
+  const [settingsTab, setSettingsTab] = useState<'realtime' | 'turnturn'>('realtime');
+  const [maxTurnDays, setMaxTurnDays] = useState(3);
 
   // Load last-invited from localStorage on mount
   useEffect(() => {
@@ -284,7 +288,7 @@ export default function LobbySection({
 
   const handleCopyCode = async () => {
     try {
-      await navigator.clipboard.writeText(snapshot.roomCode);
+      await navigator.clipboard.writeText(roomCode);
       setCodeCopied(true);
       setTimeout(() => setCodeCopied(false), 2000);
     } catch {
@@ -296,7 +300,6 @@ export default function LobbySection({
    * Render-only derivation — ALL lobby display values from snapshot.
    * No local lobby state. UI reflects DO snapshot only.
    * ------------------------------------------------------------------ */
-  const sessionStatus   = snapshot.status;
   const roomCode        = snapshot.roomCode;
   const activePlayers   = snapshot.players.filter((p) => p.leftAt === null);
   const totalPlayers    = activePlayers.length;
@@ -325,28 +328,17 @@ export default function LobbySection({
 
   return (
     <div className={styles['lobby-shell']}>
-      {/* Title Bar */}
-      <div className={styles['lobby-title-bar']}>
-        <button className={styles['lobby-back-btn']} onClick={() => router.push("/")}>
-          ←
-        </button>
-        <div className={styles['lobby-title-center']}>
-          <span className={styles['lobby-title-text']}>Compete</span>
-          <span className={styles['lobby-status-line']}>
-            <span
-              className={styles['lobby-connection-dot']}
-              style={{
-                background: isConnected ? "#22d3ee" : "#ef4444",
-                boxShadow: isConnected
-                  ? "0 0 6px rgba(34,211,238,0.5)"
-                  : "0 0 6px rgba(239,68,68,0.4)",
-              }}
-            />
-            Room {roomCode} · Status: {sessionStatus}
+      <header className={styles['lobby-header']}>
+        <button className={styles['lobby-back-btn']} onClick={() => router.push("/")}>←</button>
+        <div className={styles['lobby-header-top']}>
+          <span className={styles['lobby-mode-badge']}>COMPETE</span>
+          <span className={styles['lobby-status-chip']}>
+            <span className={styles['lobby-status-dot']} />
+            Waiting for players
           </span>
         </div>
-        <span className={styles['lobby-title-spacer']} />
-      </div>
+        <h1 className={styles['lobby-title-h1']}>Game Lobby</h1>
+      </header>
 
       {/* Main Grid */}
       <div className={styles['lobby-grid']}>
@@ -358,6 +350,7 @@ export default function LobbySection({
           {viewer?.isHost && (
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
+              <span className={styles['lobby-accent-bar-sm']} />
               <span className={styles['lobby-subsection-title']}>Invite Players</span>
               <div className={styles['lobbyShareBtnGroup']}>
                 <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyLink}>
@@ -497,9 +490,7 @@ export default function LobbySection({
           {/* Sub-section B: Players roster */}
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-subsection-title']}>
-                Players ({totalPlayers}/{totalPlayers + pendingInvites.length})
-              </span>
+              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>Players ({totalPlayers}/{totalPlayers + pendingInvites.length})</span>
               <span className={styles['lobbyReadyIndicator']}>
                 <span
                   className={styles['lobbyReadyDot']}
@@ -508,71 +499,52 @@ export default function LobbySection({
                 {readyCount} ready
               </span>
             </div>
-            <div className={styles['lobbyRail']}>
+            <div className={styles['lobbyRosterList']}>
               {activePlayers.map((p) => {
                 const displayName = p.displayName || p.playerId.slice(0, 8);
-                const nameParts = displayName.split(' ');
-                const firstName = nameParts[0];
-                const lastName = nameParts.slice(1).join(' ');
+                const isViewerPlayer = p.playerId === viewer?.playerId;
                 return (
-                <div key={p.playerId} className={styles['lobbyPlayerCard']}>
-                  {p.isHost && (
-                    <div className={styles['lobbyHostBadge']}>
-                      <span className={styles['lobbyHostIcon']}>♛</span>
-                      <span className={styles['lobbyHostLabel']}>Host</span>
+                  <div key={p.playerId} className={`${styles['lobbyRosterRow']} ${p.ready ? styles['lobbyRosterRowReady'] : ''}`}>
+                    <div className={styles['lobbyAvatarWrap']}>
+                      <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
+                      {!isViewerPlayer && (
+                        <button className={styles['lobbyStarBtn']} onClick={() => toggleFollow(p.playerId)} aria-label="Toggle follow">
+                          <span style={{ color: followedIds.has(p.playerId) ? '#f0c060' : 'rgba(255,255,255,0.45)' }}>
+                            {followedIds.has(p.playerId) ? '★' : '☆'}
+                          </span>
+                        </button>
+                      )}
                     </div>
-                  )}
-                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
-                  <div style={getUsernameGradientStyle(p.playerId)}>
-                    <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
-                    {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                    <div className={styles['lobbyRosterMeta']}>
+                      <span className={styles['lobbyRosterName']}>
+                        {displayName}
+                        {isViewerPlayer && <span className={styles['lobbyYouTag']}>You</span>}
+                      </span>
+                      {p.isHost && <span className={styles['lobbyHostInline']}>♛ Host</span>}
+                    </div>
+                    <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
+                      {p.ready ? 'READY' : 'NOT READY'}
+                    </span>
+                    {isHost && !p.isHost && (
+                      <button type="button" className={styles['lobby-kick-btn']} onClick={() => onKickPlayer?.(p.playerId)} disabled={busy} title="Kick player">×</button>
+                    )}
                   </div>
-                  <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
-                    {p.ready ? "READY" : "NOT READY"}
-                  </span>
-                  {isHost && !p.isHost && (
-                    <button
-                      type="button"
-                      className={styles['lobby-kick-btn']}
-                      onClick={() => onKickPlayer?.(p.playerId)}
-                      disabled={busy}
-                      title="Kick player"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
                 );
               })}
-              {pendingInvites.map((p) => {
-                const nameParts = p.displayName.split(' ');
-                const firstName = nameParts[0];
-                const lastName = nameParts.slice(1).join(' ');
-                return (
-                <div key={p.id} className={styles['lobbyPlayerCard']}>
+              {pendingInvites.map((p) => (
+                <div key={p.id} className={styles['lobbyRosterRow']}>
                   {viewer?.isHost && (
-                    <button
-                      type="button"
-                      className={styles['lobbyCardRemoveBtn']}
-                      onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))}
-                      title="Remove invite"
-                    >
-                      ×
-                    </button>
+                    <button type="button" className={styles['lobbyCardRemoveBtn']} onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))} title="Remove invite">×</button>
                   )}
                   <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
-                  <div>
-                    <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
-                    {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                  <div className={styles['lobbyRosterMeta']}>
+                    <span className={styles['lobbyRosterName']}>{p.displayName}</span>
                   </div>
                   <span className={styles['lobbyStatusPillAmber']}>INVITED</span>
                 </div>
-                );
-              })}
+              ))}
               {activePlayers.length === 0 && pendingInvites.length === 0 && (
-                <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
-                  <span className={styles['lobbyEmptyRailText']}>No players yet</span>
-                </div>
+                <div className={styles['lobbyRosterEmpty']}>No players yet</div>
               )}
             </div>
           </div>
@@ -584,8 +556,12 @@ export default function LobbySection({
             <span className={styles['lobby-accent-bar']} />
             <h3>Game Settings</h3>
           </div>
-          <span className={styles['lobbyRelaxLabel']}>RELAX MODE</span>
+          <div className={styles['lobbyTabRow']}>
+            <button className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`} onClick={() => setSettingsTab('realtime')}>Real-Time</button>
+            <button className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`} onClick={() => setSettingsTab('turnturn')}>Turn-by-Turn</button>
+          </div>
           <div className={styles['lobby-settings-grid']}>
+            {settingsTab === 'realtime' && (<>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
               <span className={styles['lobby-setting-label']}>Timer</span>
               {isHost ? (
@@ -778,6 +754,20 @@ export default function LobbySection({
                 </span>
               )}
             </div>
+            </>)}
+            {settingsTab === 'turnturn' && (
+              <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
+                <span className={styles['lobby-setting-label']}>Max Time Per Turn</span>
+                <span className={styles['lobbyRowLeft']}>
+                  <span className={styles['lobby-timer-slider-wrap']}>
+                    <div className={styles['lobby-timer-slider-track']} />
+                    <div className={styles['lobby-timer-slider-fill']} style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }} />
+                    <input type="range" className={styles['lobby-timer-slider']} min={1} max={14} step={1} value={maxTurnDays} onChange={(e) => setMaxTurnDays(Number(e.target.value))} />
+                  </span>
+                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? '1 day' : `${maxTurnDays} days`}</span>
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -792,7 +782,7 @@ export default function LobbySection({
             onClick={onToggleReady}
             disabled={busy}
           >
-            {isReady ? "Ready - Waiting for others" : "I'm ready"}
+            {isReady ? "Ready — waiting for others" : "I'm ready"}
           </button>
           <span className={styles['lobby-ready-count']}>
             ({readyCount}/{totalPlayers} players ready)

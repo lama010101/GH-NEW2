@@ -1,0 +1,13 @@
+--- a/src/components/compete/LobbySection.tsx
++++ b/src/components/compete/LobbySection.tsx
+@@ -111,6 +111,10 @@ export default function LobbySection({
+   const [playerPool, setPlayerPool] = useState<PlayerPoolEntry[]>([]);
+   const [searchQuery, setSearchQuery] = useState('');
+   const [showAllModal, setShowAllModal] = useState(false);
++
++  /* ── Settings tab UI state ── */
++  const [settingsTab, setSettingsTab] = useState<'realtime' | 'turnturn'>('realtime');
++  const [maxTurnDays, setMaxTurnDays] = useState(3);
+ 
+   // Load last-invited from localStorage on mount
+   useEffect(() => {
