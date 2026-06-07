@@ -3,7 +3,6 @@
 import React, { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from './NavModal.module.css'
-import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
 
 interface NavModalProps {
   isOpen: boolean
@@ -15,6 +14,18 @@ interface NavModalProps {
 
 export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: NavModalProps) {
   const router = useRouter()
+
+  const [locale, setLocaleState] = React.useState<'en' | 'fr'>(() => {
+    if (typeof document === 'undefined') return 'en'
+    const match = document.cookie.split(';').find(c => c.trim().startsWith('gh_locale='))
+    const val = match?.split('=')[1]?.trim()
+    return val === 'fr' ? 'fr' : 'en'
+  })
+
+  const handleLocale = (l: 'en' | 'fr') => {
+    setLocaleState(l)
+    import('@/actions/setLocale').then(m => m.setLocale(l))
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -68,14 +79,6 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
 
         <div className={styles.divider} />
 
-        <div style={{ padding: '12px 24px 4px' }}>
-          <LanguageSwitcher initialLocale={
-            (typeof document !== 'undefined'
-              ? document.cookie.split(';').find(c => c.trim().startsWith('gh_locale='))?.split('=')[1]
-              : undefined) ?? 'en'
-          } />
-        </div>
-
         {ITEMS.map(({ label, icon, action }) => (
           <button
             key={label}
@@ -88,6 +91,43 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
             {label}
           </button>
         ))}
+
+        <div className={styles.menuItem} style={{ cursor: 'default' }}>
+          <span className={styles.menuItemIcon}>
+            {LANGUAGE_ICON}
+          </span>
+          Language
+          <span style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
+            <button
+              onClick={() => handleLocale('en')}
+              style={{
+                padding: '3px 10px',
+                borderRadius: '10px',
+                fontSize: '11px',
+                fontWeight: locale === 'en' ? 700 : 400,
+                background: locale === 'en' ? 'rgba(255,255,255,0.9)' : 'transparent',
+                color: locale === 'en' ? '#111' : 'rgba(255,255,255,0.45)',
+                border: 'none',
+                cursor: 'pointer',
+                letterSpacing: '0.5px',
+              }}
+            >EN</button>
+            <button
+              onClick={() => handleLocale('fr')}
+              style={{
+                padding: '3px 10px',
+                borderRadius: '10px',
+                fontSize: '11px',
+                fontWeight: locale === 'fr' ? 700 : 400,
+                background: locale === 'fr' ? 'rgba(255,255,255,0.9)' : 'transparent',
+                color: locale === 'fr' ? '#111' : 'rgba(255,255,255,0.45)',
+                border: 'none',
+                cursor: 'pointer',
+                letterSpacing: '0.5px',
+              }}
+            >FR</button>
+          </span>
+        </div>
 
         <div className={styles.dividerBottom} />
 
@@ -155,5 +195,12 @@ const SIGNOUT_ICON = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
     <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+)
+
+const LANGUAGE_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
   </svg>
 )
