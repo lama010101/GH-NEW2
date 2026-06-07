@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import styles from "./AuthModal.module.css";
 
@@ -10,6 +11,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const t = useTranslations('auth');
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -135,7 +137,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <h2
           className={styles.title}
         >
-          Sign in to Guess-History
+          {t('welcome_back')}
         </h2>
 
         {error && (
@@ -158,12 +160,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             <path fill="none" d="M0 0h48v48H0z"/>
           </svg>
-          {loading ? "Redirecting…" : "Continue with Google"}
+          {loading ? "Redirecting…" : t('continue') + " with Google"}
         </button>
 
         <div className={styles.divider}>
           <div className={styles.dividerLine}></div>
-          <span className={styles.dividerText}>or</span>
+          <span className={styles.dividerText}>{t('or')}</span>
           <div className={styles.dividerLine}></div>
         </div>
 
@@ -172,7 +174,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <label
               className={styles.label}
             >
-              Email
+              {t('email')}
             </label>
             <input
               type="email"
@@ -188,7 +190,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <label
               className={styles.label}
             >
-              Password
+              {t('password')}
             </label>
             <input
               type="password"
@@ -228,7 +230,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     disabled={loading}
                     className={styles.forgotPasswordButton}
                   >
-                    Forgot password?
+                    {t('forgot_password')}
                   </button>
                 </>
               )}
@@ -258,7 +260,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             disabled={loading}
             className={styles.submitButton}
           >
-            {loading ? "Processing…" : mode === "signin" ? "Sign in" : "Sign up"}
+            {loading ? t('loading') : mode === "signin" ? t('sign_in') : t('sign_up')}
           </button>
 
           <p
@@ -266,24 +268,24 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           >
             {mode === "signin" ? (
               <>
-                Don&apos;t have an account?{" "}
+                {t('no_account')}{" "}
                 <button
                   onClick={() => { setMode("signup"); setError(null); setForgotSent(false); }}
                   disabled={loading}
                   className={styles.switchModeButton}
                 >
-                  Sign up
+                  {t('sign_up')}
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{" "}
+                {t('have_account')}{" "}
                 <button
                   onClick={() => { setMode("signin"); setError(null); setForgotSent(false); }}
                   disabled={loading}
                   className={styles.switchModeButton}
                 >
-                  Sign in
+                  {t('sign_in')}
                 </button>
               </>
             )}

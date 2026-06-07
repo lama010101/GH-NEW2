@@ -150,6 +150,36 @@
     "best_player": "Meilleur joueur",
     "creating_lobby": "Création du salon...",
     "waiting_for_host": "En attente de l'hôte…",
-    "guess_history": "Guess History"
+    "guess_history": "Guess History",
+    "leaderboard": "Classement",
+    "hints": "Indices",
+    "no_guess": "Pas de réponse",
+    "no_time_clues": "Aucun indice temporel disponible pour cet événement.",
+    "no_location_clues": "Aucun indice de localisation disponible pour cet événement.",
+    "near_miss": "Presque !",
+    "hints_suffix": "indices",
+    "hint_century": "Siècle",
+    "hint_historical_event": "Événement historique",
+    "hint_decade": "Décennie",
+    "hint_contemporary_event": "Événement contemporain",
+    "hint_visual_clues": "Indices visuels",
+    "hint_continent": "Continent",
+    "hint_remote_landmark": "Monument lointain",
+    "hint_region": "Région",
+    "hint_nearby_landmark": "Monument proche"
+  },
+  "auth": {
+    "sign_in": "Se connecter",
+    "sign_up": "S'inscrire",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "continue": "Continuer",
+    "or": "ou",
+    "welcome_back": "Bon retour",
+    "create_account": "Créer un compte",
+    "forgot_password": "Mot de passe oublié ?",
+    "no_account": "Pas encore de compte ?",
+    "have_account": "Déjà un compte ?",
+    "loading": "Chargement..."
   }
 }
