@@ -104,7 +104,7 @@ export default function WhereCard({
                 }
                 return (
                   <span className={styles.nearMissChip}>
-                    Near miss
+                    {t('game.near_miss')}
                   </span>
                 );
               })()}
@@ -115,7 +115,7 @@ export default function WhereCard({
       {whereAccPenalty > 0 && (
         <div className={styles.hintPenaltyWrap}>
           <span className={styles.hintPenalty}>
-            −{Math.round(whereAccPenalty / 2)}<span className={styles.hintPenaltySuffix}>%</span> hints
+            −{Math.round(whereAccPenalty / 2)}<span className={styles.hintPenaltySuffix}>%</span> {t('game.hints_suffix')}
           </span>
         </div>
       )}
@@ -127,7 +127,7 @@ export default function WhereCard({
         if (myResult == null || !myResult.didSubmit) {
           return (
             <div className={styles.noGuessWrap}>
-              <span className={styles.noGuessText}>No guess</span>
+              <span className={styles.noGuessText}>{t('game.no_guess')}</span>
             </div>
           );
         }
@@ -176,7 +176,7 @@ export default function WhereCard({
               {whereLbExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
             <span className={styles.expandLabel}>
-              Leaderboard
+              {t('game.leaderboard')}
             </span>
           </div>
           {(() => {
@@ -239,7 +239,7 @@ export default function WhereCard({
               {whereCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
             <span className={styles.expandLabelAccent}>
-              Hints
+              {t('game.hints')}
             </span>
           </div>
           {null}
@@ -252,12 +252,12 @@ export default function WhereCard({
                 .sort((a, b) => a.tier - b.tier);
               if (whereHints.length === 0) return (
                 <div className={styles.emptyHints}>
-                  No location clues available for this event.
+                  {t('game.no_location_clues')}
                 </div>
               );
               const labelMap: Record<number, string> = {
-                1: "Continent", 2: "Remote Landmark", 3: "Region",
-                4: "Nearby Landmark", 5: "Visual Clues"
+                1: t('game.hint_continent'), 2: t('game.hint_remote_landmark'), 3: t('game.hint_region'),
+                4: t('game.hint_nearby_landmark'), 5: t('game.hint_visual_clues')
               };
               return whereHints.map((hint, idx) => (
                 <div key={hint.id} className={`${styles.hintRow} ${idx < whereHints.length - 1 ? styles.hintRowDivider : ""}`}>

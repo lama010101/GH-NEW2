@@ -133,7 +133,7 @@ export default function WhenCard({
                   }
                   return (
                     <span className={styles.nearMissChip}>
-                      Near miss
+                      {t('game.near_miss')}
                     </span>
                   );
                 })()}
@@ -147,7 +147,7 @@ export default function WhenCard({
       {whenAccPenalty > 0 && (
         <div>
           <span className={styles.hintPenalty}>
-            −{Math.round(whenAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> hints
+            −{Math.round(whenAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('game.hints_suffix')}
           </span>
         </div>
       )}
@@ -229,7 +229,7 @@ export default function WhenCard({
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.svgMuted}>
               {whenLbExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
-            <span className={styles.expandLabel}>Leaderboard</span>
+            <span className={styles.expandLabel}>{t('game.leaderboard')}</span>
           </div>
           {(() => {
             const myRank = roundResults?.find(r => r.playerId === playerId)?.rank ?? null;
@@ -283,7 +283,7 @@ export default function WhenCard({
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.svgAccent}>
               {whenCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
-            <span className={styles.expandLabelAccent}>Hints</span>
+            <span className={styles.expandLabelAccent}>{t('game.hints')}</span>
           </div>
         </div>
         {whenCluesExpanded && (
@@ -293,11 +293,11 @@ export default function WhenCard({
                 .filter(h => h.type === "when")
                 .sort((a, b) => a.tier - b.tier);
               if (whenHints.length === 0) return (
-                <div className={styles.emptyHints}>No time clues available for this event.</div>
+                <div className={styles.emptyHints}>{t('game.no_time_clues')}</div>
               );
               const labelMap: Record<number, string> = {
-                1: "Century", 2: "Historical Event", 3: "Decade",
-                4: "Contemporary Event", 5: "Visual Clues"
+                1: t('game.hint_century'), 2: t('game.hint_historical_event'), 3: t('game.hint_decade'),
+                4: t('game.hint_contemporary_event'), 5: t('game.hint_visual_clues')
               };
               return whenHints.map((hint, idx) => (
                 <div
