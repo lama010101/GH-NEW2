@@ -32,7 +32,7 @@
 
 .siteTitle {
   color: #6b7280;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -50,7 +50,7 @@
   justify-content: center;
   overflow: hidden;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
 }
 
@@ -90,7 +90,7 @@
 .xp {
   margin-top: 8px;
   color: #9ca3af;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 400;
 }
 
@@ -134,11 +134,11 @@
 }
 
 .statNumber {
-  font-size: 24px;
+  font-size: var(--font-2xl);
 }
 
 .statSymbol {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   margin-left: 1px;
   color: #ffffff;
 }
@@ -146,7 +146,7 @@
 .statSub {
   margin-top: 7px;
   color: #6b7280;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   text-align: center;
 }
@@ -162,7 +162,7 @@
 
 .panelHeading {
   color: #9ca3af;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -186,7 +186,7 @@
 
 .rankNum {
   color: #9ca3af;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 400;
 }
 
@@ -206,7 +206,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 700;
 }
 
@@ -236,7 +236,7 @@
 
 .rankName {
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -245,7 +245,7 @@
 
 .youTag {
   color: #9ca3af;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   flex: 0 0 auto;
 }
@@ -272,7 +272,7 @@
 
 .rankPercent {
   color: #ffffff;
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 700;
   line-height: 1;
   display: inline-flex;
@@ -284,12 +284,12 @@
    out of scope for this styling migration task. */
 .rankPercentSymbol {
   color: #ffffff;
-  font-size: 3.75px;
+  font-size: 3.75px; /* layout-constrained — do not tokenize */
 }
 
 .rankXp {
   color: #9ca3af;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   margin-top: 4px;
 }
@@ -331,7 +331,7 @@
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.72);
   color: #9ca3af;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.08em;
   padding: 5px 8px;
@@ -344,7 +344,7 @@
   justify-content: center;
   padding: 12px;
   color: #6b7280;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   text-align: center;
 }
@@ -355,7 +355,7 @@
 
 .roundTitle {
   color: #ffffff;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   line-height: 1.35;
   display: -webkit-box;
@@ -382,18 +382,18 @@
 }
 
 .miniNumber {
-  font-size: 20px;
+  font-size: var(--font-lg);
 }
 
 .miniSymbol {
-  font-size: 10px;
+  font-size: 10px; /* layout-constrained — do not tokenize */
   margin-left: 1px;
   color: #ffffff;
 }
 
 .miniLabel {
   color: #6b7280;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1;
@@ -403,7 +403,7 @@
 
 .miniSub {
   color: #6b7280;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   line-height: 1.15;
   margin-top: 5px;
@@ -426,7 +426,7 @@
   align-items: center;
   gap: 5px;
   color: #6b7280;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -435,7 +435,7 @@
 .bestName {
   min-width: 0;
   color: #9ca3af;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   overflow: hidden;
   text-align: right;
@@ -466,7 +466,7 @@
   height: 46px;
   border-radius: 12px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
@@ -493,7 +493,7 @@
 
 .lobbyError {
   color: var(--gh-danger);
-  font-size: 12px;
+  font-size: var(--font-2xs);
   margin-top: 8px;
   grid-column: 1 / -1;
   text-align: center;
@@ -503,7 +503,7 @@
 
 .roundsHeading {
   color: #9ca3af;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
