@@ -39,6 +39,7 @@ import { appendEvent, loadLastEventWithLock } from "@/server/eventStore";
 import { TransitionCause } from "@/core/transitionCause";
 import { transition } from "@/server/engine/transition";
 import type { TransitionEvent } from "@/server/engine/transition";
+import { createSupabaseServerClient } from "@/core/supabaseServer";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TRANSITION ENGINE VALIDATION (MP-ARCH-PHASE-1)
@@ -252,6 +253,7 @@ export function mapSessionRowToConfig(row: SessionRow): SessionConfig {
     totalRounds: row.total_rounds,
     yearMin: row.year_min,
     yearMax: row.year_max,
+    selectedEras: Array.isArray(row.selected_eras) ? row.selected_eras : [],
     resultsAutoAdvanceSec: row.results_auto_advance_sec,
     hostPlayerId: null,
     sessionDeadline: toIsoString(row.session_deadline),
@@ -937,7 +939,7 @@ export async function setCompeteEraSelection(input: {
   yearMin: number;
   yearMax: number;
 }): Promise<CompeteSessionSnapshot> {
-  const client = getServiceClient();
+  const client = createSupabaseServerClient();
   const { gameId, playerId, selectedEras, yearMin, yearMax } = input;
 
   const { data: session, error: sessionError } = await client
@@ -987,7 +989,11 @@ export async function setCompeteEraSelection(input: {
     throw new Error(`Failed to update era selection: ${updateError.message}`);
   }
 
-  return loadCompeteSessionSnapshot(gameId, playerId);
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    throw new Error(`Failed to load snapshot after era selection update: ${gameId}`);
+  }
+  return snapshot;
 }
 
 export async function kickCompetePlayer(input: KickCompetePlayerInput): Promise<CompeteSessionSnapshot> {
