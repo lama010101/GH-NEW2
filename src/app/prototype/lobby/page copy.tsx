@@ -157,6 +157,11 @@ export default function LobbyPrototypePage() {
         {/* ── Header ── */}
         <header className="header">
           <div className="headerTop">
+            <button className="backBtn" onClick={() => window.history.back()} aria-label="Back">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
             <span className="modeBadge">COMPETE</span>
             <span className="statusChip">
               <span className="statusDot" />
@@ -164,10 +169,6 @@ export default function LobbyPrototypePage() {
             </span>
           </div>
           <h1 className="title">Game Lobby</h1>
-          <div className="roomRow">
-            <span className="roomLabel">Room code</span>
-            <span className="roomCode">{roomCode}</span>
-          </div>
         </header>
 
         {/* ── Invite card ── */}
@@ -436,7 +437,7 @@ export default function LobbyPrototypePage() {
 
         /* ── Header ── */
         .header { padding: 8px 4px 0; }
-        .headerTop { display: flex; align-items: center; justify-content: space-between; }
+        .headerTop { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .modeBadge {
           font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
           color: #22d3ee; background: rgba(34,211,238,0.12);
@@ -453,14 +454,14 @@ export default function LobbyPrototypePage() {
           animation: pulseDot 1.8s ease-in-out infinite;
         }
         @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
-        .title { font-size: 30px; font-weight: 800; margin: 12px 0 0; letter-spacing: -0.5px; }
-        .roomRow { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
-        .roomLabel { font-size: 13px; color: rgba(255,255,255,0.55); }
-        .roomCode {
-          font-size: 16px; font-weight: 800; letter-spacing: 3px; color: #fff;
-          background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.3);
-          padding: 3px 12px; border-radius: 8px;
+        .title { font-size: 30px; font-weight: 800; margin: 12px 0 0; letter-spacing: -0.5px; text-align: center; }
+        .backBtn {
+          display: flex; align-items: center; justify-content: center;
+          width: 36px; height: 36px; border-radius: 10px;
+          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+          color: #fff; cursor: pointer; transition: background 0.15s;
         }
+        .backBtn:hover { background: rgba(255,255,255,0.15); }
 
         /* ── Cards ── */
         .card {
