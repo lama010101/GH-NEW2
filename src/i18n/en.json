@@ -181,7 +181,19 @@
     "hints_used": "Hints used",
     "era_presets": "Era Presets",
     "hint_desc_broad_era": "Broad era clue",
-    "hint_desc_nearby_event": "Nearby event clue"
+    "hint_desc_nearby_event": "Nearby event clue",
+    "hint_desc_decade_window": "A 10-year window",
+    "hint_desc_dated_event": "A closely dated event",
+    "hint_desc_era_scene": "Scene elements suggesting the era",
+    "hint_desc_broad_region": "Broad region clue",
+    "hint_desc_distant_landmark_km": "A landmark ~{km} km away",
+    "hint_desc_distant_landmark": "A distant landmark",
+    "hint_desc_admin_region": "Administrative region",
+    "hint_desc_nearby_landmark_km": "A landmark ~{km} km away",
+    "hint_desc_nearby_landmark": "A nearby landmark",
+    "hint_desc_location_scene": "Scene elements suggesting the location",
+    "hint_desc_tap_reveal": "Tap to reveal",
+    "hint_label_default": "Hint"
   },
   "auth": {
     "sign_in": "Sign In",
@@ -196,5 +208,55 @@
     "no_account": "Don't have an account?",
     "have_account": "Already have an account?",
     "loading": "Loading..."
+  },
+  "compete_page": {
+    "create_game": "Create Game",
+    "join_game": "Join Game",
+    "creating": "Creating…",
+    "joining": "Joining…",
+    "room_code_label": "Room Code",
+    "err_identity": "Identity not ready — please wait",
+    "err_code_required": "Room code is required",
+    "err_create": "Failed to create game",
+    "err_join": "Failed to join game"
+  },
+  "leaderboard": {
+    "title": "LEADERBOARD",
+    "back": "Back",
+    "col_player": "Player",
+    "col_xp_today": "XP Today",
+    "col_avg_accuracy": "Avg Accuracy",
+    "col_total_xp": "Total XP",
+    "col_games": "Games",
+    "col_level": "Level",
+    "col_accuracy_at_level": "Accuracy at Level",
+    "lvl_prefix": "Lvl {n}"
+  },
+  "profile": {
+    "accuracy_breakdown": "Accuracy breakdown",
+    "badge_collection": "Badge collection",
+    "performance_by_mode": "Performance by mode",
+    "leaderboard_positions": "Leaderboard positions",
+    "score_distribution": "Score distribution",
+    "history_collection": "History collection",
+    "accuracy_by_century": "Accuracy by century",
+    "account": "Account",
+    "email": "Email",
+    "member_since": "Member since",
+    "events_seen": "Events seen",
+    "by_century": "By century",
+    "coming_soon": "Coming soon",
+    "daily": "Daily",
+    "level_up": "Level Up",
+    "compete": "Compete"
+  },
+  "account": {
+    "username": "Username",
+    "email": "Email",
+    "member_since": "Member since"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications"
   }
 }

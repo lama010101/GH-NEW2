@@ -181,7 +181,19 @@
     "hints_used": "Indices utilisés",
     "era_presets": "Préréglages d'ère",
     "hint_desc_broad_era": "Indice d'ère général",
-    "hint_desc_nearby_event": "Indice d'événement proche"
+    "hint_desc_nearby_event": "Indice d'événement proche",
+    "hint_desc_decade_window": "Une fenêtre de 10 ans",
+    "hint_desc_dated_event": "Un événement daté de près",
+    "hint_desc_era_scene": "Éléments de scène suggérant l'ère",
+    "hint_desc_broad_region": "Indice de région général",
+    "hint_desc_distant_landmark_km": "Un monument à ~{km} km",
+    "hint_desc_distant_landmark": "Un monument lointain",
+    "hint_desc_admin_region": "Région administrative",
+    "hint_desc_nearby_landmark_km": "Un monument à ~{km} km",
+    "hint_desc_nearby_landmark": "Un monument proche",
+    "hint_desc_location_scene": "Éléments de scène suggérant le lieu",
+    "hint_desc_tap_reveal": "Appuyer pour révéler",
+    "hint_label_default": "Indice"
   },
   "auth": {
     "sign_in": "Se connecter",
@@ -196,5 +208,55 @@
     "no_account": "Pas encore de compte ?",
     "have_account": "Déjà un compte ?",
     "loading": "Chargement..."
+  },
+  "compete_page": {
+    "create_game": "Créer une partie",
+    "join_game": "Rejoindre",
+    "creating": "Création…",
+    "joining": "Connexion…",
+    "room_code_label": "Code de salle",
+    "err_identity": "Identité non prête — veuillez patienter",
+    "err_code_required": "Le code de salle est requis",
+    "err_create": "Impossible de créer la partie",
+    "err_join": "Impossible de rejoindre la partie"
+  },
+  "leaderboard": {
+    "title": "CLASSEMENT",
+    "back": "Retour",
+    "col_player": "Joueur",
+    "col_xp_today": "XP aujourd'hui",
+    "col_avg_accuracy": "Précision moy.",
+    "col_total_xp": "XP total",
+    "col_games": "Parties",
+    "col_level": "Niveau",
+    "col_accuracy_at_level": "Précision au niveau",
+    "lvl_prefix": "Niv. {n}"
+  },
+  "profile": {
+    "accuracy_breakdown": "Répartition de la précision",
+    "badge_collection": "Collection de badges",
+    "performance_by_mode": "Performance par mode",
+    "leaderboard_positions": "Positions au classement",
+    "score_distribution": "Distribution des scores",
+    "history_collection": "Collection historique",
+    "accuracy_by_century": "Précision par siècle",
+    "account": "Compte",
+    "email": "E-mail",
+    "member_since": "Membre depuis",
+    "events_seen": "Événements vus",
+    "by_century": "Par siècle",
+    "coming_soon": "Bientôt disponible",
+    "daily": "Quotidien",
+    "level_up": "Monter de niveau",
+    "compete": "Compétition"
+  },
+  "account": {
+    "username": "Nom d'utilisateur",
+    "email": "E-mail",
+    "member_since": "Membre depuis"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification"
   }
 }
