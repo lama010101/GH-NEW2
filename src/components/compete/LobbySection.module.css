@@ -464,6 +464,9 @@
   text-align: center;
   white-space: nowrap;
 }
+.lobbyAllReadyTag {
+  color: #4ade80;
+}
 
 /* ── Single READY CTA ── */
 .lobbyReadyBtnNotReady {

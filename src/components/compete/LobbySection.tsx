@@ -894,6 +894,9 @@ export default function LobbySection({
           </button>
           <span className={styles['lobby-ready-count']}>
             {t('lobby.players_ready', { ready: readyCount, total: totalPlayers })}
+            {snapshot.allPlayersReady && totalPlayers > 0 && (
+              <span className={styles['lobbyAllReadyTag']}> · starting soon</span>
+            )}
           </span>
         </div>
       </div>
