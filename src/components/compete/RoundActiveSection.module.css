@@ -72,7 +72,7 @@
 }
 
 .timerText {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
@@ -108,7 +108,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
@@ -156,7 +156,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 20px;
   padding: 4px 10px;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
@@ -174,7 +174,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.7);
 }
@@ -222,7 +222,7 @@
   left: 16px;
   padding: 4px 10px;
   border-radius: 12px;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--gh-orange);
 }
@@ -274,7 +274,7 @@
 
 .guessHint {
   text-align: center;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--gh-orange);
   padding: 4px 0 2px;
@@ -327,7 +327,7 @@
   right: -4px;
   background: var(--gh-orange, #f59e0b);
   color: #000;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   min-width: 18px;
   height: 18px;
@@ -432,7 +432,7 @@
   z-index: 2;
   border-radius: 999px;
   padding: 3px 10px;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   letter-spacing: 0.6px;
   pointer-events: none;
@@ -564,7 +564,7 @@
 }
 
 .sheetHeaderValue {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
@@ -623,7 +623,7 @@
   border: 1.5px solid rgba(255, 255, 255, 0.35);
   border-radius: 12px;
   color: #fff;
-  font-size: 15px;
+  font-size: var(--font-sm);
   padding: 12px 14px;
   outline: none;
 }
@@ -661,7 +661,7 @@
 
 .sheetSearchLoading {
   padding: 12px 14px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: rgba(255, 255, 255, 0.4);
 }
 
@@ -672,7 +672,7 @@
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 14px;
+  font-size: var(--font-sm);
   cursor: pointer;
   display: block;
 }
@@ -694,7 +694,7 @@
   border: none;
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.6);
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 700;
   cursor: not-allowed;
 }
@@ -757,7 +757,7 @@
 }
 
 .settingsTitle {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #111;
   text-transform: uppercase;
@@ -781,7 +781,7 @@
 
 .settingsLabel {
   color: #111;
-  font-size: 15px;
+  font-size: var(--font-sm);
 }
 
 .toggle {
@@ -813,7 +813,7 @@
   border: none;
   background: var(--gh-orange);
   color: white;
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 700;
   cursor: pointer;
 }

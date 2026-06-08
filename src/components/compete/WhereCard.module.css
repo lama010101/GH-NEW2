@@ -26,7 +26,7 @@
 }
 
 .titleText {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--gh-teal);
 }
@@ -38,7 +38,7 @@
 }
 
 .noSubmitDash {
-  font-size: 19px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--gh-text-muted);
 }
@@ -57,7 +57,7 @@
 }
 
 .scoreSuffix {
-  font-size: 9px;
+  font-size: 9px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: var(--gh-text-secondary);
 }
@@ -68,7 +68,7 @@
   align-items: center;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   background: var(--chip-bg);
   border: 0.5px solid var(--chip-border);
@@ -98,7 +98,7 @@
   align-items: center;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-style: italic;
   background: rgba(255, 255, 255, 0.04);
   border: 0.5px solid rgba(255, 255, 255, 0.1);
@@ -113,7 +113,7 @@
 .hintPenalty {
   display: inline-flex;
   align-items: center;
-  font-size: 10px;
+  font-size: 10px; /* layout-constrained — do not tokenize */
   color: var(--gh-danger);
   font-weight: 600;
   background: rgba(127, 29, 29, 1);
@@ -128,7 +128,7 @@
 
 /* Correct row */
 .correctRow {
-  font-size: 15px;
+  font-size: var(--font-sm);
   color: var(--gh-text-primary);
   margin-bottom: 8px;
   display: flex;
@@ -137,7 +137,7 @@
 
 .correctName {
   color: var(--gh-text-primary);
-  font-size: 17px;
+  font-size: var(--font-base);
   font-weight: 700;
 }
 
@@ -147,7 +147,7 @@
 }
 
 .noGuessText {
-  font-size: 15px;
+  font-size: var(--font-sm);
   color: var(--gh-text-muted);
 }
 
@@ -156,7 +156,7 @@
 }
 
 .distanceText {
-  font-size: 14px;
+  font-size: var(--font-sm);
   color: var(--gh-text-primary);
 }
 
@@ -194,7 +194,7 @@
 }
 
 .expandLabel {
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: var(--gh-text-muted);
   text-transform: uppercase;
@@ -202,7 +202,7 @@
 }
 
 .expandLabelAccent {
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: var(--gh-teal);
   text-transform: uppercase;
@@ -210,7 +210,7 @@
 }
 
 .expandRank {
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   color: var(--gh-text-muted);
   font-weight: 600;
 }
@@ -231,24 +231,24 @@
 .lbRank {
   min-width: 20px;
   color: var(--gh-text-muted);
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
 }
 
 .lbName {
   flex: 1;
-  font-size: 15px;
+  font-size: var(--font-sm);
 }
 
 .lbYouTag {
   color: var(--gh-text-muted);
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   margin-left: 4px;
 }
 
 .lbDistance {
   color: var(--gh-text-secondary);
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
 }
 
@@ -256,7 +256,7 @@
   background: var(--gh-bg-input);
   border-radius: 999px;
   padding: 2px 8px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
 }
 
@@ -279,7 +279,7 @@
 }
 
 .hintTierText {
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   color: var(--gh-teal);
   text-transform: uppercase;
@@ -287,13 +287,13 @@
 }
 
 .hintContent {
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: var(--gh-text-secondary);
   line-height: 1.4;
 }
 
 .emptyHints {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--gh-text-muted);
   font-style: italic;
 }
