@@ -61,13 +61,13 @@ const YEAR_MIN_BOUND = -400;
 const YEAR_MAX_BOUND = new Date().getFullYear();
 
 type EraId = 'prehistoric' | 'ancient' | 'medieval' | 'earlymodern' | 'modern' | 'contemporary';
-const ERAS: { id: EraId; label: string; span: string }[] = [
-  { id: 'prehistoric', label: 'Prehistoric', span: '3000–800 BCE' },
-  { id: 'ancient',     label: 'Ancient',     span: '800 BCE–500 CE' },
-  { id: 'medieval',    label: 'Medieval',    span: '500–1500' },
-  { id: 'earlymodern', label: 'Early Modern',span: '1500–1800' },
-  { id: 'modern',      label: 'Modern',      span: '1800–1950' },
-  { id: 'contemporary',label: 'Contemporary',span: '1950–today' },
+const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: number; yearMax: number }[] = [
+  { id: 'prehistoric', label: 'Prehistoric', span: '3000–800 BCE', icon: '🦕', yearMin: -3000, yearMax: -800 },
+  { id: 'ancient',     label: 'Ancient',     span: '800 BCE–500',  icon: '🏛️', yearMin: -800,  yearMax: 500  },
+  { id: 'medieval',    label: 'Medieval',    span: '500–1500',     icon: '⚔️', yearMin: 500,   yearMax: 1500 },
+  { id: 'earlymodern', label: 'Early Modern',span: '1500–1800',    icon: '⛵', yearMin: 1500,  yearMax: 1800 },
+  { id: 'modern',      label: 'Modern',      span: '1800–1950',    icon: '🏭', yearMin: 1800,  yearMax: 1950 },
+  { id: 'contemporary',label: 'Contemporary',span: '1950–today',   icon: '🚀', yearMin: 1950,  yearMax: new Date().getFullYear() },
 ];
 
 export default function LobbySection({
@@ -136,19 +136,36 @@ export default function LobbySection({
       const next = new Set(prev);
       if (next.has(id)) {
         if (next.size > 1) next.delete(id);
+        else return prev; // keep at least one era
       } else {
         next.add(id);
       }
+      const selected = ERAS.filter(e => next.has(e.id));
+      const newMin = Math.min(...selected.map(e => e.yearMin));
+      const newMax = Math.max(...selected.map(e => e.yearMax));
+      setYearMinValue(newMin);
+      setYearMaxValue(newMax);
+      onSetYearRange?.(newMin, newMax);
       return next;
     });
   };
 
   const allErasSelected = selectedEras.size === ERAS.length;
   const toggleAllEras = () => {
-    setSelectedEras(allErasSelected
-      ? new Set([ERAS[ERAS.length - 1].id])
-      : new Set(ERAS.map(e => e.id))
-    );
+    if (allErasSelected) {
+      const last = ERAS[ERAS.length - 1];
+      setSelectedEras(new Set([last.id]));
+      setYearMinValue(last.yearMin);
+      setYearMaxValue(last.yearMax);
+      onSetYearRange?.(last.yearMin, last.yearMax);
+    } else {
+      const allMin = Math.min(...ERAS.map(e => e.yearMin));
+      const allMax = Math.max(...ERAS.map(e => e.yearMax));
+      setSelectedEras(new Set(ERAS.map(e => e.id)));
+      setYearMinValue(allMin);
+      setYearMaxValue(allMax);
+      onSetYearRange?.(allMin, allMax);
+    }
   };
 
   // Load last-invited from localStorage on mount
@@ -820,7 +837,7 @@ export default function LobbySection({
                       disabled={!isHost}
                       aria-pressed={on}
                     >
-                      <span className={styles['lobbyEraCheck']}>{on ? '✓' : ''}</span>
+                      <span className={styles['lobbyEraIcon']}>{era.icon}</span>
                       <span className={styles['lobbyEraText']}>
                         <span className={styles['lobbyEraLabel']}>{era.label}</span>
                         <span className={styles['lobbyEraSpan']}>{era.span}</span>
@@ -865,7 +882,7 @@ export default function LobbySection({
                       disabled={!isHost}
                       aria-pressed={on}
                     >
-                      <span className={styles['lobbyEraCheck']}>{on ? '✓' : ''}</span>
+                      <span className={styles['lobbyEraIcon']}>{era.icon}</span>
                       <span className={styles['lobbyEraText']}>
                         <span className={styles['lobbyEraLabel']}>{era.label}</span>
                         <span className={styles['lobbyEraSpan']}>{era.span}</span>
