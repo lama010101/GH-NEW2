@@ -1,0 +1,28 @@
+/* ── Compete page shell background ── */
+.pageShell {
+  position: relative;
+  min-height: 100dvh;
+}
+
+.bgImage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image: url(/home_background.webp);
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+}
+
+.bgScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.78);
+  pointer-events: none;
+}
+
+.pageContent {
+  position: relative;
+  z-index: 2;
+}

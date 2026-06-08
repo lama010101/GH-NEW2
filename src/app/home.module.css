@@ -389,7 +389,8 @@
   text-align: center;
   color: #ffffff;
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-sora);
   letter-spacing: -0.2px;
   line-height: 1.25;
   margin: 0 auto;

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Bebas_Neue } from "next/font/google";
+import { Bebas_Neue, Sora } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { cookies } from 'next/headers';
@@ -11,6 +11,13 @@ const bebasNeue = Bebas_Neue({
   subsets: ['latin'],
   weight: ['400'],
   variable: '--font-bebas',
+  display: 'swap',
+});
+
+const sora = Sora({
+  subsets: ['latin'],
+  weight: ['700'],
+  variable: '--font-sora',
   display: 'swap',
 });
 
@@ -29,7 +36,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning className={bebasNeue.variable}>
+    <html lang={locale} suppressHydrationWarning className={`${bebasNeue.variable} ${sora.variable}`}>
       <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           {children}
