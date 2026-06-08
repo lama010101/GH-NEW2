@@ -31,7 +31,7 @@ export function DailyPanel({ onPlay }: { onPlay: () => void }) {
           <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8"/>
           <path d="M12 7v5l3 3" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round"/>
         </svg>
-        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
+        <span style={{ fontSize: 'var(--font-xs)', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
           {t('home.daily_new_challenge')} <span style={{ color: 'var(--gh-orange)' }}>{countdown}</span>
         </span>
       </div>

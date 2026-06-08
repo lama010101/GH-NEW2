@@ -47,7 +47,7 @@ export function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: b
       </div>
       <div style={{ background: CARD_GRADIENT[mode], padding: '10px 8px 12px', textAlign: 'center', position: 'relative' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(12,12,18,0.8)' }} />
-        <div style={{ position: 'relative', zIndex: 1, fontSize: 13, fontWeight: 800, letterSpacing: '1.5px', color: '#fff', textTransform: 'uppercase' }}>{CARD_NAME[mode]}</div>
+        <div style={{ position: 'relative', zIndex: 1, fontSize: 'var(--font-xs)', fontWeight: 800, letterSpacing: '1.5px', color: '#fff', textTransform: 'uppercase' }}>{CARD_NAME[mode]}</div>
         <div style={{ position: 'relative', zIndex: 1, fontSize: 10, fontWeight: 500, letterSpacing: '1px', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginTop: 3 }}>{CARD_SUB[mode]}</div>
       </div>
     </button>

@@ -15,7 +15,7 @@
   flex: 1;
   border: none;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.45);
   text-align: center;
@@ -31,7 +31,7 @@
   background: var(--gh-danger);
   color: #fff;
   border-radius: var(--gh-radius-pill);
-  font-size: 9px;
+  font-size: 9px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   padding: 1px 5px;
   margin-left: 4px;
@@ -45,14 +45,14 @@
   gap: 10px;
   padding: 12px 0;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 .emptyStateCenter {
   padding: 12px 0;
   text-align: center;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 .emptyIconWrap {
@@ -90,7 +90,7 @@
 
 .loadingText {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 /* ── Game / invite rows ── */
@@ -128,7 +128,7 @@
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -142,20 +142,20 @@
 
 .gameName {
   color: #fff;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
 }
 
 .gameSub {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
 }
 
 .declineBtn {
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.4);
-  font-size: 16px;
+  font-size: var(--font-base);
   cursor: pointer;
   padding: 0 4px;
 }
@@ -165,7 +165,7 @@
 .playBadge {
   background: var(--gh-blue);
   color: #fff;
-  font-size: 10px;
+  font-size: 10px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--gh-radius-pill);
@@ -182,7 +182,7 @@
   display: inline-block;
   padding: 1px 7px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   color: white;
   margin-right: 6px;
@@ -194,19 +194,19 @@
 
 .accuracyValue {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--font-xs);
   /* color set inline via getAccuracyColor() */
 }
 
 .xpValue {
   color: rgba(255, 255, 255, 0.55);
-  font-size: 12px;
+  font-size: var(--font-2xs);
   margin-left: 4px;
 }
 
 .completedLabel {
   color: #fff;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
 }
 
@@ -228,7 +228,7 @@
   border: 1px solid rgba(0, 173, 193, 0.6);
   border-radius: 10px;
   color: #fff;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   letter-spacing: 4px;
   text-align: center;
@@ -251,7 +251,7 @@
   padding: 14px 16px;
   border-radius: 12px;
   border: none;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -279,7 +279,7 @@
 }
 
 .errorText {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: #f87171;
   text-align: center;
 }
