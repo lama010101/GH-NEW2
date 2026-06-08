@@ -1895,3 +1895,4 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 **Description:** Wire translations into RoundCompleteSection, RoundActiveSection, LobbySection
 **Date:** 2026-06-08
 **Status:** done
+| MP-UI-LOBBY-ALIGN-001 | Align live lobby UI with prototype | DONE | 2026-06-08 |

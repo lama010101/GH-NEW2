@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
 import {
   createCompeteSessionRequest
 } from "@/core/competeApi";
@@ -12,6 +13,7 @@ type Mode = "create" | "join";
 
 export default function CompeteEntryPage() {
   const router = useRouter();
+  const t = useTranslations('compete_page');
   
   // Redirect to home page - this route is deprecated
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function CompeteEntryPage() {
   const handleCreate = async () => {
     setError(null);
     if (!playerId) {
-      setError("Identity not ready — please wait");
+      setError(t('err_identity'));
       return;
     }
     setLoading(true);
@@ -49,7 +51,7 @@ export default function CompeteEntryPage() {
       });
       redirectWithIdentity(snapshot.gameId, "");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create game");
+      setError(err instanceof Error ? err.message : t('err_create'));
       setLoading(false);
     }
   };
@@ -57,12 +59,12 @@ export default function CompeteEntryPage() {
   const handleJoin = async () => {
     setError(null);
     if (!playerId) {
-      setError("Identity not ready — please wait");
+      setError(t('err_identity'));
       return;
     }
     const code = gameId.trim().toUpperCase();
     if (code.length === 0) {
-      setError("Room code is required");
+      setError(t('err_code_required'));
       return;
     }
     setLoading(true);
@@ -74,7 +76,7 @@ export default function CompeteEntryPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Failed to join game");
+        throw new Error((data as { error?: string }).error ?? t('err_join'));
       }
       const data = await res.json() as { gameId?: string };
       const resolvedGameId = data.gameId;
@@ -83,7 +85,7 @@ export default function CompeteEntryPage() {
       }
       redirectWithIdentity(resolvedGameId, "");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to join game");
+      setError(err instanceof Error ? err.message : t('err_join'));
       setLoading(false);
     }
   };
@@ -160,13 +162,13 @@ export default function CompeteEntryPage() {
                 onClick={handleCreate}
                 disabled={blocked || loading}
               >
-                {loading ? "Creating…" : "Create Game"}
+                {loading ? t('creating') : t('create_game')}
               </button>
             </div>
           ) : (
             <div className="stack">
               <div className="field">
-                <label htmlFor="join-game-id">Room Code</label>
+                <label htmlFor="join-game-id">{t('room_code_label')}</label>
                 <input
                   id="join-game-id"
                   className="input"
@@ -183,7 +185,7 @@ export default function CompeteEntryPage() {
                 onClick={handleJoin}
                 disabled={blocked || loading}
               >
-                {loading ? "Joining…" : "Join Game"}
+                {loading ? t('joining') : t('join_game')}
               </button>
             </div>
           )}

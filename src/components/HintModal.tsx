@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useTranslations } from 'next-intl';
 import type { EventHint } from "@/core/types";
 import styles from "./HintModal.module.css";
 
@@ -44,22 +45,22 @@ const ICONS = {
 
 type TabType = "when" | "where";
 
-function getHintLabel(hint: EventHint): string {
+function getHintLabel(hint: EventHint, t: (key: string) => string): string {
   if (hint.type === "when") {
-    if (hint.tier === 1) return "Century";
-    if (hint.tier === 2) return "Historical Event";
-    if (hint.tier === 3) return "Decade";
-    if (hint.tier === 4) return "Contemporary Event";
-    if (hint.tier === 5) return "Visual Clues";
+    if (hint.tier === 1) return t('hint_century');
+    if (hint.tier === 2) return t('hint_historical_event');
+    if (hint.tier === 3) return t('hint_decade');
+    if (hint.tier === 4) return t('hint_contemporary_event');
+    if (hint.tier === 5) return t('hint_visual_clues');
   }
   if (hint.type === "where") {
-    if (hint.tier === 1) return "Continent";
-    if (hint.tier === 2) return "Remote Landmark";
-    if (hint.tier === 3) return "Region";
-    if (hint.tier === 4) return "Nearby Landmark";
-    if (hint.tier === 5) return "Visual Clues";
+    if (hint.tier === 1) return t('hint_continent');
+    if (hint.tier === 2) return t('hint_remote_landmark');
+    if (hint.tier === 3) return t('hint_region');
+    if (hint.tier === 4) return t('hint_nearby_landmark');
+    if (hint.tier === 5) return t('hint_visual_clues');
   }
-  return "Hint";
+  return t('hint_label_default');
 }
 
 function penaltyBorderColor(pct: number): string {
@@ -70,28 +71,28 @@ function penaltyBorderColor(pct: number): string {
   return "rgba(232,68,34,0.4)";
 }
 
-function getHintDescription(hint: EventHint): string {
+function getHintDescription(hint: EventHint, t: (key: string, params?: Record<string, unknown>) => string): string {
   if (hint.type === "when") {
-    if (hint.tier === 1) return "Broad era clue";
-    if (hint.tier === 2) return "A historically nearby event";
-    if (hint.tier === 3) return "A 10-year window";
-    if (hint.tier === 4) return "A closely dated event";
-    if (hint.tier === 5) return "Scene elements suggesting the era";
+    if (hint.tier === 1) return t('hint_desc_broad_era');
+    if (hint.tier === 2) return t('hint_desc_nearby_event');
+    if (hint.tier === 3) return t('hint_desc_decade_window');
+    if (hint.tier === 4) return t('hint_desc_dated_event');
+    if (hint.tier === 5) return t('hint_desc_era_scene');
   }
   if (hint.type === "where") {
-    if (hint.tier === 1) return "Broad region clue";
+    if (hint.tier === 1) return t('hint_desc_broad_region');
     if (hint.tier === 2) {
       const km = (hint.metadata as { km?: number } | null)?.km;
-      return km != null ? `A landmark ~${km} km away` : "A distant landmark";
+      return km != null ? t('hint_desc_distant_landmark_km', { km }) : t('hint_desc_distant_landmark');
     }
-    if (hint.tier === 3) return "Administrative region";
+    if (hint.tier === 3) return t('hint_desc_admin_region');
     if (hint.tier === 4) {
       const km = (hint.metadata as { km?: number } | null)?.km;
-      return km != null ? `A landmark ~${km} km away` : "A nearby landmark";
+      return km != null ? t('hint_desc_nearby_landmark_km', { km }) : t('hint_desc_nearby_landmark');
     }
-    if (hint.tier === 5) return "Scene elements suggesting the location";
+    if (hint.tier === 5) return t('hint_desc_location_scene');
   }
-  return "Tap to reveal";
+  return t('hint_desc_tap_reveal');
 }
 
 function getIcon(hint: EventHint): string {
