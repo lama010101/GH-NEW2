@@ -1889,3 +1889,9 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 **Description:** Complete missing i18n namespaces + fix JSON syntax
 **Date:** 2026-06-08
 **Status:** done
+
+## Task MP-FEAT-I18N-018
+**Files modified:** src/components/compete/RoundCompleteSection.tsx, src/components/compete/RoundActiveSection.tsx, src/components/compete/LobbySection.tsx
+**Description:** Wire translations into RoundCompleteSection, RoundActiveSection, LobbySection
+**Date:** 2026-06-08
+**Status:** done
