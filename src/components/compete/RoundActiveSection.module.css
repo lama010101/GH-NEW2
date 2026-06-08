@@ -587,6 +587,11 @@
 }
 
 /* ── Sheet map ── */
+/* WARNING: Leaflet z-index ceiling is 1000 (tile panes 200-700, controls 1000).
+   Any UI element that must appear ABOVE the map (dropdowns, tooltips, overlays)
+   MUST be placed in a container with z-index: 1001+ and position: relative + overflow: visible.
+   Raising z-index on a child inside a lower stacking context has NO effect.
+   See: MP-FIX-MAP-ZINDEX-001, MP-FIX-SEARCH-DROPDOWN-002, MP-FIX-ZINDEX-REGRESSION-003 */
 .sheetMap {
   flex: 1;
   min-height: 0;
@@ -603,6 +608,11 @@
 /* ── Sheet field (search + year input — shared) ── */
 .sheetFieldWrap {
   position: relative;
+  overflow: visible;
+  z-index: 1001; /* LOAD-BEARING: must stay ≥ 1001 — Leaflet internal z-index ceiling is 1000.
+                    Raising child z-index alone does NOT work (stacking context trap).
+                    See: MP-FIX-MAP-ZINDEX-001, MP-FIX-SEARCH-DROPDOWN-002, MP-FIX-ZINDEX-REGRESSION-003
+                    DO NOT remove or reduce this value. DO NOT move it to a child element. */
   margin-top: 16px;
 }
 
@@ -645,7 +655,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   overflow: hidden;
-  z-index: 5;
+  z-index: 10;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
 }
 
