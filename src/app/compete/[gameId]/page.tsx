@@ -345,6 +345,11 @@ export default function CompeteGamePage() {
     setTimer(roundTimerSec);
   }, [playerId, setTimer]);
 
+  const handleSetEraSelection = useCallback((selectedEras: string[], yearMin: number, yearMax: number) => {
+    if (!playerId) return;
+    sendMessage({ type: "SET_ERA_SELECTION", playerId, selectedEras, yearMin, yearMax });
+  }, [playerId, sendMessage]);
+
   const handleSetYearRange = useCallback((yearMin: number, yearMax: number) => {
     if (!playerId) return;
     setBusy(true);
@@ -515,6 +520,7 @@ export default function CompeteGamePage() {
               onSetYearRange={handleSetYearRange}
               onSetResultsTimer={handleSetResultsTimer}
               onKickPlayer={handleKickPlayer}
+              onSetEraSelection={handleSetEraSelection}
             />
           </>
         ) : null}
