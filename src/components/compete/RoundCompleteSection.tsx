@@ -191,7 +191,7 @@ export default function RoundCompleteSection({
 
             {/* ROUND LEADERBOARD CARD */}
             <div className={styles.leaderboardCard}>
-              <div className={styles.leaderboardTitle}>Round leaderboard</div>
+              <div className={styles.leaderboardTitle}>{t('round_leaderboard')}</div>
               {leaderboardRows.map(row => {
                 const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
                 const accColor = `hsl(${hue}, 100%, 50%)`;

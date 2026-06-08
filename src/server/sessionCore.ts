@@ -89,6 +89,7 @@ export type SessionRow = {
   year_min: number;
   year_max: number;
   results_auto_advance_sec: number;
+  selected_eras: string[];
   session_deadline: Date | null;
   created_at: Date;
   seed: bigint;
@@ -443,6 +444,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
       yearMin: gameState.session.yearMin,
       yearMax: gameState.session.yearMax,
       resultsAutoAdvanceSec: gameState.session.resultsAutoAdvanceSec,
+      selectedEras: Array.isArray(gameState.session.selectedEras) ? gameState.session.selectedEras : ['prehistoric','ancient','medieval','earlymodern','modern','contemporary'],
       hostPlayerId: hostPlayer ? hostPlayer.playerId : null,
       sessionDeadline: gameState.session.sessionDeadline,
       startedAt: null,
@@ -926,6 +928,66 @@ export async function setCompeteResultsTimer(input: SetCompeteResultsTimerInput)
   }
 
   return snapshot;
+}
+
+export async function setCompeteEraSelection(input: {
+  gameId: string;
+  playerId: string;
+  selectedEras: string[];
+  yearMin: number;
+  yearMax: number;
+}): Promise<CompeteSessionSnapshot> {
+  const client = getServiceClient();
+  const { gameId, playerId, selectedEras, yearMin, yearMax } = input;
+
+  const { data: session, error: sessionError } = await client
+    .from("sessions")
+    .select("game_id, mode")
+    .eq("game_id", gameId)
+    .single();
+
+  if (sessionError || !session) {
+    throw new Error(`Session not found: ${gameId}`);
+  }
+
+  const { data: player, error: playerError } = await client
+    .from("session_players")
+    .select("player_id, is_host")
+    .eq("game_id", gameId)
+    .eq("player_id", playerId)
+    .single();
+
+  if (playerError || !player) {
+    throw new Error(`Player not found: ${playerId}`);
+  }
+
+  if (!player.is_host) {
+    throw new Error("Only the host can change era selection");
+  }
+
+  const validEras = ['prehistoric','ancient','medieval','earlymodern','modern','contemporary'];
+  const sanitized = selectedEras.filter(e => validEras.includes(e));
+  if (sanitized.length === 0) {
+    throw new Error("At least one era must be selected");
+  }
+
+  const yearMinRounded = Math.round(yearMin);
+  const yearMaxRounded = Math.round(yearMax);
+
+  const { error: updateError } = await client
+    .from("sessions")
+    .update({
+      selected_eras: sanitized,
+      year_min: yearMinRounded,
+      year_max: yearMaxRounded,
+    })
+    .eq("game_id", gameId);
+
+  if (updateError) {
+    throw new Error(`Failed to update era selection: ${updateError.message}`);
+  }
+
+  return loadCompeteSessionSnapshot(gameId, playerId);
 }
 
 export async function kickCompetePlayer(input: KickCompetePlayerInput): Promise<CompeteSessionSnapshot> {
