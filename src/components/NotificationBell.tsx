@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import styles from './NotificationBell.module.css';
 
 interface NotificationBellProps {
@@ -72,6 +73,7 @@ function NotificationItem({
 }
 
 export default function NotificationBell({ className }: NotificationBellProps) {
+  const t = useTranslations('notifications');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -160,14 +162,14 @@ export default function NotificationBell({ className }: NotificationBellProps) {
       {open && (
         <div className={styles.drawer}>
           <div className={styles.drawerHeader}>
-            <span>Notifications</span>
+            <span>{t('title')}</span>
             <button type="button" onClick={() => setOpen(false)}>
               ✕
             </button>
           </div>
           <div className={styles.drawerList}>
             {notifications.filter(n => !n.read).length === 0 && (
-              <div className={styles.empty}>No notifications</div>
+              <div className={styles.empty}>{t('empty')}</div>
             )}
             {notifications.filter(n => !n.read).map((n) => (
               <NotificationItem key={n.id} notification={n} onClose={() => setOpen(false)} />
