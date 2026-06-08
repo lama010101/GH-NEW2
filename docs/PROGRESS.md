@@ -1896,3 +1896,15 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 **Date:** 2026-06-08
 **Status:** done
 | MP-UI-LOBBY-ALIGN-001 | Align live lobby UI with prototype | DONE | 2026-06-08 |
+## MP-FEAT-I18N-019
+**Files modified:** src/app/compete/page.tsx, src/components/HintModal.tsx
+**Description:** Wire translations into compete/page.tsx and HintModal
+**Date:** 2026-06-08
+**Status:** done | commit: abf22f3
+
+---
+**Task ID:** MP-FIX-COMPETE-BG-001
+**Files modified:** src/app/compete/[gameId]/page.tsx, src/app/compete/[gameId]/page.module.css
+**Description:** Add home background to compete page shell. Replaced black background with home_background.webp fixed image + dark scrim overlay using CSS module classes pageShell, bgImage, bgScrim, pageContent.
+**Date:** 2026-06-08
+**Status:** done
