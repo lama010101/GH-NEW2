@@ -171,7 +171,17 @@
     "hint_continent": "Continent",
     "hint_remote_landmark": "Monument lointain",
     "hint_region": "Région",
-    "hint_nearby_landmark": "Monument proche"
+    "hint_nearby_landmark": "Monument proche",
+    "confirm_location": "Confirmer la position",
+    "confirm_year": "Confirmer l'année",
+    "guessed": "Deviné",
+    "no_image": "Aucune image disponible",
+    "hint_penalties": "Pénalités d'indices déduites",
+    "round_leaderboard": "Classement du round",
+    "hints_used": "Indices utilisés",
+    "era_presets": "Préréglages d'ère",
+    "hint_desc_broad_era": "Indice d'ère général",
+    "hint_desc_nearby_event": "Indice d'événement proche"
   },
   "auth": {
     "sign_in": "Se connecter",
