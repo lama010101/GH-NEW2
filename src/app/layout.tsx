@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Bebas_Neue, Sora } from "next/font/google";
+import { Bebas_Neue, DM_Sans, Sora } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { cookies } from 'next/headers';
@@ -21,6 +21,13 @@ const sora = Sora({
   display: 'swap',
 });
 
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: "Guess-History Practice",
   description: "Deterministic historical guessing game"
@@ -36,7 +43,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning className={`${bebasNeue.variable} ${sora.variable}`}>
+    <html lang={locale} suppressHydrationWarning className={`${bebasNeue.variable} ${dmSans.variable} ${sora.variable}`}>
       <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           {children}

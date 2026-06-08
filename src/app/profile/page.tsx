@@ -392,35 +392,35 @@ export default function ProfilePage() {
       {/* 7. FULL-WIDTH PANEL - Performance by mode */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>Performance by mode</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('performance_by_mode')}</h3>
           <div className="grid grid-cols-3 gap-[10px]">
             {/* Daily */}
             <div className="p-4 rounded-xl relative overflow-hidden bg-blue-900/40 border border-blue-500/30">
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500" />
-              <div className={`font-bebas text-lg font-bold mb-2`}>Daily</div>
+              <div className={`font-bebas text-lg font-bold mb-2`}>{t('daily')}</div>
               <div className="flex flex-col gap-1 items-center py-4">
                 <div className="text-sm text-white/35">—</div>
-                <div className="text-xs text-white/35">Coming soon</div>
+                <div className="text-xs text-white/35">{t('coming_soon')}</div>
               </div>
             </div>
             
             {/* Level Up */}
             <div className="p-4 rounded-xl relative overflow-hidden bg-purple-900/30 border border-purple-400/30">
               <div className={`absolute top-0 left-0 right-0 h-0.5 ${styles.accentBarViolet}`} />
-              <div className={`font-bebas text-lg font-bold mb-2`}>Level Up</div>
+              <div className={`font-bebas text-lg font-bold mb-2`}>{t('level_up')}</div>
               <div className="flex flex-col gap-1 items-center py-4">
                 <div className="text-sm text-white/35">—</div>
-                <div className="text-xs text-white/35">Coming soon</div>
+                <div className="text-xs text-white/35">{t('coming_soon')}</div>
               </div>
             </div>
             
             {/* Compete */}
             <div className="p-4 rounded-xl relative overflow-hidden bg-teal-500/25 border border-teal-500/30">
               <div className={`absolute top-0 left-0 right-0 h-0.5 ${styles.accentBarTeal}`} />
-              <div className={`font-bebas text-lg font-bold mb-2`}>Compete</div>
+              <div className={`font-bebas text-lg font-bold mb-2`}>{t('compete')}</div>
               <div className="flex flex-col gap-1 items-center py-4">
                 <div className="text-sm text-white/35">—</div>
-                <div className="text-xs text-white/35">Coming soon</div>
+                <div className="text-xs text-white/35">{t('coming_soon')}</div>
               </div>
             </div>
           </div>
@@ -430,7 +430,7 @@ export default function ProfilePage() {
       {/* 8. TWO-COLUMN ROW */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>Leaderboard positions</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('leaderboard_positions')}</h3>
           <div className="flex flex-col gap-3">
             {/* Daily */}
             <div className="flex items-center justify-between">
@@ -453,9 +453,9 @@ export default function ProfilePage() {
           </div>
         </div>
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>Score distribution</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('score_distribution')}</h3>
           <div className="flex flex-col items-center gap-2 py-6">
-            <div className="text-sm text-white/35">Coming soon</div>
+            <div className="text-sm text-white/35">{t('coming_soon')}</div>
           </div>
         </div>
       </div>
@@ -463,13 +463,13 @@ export default function ProfilePage() {
       {/* 9. FULL-WIDTH PANEL - History collection */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>History collection</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('history_collection')}</h3>
           <div className="grid grid-cols-4 gap-3 mb-6">
             <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorOrange}`}>
                 {progressData?.eventsSeenCount?.toLocaleString() ?? '—'}
               </div>
-              <div className="text-[10px] mt-1 text-white/45">Events seen</div>
+              <div className="text-[10px] mt-1 text-white/45">{t('events_seen')}</div>
             </div>
             {[
               { label: 'Rated', colorClass: styles.historyColorViolet },
