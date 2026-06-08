@@ -347,8 +347,8 @@ export default function CompeteGamePage() {
 
   const handleSetEraSelection = useCallback((selectedEras: string[], yearMin: number, yearMax: number) => {
     if (!playerId) return;
-    sendMessage({ type: "SET_ERA_SELECTION", playerId, selectedEras, yearMin, yearMax });
-  }, [playerId, sendMessage]);
+    wsRef.current?.send(JSON.stringify({ type: "SET_ERA_SELECTION", playerId, selectedEras, yearMin, yearMax }));
+  }, [playerId, wsRef]);
 
   const handleSetYearRange = useCallback((yearMin: number, yearMax: number) => {
     if (!playerId) return;
