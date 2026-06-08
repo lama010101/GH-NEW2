@@ -33,6 +33,7 @@ import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import useCompeteTimer from "@/hooks/useCompeteTimer";
 import useCompeteSocket from "@/hooks/useCompeteSocket";
 import btnStyles from "@/components/ui/Button.module.css";
+import pageStyles from './page.module.css';
 
 export default function CompeteGamePage() {
   const params = useParams<{ gameId: string }>();

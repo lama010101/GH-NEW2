@@ -71,7 +71,7 @@ function penaltyBorderColor(pct: number): string {
   return "rgba(232,68,34,0.4)";
 }
 
-function getHintDescription(hint: EventHint, t: (key: string, params?: Record<string, unknown>) => string): string {
+function getHintDescription(hint: EventHint, t: (key: string, params?: Record<string, string | number | Date>) => string): string {
   if (hint.type === "when") {
     if (hint.tier === 1) return t('hint_desc_broad_era');
     if (hint.tier === 2) return t('hint_desc_nearby_event');
@@ -132,6 +132,7 @@ function getRevealedText(hint: EventHint): string {
 }
 
 export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalProps) {
+  const t = useTranslations('game');
   const [purchased, setPurchased] = useState<Set<string>>(new Set(purchasedIds));
   const [activeTab, setActiveTab] = useState<TabType>("when");
 
@@ -333,11 +334,11 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
 
                   {/* Body */}
                   <div className={styles.hintBody}>
-                    <div className={styles.hintName}>{getHintLabel(hint)}</div>
+                    <div className={styles.hintName}>{getHintLabel(hint, t)}</div>
                     {owned ? (
                       <div className={styles.hintAnswer}>{getRevealedText(hint)}</div>
                     ) : (
-                      <div className={styles.hintSub}>{getHintDescription(hint)}</div>
+                      <div className={styles.hintSub}>{getHintDescription(hint, t)}</div>
                     )}
                   </div>
 
