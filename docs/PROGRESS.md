@@ -1908,3 +1908,4 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 **Description:** Add home background to compete page shell. Replaced black background with home_background.webp fixed image + dark scrim overlay using CSS module classes pageShell, bgImage, bgScrim, pageContent.
 **Date:** 2026-06-08
 **Status:** done
+| MP-FEAT-TYPOGRAPHY-002 | Tokenize font sizes — home screen files | done | 2026-06-08 |
