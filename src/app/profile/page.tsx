@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { signOut } from '@/core/identity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
@@ -20,6 +21,7 @@ type ProfileHistoricalAvatar = {
 export default function ProfilePage() {
   const router = useRouter();
   const { playerId } = useIdentity();
+  const t = useTranslations('profile');
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
   const [progressData, setProgressData] = useState<{
@@ -334,7 +336,7 @@ export default function ProfilePage() {
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
         {/* Left: Accuracy breakdown */}
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>Accuracy breakdown</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('accuracy_breakdown')}</h3>
           {progressData && progressData.byContinent.length > 0 ? (
             <div className="flex flex-col gap-2">
               {progressData.byContinent.map((item) => (
@@ -362,7 +364,7 @@ export default function ProfilePage() {
         
         {/* Right: Badge collection */}
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>Badge collection</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('badge_collection')}</h3>
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: 'Gold', count: null, colorClass: styles.badgeColorGold },
@@ -443,7 +445,7 @@ export default function ProfilePage() {
             </div>
             {/* Level Up */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-white/60">Level Up</span>
+              <span className="text-xs text-white/60">{t('level_up')}</span>
               <span className={`font-bebas text-sm font-bold ${styles.leaderboardViolet}`}>
                 {profileData.levelUpCurrentLevel === null
                   ? '—'
@@ -486,7 +488,7 @@ export default function ProfilePage() {
             ))}
           </div>
           <div className="mt-6">
-            <h4 className="text-xs font-bold mb-3 text-white/70">By century</h4>
+            <h4 className="text-xs font-bold mb-3 text-white/70">{t('by_century')}</h4>
             <div className="flex flex-col gap-2">
               {progressData && progressData.byCentury.length > 0 ? (
                 progressData.byCentury.map((item) => (
@@ -516,7 +518,7 @@ export default function ProfilePage() {
       {/* 10. FULL-WIDTH PANEL - Accuracy by century */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>Accuracy by century</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('accuracy_by_century')}</h3>
           <div className="flex flex-wrap gap-2">
             {progressData && progressData.byCentury.length > 0 ? (
               progressData.byCentury.map((item) => (
@@ -550,14 +552,14 @@ export default function ProfilePage() {
       {/* 11. ACCOUNT SECTION */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>Account</h3>
+          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('account')}</h3>
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-white/70">Email</span>
+              <span className="text-sm text-white/70">{t('email')}</span>
               <span className="text-sm text-white/45">{profileData.email ?? '—'}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-white/70">Member since</span>
+              <span className="text-sm text-white/70">{t('member_since')}</span>
               <span className="text-sm text-white/45">{formatMemberSince(profileData.createdAt)}</span>
             </div>
             <button

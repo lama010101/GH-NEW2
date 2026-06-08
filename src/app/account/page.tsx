@@ -3,6 +3,7 @@
 import { DM_Sans } from 'next/font/google'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
 import { signOut } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
@@ -22,6 +23,7 @@ type AvatarInfo = {
 export default function AccountPage() {
   const router = useRouter()
   const { playerId } = useIdentity()
+  const t = useTranslations('account')
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
@@ -182,7 +184,7 @@ export default function AccountPage() {
         <div className={styles.settingsCard}>
           {/* Row 1 — Display name */}
           <div>
-            <div className={styles.fieldLabel}>Username</div>
+            <div className={styles.fieldLabel}>{t('username')}</div>
             <input
               type="text"
               value={displayName}
@@ -210,13 +212,13 @@ export default function AccountPage() {
 
           {/* Row 2 — Email */}
           <div>
-            <div className={styles.fieldLabelSmall}>Email</div>
+            <div className={styles.fieldLabelSmall}>{t('email')}</div>
             <div className={styles.fieldValueItalic}>{email ?? '—'}</div>
           </div>
 
           {/* Row 3 — Member since */}
           <div>
-            <div className={styles.fieldLabelSmall}>Member since</div>
+            <div className={styles.fieldLabelSmall}>{t('member_since')}</div>
             <div className={styles.fieldValue}>{formatDate(createdAt)}</div>
           </div>
         </div>

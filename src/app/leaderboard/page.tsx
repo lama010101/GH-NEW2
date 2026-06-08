@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import styles from './leaderboard.module.css';
@@ -61,6 +62,7 @@ function LeaderboardPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { playerId } = useIdentity();
+  const t = useTranslations('leaderboard');
   
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('overall');
   const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
@@ -322,9 +324,9 @@ function LeaderboardPageInner() {
       <div className={styles.header}>
         <button onClick={() => router.back()} className={styles.backBtn}>
           <span className={styles.backArrow}>←</span>
-          <span>Back</span>
+          <span>{t('back')}</span>
         </button>
-        <h1 className={styles.title}>LEADERBOARD</h1>
+        <h1 className={styles.title}>{t('title')}</h1>
         <div className={styles.headerSpacer}></div>
       </div>
 
@@ -397,31 +399,31 @@ function LeaderboardPageInner() {
               <thead>
                 <tr>
                   <th className={styles.th}>#</th>
-                  <th className={styles.th}>Player</th>
+                  <th className={styles.th}>{t('col_player')}</th>
                   {activeTab === 'daily' && activeSubTab === 'today' && (
                     <>
                       <th className={styles.th}>Accuracy %</th>
-                      <th className={styles.th}>XP Today</th>
+                      <th className={styles.th}>{t('col_xp_today')}</th>
                     </>
                   )}
                   {activeTab === 'daily' && activeSubTab === 'alltime' && (
                     <>
-                      <th className={styles.th}>Avg Accuracy</th>
-                      <th className={styles.th}>Total XP</th>
-                      <th className={`${styles.th} ${styles.thGames}`}>Games</th>
+                      <th className={styles.th}>{t('col_avg_accuracy')}</th>
+                      <th className={styles.th}>{t('col_total_xp')}</th>
+                      <th className={`${styles.th} ${styles.thGames}`}>{t('col_games')}</th>
                     </>
                   )}
                   {activeTab === 'levelup' && (
                     <>
-                      <th className={styles.th}>Level</th>
-                      <th className={styles.th}>Accuracy at Level</th>
+                      <th className={styles.th}>{t('col_level')}</th>
+                      <th className={styles.th}>{t('col_accuracy_at_level')}</th>
                     </>
                   )}
                   {activeTab === 'overall' && (
                     <>
-                      <th className={styles.th}>Avg Accuracy</th>
-                      <th className={styles.th}>Total XP</th>
-                      <th className={`${styles.th} ${styles.thGames}`}>Games</th>
+                      <th className={styles.th}>{t('col_avg_accuracy')}</th>
+                      <th className={styles.th}>{t('col_total_xp')}</th>
+                      <th className={`${styles.th} ${styles.thGames}`}>{t('col_games')}</th>
                     </>
                   )}
                 </tr>
@@ -465,7 +467,7 @@ function LeaderboardPageInner() {
                       {activeTab === 'levelup' && (
                         <>
                           <td className={styles.levelCell}>
-                            <span className={styles.levelValue}>Lvl {entry.current_level}</span>
+                            <span className={styles.levelValue}>{t('lvl_prefix', { n: entry.current_level ?? 0 })}</span>
                           </td>
                           <td className={styles.accuracyCell}>
                             {formatAccuracy(entry.best_accuracy)}
