@@ -171,7 +171,17 @@
     "hint_continent": "Continent",
     "hint_remote_landmark": "Remote Landmark",
     "hint_region": "Region",
-    "hint_nearby_landmark": "Nearby Landmark"
+    "hint_nearby_landmark": "Nearby Landmark",
+    "confirm_location": "Confirm Location",
+    "confirm_year": "Confirm Year",
+    "guessed": "Guessed",
+    "no_image": "No image available",
+    "hint_penalties": "Hint penalties deducted",
+    "round_leaderboard": "Round leaderboard",
+    "hints_used": "Hints used",
+    "era_presets": "Era Presets",
+    "hint_desc_broad_era": "Broad era clue",
+    "hint_desc_nearby_event": "Nearby event clue"
   },
   "auth": {
     "sign_in": "Sign In",
