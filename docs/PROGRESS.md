@@ -1877,3 +1877,4 @@ MP-FIX-LOBBY-I18N-001 | Add missing lobby.invite i18n key | en.json + fr.json
 MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert) — committed | LobbySection.tsx + LobbySection.module.css
 | MP-FIX-ZINDEX-REGRESSION-003 | Fix search dropdown z-index regression + guard comments | 2026-06-08 | done |
 | MP-ENFORCE-CONSTRAINTS-001 | Create KNOWN_CONSTRAINTS.md with architectural constraints | 2026-06-08 | done |
+| MP-FEAT-I18N-014 | Localize WHERE/WHEN navbar buttons in RoundActiveSection | 2026-06-08 | done |

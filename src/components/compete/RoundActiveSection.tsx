@@ -478,7 +478,7 @@ export default function RoundActiveSection({
                 cx="36" cy="36" r={radius}
                 fill="none"
                 stroke={ringColor}
-                strokeWidth="3"
+                strokeWidth="5.00"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 strokeLinecap="round"
