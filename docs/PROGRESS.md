@@ -1878,3 +1878,8 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 | MP-FIX-ZINDEX-REGRESSION-003 | Fix search dropdown z-index regression + guard comments | 2026-06-08 | done |
 | MP-ENFORCE-CONSTRAINTS-001 | Create KNOWN_CONSTRAINTS.md with architectural constraints | 2026-06-08 | done |
 | MP-FEAT-I18N-014 | Localize WHERE/WHEN navbar buttons in RoundActiveSection | 2026-06-08 | done |
+
+## Task MP-FEAT-I18N-017
+**Files modified:** src/i18n/en.json, src/i18n/fr.json
+**Description:** Added 8 missing i18n keys to game namespace in both language files (guessed, no_image, hint_penalties, round_leaderboard, hints_used, era_presets, hint_desc_broad_era, hint_desc_nearby_event)
+| MP-FEAT-I18N-015 | Add confirm_location, confirm_year, forgot_password translation keys | 2026-06-08 | done |
