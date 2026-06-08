@@ -1911,3 +1911,4 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 | MP-FEAT-TYPOGRAPHY-002 | Tokenize font sizes — home screen files | done | 2026-06-08 |
 | MP-FIX-TSC-001 | Add SetEraSelectionSchema in partykit/server.ts | 2026-06-08 | done |
 | MP-FIX-TSC-002 | Fix selectedEras and getServiceClient in sessionCore.ts | 2026-06-08 | done |
+| MP-FEAT-TYPOGRAPHY-004 | Tokenize font sizes — session files | done | 2026-06-08 |
