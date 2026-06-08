@@ -20,6 +20,7 @@ interface LobbySectionProps {
   onSetYearRange?: (yearMin: number, yearMax: number) => void;
   onSetResultsTimer?: (resultsAutoAdvanceSec: number) => void;
   onKickPlayer?: (targetPlayerId: string) => void;
+  onSetEraSelection?: (selectedEras: string[], yearMin: number, yearMax: number) => void;
 }
 
 type LastInvitedPlayer = { id: string; displayName: string; avatarUrl: string | null };
@@ -82,6 +83,7 @@ export default function LobbySection({
   onSetYearRange,
   onSetResultsTimer,
   onKickPlayer,
+  onSetEraSelection,
 }: LobbySectionProps) {
   const router = useRouter();
   const t = useTranslations();
@@ -117,6 +119,11 @@ export default function LobbySection({
     setResultsTimerValue(snapshot.config.resultsAutoAdvanceSec);
   }, [snapshot.config.resultsAutoAdvanceSec]);
 
+  // Sync selected eras to authoritative snapshot value whenever it changes externally.
+  useEffect(() => {
+    setSelectedEras(new Set((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[]));
+  }, [snapshot.config.selectedEras]);
+
   /* ── Invite panel ── */
   const [linkCopied, setLinkCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
@@ -129,7 +136,9 @@ export default function LobbySection({
   /* ── Settings tab UI state ── */
   const [settingsTab, setSettingsTab] = useState<'realtime' | 'turnturn'>('realtime');
   const [maxTurnDays, setMaxTurnDays] = useState(3);
-  const [selectedEras, setSelectedEras] = useState<Set<EraId>>(new Set(ERAS.map(e => e.id)));
+  const [selectedEras, setSelectedEras] = useState<Set<EraId>>(
+    () => new Set((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[])
+  );
 
   const toggleEra = (id: EraId) => {
     setSelectedEras(prev => {
@@ -146,6 +155,7 @@ export default function LobbySection({
       setYearMinValue(newMin);
       setYearMaxValue(newMax);
       onSetYearRange?.(newMin, newMax);
+      onSetEraSelection?.([...next], newMin, newMax);
       return next;
     });
   };
@@ -158,6 +168,7 @@ export default function LobbySection({
       setYearMinValue(last.yearMin);
       setYearMaxValue(last.yearMax);
       onSetYearRange?.(last.yearMin, last.yearMax);
+      onSetEraSelection?.([last.id], last.yearMin, last.yearMax);
     } else {
       const allMin = Math.min(...ERAS.map(e => e.yearMin));
       const allMax = Math.max(...ERAS.map(e => e.yearMax));
@@ -165,6 +176,7 @@ export default function LobbySection({
       setYearMinValue(allMin);
       setYearMaxValue(allMax);
       onSetYearRange?.(allMin, allMax);
+      onSetEraSelection?.(ERAS.map(e => e.id), allMin, allMax);
     }
   };
 

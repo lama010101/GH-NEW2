@@ -183,6 +183,7 @@ export type ServerMessage =
   | { type: "SET_TIMER"; playerId: string; roundTimerSec: number }
   | { type: "SET_YEAR_RANGE"; playerId: string; yearMin: number; yearMax: number }
   | { type: "SET_RESULTS_TIMER"; playerId: string; resultsAutoAdvanceSec: number }
+  | { type: "SET_ERA_SELECTION"; playerId: string; selectedEras: string[]; yearMin: number; yearMax: number }
   | { type: "KICK_PLAYER"; playerId: string; targetPlayerId: string }
   | { type: "PLAY_AGAIN"; playerId: string; newGameId: string }
   | { type: "PING" };
@@ -1331,6 +1332,35 @@ export default class GameServer {
           if (!response.ok) {
             const text = await response.text();
             console.error(`[SET_RESULTS_TIMER] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
+          this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "SET_ERA_SELECTION": {
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "SET_ERA_SELECTION only allowed in LOBBY phase");
+            break;
+          }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/era-selection`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              selectedEras: data.selectedEras,
+              yearMin: data.yearMin,
+              yearMax: data.yearMax,
+            })
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[SET_ERA_SELECTION] API error ${response.status}: ${text}`);
             break;
           }
           const snapshot = await response.json();
