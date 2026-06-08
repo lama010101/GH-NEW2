@@ -52,7 +52,7 @@ export default function RoundActiveSection({
   hintsUsedCount,
   localPlayerAvatarUrl,
 }: RoundActiveSectionProps) {
-  const t = useTranslations();
+  const t = useTranslations('game');
   const currentEvent = snapshot.rounds?.[snapshot.currentRoundIndex];
   const guessLocation =
     guessLat !== null && guessLng !== null
@@ -520,7 +520,7 @@ export default function RoundActiveSection({
               return (
                 <div key={p.playerId} className={styles.opponentRow}>
                   {submittedToasts[p.playerId] && (
-                    <div className={styles.submittedToast}>Guessed</div>
+                    <div className={styles.submittedToast}>{t('guessed')}</div>
                   )}
                   <div className={`${styles.opponentAvatar} ${p.hasSubmitted ? styles.opponentAvatarSubmitted : ""}`}>
                     {p.avatarUrl ? (

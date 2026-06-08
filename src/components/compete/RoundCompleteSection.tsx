@@ -63,6 +63,7 @@ export default function RoundCompleteSection({
   onWhenCardVisible,
 }: RoundCompleteSectionProps) {
   const router = useRouter();
+  const t = useTranslations('game');
 
   const accuracyCardRef = useRef<HTMLDivElement>(null);
   const whereCardRef = useRef<HTMLDivElement>(null);
@@ -182,7 +183,7 @@ export default function RoundCompleteSection({
               })()}
               {submittedHintPenaltyRef.current.xpPenalty > 0 && (
                 <div className={styles.hintPenaltyBadge}>
-                  <span className={styles.hintPenaltyBadgeInner}>Hint penalties deducted</span>
+                  <span className={styles.hintPenaltyBadgeInner}>{t('hint_penalties')}</span>
                 </div>
               )}
             </div>
@@ -227,7 +228,7 @@ export default function RoundCompleteSection({
                           </span>
                         </span>
                         {isMe && <span className={styles.lbYouTag}>(you)</span>}
-                        <span className={styles.lbNoGuessTag}>No guess</span>
+                        <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>
                       </span>
                       <span className={styles.lbAccEmpty}>—</span>
                     </div>
@@ -278,7 +279,7 @@ export default function RoundCompleteSection({
               if (usedHints.length === 0) return null;
               return (
                 <div className={styles.hintsCard}>
-                  <div className={styles.hintsTitle}>Hints used</div>
+                  <div className={styles.hintsTitle}>{t('hints_used')}</div>
                   {usedHints.map((hint, idx) => {
                     const tierPenaltyAcc = [0,10,20,30,40,50][hint.tier] ?? 0;
                     const meta = hint.metadata as { km?: number; years?: number | string } | null;

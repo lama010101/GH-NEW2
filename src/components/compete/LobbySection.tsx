@@ -85,6 +85,7 @@ export default function LobbySection({
 }: LobbySectionProps) {
   const router = useRouter();
   const t = useTranslations();
+  const tGame = useTranslations('game');
 
   /* Timer slider transient state — synced from snapshot on every update.
      Local value is ONLY for drag feedback; authority stays in snapshot. */
@@ -364,7 +365,7 @@ export default function LobbySection({
       <header className={styles['lobby-header']}>
         <button className={styles['lobby-back-btn']} onClick={() => router.push("/")}>←</button>
         <div className={styles['lobby-header-top']}>
-          <span className={styles['lobby-mode-badge']}>COMPETE</span>
+          <span className={styles['lobby-mode-badge']}>COMPETE</span>{/* TODO i18n: lobby.mode_compete */}
           <span className={styles['lobby-status-chip']}>
             <span className={styles['lobby-status-dot']} />
             {t('lobby.waiting')}
@@ -789,7 +790,7 @@ export default function LobbySection({
             </div>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
               <div className={styles['lobbySettingRowHead']}>
-                <span className={styles['lobby-setting-label']}>Era Presets</span>
+                <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
                 {isHost && (
                   <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
                     {allErasSelected ? 'Deselect all' : 'Select all'}
@@ -834,7 +835,7 @@ export default function LobbySection({
               </div>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
               <div className={styles['lobbySettingRowHead']}>
-                <span className={styles['lobby-setting-label']}>Era Presets</span>
+                <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
                 {isHost && (
                   <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
                     {allErasSelected ? 'Deselect all' : 'Select all'}
