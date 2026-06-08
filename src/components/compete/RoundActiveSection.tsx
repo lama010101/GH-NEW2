@@ -599,7 +599,7 @@ export default function RoundActiveSection({
           {/* WHEN — left of WHERE */}
           <div className={styles.circleWrap}>
             <span className={`${styles.overlayTag} ${styles.overlayTagWhen} ${guessYear !== null ? styles.overlayTagAnswer : ""}`}>
-              {guessYear !== null ? String(guessYear) : "WHEN"}
+              {guessYear !== null ? String(guessYear) : t('game.when')}
             </span>
             <button
               type="button"
@@ -632,7 +632,7 @@ export default function RoundActiveSection({
             <span className={`${styles.overlayTag} ${styles.overlayTagWhere} ${guessLocation !== null ? styles.overlayTagWhereAnswer : ""}`}>
               {guessLocation !== null
                 ? (locationNameLoading ? "…" : (locationName ?? "✓").split(",")[0].trim())
-                : "WHERE"}
+                : t('game.where')}
             </span>
             <button
               type="button"
