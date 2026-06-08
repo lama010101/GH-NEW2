@@ -113,6 +113,14 @@ const SetYearRangeSchema = z.object({
   yearMax: z.number().int()
 });
 
+const SetEraSelectionSchema = z.object({
+  type: z.literal("SET_ERA_SELECTION"),
+  playerId: z.string().uuid(),
+  selectedEras: z.array(z.string()),
+  yearMin: z.number().int(),
+  yearMax: z.number().int()
+});
+
 const SetResultsTimerSchema = z.object({
   type: z.literal("SET_RESULTS_TIMER"),
   playerId: z.string().uuid(),
@@ -144,6 +152,7 @@ const ServerMessageSchema = z.discriminatedUnion("type", [
   ReadyNextSchema,
   SetTimerSchema,
   SetYearRangeSchema,
+  SetEraSelectionSchema,
   SetResultsTimerSchema,
   KickPlayerSchema,
   PlayAgainSchema,
