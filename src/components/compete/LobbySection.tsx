@@ -58,9 +58,6 @@ function formatTimerDisplay(sec: number): string {
   return `${m}m ${s.toString().padStart(2, "0")}s`;
 }
 
-const YEAR_MIN_BOUND = -400;
-const YEAR_MAX_BOUND = new Date().getFullYear();
-
 type EraId = 'prehistoric' | 'ancient' | 'medieval' | 'earlymodern' | 'modern' | 'contemporary';
 const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: number; yearMax: number }[] = [
   { id: 'prehistoric', label: 'Prehistoric', span: '3000–800 BCE', icon: '🦕', yearMin: -3000, yearMax: -800 },
@@ -102,7 +99,6 @@ export default function LobbySection({
   /* Year range transient state — synced from snapshot on every update. */
   const [yearMinValue, setYearMinValue] = useState(snapshot.config.yearMin);
   const [yearMaxValue, setYearMaxValue] = useState(snapshot.config.yearMax);
-  const yearDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync year range to authoritative snapshot value whenever it changes externally.
   useEffect(() => {
@@ -145,17 +141,22 @@ export default function LobbySection({
       const next = new Set(prev);
       if (next.has(id)) {
         if (next.size > 1) next.delete(id);
-        else return prev; // keep at least one era
+        else return prev;
       } else {
         next.add(id);
       }
+      return next;
+    });
+    setSelectedEras(next => {
       const selected = ERAS.filter(e => next.has(e.id));
       const newMin = Math.min(...selected.map(e => e.yearMin));
       const newMax = Math.max(...selected.map(e => e.yearMax));
       setYearMinValue(newMin);
       setYearMaxValue(newMax);
-      onSetYearRange?.(newMin, newMax);
-      onSetEraSelection?.([...next], newMin, newMax);
+      setTimeout(() => {
+        onSetYearRange?.(newMin, newMax);
+        onSetEraSelection?.([...next], newMin, newMax);
+      }, 0);
       return next;
     });
   };
@@ -702,66 +703,6 @@ export default function LobbySection({
               )}
             </div>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}>{t('lobby.year_range')}</span>
-              {isHost ? (
-                <span className={styles['lobbyRowLeft']}>
-                  <span className={styles['lobby-year-range-wrap']}>
-                    <div className={styles['lobby-year-range-track']} />
-                    <div
-                      className={styles['lobby-year-range-fill']}
-                      style={{
-                        left: `${((yearMinValue - YEAR_MIN_BOUND) / (YEAR_MAX_BOUND - YEAR_MIN_BOUND)) * 100}%`,
-                        right: `${100 - ((yearMaxValue - YEAR_MIN_BOUND) / (YEAR_MAX_BOUND - YEAR_MIN_BOUND)) * 100}%`,
-                      }}
-                    />
-                    <input
-                      type="range"
-                      min={YEAR_MIN_BOUND}
-                      max={YEAR_MAX_BOUND}
-                      step={1}
-                      value={yearMinValue}
-                      disabled={busy}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        if (val >= yearMaxValue - 1) return;
-                        setYearMinValue(val);
-                        if (yearDebounceRef.current) clearTimeout(yearDebounceRef.current);
-                        yearDebounceRef.current = setTimeout(() => {
-                          onSetYearRange?.(val, yearMaxValue);
-                        }, 400);
-                      }}
-                      style={{ zIndex: yearMinValue > 1000 ? 5 : 3 }}
-                    />
-                    <input
-                      type="range"
-                      min={YEAR_MIN_BOUND}
-                      max={YEAR_MAX_BOUND}
-                      step={1}
-                      value={yearMaxValue}
-                      disabled={busy}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        if (val <= yearMinValue + 1) return;
-                        setYearMaxValue(val);
-                        if (yearDebounceRef.current) clearTimeout(yearDebounceRef.current);
-                        yearDebounceRef.current = setTimeout(() => {
-                          onSetYearRange?.(yearMinValue, val);
-                        }, 400);
-                      }}
-                      className={styles['lobbyRangeInputTop']}
-                    />
-                  </span>
-                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
-                    {yearMinValue} – {yearMaxValue}
-                  </span>
-                </span>
-              ) : (
-                <span className={styles['lobby-setting-value']}>
-                  {snapshot.config.yearMin} – {snapshot.config.yearMax}
-                </span>
-              )}
-            </div>
-            <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
               <span className={styles['lobby-setting-label']}>{t('lobby.results_timer')}</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
@@ -922,7 +863,7 @@ export default function LobbySection({
             {isReady ? t('lobby.ready_waiting') : t('lobby.im_ready')}
           </button>
           <span className={styles['lobby-ready-count']}>
-            {t('lobby.players_ready', { ready: readyCount, total: totalPlayers })}
+            {t('lobby.players_ready', { ready: readyCount ?? 0, total: totalPlayers ?? 0 })}
             {snapshot.allPlayersReady && totalPlayers > 0 && (
               <span className={styles['lobbyAllReadyTag']}> · starting soon</span>
             )}

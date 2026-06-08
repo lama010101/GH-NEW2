@@ -32,24 +32,24 @@
 }
 
 .xpPillAccuracy {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #fff;
 }
 
 .xpPillSuffix {
-  font-size: 10px;
+  font-size: 10px; /* layout-constrained — do not tokenize */
   color: rgba(255, 255, 255, 0.5);
   margin-left: 2px;
 }
 
 .xpPillDivider {
   color: rgba(255, 255, 255, 0.2);
-  font-size: 12px;
+  font-size: var(--font-2xs);
 }
 
 .xpPillXp {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--gh-gold);
 }
@@ -84,7 +84,7 @@
 
 .avatarBtnInitials {
   color: #fff;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
 }
 
