@@ -454,8 +454,11 @@ export default function CompeteGamePage() {
   }
 
   return (
-    <main className="app-shell" style={{ background: "#000000" }}>
-      <div className="shell-grid">
+    <main className={`app-shell ${pageStyles.pageShell}`}>
+      <div className={pageStyles.bgImage} />
+      <div className={pageStyles.bgScrim} />
+      <div className={pageStyles.pageContent}>
+        <div className="shell-grid">
         {/* Toast stack - top-center (hidden during ROUND_COMPLETE) */}
         {/* REMOVED: Duplicate notification - avatar-side toasts in RoundActiveSection.tsx handle this */}
 
@@ -616,6 +619,7 @@ export default function CompeteGamePage() {
           <BadgePopup badges={badges} nearMisses={nearMisses} onDismiss={() => setShowBadgePopup(false)} />
         )
       })()}
+      </div>
     </main>
   );
 }
