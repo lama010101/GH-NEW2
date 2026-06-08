@@ -32,7 +32,7 @@
   background: rgba(255,255,255,0.15);
 }
 .lobby-title-text {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.5px;
@@ -47,7 +47,7 @@
   gap: 2px;
 }
 .lobby-status-line {
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 500;
   color: rgba(255,255,255,0.5);
   letter-spacing: 0.5px;
@@ -104,7 +104,7 @@
 }
 .lobby-card-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: #fff;
 }
@@ -129,7 +129,7 @@
   gap: 8px;
 }
 .lobby-subsection-title {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: #fff;
 }
@@ -177,7 +177,7 @@
   border: 1px dashed rgba(255,255,255,0.1);
 }
 .lobbyEmptyRailText {
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   color: rgba(255,255,255,0.35);
   text-align: center;
 }
@@ -185,7 +185,7 @@
 .lobbyCardNameLast {
   display: block;
   text-align: center;
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -201,7 +201,7 @@
   font-weight: 400;
 }
 .lobbyPlayerCardName {
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 500;
   text-align: center;
   color: #fff;
@@ -220,14 +220,14 @@
   top: -8px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: #facc15;
   line-height: 1;
 }
 
 /* ── Status pills ── */
 .lobbyStatusPillGreen {
-  font-size: 9px;
+  font-size: 9px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   letter-spacing: 0.4px;
   padding: 2px 6px;
@@ -238,7 +238,7 @@
   white-space: nowrap;
 }
 .lobbyStatusPillGrey {
-  font-size: 9px;
+  font-size: 9px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   letter-spacing: 0.4px;
   padding: 2px 6px;
@@ -249,7 +249,7 @@
   white-space: nowrap;
 }
 .lobbyStatusPillAmber {
-  font-size: 9px;
+  font-size: 9px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   letter-spacing: 0.4px;
   padding: 2px 6px;
@@ -262,7 +262,7 @@
 
 /* ── Invite button on player card ── */
 .lobbyInviteBtn {
-  font-size: 10px;
+  font-size: 10px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 6px;
@@ -303,7 +303,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--font-base);
   cursor: pointer;
   padding: 0;
   line-height: 1;
@@ -316,7 +316,7 @@
 
 /* ── Copy link button ── */
 .lobbyLinkBtn {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-teal);
   background: transparent;
@@ -333,7 +333,7 @@
 
 /* ── Copied toast ── */
 .lobbyCopiedToast {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: #4ade80;
   display: block;
@@ -345,7 +345,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: rgba(255,255,255,0.55);
   white-space: nowrap;
@@ -361,7 +361,7 @@
 /* ── RELAX MODE label ── */
 .lobbyRelaxLabel {
   display: block;
-  font-size: 10px;
+  font-size: 10px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -386,13 +386,13 @@
   border-bottom: none;
 }
 .lobby-setting-label {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: rgba(255,255,255,0.55);
   letter-spacing: 0.3px;
 }
 .lobby-setting-value {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--gh-teal);
   font-variant-numeric: tabular-nums;
@@ -408,7 +408,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   line-height: 1;
   padding: 0;
@@ -458,7 +458,7 @@
   gap: 6px;
 }
 .lobby-ready-count {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: rgba(255,255,255,0.5);
   text-align: center;
@@ -476,7 +476,7 @@
   border: none;
   background: #22d3ee;
   color: #06181c;
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 800;
   letter-spacing: 0.5px;
   cursor: pointer;
@@ -500,7 +500,7 @@
   border: 1px solid rgba(74,222,128,0.5);
   background: rgba(74,222,128,0.18);
   color: #4ade80;
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 800;
   letter-spacing: 0.5px;
   cursor: pointer;
@@ -656,7 +656,7 @@
     gap: 12px;
   }
   .lobby-title-text {
-    font-size: 16px;
+    font-size: var(--font-base);
   }
   .lobby-dock-content {
     padding: 10px 12px;
@@ -675,10 +675,10 @@
     border-radius: 18px;
   }
   .lobby-setting-label {
-    font-size: 12px;
+    font-size: var(--font-2xs);
   }
   .lobby-setting-value {
-    font-size: 13px;
+    font-size: var(--font-xs);
   }
 }
 
@@ -761,7 +761,7 @@
   flex-shrink: 0;
 }
 .lobbyShareBtn {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: #fff;
   background: rgba(255,255,255,0.1);
@@ -784,7 +784,7 @@
   border: 1px solid rgba(255,255,255,0.15);
   background: rgba(255,255,255,0.06);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--font-xs);
   outline: none;
   box-sizing: border-box;
   transition: border-color 0.15s;
@@ -820,7 +820,7 @@
   background: rgba(34,211,238,0.1);
 }
 .lobbyViewAllText {
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: var(--gh-teal);
   text-align: center;
@@ -855,7 +855,7 @@
   background: transparent;
   border: none;
   color: rgba(255,255,255,0.6);
-  font-size: 22px;
+  font-size: var(--font-xl);
   cursor: pointer;
   line-height: 1;
   padding: 0;
@@ -883,12 +883,12 @@
   transform: translateX(-50%);
 }
 .lobbyHostIcon {
-  font-size: 20px;
+  font-size: var(--font-lg);
   color: #f59e0b;
   line-height: 1;
 }
 .lobbyHostLabel {
-  font-size: 10px;
+  font-size: 10px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: #f59e0b;
   line-height: 1;
@@ -904,7 +904,7 @@
   border-radius: 50%;
   background: rgba(255,255,255,0.1);
   color: white;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   line-height: 1;
   cursor: pointer;
   border: none;
@@ -920,39 +920,39 @@
 
 .lobby-header { position: relative; padding: 8px 4px 0; }
 .lobby-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.lobby-mode-badge { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #22d3ee; background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.35); padding: 4px 10px; border-radius: 999px; }
-.lobby-status-chip { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); }
+.lobby-mode-badge { font-size: 11px; /* layout-constrained — do not tokenize */ font-weight: 800; letter-spacing: 1.5px; color: #22d3ee; background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.35); padding: 4px 10px; border-radius: 999px; }
+.lobby-status-chip { display: inline-flex; align-items: center; gap: 7px; font-size: var(--font-2xs); font-weight: 600; color: rgba(255,255,255,0.7); }
 .lobby-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22d3ee; box-shadow: 0 0 8px rgba(34,211,238,0.7); animation: pulseDot 1.8s ease-in-out infinite; }
 @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-.lobby-title-h1 { font-size: 30px; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.5px; text-align: center; color: #fff; }
+.lobby-title-h1 { font-size: var(--font-3xl); font-weight: 800; margin: 0 0 8px; letter-spacing: -0.5px; text-align: center; color: #fff; }
 .lobby-accent-bar-sm { width: 4px; height: 18px; border-radius: 999px; background: #22d3ee; flex-shrink: 0; }
 .lobbyRosterList { display: flex; flex-direction: column; gap: 8px; }
 .lobbyRosterRow { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 10px 12px; transition: border-color 0.2s, background 0.2s; }
 .lobbyRosterRowReady { border-color: rgba(74,222,128,0.35); background: rgba(74,222,128,0.06); }
 .lobbyRosterMeta { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.lobbyRosterName { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
-.lobbyYouTag { font-size: 10px; font-weight: 700; color: #22d3ee; background: rgba(34,211,238,0.15); padding: 1px 7px; border-radius: 999px; flex-shrink: 0; }
-.lobbyHostInline { font-size: 11px; font-weight: 600; color: #f0c060; }
-.lobbyRosterEmpty { padding: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
+.lobbyRosterName { font-size: var(--font-sm); font-weight: 600; display: flex; align-items: center; gap: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+.lobbyYouTag { font-size: 10px; /* layout-constrained — do not tokenize */ font-weight: 700; color: #22d3ee; background: rgba(34,211,238,0.15); padding: 1px 7px; border-radius: 999px; flex-shrink: 0; }
+.lobbyHostInline { font-size: 11px; /* layout-constrained — do not tokenize */ font-weight: 600; color: #f0c060; }
+.lobbyRosterEmpty { padding: 20px; text-align: center; font-size: var(--font-xs); color: rgba(255,255,255,0.4); }
 .lobbyTabRow { display: flex; gap: 6px; margin-bottom: 16px; background: rgba(255,255,255,0.06); border-radius: 12px; padding: 4px; }
-.lobbyTabBtn { flex: 1; padding: 9px 0; border-radius: 9px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; letter-spacing: 0.2px; color: rgba(255,255,255,0.55); background: transparent; transition: background 0.18s, color 0.18s; }
+.lobbyTabBtn { flex: 1; padding: 9px 0; border-radius: 9px; border: none; cursor: pointer; font-size: var(--font-xs); font-weight: 700; letter-spacing: 0.2px; color: rgba(255,255,255,0.55); background: transparent; transition: background 0.18s, color 0.18s; }
 .lobbyTabBtnActive { background: rgba(34,211,238,0.18); color: #22d3ee; border: 1px solid rgba(34,211,238,0.35); }
 .lobbySettingRowBlock { flex-direction: column; align-items: stretch; gap: 0; }
 .lobbySettingRowHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-.lobbySelectAllBtn { font-size: 11px; font-weight: 600; color: var(--gh-teal); background: transparent; border: 1px solid var(--gh-teal); border-radius: 6px; padding: 3px 8px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+.lobbySelectAllBtn { font-size: 11px; /* layout-constrained — do not tokenize */ font-weight: 600; color: var(--gh-teal); background: transparent; border: 1px solid var(--gh-teal); border-radius: 6px; padding: 3px 8px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
 .lobbySelectAllBtn:hover { background: rgba(34,211,238,0.10); }
 .lobbyEraGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
 .lobbyEraBtn { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: background 0.15s, border-color 0.15s; background: transparent; }
 .lobbyEraBtnOn { background: rgba(34,211,238,0.10); border-color: var(--gh-teal); }
 .lobbyEraBtnOff { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
 .lobbyEraBtn:disabled { cursor: default; }
-.lobbyEraIcon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; background: rgba(255,255,255,0.08); }
+.lobbyEraIcon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: var(--font-base); line-height: 1; background: rgba(255,255,255,0.08); }
 .lobbyEraBtnOn .lobbyEraIcon { background: rgba(255,255,255,0.14); }
 .lobbyEraText { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.lobbyEraLabel { font-size: 13px; font-weight: 600; }
+.lobbyEraLabel { font-size: var(--font-xs); font-weight: 600; }
 .lobbyEraBtnOn .lobbyEraLabel { color: var(--gh-teal); }
 .lobbyEraBtnOff .lobbyEraLabel { color: rgba(255,255,255,0.7); }
-.lobbyEraSpan { font-size: 10px; font-weight: 500; }
+.lobbyEraSpan { font-size: 10px; /* layout-constrained — do not tokenize */ font-weight: 500; }
 .lobbyEraBtnOn .lobbyEraSpan { color: rgba(34,211,238,0.65); }
 .lobbyEraBtnOff .lobbyEraSpan { color: rgba(255,255,255,0.35); }
 .lobbyEraBtn[data-era="prehistoric"].lobbyEraBtnOn { background: rgba(245,158,11,0.12); border-color: #f59e0b; }
@@ -979,12 +979,12 @@
 .lobbyEraBtn[data-era="contemporary"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-success); color: #0a0a0a; }
 .lobbyEraBtn[data-era="contemporary"].lobbyEraBtnOn .lobbyEraLabel { color: var(--gh-success); }
 .lobbyEraBtn[data-era="contemporary"].lobbyEraBtnOn .lobbyEraSpan { color: rgba(34,197,94,0.65); }
-.lobbyEraIcon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; background: rgba(255,255,255,0.08); }
+.lobbyEraIcon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: var(--font-base); line-height: 1; background: rgba(255,255,255,0.08); }
 .lobbyEraBtnOn .lobbyEraIcon { background: rgba(255,255,255,0.14); }
 .lobbyEraText { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.lobbyEraLabel { font-size: 13px; font-weight: 600; }
+.lobbyEraLabel { font-size: var(--font-xs); font-weight: 600; }
 .lobbyEraBtnOn .lobbyEraLabel { color: var(--gh-teal); }
 .lobbyEraBtnOff .lobbyEraLabel { color: rgba(255,255,255,0.7); }
-.lobbyEraSpan { font-size: 10px; font-weight: 500; }
+.lobbyEraSpan { font-size: 10px; /* layout-constrained — do not tokenize */ font-weight: 500; }
 .lobbyEraBtnOn .lobbyEraSpan { color: rgba(34,211,238,0.65); }
 .lobbyEraBtnOff .lobbyEraSpan { color: rgba(255,255,255,0.35); }
