@@ -363,7 +363,11 @@ export default function LobbySection({
   return (
     <div className={styles['lobby-shell']}>
       <header className={styles['lobby-header']}>
-        <button className={styles['lobby-back-btn']} onClick={() => router.push("/")}>←</button>
+        <button className={styles['lobby-back-btn']} onClick={() => router.push("/")} aria-label="Back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
         <div className={styles['lobby-header-top']}>
           <span className={styles['lobby-mode-badge']}>COMPETE</span>{/* TODO i18n: lobby.mode_compete */}
           <span className={styles['lobby-status-chip']}>
@@ -400,13 +404,19 @@ export default function LobbySection({
                 {linkCopied ? t('lobby.link_copied') : t('lobby.code_copied')}
               </span>
             )}
-            <input
-              type="text"
-              className={styles['lobbyInviteSearch']}
-              placeholder={t('lobby.search_players')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className={styles['lobbySearchWrap']}>
+              <svg className={styles['lobbySearchIcon']} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                className={styles['lobbyInviteSearch']}
+                placeholder={t('lobby.search_players')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
             <div className={styles['lobbyRail']}>
               {displayList.length === 0 ? (
                 <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
