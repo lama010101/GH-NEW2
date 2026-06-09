@@ -97,8 +97,8 @@ export default function LobbySection({
   }, [snapshot.config.roundTimerSec]);
 
   /* Year range transient state — synced from snapshot on every update. */
-  const [_yearMinValue, setYearMinValue] = useState(snapshot.config.yearMin);
-  const [_yearMaxValue, setYearMaxValue] = useState(snapshot.config.yearMax);
+  const [yearMinValue, setYearMinValue] = useState(snapshot.config.yearMin);
+  const [yearMaxValue, setYearMaxValue] = useState(snapshot.config.yearMax);
 
   // Sync year range to authoritative snapshot value whenever it changes externally.
   useEffect(() => {
