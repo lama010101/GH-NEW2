@@ -422,7 +422,7 @@ export default function CompeteGamePage() {
           <section className="hero">
             <span className="badge">Compete</span>
             <h1>Identity error</h1>
-            <p style={{ color: "#ff6b6b", margin: 0 }}>{identityError}</p>
+            <p className={pageStyles.identityErrorText}>{identityError}</p>
           </section>
         </div>
       </main>
@@ -431,29 +431,14 @@ export default function CompeteGamePage() {
 
   if (!snapshot) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: '#0a0a0a',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 16,
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-      }}>
-        <div style={{
-          width: 40, height: 40, borderRadius: '50%',
-          border: '3px solid rgba(255,255,255,0.1)',
-          borderTopColor: '#00adc1',
-          animation: 'spin 0.8s linear infinite'
-        }} />
-        <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14 }}>
+      <div className={pageStyles.loadingContainer}>
+        <div className={pageStyles.spinner} />
+        <span className={pageStyles.loadingText}>
           Joining room…
         </span>
         {error && (
-          <span style={{ color: '#f87171', fontSize: 13 }}>{error}</span>
+          <span className={pageStyles.errorText}>{error}</span>
         )}
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     );
   }
@@ -469,9 +454,7 @@ export default function CompeteGamePage() {
 
         {/* Red flash overlay */}
         {timerClamped && (
-          <div
-            style={{ position: 'absolute', inset: 0, zIndex: 40, pointerEvents: 'none', backgroundColor: 'rgba(220, 38, 38, 0.35)' }}
-          />
+          <div className={pageStyles.timerFlashOverlay} />
         )}
 
 
@@ -479,21 +462,9 @@ export default function CompeteGamePage() {
           <>
             {wsDisconnected && (
               <section
-                className="card"
-                style={{
-                  marginBottom: '1rem',
-                  background: 'rgba(34, 211, 238, 0.06)',
-                  border: '1px solid rgba(34, 211, 238, 0.35)',
-                  borderRadius: 16,
-                  padding: '14px 18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                  flexWrap: 'wrap',
-                }}
+                className={`card ${pageStyles.connectionLostCard}`}
               >
-                <p style={{ color: "#22d3ee", margin: 0, fontSize: 14, fontWeight: 500 }}>
+                <p className={pageStyles.connectionLostText}>
                   Connection lost. Reconnect to restore live state.
                 </p>
                 <button
@@ -597,22 +568,13 @@ export default function CompeteGamePage() {
       {fullscreenImg && (
         <div
           onClick={() => setFullscreenImg(null)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            background: "rgba(0,0,0,0.92)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
+          className={pageStyles.fullscreenOverlay}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={fullscreenImg}
             alt="Fullscreen"
-            style={{ maxWidth: "100vw", maxHeight: "100vh", objectFit: "contain" }}
+            className={pageStyles.fullscreenImg}
             onClick={(e) => e.stopPropagation()}
           />
         </div>

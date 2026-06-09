@@ -26,3 +26,89 @@
   position: relative;
   z-index: 2;
 }
+
+/* ── Loading and error states (MP-STYLE-COMPETEPAGE-001) ── */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loadingContainer {
+  minHeight: 100vh;
+  background: #0a0a0a;
+  display: flex;
+  flexDirection: column;
+  alignItems: center;
+  justifyContent: center;
+  gap: 16px;
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  borderRadius: 50%;
+  border: 3px solid rgba(255,255,255,0.1);
+  borderTopColor: #00adc1;
+  animation: spin 0.8s linear infinite;
+}
+
+.loadingText {
+  color: rgba(255,255,255,0.45);
+  fontSize: 14px;
+}
+
+.errorText {
+  color: #f87171;
+  fontSize: 13px;
+}
+
+.identityErrorText {
+  color: #ff6b6b;
+  margin: 0;
+}
+
+.timerFlashOverlay {
+  position: absolute;
+  inset: 0;
+  zIndex: 40;
+  pointerEvents: none;
+  backgroundColor: rgba(220, 38, 38, 0.35);
+}
+
+.connectionLostCard {
+  marginBottom: 1rem;
+  background: rgba(34, 211, 238, 0.06);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  borderRadius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  alignItems: center;
+  justifyContent: space-between;
+  gap: 12px;
+  flexWrap: wrap;
+}
+
+.connectionLostText {
+  color: #22d3ee;
+  margin: 0;
+  fontSize: 14px;
+  fontWeight: 500;
+}
+
+.fullscreenOverlay {
+  position: fixed;
+  inset: 0;
+  zIndex: 9999;
+  background: rgba(0,0,0,0.92);
+  display: flex;
+  alignItems: center;
+  justifyContent: center;
+  cursor: pointer;
+}
+
+.fullscreenImg {
+  maxWidth: 100vw;
+  maxHeight: 100vh;
+  objectFit: contain;
+}
