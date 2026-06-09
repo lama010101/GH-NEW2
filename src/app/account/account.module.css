@@ -33,7 +33,7 @@
 }
 
 .topBarTitle {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   letter-spacing: 0.5px;
 }
@@ -74,20 +74,20 @@
   align-items: center;
   justify-content: center;
   margin: 0 auto 12px;
-  font-size: 32px;
+  font-size: var(--font-4xl);
   font-weight: 700;
   background: rgba(255, 255, 255, 0.08);
 }
 
 .avatarName {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--gh-text-primary);
   margin-bottom: 6px;
 }
 
 .avatarDescription {
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: rgba(255, 255, 255, 0.45);
   margin-bottom: 6px;
   overflow: hidden;
@@ -104,7 +104,7 @@
 }
 
 .avatarMetaLast {
-  font-size: 11px;
+  font-size: 11px; /* layout-constrained — do not tokenize */
   color: rgba(255, 255, 255, 0.4);
 }
 
@@ -125,7 +125,7 @@
 }
 
 .fieldLabel {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -133,7 +133,7 @@
 }
 
 .fieldLabelSmall {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -147,7 +147,7 @@
   border-radius: 8px;
   padding: 10px 14px;
   color: var(--gh-text-primary);
-  font-size: 15px;
+  font-size: var(--font-sm);
   box-sizing: border-box;
   outline: none;
 }
@@ -160,12 +160,12 @@
   border-radius: 8px;
   padding: 10px;
   border: none;
-  font-size: 15px;
+  font-size: var(--font-sm);
 }
 
 .saveFeedbackSuccess {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: var(--gh-success);
 }
 
@@ -181,7 +181,7 @@
 }
 
 .fieldValueItalic {
-  font-size: 15px;
+  font-size: var(--font-sm);
   color: rgba(255, 255, 255, 0.5);
   font-style: italic;
 }
@@ -200,6 +200,6 @@
   border-radius: 12px;
   padding: 14px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--font-sm);
   cursor: pointer;
 }
