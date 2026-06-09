@@ -504,3 +504,75 @@
   position: relative;
   z-index: 1;
 }
+
+/* ============================================================
+   LEGACY CARD ITEM CLASSES - CAMELCASE (MP-STYLE-CARDITEM-001)
+   ============================================================ */
+
+.cardItemWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 220px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.cardArtZone {
+  aspect-ratio: 5 / 4;
+  position: relative;
+}
+
+.cardIconWrap {
+  position: relative;
+  width: 214px;
+  height: 214px;
+}
+
+.cardIconImg {
+  object-fit: contain;
+}
+
+.cardLevelBadge {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.cardLabelBar {
+  padding: 10px 8px 8px;
+  text-align: center;
+  border-radius: 0 0 14px 14px;
+}
+
+.cardLabelName {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.cardLabelSub {
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
