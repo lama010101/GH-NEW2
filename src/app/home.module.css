@@ -401,3 +401,106 @@
 .cardIconImg {
   object-fit: contain;
 }
+
+/* ============================================================
+   LEGACY CARD ITEM CLASSES (MP-STYLE-CARDITEM-001)
+   ============================================================ */
+
+.card-item-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 220px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.card-item-btn {
+  display: block;
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: initial;
+  touch-action: manipulation;
+  outline: 3px solid transparent;
+  transform: none;
+  transition: outline-color 0.18s, transform 0.15s;
+}
+
+.card-item-btn-selected {
+  outline: 3px solid rgba(255,255,255,0.7);
+  transform: translateY(-5px);
+}
+
+.card-art-zone {
+  width: 100%;
+  aspect-ratio: 5 / 4;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-icon-wrap {
+  position: relative;
+  width: 214px;
+  height: 214px;
+}
+
+.card-icon-img {
+  object-fit: contain;
+}
+
+.card-level-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.card-label-bar {
+  padding: 10px 8px 12px;
+  text-align: center;
+  position: relative;
+  background: rgba(12,12,18,0.9);
+}
+
+.card-label-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(12,12,18,0.8);
+}
+
+.card-label-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.card-label-sub {
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
