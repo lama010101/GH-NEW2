@@ -70,7 +70,8 @@
     "years_off": "{n} years off",
     "km_away": "{n} km away",
     "round_label": "Round {current} / {total}",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "no_description": "No description available"
   },
   "lobby": {
     "waiting": "Waiting for players ({ready}/{total} ready)",
@@ -218,7 +219,9 @@
     "err_identity": "Identity not ready — please wait",
     "err_code_required": "Room code is required",
     "err_create": "Failed to create game",
-    "err_join": "Failed to join game"
+    "err_join": "Failed to join game",
+    "failed_lobby": "Failed to create lobby",
+    "failed_lobby_retry": "Failed to create lobby, try again"
   },
   "leaderboard": {
     "title": "LEADERBOARD",

@@ -65,6 +65,7 @@ export default function RoundCompleteSection({
 }: RoundCompleteSectionProps) {
   const router = useRouter();
   const t = useTranslations('game');
+  const tc = useTranslations('common');
 
   const accuracyCardRef = useRef<HTMLDivElement>(null);
   const whereCardRef = useRef<HTMLDivElement>(null);
@@ -138,7 +139,7 @@ export default function RoundCompleteSection({
               <div className={styles.eventMeta}>{correctYear} · {correctName}</div>
               <div className={styles.eventDescriptionWrap}>
                 <div className={styles.eventDescription}>
-                  {round.description ?? "No description available"}
+                  {round.description ?? tc('no_description')}
                 </div>
               </div>
               {(round as unknown as { sourceUrl?: string }).sourceUrl && (
@@ -292,10 +293,10 @@ export default function RoundCompleteSection({
                       revealedText = `${hint.content} — ${meta.years} years off`;
                     }
                     const labelMap: Record<string, Record<number, string>> = {
-                      when: { 1: "Century", 2: "Historical Event", 3: "Decade", 4: "Contemporary Event", 5: "Visual Clues" },
-                      where: { 1: "Continent", 2: "Remote Landmark", 3: "Region", 4: "Nearby Landmark", 5: "Visual Clues" },
+                      when: { 1: t('hint_century'), 2: t('hint_historical_event'), 3: t('hint_decade'), 4: t('hint_contemporary_event'), 5: t('hint_visual_clues') },
+                      where: { 1: t('hint_continent'), 2: t('hint_remote_landmark'), 3: t('hint_region'), 4: t('hint_nearby_landmark'), 5: t('hint_visual_clues') },
                     };
-                    const label = labelMap[hint.type]?.[hint.tier] ?? "Hint";
+                    const label = labelMap[hint.type]?.[hint.tier] ?? t('hint_label_default');
                     return (
                       <div key={hint.id} className={`${styles.hintRow} ${idx < usedHints.length - 1 ? styles.hintRowDivider : ""}`}>
                         <div className={styles.hintInfo}>
