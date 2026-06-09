@@ -2,7 +2,7 @@ import { supabaseBrowser } from "./supabaseBrowser";
 
 export type IdentityState =
   | { status: "loading" }
-  | { status: "ready"; playerId: string; isAnonymous: boolean; displayName: string }
+  | { status: "ready"; playerId: string; isAnonymous: boolean; displayName: string; isNewUser: boolean }
   | { status: "unauthenticated" }
   | { status: "error"; error: string };
 
@@ -47,11 +47,15 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
     if (user?.id) {
       const isAnonymous = user.is_anonymous ?? false;
       const displayName = await fetchDisplayName(user.id);
+      const createdAt = new Date(user.created_at).getTime();
+      const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
+      const isNewUser = Math.abs(createdAt - lastSignIn) < 10_000;
       cachedState = {
         status: "ready",
         playerId: user.id,
         isAnonymous,
-        displayName
+        displayName,
+        isNewUser
       };
       resolveReady?.(user.id);
       return cachedState;
@@ -104,11 +108,15 @@ export function subscribeToIdentityChanges(
       if (session?.user?.id) {
         const isAnonymous = session.user.is_anonymous ?? false;
         const displayName = await fetchDisplayName(session.user.id);
+        const createdAt = new Date(session.user.created_at).getTime();
+        const lastSignIn = session.user.last_sign_in_at ? new Date(session.user.last_sign_in_at).getTime() : createdAt;
+        const isNewUser = Math.abs(createdAt - lastSignIn) < 10_000;
         cachedState = {
           status: "ready",
           playerId: session.user.id,
           isAnonymous,
-          displayName
+          displayName,
+          isNewUser
         };
         resolveReady?.(session.user.id);
       } else {
