@@ -28,6 +28,8 @@ function HomePageInner() {
       setIdentity(state);
       if (state.status === 'ready') {
         setShowAuthModal(false);
+      } else if (state.status === 'unauthenticated') {
+        setShowAuthModal(true);
       }
     });
   }, [])
