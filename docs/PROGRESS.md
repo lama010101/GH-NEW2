@@ -1959,3 +1959,7 @@ MP-STYLE-BADGEPOPUP-001: Migrate static inline styles and embedded style tag fro
 MP-STYLE-COMPETEPAGE-001: Migrate static inline styles and embedded style tag from compete page.tsx to CSS module
 - Files modified: src/app/compete/[gameId]/page.tsx, src/app/compete/[gameId]/page.module.css
 - Commit: e00094d
+
+MP-STYLE-ROUNDCOMPLETE-002: Migrate remaining static inline styles from RoundCompleteSection.tsx to CSS module
+- Files modified: src/components/compete/RoundCompleteSection.tsx, src/components/compete/RoundCompleteSection.module.css
+- Commit: 4657327
