@@ -39,6 +39,7 @@ async function getAuthenticatedUser(): Promise<{ user: { id: string } } | null> 
   return { user };
 }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(_request: NextRequest) {
   const auth = await getAuthenticatedUser();
 
