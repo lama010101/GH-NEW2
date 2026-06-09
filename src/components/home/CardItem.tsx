@@ -9,25 +9,11 @@ export function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: b
   return (
     <button
       type="button"
-      className={styles['card-item']}
+      className={`${styles['card-item-btn']} ${selected ? styles['card-item-btn-selected'] : ''}`}
       onClick={() => onSelect(mode)}
-      style={{
-        display: 'block',
-        padding: 0,
-        border: 'none',
-        borderRadius: 16,
-        background: 'transparent',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        outline: selected ? '3px solid rgba(255,255,255,0.7)' : '3px solid transparent',
-        textAlign: 'initial',
-        touchAction: 'manipulation',
-        transform: selected ? 'translateY(-5px)' : 'none',
-        transition: 'outline-color 0.18s, transform 0.15s',
-      }}
     >
-      <div style={{ width: '100%', aspectRatio: '5/4', position: 'relative', background: CARD_GRADIENT[mode], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ position: 'relative', width: 214, height: 214 }}>
+      <div className={styles['card-art-zone']} style={{ background: CARD_GRADIENT[mode] }}>
+        <div className={styles['card-icon-wrap']}>
           <Image
             src={
               mode === 'daily'    ? '/icons/daily_large.webp'    :
@@ -37,18 +23,18 @@ export function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: b
             }
             alt={CARD_NAME[mode]}
             fill
-            style={{ objectFit: 'contain' }}
+            className={styles['card-icon-img']}
             sizes="160px"
           />
         </div>
         {mode === 'levelup' && (
-          <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 10, padding: '3px 10px', fontSize: 10, color: '#fff', whiteSpace: 'nowrap', fontWeight: 600 }}>Level 5</div>
+          <div className={styles['card-level-badge']}>Level 5</div>
         )}
       </div>
-      <div style={{ background: CARD_GRADIENT[mode], padding: '10px 8px 12px', textAlign: 'center', position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(12,12,18,0.8)' }} />
-        <div style={{ position: 'relative', zIndex: 1, fontSize: 'var(--font-xs)', fontWeight: 800, letterSpacing: '1.5px', color: '#fff', textTransform: 'uppercase' }}>{CARD_NAME[mode]}</div>
-        <div style={{ position: 'relative', zIndex: 1, fontSize: 10, fontWeight: 500, letterSpacing: '1px', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginTop: 3 }}>{CARD_SUB[mode]}</div>
+      <div className={styles['card-label-bar']}>
+        <div className={styles['card-label-overlay']} />
+        <div className={styles['card-label-name']}>{CARD_NAME[mode]}</div>
+        <div className={styles['card-label-sub']}>{CARD_SUB[mode]}</div>
       </div>
     </button>
   )
