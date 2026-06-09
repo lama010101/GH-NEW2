@@ -111,6 +111,9 @@ export default function BadgePopup({ badges, nearMisses: _nearMisses, onDismiss 
 
   const currentBadge = badges[currentBadgeIndex];
 
+  const getVerdictStyle = (tier: string) => ({ '--tier-color': tierColor[tier] } as React.CSSProperties);
+  const getStarStyle = (tier: string, delay: number) => ({ '--tier-color': tierColor[tier], '--star-delay': `${delay}ms` } as React.CSSProperties);
+
   return (
     <div
       onClick={onDismiss}
@@ -138,7 +141,7 @@ export default function BadgePopup({ badges, nearMisses: _nearMisses, onDismiss 
           {currentBadge.accuracy >= 80 && (
             <div
               className={styles.verdictText}
-              style={{ '--tier-color': tierColor[currentBadge.tier] } as React.CSSProperties}
+              style={getVerdictStyle(currentBadge.tier)}
             >
               {currentBadge.accuracy === 100 ? 'PERFECT!' : currentBadge.accuracy >= 95 ? 'AMAZING!' : currentBadge.accuracy >= 90 ? 'GREAT!' : 'GOOD'}
             </div>
@@ -160,10 +163,7 @@ export default function BadgePopup({ badges, nearMisses: _nearMisses, onDismiss 
                 <span
                   key={starIndex}
                   className={styles.star}
-                  style={{
-                    '--tier-color': tierColor[currentBadge.tier],
-                    '--star-delay': `${starIndex * 150}ms`,
-                  } as React.CSSProperties}
+                  style={getStarStyle(currentBadge.tier, starIndex * 150)}
                 >
                   ★
                 </span>
