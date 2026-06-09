@@ -12,8 +12,8 @@ export function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: b
       className={`${styles['card-item-btn']} ${selected ? styles['card-item-btn-selected'] : ''}`}
       onClick={() => onSelect(mode)}
     >
-      <div className={styles['card-art-zone']} style={{ background: CARD_GRADIENT[mode] }}>
-        <div className={styles['card-icon-wrap']}>
+      <div className={styles.cardArtZone} style={{ background: CARD_GRADIENT[mode] }}>
+        <div className={styles.cardIconWrap}>
           <Image
             src={
               mode === 'daily'    ? '/icons/daily_large.webp'    :
@@ -23,18 +23,18 @@ export function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: b
             }
             alt={CARD_NAME[mode]}
             fill
-            className={styles['card-icon-img']}
+            className={styles.cardIconImg}
             sizes="160px"
           />
         </div>
         {mode === 'levelup' && (
-          <div className={styles['card-level-badge']}>Level 5</div>
+          <div className={styles.cardLevelBadge}>Level 5</div>
         )}
       </div>
-      <div className={styles['card-label-bar']}>
+      <div className={styles.cardLabelBar}>
         <div className={styles['card-label-overlay']} />
-        <div className={styles['card-label-name']}>{CARD_NAME[mode]}</div>
-        <div className={styles['card-label-sub']}>{CARD_SUB[mode]}</div>
+        <div className={styles.cardLabelName}>{CARD_NAME[mode]}</div>
+        <div className={styles.cardLabelSub}>{CARD_SUB[mode]}</div>
       </div>
     </button>
   )
