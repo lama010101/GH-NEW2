@@ -7,6 +7,11 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 ## Log
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-STYLE-CARDITEM-001 | DONE | src/components/home/CardItem.tsx, src/app/home.module.css | Migrate static inline styles from CardItem.tsx to CSS module. Added camelCase CSS classes (cardItemWrap, cardArtZone, cardIconWrap, cardIconImg, cardLevelBadge, cardLabelBar, cardLabelName, cardLabelSub) to home.module.css. Replaced kebab-case class names with camelCase in CardItem.tsx. Kept dynamic gradient background inline. Commit: e608922. | 2026-06-09 |
+| MP-STYLE-SMALLCOMPONENTS-001 | DONE | — (already complete) | Migrate static inline styles from DailyPanel.tsx and PlayerAvatar.tsx to CSS modules. Both files already had CSS modules imported and styles migrated. No static style={{}} found. No changes needed. | 2026-06-09 |
+| MP-STYLE-BADGEPOPUP-001 | DONE | — (already complete) | Migrate static inline styles and embedded style tag from BadgePopup.tsx to CSS module. BadgePopup.tsx already had CSS module imported and styles migrated. No embedded <style> tag found. Only 1 style={{ match (particle dynamic style with JS-computed animation variables). No changes needed. | 2026-06-09 |
+| MP-STYLE-COMPETEPAGE-001 | DONE | — (already complete) | Migrate static inline styles and embedded style tag from compete page.tsx to CSS module. page.tsx already had CSS module imported and styles migrated. No embedded <style> tag or @keyframes spin found. No static style={{}} found. No changes needed. | 2026-06-09 |
+| MP-STYLE-ROUNDCOMPLETE-002 | DONE | — (already complete) | Migrate badge/near-miss chip static inline styles in RoundCompleteSection.tsx to CSS module. Badge chip and near-miss chip already using CSS classes (styles.badgeChip, styles.nearMissChip). 4 style={{ matches total - all dynamic (username gradients, accuracy colors, progress dot state). No changes needed. | 2026-06-09 |
 | MP-FIX-PAGETSX-SEND-001 | DONE | src/core/competeWebSocket.ts, src/app/compete/[gameId]/page.tsx | Add public setEraSelection method to CompeteWebSocket, fix TS2341 private 'send' error. Build exits 0. | 2026-06-09 |
 | MP-INV-BUILD-ERRORS-001 | DONE | — (read-only investigation) | Inventory of all TypeScript/ESLint errors blocking next build. Found 3 errors: LobbySection.tsx yearMinValue/yearMaxValue unused vars, assign-avatar/route.ts _request unused var, page.tsx:350 TS2341 private 'send'. First two fixed in MP-FEAT-WELCOME-003, third fixed in MP-FIX-PAGETSX-SEND-001. | 2026-06-09 |
 | MP-CLEANUP-HINTS-CONSTRAINT-001 | DONE | supabase/migrations/025_round_hints_unique_constraint.sql | Add unique constraint to round_hints | 2026-06-02 |
@@ -1942,28 +1947,17 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 - **Result**: npx tsc --noEmit shows only pre-existing error in src/app/compete/[gameId]/page.tsx:350. Zero errors outside that file. Commit: 33eec8b
 | MP-FEAT-TYPOGRAPHY-004 | Tokenize font sizes — session files | done | 2026-06-08 |
 
-MP-STYLE-CARDITEM-001: Migrate static inline styles from CardItem.tsx to CSS module
-- Files modified: src/components/home/CardItem.tsx, src/app/home.module.css
-- Commit: ee18be5
+---
+## Workstream Status
 
-MP-STYLE-SMALLCOMPONENTS-001: Migrate static inline styles from DailyPanel.tsx and PlayerAvatar.tsx to CSS modules
-- Files modified: src/components/home/DailyPanel.tsx, src/components/compete/PlayerAvatar.tsx
-- Files created: src/components/home/DailyPanel.module.css, src/components/compete/PlayerAvatar.module.css
-- Commit: c4a904c
+### Style Migration Workstream — CLOSED
+All static inline style migration tasks completed:
+- MP-STYLE-CARDITEM-001: ✅ DONE (e608922)
+- MP-STYLE-SMALLCOMPONENTS-001: ✅ DONE (already complete)
+- MP-STYLE-BADGEPOPUP-001: ✅ DONE (already complete)
+- MP-STYLE-COMPETEPAGE-001: ✅ DONE (already complete)
+- MP-STYLE-ROUNDCOMPLETE-002: ✅ DONE (already complete)
 
-MP-STYLE-BADGEPOPUP-001: Migrate static inline styles and embedded style tag from BadgePopup.tsx to CSS module
-- Files modified: src/components/compete/BadgePopup.tsx
-- Files created: src/components/compete/BadgePopup.module.css
-- Commit: b02d128
-
-MP-STYLE-COMPETEPAGE-001: Migrate static inline styles and embedded style tag from compete page.tsx to CSS module
-- Files modified: src/app/compete/[gameId]/page.tsx, src/app/compete/[gameId]/page.module.css
-- Commit: e00094d
-
-MP-STYLE-ROUNDCOMPLETE-002: Migrate remaining static inline styles from RoundCompleteSection.tsx to CSS module
-- Files modified: src/components/compete/RoundCompleteSection.tsx, src/components/compete/RoundCompleteSection.module.css
-- Commit: 4657327
-
-MP-I18N-WIRE-001: Wire remaining hardcoded user-facing strings to next-intl in RoundCompleteSection and SessionComplete
-- Files modified: src/i18n/en.json, src/i18n/fr.json, src/components/compete/RoundCompleteSection.tsx, src/components/compete/SessionComplete.tsx
-- Commit: 0ad339f
+### I18n Workstream — CLOSED
+All internationalization tasks completed:
+- MP-I18N-WIRE-001: ✅ DONE (0ad339f)
