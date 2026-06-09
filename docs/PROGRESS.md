@@ -1955,3 +1955,7 @@ MP-STYLE-BADGEPOPUP-001: Migrate static inline styles and embedded style tag fro
 - Files modified: src/components/compete/BadgePopup.tsx
 - Files created: src/components/compete/BadgePopup.module.css
 - Commit: b02d128
+
+MP-STYLE-COMPETEPAGE-001: Migrate static inline styles and embedded style tag from compete page.tsx to CSS module
+- Files modified: src/app/compete/[gameId]/page.tsx, src/app/compete/[gameId]/page.module.css
+- Commit: e00094d
