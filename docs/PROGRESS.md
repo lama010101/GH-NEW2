@@ -1963,3 +1963,7 @@ MP-STYLE-COMPETEPAGE-001: Migrate static inline styles and embedded style tag fr
 MP-STYLE-ROUNDCOMPLETE-002: Migrate remaining static inline styles from RoundCompleteSection.tsx to CSS module
 - Files modified: src/components/compete/RoundCompleteSection.tsx, src/components/compete/RoundCompleteSection.module.css
 - Commit: 4657327
+
+MP-I18N-WIRE-001: Wire remaining hardcoded user-facing strings to next-intl in RoundCompleteSection and SessionComplete
+- Files modified: src/i18n/en.json, src/i18n/fr.json, src/components/compete/RoundCompleteSection.tsx, src/components/compete/SessionComplete.tsx
+- Commit: 0ad339f
