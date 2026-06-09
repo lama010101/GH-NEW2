@@ -7,6 +7,8 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 ## Log
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-FIX-PAGETSX-SEND-001 | DONE | src/core/competeWebSocket.ts, src/app/compete/[gameId]/page.tsx | Add public setEraSelection method to CompeteWebSocket, fix TS2341 private 'send' error. Build exits 0. | 2026-06-09 |
+| MP-INV-BUILD-ERRORS-001 | DONE | — (read-only investigation) | Inventory of all TypeScript/ESLint errors blocking next build. Found 3 errors: LobbySection.tsx yearMinValue/yearMaxValue unused vars, assign-avatar/route.ts _request unused var, page.tsx:350 TS2341 private 'send'. First two fixed in MP-FEAT-WELCOME-003, third fixed in MP-FIX-PAGETSX-SEND-001. | 2026-06-09 |
 | MP-CLEANUP-HINTS-CONSTRAINT-001 | DONE | supabase/migrations/025_round_hints_unique_constraint.sql | Add unique constraint to round_hints | 2026-06-02 |
 | MP-CLEANUP-TRANSPORT-001b | DONE | competeWebSocket.ts, useCompeteSocket.ts | Remove dead accPenalty/xpPenalty from client transport | 2026-06-02 |
 | MP-FIX-YEARRANGE-DEFAULT-001 | DONE | src/components/home/CompetePanel.tsx, src/server/sessionCore.ts, partykit/server.ts, scripts/migrations/006_compete_mode_core.sql | Change year_min default from -100 to -400 across all 4 locations. CompetePanel.tsx:129 yearMin: -400, sessionCore.ts:517 normalizeYearBoundary fallback -400, partykit/server.ts:682 cold-load fallback -400, 006 migration DEFAULT -400. LobbySection.tsx YEAR_MIN_BOUND already -400 (unchanged). tsc exits 0. | 2026-06-02 |
