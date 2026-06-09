@@ -19,7 +19,7 @@
   border-radius: 12px;
   cursor: pointer;
   color: #fff;
-  font-size: 24px;
+  font-size: var(--font-2xl);
   line-height: 1;
   padding: 10px;
   backdrop-filter: blur(10px);
@@ -69,13 +69,13 @@
 
 .avatarInitials {
   color: #fff;
-  font-size: 26px;
+  font-size: var(--font-2xl);
   font-weight: 700;
 }
 
 .displayName {
   color: var(--gh-violet);
-  font-size: 17px;
+  font-size: var(--font-base);
   font-weight: 600;
 }
 
@@ -105,7 +105,7 @@
   border: none;
   cursor: pointer;
   color: #fff;
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 400;
   text-align: left;
   border-radius: 0;
@@ -148,7 +148,7 @@
   border: none;
   cursor: pointer;
   color: var(--gh-danger);
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 500;
   text-align: left;
   transition: background 0.15s;
