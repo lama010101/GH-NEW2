@@ -1,0 +1,24 @@
+.dailyPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.timerBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  padding: 7px 12px;
+}
+
+.timerLabel {
+  font-size: var(--font-xs);
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+}
+
+.timerCountdown {
+  color: var(--gh-orange);
+}

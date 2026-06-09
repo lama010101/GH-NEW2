@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import styles from './DailyPanel.module.css'
 
 export function DailyPanel({ onPlay }: { onPlay: () => void }) {
   const t = useTranslations()
@@ -22,17 +23,14 @@ export function DailyPanel({ onPlay }: { onPlay: () => void }) {
   }, [])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        background: 'rgba(0,0,0,0.25)', borderRadius: 8, padding: '7px 12px',
-      }}>
+    <div className={styles.dailyPanel}>
+      <div className={styles.timerBox}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8"/>
           <path d="M12 7v5l3 3" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round"/>
         </svg>
-        <span style={{ fontSize: 'var(--font-xs)', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
-          {t('home.daily_new_challenge')} <span style={{ color: 'var(--gh-orange)' }}>{countdown}</span>
+        <span className={styles.timerLabel}>
+          {t('home.daily_new_challenge')} <span className={styles.timerCountdown}>{countdown}</span>
         </span>
       </div>
     </div>

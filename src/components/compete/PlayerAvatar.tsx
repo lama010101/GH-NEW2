@@ -1,4 +1,5 @@
 import React from "react";
+import styles from './PlayerAvatar.module.css';
 
 interface PlayerAvatarProps {
   avatarUrl: string | null;
@@ -31,7 +32,7 @@ export default function PlayerAvatar({ avatarUrl, displayName, size = 26 }: Play
         <img
           src={avatarUrl}
           alt={displayName}
-          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+          className={styles.avatarImg}
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       </span>
