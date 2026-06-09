@@ -202,6 +202,10 @@ export class CompeteWebSocket {
     this.send({ type: "SET_YEAR_RANGE", playerId: this.playerId, yearMin, yearMax });
   }
 
+  setEraSelection(selectedEras: string[], yearMin: number, yearMax: number): void {
+    this.send({ type: "SET_ERA_SELECTION", playerId: this.playerId, selectedEras, yearMin, yearMax });
+  }
+
   setResultsTimer(resultsAutoAdvanceSec: number): void {
     this.send({ type: "SET_RESULTS_TIMER", playerId: this.playerId, resultsAutoAdvanceSec });
   }
