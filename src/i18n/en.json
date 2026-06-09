@@ -113,7 +113,9 @@
     "n_days": "{n} days",
     "ready_waiting": "Ready — waiting for others",
     "im_ready": "I'm ready",
-    "players_ready": "({ready}/{total} players ready)"
+    "players_ready": "({ready}/{total} players ready)",
+    "select_all": "Select all",
+    "deselect_all": "Deselect all"
   },
   "game": {
     "sound": "Sound",

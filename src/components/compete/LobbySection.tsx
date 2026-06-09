@@ -775,7 +775,7 @@ export default function LobbySection({
                 <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
                 {isHost && (
                   <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
-                    {allErasSelected ? 'Deselect all' : 'Select all'}
+                    {allErasSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
                   </button>
                 )}
               </div>
@@ -820,7 +820,7 @@ export default function LobbySection({
                 <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
                 {isHost && (
                   <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
-                    {allErasSelected ? 'Deselect all' : 'Select all'}
+                    {allErasSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
                   </button>
                 )}
               </div>
