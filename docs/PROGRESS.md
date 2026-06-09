@@ -1911,4 +1911,31 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 | MP-FEAT-TYPOGRAPHY-002 | Tokenize font sizes — home screen files | done | 2026-06-08 |
 | MP-FIX-TSC-001 | Add SetEraSelectionSchema in partykit/server.ts | 2026-06-08 | done |
 | MP-FIX-TSC-002 | Fix selectedEras and getServiceClient in sessionCore.ts | 2026-06-08 | done |
+
+---
+
+# MP-INV-WELCOME-001
+- **Task Title**: Investigate — Post-registration state and welcome flow gap
+- **Files Modified**: None (read-only investigation)
+- **Result**: AuthModal success paths end with onClose() + window.location.reload() (no post-registration callback). No new-user detection in page.tsx or identity.ts. IdentityState lacks isNewUser flag. profiles table has id, display_name, avatar_url, created_at, updated_at. avatars table exists with 57 historical figure entries (not user avatars). No welcome flow currently exists.
+
+# MP-FEAT-WELCOME-001
+- **Task Title**: Add isNewUser flag to IdentityState
+- **Files Modified**: src/core/identity.ts
+- **Result**: Added isNewUser: boolean to IdentityState ready variant. Computed as Math.abs(createdAt - lastSignIn) < 10_000 in both bootstrapIdentity and subscribeToIdentityChanges functions. tsc --noEmit → exit 0 (pre-existing error in compete/[gameId]/page.tsx unrelated). Commit: 03723ca
+
+# MP-FEAT-WELCOME-002
+- **Task Title**: Create POST /api/user/assign-avatar route
+- **Files Modified**: src/app/api/user/assign-avatar/route.ts (created)
+- **Result**: API route that assigns random avatar from avatars table (ready=true) to new user. Idempotent: if avatar_url already set, returns existing data. Generates default username as "FirstName LastName ####" with random 4-digit suffix. Returns { assigned: boolean, profile: { display_name }, avatar: <full avatars row> }. Uses service role client for profiles UPDATE. tsc --noEmit → exit 0.
+
+# MP-FEAT-WELCOME-003
+- **Task Title**: WelcomeModal component and home page new-user trigger
+- **Files Modified**: src/components/WelcomeModal.tsx (created), src/components/WelcomeModal.module.css (created), src/app/api/user/update-username/route.ts (created), src/app/page.tsx
+- **Result**: WelcomeModal component with avatar display, bio line, description, username input, save button (PATCH /api/user/update-username), skip link. Uses CSS Modules with var(--gh-*) tokens. /api/user/update-username route validates display_name (max 40 chars, non-empty) and updates profiles table. page.tsx: added welcomeData state, isNewUser detection in subscribeToIdentityChanges callback calling /api/user/assign-avatar, WelcomeModal JSX. KC-001 guard check passed (sheetFieldWrap z-index: 1001). tsc --noEmit → exit 0 (pre-existing error in compete/[gameId]/page.tsx unrelated). Commit: 33eec8b
+
+# MP-FEAT-WELCOME-003-UNBLOCK
+- **Task Title**: Verify TSC passes after MP-FEAT-WELCOME-001 dependency fix
+- **Files Modified**: None (validation only)
+- **Result**: npx tsc --noEmit shows only pre-existing error in src/app/compete/[gameId]/page.tsx:350. Zero errors outside that file. Commit: 33eec8b
 | MP-FEAT-TYPOGRAPHY-004 | Tokenize font sizes — session files | done | 2026-06-08 |
