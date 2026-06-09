@@ -400,3 +400,31 @@
     height: 240px;
   }
 }
+
+/* ── Badge and near-miss chips (MP-STYLE-ROUNDCOMPLETE-002) ── */
+
+.badgeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--badge-bg);
+  border: 0.5px solid var(--badge-border);
+  color: var(--badge-color);
+}
+
+.nearMissChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: italic;
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.28);
+}
