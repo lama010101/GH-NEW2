@@ -1939,3 +1939,7 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 - **Files Modified**: None (validation only)
 - **Result**: npx tsc --noEmit shows only pre-existing error in src/app/compete/[gameId]/page.tsx:350. Zero errors outside that file. Commit: 33eec8b
 | MP-FEAT-TYPOGRAPHY-004 | Tokenize font sizes — session files | done | 2026-06-08 |
+
+MP-STYLE-CARDITEM-001: Migrate static inline styles from CardItem.tsx to CSS module
+- Files modified: src/components/home/CardItem.tsx, src/app/home.module.css
+- Commit: ee18be5
