@@ -1950,3 +1950,8 @@ MP-STYLE-SMALLCOMPONENTS-001: Migrate static inline styles from DailyPanel.tsx a
 - Files modified: src/components/home/DailyPanel.tsx, src/components/compete/PlayerAvatar.tsx
 - Files created: src/components/home/DailyPanel.module.css, src/components/compete/PlayerAvatar.module.css
 - Commit: c4a904c
+
+MP-STYLE-BADGEPOPUP-001: Migrate static inline styles and embedded style tag from BadgePopup.tsx to CSS module
+- Files modified: src/components/compete/BadgePopup.tsx
+- Files created: src/components/compete/BadgePopup.module.css
+- Commit: b02d128
