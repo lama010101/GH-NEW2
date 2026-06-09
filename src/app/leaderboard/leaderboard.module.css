@@ -28,7 +28,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   color: var(--gh-text-primary);
-  font-size: 14px;
+  font-size: var(--font-sm)--font-sm);
   font-weight: 600;
   cursor: pointer;
   padding: 8px 12px;
@@ -41,12 +41,12 @@
 }
 
 .backArrow {
-  font-size: 18px;
+  font-size: var(--font-lg)--font-lg);
 }
 
 .title {
   font-family: var(--font-bebas), sans-serif;
-  font-size: 26px;
+  font-size: var(--font-v(l)--font-2xl);
   font-weight: bold;
   letter-spacing: 1.5px;
   margin: 0;
@@ -74,7 +74,7 @@
 .tab {
   flex: 1;
   font-family: var(--font-bebas), sans-serif;
-  font-size: 17px;
+  font-size: 17px
   font-weight: bold;
   letter-spacing: 0.5px;
   padding: 10px 12px;
@@ -109,7 +109,7 @@
 }
 
 .subTab {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 500;
   padding: 8px 14px;
   background: rgba(255, 255, 255, 0.04);
@@ -167,7 +167,7 @@
   justify-content: center;
   padding: 60px 20px;
   color: rgba(255, 255, 255, 0.4);
-  font-size: 14px;
+  font-size: var(--font-sm);
 }
 
 /* Error State */
@@ -182,7 +182,7 @@
 
 .errorState p {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
+  font-size: var(--font-sm);
   margin: 0;
 }
 
@@ -289,7 +289,7 @@
 .medalGold,
 .medalSilver,
 .medalBronze {
-  font-size: 18px;
+  font-size: var(--font-lg);
   line-height: 1;
 }
 
@@ -303,7 +303,7 @@
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.6);
   font-weight: 700;
-  font-size: 12px;
+  font-size: var(--font-2xs);
 }
 
 /* Player Cell */
@@ -378,11 +378,11 @@
 /* Responsive */
 @media (max-width: 400px) {
   .title {
-    font-size: 20px;
+    font-size: var(--font-lg);
   }
   
   .tab {
-    font-size: 16px;
+    font-size: var(--font-base);
     padding: 10px 12px;
   }
   
