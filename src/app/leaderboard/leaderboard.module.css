@@ -192,7 +192,7 @@
   border: 1px solid rgba(251, 146, 60, 0.3);
   border-radius: 8px;
   color: var(--gh-orange);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -214,14 +214,14 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--font-xs);
 }
 
 .th {
   text-align: left;
   padding: 14px 8px 10px;
   color: rgba(255, 255, 255, 0.4);
-  font-size: 10px;
+  font-size: 10px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -331,7 +331,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--font-bebas), sans-serif;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: bold;
   color: var(--gh-text-primary);
   flex-shrink: 0;
