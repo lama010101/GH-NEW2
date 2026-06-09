@@ -26,7 +26,7 @@ export default function SessionComplete({
   sendMessage,
 }: SessionCompleteProps) {
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslations('compete_page');
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [navModalOpen, setNavModalOpen] = useState(false);
@@ -58,7 +58,7 @@ export default function SessionComplete({
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to create lobby");
+        throw new Error(data.error || t('failed_lobby'));
       }
       const data = await response.json();
       sendMessage({ type: "PLAY_AGAIN", playerId, newGameId: data.gameId });
@@ -66,7 +66,7 @@ export default function SessionComplete({
       router.push(`/compete/${data.gameId}`);
     } catch (error) {
       console.error("Failed to create lobby:", error);
-      setLobbyError("Failed to create lobby, try again");
+      setLobbyError(t('failed_lobby_retry'));
     } finally {
       setIsCreatingLobby(false);
     }

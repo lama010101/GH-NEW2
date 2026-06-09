@@ -70,7 +70,8 @@
     "years_off": "{n} ans d'écart",
     "km_away": "{n} km",
     "round_label": "Manche {current} / {total}",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "no_description": "Aucune description disponible"
   },
   "lobby": {
     "waiting": "En attente de joueurs ({ready}/{total} prêts)",
@@ -218,7 +219,9 @@
     "err_identity": "Identité non prête — veuillez patienter",
     "err_code_required": "Le code de salle est requis",
     "err_create": "Impossible de créer la partie",
-    "err_join": "Impossible de rejoindre la partie"
+    "err_join": "Impossible de rejoindre la partie",
+    "failed_lobby": "Échec de création du salon",
+    "failed_lobby_retry": "Échec de création du salon, réessayez"
   },
   "leaderboard": {
     "title": "CLASSEMENT",
