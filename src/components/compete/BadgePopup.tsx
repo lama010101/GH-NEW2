@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import styles from './BadgePopup.module.css';
 
 interface Badge {
   dimension: 'year' | 'location' | 'combo';
@@ -105,7 +106,7 @@ export default function BadgePopup({ badges, nearMisses: _nearMisses, onDismiss 
       );
     }
 
-    return <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>{particles}</div>;
+    return <div className={styles.particleContainer}>{particles}</div>;
   };
 
   const currentBadge = badges[currentBadgeIndex];
@@ -113,55 +114,15 @@ export default function BadgePopup({ badges, nearMisses: _nearMisses, onDismiss 
   return (
     <div
       onClick={onDismiss}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        background: 'rgba(0,0,0,0.75)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '16px',
-      }}
+      className={styles.overlay}
     >
-      <style>{`
-        @keyframes badgeEnter {
-          from { transform: scale(0.3); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-        @keyframes starEnter {
-          from { opacity: 0; transform: scale(0); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes verdictEnter {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes particleFly {
-          0% { transform: translate(0,0) scale(1); opacity: 1; }
-          100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
-        }
-      `}</style>
 
       {/* Close button */}
       <div
         onClick={onDismiss}
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          width: '36px',
-          height: '36px',
-          background: 'rgba(255,255,255,0.12)',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-        }}
+        className={styles.closeBtn}
       >
-        <span style={{ fontSize: '20px', color: 'white' }}>×</span>
+        <span className={styles.closeBtnText}>×</span>
       </div>
 
       {/* Badge card */}
@@ -169,74 +130,40 @@ export default function BadgePopup({ badges, nearMisses: _nearMisses, onDismiss 
         <div
           ref={badgeCardRef}
           onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'relative',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
+          className={styles.badgeCard}
         >
           {renderParticles()}
 
           {/* Verdict text */}
           {currentBadge.accuracy >= 80 && (
             <div
-              style={{
-                fontSize: '28px',
-                fontWeight: 800,
-                letterSpacing: '1px',
-                color: tierColor[currentBadge.tier],
-                animation: 'verdictEnter 250ms ease-out',
-              }}
+              className={styles.verdictText}
+              style={{ '--tier-color': tierColor[currentBadge.tier] } as React.CSSProperties}
             >
               {currentBadge.accuracy === 100 ? 'PERFECT!' : currentBadge.accuracy >= 95 ? 'AMAZING!' : currentBadge.accuracy >= 90 ? 'GREAT!' : 'GOOD'}
             </div>
           )}
 
           {/* Icon with stars overlaid */}
-          <div
-            style={{
-              position: 'relative',
-              width: '180px',
-              height: '180px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className={styles.iconWrap}>
             {/* Base image */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={currentBadge.dimension === 'year' ? '/badges/when.webp' : '/badges/where.webp'}
               alt=""
-              style={{
-                width: '180px',
-                height: '180px',
-                objectFit: 'contain',
-                animation: 'badgeEnter 400ms ease-out 0ms both',
-              }}
+              className={styles.badgeImg}
             />
 
             {/* Stars overlaid */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '-10px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                display: 'flex',
-                flexDirection: 'row',
-                gap: '6px',
-              }}
-            >
+            <div className={styles.starsContainer}>
               {Array.from({ length: starCount[currentBadge.tier] }).map((_, starIndex) => (
                 <span
                   key={starIndex}
+                  className={styles.star}
                   style={{
-                    fontSize: '24px',
-                    color: tierColor[currentBadge.tier],
-                    animation: `starEnter 300ms ease-out ${starIndex * 150}ms both`,
-                  }}
+                    '--tier-color': tierColor[currentBadge.tier],
+                    '--star-delay': `${starIndex * 150}ms`,
+                  } as React.CSSProperties}
                 >
                   ★
                 </span>
@@ -245,14 +172,7 @@ export default function BadgePopup({ badges, nearMisses: _nearMisses, onDismiss 
           </div>
 
           {/* Accuracy + dimension line */}
-          <div
-            style={{
-              fontSize: '22px',
-              fontWeight: 700,
-              color: 'white',
-              marginTop: '16px',
-            }}
-          >
+          <div className={styles.accuracyLine}>
             {currentBadge.accuracy}% {dimLabel[currentBadge.dimension]}
           </div>
         </div>
