@@ -1943,3 +1943,8 @@ MP-FIX-LOBBY-UI-003 | Re-implement era grid + per-era colors (lost to git revert
 MP-STYLE-CARDITEM-001: Migrate static inline styles from CardItem.tsx to CSS module
 - Files modified: src/components/home/CardItem.tsx, src/app/home.module.css
 - Commit: ee18be5
+
+MP-STYLE-SMALLCOMPONENTS-001: Migrate static inline styles from DailyPanel.tsx and PlayerAvatar.tsx to CSS modules
+- Files modified: src/components/home/DailyPanel.tsx, src/components/compete/PlayerAvatar.tsx
+- Files created: src/components/home/DailyPanel.module.css, src/components/compete/PlayerAvatar.module.css
+- Commit: c4a904c
