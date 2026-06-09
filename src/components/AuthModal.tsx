@@ -8,9 +8,10 @@ import styles from "./AuthModal.module.css";
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  required?: boolean;
 }
 
-export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
   const t = useTranslations('auth');
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -121,18 +122,20 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   return (
     <div
       className={styles.overlay}
-      onClick={onClose}
+      onClick={required ? undefined : onClose}
     >
       <div
         className={styles.card}
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={onClose}
-          className={styles.closeButton}
-        >
-          ×
-        </button>
+        {!required && (
+          <button
+            onClick={onClose}
+            className={styles.closeButton}
+          >
+            ×
+          </button>
+        )}
 
         <h2
           className={styles.title}

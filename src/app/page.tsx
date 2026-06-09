@@ -161,7 +161,7 @@ function HomePageInner() {
         initials={initials}
         displayName={(identity as { status: string; playerId: string; displayName: string }).displayName ?? initials}
       />
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} required={true} />
       {welcomeData && (
         <WelcomeModal
           isOpen={true}
