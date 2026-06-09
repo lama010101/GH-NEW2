@@ -170,14 +170,15 @@ export default function RoundCompleteSection({
                 };
                 if (badge) {
                   const c = tierColors[badge.tier] ?? tierColors.bronze;
+                  const getBadgeStyle = () => ({ '--badge-bg': c.bg, '--badge-border': c.border, '--badge-color': c.color } as React.CSSProperties);
                   return (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: c.bg, border: `0.5px solid ${c.border}`, color: c.color }}>
+                    <span className={styles.badgeChip} style={getBadgeStyle()}>
                       {badge.tier.charAt(0).toUpperCase() + badge.tier.slice(1)}
                     </span>
                   );
                 }
                 return (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 9px', borderRadius: 999, fontSize: 11, fontStyle: 'italic', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.28)' }}>
+                  <span className={styles.nearMissChip}>
                     Near miss
                   </span>
                 );
