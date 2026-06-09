@@ -98,7 +98,7 @@
 }
 
 .avatarMeta {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 11px; /* layout-constrained — do not tokenize */;
   color: rgba(255, 255, 255, 0.4);
   margin-bottom: 2px;
 }
