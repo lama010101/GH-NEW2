@@ -139,7 +139,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
         <h2
           className={styles.title}
         >
-          {t('welcome_back')}
+          {t('welcome')}
         </h2>
 
         {error && (
