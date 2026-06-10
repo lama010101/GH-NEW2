@@ -1971,3 +1971,4 @@ MP-FIX-AVATAR-INITIALS-002 | src/app/page.tsx | Replaced setInitials('?') with s
 MP-FIX-HOME-UI-001 | src/app/home.module.css, src/app/page.tsx | Fixed card icon position, tagline styling, background overlay, CTA button
 
 MP-FIX-HOME-UI-003 | src/app/home.module.css | Fixed icon clipping, mobile font sizes, desktop 2x2 grid layout
+MP-FIX-HOME-UI-004 | src/app/home.module.css | Fixed card icon absolute position to top-right (10px offset)
