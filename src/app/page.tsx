@@ -66,7 +66,7 @@ function HomePageInner() {
   const [xp, setXp] = useState('--')
 
   const [avatarUrl, setAvatarUrl] = useState<string|null>(null)
-  const [initials, setInitials] = useState('?')
+  const [initials, setInitials] = useState('')
 
   useEffect(() => {
     if (identity.status !== 'ready') {
@@ -92,6 +92,14 @@ function HomePageInner() {
           if (profile.display_name) setInitials(profile.display_name.slice(0,2).toUpperCase())
         }
       } catch {}
+      if (initials === '') {
+        const dn = (identity as { status: string; playerId: string; displayName: string }).displayName
+        if (dn && dn !== 'Player') {
+          setInitials(dn.slice(0,2).toUpperCase())
+        } else {
+          setInitials('PL')
+        }
+      }
     })()
   }, [identity])
 
