@@ -71,9 +71,10 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
           <div className={styles.avatarRing}>
             {avatarUrl
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={avatarUrl} alt="" className={styles.avatarImg} />
-              : <span className={styles.avatarInitials}>{initials.slice(0, 2)}</span>
+              ? <img src={avatarUrl} alt="" className={styles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
+              : null
             }
+            <span className={styles.avatarInitials} style={{ display: avatarUrl ? "none" : "inline" }}>{initials.slice(0, 2)}</span>
           </div>
           <span className={styles.displayName}>{displayName}</span>
         </div>

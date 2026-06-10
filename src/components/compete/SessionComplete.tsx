@@ -173,8 +173,10 @@ export default function SessionComplete({
                       src={currentPlayerData.avatarUrl}
                       alt={currentDisplayName}
                       className={styles.avatarImg}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }}
                     />
-                  ) : currentInitial}
+                  ) : null}
+                  {currentInitial}
                 </button>
                 <NavModal
                   isOpen={navModalOpen}
@@ -240,8 +242,10 @@ export default function SessionComplete({
                               src={playerData.avatarUrl}
                               alt={displayName}
                               className={styles.avatarImg}
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }}
                             />
-                          ) : firstLetter}
+                          ) : null}
+                          {firstLetter}
                         </div>
                         {isCurrentPlayer && <span className={styles.youDot} />}
                       </div>

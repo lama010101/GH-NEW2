@@ -84,10 +84,10 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName }: We
               src={avatar.image_url}
               alt={fullName}
               className={styles.avatarImg}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }}
             />
-          ) : (
-            <span className={styles.avatarInitials}>{initials.toUpperCase()}</span>
-          )}
+          ) : null}
+          <span className={styles.avatarInitials} style={{ display: avatar.image_url ? "none" : "inline" }}>{initials.toUpperCase()}</span>
         </div>
 
         <div className={styles.avatarName}>{fullName}</div>
