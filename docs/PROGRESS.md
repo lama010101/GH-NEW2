@@ -1973,3 +1973,7 @@ MP-FIX-HOME-UI-001 | src/app/home.module.css, src/app/page.tsx | Fixed card icon
 MP-FIX-HOME-UI-003 | src/app/home.module.css | Fixed icon clipping, mobile font sizes, desktop 2x2 grid layout
 MP-FIX-HOME-UI-004 | src/app/home.module.css | Fixed card icon absolute position to top-right (10px offset)
 MP-FIX-HOME-UI-005 | src/app/home.module.css | Renamed duplicate .card-icon-wrap and .cardIconWrap legacy rules to .legacy-card-icon-wrap and .legacyCardIconWrap
+
+## MP-FIX-HOME-UI-006
+- File modified: src/app/home.module.css
+- Changes: Increased icon size (mobile 110px→150px, desktop 90px→120px), increased card title font size to var(--font-4xl) with Bebas Neue, increased subtitle font size and weight, changed card desc from 11px to var(--font-xs), increased card-title-section padding-right (mobile 120px→160px, desktop 100px→130px)
