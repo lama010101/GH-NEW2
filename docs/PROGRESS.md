@@ -1967,3 +1967,5 @@ All internationalization tasks completed:
 MP-FIX-AVATAR-INITIALS-001 | src/app/page.tsx | Added identity.displayName fallback for initials when profile.display_name is null
 
 MP-FIX-AVATAR-INITIALS-002 | src/app/page.tsx | Replaced setInitials('?') with setInitials('PL') at line 74
+
+MP-FIX-HOME-UI-001 | src/app/home.module.css, src/app/page.tsx | Fixed card icon position, tagline styling, background overlay, CTA button
