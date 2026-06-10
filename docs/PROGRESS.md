@@ -1963,3 +1963,5 @@ All static inline style migration tasks completed:
 ### I18n Workstream — CLOSED
 All internationalization tasks completed:
 - MP-I18N-WIRE-001: ✅ DONE (0ad339f)
+
+MP-FIX-AVATAR-INITIALS-001 | src/app/page.tsx | Added identity.displayName fallback for initials when profile.display_name is null
