@@ -49,7 +49,6 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
 
   const ITEMS = [
     { id: 'home',         label: t('home'),          icon: HOME_ICON,          action: () => navigate('/') },
-    { id: 'friends',      label: t('friends'),       icon: FRIENDS_ICON,       action: () => comingSoon(t('friends')) },
     { id: 'leaderboard',  label: t('leaderboard'),   icon: LEADERBOARD_ICON,   action: () => navigate('/leaderboard') },
     { id: 'profile_stats',label: t('profile_stats'), icon: PROFILE_ICON,       action: () => navigate('/progress') },
     { id: 'account',      label: t('account'),       icon: ACCOUNT_ICON,       action: () => navigate('/account') },
@@ -136,9 +135,9 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
         <button
           className={styles.signOutBtn}
           onClick={async () => {
+            onClose()
             const { signOut } = await import('@/core/identity')
             await signOut()
-            onClose()
           }}
         >
           <span className={styles.signOutIcon}>{SIGNOUT_ICON}</span>
@@ -155,13 +154,6 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
 const HOME_ICON = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M12 3L2 12h3v9h6v-6h2v6h6v-9h3L12 3z"/>
-  </svg>
-)
-
-const FRIENDS_ICON = (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/>
   </svg>
 )
 
