@@ -1965,3 +1965,5 @@ All internationalization tasks completed:
 - MP-I18N-WIRE-001: ✅ DONE (0ad339f)
 
 MP-FIX-AVATAR-INITIALS-001 | src/app/page.tsx | Added identity.displayName fallback for initials when profile.display_name is null
+
+MP-FIX-AVATAR-INITIALS-002 | src/app/page.tsx | Replaced setInitials('?') with setInitials('PL') at line 74
