@@ -64,37 +64,34 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });
     }
 
-    // If avatar_url is already set, return existing data
     if (profile?.avatar_url) {
-      const { data: avatar, error: avatarError } = await serviceRoleClient
+      const { data: avatar } = await serviceRoleClient
         .from("avatars")
         .select("*")
         .eq("image_url", profile.avatar_url)
         .single();
 
-      if (avatarError) {
-        console.error("[assign-avatar] Failed to fetch avatar by image_url:", avatarError);
-        return NextResponse.json({ error: "Failed to fetch avatar" }, { status: 500 });
+      if (avatar) {
+        return NextResponse.json({
+          assigned: false,
+          profile: { display_name: profile.display_name },
+          avatar: {
+            id: avatar.id,
+            first_name: avatar.first_name,
+            last_name: avatar.last_name,
+            description: avatar.description,
+            gender: avatar.gender,
+            birth_city: avatar.birth_city,
+            birth_country: avatar.birth_country,
+            death_city: avatar.death_city,
+            death_country: avatar.death_country,
+            birth_day: avatar.birth_day,
+            death_day: avatar.death_day,
+            image_url: avatar.image_url,
+          },
+        });
       }
-
-      return NextResponse.json({
-        assigned: false,
-        profile: { display_name: profile.display_name },
-        avatar: {
-          id: avatar.id,
-          first_name: avatar.first_name,
-          last_name: avatar.last_name,
-          description: avatar.description,
-          gender: avatar.gender,
-          birth_city: avatar.birth_city,
-          birth_country: avatar.birth_country,
-          death_city: avatar.death_city,
-          death_country: avatar.death_country,
-          birth_day: avatar.birth_day,
-          death_day: avatar.death_day,
-          image_url: avatar.image_url,
-        },
-      });
+      // avatar_url set but no matching avatars row — fall through to reassign
     }
 
     // avatar_url is null or empty - assign a new random avatar
