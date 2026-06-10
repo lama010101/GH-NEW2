@@ -1985,3 +1985,4 @@ MP-FIX-HOME-UI-005 | src/app/home.module.css | Renamed duplicate .card-icon-wrap
 TASK: MP-FIX-HOME-UI-009
 FILES MODIFIED: src/app/home.module.css, src/components/home/types.ts
 DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilities), increased tagline font size to var(--font-lg), increased card subtitle font size to var(--font-base), updated compete gradient to dark-to-light (left-to-right)
+| MP-FIX-AUTH-SIGNIN-005 | DONE | src/core/supabaseBrowser.ts | Removed flowType:pkce from createBrowserClient — was causing session cookie not to persist after email/password sign-in, appearing signed out after refresh |
