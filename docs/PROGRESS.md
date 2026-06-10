@@ -1986,3 +1986,4 @@ TASK: MP-FIX-HOME-UI-009
 FILES MODIFIED: src/app/home.module.css, src/components/home/types.ts
 DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilities), increased tagline font size to var(--font-lg), increased card subtitle font size to var(--font-base), updated compete gradient to dark-to-light (left-to-right)
 | MP-FIX-AUTH-SIGNIN-005 | DONE | src/core/supabaseBrowser.ts | Removed flowType:pkce from createBrowserClient — was causing session cookie not to persist after email/password sign-in, appearing signed out after refresh |
+| MP-FIX-AUTH-SIGNIN-007 | DONE | page.tsx, AuthModal.tsx, en.json, fr.json | Fixed modal not opening on unauthenticated load (bootstrapIdentity path); removed onClose() call after email sign-in (reactive close only); updated modal title to Welcome to Guess-History |
