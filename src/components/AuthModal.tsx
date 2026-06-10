@@ -95,9 +95,20 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
 
     if (result.error) {
       setError(result.error.message);
-    } else {
-      onClose();
+      return;
     }
+
+    // Poll for session confirmation then close (onAuthStateChange timing is
+    // unreliable with @supabase/ssr createBrowserClient)
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
+      const { data: { user } } = await supabaseBrowser.auth.getUser();
+      if (user || attempts >= 10) {
+        clearInterval(poll);
+        onClose();
+      }
+    }, 300);
   }
 
   async function handleForgotPassword() {
