@@ -479,7 +479,7 @@
   justify-content: center;
 }
 
-.card-icon-wrap {
+.legacy-card-icon-wrap {
   position: relative;
   width: 214px;
   height: 214px;
@@ -558,7 +558,7 @@
   position: relative;
 }
 
-.cardIconWrap {
+.legacyCardIconWrap {
   position: relative;
   width: 214px;
   height: 214px;
