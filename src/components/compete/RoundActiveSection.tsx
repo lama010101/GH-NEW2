@@ -702,7 +702,7 @@ export default function RoundActiveSection({
         <>
           <div className={styles.sheetBackdrop} onClick={closeSheet} />
           <div
-            className={`${styles.sheet} ${activePanel === 'where' && sheetExpanded ? styles.sheetFull : ""}`}
+            className={`${styles.sheet} ${activePanel === 'where' && sheetExpanded ? styles.sheetFull : ""} ${activePanel === 'when' ? styles.sheetWhen : ""}`}
             style={{ "--sheet-drag": `${sheetDrag}px` } as React.CSSProperties}
           >
             {/* Drag handle — only element that controls sheet drag */}
