@@ -95,9 +95,8 @@ export async function onIdentityReady(): Promise<string> {
 }
 
 export async function signOut(): Promise<void> {
-  await supabaseBrowser.auth.signOut();
   bootstrapped = false;
-  cachedState = { status: "unauthenticated" };
+  await supabaseBrowser.auth.signOut();
 }
 
 export function subscribeToIdentityChanges(
