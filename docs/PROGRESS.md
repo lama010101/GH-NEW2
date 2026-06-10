@@ -1981,3 +1981,7 @@ MP-FIX-HOME-UI-005 | src/app/home.module.css | Renamed duplicate .card-icon-wrap
 ## MP-FIX-HOME-UI-007
 - File modified: src/app/home.module.css
 - Changes: Increased mobile icon size 150px→180px, increased card-title-section padding-right 160px→190px, updated desktop grid with align-items: start and grid-template-rows: auto auto, increased desktop max-width to 900px, adjusted desktop icon size to 140px and padding-right to 150px
+
+TASK: MP-FIX-HOME-UI-009
+FILES MODIFIED: src/app/home.module.css, src/components/home/types.ts
+DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilities), increased tagline font size to var(--font-lg), increased card subtitle font size to var(--font-base), updated compete gradient to dark-to-light (left-to-right)
