@@ -1,11 +1,14 @@
 /* WhenCard — uses tokens from gh-card--when set in globals.css */
 
 .card {
-  background: rgba(139, 92, 246, 0.10);
-  border: 1px solid rgba(139, 92, 246, 0.28);
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.32);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(139, 92, 246, 0.08);
 }
 
 .header {
@@ -160,7 +163,7 @@
 
 .expandSection {
   margin-top: 10px;
-  background: rgba(139, 92, 246, 0.06);
+  background: rgba(139, 92, 246, 0.04);
   border-radius: 8px;
 }
 

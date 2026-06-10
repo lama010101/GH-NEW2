@@ -1,11 +1,14 @@
 /* WhereCard */
 
 .card {
-  background: rgba(8, 145, 178, 0.15);
+  background: rgba(8, 145, 178, 0.12);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 10px;
-  border: 1px solid rgba(34, 211, 238, 0.25);
+  border: 1px solid rgba(34, 211, 238, 0.30);
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(34, 211, 238, 0.06);
 }
 
 .header {
@@ -170,7 +173,7 @@
 /* Expandable sections */
 .expandSection {
   margin-top: 10px;
-  background: rgba(34, 211, 238, 0.06);
+  background: rgba(34, 211, 238, 0.04);
   border-radius: 8px;
 }
 
