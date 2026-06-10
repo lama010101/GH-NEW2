@@ -144,6 +144,32 @@
   box-sizing: border-box;
 }
 
+@media (min-width: 768px) {
+  .cards-stack {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 860px;
+  }
+
+  .page-scroll {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card-icon-wrap {
+    width: 90px;
+    height: 90px;
+    top: 8px;
+    right: 8px;
+  }
+
+  .card-title-section {
+    padding-right: 100px;
+  }
+}
+
 .mode-card {
   width: 100%;
   position: relative;
@@ -153,6 +179,7 @@
   width: 100%;
   border-radius: 16px;
   position: relative;
+  overflow: hidden;
 }
 
 .card-inner {
@@ -174,8 +201,8 @@
 }
 
 .card-title {
-  font-size: var(--font-2xl);
-  font-weight: 900;
+  font-size: var(--font-xl);
+  font-weight: 800;
   color: #fff;
   text-transform: uppercase;
   letter-spacing: 1px;
