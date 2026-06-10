@@ -2006,3 +2006,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - Tests: 12 passed, 3 failed (era-based year decay calculations)
 
 **Report Location:** docs/AUDIT_REPORT.md
+| MP-UI-RESULTS-CARDS-001 | Apply glassmorphism to round results cards | Done | 2026-06-10 |
