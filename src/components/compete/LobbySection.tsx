@@ -188,12 +188,17 @@ export default function LobbySection({
     setLastInvited(readLastInvited());
   }, []);
 
-  // Fetch player pool on mount (parallel: friends/search?q=a + players/recent)
+  // Fetch player pool on mount (parallel: friends/search?q=aa + players/recent)
   useEffect(() => {
     let cancelled = false;
     async function fetchPool() {
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
       const [friendsRes, recentRes] = await Promise.allSettled([
-        fetch('/api/friends/search?q=a').then((r) => r.ok ? r.json() : { players: [] }),
+        fetch('/api/friends/search?q=aa', { headers }).then((r) => r.ok ? r.json() : { players: [] }),
         fetch('/api/players/recent').then((r) => r.ok ? r.json() : { players: [] }),
       ]);
       if (cancelled) return;

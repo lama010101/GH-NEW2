@@ -1,29 +1,22 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const cookieStore = cookies();
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const supabase = createServerClient(
+  const token = authHeader.substring(7);
+  const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if middleware refreshes sessions.
-          }
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
       },
     }
@@ -38,8 +31,8 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get("q");
 
-  if (!query || typeof query !== "string" || query.length < 2) {
-    return NextResponse.json({ error: "Query parameter 'q' is required and must be at least 2 characters" }, { status: 400 });
+  if (!query || typeof query !== "string" || query.length < 1) {
+    return NextResponse.json({ error: "Query parameter 'q' is required" }, { status: 400 });
   }
 
   try {
