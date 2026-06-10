@@ -71,7 +71,7 @@ function HomePageInner() {
   useEffect(() => {
     if (identity.status !== 'ready') {
       setAvatarUrl(null)
-      setInitials('?')
+      setInitials('PL')
       setAccuracy('--')
       setXp('--')
       return
