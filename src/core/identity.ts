@@ -103,13 +103,13 @@ export function subscribeToIdentityChanges(
   callback: (state: IdentityState) => void
 ): () => void {
   const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-    async (_event, session) => {
+    async (event, session) => {
       if (session?.user?.id) {
         const isAnonymous = session.user.is_anonymous ?? false;
         const displayName = await fetchDisplayName(session.user.id);
         const createdAt = new Date(session.user.created_at).getTime();
         const lastSignIn = session.user.last_sign_in_at ? new Date(session.user.last_sign_in_at).getTime() : createdAt;
-        const isNewUser = Math.abs(createdAt - lastSignIn) < 10_000;
+        const isNewUser = event === 'SIGNED_IN' && Math.abs(createdAt - lastSignIn) < 10_000;
         cachedState = {
           status: "ready",
           playerId: session.user.id,
