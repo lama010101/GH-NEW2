@@ -159,14 +159,14 @@
   }
 
   .card-icon-wrap {
-    width: 90px;
-    height: 90px;
-    top: 10px;
-    right: 10px;
+    width: 120px;
+    height: 120px;
+    top: 6px;
+    right: 6px;
   }
 
   .card-title-section {
-    padding-right: 100px;
+    padding-right: 130px;
   }
 }
 
@@ -196,29 +196,33 @@
 .card-title-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-right: 120px;
+  gap: 6px;
+  padding-right: 160px;
 }
 
 .card-title {
-  font-size: var(--font-xl);
+  font-size: var(--font-4xl);
   font-weight: 800;
   color: #fff;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   margin: 0;
+  font-family: var(--font-bebas, 'Bebas Neue', sans-serif);
+  line-height: 1;
 }
 
 .card-subtitle {
-  font-size: var(--font-xs);
-  color: rgba(255, 255, 255, 0.85);
-  line-height: 1.5;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.4;
   margin: 0;
   white-space: pre-line;
+  letter-spacing: 0.5px;
 }
 
 .card-desc {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.65);
   line-height: 1.6;
@@ -228,10 +232,10 @@
 
 .card-icon-wrap {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 110px;
-  height: 110px;
+  top: 6px;
+  right: 6px;
+  width: 150px;
+  height: 150px;
   pointer-events: none;
   z-index: 2;
   flex-shrink: 0;
