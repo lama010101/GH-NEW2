@@ -20,12 +20,16 @@ const readyPromise = new Promise<string>((resolve) => {
 let bootstrapped = false;
 
 async function fetchDisplayName(userId: string): Promise<string> {
-  const { data } = await supabaseBrowser
-    .from("profiles")
-    .select("display_name")
-    .eq("id", userId)
-    .single();
-  return data?.display_name?.trim() || 'Player';
+  try {
+    const { data } = await supabaseBrowser
+      .from("profiles")
+      .select("display_name")
+      .eq("id", userId)
+      .single();
+    return data?.display_name?.trim() || 'Player';
+  } catch (e) {
+    return 'Player';
+  }
 }
 
 export async function bootstrapIdentity(): Promise<IdentityState> {
@@ -40,6 +44,10 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
       await supabaseBrowser.auth.getUser();
 
     if (sessionError) {
+      if (sessionError.message?.includes("Auth session missing") || sessionError.name === "AuthSessionMissingError") {
+        cachedState = { status: "unauthenticated" };
+        return cachedState;
+      }
       cachedState = { status: "error", error: `Session check failed: ${sessionError.message}` };
       return cachedState;
     }
