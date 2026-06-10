@@ -97,7 +97,6 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
       setError(result.error.message);
     } else {
       onClose();
-      window.location.reload();
     }
   }
 
