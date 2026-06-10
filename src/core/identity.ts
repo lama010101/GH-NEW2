@@ -27,7 +27,7 @@ async function fetchDisplayName(userId: string): Promise<string> {
       .eq("id", userId)
       .single();
     return data?.display_name?.trim() || 'Player';
-  } catch (e) {
+  } catch {
     return 'Player';
   }
 }
