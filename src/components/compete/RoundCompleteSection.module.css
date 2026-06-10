@@ -13,12 +13,15 @@
 /* ── Event card ── */
 
 .eventCard {
-  background: var(--gh-bg-elevated);
-  border: 1px solid var(--gh-border-subtle);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: var(--gh-radius-md);
   overflow: hidden;
   margin-bottom: 10px;
   min-height: 50vh;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
 }
 
 .eventTitle {
@@ -91,11 +94,14 @@
 /* ── Accuracy ring card ── */
 
 .accuracyCard {
-  background: var(--gh-bg-elevated);
-  border: 1px solid var(--gh-border-subtle);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
 }
 
 .accuracyRingWrap {
@@ -131,11 +137,14 @@
 /* ── Round leaderboard card ── */
 
 .leaderboardCard {
-  background: var(--gh-bg-elevated);
-  border: 1px solid var(--gh-border-subtle);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
 }
 
 .leaderboardTitle {
@@ -219,11 +228,14 @@
 /* ── Hints used card ── */
 
 .hintsCard {
-  background: var(--gh-bg-elevated);
-  border: 1px solid var(--gh-border-subtle);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
 }
 
 .hintsTitle {
@@ -285,11 +297,14 @@
 /* ── Countdown / ready card ── */
 
 .countdownCard {
-  background: var(--gh-bg-elevated);
-  border: 1px solid var(--gh-border-subtle);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
 }
 
 .countdownText {
