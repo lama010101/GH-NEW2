@@ -15,12 +15,7 @@ if (!SUPABASE_ANON_KEY) {
 
 export const supabaseBrowser: SupabaseClient = createBrowserClient(
   SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  {
-    auth: {
-      flowType: 'pkce',
-    },
-  }
+  SUPABASE_ANON_KEY
 );
 
 export function createSupabaseBrowserClient(persistSession: boolean) {
