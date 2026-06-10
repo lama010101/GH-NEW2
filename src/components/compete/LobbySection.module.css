@@ -293,8 +293,8 @@
 /* ── Star button on player card ── */
 .lobbyStarBtn {
   position: absolute;
-  top: -4px;
-  right: -4px;
+  top: 0;
+  right: 0;
   background: rgba(0, 0, 0, 0.55);
   border: none;
   border-radius: 50%;
