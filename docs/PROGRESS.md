@@ -1988,3 +1988,21 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-AUTH-SIGNIN-005 | DONE | src/core/supabaseBrowser.ts | Removed flowType:pkce from createBrowserClient — was causing session cookie not to persist after email/password sign-in, appearing signed out after refresh |
 | MP-FIX-AUTH-SIGNIN-007 | DONE | page.tsx, AuthModal.tsx, en.json, fr.json | Fixed modal not opening on unauthenticated load (bootstrapIdentity path); removed onClose() call after email sign-in (reactive close only); updated modal title to Welcome to Guess-History |
 | MP-FIX-AUTH-SIGNIN-009 | DONE | identity.ts, AuthModal.tsx | Fixed unused var build error; added poll-based modal close after sign-in to work around @supabase/ssr onAuthStateChange timing |
+
+| MP-FIX-FRIENDS-SEARCH-001 | Fix friends/search auth (replace @supabase/ssr with createClient + Bearer token) and query length | DONE | 2026-06-10 |
+
+## Task: Full Codebase Audit
+**Date:** 2025-01-XX
+**Status:** COMPLETED
+**Files Modified:** None (read-only audit)
+**Description:** Comprehensive audit covering TypeScript & Logic, Database & Schema, CSS & Visual Consistency, Translations, Architecture & Spec Compliance, and File Hygiene. Generated detailed report at docs/AUDIT_REPORT.md.
+
+**Key Findings:**
+- TypeScript compilation: PASSED
+- Database schema: All tables exist, RLS enabled on multiplayer tables
+- CSS: Extensive hardcoded hex colors and inline styles (MEDIUM severity)
+- Translations: Files structurally consistent, but hardcoded English strings in components (MEDIUM severity)
+- Auth: Properly gated on home page
+- Tests: 12 passed, 3 failed (era-based year decay calculations)
+
+**Report Location:** docs/AUDIT_REPORT.md
