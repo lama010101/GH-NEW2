@@ -609,14 +609,21 @@ export default function LobbySection({
               })}
               {pendingInvites.map((p) => (
                 <div key={p.id} className={styles['lobbyRosterRow']}>
-                  {viewer?.isHost && (
-                    <button type="button" className={styles['lobbyCardRemoveBtn']} onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))} title={t('lobby.remove_invite')}>×</button>
-                  )}
                   <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
                   <div className={styles['lobbyRosterMeta']}>
                     <span className={styles['lobbyRosterName']}>{p.displayName}</span>
                   </div>
                   <span className={styles['lobbyStatusPillAmber']}>{t('lobby.invited')}</span>
+                  {isHost && (
+                    <button
+                      type="button"
+                      className={styles['lobby-kick-btn']}
+                      onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))}
+                      title={t('lobby.remove_invite')}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
               {activePlayers.length === 0 && pendingInvites.length === 0 && (
