@@ -1972,3 +1972,4 @@ MP-FIX-HOME-UI-001 | src/app/home.module.css, src/app/page.tsx | Fixed card icon
 
 MP-FIX-HOME-UI-003 | src/app/home.module.css | Fixed icon clipping, mobile font sizes, desktop 2x2 grid layout
 MP-FIX-HOME-UI-004 | src/app/home.module.css | Fixed card icon absolute position to top-right (10px offset)
+MP-FIX-HOME-UI-005 | src/app/home.module.css | Renamed duplicate .card-icon-wrap and .cardIconWrap legacy rules to .legacy-card-icon-wrap and .legacyCardIconWrap
