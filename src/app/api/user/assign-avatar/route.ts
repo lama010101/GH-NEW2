@@ -95,18 +95,17 @@ export async function POST(_request: NextRequest) {
     }
 
     // avatar_url is null or empty - assign a new random avatar
-    const { data: randomAvatar, error: randomError } = await serviceRoleClient
+    const { data: avatarRows, error: randomError } = await serviceRoleClient
       .from("avatars")
       .select("*")
-      .eq("ready", true)
-      .order("random()")
-      .limit(1)
-      .single();
+      .eq("ready", true);
 
-    if (randomError || !randomAvatar) {
+    if (randomError || !avatarRows || avatarRows.length === 0) {
       console.error("[assign-avatar] Failed to fetch random avatar:", randomError);
       return NextResponse.json({ error: "No avatars available" }, { status: 500 });
     }
+
+    const randomAvatar = avatarRows[Math.floor(Math.random() * avatarRows.length)];
 
     // Build display_name: first_name + last_name (if exists) + random 4-digit suffix
     const baseName = randomAvatar.first_name + (randomAvatar.last_name ? ` ${randomAvatar.last_name}` : "");
