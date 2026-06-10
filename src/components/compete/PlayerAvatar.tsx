@@ -33,7 +33,13 @@ export default function PlayerAvatar({ avatarUrl, displayName, size = 26 }: Play
           src={avatarUrl}
           alt={displayName}
           className={styles.avatarImg}
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          onError={(e) => { 
+            (e.currentTarget as HTMLImageElement).style.display = "none"; 
+            const parent = (e.currentTarget as HTMLImageElement).parentElement;
+            if (parent) {
+              parent.textContent = initial;
+            }
+          }}
         />
       </span>
     );

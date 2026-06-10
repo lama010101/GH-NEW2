@@ -529,8 +529,12 @@ export default function RoundActiveSection({
                         src={p.avatarUrl}
                         alt={initials}
                         className={styles.opponentAvatarImg}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        onError={(e) => { 
+                          (e.currentTarget as HTMLImageElement).style.display = "none"; 
+                          const parent = (e.currentTarget as HTMLImageElement).parentElement;
+                          if (parent) {
+                            parent.textContent = initials;
+                          }
                         }}
                       />
                     ) : (

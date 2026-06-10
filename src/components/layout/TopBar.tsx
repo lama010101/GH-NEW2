@@ -36,10 +36,11 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
           {avatarUrl
             ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="" className={styles.avatarBtnImg} />
+              <img src={avatarUrl} alt="" className={styles.avatarBtnImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
             )
-            : <span className={styles.avatarBtnInitials}>{initials.slice(0,2)}</span>
+            : null
           }
+          <span className={styles.avatarBtnInitials} style={{ display: avatarUrl ? "none" : "inline" }}>{initials.slice(0,2)}</span>
         </button>
       </div>
     </div>
