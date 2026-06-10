@@ -129,7 +129,7 @@
   width: 100%;
   min-height: 100vh;
   overflow-y: auto;
-  padding-top: 56px;
+  padding-top: 64px;
   padding-bottom: 24px;
 }
 
@@ -152,7 +152,6 @@
 .card-bg {
   width: 100%;
   border-radius: 16px;
-  overflow: hidden;
   position: relative;
 }
 
@@ -160,7 +159,7 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .card-header {
@@ -171,12 +170,12 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-right: 140px;
+  padding-right: 120px;
 }
 
 .card-title {
-  font-size: var(--font-xl);
-  font-weight: 800;
+  font-size: var(--font-2xl);
+  font-weight: 900;
   color: #fff;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -185,7 +184,7 @@
 
 .card-subtitle {
   font-size: var(--font-xs);
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.85);
   line-height: 1.5;
   margin: 0;
   white-space: pre-line;
@@ -202,10 +201,10 @@
 
 .card-icon-wrap {
   position: absolute;
-  top: -20px;
+  top: 8px;
   right: 8px;
-  width: 180px;
-  height: 180px;
+  width: 110px;
+  height: 110px;
   pointer-events: none;
   z-index: 2;
 }
@@ -304,9 +303,10 @@
 }
 
 .card-cta-btn-blue {
-  background: #ffffff;
-  color: #0891b2;
+  background: rgba(255, 255, 255, 0.95);
+  color: #0e7490;
   border: none;
+  font-weight: 800;
 }
 
 .card-cta-btn-outline {
@@ -387,24 +387,21 @@
   position: fixed;
   inset: 0;
   z-index: 1;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.58);
 }
 
 .tagline {
   width: 100%;
   max-width: 480px;
-  padding: 8px 24px 20px;
+  padding: 4px 24px 16px;
   box-sizing: border-box;
   text-align: center;
-  color: #ffffff;
-  font-size: var(--font-2xl);
-  font-weight: 700;
-  font-family: var(--font-sora);
-  letter-spacing: -0.2px;
-  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: var(--font-sm);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
   margin: 0 auto;
-  text-wrap: balance;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .cardIconImg {

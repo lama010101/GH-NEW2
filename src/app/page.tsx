@@ -250,17 +250,17 @@ function ModeCard({
             <PracticePanel onStart={() => onNavigate('/practice')} />
           )}
         </div>
-      </div>
 
-      {/* Icon floats above, outside clip */}
-      <div className={styles['card-icon-wrap']}>
-        <Image
-          src={getIconSrc()}
-          alt={title}
-          fill
-          className={styles.cardIconImg}
-          sizes="180px"
-        />
+        {/* Icon inside card — positioned absolute top-right */}
+        <div className={styles['card-icon-wrap']}>
+          <Image
+            src={getIconSrc()}
+            alt={title}
+            fill
+            className={styles.cardIconImg}
+            sizes="110px"
+          />
+        </div>
       </div>
     </div>
   )
