@@ -583,14 +583,14 @@ export default function LobbySection({
                   <div key={p.playerId} className={`${styles['lobbyRosterRow']} ${p.ready ? styles['lobbyRosterRowReady'] : ''}`}>
                     <div className={styles['lobbyAvatarWrap']}>
                       <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
-                      {!isViewerPlayer && (
-                        <button className={styles['lobbyStarBtn']} onClick={() => toggleFollow(p.playerId)} aria-label="Toggle follow">
-                          <span style={{ color: followedIds.has(p.playerId) ? '#f0c060' : 'rgba(255,255,255,0.45)' }}>
-                            {followedIds.has(p.playerId) ? '★' : '☆'}
-                          </span>
-                        </button>
-                      )}
                     </div>
+                    {!isViewerPlayer && (
+                      <button className={styles['lobbyStarBtnInline']} onClick={() => toggleFollow(p.playerId)} aria-label="Toggle follow">
+                        <span style={{ color: followedIds.has(p.playerId) ? '#f0c060' : 'rgba(255,255,255,0.45)' }}>
+                          {followedIds.has(p.playerId) ? '★' : '☆'}
+                        </span>
+                      </button>
+                    )}
                     <div className={styles['lobbyRosterMeta']}>
                       <span className={styles['lobbyRosterName']}>
                         {displayName}

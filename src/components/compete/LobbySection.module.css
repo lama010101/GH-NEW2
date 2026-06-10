@@ -290,7 +290,7 @@
   flex-shrink: 0;
 }
 
-/* ── Star button on player card ── */
+/* ── Star button on player card (invite cards, modal) ── */
 .lobbyStarBtn {
   position: absolute;
   top: 0;
@@ -312,6 +312,20 @@
 }
 .lobbyStarBtn:hover {
   background: rgba(0, 0, 0, 0.80);
+}
+
+/* ── Star button inline (roster rows) ── */
+.lobbyStarBtnInline {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── Copy link button ── */
