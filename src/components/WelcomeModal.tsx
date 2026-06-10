@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import styles from "./WelcomeModal.module.css";
 
 export interface WelcomeModalProps {
@@ -76,13 +75,14 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName }: We
       <div className={styles.card}>
         <h2 className={styles.greeting}>Welcome to Guess-History!</h2>
 
+        <p className={styles.avatarIntro}>Your historical avatar</p>
+
         <div className={styles.avatarWrap}>
           {avatar.image_url ? (
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={avatar.image_url}
               alt={fullName}
-              width={96}
-              height={96}
               className={styles.avatarImg}
             />
           ) : (
