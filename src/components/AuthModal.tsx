@@ -95,9 +95,9 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
 
     if (result.error) {
       setError(result.error.message);
-    } else {
-      onClose();
     }
+    // Modal close is handled reactively by page.tsx subscribeToIdentityChanges
+    // when state.status === 'ready'. Do not call onClose() here.
   }
 
   async function handleForgotPassword() {

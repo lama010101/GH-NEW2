@@ -41,7 +41,12 @@ function HomePageInner() {
     displayName: string;
   } | null>(null)
   useEffect(() => {
-    bootstrapIdentity().then(setIdentity)
+    bootstrapIdentity().then((state) => {
+      setIdentity(state);
+      if (state.status === 'unauthenticated') {
+        setShowAuthModal(true);
+      }
+    })
     return subscribeToIdentityChanges((state) => {
       setIdentity(state);
       if (state.status === 'ready') {
