@@ -25,7 +25,7 @@ async function fetchDisplayName(userId: string): Promise<string> {
     .select("display_name")
     .eq("id", userId)
     .single();
-  return data?.display_name ?? "";
+  return data?.display_name?.trim() || 'Player';
 }
 
 export async function bootstrapIdentity(): Promise<IdentityState> {
