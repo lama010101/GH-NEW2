@@ -1265,13 +1265,15 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 
     if (guard.round_complete) {
       await client.query("COMMIT");
-      let snapshot = null;
-      for (let attempt = 0; attempt < 8; attempt++) {
+      // Winner already inserted ROUND_COMPLETE — wait briefly for round_results commit, then load once
+      await new Promise(r => setTimeout(r, 300));
+      let snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      if (!snapshot) {
+        // Still not ready — one more wait
+        await new Promise(r => setTimeout(r, 500));
         snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-        if (snapshot) break;
-        await new Promise(r => setTimeout(r, 150));
       }
-      if (!snapshot) throw new Error("Session not found");
+      if (!snapshot) throw new Error("Session not found after round complete");
       return snapshot;
     }
 
@@ -1595,11 +1597,14 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   }
 
   console.time("[PERF] submitGuess:snapshot");
-  let snapshot = null;
-  for (let attempt = 0; attempt < 8; attempt++) {
+  let snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    await new Promise(r => setTimeout(r, 300));
     snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-    if (snapshot) break;
-    await new Promise(r => setTimeout(r, 150));
+  }
+  if (!snapshot) {
+    await new Promise(r => setTimeout(r, 500));
+    snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
   }
   console.timeEnd("[PERF] submitGuess:snapshot");
   if (!snapshot) throw new Error("Session not found");
@@ -2215,7 +2220,7 @@ async function appendEventIfNotExists(
   const result = await client.query<{ id: string }>(
     `INSERT INTO round_events (game_id, round_index, event_type, payload, created_at)
      VALUES ($1, $2, $3, $4::jsonb, now())
-     ON CONFLICT ON CONSTRAINT uq_round_events_round_complete DO NOTHING
+     ON CONFLICT (game_id, round_index) WHERE event_type = 'ROUND_COMPLETE' DO NOTHING
      RETURNING id`,
     [gameId, roundIndex, eventType, JSON.stringify(payload)]
   );
