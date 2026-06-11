@@ -1194,6 +1194,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   }
 
   const client = await getTransactionClient();
+  let clientReleased = false;
   let shouldVerifyRoundResults = false;
   let event: Awaited<ReturnType<typeof fetchEventById>> = null;
 
@@ -1264,16 +1265,12 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     }
 
     if (guard.round_complete) {
+      // Round already complete — commit and load snapshot (round_results already written)
       await client.query("COMMIT");
-      // Winner already inserted ROUND_COMPLETE — wait briefly for round_results commit, then load once
-      await new Promise(r => setTimeout(r, 300));
-      let snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-      if (!snapshot) {
-        // Still not ready — one more wait
-        await new Promise(r => setTimeout(r, 500));
-        snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-      }
-      if (!snapshot) throw new Error("Session not found after round complete");
+      client.release();
+      clientReleased = true;
+      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      if (!snapshot) throw new Error("Session not found");
       return snapshot;
     }
 
@@ -1301,6 +1298,8 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       );
       compareTransitionEvents("submitGuess-existingCommit", existingEvents, transitionResult.events);
 
+      client.release();
+      clientReleased = true;
       const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
       if (!snapshot) throw new Error("Session not found");
       return snapshot;
@@ -1435,7 +1434,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     await client.query("ROLLBACK");
     throw error;
   } finally {
-    client.release();
+    if (!clientReleased) client.release();
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
