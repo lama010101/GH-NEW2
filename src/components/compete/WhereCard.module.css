@@ -1,14 +1,14 @@
 /* WhereCard */
 
 .card {
-  background: rgba(8, 145, 178, 0.12);
+  background: var(--gh-where-card-bg);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 10px;
-  border: 1px solid rgba(34, 211, 238, 0.30);
+  border: 1px solid var(--gh-where-card-border);
   backdrop-filter: var(--gh-glass-blur);
   -webkit-backdrop-filter: var(--gh-glass-blur);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(34, 211, 238, 0.06);
+  box-shadow: 0 4px 24px var(--gh-card-shadow), 0 0 20px var(--gh-where-card-glow);
 }
 
 .header {
@@ -79,20 +79,20 @@
 }
 
 .badgeChipGold {
-  --chip-bg: rgba(255, 190, 0, 0.15);
-  --chip-border: rgba(255, 190, 0, 0.4);
+  --chip-bg: var(--gh-gold-chip-bg);
+  --chip-border: var(--gh-gold-chip-border);
   --chip-color: var(--gh-badge-gold);
 }
 
 .badgeChipSilver {
-  --chip-bg: rgba(180, 195, 215, 0.12);
-  --chip-border: rgba(180, 195, 215, 0.4);
+  --chip-bg: var(--gh-silver-chip-bg);
+  --chip-border: var(--gh-silver-chip-border);
   --chip-color: var(--gh-badge-silver);
 }
 
 .badgeChipBronze {
-  --chip-bg: rgba(180, 120, 60, 0.15);
-  --chip-border: rgba(180, 120, 60, 0.4);
+  --chip-bg: var(--gh-bronze-chip-bg);
+  --chip-border: var(--gh-bronze-chip-border);
   --chip-color: var(--gh-badge-bronze);
 }
 
@@ -103,9 +103,9 @@
   border-radius: 999px;
   font-size: 11px; /* layout-constrained — do not tokenize */
   font-style: italic;
-  background: rgba(255, 255, 255, 0.04);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.28);
+  background: var(--gh-near-miss-bg);
+  border: 0.5px solid var(--gh-near-miss-border);
+  color: var(--gh-near-miss-text);
 }
 
 /* Hint penalty */
@@ -119,7 +119,7 @@
   font-size: 10px; /* layout-constrained — do not tokenize */
   color: var(--gh-danger);
   font-weight: 600;
-  background: rgba(127, 29, 29, 1);
+  background: var(--gh-penalty-bg);
   border-radius: 999px;
   padding: 2px 8px;
 }
@@ -173,7 +173,7 @@
 /* Expandable sections */
 .expandSection {
   margin-top: 10px;
-  background: rgba(34, 211, 238, 0.04);
+  background: var(--gh-where-expand-bg);
   border-radius: 8px;
 }
 

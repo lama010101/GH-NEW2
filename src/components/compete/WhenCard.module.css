@@ -1,14 +1,14 @@
 /* WhenCard — uses tokens from gh-card--when set in globals.css */
 
 .card {
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.32);
+  background: var(--gh-when-card-bg);
+  border: 1px solid var(--gh-when-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;
   backdrop-filter: var(--gh-glass-blur);
   -webkit-backdrop-filter: var(--gh-glass-blur);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(139, 92, 246, 0.08);
+  box-shadow: 0 4px 24px var(--gh-card-shadow), 0 0 20px var(--gh-when-card-glow);
 }
 
 .header {
@@ -40,7 +40,7 @@
   font-size: 10px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: var(--gh-danger);
-  background: rgba(127, 29, 29, 1);
+  background: var(--gh-penalty-bg);
   border-radius: var(--gh-radius-pill);
   padding: 2px 8px;
   margin-bottom: 6px;
@@ -72,7 +72,7 @@
   height: 108px;
   position: relative;
   margin: 12px 0;
-  background: rgba(139, 92, 246, 0.12);
+  background: var(--gh-when-card-bg);
   border-radius: 8px;
   padding: 0 16px;
   box-sizing: border-box;
@@ -163,7 +163,7 @@
 
 .expandSection {
   margin-top: 10px;
-  background: rgba(139, 92, 246, 0.04);
+  background: var(--gh-expand-section-bg);
   border-radius: 8px;
 }
 
@@ -223,11 +223,11 @@
 }
 
 .lbRowSelf {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--gh-row-self-bg);
 }
 
 .lbRowDivider {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--gh-row-divider);
 }
 
 .lbRank {
@@ -281,7 +281,7 @@
 }
 
 .hintRowDivider {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--gh-hint-divider);
 }
 
 .hintLabel {
@@ -320,20 +320,20 @@
 }
 
 .badgeChipGold {
-  --chip-bg: rgba(255, 190, 0, 0.15);
-  --chip-border: rgba(255, 190, 0, 0.4);
+  --chip-bg: var(--gh-gold-chip-bg);
+  --chip-border: var(--gh-gold-chip-border);
   --chip-color: var(--gh-badge-gold);
 }
 
 .badgeChipSilver {
-  --chip-bg: rgba(180, 195, 215, 0.12);
-  --chip-border: rgba(180, 195, 215, 0.4);
+  --chip-bg: var(--gh-silver-chip-bg);
+  --chip-border: var(--gh-silver-chip-border);
   --chip-color: var(--gh-badge-silver);
 }
 
 .badgeChipBronze {
-  --chip-bg: rgba(180, 120, 60, 0.15);
-  --chip-border: rgba(180, 120, 60, 0.4);
+  --chip-bg: var(--gh-bronze-chip-bg);
+  --chip-border: var(--gh-bronze-chip-border);
   --chip-color: var(--gh-badge-bronze);
 }
 
@@ -344,9 +344,9 @@
   border-radius: 999px;
   font-size: 11px; /* layout-constrained — do not tokenize */
   font-style: italic;
-  background: rgba(255, 255, 255, 0.04);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.28);
+  background: var(--gh-near-miss-bg);
+  border: 0.5px solid var(--gh-near-miss-border);
+  color: var(--gh-near-miss-text);
 }
 
 .scoreColFlex {
