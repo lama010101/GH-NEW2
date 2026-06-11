@@ -53,6 +53,7 @@ export default function RoundActiveSection({
   localPlayerAvatarUrl,
 }: RoundActiveSectionProps) {
   const t = useTranslations('game');
+  const tNav = useTranslations('nav');
   const currentEvent = snapshot.rounds?.[snapshot.currentRoundIndex];
   const guessLocation =
     guessLat !== null && guessLng !== null
@@ -882,10 +883,10 @@ export default function RoundActiveSection({
           </button>
 
           <div className={styles.settingsCard} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.settingsTitle}>{t('game.settings')}</div>
+            <div className={styles.settingsTitle}>{t('settings')}</div>
 
             <div className={styles.settingsRow}>
-              <span className={styles.settingsLabel}>{t('game.sound')}</span>
+              <span className={styles.settingsLabel}>{t('sound')}</span>
               <button
                 type="button"
                 onClick={() => setSoundEnabled(!soundEnabled)}
@@ -900,7 +901,7 @@ export default function RoundActiveSection({
             </div>
 
             <div className={styles.settingsRowLast}>
-              <span className={styles.settingsLabel}>{t('game.vibrate')}</span>
+              <span className={styles.settingsLabel}>{t('vibrate')}</span>
               <button
                 type="button"
                 onClick={() => setVibrateEnabled(!vibrateEnabled)}
@@ -915,7 +916,7 @@ export default function RoundActiveSection({
             </div>
 
             <div style={{ marginTop: '4px', paddingTop: '16px', borderTop: '0.5px solid rgba(0,0,0,0.1)' }}>
-              <div style={{ fontSize: '13px', color: '#555', marginBottom: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('nav.language')}</div>
+              <div style={{ fontSize: '13px', color: '#555', marginBottom: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tNav('language')}</div>
               <LanguageSwitcher initialLocale={
                 (typeof document !== 'undefined'
                   ? document.cookie.split(';').find(c => c.trim().startsWith('gh_locale='))?.split('=')[1]
@@ -928,7 +929,7 @@ export default function RoundActiveSection({
               onClick={() => window.location.href = '/'}
               className={styles.settingsHomeBtn}
             >
-              {t('nav.home')}
+              {tNav('home')}
             </button>
           </div>
         </div>
