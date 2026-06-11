@@ -95,8 +95,12 @@
 }
 
 .card {
-  background: var(--gh-bg-elevated);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: 14px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
 }
 
 /* ── WHERE / WHEN stat cards ── */
@@ -114,8 +118,12 @@
   align-items: center;
   justify-content: center;
   padding: 15px 10px;
-  background: var(--gh-bg-elevated);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: 14px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
 }
 
 .statIcon {
@@ -156,8 +164,12 @@
 .panel {
   overflow: hidden;
   margin-bottom: 12px;
-  background: var(--gh-bg-elevated);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: 14px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
 }
 
 .panelHeading {
@@ -181,7 +193,7 @@
 }
 
 .rankRow + .rankRow {
-  border-top: 1px solid #374151;
+  border-top: 1px solid var(--gh-glass-border);
 }
 
 .rankNum {
@@ -304,8 +316,12 @@
 
 .roundCard {
   overflow: hidden;
-  background: var(--gh-bg-elevated);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: 14px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
 }
 
 .photo {
@@ -375,10 +391,21 @@
 
 .miniTile {
   min-width: 0;
-  background: var(--gh-bg-surface);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
   border-radius: 8px;
   padding: 9px 4px 8px;
   text-align: center;
+}
+
+.miniTileWhere {
+  background: rgba(8, 145, 178, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.30);
+}
+
+.miniTileWhen {
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.32);
 }
 
 .miniNumber {
@@ -412,7 +439,7 @@
 /* ── Best player row ── */
 
 .bestRow {
-  border-top: 1px solid #374151;
+  border-top: 1px solid var(--gh-glass-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -473,7 +500,7 @@
 .homeBtn {
   flex: 1;
   background: var(--gh-bg-surface);
-  border: 1px solid #374151;
+  border: 1px solid var(--gh-glass-border);
   color: #9ca3af;
 }
 
