@@ -27,6 +27,7 @@ export default function SessionComplete({
 }: SessionCompleteProps) {
   const router = useRouter();
   const t = useTranslations('compete_page');
+  const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [navModalOpen, setNavModalOpen] = useState(false);
@@ -282,7 +283,6 @@ export default function SessionComplete({
               <div className={styles.roundsHeading}>{t('round_breakdown')}</div>
               <div className={styles.rounds}>
                 {(() => {
-                  const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
                   return snapshot.rounds.map((round, i) => {
                   const roundStats = computeRoundStats(i) ?? {
                     avgAccuracy: 0, avgLocationScore: 0, avgTimeScore: 0,
