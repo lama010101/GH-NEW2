@@ -583,3 +583,48 @@
     padding: 0 12px;
   }
 }
+
+.roundCardHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--gh-text-primary);
+}
+
+.roundCardHeader:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.roundCardHeaderLabel {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gh-text-secondary);
+  text-transform: uppercase;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.40);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+
+.roundCardHeaderTitle {
+  flex: 1;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--gh-text-primary);
+}
+
+.roundCardChevron {
+  font-size: 10px;
+  color: var(--gh-text-secondary);
+  flex-shrink: 0;
+}
