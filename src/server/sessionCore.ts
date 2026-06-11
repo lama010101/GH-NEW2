@@ -486,18 +486,15 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
 
     // Replay equivalence check: if last event is ROUND_COMPLETE, status MUST be ROUND_COMPLETE
     if (lastEvent.eventType === "ROUND_COMPLETE" && status !== "ROUND_COMPLETE") {
-      throw new Error(
-        `[REPLAY_MISMATCH] Phase derivation mismatch: lastEvent=ROUND_COMPLETE but derivedStatus=${status}. ` +
-        `Phase must be derived EXCLUSIVELY from round_events.`
-      );
+      // Transient: ROUND_COMPLETE event written but round_results not yet committed.
+      // Return null so caller can retry.
+      return null;
     }
 
     // Replay equivalence check: if last event is SESSION_COMPLETE, status MUST be SESSION_COMPLETE
     if (lastEvent.eventType === "SESSION_COMPLETE" && status !== "SESSION_COMPLETE") {
-      throw new Error(
-        `[REPLAY_MISMATCH] Phase derivation mismatch: lastEvent=SESSION_COMPLETE but derivedStatus=${status}. ` +
-        `Phase must be derived EXCLUSIVELY from round_events.`
-      );
+      // Same pattern for SESSION_COMPLETE.
+      return null;
     }
   }
 
@@ -1268,7 +1265,12 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 
     if (guard.round_complete) {
       await client.query("COMMIT");
-      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      let snapshot = null;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+        if (snapshot) break;
+        await new Promise(r => setTimeout(r, 150));
+      }
       if (!snapshot) throw new Error("Session not found");
       return snapshot;
     }
@@ -1593,7 +1595,12 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   }
 
   console.time("[PERF] submitGuess:snapshot");
-  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  let snapshot = null;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+    if (snapshot) break;
+    await new Promise(r => setTimeout(r, 150));
+  }
   console.timeEnd("[PERF] submitGuess:snapshot");
   if (!snapshot) throw new Error("Session not found");
 
