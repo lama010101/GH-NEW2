@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
 import { useTranslations } from 'next-intl';
 import { YearPicker } from "@/components/YearPicker";
-import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import styles from "./RoundActiveSection.module.css";
 
 const GameMap = dynamic(
@@ -917,12 +916,37 @@ export default function RoundActiveSection({
 
             <div className={styles.settingsLanguageRow}>
               <span className={styles.settingsLanguageLabel}>{tNav('language')}</span>
-              <LanguageSwitcher initialLocale={
-                (typeof document !== 'undefined'
-                  ? document.cookie.split(';').find(c => c.trim().startsWith('gh_locale='))?.split('=')[1]
-                  : undefined) ?? 'en'
-              } />
+              <div className={styles.settingsLanguageToggle}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const locale = 'en';
+                    if (typeof document !== 'undefined') {
+                      document.cookie = `gh_locale=${locale}; path=/; max-age=31536000`;
+                    }
+                    window.location.reload();
+                  }}
+                  className={`${styles.settingsLanguageOption} ${(typeof document !== 'undefined' && document.cookie.includes('gh_locale=en')) || (!document.cookie.includes('gh_locale=')) ? styles.settingsLanguageOptionActive : ''}`}
+                >
+                  EN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const locale = 'fr';
+                    if (typeof document !== 'undefined') {
+                      document.cookie = `gh_locale=${locale}; path=/; max-age=31536000`;
+                    }
+                    window.location.reload();
+                  }}
+                  className={`${styles.settingsLanguageOption} ${typeof document !== 'undefined' && document.cookie.includes('gh_locale=fr') ? styles.settingsLanguageOptionActive : ''}`}
+                >
+                  FR
+                </button>
+              </div>
             </div>
+
+            <div className={styles.settingsDivider} />
 
             <button
               type="button"
