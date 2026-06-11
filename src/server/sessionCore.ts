@@ -1680,7 +1680,15 @@ export async function completeRound(input: {
     client.release();
   }
 
-  const snapshot = await loadCompeteSessionSnapshot(gameId, undefined);
+  let snapshot = await loadCompeteSessionSnapshot(gameId, undefined);
+  if (!snapshot) {
+    await new Promise(r => setTimeout(r, 300));
+    snapshot = await loadCompeteSessionSnapshot(gameId, undefined);
+  }
+  if (!snapshot) {
+    await new Promise(r => setTimeout(r, 500));
+    snapshot = await loadCompeteSessionSnapshot(gameId, undefined);
+  }
   if (!snapshot) throw new Error("Session not found");
   return snapshot;
 }
