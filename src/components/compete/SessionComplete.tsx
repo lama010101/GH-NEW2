@@ -292,75 +292,95 @@ export default function SessionComplete({
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
                   return (
                     <div key={i} className={styles.roundCard}>
-                      <div className={styles.photo}>
-                        {round.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={round.imageUrl}
-                            alt={round.title}
-                            onClick={() => setFullscreenImg(round.imageUrl)}
-                          />
-                        ) : (
-                          <div className={styles.photoFallback}>
-                            {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`} · {round.year}
-                          </div>
-                        )}
-                        <div className={styles.roundBadge}>{t('game.round_label_short', { n: i + 1 })}</div>
-                      </div>
+                      <button
+                        type="button"
+                        className={styles.roundCardHeader}
+                        onClick={() => setOpenRounds(prev => {
+                          const next = new Set(prev);
+                          next.has(i) ? next.delete(i) : next.add(i);
+                          return next;
+                        })}
+                        aria-expanded={openRounds.has(i)}
+                      >
+                        <span className={styles.roundCardHeaderLabel}>{t('game.round_label_short', { n: i + 1 })}</span>
+                        <span className={styles.roundCardHeaderTitle}>{round.title}</span>
+                        <span className={styles.roundCardChevron} aria-hidden="true">
+                          {openRounds.has(i) ? '▲' : '▼'}
+                        </span>
+                      </button>
 
-                      <div className={styles.roundBody}>
-                        <div className={styles.roundTitle}>{round.title}</div>
-
-                        <div className={styles.miniGrid}>
-                          <div className={styles.miniTile}>
-                            <div className={styles.percentLine}>
-                              <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgAccuracy}</span>
-                              <span className={styles.miniSymbol}>%</span>
-                            </div>
-                            <div className={styles.miniLabel}>{t('game.total')}</div>
-                            <div className={styles.miniSub}>{roundStats.totalScore} pts</div>
-                          </div>
-
-                          <div className={styles.miniTile}>
-                            <div className={styles.percentLine}>
-                              <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgLocationScore}</span>
-                              <span className={styles.miniSymbol}>%</span>
-                            </div>
-                            <div className={styles.miniLabel}>{t('game.where')}</div>
-                            <div className={styles.miniSub}>avg {Math.round(roundStats.avgDistanceKm)} km</div>
+                      {openRounds.has(i) && (
+                        <>
+                          <div className={styles.photo}>
+                            {round.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={round.imageUrl}
+                                alt={round.title}
+                                onClick={() => setFullscreenImg(round.imageUrl)}
+                                style={{ cursor: 'pointer' }}
+                              />
+                            ) : (
+                              <div className={styles.photoFallback}>
+                                {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`} · {round.year}
+                              </div>
+                            )}
                           </div>
 
-                          <div className={styles.miniTile}>
-                            <div className={styles.percentLine}>
-                              <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgTimeScore}</span>
-                              <span className={styles.miniSymbol}>%</span>
-                            </div>
-                            <div className={styles.miniLabel}>{t('game.when')}</div>
-                            <div className={styles.miniSub}>avg {Math.round(roundStats.avgYearDiff)} yrs</div>
-                          </div>
-                        </div>
+                          <div className={styles.roundBody}>
+                            <div className={styles.miniGrid}>
+                              <div className={styles.miniTile}>
+                                <div className={styles.percentLine}>
+                                  <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgAccuracy}</span>
+                                  <span className={styles.miniSymbol}>%</span>
+                                </div>
+                                <div className={styles.miniLabel}>{t('game.total')}</div>
+                                <div className={styles.miniSub}>{roundStats.totalScore} pts</div>
+                              </div>
 
-                        {bestPlayerName && (
-                          <div className={styles.bestRow}>
-                            <div className={styles.bestLabel}>
-                              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <path d="M8 21h8" />
-                                <path d="M12 17v4" />
-                                <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
-                                <path d="M5 6H3a3 3 0 0 0 3 3h1" />
-                                <path d="M19 6h2a3 3 0 0 1-3 3h-1" />
-                              </svg>
-                              {t('game.best_player')}
+                              <div className={`${styles.miniTile} ${styles.miniTileWhere}`}>
+                                <div className={styles.percentLine}>
+                                  <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgLocationScore}</span>
+                                  <span className={styles.miniSymbol}>%</span>
+                                </div>
+                                <div className={styles.miniLabel}>{t('game.where')}</div>
+                                <div className={styles.miniSub}>avg {Math.round(roundStats.avgDistanceKm)} km</div>
+                              </div>
+
+                              <div className={`${styles.miniTile} ${styles.miniTileWhen}`}>
+                                <div className={styles.percentLine}>
+                                  <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgTimeScore}</span>
+                                  <span className={styles.miniSymbol}>%</span>
+                                </div>
+                                <div className={styles.miniLabel}>{t('game.when')}</div>
+                                <div className={styles.miniSub}>avg {Math.round(roundStats.avgYearDiff)} yrs</div>
+                              </div>
                             </div>
-                            <div className={`${styles.bestName} ${isCurrentBestPlayer ? styles.bestNameHighlight : ""}`}>
-                              {bestPlayerName}
-                            </div>
+
+                            {bestPlayerName && (
+                              <div className={styles.bestRow}>
+                                <div className={styles.bestLabel}>
+                                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="M8 21h8" />
+                                    <path d="M12 17v4" />
+                                    <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
+                                    <path d="M5 6H3a3 3 0 0 0 3 3h1" />
+                                    <path d="M19 6h2a3 3 0 0 1-3 3h-1" />
+                                  </svg>
+                                  {t('game.best_player')}
+                                </div>
+                                <div className={`${styles.bestName} ${isCurrentBestPlayer ? styles.bestNameHighlight : ""}`}>
+                                  {bestPlayerName}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </>
+                      )}
                     </div>
                   );
-                })}
+                });
+                })()}
               </div>
 
               {/* BOTTOM CTA */}
