@@ -293,8 +293,8 @@
 /* ── Star button on player card (invite cards, modal) ── */
 .lobbyStarBtn {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: -6px;
+  right: -6px;
   background: rgba(0, 0, 0, 0.55);
   border: none;
   border-radius: 50%;
@@ -808,6 +808,30 @@
 }
 .lobbyInviteSearch:focus {
   border-color: var(--gh-teal);
+}
+.lobbyInviteSearchWithClear {
+  padding-right: 32px;
+}
+
+/* ── Invite search clear button ── */
+.lobbySearchClearBtn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lobbySearchClearBtn:hover {
+  color: rgba(255,255,255,0.9);
 }
 
 /* ── Invite search wrapper with inset icon ── */

@@ -2019,3 +2019,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - Updated French compete_desc to: "Jouez contre vos amis.\nTemps réel : Jusqu'à 5 min\nTour par tour : Jusqu'à 14 jours"
   - Updated turn_by_turn from "Turn-by-Turn" to "Turn-Based" (French already "Tour par tour")
 | MP-UI-FULLSCREEN-CLOSE-001 | Visible close button on fullscreen image overlay | Done | 2026-06-11 |
+| MP-FIX-TOPBAR-REFRESH-001 | Force profile re-fetch after WelcomeModal save — fixes stale avatar+username in top bar | Done | 2026-06-11 |
