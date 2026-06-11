@@ -70,34 +70,7 @@ export function deriveStateFromEventStream(inputEvents: RoundEvent[]): {
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // STEP 3: STRICT ORDERING VALIDATION — Monotonic chronology
-  // ═════════════════════════════════════════════════════════════════════════════
-  for (let i = 1; i < events.length; i++) {
-    const prev = events[i - 1];
-    const curr = events[i];
-
-    const prevTime = new Date(prev.createdAt).getTime();
-    const currTime = new Date(curr.createdAt).getTime();
-
-    // Strict chronology: created_at must be non-decreasing
-    if (currTime < prevTime) {
-      throw new Error(
-        `EVENT_ORDER_VIOLATION: Event ${curr.id} (created_at=${curr.createdAt}) ` +
-        `comes before event ${prev.id} (created_at=${prev.createdAt})`
-      );
-    }
-
-    // Tie-break: id must be increasing for same-timestamp events
-    if (currTime === prevTime && curr.id < prev.id) {
-      throw new Error(
-        `EVENT_ORDER_VIOLATION: Event ${curr.id} has same timestamp as ${prev.id} ` +
-        `but lower id (id tie-break violated)`
-      );
-    }
-  }
-
-  // ═════════════════════════════════════════════════════════════════════════════
-  // STEP 4: STRICT ROUND VALIDATION — Per-event validation with continuity tracking
+  // STEP 3: STRICT ROUND VALIDATION — Per-event validation with continuity tracking
   // ═════════════════════════════════════════════════════════════════════════════
   let expectedRound = 0;
   let maxSeenRound = -1;
