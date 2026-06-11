@@ -448,11 +448,21 @@ export default function LobbySection({
               </svg>
               <input
                 type="text"
-                className={styles['lobbyInviteSearch']}
+                className={`${styles['lobbyInviteSearch']} ${searchQuery ? styles['lobbyInviteSearchWithClear'] : ''}`}
                 placeholder={t('lobby.search_players')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className={styles['lobbySearchClearBtn']}
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
             </div>
             <div className={styles['lobbyRail']}>
               {displayList.length === 0 ? (
