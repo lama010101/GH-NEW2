@@ -1660,20 +1660,17 @@ export async function completeRound(input: {
       [gameId, roundIndex]
     );
 
-    // Idempotency: if ROUND_COMPLETE already exists, skip all writes
-    const existing = await client.query(
-      `SELECT 1 FROM round_events
-       WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_COMPLETE'
-       LIMIT 1`,
-      [gameId, roundIndex]
+    const commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
+    const roundCompleteInserted = await appendEventIfNotExists(
+      client, gameId, "ROUND_COMPLETE",
+      { commitCount, resultPhaseStartedAt: new Date().toISOString() },
+      roundIndex
     );
-
-    if (existing.rows.length === 0) {
-      const commitCount = await loadRoundCommitCount(gameId, roundIndex, client);
-      await appendEvent(client, gameId, "ROUND_COMPLETE", { commitCount, resultPhaseStartedAt: new Date().toISOString() }, roundIndex);
+    if (roundCompleteInserted) {
       await insertMissingCommits(client, gameId, roundIndex);
       await computeAndWriteRoundResults(gameId, roundIndex, client);
     }
+    // If !roundCompleteInserted: submitGuess already completed this round — commit cleanly
 
     await client.query("COMMIT");
   } catch (error) {
