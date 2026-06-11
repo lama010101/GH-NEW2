@@ -90,6 +90,7 @@
     "you": "You",
     "connected": "Connected",
     "disconnected": "Disconnected",
+    "mode_challenge": "CHALLENGE",
     "game_lobby": "Game Lobby",
     "invite_players": "Invite Players",
     "copy_code": "Copy Code",

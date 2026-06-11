@@ -431,8 +431,8 @@ export default function LobbySection({
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
           </button>
+          <span className={styles['lobby-mode-badge']}>{t('lobby.mode_challenge')}</span>
           <div className={styles['lobby-header-meta']}>
-            <span className={styles['lobby-mode-badge']}>COMPETE</span>{/* TODO i18n: lobby.mode_compete */}
             <span className={styles['lobby-status-chip']}>
               <span className={styles['lobby-status-dot']} />
               {t('lobby.waiting')}
