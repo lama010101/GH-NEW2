@@ -159,7 +159,7 @@ export default function SessionComplete({
           <>
             {/* TOP BAR */}
             <div className={styles.topbar}>
-              <div className={styles.siteTitle}>{t('game.guess_history')}</div>
+              <div className={styles.siteTitle}>{t('guess_history')}</div>
               <>
                 <button
                   type="button"
@@ -225,7 +225,7 @@ export default function SessionComplete({
 
               {/* LEADERBOARD */}
               <div className={styles.panel}>
-                <div className={styles.panelHeading}>{t('game.final_rankings')}</div>
+                <div className={styles.panelHeading}>{t('final_rankings')}</div>
                 {leaderboard.map((player, index) => {
                   const isCurrentPlayer = player.playerId === playerId;
                   const playerData = snapshot.players.find(p => p.playerId === player.playerId);
@@ -257,7 +257,7 @@ export default function SessionComplete({
                           >
                             {displayName}
                           </span>
-                          {isCurrentPlayer ? <span className={styles.youTag}>{t('game.you')}</span> : null}
+                          {isCurrentPlayer ? <span className={styles.youTag}>{t('you')}</span> : null}
                         </div>
                         <div className={styles.progressTrack}>
                           <div
@@ -279,7 +279,7 @@ export default function SessionComplete({
               </div>
 
               {/* ROUND BREAKDOWN */}
-              <div className={styles.roundsHeading}>{t('game.round_breakdown')}</div>
+              <div className={styles.roundsHeading}>{t('round_breakdown')}</div>
               <div className={styles.rounds}>
                 {(() => {
                   const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
@@ -302,7 +302,7 @@ export default function SessionComplete({
                         })}
                         aria-expanded={openRounds.has(i)}
                       >
-                        <span className={styles.roundCardHeaderLabel}>{t('game.round_label_short', { n: i + 1 })}</span>
+                        <span className={styles.roundCardHeaderLabel}>{t('round_label_short', { n: i + 1 })}</span>
                         <span className={styles.roundCardHeaderTitle}>{round.title}</span>
                         <span className={styles.roundCardChevron} aria-hidden="true">
                           {openRounds.has(i) ? '▲' : '▼'}
@@ -334,7 +334,7 @@ export default function SessionComplete({
                                   <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgAccuracy}</span>
                                   <span className={styles.miniSymbol}>%</span>
                                 </div>
-                                <div className={styles.miniLabel}>{t('game.total')}</div>
+                                <div className={styles.miniLabel}>{t('total')}</div>
                                 <div className={styles.miniSub}>{roundStats.totalScore} pts</div>
                               </div>
 
@@ -343,7 +343,7 @@ export default function SessionComplete({
                                   <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgLocationScore}</span>
                                   <span className={styles.miniSymbol}>%</span>
                                 </div>
-                                <div className={styles.miniLabel}>{t('game.where')}</div>
+                                <div className={styles.miniLabel}>{t('where')}</div>
                                 <div className={styles.miniSub}>avg {Math.round(roundStats.avgDistanceKm)} km</div>
                               </div>
 
@@ -352,7 +352,7 @@ export default function SessionComplete({
                                   <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgTimeScore}</span>
                                   <span className={styles.miniSymbol}>%</span>
                                 </div>
-                                <div className={styles.miniLabel}>{t('game.when')}</div>
+                                <div className={styles.miniLabel}>{t('when')}</div>
                                 <div className={styles.miniSub}>avg {Math.round(roundStats.avgYearDiff)} yrs</div>
                               </div>
                             </div>
@@ -367,7 +367,7 @@ export default function SessionComplete({
                                     <path d="M5 6H3a3 3 0 0 0 3 3h1" />
                                     <path d="M19 6h2a3 3 0 0 1-3 3h-1" />
                                   </svg>
-                                  {t('game.best_player')}
+                                  {t('best_player')}
                                 </div>
                                 <div className={`${styles.bestName} ${isCurrentBestPlayer ? styles.bestNameHighlight : ""}`}>
                                   {bestPlayerName}
@@ -390,7 +390,7 @@ export default function SessionComplete({
                   className={styles.homeBtn}
                   onClick={() => router.push("/")}
                 >
-                  {t('game.home')}
+                  {t('home')}
                 </button>
                 {isHost ? (
                   <button
@@ -399,7 +399,7 @@ export default function SessionComplete({
                     onClick={handlePlayAgain}
                     disabled={isCreatingLobby}
                   >
-                    {isCreatingLobby ? t('game.creating_lobby') : t('game.play_again')}
+                    {isCreatingLobby ? t('creating_lobby') : t('play_again')}
                   </button>
                 ) : (
                   <GuestPlayAgainButton styles={styles} />
@@ -417,7 +417,7 @@ export default function SessionComplete({
 }
 
 function GuestPlayAgainButton({ styles }: { styles: Record<string, string> }) {
-  const t = useTranslations();
+  const t = useTranslations('game');
   const [waiting, setWaiting] = useState(false);
   return (
     <button
@@ -426,7 +426,7 @@ function GuestPlayAgainButton({ styles }: { styles: Record<string, string> }) {
       onClick={() => setWaiting(true)}
       disabled={waiting}
     >
-      {waiting ? t('game.waiting_for_host') : t('game.play_again')}
+      {waiting ? t('waiting_for_host') : t('play_again')}
     </button>
   );
 }

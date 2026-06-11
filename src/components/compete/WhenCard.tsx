@@ -39,7 +39,7 @@ export default function WhenCard({
   roundHints,
   snapshotPlayers,
 }: WhenCardProps) {
-  const t = useTranslations();
+  const t = useTranslations('game');
   // Compute whenRows
   const whenRows = snapshotPlayers
     .map(p => {
@@ -94,7 +94,7 @@ export default function WhenCard({
         <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/badges/when.webp" alt="when" width={36} height={36} className={styles.titleIcon} />
-          <span className={styles.titleText}>{t('game.when')}</span>
+          <span className={styles.titleText}>{t('when')}</span>
         </div>
         {(() => {
           const myWhenRow = whenRows.find(r => r.isMe);
@@ -133,7 +133,7 @@ export default function WhenCard({
                   }
                   return (
                     <span className={styles.nearMissChip}>
-                      {t('game.near_miss')}
+                      {t('near_miss')}
                     </span>
                   );
                 })()}
@@ -147,14 +147,14 @@ export default function WhenCard({
       {whenAccPenalty > 0 && (
         <div>
           <span className={styles.hintPenalty}>
-            −{Math.round(whenAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('game.hints_suffix')}
+            −{Math.round(whenAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
           </span>
         </div>
       )}
 
       {/* Correct year */}
       <div className={styles.correctRow}>
-        <span>{t('game.correct_location')}:</span>
+        <span>{t('correct_location')}:</span>
         <span className={styles.correctValue}>{correctYear}</span>
       </div>
 
@@ -167,7 +167,7 @@ export default function WhenCard({
           className={styles.correctMarker}
           style={{ left: `${correctXPercent}%` }}
         >
-          <div className={styles.correctLabel}>{t('game.correct_location')}</div>
+          <div className={styles.correctLabel}>{t('correct_location')}</div>
           <div className={styles.correctYear}>{correctYear}</div>
         </div>
 
@@ -229,7 +229,7 @@ export default function WhenCard({
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.svgMuted}>
               {whenLbExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
-            <span className={styles.expandLabel}>{t('game.leaderboard')}</span>
+            <span className={styles.expandLabel}>{t('leaderboard')}</span>
           </div>
           {(() => {
             const myRank = roundResults?.find(r => r.playerId === playerId)?.rank ?? null;
@@ -256,10 +256,10 @@ export default function WhenCard({
                     <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
                       {row.displayName}
                     </span>
-                    {row.isMe && <span className={styles.lbYouTag}>({t('game.you')})</span>}
+                    {row.isMe && <span className={styles.lbYouTag}>({t('you')})</span>}
                   </span>
                   <span className={styles.lbYearsOff}>
-                    {row.diff != null ? t('game.years_off', { n: row.diff }) : "—"}
+                    {row.diff != null ? t('years_off', { n: row.diff }) : "—"}
                   </span>
                   <span className={styles.lbAccPill}>
                     {row.acc != null ? (
@@ -283,7 +283,7 @@ export default function WhenCard({
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.svgAccent}>
               {whenCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
-            <span className={styles.expandLabelAccent}>{t('game.hints')}</span>
+            <span className={styles.expandLabelAccent}>{t('hints')}</span>
           </div>
         </div>
         {whenCluesExpanded && (
@@ -293,11 +293,11 @@ export default function WhenCard({
                 .filter(h => h.type === "when")
                 .sort((a, b) => a.tier - b.tier);
               if (whenHints.length === 0) return (
-                <div className={styles.emptyHints}>{t('game.no_time_clues')}</div>
+                <div className={styles.emptyHints}>{t('no_time_clues')}</div>
               );
               const labelMap: Record<number, string> = {
-                1: t('game.hint_century'), 2: t('game.hint_historical_event'), 3: t('game.hint_decade'),
-                4: t('game.hint_contemporary_event'), 5: t('game.hint_visual_clues')
+                1: t('hint_century'), 2: t('hint_historical_event'), 3: t('hint_decade'),
+                4: t('hint_contemporary_event'), 5: t('hint_visual_clues')
               };
               return whenHints.map((hint, idx) => (
                 <div
