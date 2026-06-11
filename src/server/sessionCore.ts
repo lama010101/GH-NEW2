@@ -1449,19 +1449,18 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     const resultsClient = await getTransactionClient();
     try {
       await resultsClient.query("BEGIN");
-      // Idempotency: another request may have already completed the round
-      const existing = await resultsClient.query(
-        `SELECT 1 FROM round_events
-         WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_COMPLETE'
-         LIMIT 1`,
-        [gameId, roundIndex]
+      // Atomic insert with idempotency via unique partial index
+      const roundCompleteInserted = await appendEventIfNotExists(
+        resultsClient, gameId, "ROUND_COMPLETE",
+        { commitCount: finalCommitCount, resultPhaseStartedAt: new Date().toISOString() },
+        roundIndex
       );
-      if (existing.rows.length === 0) {
+      if (roundCompleteInserted) {
         roundResultsToken = await computeAndWriteRoundResults(gameId, roundIndex, resultsClient);
         shouldVerifyRoundResults = true;
         verifyLog("INSERT", "round_results", "OK", `${finalCommitCount} rows written for round=${roundIndex} token=${roundResultsToken.slice(0, 8)}...`);
-        await appendEvent(resultsClient, gameId, "ROUND_COMPLETE", { commitCount: finalCommitCount, resultPhaseStartedAt: new Date().toISOString() }, roundIndex);
       }
+      // If !roundCompleteInserted: concurrent caller won, this caller skips compute — both paths commit cleanly
       await resultsClient.query("COMMIT");
     } catch (error) {
       await resultsClient.query("ROLLBACK");
@@ -2192,6 +2191,28 @@ async function loadRoundCommitCount(
     [gameId, roundIndex]
   );
   return parseInt(result.rows[0]?.count ?? "0", 10);
+}
+
+/**
+ * Atomic insert for ROUND_COMPLETE event with idempotency via unique partial index.
+ * Returns true if the event was inserted (caller won the race), false if it already exists (caller lost).
+ * Used exclusively for ROUND_COMPLETE to prevent concurrent submitGuess calls from both inserting.
+ */
+async function appendEventIfNotExists(
+  client: DbTransactionClient,
+  gameId: string,
+  eventType: string,
+  payload: Record<string, unknown>,
+  roundIndex: number
+): Promise<boolean> {
+  const result = await client.query<{ id: string }>(
+    `INSERT INTO round_events (game_id, round_index, event_type, payload, created_at)
+     VALUES ($1, $2, $3, $4::jsonb, now())
+     ON CONFLICT ON CONSTRAINT uq_round_events_round_complete DO NOTHING
+     RETURNING id`,
+    [gameId, roundIndex, eventType, JSON.stringify(payload)]
+  );
+  return result.rows.length > 0;
 }
 
 async function computeAndWriteRoundResults(
