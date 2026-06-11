@@ -32,7 +32,7 @@
 
 .siteTitle {
   color: #6b7280;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -154,7 +154,7 @@
 .statSub {
   margin-top: 7px;
   color: #6b7280;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   text-align: center;
 }
@@ -174,7 +174,7 @@
 
 .panelHeading {
   color: #9ca3af;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -257,7 +257,7 @@
 
 .youTag {
   color: #9ca3af;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   flex: 0 0 auto;
 }
@@ -301,7 +301,7 @@
 
 .rankXp {
   color: #9ca3af;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   margin-top: 4px;
 }
@@ -347,7 +347,7 @@
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.72);
   color: #9ca3af;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.08em;
   padding: 5px 8px;
@@ -360,7 +360,7 @@
   justify-content: center;
   padding: 12px;
   color: #6b7280;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   text-align: center;
 }
@@ -413,14 +413,14 @@
 }
 
 .miniSymbol {
-  font-size: 10px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   margin-left: 1px;
   color: #ffffff;
 }
 
 .miniLabel {
   color: #6b7280;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.04em;
   line-height: 1;
@@ -430,7 +430,7 @@
 
 .miniSub {
   color: #6b7280;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 400;
   line-height: 1.15;
   margin-top: 5px;
@@ -453,7 +453,7 @@
   align-items: center;
   gap: 5px;
   color: #6b7280;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -462,7 +462,7 @@
 .bestName {
   min-width: 0;
   color: #9ca3af;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   overflow: hidden;
   text-align: right;
@@ -530,7 +530,7 @@
 
 .roundsHeading {
   color: #9ca3af;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -624,7 +624,7 @@
 }
 
 .roundCardChevron {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--gh-text-secondary);
   flex-shrink: 0;
 }

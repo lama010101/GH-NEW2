@@ -60,7 +60,7 @@
 }
 
 .scoreSuffix {
-  font-size: 9px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: var(--gh-text-secondary);
 }
@@ -71,7 +71,7 @@
   align-items: center;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   background: var(--chip-bg);
   border: 0.5px solid var(--chip-border);
@@ -101,7 +101,7 @@
   align-items: center;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-style: italic;
   background: var(--gh-near-miss-bg);
   border: 0.5px solid var(--gh-near-miss-border);
@@ -116,7 +116,7 @@
 .hintPenalty {
   display: inline-flex;
   align-items: center;
-  font-size: 10px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   color: var(--gh-danger);
   font-weight: 600;
   background: var(--gh-penalty-bg);
@@ -197,7 +197,7 @@
 }
 
 .expandLabel {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: var(--gh-text-muted);
   text-transform: uppercase;
@@ -205,7 +205,7 @@
 }
 
 .expandLabelAccent {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
   color: var(--gh-teal);
   text-transform: uppercase;
@@ -213,7 +213,7 @@
 }
 
 .expandRank {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   color: var(--gh-text-muted);
   font-weight: 600;
 }
@@ -245,7 +245,7 @@
 
 .lbYouTag {
   color: var(--gh-text-muted);
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   margin-left: 4px;
 }
 
@@ -282,7 +282,7 @@
 }
 
 .hintTierText {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   color: var(--gh-teal);
   text-transform: uppercase;
