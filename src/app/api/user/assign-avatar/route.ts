@@ -116,7 +116,7 @@ export async function POST(_request: NextRequest) {
     const { error: updateError } = await serviceRoleClient
       .from("profiles")
       .update({
-        avatar_url: randomAvatar.image_url,
+        avatar_url: randomAvatar.firebase_url || randomAvatar.image_url,
         display_name: displayName,
         updated_at: new Date().toISOString(),
       })
@@ -142,7 +142,7 @@ export async function POST(_request: NextRequest) {
         death_country: randomAvatar.death_country,
         birth_day: randomAvatar.birth_day,
         death_day: randomAvatar.death_day,
-        image_url: randomAvatar.image_url,
+        image_url: randomAvatar.firebase_url || randomAvatar.image_url,
       },
     });
   } catch (error) {
