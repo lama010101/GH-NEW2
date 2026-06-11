@@ -281,7 +281,9 @@ export default function SessionComplete({
               {/* ROUND BREAKDOWN */}
               <div className={styles.roundsHeading}>{t('game.round_breakdown')}</div>
               <div className={styles.rounds}>
-                {snapshot.rounds.map((round, i) => {
+                {(() => {
+                  const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
+                  return snapshot.rounds.map((round, i) => {
                   const roundStats = computeRoundStats(i) ?? {
                     avgAccuracy: 0, avgLocationScore: 0, avgTimeScore: 0,
                     avgDistanceKm: 0, avgYearDiff: 0, totalScore: 0, bestPlayerId: null
