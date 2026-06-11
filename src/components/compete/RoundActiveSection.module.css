@@ -724,9 +724,9 @@
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(18px) saturate(1.6);
-  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -735,11 +735,13 @@
 }
 
 .settingsCloseBtn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.12);
-  border: 0.5px solid rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -749,12 +751,10 @@
 }
 
 .settingsCard {
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(28px) saturate(1.8);
-  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  background: #252836;
   border-radius: 20px;
-  border: 0.5px solid rgba(255, 255, 255, 0.90);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18), 0 1.5px 0 rgba(255, 255, 255, 0.9) inset;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.07);
   padding: 24px;
   width: 100%;
   max-width: 320px;
@@ -763,7 +763,7 @@
 .settingsTitle {
   font-size: var(--font-sm);
   font-weight: 700;
-  color: #111;
+  color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 20px;
@@ -784,7 +784,7 @@
 }
 
 .settingsLabel {
-  color: #111;
+  color: rgba(255, 255, 255, 0.75);
   font-size: var(--font-sm);
 }
 
@@ -793,7 +793,7 @@
   height: 28px;
   border-radius: 14px;
   border: none;
-  background: var(--toggle-bg, rgba(0, 0, 0, 0.15));
+  background: var(--toggle-bg, rgba(255, 255, 255, 0.15));
   cursor: pointer;
   position: relative;
   transition: background 0.2s;
@@ -820,6 +820,48 @@
   font-size: var(--font-sm);
   font-weight: 700;
   cursor: pointer;
+}
+
+/* ── Language toggle ── */
+
+.settingsLanguageRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.settingsLanguageLabel {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.settingsLanguageToggle {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 3px;
+  display: flex;
+  gap: 2px;
+}
+
+.settingsLanguageOption {
+  padding: 5px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.4);
+  border: none;
+  background: transparent;
+}
+
+.settingsLanguageOptionActive {
+  background: #ffffff;
+  color: #111111;
 }
 
 /* ── Responsive ── */

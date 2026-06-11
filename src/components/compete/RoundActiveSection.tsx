@@ -878,7 +878,7 @@ export default function RoundActiveSection({
             className={styles.settingsCloseBtn}
           >
             <svg viewBox="0 0 10 10" fill="none" width="12" height="12">
-              <path d="M2 2l6 6M8 2L2 8" stroke="#333" strokeWidth="1.4" strokeLinecap="round" />
+              <path d="M2 2l6 6M8 2L2 8" stroke="rgba(255,255,255,0.75)" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </button>
 
@@ -892,7 +892,7 @@ export default function RoundActiveSection({
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className={styles.toggle}
                 style={{
-                  "--toggle-bg": soundEnabled ? "var(--gh-orange)" : "rgba(0,0,0,0.15)",
+                  "--toggle-bg": soundEnabled ? "var(--gh-orange)" : "rgba(255, 255, 255, 0.15)",
                   "--toggle-left": soundEnabled ? "22px" : "2px",
                 } as React.CSSProperties}
               >
@@ -907,7 +907,7 @@ export default function RoundActiveSection({
                 onClick={() => setVibrateEnabled(!vibrateEnabled)}
                 className={styles.toggle}
                 style={{
-                  "--toggle-bg": vibrateEnabled ? "var(--gh-orange)" : "rgba(0,0,0,0.15)",
+                  "--toggle-bg": vibrateEnabled ? "var(--gh-orange)" : "rgba(255, 255, 255, 0.15)",
                   "--toggle-left": vibrateEnabled ? "22px" : "2px",
                 } as React.CSSProperties}
               >
@@ -915,8 +915,8 @@ export default function RoundActiveSection({
               </button>
             </div>
 
-            <div style={{ marginTop: '4px', paddingTop: '16px', borderTop: '0.5px solid rgba(0,0,0,0.1)' }}>
-              <div style={{ fontSize: '13px', color: '#555', marginBottom: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tNav('language')}</div>
+            <div className={styles.settingsLanguageRow}>
+              <span className={styles.settingsLanguageLabel}>{tNav('language')}</span>
               <LanguageSwitcher initialLocale={
                 (typeof document !== 'undefined'
                   ? document.cookie.split(';').find(c => c.trim().startsWith('gh_locale='))?.split('=')[1]

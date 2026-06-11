@@ -1,15 +1,17 @@
 .container {
   display: flex;
   gap: 2px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 2px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 3px;
 }
 
 .pill {
-  border-radius: 12px;
-  padding: 4px 10px;
+  border-radius: 7px;
+  padding: 5px 14px;
   font-size: 12px;
+  font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   border: none;
@@ -18,15 +20,15 @@
 }
 
 .pillActive {
-  background: white;
-  color: var(--color-text-primary, #1a1a1a);
-  font-weight: 600;
+  background: #ffffff;
+  color: #111111;
+  font-weight: 700;
 }
 
 .pillInactive {
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
-  font-weight: 400;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 700;
 }
 
 .disabled {
