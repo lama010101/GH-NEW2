@@ -2034,3 +2034,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-UI-FULLSCREEN-CLOSE-001 | Visible close button on fullscreen image overlay | Done | 2026-06-11 |
 | MP-FIX-TOPBAR-REFRESH-001 | Force profile re-fetch after WelcomeModal save — fixes stale avatar+username in top bar | Done | 2026-06-11 |
 | MP-FIX-SESSIONCOMPLETE-HOOK-001 | Fix illegal useState inside IIFE in SessionComplete | Done | 2026-06-11 |
+| MP-FIX-FONT-SCALE-001 | Raise font tokens and micro-labels to 12px minimum | done | 2026-06-11 |
