@@ -72,6 +72,7 @@ function HomePageInner() {
 
   const [avatarUrl, setAvatarUrl] = useState<string|null>(null)
   const [initials, setInitials] = useState('')
+  const [profileVersion, setProfileVersion] = useState(0)
 
   useEffect(() => {
     if (identity.status !== 'ready') {
@@ -105,8 +106,10 @@ function HomePageInner() {
           setInitials('PL')
         }
       }
+      // profileVersion is used to force re-fetch when WelcomeModal saves
+      void profileVersion
     })()
-  }, [identity])
+  }, [identity, profileVersion])
 
   const [, setMosaicUrls] = useState<string[]>([])
   useEffect(() => {
@@ -181,6 +184,7 @@ function HomePageInner() {
           onClose={() => setWelcomeData(null)}
           avatar={welcomeData.avatar}
           initialDisplayName={welcomeData.displayName}
+          onSaved={() => setProfileVersion(v => v + 1)}
         />
       )}
     </div>

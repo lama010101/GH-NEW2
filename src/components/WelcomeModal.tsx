@@ -19,9 +19,10 @@ export interface WelcomeModalProps {
     image_url: string | null;
   };
   initialDisplayName: string;
+  onSaved?: () => void;
 }
 
-export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName }: WelcomeModalProps) {
+export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSaved }: WelcomeModalProps) {
   const [usernameValue, setUsernameValue] = useState(initialDisplayName);
 
   if (!isOpen) return null;
@@ -57,12 +58,13 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName }: We
   }
 
   const handleSave = () => {
-    // Fire-and-forget PATCH request
     fetch("/api/user/update-username", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ display_name: usernameValue.trim() }),
-    }).catch(() => {});
+    })
+      .then(() => onSaved?.())
+      .catch(() => {});
     onClose();
   };
 
