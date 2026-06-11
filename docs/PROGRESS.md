@@ -2009,3 +2009,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-UI-RESULTS-CARDS-001 | Apply glassmorphism to round results cards | Done | 2026-06-10 |
 | MP-UI-SESSIONCOMPLETE-CARDS-001 | Glassmorphism cards on final results screen | Done | 2026-06-11 |
 | MP-UI-SESSIONCOMPLETE-COLLAPSE-001 | Collapsible round breakdown + tile colors on final results | Done | 2026-06-11 |
+| MP-UI-FULLSCREEN-CLOSE-001 | Visible close button on fullscreen image overlay | Done | 2026-06-11 |
