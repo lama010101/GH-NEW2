@@ -56,7 +56,7 @@ export default function WhereCard({
   snapshotPlayers,
   currentRoundIndex,
 }: WhereCardProps) {
-  const t = useTranslations();
+  const t = useTranslations('game');
   const myResult = roundResults?.find(r => r.playerId === playerId);
 
   return (
@@ -65,7 +65,7 @@ export default function WhereCard({
         <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/badges/where.webp" alt="where" width={36} height={36} className={styles.titleIcon} />
-          <span className={styles.titleText}>{t('game.where')}</span>
+          <span className={styles.titleText}>{t('where')}</span>
         </div>
         {(() => {
           if (myResult == null || !myResult.didSubmit) {
@@ -104,7 +104,7 @@ export default function WhereCard({
                 }
                 return (
                   <span className={styles.nearMissChip}>
-                    {t('game.near_miss')}
+                    {t('near_miss')}
                   </span>
                 );
               })()}
@@ -115,26 +115,26 @@ export default function WhereCard({
       {whereAccPenalty > 0 && (
         <div className={styles.hintPenaltyWrap}>
           <span className={styles.hintPenalty}>
-            −{Math.round(whereAccPenalty / 2)}<span className={styles.hintPenaltySuffix}>%</span> {t('game.hints_suffix')}
+            −{Math.round(whereAccPenalty / 2)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
           </span>
         </div>
       )}
       <div className={styles.correctRow}>
-        <span>{t('game.correct_location')}:</span>
+        <span>{t('correct_location')}:</span>
         <span className={styles.correctName}>{correctName}</span>
       </div>
       {(() => {
         if (myResult == null || !myResult.didSubmit) {
           return (
             <div className={styles.noGuessWrap}>
-              <span className={styles.noGuessText}>{t('game.no_guess')}</span>
+              <span className={styles.noGuessText}>{t('no_guess')}</span>
             </div>
           );
         }
         if (myDistanceKm != null) {
           return (
             <div className={styles.distanceWrap}>
-              <span className={styles.distanceText}>{t('game.km_away', { n: Math.round(myDistanceKm) })}</span>
+              <span className={styles.distanceText}>{t('km_away', { n: Math.round(myDistanceKm) })}</span>
             </div>
           );
         }
@@ -176,7 +176,7 @@ export default function WhereCard({
               {whereLbExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
             <span className={styles.expandLabel}>
-              {t('game.leaderboard')}
+              {t('leaderboard')}
             </span>
           </div>
           {(() => {
@@ -212,10 +212,10 @@ export default function WhereCard({
                       <span style={{ ...getUsernameGradientStyle(r.playerId), fontWeight: r.playerId === playerId ? 600 : 400 }}>
                         {snapshotPlayers.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
                       </span>
-                      {r.playerId === playerId && <span className={styles.lbYouTag}>({t('game.you')})</span>}
+                      {r.playerId === playerId && <span className={styles.lbYouTag}>({t('you')})</span>}
                     </span>
                     <span className={styles.lbDistance}>
-                      {distanceKm != null ? t('game.km_away', { n: Math.round(distanceKm) }) : "—"}
+                      {distanceKm != null ? t('km_away', { n: Math.round(distanceKm) }) : "—"}
                     </span>
                     {locationAcc != null && (
                       <span className={styles.lbAccPill}>
@@ -239,7 +239,7 @@ export default function WhereCard({
               {whereCluesExpanded ? <path d="M6 9l6 6 6-6" /> : <path d="M9 6l6 6-6 6" />}
             </svg>
             <span className={styles.expandLabelAccent}>
-              {t('game.hints')}
+              {t('hints')}
             </span>
           </div>
           {null}
@@ -252,12 +252,12 @@ export default function WhereCard({
                 .sort((a, b) => a.tier - b.tier);
               if (whereHints.length === 0) return (
                 <div className={styles.emptyHints}>
-                  {t('game.no_location_clues')}
+                  {t('no_location_clues')}
                 </div>
               );
               const labelMap: Record<number, string> = {
-                1: t('game.hint_continent'), 2: t('game.hint_remote_landmark'), 3: t('game.hint_region'),
-                4: t('game.hint_nearby_landmark'), 5: t('game.hint_visual_clues')
+                1: t('hint_continent'), 2: t('hint_remote_landmark'), 3: t('hint_region'),
+                4: t('hint_nearby_landmark'), 5: t('hint_visual_clues')
               };
               return whereHints.map((hint, idx) => (
                 <div key={hint.id} className={`${styles.hintRow} ${idx < whereHints.length - 1 ? styles.hintRowDivider : ""}`}>
