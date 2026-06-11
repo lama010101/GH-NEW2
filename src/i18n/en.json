@@ -51,7 +51,7 @@
     "compete_create_game": "CREATE GAME",
     "tagline": "Where and when did it happen?",
     "daily_new_challenge": "New challenge in",
-    "compete_desc": "Play against your friends.\nLive Blitz or turn-based Relax modes.\nGroups of up to 8 players.",
+    "compete_desc": "Play against your friends.\nReal-Time: Up to 5 mins\nTurn-Based: Up to 14 days",
     "daily_desc": "A new challenge every day.\nSame events for everyone.\nClimb the leaderboard.",
     "levelup_desc": "Beat levels and earn XP.\nProgressive difficulty from 1 to 100.\nUnlock new challenges.",
     "practice_desc": "Hone your skills solo.\nCustom timer and year range.\nUnlimited practice games."
@@ -107,7 +107,7 @@
     "no_players_yet": "No players yet",
     "game_settings": "Game Settings",
     "realtime": "Real-Time",
-    "turn_by_turn": "Turn-by-Turn",
+    "turn_by_turn": "Turn-Based",
     "max_time_per_turn": "Max Time Per Turn",
     "1_day": "1 day",
     "n_days": "{n} days",

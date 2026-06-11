@@ -2009,4 +2009,13 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-UI-RESULTS-CARDS-001 | Apply glassmorphism to round results cards | Done | 2026-06-10 |
 | MP-UI-SESSIONCOMPLETE-CARDS-001 | Glassmorphism cards on final results screen | Done | 2026-06-11 |
 | MP-UI-SESSIONCOMPLETE-COLLAPSE-001 | Collapsible round breakdown + tile colors on final results | Done | 2026-06-11 |
+
+## Text Changes - 2026-06-11
+- File modified: src/i18n/en.json
+- File modified: src/i18n/fr.json
+- File modified: src/components/home/types.ts
+- Changes:
+  - Updated compete_desc from "Live Blitz or turn-based Relax modes" to 3-line format: "Play against your friends.\nReal-Time: Up to 5 mins\nTurn-Based: Up to 14 days"
+  - Updated French compete_desc to: "Jouez contre vos amis.\nTemps réel : Jusqu'à 5 min\nTour par tour : Jusqu'à 14 jours"
+  - Updated turn_by_turn from "Turn-by-Turn" to "Turn-Based" (French already "Tour par tour")
 | MP-UI-FULLSCREEN-CLOSE-001 | Visible close button on fullscreen image overlay | Done | 2026-06-11 |
