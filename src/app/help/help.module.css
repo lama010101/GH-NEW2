@@ -31,9 +31,9 @@
   color: var(--gh-orange);
   font-weight: 700;
   padding: 6px 14px;
-  border: 1px solid rgba(251, 146, 60, 0.35);
+  border: 1px solid var(--gh-orange-border);
   border-radius: var(--radius-pill);
-  background: rgba(251, 146, 60, 0.08);
+  background: var(--gh-orange-bg);
 }
 
 .heroTitle {
@@ -86,7 +86,7 @@
 }
 
 .searchInput:focus {
-  border-color: rgba(251, 146, 60, 0.55);
+  border-color: var(--gh-orange-focus);
   box-shadow: 0 0 0 4px var(--gh-glow-orange);
 }
 
@@ -99,7 +99,7 @@
   height: 26px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--gh-icon-bg);
   color: var(--gh-text-secondary);
   cursor: pointer;
   font-size: 12px;
@@ -109,7 +109,7 @@
 }
 
 .searchClear:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--gh-icon-bg-hover);
 }
 
 /* ---------- Main / sections ---------- */
@@ -406,21 +406,21 @@
 .modeTitle {
   font-size: 18px;
   font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  color: var(--gh-mode-title);
+  text-shadow: 0 1px 3px var(--gh-mode-shadow);
 }
 
 .modeSub {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--gh-mode-sub);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .modeDesc {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--gh-mode-desc);
   line-height: 1.5;
 }
 
@@ -436,10 +436,10 @@
 .modeFeatures li {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--gh-mode-feature);
   padding: 3px 8px;
   border-radius: var(--radius-pill);
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--gh-mode-feature-bg);
   letter-spacing: 0.03em;
 }
 
@@ -513,7 +513,7 @@
   background: var(--gh-bg-elevated);
   border: 1px solid var(--gh-border-default);
   color: var(--gh-text-primary);
-  box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+  box-shadow: 0 2px 0 var(--gh-key-shadow);
 }
 
 .shortcutAction {
