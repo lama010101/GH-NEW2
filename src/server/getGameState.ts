@@ -143,7 +143,7 @@ async function loadRoundEvents(
       created_at
     FROM round_events
     WHERE game_id = $1
-    ORDER BY created_at ASC, id ASC`,
+    ORDER BY id ASC`,
     [gameId]
   );
 
@@ -255,14 +255,14 @@ export async function getGameState(
         SELECT id, round_index, event_type, payload, created_at
         FROM round_events
         WHERE game_id = $1
-        ORDER BY created_at ASC, id ASC
+        ORDER BY id ASC
       )
     SELECT
       (SELECT row_to_json(s) FROM session_data s) AS session,
       (SELECT json_agg(p ORDER BY p.joined_at ASC, p.player_id ASC) FROM players_data p) AS players,
       (SELECT json_agg(c ORDER BY c.round_index ASC, c.submitted_at ASC, c.player_id ASC) FROM commits_data c) AS commits,
       (SELECT json_agg(r ORDER BY r.round_index ASC, r.rank ASC, r.player_id ASC) FROM results_data r) AS results,
-      (SELECT json_agg(e ORDER BY e.created_at ASC, e.id ASC) FROM events_data e) AS events`,
+      (SELECT json_agg(e ORDER BY e.id ASC) FROM events_data e) AS events`,
     [sessionId]
   );
 
