@@ -188,34 +188,59 @@ export default function LobbySection({
     setLastInvited(readLastInvited());
   }, []);
 
-  // Fetch player pool on mount (parallel: friends/search?q=aa + players/recent)
+  // Fetch recent players on mount as default pool
   useEffect(() => {
     let cancelled = false;
-    async function fetchPool() {
+    async function fetchRecent() {
       const { data: { session } } = await supabaseBrowser.auth.getSession();
       const headers: Record<string, string> = {};
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
-      const [friendsRes, recentRes] = await Promise.allSettled([
-        fetch('/api/friends/search?q=aa', { headers }).then((r) => r.ok ? r.json() : { players: [] }),
-        fetch('/api/players/recent').then((r) => r.ok ? r.json() : { players: [] }),
-      ]);
+      const res = await fetch('/api/players/recent', { headers });
       if (cancelled) return;
-      const friendsPlayers: PlayerPoolEntry[] =
-        friendsRes.status === 'fulfilled' ? (friendsRes.value.players ?? []).map((p: { id: string; display_name: string; avatar_url: string | null }) => ({ id: p.id, displayName: p.display_name, avatarUrl: p.avatar_url })) : [];
-      const recentPlayers: PlayerPoolEntry[] =
-        recentRes.status === 'fulfilled' ? (recentRes.value.players ?? []).map((p: { id: string; display_name: string; avatar_url: string | null }) => ({ id: p.id, displayName: p.display_name, avatarUrl: p.avatar_url })) : [];
-      const seen = new Set<string>();
-      const merged: PlayerPoolEntry[] = [];
-      for (const p of [...friendsPlayers, ...recentPlayers]) {
-        if (!seen.has(p.id)) { seen.add(p.id); merged.push(p); }
-      }
-      setPlayerPool(merged);
+      const json = res.ok ? await res.json() : { players: [] };
+      const players: PlayerPoolEntry[] = (json.players ?? []).map(
+        (p: { id: string; display_name: string; avatar_url: string | null }) => ({
+          id: p.id,
+          displayName: p.display_name,
+          avatarUrl: p.avatar_url,
+        })
+      );
+      setPlayerPool(players);
     }
-    fetchPool();
+    fetchRecent();
     return () => { cancelled = true; };
   }, []);
+
+  // Live debounced search — fires when searchQuery >= 2 chars
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    const q = searchQuery.trim();
+    if (q.length < 2) return;
+    searchDebounceRef.current = setTimeout(async () => {
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      const res = await fetch(`/api/friends/search?q=${encodeURIComponent(q)}`, { headers });
+      if (!res.ok) return;
+      const json = await res.json();
+      const players: PlayerPoolEntry[] = (json.players ?? []).map(
+        (p: { id: string; display_name: string; avatar_url: string | null }) => ({
+          id: p.id,
+          displayName: p.display_name,
+          avatarUrl: p.avatar_url,
+        })
+      );
+      setPlayerPool(players);
+    }, 350);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery]);
 
   /* ── Pending invites (invited but not yet joined) ── */
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
@@ -400,17 +425,19 @@ export default function LobbySection({
   return (
     <div className={styles['lobby-shell']}>
       <header className={styles['lobby-header']}>
-        <button className={styles['lobby-back-btn']} onClick={() => router.push("/")} aria-label="Back">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-        </button>
         <div className={styles['lobby-header-top']}>
-          <span className={styles['lobby-mode-badge']}>COMPETE</span>{/* TODO i18n: lobby.mode_compete */}
-          <span className={styles['lobby-status-chip']}>
-            <span className={styles['lobby-status-dot']} />
-            {t('lobby.waiting')}
-          </span>
+          <button className={styles['lobby-back-btn']} onClick={() => router.push("/")} aria-label="Back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className={styles['lobby-header-meta']}>
+            <span className={styles['lobby-mode-badge']}>COMPETE</span>{/* TODO i18n: lobby.mode_compete */}
+            <span className={styles['lobby-status-chip']}>
+              <span className={styles['lobby-status-dot']} />
+              {t('lobby.waiting')}
+            </span>
+          </div>
         </div>
         <h1 className={styles['lobby-title-h1']}>{t('lobby.game_lobby')}</h1>
       </header>
