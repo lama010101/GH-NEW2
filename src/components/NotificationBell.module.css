@@ -15,7 +15,7 @@
   top: -4px; right: -4px;
   background: #ef4444;
   color: #fff;
-  font-size: 10px; /* layout-constrained — do not tokenize */ font-weight: 700;
+  font-size: 12px; /* layout-constrained — do not tokenize */ font-weight: 700;
   min-width: 16px; height: 16px;
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
@@ -57,7 +57,7 @@
 }
 .notifBody { flex: 1; }
 .notifText { font-size: var(--font-xs); color: #e2e8f0; line-height: 1.4; }
-.notifTime { font-size: 11px; /* layout-constrained — do not tokenize */ color: rgba(255,255,255,0.35); margin-top: 3px; }
+.notifTime { font-size: 12px; /* layout-constrained — do not tokenize */ color: rgba(255,255,255,0.35); margin-top: 3px; }
 .joinBtn {
   margin-top: 8px;
   padding: 5px 12px;

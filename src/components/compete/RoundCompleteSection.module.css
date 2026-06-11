@@ -129,7 +129,7 @@
   background: var(--gh-penalty-bg);
   border-radius: var(--gh-radius-pill);
   padding: 2px 8px;
-  font-size: 10px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   color: var(--gh-penalty-text);
   font-weight: 600;
 }
@@ -168,7 +168,7 @@
 }
 
 .lbRank {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   color: var(--gh-text-muted);
   min-width: 14px;
 }
@@ -186,13 +186,13 @@
 
 .lbYouTag {
   color: var(--gh-text-muted);
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   margin-left: 4px;
 }
 
 .lbNoGuessTag {
   color: var(--gh-text-muted);
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   font-style: italic;
   margin-left: 4px;
 }
@@ -270,7 +270,7 @@
 }
 
 .hintRevealedText {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   color: var(--gh-text-secondary);
   font-style: italic;
   margin-top: 1px;
@@ -283,7 +283,7 @@
   border: 0.5px solid var(--gh-penalty-pill-border);
   border-radius: var(--gh-radius-pill);
   padding: 2px 7px;
-  font-size: 10px; /* layout-constrained — do not tokenize */
+  font-size: 12px; /* layout-constrained — do not tokenize */
   color: var(--gh-penalty-pill-text);
   font-weight: 600;
   flex-shrink: 0;
@@ -424,7 +424,7 @@
   gap: 4px;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   background: var(--badge-bg);
   border: 0.5px solid var(--badge-border);
@@ -437,7 +437,7 @@
   gap: 4px;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-style: italic;
   background: var(--gh-near-miss-bg);
   border: 0.5px solid var(--gh-near-miss-border);
