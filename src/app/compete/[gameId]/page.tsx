@@ -570,6 +570,14 @@ export default function CompeteGamePage() {
           onClick={() => setFullscreenImg(null)}
           className={pageStyles.fullscreenOverlay}
         >
+          <button
+            type="button"
+            className={pageStyles.fullscreenClose}
+            onClick={(e) => { e.stopPropagation(); setFullscreenImg(null); }}
+            aria-label="Close fullscreen"
+          >
+            ✕
+          </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={fullscreenImg}
