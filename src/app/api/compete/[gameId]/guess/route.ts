@@ -57,6 +57,8 @@ export async function POST(
     return NextResponse.json({ ...snapshot, results });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to submit guess";
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error("[GUESS_400_ERROR]", { message, stack, gameId: params.gameId });
     const status = message.includes("Session not found") ? 404 : 400;
     return NextResponse.json({ error: message }, { status });
   }
