@@ -2037,3 +2037,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-FONT-SCALE-001 | Raise font tokens and micro-labels to 12px minimum | done | 2026-06-11 |
 | MP-FIX-FONT-MOBILE-001 | Mobile font scale fix — home page to mainstream app standard | done | 2026-06-12 |
 | GH-UI-MODAL-002 | DONE | globals.css + 9 files | Unified dark modal tokens across all production modals |
+| MP-FIX-AUTH-BROWSER-CLIENT-001 | Replace createBrowserClient with createClient for browser singleton | DONE | 2026-06-12 |
