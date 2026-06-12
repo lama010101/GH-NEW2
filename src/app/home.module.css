@@ -135,7 +135,7 @@
   padding: 0;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
 }
 
@@ -257,10 +257,10 @@
   padding: 4px 24px 16px;
   box-sizing: border-box;
   text-align: center;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: var(--font-base);
-  font-weight: 400;
-  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--font-lg);
+  font-weight: 500;
+  letter-spacing: 0.2px;
   line-height: 1.4;
   margin: 0 auto;
 }
