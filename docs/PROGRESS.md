@@ -2050,3 +2050,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-FONT-MOBILE-001 | Mobile font scale fix — home page to mainstream app standard | done | 2026-06-12 |
 | GH-UI-MODAL-002 | DONE | globals.css + 9 files | Unified dark modal tokens across all production modals |
 | MP-FIX-AUTH-BROWSER-CLIENT-001 | Replace createBrowserClient with createClient for browser singleton | DONE | 2026-06-12 |
+| MP-FIX-ERA-FILTER-BROADCAST-001 | Fix era filter wiring, guest broadcast, 5-era buttons | DONE | 2026-06-12 |
