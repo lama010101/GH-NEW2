@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { DM_Sans } from 'next/font/google'
 import styles from './help.module.css'
 
@@ -142,6 +143,7 @@ const GETTING_STARTED_STEPS = [
 ]
 
 export default function HelpPage() {
+  const router = useRouter()
   const [query, setQuery] = useState('')
   const [openFaq, setOpenFaq] = useState<string | null>(FAQ[0]?.id ?? null)
 
@@ -160,7 +162,16 @@ export default function HelpPage() {
       {/* Hero */}
       <header className={styles.hero}>
         <div className={styles.heroInner}>
-          <span className={styles.kicker}>Help Center</span>
+          <div className={styles.heroHeaderRow}>
+            <button
+              className={styles.backButton}
+              onClick={() => router.back()}
+              aria-label="Go back"
+            >
+              ←
+            </button>
+            <span className={styles.kicker}>Help Center</span>
+          </div>
           <h1 className={styles.heroTitle}>How can we help?</h1>
           <p className={styles.heroSubtitle}>Find answers, learn the rules, and get the most out of Guess-History.</p>
 
