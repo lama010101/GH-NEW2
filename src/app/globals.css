@@ -90,7 +90,7 @@ a {
   background: rgba(255, 138, 0, 0.16);
   color: var(--gh-orange);
   border: 1px solid rgba(255, 138, 0, 0.24);
-  font-size: 0.85rem;
+  font-size: var(--font-xs);
 }
 
 

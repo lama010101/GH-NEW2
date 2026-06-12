@@ -168,7 +168,7 @@
 .axisVal {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 15px
   line-height: 1;
   color: var(--modal-text);
 }
@@ -269,7 +269,7 @@
   border-radius: 50%;
   background: var(--modal-surface);
   border: 0.5px solid var(--modal-border-md);
-  font-size: 12px;
+  font-size: 1p
   font-weight: 700;
   color: var(--modal-text-muted);
   display: flex;
@@ -367,7 +367,7 @@
 }
 
 .hintName {
-  font-size: 13px;
+  font-size: 13p
   font-weight: 500;
   color: var(--modal-text);
   margin-bottom: 2px;
@@ -379,13 +379,13 @@
 }
 
 .hintSub {
-  font-size: 12px;
+  font-size: 1p
   color: #999;
   line-height: 1.4;
 }
 
 .hintAnswer {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--modal-text-dim);
   line-height: 1.45;
   font-style: italic;
@@ -407,7 +407,7 @@
   border-radius: 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 1p
   border: 0.5px solid;
   letter-spacing: 0.02em;
   transition: opacity 0.12s;

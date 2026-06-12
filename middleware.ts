@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Routes that do NOT require authentication.
  * Everything else redirects to /login if no Supabase session is present.
  */
-const PUBLIC_PATHS = ["/", "/login", "/auth/callback"];
+const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help"];
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
