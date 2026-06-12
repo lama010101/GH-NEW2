@@ -301,6 +301,13 @@ a {
   --gh-particle-white: #ffffff;
 }
 
+@media (max-width: 480px) {
+  :root {
+    --font-3xl: 22px;  /* card/section titles — reduced from 28px for narrow viewports */
+    --font-4xl: 26px;  /* hero/display — reduced from 32px for narrow viewports */
+  }
+}
+
 /* ============================================================
    FONT UTILITIES
    ============================================================ */
