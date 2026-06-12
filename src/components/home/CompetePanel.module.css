@@ -15,7 +15,7 @@
   flex: 1;
   border: none;
   cursor: pointer;
-  font-size: var(--font-2xs);
+  font-size: var(--font-sm);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.45);
   text-align: center;
@@ -31,7 +31,7 @@
   background: var(--gh-danger);
   color: #fff;
   border-radius: var(--gh-radius-pill);
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   padding: 1px 5px;
   margin-left: 4px;
@@ -128,7 +128,7 @@
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -148,7 +148,7 @@
 
 .gameSub {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: 14px; /* layout-constrained — do not tokenize */
 }
 
 .declineBtn {
@@ -165,7 +165,7 @@
 .playBadge {
   background: var(--gh-blue);
   color: #fff;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--gh-radius-pill);
@@ -182,7 +182,7 @@
   display: inline-block;
   padding: 1px 7px;
   border-radius: 6px;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   color: white;
   margin-right: 6px;

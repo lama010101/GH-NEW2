@@ -188,13 +188,13 @@ a {
   /* --- Typography scale (mobile-first, 16px base) --- */
   --font-2xs:   12px;   /* use only for badges/labels — sparingly */
   --font-xs:    13px;   /* captions, secondary metadata */
-  --font-sm:    14px;   /* secondary labels, pill text */
-  --font-base:  17px;   /* body text — MINIMUM for readable content */
-  --font-lg:    20px;   /* emphasized body, card headers */
-  --font-xl:    22px;   /* section titles */
-  --font-2xl:   26px;   /* screen headers */
+  --font-sm:    15px;   /* secondary UI text */
+  --font-base:  16px;   /* body text — iOS/Android standard */
+  --font-lg:    18px;   /* primary readable text / card descriptions */
+  --font-xl:    20px;   /* subheadings */
+  --font-2xl:   24px;   /* section headings */
   --font-3xl:   30px;   /* large display numbers */
-  --font-4xl:   42px;   /* hero numbers (XP, accuracy ring) */
+  --font-4xl:   38px;   /* display / hero */
 
   /* --- Spacing --- */
   --radius-sm:  6px;

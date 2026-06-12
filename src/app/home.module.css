@@ -126,7 +126,7 @@
 }
 
 .card-desc {
-  font-size: var(--font-xs);
+  font-size: var(--font-lg);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.65);
   line-height: 1.6;
