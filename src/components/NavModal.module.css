@@ -19,7 +19,7 @@
   border-radius: 12px;
   cursor: pointer;
   color: #fff;
-  font-size: var(--font-2xl);
+  font-size: var(--font-xl);
   line-height: 1;
   padding: 10px;
   backdrop-filter: blur(10px);
@@ -177,7 +177,7 @@
 .navLangOption {
   padding: 5px 14px;
   border-radius: 7px;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-modal-text-muted);
   background: transparent;

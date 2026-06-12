@@ -38,7 +38,7 @@
 }
 
 .xpPillSuffix {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.5);
   margin-left: 2px;
 }
