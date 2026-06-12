@@ -105,31 +105,32 @@
 }
 
 .card-title {
-  font-size: var(--font-4xl);
+  font-size: var(--font-3xl);
   font-weight: 800;
   color: #fff;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   margin: 0;
   font-family: var(--font-bebas, 'Bebas Neue', sans-serif);
   line-height: 1;
 }
 
 .card-subtitle {
-  font-size: var(--font-base);
-  font-weight: 600;
+  font-size: var(--font-sm);
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.4;
   margin: 0;
   white-space: pre-line;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .card-desc {
-  font-size: var(--font-lg);
+  font-size: var(--font-base);
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.65);
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
   margin: 6px 0 0 0;
   padding: 0;
   overflow: hidden;
@@ -256,7 +257,7 @@
   padding: 4px 24px 16px;
   box-sizing: border-box;
   text-align: center;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.8);
   font-size: var(--font-base);
   font-weight: 400;
   letter-spacing: 0.3px;
