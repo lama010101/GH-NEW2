@@ -691,6 +691,7 @@ export default class GameServer {
         totalRounds: (configRecord?.["totalRounds"] as number) ?? 5,
         yearMin: (configRecord?.["yearMin"] as number) ?? (snapshotRecord["yearMin"] as number) ?? -400,
         yearMax: (configRecord?.["yearMax"] as number) ?? (snapshotRecord["yearMax"] as number) ?? new Date().getFullYear(),
+        selectedEras: (configRecord?.["selectedEras"] as string[] | undefined) ?? (snapshotRecord["selectedEras"] as string[] | undefined) ?? null,
         resultsAutoAdvanceSec: (configRecord?.["resultsAutoAdvanceSec"] as number) ?? (snapshotRecord["resultsAutoAdvanceSec"] as number) ?? 90,
         hostPlayerId: hostPlayer?.playerId ?? null,
         sessionDeadline: (configRecord?.["sessionDeadline"] as string | null) ?? null,
