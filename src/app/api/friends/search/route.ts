@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { getDbPool } from "@/server/db";
 
 export const dynamic = "force-dynamic";
 
@@ -36,19 +37,23 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { data: players, error: dbError } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url")
-      .ilike("display_name", `%${query}%`)
-      .neq("id", user.id)
-      .limit(10);
+    const pool = getDbPool();
+    const searchPattern = `%${query}%`;
+    
+    const { rows: players } = await pool.query(
+      `SELECT p.id, p.display_name, p.avatar_url
+       FROM public.profiles p
+       JOIN auth.users u ON u.id = p.id
+       WHERE p.id != $1
+       AND (
+         p.display_name ILIKE $2
+         OR u.raw_user_meta_data->>'display_name' ILIKE $2
+       )
+       LIMIT 10`,
+      [user.id, searchPattern]
+    );
 
-    if (dbError) {
-      console.error("[friends/search] Database error:", dbError);
-      return NextResponse.json({ error: "Failed to search players" }, { status: 500 });
-    }
-
-    return NextResponse.json({ players: players ?? [] });
+    return NextResponse.json({ players });
   } catch (error) {
     console.error("[friends/search] Unexpected error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
