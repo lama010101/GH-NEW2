@@ -31,7 +31,7 @@
   background: var(--gh-danger);
   color: #fff;
   border-radius: var(--gh-radius-pill);
-  font-size: var(--font-2xs);
+  font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   padding: 1px 5px;
   margin-left: 4px;
@@ -165,7 +165,7 @@
 .playBadge {
   background: var(--gh-blue);
   color: #fff;
-  font-size: var(--font-xs);
+  font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--gh-radius-pill);
@@ -182,7 +182,7 @@
   display: inline-block;
   padding: 1px 7px;
   border-radius: 6px;
-  font-size: var(--font-xs);
+  font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   color: white;
   margin-right: 6px;
