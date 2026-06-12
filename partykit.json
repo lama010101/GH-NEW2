@@ -2,6 +2,7 @@
   "name": "guess-history-multiplayer",
   "main": "partykit/server.ts",
   "compatibilityDate": "2024-04-01",
+  "port": 1999,
   "parties": {
     "lobby": "partykit/server.ts"
   },

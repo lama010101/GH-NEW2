@@ -2051,3 +2051,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | GH-UI-MODAL-002 | DONE | globals.css + 9 files | Unified dark modal tokens across all production modals |
 | MP-FIX-AUTH-BROWSER-CLIENT-001 | Replace createBrowserClient with createClient for browser singleton | DONE | 2026-06-12 |
 | MP-FIX-ERA-FILTER-BROADCAST-001 | Fix era filter wiring, guest broadcast, 5-era buttons | DONE | 2026-06-12 |
+| GH-UI-HOME-FONTS-001 | Typography adjustments on home page for consistency | DONE | 2026-06-12 |
