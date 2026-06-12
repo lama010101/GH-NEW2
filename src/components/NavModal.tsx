@@ -52,7 +52,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
     { id: 'leaderboard',  label: t('leaderboard'),   icon: LEADERBOARD_ICON,   action: () => navigate('/leaderboard') },
     { id: 'profile_stats',label: t('profile_stats'), icon: PROFILE_ICON,       action: () => navigate('/progress') },
     { id: 'account',      label: t('account'),       icon: ACCOUNT_ICON,       action: () => navigate('/account') },
-    { id: 'help',         label: t('help'),           icon: HELP_ICON,          action: () => comingSoon(t('help')) },
+    { id: 'help',         label: t('help'),           icon: HELP_ICON,          action: () => navigate('/help') },
   ]
 
   return (
