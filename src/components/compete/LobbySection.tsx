@@ -318,8 +318,11 @@ export default function LobbySection({
   ].filter(p => !pendingInvites.some(pi => pi.id === p.id));
 
   const trimmedQuery = searchQuery.trim().toLowerCase();
+  const searchResults: PlayerPoolEntry[] = trimmedQuery.length >= 1
+    ? playerPool.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId).slice(0, 20)
+    : [];
   const displayList: PlayerPoolEntry[] = (trimmedQuery.length >= 1
-    ? priorityList.filter((p) => p.displayName.toLowerCase().includes(trimmedQuery)).slice(0, 20)
+    ? searchResults
     : priorityList.slice(0, 10)
   ).sort((a, b) => {
     const aFav = followedIds.has(a.id) ? 0 : 1;
