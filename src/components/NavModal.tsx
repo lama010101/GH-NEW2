@@ -43,10 +43,6 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
     router.push(path)
   }
 
-  const comingSoon = (label: string) => {
-    alert(`${label} — coming soon!`)
-  }
-
   const ITEMS = [
     { id: 'home',         label: t('home'),          icon: HOME_ICON,          action: () => navigate('/') },
     { id: 'leaderboard',  label: t('leaderboard'),   icon: LEADERBOARD_ICON,   action: () => navigate('/leaderboard') },
