@@ -56,7 +56,12 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       return
     }
     try {
-      const res = await fetch('/api/invitations/pending')
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      const res = await fetch('/api/invitations/pending', { headers })
       if (!res.ok) {
         setInvites([])
         setInvitesLoading(false)
