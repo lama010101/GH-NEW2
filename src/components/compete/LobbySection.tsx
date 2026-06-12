@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
@@ -58,14 +58,13 @@ function formatTimerDisplay(sec: number): string {
   return `${m}m ${s.toString().padStart(2, "0")}s`;
 }
 
-type EraId = 'prehistoric' | 'ancient' | 'medieval' | 'earlymodern' | 'modern' | 'contemporary';
+type EraId = 'ancient' | 'medieval' | 'earlymodern' | 'modern' | 'contemporary';
 const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: number; yearMax: number }[] = [
-  { id: 'prehistoric', label: 'Prehistoric', span: '3000–800 BCE', icon: '🦕', yearMin: -3000, yearMax: -800 },
-  { id: 'ancient',     label: 'Ancient',     span: '800 BCE–500',  icon: '🏛️', yearMin: -800,  yearMax: 500  },
-  { id: 'medieval',    label: 'Medieval',    span: '500–1500',     icon: '⚔️', yearMin: 500,   yearMax: 1500 },
-  { id: 'earlymodern', label: 'Early Modern',span: '1500–1800',    icon: '⛵', yearMin: 1500,  yearMax: 1800 },
-  { id: 'modern',      label: 'Modern',      span: '1800–1950',    icon: '🏭', yearMin: 1800,  yearMax: 1950 },
-  { id: 'contemporary',label: 'Contemporary',span: '1950–today',   icon: '🚀', yearMin: 1950,  yearMax: new Date().getFullYear() },
+  { id: 'ancient',     label: 'Ancient',      span: '-3000 – 476',  icon: '🏛️', yearMin: -3000, yearMax: 476  },
+  { id: 'medieval',    label: 'Medieval',     span: '476 – 1492',   icon: '⚔️', yearMin: 476,   yearMax: 1492 },
+  { id: 'earlymodern', label: 'Early Modern', span: '1492 – 1789',  icon: '⛵', yearMin: 1492,  yearMax: 1789 },
+  { id: 'modern',      label: 'Modern',       span: '1789 – 1945',  icon: '🏭', yearMin: 1789,  yearMax: 1945 },
+  { id: 'contemporary',label: 'Contemporary', span: '1945 – 2025',  icon: '🚀', yearMin: 1945,  yearMax: new Date().getFullYear() },
 ];
 
 export default function LobbySection({
@@ -138,30 +137,21 @@ export default function LobbySection({
     () => new Set((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[])
   );
 
-  const toggleEra = (id: EraId) => {
+  const toggleEra = useCallback((id: EraId) => {
     setSelectedEras(prev => {
+      if (prev.has(id) && prev.size === 1) return prev;
       const next = new Set(prev);
-      if (next.has(id)) {
-        if (next.size > 1) next.delete(id);
-        else return prev;
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-    setSelectedEras(next => {
+      if (next.has(id)) next.delete(id); else next.add(id);
       const selected = ERAS.filter(e => next.has(e.id));
       const newMin = Math.min(...selected.map(e => e.yearMin));
       const newMax = Math.max(...selected.map(e => e.yearMax));
       setYearMinValue(newMin);
       setYearMaxValue(newMax);
-      setTimeout(() => {
-        onSetYearRange?.(newMin, newMax);
-        onSetEraSelection?.([...next], newMin, newMax);
-      }, 0);
+      onSetYearRange?.(newMin, newMax);
+      onSetEraSelection?.([...next], newMin, newMax);
       return next;
     });
-  };
+  }, [onSetEraSelection, onSetYearRange]);
 
   const allErasSelected = selectedEras.size === ERAS.length;
   const toggleAllEras = () => {
