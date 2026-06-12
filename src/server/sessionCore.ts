@@ -129,11 +129,13 @@ export type RoundCommitRow = {
   verification_token: string | null;
 };
 
-function generateRoomCode(): string {
+function generateRoomCode(seed: bigint): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let s = Number(seed % BigInt(2 ** 31))
   let code = ''
   for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)]
+    s = (s * 1664525 + 1013904223) % (2 ** 32)
+    code += chars[s % chars.length]
   }
   return code
 }
