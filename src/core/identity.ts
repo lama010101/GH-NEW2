@@ -1,5 +1,7 @@
 import { supabaseBrowser } from "./supabaseBrowser";
 
+const NEW_USER_WINDOW_MS = 10_000;
+
 export type IdentityState =
   | { status: "loading" }
   | { status: "ready"; playerId: string; isAnonymous: boolean; displayName: string; isNewUser: boolean }
@@ -57,7 +59,7 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
       const displayName = await fetchDisplayName(user.id);
       const createdAt = new Date(user.created_at).getTime();
       const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
-      const isNewUser = Math.abs(createdAt - lastSignIn) < 10_000;
+      const isNewUser = Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
       cachedState = {
         status: "ready",
         playerId: user.id,
@@ -117,7 +119,7 @@ export function subscribeToIdentityChanges(
         const displayName = await fetchDisplayName(session.user.id);
         const createdAt = new Date(session.user.created_at).getTime();
         const lastSignIn = session.user.last_sign_in_at ? new Date(session.user.last_sign_in_at).getTime() : createdAt;
-        const isNewUser = event === 'SIGNED_IN' && Math.abs(createdAt - lastSignIn) < 10_000;
+        const isNewUser = event === 'SIGNED_IN' && Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
         cachedState = {
           status: "ready",
           playerId: session.user.id,
