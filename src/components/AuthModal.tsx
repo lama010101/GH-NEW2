@@ -98,17 +98,13 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
       return;
     }
 
-    // Poll for session confirmation then close (onAuthStateChange timing is
-    // unreliable with @supabase/ssr createBrowserClient)
-    let attempts = 0;
-    const poll = setInterval(async () => {
-      attempts++;
-      const { data: { user } } = await supabaseBrowser.auth.getUser();
-      if (user || attempts >= 10) {
-        clearInterval(poll);
+    // onAuthStateChange fires reliably with @supabase/supabase-js createClient
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        subscription.unsubscribe();
         onClose();
       }
-    }, 300);
+    });
   }
 
   async function handleForgotPassword() {
