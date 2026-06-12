@@ -273,6 +273,32 @@ a {
   --gh-badge-gold:   #ffd700;
   --gh-badge-silver: #c0c0c0;
   --gh-badge-bronze: #cd7f32;
+
+  /* --- Modal system --- */
+  --gh-modal-overlay: rgba(0, 0, 0, 0.72);
+  --gh-modal-blur: blur(8px);
+  --gh-modal-bg: #2e3144;
+  --gh-modal-border: 1px solid rgba(255, 255, 255, 0.13);
+  --gh-modal-shadow: 0 8px 48px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.07);
+  --gh-modal-radius: 20px;
+  --gh-modal-divider: rgba(255, 255, 255, 0.08);
+  --gh-modal-close-bg: rgba(255, 255, 255, 0.12);
+  --gh-modal-close-border: rgba(255, 255, 255, 0.15);
+  --gh-modal-close-color: rgba(255, 255, 255, 0.8);
+  --gh-modal-input-bg: rgba(255, 255, 255, 0.07);
+  --gh-modal-input-border: rgba(255, 255, 255, 0.15);
+  --gh-modal-toggle-off: rgba(255, 255, 255, 0.15);
+  --gh-modal-lang-bg: rgba(255, 255, 255, 0.07);
+  --gh-modal-lang-border: rgba(255, 255, 255, 0.12);
+  --gh-modal-text-primary: #ffffff;
+  --gh-modal-text-secondary: rgba(255, 255, 255, 0.75);
+  --gh-modal-text-muted: rgba(255, 255, 255, 0.4);
+
+  /* --- Particle colors (BadgePopup) --- */
+  --gh-particle-gold: #ffd700;
+  --gh-particle-red: #ff6b6b;
+  --gh-particle-teal: #4ecdc4;
+  --gh-particle-white: #ffffff;
 }
 
 /* ============================================================

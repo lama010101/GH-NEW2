@@ -869,14 +869,17 @@
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(0,0,0,0.72);
+  background: var(--gh-modal-overlay);
+  backdrop-filter: var(--gh-modal-blur);
+  -webkit-backdrop-filter: var(--gh-modal-blur);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .lobbyAllModalInner {
-  background: var(--gh-bg-elevated);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--gh-modal-bg);
+  border: var(--gh-modal-border);
+  box-shadow: var(--gh-modal-shadow);
   border-radius: 18px;
   padding: 20px;
   width: min(480px, 90vw);
@@ -892,14 +895,14 @@
   right: 14px;
   background: transparent;
   border: none;
-  color: rgba(255,255,255,0.6);
+  color: var(--gh-modal-close-color);
   font-size: var(--font-xl);
   cursor: pointer;
   line-height: 1;
   padding: 0;
 }
 .lobbyAllModalClose:hover {
-  color: #fff;
+  color: var(--gh-modal-text-primary);
 }
 .lobbyAllModalList {
   display: flex;

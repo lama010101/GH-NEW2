@@ -76,7 +76,7 @@ export default function BadgePopup({ badges, nearMisses: _nearMisses, onDismiss 
   const renderParticles = () => {
     if (!celebrate || !badgeCardRef.current) return null;
 
-    const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#fff'];
+    const colors = ['var(--gh-particle-gold)', 'var(--gh-particle-red)', 'var(--gh-particle-teal)', 'var(--gh-particle-white)'];
     const particles = [];
 
     for (let i = 0; i < 8; i++) {
