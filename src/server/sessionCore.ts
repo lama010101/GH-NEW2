@@ -571,7 +571,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
         }
         // Check for Postgres unique violation error code 23505
         if (err instanceof Error && "code" in err && (err as { code: string }).code === "23505") {
-          roomCode = generateRoomCode();
+          roomCode = generateRoomCode(seed);
         } else {
           throw err; // Re-throw non-unique-violation errors immediately
         }
