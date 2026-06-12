@@ -269,7 +269,7 @@
   border-radius: 50%;
   background: var(--modal-surface);
   border: 0.5px solid var(--modal-border-md);
-  font-size: 1p
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--modal-text-muted);
   display: flex;
@@ -367,7 +367,7 @@
 }
 
 .hintName {
-  font-size: 13p
+  font-size: 13px;
   font-weight: 500;
   color: var(--modal-text);
   margin-bottom: 2px;
@@ -379,7 +379,7 @@
 }
 
 .hintSub {
-  font-size: 1p
+  font-size: 12px;
   color: #999;
   line-height: 1.4;
 }
@@ -407,7 +407,7 @@
   border-radius: 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-weight: 700;
-  font-size: 1p
+  font-size: 12px;
   border: 0.5px solid;
   letter-spacing: 0.02em;
   transition: opacity 0.12s;
