@@ -368,6 +368,17 @@ npm run dev
 | MP-PLAN-2.1 | DONE | src/server/getGameState.ts | All SELECTs have deterministic ORDER BY. round_events: created_at ASC + id ASC. session_players: joined_at ASC + player_id ASC. round_commits: round_index ASC + submitted_at ASC + player_id ASC. round_results: round_index ASC + rank ASC + player_id ASC. Zero Math.random or Date.now in getGameState.ts. Date: 2026-05-10 |
 | MP-PLAN-2.2 | DONE | src/server/sessionCore.ts | Seed generated via randomBytes(8) (not Math.random), stored as BIGINT in sessions table, passed to fetchRandomEventsForSession. Fixed at creation, never regenerated. Zero Math.random or Date.now in sessionCore.ts. Date: 2026-05-10 |
 | MP-PLAN-2.3 | DONE | src/server/sessionCore.ts, src/server/db.ts | verifyFullReplay exists in db.ts and is called from zeroTrust.execution.integration.test.ts. Intentionally excluded from submitGuess hot path per MP-PERF-001 (O(n) replay blocks request latency). ENABLE_ZERO_TRUST env var gates verifyWriteSet on hot path. Full replay verification runs in test harness only — correct architecture. No code change required. Date: 2026-05-10 |
+| MP-INV-MECHANICAL-001 | DONE | — | Static codebase audit — mechanical inventory. 10 checks, 5 findings confirmed. | 2026-06-12 |
+| MP-INV-WRITEPATH-001 | DONE | — | Write path verification. Write path confirmed correct end-to-end. | 2026-06-12 |
+| MP-FIX-DISPLAYNAME-001 | DONE | src/components/compete/LobbySection.tsx | Guard display_name in LobbySection.tsx. Commit: 6d1d995. | 2026-06-12 |
+| MP-FIX-DISPLAYNAME-002 | DONE | src/components/compete/RoundActiveSection.tsx | Guard display_name in RoundActiveSection.tsx. Commit: c1881e4. | 2026-06-12 |
+| MP-FIX-ISNEWUSER-001 | DONE | src/components/compete/LobbySection.tsx | Deduplicate isNewUser threshold constant. Commit: 8c13e25. | 2026-06-12 |
+| MP-FIX-DETERMINISM-001 | DONE | src/server/sessionCore.ts | Replace Math.random in generateRoomCode. Already correct in prior commit. | 2026-06-12 |
+| MP-FIX-INVITATIONS-001 | DONE | src/components/compete/LobbySection.tsx | Add credentials include to handleSendInvite. Commit: d79d3d4. | 2026-06-12 |
+| MP-AUTH-BROWSER-CLIENT-001 | DONE | src/core/supabaseBrowser.ts | Migrate supabaseBrowser to supabase-js. Already correct — @supabase/supabase-js confirmed. | 2026-06-12 |
+
+## Open Items
+- NavModal.tsx line 46 — unused variable comingSoon — trivial cleanup pending
 
 ## MP-FIX-ROUND-RESULTS-002 — Round results: no-submission fallback + card spacing
 Status: COMPLETE
