@@ -24,6 +24,27 @@
   gap: 14px;
 }
 
+.heroHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: var(--gh-orange);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.backButton:hover {
+  background: var(--gh-orange-bg);
+}
+
 .kicker {
   font-size: 12px;
   letter-spacing: 0.16em;
