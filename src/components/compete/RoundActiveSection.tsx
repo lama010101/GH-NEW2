@@ -292,7 +292,7 @@ export default function RoundActiveSection({
         const data = await res.json();
         setSearchResults(
           (data as Array<{ display_name: string; lat: string; lon: string }>).map((r) => ({
-            displayName: r.display_name.split(",").slice(0, 3).join(",").trim(),
+            displayName: r.display_name.split(",").slice(0, 3).join(",").trim() || 'Player',
             lat: parseFloat(r.lat),
             lng: parseFloat(r.lon),
           }))
