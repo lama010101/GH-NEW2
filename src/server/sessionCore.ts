@@ -550,7 +550,7 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     await client.query("BEGIN");
 
     // Retry loop for room code unique violation
-    let roomCode = generateRoomCode();
+    let roomCode = generateRoomCode(seed);
     let roomCodeAttempts = 0;
     const maxRoomCodeAttempts = 5;
     let roomCodeInsertSuccess = false;

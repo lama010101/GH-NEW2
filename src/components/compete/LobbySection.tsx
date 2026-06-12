@@ -344,6 +344,7 @@ export default function LobbySection({
       const res = await fetch('/api/invitations/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ game_id: snapshot.gameId, invitee_id: player.id }),
       });
       if (res.ok) {
