@@ -185,16 +185,16 @@ a {
    UNIFIED GH DESIGN TOKENS — authoritative palette for all new code
    ============================================================ */
 :root {
-  /* --- Typography scale (mobile-first, 16px base) --- */
-  --font-2xs:   12px;   /* use only for badges/labels — sparingly */
-  --font-xs:    13px;   /* captions, secondary metadata */
-  --font-sm:    15px;   /* secondary UI text */
-  --font-base:  16px;   /* body text — iOS/Android standard */
-  --font-lg:    18px;   /* primary readable text / card descriptions */
-  --font-xl:    20px;   /* subheadings */
-  --font-2xl:   24px;   /* section headings */
-  --font-3xl:   30px;   /* large display numbers */
-  --font-4xl:   38px;   /* display / hero */
+  /* --- Typography scale (mobile-first, calibrated per MP-FIX-FONT-MOBILE-002) --- */
+  --font-2xs:   12px;   /* micro labels: badges, counters — minimum size, never below */
+  --font-xs:    13px;   /* captions, metadata, small labels */
+  --font-sm:    14px;   /* secondary labels, pill text, button text */
+  --font-base:  15px;   /* body / description / readable multi-line text */
+  --font-lg:    17px;   /* card subtitles / section labels */
+  --font-xl:    20px;   /* subheadings, screen/page headings (small) */
+  --font-2xl:   24px;   /* screen/page headings */
+  --font-3xl:   28px;   /* card/section titles (large display) */
+  --font-4xl:   32px;   /* hero / large display — max for 375px screens */
 
   /* --- Spacing --- */
   --radius-sm:  6px;
