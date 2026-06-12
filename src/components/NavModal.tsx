@@ -94,39 +94,19 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
           </button>
         ))}
 
-        <div className={styles.menuItem} style={{ cursor: 'default' }}>
+        <div className={`${styles.menuItem} ${styles.navCursorDefault}`}>
           <span className={styles.menuItemIcon}>
             {LANGUAGE_ICON}
           </span>
           {t('language')}
-          <span style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
+          <span className={styles.navLangToggle}>
             <button
               onClick={() => handleLocale('en')}
-              style={{
-                padding: '3px 10px',
-                borderRadius: '10px',
-                fontSize: '11px',
-                fontWeight: locale === 'en' ? 700 : 400,
-                background: locale === 'en' ? 'rgba(255,255,255,0.9)' : 'transparent',
-                color: locale === 'en' ? '#111' : 'rgba(255,255,255,0.45)',
-                border: 'none',
-                cursor: 'pointer',
-                letterSpacing: '0.5px',
-              }}
+              className={`${styles.navLangOption} ${locale === 'en' ? styles.navLangOptionActive : ''}`}
             >EN</button>
             <button
               onClick={() => handleLocale('fr')}
-              style={{
-                padding: '3px 10px',
-                borderRadius: '10px',
-                fontSize: '11px',
-                fontWeight: locale === 'fr' ? 700 : 400,
-                background: locale === 'fr' ? 'rgba(255,255,255,0.9)' : 'transparent',
-                color: locale === 'fr' ? '#111' : 'rgba(255,255,255,0.45)',
-                border: 'none',
-                cursor: 'pointer',
-                letterSpacing: '0.5px',
-              }}
+              className={`${styles.navLangOption} ${locale === 'fr' ? styles.navLangOptionActive : ''}`}
             >FR</button>
           </span>
         </div>

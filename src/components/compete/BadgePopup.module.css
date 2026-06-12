@@ -6,7 +6,9 @@
   alignItems: center;
   justifyContent: center;
   gap: 16px;
-  background: rgba(0,0,0,0.75);
+  background: var(--gh-modal-overlay);
+  backdrop-filter: var(--gh-modal-blur);
+  -webkit-backdrop-filter: var(--gh-modal-blur);
   z-index: 9999;
 }
 
@@ -22,7 +24,7 @@
   right: 20px;
   width: 36px;
   height: 36px;
-  background: rgba(255,255,255,0.12);
+  background: var(--gh-modal-close-bg);
   borderRadius: 50%;
   display: flex;
   alignItems: center;

@@ -1,7 +1,9 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: var(--gh-modal-overlay);
+  backdrop-filter: var(--gh-modal-blur);
+  -webkit-backdrop-filter: var(--gh-modal-blur);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -9,9 +11,10 @@
 }
 
 .modal {
-  background: var(--gh-bg-surface);
-  border: 1px solid var(--gh-border-default);
-  border-radius: var(--radius-lg);
+  background: var(--gh-modal-bg);
+  border: var(--gh-modal-border);
+  border-radius: var(--gh-modal-radius);
+  box-shadow: var(--gh-modal-shadow);
   padding: 24px;
   max-width: 480px;
   width: 100%;

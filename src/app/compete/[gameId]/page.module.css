@@ -101,6 +101,8 @@
   inset: 0;
   zIndex: 9999;
   background: rgba(0,0,0,0.92);
+  backdrop-filter: var(--gh-modal-blur);
+  -webkit-backdrop-filter: var(--gh-modal-blur);
   display: flex;
   alignItems: center;
   justifyContent: center;
@@ -118,8 +120,8 @@
   top: 16px;
   right: 16px;
   z-index: 10000;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: var(--gh-modal-close-bg);
+  border: 1px solid var(--gh-modal-close-border);
   border-radius: 10px;
   color: #ffffff;
   font-size: 18px;
@@ -130,5 +132,5 @@
 }
 
 .fullscreenClose:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.18);
 }
