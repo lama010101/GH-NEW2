@@ -2052,3 +2052,10 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-AUTH-BROWSER-CLIENT-001 | Replace createBrowserClient with createClient for browser singleton | DONE | 2026-06-12 |
 | MP-FIX-ERA-FILTER-BROADCAST-001 | Fix era filter wiring, guest broadcast, 5-era buttons | DONE | 2026-06-12 |
 | GH-UI-HOME-FONTS-001 | Typography adjustments on home page for consistency | DONE | 2026-06-12 |
+
+## 2026-06-13
+- **MP-INV-CREATE-REQCOUNT-001** | Count exact HTTP requests at create route
+  - File: src/app/api/compete/create/route.ts
+  - Result: 1 request arrives (single caller confirmed)
+  - Conclusion: Issue is internal to one request, not duplicate HTTP requests
+
