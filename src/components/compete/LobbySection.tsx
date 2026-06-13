@@ -118,6 +118,10 @@ export default function LobbySection({
 
   // Sync selected eras to authoritative snapshot value whenever it changes externally.
   useEffect(() => {
+    if (suppressEraSyncRef.current) {
+      suppressEraSyncRef.current = false;
+      return;
+    }
     setSelectedEras(new Set((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[]));
   }, [snapshot.config.selectedEras]);
 
@@ -136,6 +140,7 @@ export default function LobbySection({
   const [selectedEras, setSelectedEras] = useState<Set<EraId>>(
     () => new Set((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[])
   );
+  const suppressEraSyncRef = useRef(false);
 
   const toggleEra = useCallback((id: EraId) => {
     setSelectedEras(prev => {
@@ -147,6 +152,7 @@ export default function LobbySection({
       const newMax = Math.max(...selected.map(e => e.yearMax));
       setYearMinValue(newMin);
       setYearMaxValue(newMax);
+      suppressEraSyncRef.current = true;
       onSetYearRange?.(newMin, newMax);
       onSetEraSelection?.([...next], newMin, newMax);
       return next;
@@ -160,6 +166,7 @@ export default function LobbySection({
       setSelectedEras(new Set([last.id]));
       setYearMinValue(last.yearMin);
       setYearMaxValue(last.yearMax);
+      suppressEraSyncRef.current = true;
       onSetYearRange?.(last.yearMin, last.yearMax);
       onSetEraSelection?.([last.id], last.yearMin, last.yearMax);
     } else {
@@ -168,6 +175,7 @@ export default function LobbySection({
       setSelectedEras(new Set(ERAS.map(e => e.id)));
       setYearMinValue(allMin);
       setYearMaxValue(allMax);
+      suppressEraSyncRef.current = true;
       onSetYearRange?.(allMin, allMax);
       onSetEraSelection?.(ERAS.map(e => e.id), allMin, allMax);
     }
