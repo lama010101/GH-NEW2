@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "npx kill-port 3000 && concurrently -n next,party -c cyan,magenta \"next dev\" \"partykit dev\"",
+    "dev": "npx kill-port 3000 1999 && concurrently -n next,party -c cyan,magenta \"next dev\" \"partykit dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
