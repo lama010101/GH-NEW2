@@ -153,7 +153,6 @@ export default function LobbySection({
       setYearMinValue(newMin);
       setYearMaxValue(newMax);
       suppressEraSyncRef.current = true;
-      onSetYearRange?.(newMin, newMax);
       onSetEraSelection?.([...next], newMin, newMax);
       return next;
     });
@@ -167,7 +166,6 @@ export default function LobbySection({
       setYearMinValue(last.yearMin);
       setYearMaxValue(last.yearMax);
       suppressEraSyncRef.current = true;
-      onSetYearRange?.(last.yearMin, last.yearMax);
       onSetEraSelection?.([last.id], last.yearMin, last.yearMax);
     } else {
       const allMin = Math.min(...ERAS.map(e => e.yearMin));
@@ -176,7 +174,6 @@ export default function LobbySection({
       setYearMinValue(allMin);
       setYearMaxValue(allMax);
       suppressEraSyncRef.current = true;
-      onSetYearRange?.(allMin, allMax);
       onSetEraSelection?.(ERAS.map(e => e.id), allMin, allMax);
     }
   };
