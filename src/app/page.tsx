@@ -230,13 +230,14 @@ function ModeCard({
           {/* Header: title only */}
           <div className={styles['card-header']}>
             <div className={styles['card-title-section']}>
-              <h2 className={styles['card-title']}>{title}</h2>
-              <p className={styles['card-subtitle']}>{subtitle}</p>
-              <p className={styles['card-desc']}>
-                {desc.split('\n').map((line, i) => (
-                  <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
-                ))}
-              </p>
+              <h2 className={styles['card-title']}>{subtitle}</h2>
+              <div className={styles['card-desc-wrap']}>
+                <p className={styles['card-desc']}>
+                  {desc.split('\n').map((line, i) => (
+                    <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
+                  ))}
+                </p>
+              </div>
             </div>
           </div>
 
