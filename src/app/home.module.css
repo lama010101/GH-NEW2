@@ -69,7 +69,7 @@
     right: 4px;
   }
 
-  .card-title-section {
+  .card-title {
     padding-right: 150px;
   }
 }
@@ -101,11 +101,10 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding-right: 190px;
 }
 
 .card-title {
-  font-size: var(--font-3xl);
+  font-size: var(--font-2xl);
   font-weight: 800;
   color: #fff;
   text-transform: uppercase;
@@ -113,17 +112,7 @@
   margin: 0;
   font-family: var(--font-bebas, 'Bebas Neue', sans-serif);
   line-height: 1;
-}
-
-.card-subtitle {
-  font-size: var(--font-sm);
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.4;
-  margin: 0;
-  white-space: pre-line;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  padding-right: 190px;
 }
 
 .card-desc {
@@ -137,6 +126,12 @@
   display: -webkit-box;
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
+}
+
+.card-desc-wrap {
+  width: 100%;
+  padding-right: 0;
+  margin-top: 8px;
 }
 
 .card-icon-wrap {
