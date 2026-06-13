@@ -135,7 +135,7 @@ function generateRoomCode(seed: bigint): string {
   let code = ''
   for (let i = 0; i < 6; i++) {
     s = (s * 1664525 + 1013904223) % (2 ** 32)
-    code += chars[s % chars.length]
+    code += chars[Math.floor(s / 134217728) % chars.length]
   }
   return code
 }
@@ -557,21 +557,24 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
 
     while (!roomCodeInsertSuccess && roomCodeAttempts < maxRoomCodeAttempts) {
       try {
+        await client.query(`SAVEPOINT room_code_attempt`);
         verifyLog("INSERT", "sessions", "OK", `game_id=${gameId} — executing`);
         await client.query(
           `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, results_auto_advance_sec, seed, room_code)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, resultsAutoAdvanceSec, seed, roomCode]
         );
+        await client.query(`RELEASE SAVEPOINT room_code_attempt`);
         roomCodeInsertSuccess = true;
       } catch (err: unknown) {
+        await client.query(`ROLLBACK TO SAVEPOINT room_code_attempt`);
         roomCodeAttempts++;
         if (roomCodeAttempts >= maxRoomCodeAttempts) {
           throw new Error("Failed to generate unique room code after 5 attempts");
         }
         const pgErr = err as { code?: string; constraint?: string };
         if (pgErr.code === "23505" && pgErr.constraint === "sessions_room_code_key") {
-          roomCode = generateRoomCode(seed);
+          roomCode = generateRoomCode(seed + BigInt(roomCodeAttempts));
         } else {
           throw err; // Re-throw all other errors immediately (including game_id PK violations)
         }
