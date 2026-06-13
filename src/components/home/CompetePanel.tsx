@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import cpStyles from "./CompetePanel.module.css";
@@ -49,7 +49,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
   const [tab, setTab] = useState<'invitations'|'your_turn'|'completed'>('invitations')
   const [activeGames, setActiveGames] = useState<ActiveGame[]>([])
 
-  const fetchInvites = async () => {
+  const fetchInvites = useCallback(async () => {
     if (!playerId) {
       setInvites([])
       setInvitesLoading(false)
@@ -74,7 +74,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       setInvites([])
       setInvitesLoading(false)
     }
-  }
+  }, [playerId])
 
   const fetchActiveGames = async () => {
     if (!playerId) return
@@ -117,7 +117,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       supabaseBrowser.removeChannel(channel)
       clearInterval(interval)
     }
-  }, [playerId])
+  }, [playerId, fetchInvites])
 
   const handleCreate = async () => {
     if (!playerId) { onRequireAuth(); return }
