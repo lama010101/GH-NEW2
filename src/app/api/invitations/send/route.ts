@@ -1,5 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/core/supabaseServer";
 
@@ -11,26 +10,18 @@ function isValidUUID(uuid: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  const cookieStore = cookies();
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const supabase = createServerClient(
+  const token = authHeader.substring(7);
+  const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if middleware refreshes sessions.
-          }
-        },
+      global: {
+        headers: { Authorization: `Bearer ${token}` },
       },
     }
   );
