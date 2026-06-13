@@ -569,11 +569,11 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
         if (roomCodeAttempts >= maxRoomCodeAttempts) {
           throw new Error("Failed to generate unique room code after 5 attempts");
         }
-        // Check for Postgres unique violation error code 23505
-        if (err instanceof Error && "code" in err && (err as { code: string }).code === "23505") {
+        const pgErr = err as { code?: string; constraint?: string };
+        if (pgErr.code === "23505" && pgErr.constraint === "sessions_room_code_key") {
           roomCode = generateRoomCode(seed);
         } else {
-          throw err; // Re-throw non-unique-violation errors immediately
+          throw err; // Re-throw all other errors immediately (including game_id PK violations)
         }
       }
     }
