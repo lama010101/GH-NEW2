@@ -2063,3 +2063,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-INV-CREATE-FULL-AUDIT-001 | Full audit of game creation flow — find and fix the double INSERT root cause | DONE | 2026-06-13 |
 - Files modified: src/server/sessionCore.ts
 - Description: Fixed roomCode LCG math flaw causing only 32 unique codes and wrapped retry loop with Postgres SAVEPOINT
+| MP-FIX-ERA-DOUBLE-CALL-001 | Remove redundant SET_YEAR_RANGE from era toggle | DONE | 2026-06-13 |
