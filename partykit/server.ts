@@ -405,6 +405,9 @@ export default class GameServer {
       if (configRecord && typeof configRecord["yearMax"] === "number") {
         s["yearMax"] = configRecord["yearMax"];
       }
+      if (configRecord && Array.isArray(configRecord["selectedEras"])) {
+        s["selectedEras"] = configRecord["selectedEras"];
+      }
     }
     this.snapshot = snapshot;
     this.snapshotLoaded = true;
