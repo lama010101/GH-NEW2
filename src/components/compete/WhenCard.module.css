@@ -189,7 +189,7 @@
 .expandLabel {
   font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
-  color: var(--gh-text-muted);
+  color: white;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -203,9 +203,9 @@
 }
 
 .expandRank {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: 13px; /* layout-constrained — do not tokenize */
   font-weight: 600;
-  color: var(--gh-text-muted);
+  color: white;
 }
 
 /* ── Leaderboard rows ── */
