@@ -357,6 +357,8 @@ export default function LobbySection({
           setInviteStates(prev => ({ ...prev, [player.id]: 'idle' }));
         }, 3000);
       } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error("[INVITE_SEND_FAIL]", res.status, errData);
         setInviteStates(prev => ({ ...prev, [player.id]: 'error' }));
         setTimeout(() => {
           setInviteStates(prev => ({ ...prev, [player.id]: 'idle' }));
