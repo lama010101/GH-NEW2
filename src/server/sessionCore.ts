@@ -1000,6 +1000,39 @@ export async function setCompeteEraSelection(input: {
     throw new Error(`Failed to update era selection: ${updateError.message}`);
   }
 
+  // Re-fetch events for the new year range and update SESSION_CREATED eventIds
+  // so startCompeteSession uses the correct events when the game begins.
+  const { data: sessionRow, error: sessionRowError } = await client
+    .from("sessions")
+    .select("total_rounds")
+    .eq("game_id", gameId)
+    .single();
+
+  if (sessionRowError || !sessionRow) {
+    throw new Error("Failed to read total_rounds for event refetch");
+  }
+
+  const freshEvents = await fetchRandomEventsForSession(sessionRow.total_rounds, {
+    minYear: yearMinRounded,
+    maxYear: yearMaxRounded,
+  });
+
+  if (freshEvents.length !== sessionRow.total_rounds) {
+    throw new Error(
+      `Era filter produced only ${freshEvents.length} events for year range ${yearMinRounded}–${yearMaxRounded}, need ${sessionRow.total_rounds}. Try selecting more eras.`
+    );
+  }
+
+  // Use raw SQL to update the JSONB payload since Supabase JS client does not
+  // handle nested JSONB merges cleanly.
+  await dbPool.query(
+    `UPDATE round_events
+     SET payload = payload || jsonb_build_object('eventIds', $2::jsonb)
+     WHERE game_id = $1
+       AND event_type = 'SESSION_CREATED'`,
+    [gameId, JSON.stringify(freshEvents.map(e => e.id))]
+  );
+
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
   if (!snapshot) {
     throw new Error(`Failed to load snapshot after era selection update: ${gameId}`);
