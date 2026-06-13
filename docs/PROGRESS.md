@@ -2059,3 +2059,7 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - Result: 1 request arrives (single caller confirmed)
   - Conclusion: Issue is internal to one request, not duplicate HTTP requests
 
+| MP-FIX-ERA-SYNC-LOOP-001 | Fix era button snap-back from stale snapshot sync | DONE | 2026-06-13 |
+| MP-INV-CREATE-FULL-AUDIT-001 | Full audit of game creation flow — find and fix the double INSERT root cause | DONE | 2026-06-13 |
+- Files modified: src/server/sessionCore.ts
+- Description: Fixed roomCode LCG math flaw causing only 32 unique codes and wrapped retry loop with Postgres SAVEPOINT
