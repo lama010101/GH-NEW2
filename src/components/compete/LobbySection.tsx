@@ -339,10 +339,13 @@ export default function LobbySection({
   const handleSendInvite = async (player: PlayerPoolEntry) => {
     setInviteStates(prev => ({ ...prev, [player.id]: 'pending' }));
     try {
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
       const res = await fetch('/api/invitations/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ game_id: snapshot.gameId, invitee_id: player.id }),
       });
       if (res.ok) {
