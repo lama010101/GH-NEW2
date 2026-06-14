@@ -2070,3 +2070,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-INVITE-AUTH-001 | Fix /api/players/recent Bearer token auth | src/app/api/players/recent/route.ts | DONE | 8cfe256 |
 | MP-FIX-ERA-APPLY-SNAPSHOT-001 | Hoist selectedEras in applySnapshotAndBroadcast, redeploy PartyKit | DONE | 2026-06-13 |
 | MP-FIX-ERA-SNAPBACK-FINAL-001 | Fix era snap-back — move WS side effect out of useState updater | DONE | 2026-06-14 |
+| MP-FIX-ERA-SNAPBACK-FINAL-001 | Fix era snap-back — move WS side effect out of useState updater | DONE | 2026-06-14 |
