@@ -2071,3 +2071,7 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-ERA-APPLY-SNAPSHOT-001 | Hoist selectedEras in applySnapshotAndBroadcast, redeploy PartyKit | DONE | 2026-06-13 |
 | MP-FIX-ERA-SNAPBACK-FINAL-001 | Fix era snap-back — move WS side effect out of useState updater | DONE | 2026-06-14 |
 | MP-FIX-ERA-SNAPBACK-FINAL-001 | Fix era snap-back — move WS side effect out of useState updater | DONE | 2026-06-14 |
+| MP-FIX-ERA-SNAPBACK-FINAL-002 | Fix era snap-back — value comparison in selectedEras sync useEffect | DONE | 2026-06-14 |
+| MP-FIX-AUTOADVANCE-001 | Fix duplicate result timer from triggerRoundExpiry fallback handler | partykit/server.ts | DONE | 1487a59 |
+| MP-FIX-AUTOADVANCE-002 | Add 500ms snapshot settle wait before calling /complete | partykit/server.ts | DONE | c2ae5ec |
+| MP-FIX-AUTOADVANCE-003 | Poll snapshot status up to 8s before calling /complete — eliminates spurious ROUND_COMPLETE→ROUND_COMPLETE FSM error | partykit/server.ts | DONE | 8ecc450 |
