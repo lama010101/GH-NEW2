@@ -118,13 +118,24 @@ export default function LobbySection({
   }, [snapshot.config.resultsAutoAdvanceSec]);
 
   // Sync selected eras to authoritative snapshot value whenever it changes externally.
+  // Use a stable string key to avoid firing on every broadcast (JSON arrays are always
+  // new references). Skip sync if local state already matches incoming value.
+  const snapshotErasKey = (snapshot.config.selectedEras ?? ERAS.map(e => e.id))
+    .slice()
+    .sort()
+    .join(',');
   useEffect(() => {
     if (suppressEraSyncRef.current) {
       suppressEraSyncRef.current = false;
       return;
     }
-    setSelectedEras(new Set((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[]));
-  }, [snapshot.config.selectedEras]);
+    const incoming = (snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[];
+    const incomingKey = incoming.slice().sort().join(',');
+    const localKey = [...selectedEras].sort().join(',');
+    if (incomingKey === localKey) return; // already in sync, skip
+    setSelectedEras(new Set(incoming));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshotErasKey]);
 
   /* ── Invite panel ── */
   const [linkCopied, setLinkCopied] = useState(false);
