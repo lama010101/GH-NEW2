@@ -255,7 +255,7 @@ export function mapSessionRowToConfig(row: SessionRow): SessionConfig {
     totalRounds: row.total_rounds,
     yearMin: row.year_min,
     yearMax: row.year_max,
-    selectedEras: Array.isArray(row.selected_eras) ? row.selected_eras : [],
+    selectedEras: Array.isArray(row.selected_eras) ? row.selected_eras : ['ancient','medieval','earlymodern','modern','contemporary'],
     resultsAutoAdvanceSec: row.results_auto_advance_sec,
     hostPlayerId: null,
     sessionDeadline: toIsoString(row.session_deadline),
@@ -448,7 +448,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
       yearMin: gameState.session.yearMin,
       yearMax: gameState.session.yearMax,
       resultsAutoAdvanceSec: gameState.session.resultsAutoAdvanceSec,
-      selectedEras: Array.isArray(gameState.session.selectedEras) ? gameState.session.selectedEras : ['prehistoric','ancient','medieval','earlymodern','modern','contemporary'],
+      selectedEras: Array.isArray(gameState.session.selectedEras) ? gameState.session.selectedEras : ['ancient','medieval','earlymodern','modern','contemporary'],
       hostPlayerId: hostPlayer ? hostPlayer.playerId : null,
       sessionDeadline: gameState.session.sessionDeadline,
       startedAt: null,
@@ -978,7 +978,7 @@ export async function setCompeteEraSelection(input: {
     throw new Error("Only the host can change era selection");
   }
 
-  const validEras = ['prehistoric','ancient','medieval','earlymodern','modern','contemporary'];
+  const validEras = ['ancient','medieval','earlymodern','modern','contemporary'];
   const sanitized = selectedEras.filter(e => validEras.includes(e));
   if (sanitized.length === 0) {
     throw new Error("At least one era must be selected");

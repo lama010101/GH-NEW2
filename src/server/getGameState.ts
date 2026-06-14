@@ -288,7 +288,7 @@ export async function getGameState(
     yearMin: sessionJson.year_min as number,
     yearMax: sessionJson.year_max as number,
     resultsAutoAdvanceSec: (sessionJson.results_auto_advance_sec as number) ?? 90,
-    selectedEras: Array.isArray(sessionJson.selected_eras) ? (sessionJson.selected_eras as string[]) : ['prehistoric','ancient','medieval','earlymodern','modern','contemporary'],
+    selectedEras: Array.isArray(sessionJson.selected_eras) ? (sessionJson.selected_eras as string[]) : ['ancient','medieval','earlymodern','modern','contemporary'],
     sessionDeadline: sessionJson.session_deadline ? new Date(sessionJson.session_deadline as string).toISOString() : null,
     createdAt: new Date(sessionJson.created_at as string).toISOString(),
     roomCode: sessionJson.room_code as string
