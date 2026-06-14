@@ -81,6 +81,7 @@ export default function LobbySection({
   onKickPlayer,
   onSetEraSelection,
 }: LobbySectionProps) {
+  void onSetYearRange;
   const router = useRouter();
   const t = useTranslations();
   const tGame = useTranslations('game');
@@ -143,20 +144,18 @@ export default function LobbySection({
   const suppressEraSyncRef = useRef(false);
 
   const toggleEra = useCallback((id: EraId) => {
-    setSelectedEras(prev => {
-      if (prev.has(id) && prev.size === 1) return prev;
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      const selected = ERAS.filter(e => next.has(e.id));
-      const newMin = Math.min(...selected.map(e => e.yearMin));
-      const newMax = Math.max(...selected.map(e => e.yearMax));
-      setYearMinValue(newMin);
-      setYearMaxValue(newMax);
-      suppressEraSyncRef.current = true;
-      onSetEraSelection?.([...next], newMin, newMax);
-      return next;
-    });
-  }, [onSetEraSelection, onSetYearRange]);
+    if (selectedEras.has(id) && selectedEras.size === 1) return;
+    const next = new Set(selectedEras);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    const selected = ERAS.filter(e => next.has(e.id));
+    const newMin = Math.min(...selected.map(e => e.yearMin));
+    const newMax = Math.max(...selected.map(e => e.yearMax));
+    setSelectedEras(next);
+    setYearMinValue(newMin);
+    setYearMaxValue(newMax);
+    suppressEraSyncRef.current = true;
+    onSetEraSelection?.([...next], newMin, newMax);
+  }, [selectedEras, onSetEraSelection]);
 
   const allErasSelected = selectedEras.size === ERAS.length;
   const toggleAllEras = () => {
