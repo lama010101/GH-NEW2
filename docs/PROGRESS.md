@@ -2067,4 +2067,5 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-ERA-DOUBLE-CALL-001 | Remove redundant SET_YEAR_RANGE from era toggle | DONE | 2026-06-13 |
 
 | MP-FIX-STATE-RESET-001 | Fix local state reset on STATE_UPDATE in lobby and home page invitation polling | DONE | 2026-06-13 |
+| MP-FIX-INVITE-AUTH-001 | Fix /api/players/recent Bearer token auth | src/app/api/players/recent/route.ts | DONE | 8cfe256 |
 | MP-FIX-ERA-APPLY-SNAPSHOT-001 | Hoist selectedEras in applySnapshotAndBroadcast, redeploy PartyKit | DONE | 2026-06-13 |
