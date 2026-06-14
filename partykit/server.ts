@@ -526,6 +526,18 @@ export default class GameServer {
       }
     }
 
+    // Wait up to 8s for any in-flight applySnapshotAndBroadcast to update this.snapshot
+    {
+      const pollStart = Date.now();
+      while (Date.now() - pollStart < 8000) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 200));
+        if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_ACTIVE" || this.snapshot.currentRoundIndex !== expectedRoundIndex) {
+          this.completeInFlight = false;
+          return;
+        }
+      }
+    }
+
     try {
       // Step 1: Complete the round (score + ROUND_COMPLETE event)
       try {
