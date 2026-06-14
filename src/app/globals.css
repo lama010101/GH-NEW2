@@ -229,8 +229,8 @@ a {
   --gh-border-default: rgba(255, 255, 255, 0.12);
 
   /* --- Glass surfaces (passive / containers) --- */
-  --gh-glass-bg:        rgba(15, 25, 50, 0.75);
-  --gh-glass-bg-hover:  rgba(20, 35, 70, 0.88);
+  --gh-glass-bg:        rgba(30, 30, 40, 0.75);
+  --gh-glass-bg-hover:  rgba(40, 40, 55, 0.88);
   --gh-glass-border:    rgba(99, 155, 255, 0.28);
   --gh-glass-border-hover: rgba(99, 155, 255, 0.50);
   --gh-glass-shadow:    0 4px 24px rgba(0, 0, 0, 0.45);

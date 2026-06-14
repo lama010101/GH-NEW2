@@ -399,13 +399,13 @@
 }
 
 .miniTileWhere {
-  background: rgba(8, 145, 178, 0.12);
-  border: 1px solid rgba(34, 211, 238, 0.30);
+  background: var(--gh-where-card-bg);
+  border: 1px solid var(--gh-where-card-border);
 }
 
 .miniTileWhen {
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.32);
+  background: var(--gh-when-card-bg);
+  border: 1px solid var(--gh-when-card-border);
 }
 
 .miniNumber {
