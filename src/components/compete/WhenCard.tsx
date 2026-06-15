@@ -5,6 +5,7 @@ import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import { getUsernameGradientStyle } from "@/core/competeUtils";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
+import InlineImageBadge from './InlineImageBadge';
 import styles from "./WhenCard.module.css";
 
 interface Hint {
@@ -25,6 +26,7 @@ interface WhenCardProps {
   setWhenCluesExpanded: (v: boolean) => void;
   roundHints: Hint[];
   snapshotPlayers: SessionPlayer[];
+  isVisible?: boolean;
 }
 
 export default function WhenCard({
@@ -38,6 +40,7 @@ export default function WhenCard({
   setWhenCluesExpanded,
   roundHints,
   snapshotPlayers,
+  isVisible,
 }: WhenCardProps) {
   const t = useTranslations('game');
   // Compute whenRows
@@ -118,17 +121,13 @@ export default function WhenCard({
                   const badge = myResult?.badges?.find(b => b.dimension === 'year');
                   const near  = myResult?.nearMisses?.find(n => n.dimension === 'year');
                   if (!badge && !near) return null;
-                  const tierChipClass: Record<string, string> = {
-                    gold:   styles.badgeChipGold,
-                    silver: styles.badgeChipSilver,
-                    bronze: styles.badgeChipBronze,
-                  };
                   if (badge) {
-                    const chipClass = tierChipClass[badge.tier] ?? styles.badgeChipBronze;
                     return (
-                      <span className={`${styles.badgeChip} ${chipClass}`}>
-                        {badge.tier.charAt(0).toUpperCase() + badge.tier.slice(1)}
-                      </span>
+                      <InlineImageBadge
+                        dimension="year"
+                        tier={badge.tier as 'gold' | 'silver' | 'bronze'}
+                        isTriggered={!!isVisible}
+                      />
                     );
                   }
                   return (
