@@ -150,6 +150,7 @@
     "year_diff_label": "{n} years off",
     "results_timer_label": "Next round in {n}s",
     "submitted": "Submitted",
+    "guess_submitted": "Guess submitted!",
     "waiting_players": "Waiting for other players...",
     "final_rankings": "Final Rankings",
     "you": "(you)",
