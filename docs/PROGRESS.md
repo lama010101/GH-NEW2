@@ -2078,3 +2078,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-ERA-DEFAULTS-001 | Fix stale era defaults in getGameState and sessionCore | DONE | 2026-06-14 |
 | MP-BADGE-IMG-001 | Add onComplete prop to RainbowRing | RainbowRing.tsx | done |
 | MP-BADGE-IMG-002 | Fix getBadgeSoundPath silver/bronze mapping | competeUtils.ts | done |
+| MP-BADGE-IMG-003 | Create InlineImageBadge component | InlineImageBadge.tsx, InlineImageBadge.module.css | done |
