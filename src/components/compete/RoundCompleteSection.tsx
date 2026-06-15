@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import RainbowRing from "@/components/compete/RainbowRing";
@@ -70,6 +70,7 @@ export default function RoundCompleteSection({
   const accuracyCardRef = useRef<HTMLDivElement>(null);
   const whereCardRef = useRef<HTMLDivElement>(null);
   const whenCardRef = useRef<HTMLDivElement>(null);
+  const [histContextOpen, setHistContextOpen] = useState(false);
 
   useEffect(() => {
     const el = accuracyCardRef.current;
@@ -137,11 +138,16 @@ export default function RoundCompleteSection({
                 <div className={styles.eventImagePlaceholder}>No image available</div>
               )}
               <div className={styles.eventMeta}>{correctYear} · {correctName}</div>
-              <div className={styles.eventDescriptionWrap}>
-                <div className={styles.eventDescription}>
-                  {round.description ?? tc('no_description')}
-                </div>
-              </div>
+              {round.description && (
+                <button
+                  className={styles.histContextTrigger}
+                  onClick={() => setHistContextOpen(true)}
+                >
+                  <span className={styles.histContextIcon}>📖</span>
+                  <span className={styles.histContextLabel}>Historical Context</span>
+                  <span className={styles.histContextArrow}>›</span>
+                </button>
+              )}
               {(round as unknown as { sourceUrl?: string }).sourceUrl && (
                 <div className={styles.sourceButtonWrap}>
                   <button
@@ -335,6 +341,21 @@ export default function RoundCompleteSection({
                 )}
               </div>
             ) : null}
+
+            {/* HISTORICAL CONTEXT BOTTOM SHEET */}
+            {histContextOpen && round.description && (
+              <div className={styles.histSheetOverlay} onClick={() => setHistContextOpen(false)}>
+                <div className={styles.histSheet} onClick={e => e.stopPropagation()}>
+                  <div className={styles.histSheetHeader}>
+                    <span className={styles.histSheetTitle}>Historical Context</span>
+                    <button className={styles.histSheetClose} onClick={() => setHistContextOpen(false)}>✕</button>
+                  </div>
+                  <div className={styles.histSheetBody}>
+                    {round.description}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* FIXED BOTTOM BAR */}
             <div className={styles.bottomBar}>
