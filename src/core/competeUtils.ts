@@ -43,10 +43,10 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
 export function getBadgeSoundPath(tier: string, dimension: string): string {
   if (dimension === 'combo') {
     if (tier === 'gold') return '/sounds/badges/perfect-combo.mp3';
-    if (tier === 'silver') return '/sounds/badges/great-combo.mp3';
-    return '/sounds/badges/amazing-combo.mp3';
+    if (tier === 'silver') return '/sounds/badges/amazing-combo.mp3';
+    return '/sounds/badges/great-combo.mp3';
   }
   if (tier === 'gold') return '/sounds/badges/perfect.mp3';
-  if (tier === 'silver') return '/sounds/badges/great.mp3';
-  return '/sounds/badges/amazing.mp3';
+  if (tier === 'silver') return '/sounds/badges/amazing.mp3';
+  return '/sounds/badges/great.mp3';
 }
