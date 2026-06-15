@@ -443,3 +443,90 @@
   border: 0.5px solid var(--gh-near-miss-border);
   color: var(--gh-near-miss-text);
 }
+
+/* ── Historical Context trigger row (MP-UX-HIST-CONTEXT-001) ── */
+
+.histContextTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--gh-border-subtle);
+  padding: 10px 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.histContextIcon {
+  font-size: var(--font-sm);
+  flex-shrink: 0;
+}
+
+.histContextLabel {
+  flex: 1;
+  font-size: var(--font-sm);
+  color: var(--gh-text-secondary);
+  font-weight: 500;
+}
+
+.histContextArrow {
+  font-size: var(--gh-font-base);
+  color: var(--gh-text-muted);
+}
+
+/* ── Historical Context bottom sheet (MP-UX-HIST-CONTEXT-001) ── */
+
+.histSheetOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.histSheet {
+  background: var(--gh-bg-card);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  width: 100%;
+  max-height: 65vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.histSheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--gh-border-subtle);
+  flex-shrink: 0;
+}
+
+.histSheetTitle {
+  font-size: var(--gh-font-base);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
+.histSheetClose {
+  background: transparent;
+  border: none;
+  color: var(--gh-text-muted);
+  font-size: var(--gh-font-base);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.histSheetBody {
+  overflow-y: auto;
+  padding: 16px 20px;
+  font-size: var(--font-sm);
+  color: var(--gh-text-secondary);
+  line-height: 1.7;
+}
