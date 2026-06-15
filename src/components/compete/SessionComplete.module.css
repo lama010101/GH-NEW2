@@ -8,7 +8,7 @@
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
-  background: var(--gh-bg-base);
+  background: transparent;
   padding: 0 0 96px;
   color: #ffffff;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -401,11 +401,17 @@
 .miniTileWhere {
   background: var(--gh-where-card-bg);
   border: 1px solid var(--gh-where-card-border);
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: 0 4px 16px var(--gh-card-shadow), 0 0 14px var(--gh-where-card-glow);
 }
 
 .miniTileWhen {
   background: var(--gh-when-card-bg);
   border: 1px solid var(--gh-when-card-border);
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: 0 4px 16px var(--gh-card-shadow), 0 0 14px var(--gh-when-card-glow);
 }
 
 .miniNumber {
