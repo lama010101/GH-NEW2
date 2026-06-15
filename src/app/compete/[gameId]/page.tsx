@@ -447,15 +447,13 @@ export default function CompeteGamePage() {
     <main className={`app-shell ${pageStyles.pageShell}`}>
       <div className={pageStyles.bgImage} />
       <div className={pageStyles.bgScrim} />
+      {timerClamped && (
+        <div className={pageStyles.timerFlashOverlay} />
+      )}
       <div className={pageStyles.pageContent}>
         <div className="shell-grid">
         {/* Toast stack - top-center (hidden during ROUND_COMPLETE) */}
         {/* REMOVED: Duplicate notification - avatar-side toasts in RoundActiveSection.tsx handle this */}
-
-        {/* Red flash overlay */}
-        {timerClamped && (
-          <div className={pageStyles.timerFlashOverlay} />
-        )}
 
 
         {snapshot.status === "LOBBY" ? (

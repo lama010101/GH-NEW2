@@ -69,11 +69,17 @@
 }
 
 .timerFlashOverlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 40;
+  background-color: rgba(220, 38, 38, 0.45);
   pointer-events: none;
-  background-color: rgba(220, 38, 38, 0.35);
+  z-index: 9999;
+  animation: flashFadeOut 600ms ease-out forwards;
+}
+
+@keyframes flashFadeOut {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .connectionLostCard {
