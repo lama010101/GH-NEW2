@@ -1,0 +1,26 @@
+.badge {
+  display: inline-block;
+  width: 56px;
+  height: 56px;
+  opacity: 0;
+}
+
+.badgeVisible {
+  opacity: 1;
+  animation: badgePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes badgePopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
