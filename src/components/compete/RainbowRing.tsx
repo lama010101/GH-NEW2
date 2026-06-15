@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface RainbowRingProps {
   value: number;
+  onComplete?: () => void;
 }
 
-export default function RainbowRing({ value }: RainbowRingProps) {
+export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
   const r = 80;
   const cx = 100;
   const cy = 100;
@@ -12,6 +13,7 @@ export default function RainbowRing({ value }: RainbowRingProps) {
   const circumference = 2 * Math.PI * r;
 
   const [displayed, setDisplayed] = useState(0);
+  const hasCompletedRef = useRef(false);
 
   useEffect(() => {
     if (value <= 0) {
@@ -22,6 +24,9 @@ export default function RainbowRing({ value }: RainbowRingProps) {
     const steps = Math.round(value);
     const totalDuration = 900; // ms
     const stepDuration = totalDuration / steps;
+
+    // Reset completion flag when target value changes
+    hasCompletedRef.current = false;
 
     // Build haptic pattern: 10ms vibration, 10ms gap per step
     // navigator.vibrate accepts [vibrate, pause, vibrate, pause, ...]
@@ -38,7 +43,14 @@ export default function RainbowRing({ value }: RainbowRingProps) {
     const interval = setInterval(() => {
       current += 1;
       setDisplayed(current);
-      if (current >= steps) clearInterval(interval);
+      if (current >= steps) {
+        clearInterval(interval);
+        // Trigger onComplete exactly once when animation completes
+        if (!hasCompletedRef.current) {
+          hasCompletedRef.current = true;
+          onComplete?.();
+        }
+      }
     }, stepDuration);
 
     return () => {
@@ -47,7 +59,7 @@ export default function RainbowRing({ value }: RainbowRingProps) {
         navigator.vibrate(0); // cancel haptic on unmount
       }
     };
-  }, [value]);
+  }, [value, onComplete]);
 
   const clamped = Math.max(0, Math.min(100, displayed));
   const offset = circumference * (1 - clamped / 100);
