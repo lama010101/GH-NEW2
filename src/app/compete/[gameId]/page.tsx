@@ -20,12 +20,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
 import type { CompeteSessionSnapshot } from "@/core/types";
 import { useIdentity } from "@/hooks/useIdentity";
 import { HintModal } from "@/components/HintModal";
 import type { HintPurchaseResult } from "@/components/HintModal";
 import { RoundResult, AllRoundResult } from "@/core/competeTypes";
-import BadgePopup from "@/components/compete/BadgePopup";
 import SessionComplete from "@/components/compete/SessionComplete";
 import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import LobbySection from "@/components/compete/LobbySection";
@@ -39,6 +39,8 @@ export default function CompeteGamePage() {
   const params = useParams<{ gameId: string }>();
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
+  const t = useTranslations('game');
+
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
   const [allRoundResults, setAllRoundResults] = useState<AllRoundResult[] | null>(null);
@@ -49,6 +51,7 @@ export default function CompeteGamePage() {
   const [busy, setBusy] = useState(false);
   const [localSubmitted, setLocalSubmitted] = useState(false);
   const [timerClamped, setTimerClamped] = useState(false);
+  const [selfSubmitToast, setSelfSubmitToast] = useState(false);
   const [hintModalOpen, setHintModalOpen] = useState(false);
   const [hintResult, setHintResult] = useState<HintPurchaseResult>({
     purchasedIds: [],
@@ -62,7 +65,6 @@ export default function CompeteGamePage() {
   const [whenLbExpanded, setWhenLbExpanded] = useState(false);
   const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
-  const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [wsDisconnected, setWsDisconnected] = useState(false);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
@@ -71,12 +73,8 @@ export default function CompeteGamePage() {
     whereAccPenalty: 0,
     whenAccPenalty: 0,
   });
-  const badgePopupShownForRoundRef = useRef<number>(-1);
-  const whereCardSeenRef = useRef(false);
-  const whenCardSeenRef = useRef(false);
 
   const router = useRouter();
-
   const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity();
   // Auto-submit on timer expiry using current input values.
   // Refs are necessary because useEffect closures cannot safely read state that changes frequently.
@@ -120,6 +118,7 @@ export default function CompeteGamePage() {
     setGuessLng(null);
     guessLngRef.current = null;
     setLocalSubmitted(false);
+    setSelfSubmitToast(false);
     setRoundResults(null);
     setHintResult({ purchasedIds: [], accPenalty: 0, xpPenalty: 0, whereAccPenalty: 0, whenAccPenalty: 0 });
     submittedHintPenaltyRef.current = { accPenalty: 0, xpPenalty: 0, purchasedIds: [], whereAccPenalty: 0, whenAccPenalty: 0 };
@@ -179,6 +178,8 @@ export default function CompeteGamePage() {
       if (submittedPlayerId !== playerId) {
         setTimerClamped(true);
         setTimeout(() => setTimerClamped(false), 600);
+      } else {
+        setSelfSubmitToast(true);
       }
     },
     onTimerClamped: (newPhaseEndsAt) => {
@@ -251,50 +252,6 @@ export default function CompeteGamePage() {
     const img = new Image();
     img.src = nextImageUrl;
   }, [snapshot?.currentRoundIndex, snapshot?.status, snapshot?.rounds]);
-
-  useEffect(() => {
-    if (snapshot?.status === "ROUND_ACTIVE") {
-      whereCardSeenRef.current = false;
-      whenCardSeenRef.current = false;
-      setShowBadgePopup(false);
-    }
-  }, [snapshot?.status, snapshot?.currentRoundIndex]);
-
-  const maybeShowBadgePopup = useCallback(() => {
-    if (badgePopupShownForRoundRef.current === (snapshot?.currentRoundIndex ?? -1)) return;
-    const myResult = roundResults?.find(r => r.playerId === playerId);
-    if (!myResult) return;
-    const badges = myResult.badges ?? [];
-    const nearMisses = myResult.nearMisses ?? [];
-    if (badges.length === 0 && nearMisses.length === 0) return;
-
-    const needsWhere = badges.some(b => b.dimension === 'location') || nearMisses.some(n => n.dimension === 'location');
-    const needsWhen = badges.some(b => b.dimension === 'year') || nearMisses.some(n => n.dimension === 'year');
-    const needsCombo = badges.some(b => b.dimension === 'combo') || nearMisses.some(n => n.dimension === 'combo');
-
-    const comboReady = !needsCombo || (whereCardSeenRef.current && whenCardSeenRef.current);
-    const whereReady = !needsWhere || whereCardSeenRef.current;
-    const whenReady = !needsWhen || whenCardSeenRef.current;
-
-    if (whereReady && whenReady && comboReady) {
-      badgePopupShownForRoundRef.current = snapshot?.currentRoundIndex ?? -1;
-      setTimeout(() => setShowBadgePopup(true), 300);
-    }
-  }, [snapshot?.currentRoundIndex, roundResults, playerId]);
-
-  const handleAccuracyCardVisible = useCallback(() => {
-    maybeShowBadgePopup();
-  }, [maybeShowBadgePopup]);
-
-  const handleWhereCardVisible = useCallback(() => {
-    whereCardSeenRef.current = true;
-    maybeShowBadgePopup();
-  }, [maybeShowBadgePopup]);
-
-  const handleWhenCardVisible = useCallback(() => {
-    whenCardSeenRef.current = true;
-    maybeShowBadgePopup();
-  }, [maybeShowBadgePopup]);
 
   const viewer = useMemo(() => {
     if (!snapshot || !playerId) return null;
@@ -450,6 +407,11 @@ export default function CompeteGamePage() {
       {timerClamped && (
         <div className={pageStyles.timerFlashOverlay} />
       )}
+      {selfSubmitToast && (
+        <div className={pageStyles.selfSubmitToast}>
+          {t('guess_submitted')}
+        </div>
+      )}
       <div className={pageStyles.pageContent}>
         <div className="shell-grid">
         {/* Toast stack - top-center (hidden during ROUND_COMPLETE) */}
@@ -535,9 +497,6 @@ export default function CompeteGamePage() {
             resultSecsLeft={resultSecsLeft}
             onAdvanceRound={handleAdvanceRound}
             setFullscreenImg={setFullscreenImg}
-            onAccuracyCardVisible={handleAccuracyCardVisible}
-            onWhereCardVisible={handleWhereCardVisible}
-            onWhenCardVisible={handleWhenCardVisible}
           />
         ) : null}
 
@@ -585,14 +544,6 @@ export default function CompeteGamePage() {
           />
         </div>
       )}
-      {showBadgePopup && (() => {
-        const myResult = roundResults?.find(r => r.playerId === playerId);
-        const badges = myResult?.badges ?? []
-        const nearMisses = myResult?.nearMisses ?? []
-        return (
-          <BadgePopup badges={badges} nearMisses={nearMisses} onDismiss={() => setShowBadgePopup(false)} />
-        )
-      })()}
       </div>
     </main>
   );

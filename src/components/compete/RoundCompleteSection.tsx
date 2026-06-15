@@ -37,9 +37,6 @@ interface RoundCompleteSectionProps {
   resultSecsLeft: number | null;
   onAdvanceRound: () => void;
   setFullscreenImg: (url: string | null) => void;
-  onAccuracyCardVisible?: () => void;
-  onWhereCardVisible?: () => void;
-  onWhenCardVisible?: () => void;
 }
 
 export default function RoundCompleteSection({
@@ -60,9 +57,6 @@ export default function RoundCompleteSection({
   resultSecsLeft,
   onAdvanceRound,
   setFullscreenImg,
-  onAccuracyCardVisible,
-  onWhereCardVisible,
-  onWhenCardVisible,
 }: RoundCompleteSectionProps) {
   const router = useRouter();
   const t = useTranslations('game');
@@ -72,6 +66,18 @@ export default function RoundCompleteSection({
   const whereCardRef = useRef<HTMLDivElement>(null);
   const whenCardRef = useRef<HTMLDivElement>(null);
   const [histContextOpen, setHistContextOpen] = useState(false);
+
+  const [isAccuracyVisible, setIsAccuracyVisible] = useState(false);
+  const [isWhereVisible, setIsWhereVisible] = useState(false);
+  const [isWhenVisible, setIsWhenVisible] = useState(false);
+  const [isRingDone, setIsRingDone] = useState(false);
+
+  useEffect(() => {
+    setIsAccuracyVisible(false);
+    setIsWhereVisible(false);
+    setIsWhenVisible(false);
+    setIsRingDone(false);
+  }, [snapshot.currentRoundIndex]);
 
   useEffect(() => {
     const el = accuracyCardRef.current;
@@ -256,6 +262,7 @@ export default function RoundCompleteSection({
                 roundHints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
                 snapshotPlayers={snapshot.players}
                 currentRoundIndex={snapshot.currentRoundIndex}
+                isVisible={isWhereVisible}
               /></div>
               <div ref={whenCardRef}><WhenCard
                 roundResults={roundResults}
@@ -268,6 +275,7 @@ export default function RoundCompleteSection({
                 setWhenCluesExpanded={setWhenCluesExpanded}
                 roundHints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
                 snapshotPlayers={snapshot.players}
+                isVisible={isWhenVisible}
               /></div>
             </div>
 
