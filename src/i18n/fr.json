@@ -150,6 +150,7 @@
     "year_diff_label": "{n} ans d'écart",
     "results_timer_label": "Prochaine manche dans {n}s",
     "submitted": "Soumis",
+    "guess_submitted": "Réponse soumise !",
     "waiting_players": "En attente des autres joueurs...",
     "final_rankings": "Classement final",
     "you": "(vous)",
