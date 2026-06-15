@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
+import InlineImageBadge from './InlineImageBadge';
 import styles from "./WhereCard.module.css";
 
 const StaticResultMap = dynamic(
@@ -36,6 +37,7 @@ interface WhereCardProps {
   roundHints: Hint[];
   snapshotPlayers: SessionPlayer[];
   currentRoundIndex: number;
+  isVisible?: boolean;
 }
 
 export default function WhereCard({
@@ -55,6 +57,7 @@ export default function WhereCard({
   roundHints,
   snapshotPlayers,
   currentRoundIndex,
+  isVisible,
 }: WhereCardProps) {
   const t = useTranslations('game');
   const myResult = roundResults?.find(r => r.playerId === playerId);
@@ -89,17 +92,13 @@ export default function WhereCard({
                 const badge = myResult?.badges?.find(b => b.dimension === 'location');
                 const near  = myResult?.nearMisses?.find(n => n.dimension === 'location');
                 if (!badge && !near) return null;
-                const tierChipClass: Record<string, string> = {
-                  gold:   styles.badgeChipGold,
-                  silver: styles.badgeChipSilver,
-                  bronze: styles.badgeChipBronze,
-                };
                 if (badge) {
-                  const chipClass = tierChipClass[badge.tier] ?? styles.badgeChipBronze;
                   return (
-                    <span className={`${styles.badgeChip} ${chipClass}`}>
-                      {badge.tier.charAt(0).toUpperCase() + badge.tier.slice(1)}
-                    </span>
+                    <InlineImageBadge
+                      dimension="location"
+                      tier={badge.tier as 'gold' | 'silver' | 'bronze'}
+                      isTriggered={!!isVisible}
+                    />
                   );
                 }
                 return (
