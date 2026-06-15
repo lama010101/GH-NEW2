@@ -166,11 +166,6 @@ export default function RoundCompleteSection({
                 const badge = myResult?.badges?.find(b => b.dimension === 'combo');
                 const near  = myResult?.nearMisses?.find(n => n.dimension === 'combo');
                 if (!badge && !near) return null;
-                const tierColors: Record<string, { bg: string; border: string; color: string }> = {
-                  gold:   { bg: 'rgba(255,190,0,0.15)',   border: 'rgba(255,190,0,0.4)',   color: '#ffcc44' },
-                  silver: { bg: 'rgba(180,195,215,0.12)', border: 'rgba(180,195,215,0.4)', color: '#b4bece' },
-                  bronze: { bg: 'rgba(180,120,60,0.15)',  border: 'rgba(180,120,60,0.4)',  color: '#cd9a5a' },
-                };
                 if (badge) {
                   return (
                     <InlineImageBadge
