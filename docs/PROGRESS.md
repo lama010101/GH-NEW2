@@ -2076,3 +2076,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-AUTOADVANCE-002 | Add 500ms snapshot settle wait before calling /complete | partykit/server.ts | DONE | c2ae5ec |
 | MP-FIX-AUTOADVANCE-003 | Poll snapshot status up to 8s before calling /complete — eliminates spurious ROUND_COMPLETE→ROUND_COMPLETE FSM error | partykit/server.ts | DONE | 8ecc450 |
 | MP-FIX-ERA-DEFAULTS-001 | Fix stale era defaults in getGameState and sessionCore | DONE | 2026-06-14 |
+| MP-BADGE-IMG-001 | Add onComplete prop to RainbowRing | RainbowRing.tsx | done |
