@@ -671,6 +671,7 @@ export default class GameServer {
     // If this fires, the snapshot builder did not include resultPhaseStartedAt from DB.
     if (isRuntimeState(this.snapshot) &&
         this.snapshot.status === "ROUND_COMPLETE" &&
+        (this.snapshot.resultsAutoAdvanceSec ?? 90) > 0 &&
         typeof resultPhaseEndsAt !== "number") {
       console.error(
         "[PartyKit] INVARIANT VIOLATION: broadcasting ROUND_COMPLETE without resultPhaseEndsAt. " +

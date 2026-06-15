@@ -75,27 +75,27 @@ export default function RoundCompleteSection({
 
   useEffect(() => {
     const el = accuracyCardRef.current;
-    if (!el || !onAccuracyCardVisible) return;
-    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { onAccuracyCardVisible(); obs.disconnect(); } }, { threshold: 0.5 });
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setIsAccuracyVisible(true); obs.disconnect(); } }, { threshold: 0.5 });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [onAccuracyCardVisible]);
+  }, []);
 
   useEffect(() => {
     const el = whereCardRef.current;
-    if (!el || !onWhereCardVisible) return;
-    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { onWhereCardVisible(); obs.disconnect(); } }, { threshold: 0.5 });
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setIsWhereVisible(true); obs.disconnect(); } }, { threshold: 0.5 });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [onWhereCardVisible]);
+  }, []);
 
   useEffect(() => {
     const el = whenCardRef.current;
-    if (!el || !onWhenCardVisible) return;
-    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { onWhenCardVisible(); obs.disconnect(); } }, { threshold: 0.5 });
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setIsWhenVisible(true); obs.disconnect(); } }, { threshold: 0.5 });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [onWhenCardVisible]);
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -159,7 +159,7 @@ export default function RoundCompleteSection({
             {/* ACCURACY RING CARD */}
             <div ref={accuracyCardRef} className={styles.accuracyCard}>
               <div className={styles.accuracyRingWrap}>
-                <RainbowRing value={accuracy} />
+                <RainbowRing value={accuracy} onComplete={() => setIsRingDone(true)} />
               </div>
               <div className={styles.accuracyXp}>{myResult?.score ?? 0} XP</div>
               {(() => {
@@ -172,12 +172,12 @@ export default function RoundCompleteSection({
                   bronze: { bg: 'rgba(180,120,60,0.15)',  border: 'rgba(180,120,60,0.4)',  color: '#cd9a5a' },
                 };
                 if (badge) {
-                  const c = tierColors[badge.tier] ?? tierColors.bronze;
-                  const getBadgeStyle = () => ({ '--badge-bg': c.bg, '--badge-border': c.border, '--badge-color': c.color } as React.CSSProperties);
                   return (
-                    <span className={styles.badgeChip} style={getBadgeStyle()}>
-                      {badge.tier.charAt(0).toUpperCase() + badge.tier.slice(1)}
-                    </span>
+                    <InlineImageBadge
+                      dimension="combo"
+                      tier={badge.tier as 'gold' | 'silver' | 'bronze'}
+                      isTriggered={isAccuracyVisible && isRingDone}
+                    />
                   );
                 }
                 return (
