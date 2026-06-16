@@ -136,5 +136,9 @@ export function subscribeToIdentityChanges(
     }
   );
 
+  if (cachedState.status !== "loading") {
+    callback(cachedState);
+  }
+
   return () => subscription.unsubscribe();
 }
