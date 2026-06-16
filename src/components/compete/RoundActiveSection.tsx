@@ -104,6 +104,12 @@ export default function RoundActiveSection({
   const panLastX = useRef(0);
   const panLastTime = useRef(0);
   const panInstantVelX = useRef(0);
+  const panY = useRef(0);
+  const panLastY = useRef(0);
+  const scaleRef = useRef(1);
+  const pinchPointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStartDist = useRef(0);
+  const pinchStartScale = useRef(1);
   const imgContainerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -359,7 +365,9 @@ export default function RoundActiveSection({
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  // Pan system helpers
+  // Pan + pinch-zoom system helpers
+  // Pinch-to-zoom is enabled by default during GUESS_PHASE. At scale 1 the
+  // behaviour is identical to the previous horizontal-only pan (maxPanY === 0).
   const getMaxPan = (): number => {
     const img = imgRef.current;
     const container = imgContainerRef.current;
@@ -367,18 +375,52 @@ export default function RoundActiveSection({
     const containerW = container.clientWidth;
     const naturalW = img.naturalWidth || 1;
     const naturalH = img.naturalHeight || 1;
-    const renderedW = (naturalW / naturalH) * container.clientHeight;
+    const renderedW = (naturalW / naturalH) * container.clientHeight * scaleRef.current;
     return Math.max(0, (renderedW - containerW) / 2);
+  };
+
+  const getMaxPanY = (): number => {
+    const container = imgContainerRef.current;
+    if (!container) return 0;
+    return Math.max(0, (container.clientHeight * scaleRef.current - container.clientHeight) / 2);
+  };
+
+  const writeTransform = () => {
+    if (imgRef.current) {
+      imgRef.current.style.transform =
+        `translate(calc(-50% + ${panX.current}px), ${panY.current}px) scale(${scaleRef.current})`;
+    }
   };
 
   const applyPan = (x: number): number => {
     const max = getMaxPan();
     const clamped = Math.max(-max, Math.min(max, x));
     panX.current = clamped;
-    if (imgRef.current) {
-      imgRef.current.style.transform = `translateX(calc(-50% + ${clamped}px))`;
-    }
+    writeTransform();
     return clamped;
+  };
+
+  const applyPanY = (y: number): number => {
+    const max = getMaxPanY();
+    const clamped = Math.max(-max, Math.min(max, y));
+    panY.current = clamped;
+    writeTransform();
+    return clamped;
+  };
+
+  const applyScale = (s: number) => {
+    scaleRef.current = Math.max(1, Math.min(4, s));
+    const maxX = getMaxPan();
+    const maxY = getMaxPanY();
+    panX.current = Math.max(-maxX, Math.min(maxX, panX.current));
+    panY.current = Math.max(-maxY, Math.min(maxY, panY.current));
+    writeTransform();
+  };
+
+  const pinchDistance = (): number => {
+    const pts = Array.from(pinchPointers.current.values());
+    if (pts.length < 2) return 0;
+    return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
   };
 
   const startInertia = () => {
@@ -397,28 +439,64 @@ export default function RoundActiveSection({
 
   const handlePanStart = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    panDragging.current = true;
-    panLastX.current = e.clientX;
-    panLastTime.current = e.timeStamp;
-    panInstantVelX.current = 0;
-    panVelX.current = 0;
-    if (panRafId.current) cancelAnimationFrame(panRafId.current);
+    pinchPointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    if (panRafId.current) cancelAnimationFrame(panRafId.current);
+    if (pinchPointers.current.size >= 2) {
+      panDragging.current = false;
+      panVelX.current = 0;
+      pinchStartDist.current = pinchDistance();
+      pinchStartScale.current = scaleRef.current;
+    } else {
+      panDragging.current = true;
+      panLastX.current = e.clientX;
+      panLastY.current = e.clientY;
+      panLastTime.current = e.timeStamp;
+      panInstantVelX.current = 0;
+      panVelX.current = 0;
+    }
     e.preventDefault();
   };
 
   const handlePanMove = (e: React.PointerEvent) => {
+    if (!pinchPointers.current.has(e.pointerId)) return;
+    pinchPointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pinchPointers.current.size >= 2) {
+      const dist = pinchDistance();
+      if (pinchStartDist.current > 0 && dist > 0) {
+        applyScale(pinchStartScale.current * (dist / pinchStartDist.current));
+      }
+      e.preventDefault();
+      return;
+    }
+
     if (!panDragging.current) return;
     const dx = e.clientX - panLastX.current;
+    const dy = e.clientY - panLastY.current;
     const dt = e.timeStamp - panLastTime.current;
     panInstantVelX.current = dt > 0 ? (dx / dt) * 16 : 0;
     panLastX.current = e.clientX;
+    panLastY.current = e.clientY;
     panLastTime.current = e.timeStamp;
     applyPan(panX.current + dx);
+    if (getMaxPanY() > 0) applyPanY(panY.current + dy);
     e.preventDefault();
   };
 
-  const handlePanEnd = () => {
+  const handlePanEnd = (e: React.PointerEvent) => {
+    pinchPointers.current.delete(e.pointerId);
+    if (pinchPointers.current.size >= 2) return;
+    if (pinchPointers.current.size === 1) {
+      const remaining = Array.from(pinchPointers.current.values())[0];
+      panDragging.current = true;
+      panLastX.current = remaining.x;
+      panLastY.current = remaining.y;
+      panLastTime.current = e.timeStamp;
+      panInstantVelX.current = 0;
+      panVelX.current = 0;
+      return;
+    }
     if (!panDragging.current) return;
     panDragging.current = false;
     panVelX.current = panInstantVelX.current;
