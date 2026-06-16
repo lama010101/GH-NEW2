@@ -328,7 +328,14 @@ export default function LobbySection({
   const lastInvitedIds = new Set(lastInvitedFiltered.map((p) => p.id));
   const poolRemainder = playerPool.filter((p) => !lastInvitedIds.has(p.id) && !inLobbyIds.has(p.id) && p.id !== viewerId);
   const priorityList: PlayerPoolEntry[] = [
-    ...lastInvitedFiltered.map((p) => ({ id: p.id, displayName: p.displayName, avatarUrl: p.avatarUrl })),
+    // The cache only supplies identity + ordering; resolve the current name and
+    // avatar from the live player pool (canonical profiles.display_name) so a
+    // recent rename is reflected, falling back to the cached values only when the
+    // player is absent from the live pool.
+    ...lastInvitedFiltered.map((p) => {
+      const live = playerPool.find((pp) => pp.id === p.id);
+      return live ?? { id: p.id, displayName: p.displayName, avatarUrl: p.avatarUrl };
+    }),
     ...poolRemainder,
   ].filter(p => !pendingInvites.some(pi => pi.id === p.id));
 
