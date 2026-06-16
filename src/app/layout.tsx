@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Bebas_Neue, DM_Sans, Sora } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
@@ -31,6 +31,12 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Guess-History Practice",
   description: "Deterministic historical guessing game"
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover"
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
