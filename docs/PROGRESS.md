@@ -2086,3 +2086,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-TOAST-CONFIRM-001 | Add i18n self-submission confirmation toast | DONE | 2026-06-16 |
 | MP-FIX-SUBMIT-OVERLAY-002 | Post-submission overlay + haptic/sound on flash | DONE | 2026-06-16 |
 | MP-FIX-SUBMIT-OVERLAY-002 | Post-submission overlay + haptic/sound on opponent flash | DONE | 2026-06-16 |
+| MP-FEAT-AVATAR-PICKER-001 | Add avatar picker to profile page | src/app/api/user/update-avatar/route.ts, src/app/profile/avatarPicker.module.css, src/app/profile/page.tsx | 2026-06-16 |
