@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from 'next-intl';
 import RainbowRing from "@/components/compete/RainbowRing";
+import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
@@ -14,7 +15,6 @@ interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
   playerId: string | null;
   allRoundResults: AllRoundResult[] | null;
-  setFullscreenImg: (url: string | null) => void;
   sendMessage: (msg: object) => void;
 }
 
@@ -22,7 +22,6 @@ export default function SessionComplete({
   snapshot,
   playerId,
   allRoundResults,
-  setFullscreenImg,
   sendMessage,
 }: SessionCompleteProps) {
   const router = useRouter();
@@ -32,6 +31,8 @@ export default function SessionComplete({
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [navModalOpen, setNavModalOpen] = useState(false);
+  const [viewerSrc, setViewerSrc] = useState<string | null>(null);
+  const [viewerAlt, setViewerAlt] = useState<string>("");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isHost = snapshot.players?.find((p: any) => p.playerId === playerId)?.isHost ?? false;
@@ -318,7 +319,7 @@ export default function SessionComplete({
                               <img
                                 src={round.imageUrl}
                                 alt={round.title}
-                                onClick={() => setFullscreenImg(round.imageUrl)}
+                                onClick={() => { setViewerSrc(round.imageUrl); setViewerAlt(round.title); }}
                                 style={{ cursor: 'pointer' }}
                               />
                             ) : (
@@ -415,6 +416,13 @@ export default function SessionComplete({
           </>
         );
       })()}
+      {viewerSrc && (
+        <FullscreenImageViewer
+          src={viewerSrc}
+          alt={viewerAlt}
+          onClose={() => setViewerSrc(null)}
+        />
+      )}
     </section>
   );
 }
