@@ -111,7 +111,6 @@ export default function RoundCompleteSection({
         if (!round) return null;
         const myResult = roundResults?.find(r => r.playerId === playerId);
         const accuracy = myResult?.accuracy ?? 0;
-        console.log("[DEBUG_CIRCLE]", { accuracy, myResultExists: !!myResult, myResultAccuracy: myResult?.accuracy, locationScore: myResult?.locationScore, timeScore: myResult?.timeScore });
         const correctLat = round.latitude;
         const correctLng = round.longitude;
         const correctName = round.locationName;

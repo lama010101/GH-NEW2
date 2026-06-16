@@ -15,6 +15,8 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
   const [displayed, setDisplayed] = useState(0);
   const hasCompletedRef = useRef(false);
   const hasAnimatedRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   useEffect(() => {
     if (value <= 0) return;
@@ -48,7 +50,7 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
         // Trigger onComplete exactly once when animation completes
         if (!hasCompletedRef.current) {
           hasCompletedRef.current = true;
-          onComplete?.();
+          onCompleteRef.current?.();
         }
       }
     }, stepDuration);
@@ -59,7 +61,7 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
         navigator.vibrate(0); // cancel haptic on unmount
       }
     };
-  }, [value, onComplete]);
+  }, [value]);
 
   const clamped = Math.max(0, Math.min(100, displayed));
   const offset = circumference * (1 - clamped / 100);
