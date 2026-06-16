@@ -77,7 +77,7 @@ export default function SessionComplete({
   // Helper: compute derived stats for a player
   const computePlayerStats = (pid: string) => {
     if (!allRoundResults) return null;
-    const playerResults = allRoundResults.filter(r => r.playerId === pid && r.didSubmit);
+    const playerResults = allRoundResults.filter(r => r.playerId === pid);
     if (playerResults.length === 0) return null;
 
     const totalScore = playerResults.reduce((sum, r) => sum + r.score, 0);
