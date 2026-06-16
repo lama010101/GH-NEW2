@@ -8,6 +8,7 @@ import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereCard from "@/components/compete/WhereCard";
 import WhenCard from "@/components/compete/WhenCard";
 import InlineImageBadge from "@/components/compete/InlineImageBadge";
+import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
@@ -36,7 +37,6 @@ interface RoundCompleteSectionProps {
   setWhenCluesExpanded: (v: boolean) => void;
   resultSecsLeft: number | null;
   onAdvanceRound: () => void;
-  setFullscreenImg: (url: string | null) => void;
 }
 
 export default function RoundCompleteSection({
@@ -56,7 +56,6 @@ export default function RoundCompleteSection({
   setWhenCluesExpanded,
   resultSecsLeft,
   onAdvanceRound,
-  setFullscreenImg,
 }: RoundCompleteSectionProps) {
   const router = useRouter();
   const t = useTranslations('game');
@@ -70,6 +69,9 @@ export default function RoundCompleteSection({
   const [isWhereVisible, setIsWhereVisible] = useState(false);
   const [isWhenVisible, setIsWhenVisible] = useState(false);
   const [isRingDone, setIsRingDone] = useState(false);
+  const [viewerSrc, setViewerSrc] = useState<string | null>(null);
+  const [viewerAlt, setViewerAlt] = useState<string>("");
+  const [leaderboardTab, setLeaderboardTab] = useState<'thisRound' | 'allRounds'>('thisRound');
 
   useEffect(() => {
     setIsAccuracyVisible(false);
@@ -125,6 +127,21 @@ export default function RoundCompleteSection({
             displayName: snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8),
             accuracy: r.accuracy,
             isMe: r.playerId === playerId,
+            score: r.score,
+            cumulativeScore: r.cumulativeScore,
+          }));
+
+        const allRoundsLeaderboardRows = (roundResults ?? [])
+          .slice()
+          .sort((a, b) => b.cumulativeScore - a.cumulativeScore)
+          .map((r, i) => ({
+            playerId: r.playerId,
+            rank: i + 1,
+            displayName: snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8),
+            accuracy: r.accuracy,
+            isMe: r.playerId === playerId,
+            score: r.score,
+            cumulativeScore: r.cumulativeScore,
           }));
         return (
           <>
@@ -132,7 +149,7 @@ export default function RoundCompleteSection({
             <div className={styles.eventCard}>
               <div className={styles.eventTitle}>{round.title}</div>
               {round.imageUrl ? (
-                <div className={styles.eventImageWrap} onClick={() => setFullscreenImg(round.imageUrl)}>
+                <div className={styles.eventImageWrap} onClick={() => { setViewerSrc(round.imageUrl); setViewerAlt(round.title); }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={round.imageUrl}
@@ -201,10 +218,31 @@ export default function RoundCompleteSection({
             {/* ROUND LEADERBOARD CARD */}
             <div className={styles.leaderboardCard}>
               <div className={styles.leaderboardTitle}>{t('round_leaderboard')}</div>
-              {leaderboardRows.map(row => {
+              <div className={styles.leaderboardTabs}>
+                <button
+                  className={`${styles.leaderboardTab} ${leaderboardTab === 'thisRound' ? styles.leaderboardTabActive : ''}`}
+                  onClick={() => setLeaderboardTab('thisRound')}
+                >
+                  This Round
+                </button>
+                <button
+                  className={`${styles.leaderboardTab} ${leaderboardTab === 'allRounds' ? styles.leaderboardTabActive : ''}`}
+                  onClick={() => setLeaderboardTab('allRounds')}
+                >
+                  All Rounds
+                </button>
+              </div>
+              <div className={styles.leaderboardHeader}>
+                <span className={styles.leaderboardHeaderRank}>#</span>
+                <span className={styles.leaderboardHeaderName}>Player</span>
+                <span className={styles.leaderboardHeaderScore}>{leaderboardTab === 'thisRound' ? 'Score' : 'Total'}</span>
+              </div>
+              {(leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows).map(row => {
                 const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
                 const accColor = `hsl(${hue}, 100%, 50%)`;
                 const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
+                const displayValue = leaderboardTab === 'thisRound' ? Math.round(row.accuracy) : row.cumulativeScore;
+                const displaySuffix = leaderboardTab === 'thisRound' ? '%' : '';
                 return (
                   <div key={row.rank} className={`${styles.lbRow} ${row.isMe ? styles.lbRowSelf : ""}`}>
                     <span className={styles.lbRank}>{row.rank}</span>
@@ -218,13 +256,13 @@ export default function RoundCompleteSection({
                       {row.isMe && <span className={styles.lbYouTag}>(you)</span>}
                     </span>
                     <span className={styles.lbAccPill}>
-                      <span style={{ color: accColor, fontSize: "var(--gh-font-base)" }}>{Math.round(row.accuracy)}</span>
-                      <span className={styles.lbAccSuffix}>%</span>
+                      <span style={{ color: accColor, fontSize: "var(--gh-font-base)" }}>{displayValue}</span>
+                      <span className={styles.lbAccSuffix}>{displaySuffix}</span>
                     </span>
                   </div>
                 );
               })}
-              {leaderboardRows.length === 0 && (
+              {(leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows).length === 0 && (
                 snapshot.players.map((p) => {
                   const isMe = p.playerId === playerId;
                   return (
@@ -398,6 +436,13 @@ export default function RoundCompleteSection({
           </>
         );
       })()}
+      {viewerSrc && (
+        <FullscreenImageViewer
+          src={viewerSrc}
+          alt={viewerAlt}
+          onClose={() => setViewerSrc(null)}
+        />
+      )}
     </div>
   );
 }

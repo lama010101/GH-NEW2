@@ -60,7 +60,6 @@ export default function CompeteGamePage() {
     whereAccPenalty: 0,
     whenAccPenalty: 0,
   });
-  const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
   const [whereLbExpanded, setWhereLbExpanded] = useState(false);
   const [whenLbExpanded, setWhenLbExpanded] = useState(false);
   const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
@@ -560,7 +559,6 @@ export default function CompeteGamePage() {
             setWhenCluesExpanded={setWhenCluesExpanded}
             resultSecsLeft={resultSecsLeft}
             onAdvanceRound={handleAdvanceRound}
-            setFullscreenImg={setFullscreenImg}
           />
         ) : null}
 
@@ -569,7 +567,6 @@ export default function CompeteGamePage() {
             snapshot={snapshot}
             playerId={playerId}
             allRoundResults={allRoundResults}
-            setFullscreenImg={setFullscreenImg}
             sendMessage={(msg) => playAgain((msg as { newGameId: string }).newGameId)}
           />
         ) : null}
@@ -585,29 +582,6 @@ export default function CompeteGamePage() {
           setHintModalOpen(false);
         }}
       />
-      {/* Fullscreen image overlay */}
-      {fullscreenImg && (
-        <div
-          onClick={() => setFullscreenImg(null)}
-          className={pageStyles.fullscreenOverlay}
-        >
-          <button
-            type="button"
-            className={pageStyles.fullscreenClose}
-            onClick={(e) => { e.stopPropagation(); setFullscreenImg(null); }}
-            aria-label="Close fullscreen"
-          >
-            ✕
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={fullscreenImg}
-            alt="Fullscreen"
-            className={pageStyles.fullscreenImg}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
       </div>
     </main>
   );

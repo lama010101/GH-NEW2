@@ -154,6 +154,60 @@
   margin-bottom: 10px;
 }
 
+.leaderboardTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.leaderboardTab {
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--gh-text-secondary);
+  cursor: pointer;
+  border-radius: var(--gh-radius-sm);
+  transition: all 0.2s ease;
+}
+
+.leaderboardTab:hover {
+  color: var(--gh-text-primary);
+  background: var(--gh-bg-input);
+}
+
+.leaderboardTabActive {
+  color: var(--gh-orange);
+  background: var(--gh-bg-input);
+  font-weight: 600;
+}
+
+.leaderboardHeader {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  gap: 6px;
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  color: var(--gh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.leaderboardHeaderRank {
+  min-width: 14px;
+}
+
+.leaderboardHeaderName {
+  flex: 1;
+}
+
+.leaderboardHeaderScore {
+  text-align: right;
+}
+
 .lbRow {
   display: flex;
   align-items: center;

@@ -2088,3 +2088,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-SUBMIT-OVERLAY-002 | Post-submission overlay + haptic/sound on opponent flash | DONE | 2026-06-16 |
 | MP-FEAT-AVATAR-PICKER-001 | Add avatar picker to profile page | src/app/api/user/update-avatar/route.ts, src/app/profile/avatarPicker.module.css, src/app/profile/page.tsx | 2026-06-16 |
 | MP-FIX-AUTOSUBMIT-VALUES-001 | Fix auto-submit sending null values when server advances round before timer fires | src/hooks/useCompeteTimer.ts | 2026-06-16 |
+| MP-FEAT-RESULT-LEADERBOARD-001 | Add All Rounds cumulative leaderboard tab to round result screen | src/core/competeTypes.ts, src/server/sessionCore.ts, src/components/compete/RoundCompleteSection.tsx, src/components/compete/RoundCompleteSection.module.css, src/app/compete/[gameId]/page.tsx, src/components/compete/SessionComplete.tsx | DONE | 2026-06-16 |
