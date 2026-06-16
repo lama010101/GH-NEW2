@@ -188,9 +188,10 @@
 .switchModeButton {
   background: none;
   border: none;
-  color: var(--gh-modal-text-secondary);
+  color: var(--gh-orange, #fb923c);
   cursor: pointer;
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
+  font-weight: 700;
   padding: 0;
   text-decoration: underline;
 }
