@@ -2097,3 +2097,10 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - Fix: hasAnimatedRef guard prevents re-run once animation has started for a non-zero value
 - File: src/components/compete/RainbowRing.tsx
 - Commit: 72182ebec
+
+## MP-FIX-CIRCLE-ZERO-001 — Fix Global Accuracy Circle Always 0%
+- Status: COMPLETE
+- Root cause: accuracy field in getRoundResults() recomputed from nullable raw DB columns instead of using already null-safe locationAccuracy/yearAccuracy locals
+- Fix: accuracy now derived from locationAccuracy and yearAccuracy (one line change)
+- File: src/server/sessionCore.ts
+- Commit: 7197b47
