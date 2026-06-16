@@ -2084,3 +2084,5 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-TOAST-CONFIRM-001 | Add i18n self-submission confirmation toast | DONE | 2026-06-15 |
 | MP-BADGE-IMG-010 | Delete BadgePopup component files | BadgePopup.tsx, BadgePopup.module.css | done |
 | MP-FIX-TOAST-CONFIRM-001 | Add i18n self-submission confirmation toast | DONE | 2026-06-16 |
+| MP-FIX-SUBMIT-OVERLAY-002 | Post-submission overlay + haptic/sound on flash | DONE | 2026-06-16 |
+| MP-FIX-SUBMIT-OVERLAY-002 | Post-submission overlay + haptic/sound on opponent flash | DONE | 2026-06-16 |
