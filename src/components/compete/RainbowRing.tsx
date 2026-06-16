@@ -14,12 +14,12 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
 
   const [displayed, setDisplayed] = useState(0);
   const hasCompletedRef = useRef(false);
+  const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
-    if (value <= 0) {
-      setDisplayed(0);
-      return;
-    }
+    if (value <= 0) return;
+    if (hasAnimatedRef.current) return;
+    hasAnimatedRef.current = true;
 
     const steps = Math.round(value);
     const totalDuration = 900; // ms
