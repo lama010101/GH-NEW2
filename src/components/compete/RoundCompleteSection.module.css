@@ -449,6 +449,7 @@
 .histContextTrigger {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   width: 100%;
   background: transparent;
@@ -456,7 +457,7 @@
   border-top: 1px solid var(--gh-border-subtle);
   padding: 10px 16px;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
 }
 
 .histContextIcon {
@@ -465,7 +466,6 @@
 }
 
 .histContextLabel {
-  flex: 1;
   font-size: var(--font-sm);
   color: var(--gh-text-secondary);
   font-weight: 500;
@@ -481,7 +481,7 @@
 .histSheetOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 1);
   z-index: 1100;
   display: flex;
   align-items: flex-end;
