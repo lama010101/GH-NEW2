@@ -73,6 +73,12 @@ export default function useCompeteTimer({
     if (localSubmitted) return;
     if (!wsRef.current || !playerId) return;
 
+    const capturedYear = guessYearRef.current;
+    const capturedLat = guessLatRef.current;
+    const capturedLng = guessLngRef.current;
+
+    if (capturedYear === null && capturedLat === null && capturedLng === null) return;
+
     const currentRoundIndex = snapshot.currentRoundIndex;
 
     // Auto-submit with whatever values the player has entered (null is valid)
@@ -87,9 +93,9 @@ export default function useCompeteTimer({
     setBusy(true);
     wsRef.current.submitGuess(
       currentRoundIndex,
-      guessYearRef.current,
-      guessLatRef.current,
-      guessLngRef.current,
+      capturedYear,
+      capturedLat,
+      capturedLng,
       hintResult.purchasedIds
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
