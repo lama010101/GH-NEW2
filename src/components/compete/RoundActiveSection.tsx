@@ -85,6 +85,12 @@ export default function RoundActiveSection({
     }
     return true;
   });
+  const [mapLang, setMapLang] = useState<'native' | 'english'>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('gh_map_lang') === 'english' ? 'english' : 'native';
+    }
+    return 'native';
+  });
   const [submittedToasts, setSubmittedToasts] = useState<Record<string, boolean>>({});
   const toastTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [guessHint, setGuessHint] = useState<string | null>(null);
@@ -206,6 +212,10 @@ export default function RoundActiveSection({
   useEffect(() => {
     localStorage.setItem('gh_vibrate', String(vibrateEnabled));
   }, [vibrateEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('gh_map_lang', mapLang);
+  }, [mapLang]);
 
   // Watch for opponent submissions and show toasts
   useEffect(() => {
@@ -556,6 +566,7 @@ export default function RoundActiveSection({
               onSetLocation={(loc) => { handleMapSetLocation(loc); }}
               flyToTarget={flyToTarget}
               localPlayerAvatarUrl={localPlayerAvatarUrl}
+              mapLang={mapLang}
             />
             {guessLocation !== null && (
               <div className={styles.mapLocationLabel}>
@@ -746,6 +757,7 @@ export default function RoundActiveSection({
                     hideZoomControls={true}
                     flyToTarget={flyToTarget}
                     localPlayerAvatarUrl={localPlayerAvatarUrl}
+                    mapLang={mapLang}
                   />
                 </div>
 
@@ -912,6 +924,26 @@ export default function RoundActiveSection({
               >
                 <div className={styles.toggleKnob} />
               </button>
+            </div>
+
+            <div className={styles.settingsLanguageRow}>
+              <span className={styles.settingsLanguageLabel}>Map labels</span>
+              <div className={styles.settingsLanguageToggle}>
+                <button
+                  type="button"
+                  onClick={() => setMapLang('english')}
+                  className={`${styles.settingsLanguageOption} ${mapLang === 'english' ? styles.settingsLanguageOptionActive : ''}`}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMapLang('native')}
+                  className={`${styles.settingsLanguageOption} ${mapLang === 'native' ? styles.settingsLanguageOptionActive : ''}`}
+                >
+                  Native
+                </button>
+              </div>
             </div>
 
             <div className={styles.settingsLanguageRow}>

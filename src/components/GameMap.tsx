@@ -6,6 +6,14 @@ import L from "leaflet";
 import type { LatLng } from "@/core/types";
 import "leaflet/dist/leaflet.css";
 
+const NATIVE_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+// UNRESOLVED: English-label map tiles require a language-capable provider, which
+// likely needs an API key + attribution and a product/cost decision. Pending CTO
+// approval of a provider, "english" falls back to the native OSM tiles so the map
+// keeps rendering. Replace this with the approved English-label tile URL once
+// chosen — do not add an API key without CTO sign-off.
+const ENGLISH_TILE_URL_UNRESOLVED = NATIVE_TILE_URL;
+
 interface GameMapProps {
   guessLocation: LatLng | null;
   onSetLocation: (location: LatLng) => void;
@@ -19,6 +27,7 @@ interface GameMapProps {
   localPlayerDisplayName?: string;
   hideZoomControls?: boolean;
   flyToTarget?: { lat: number; lng: number; id: number } | null;
+  mapLang?: "native" | "english";
 }
 
 interface GameMapState {
@@ -145,7 +154,8 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
             scrollWheelZoom={true}
           >
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              key={this.props.mapLang === "english" ? "english" : "native"}
+              url={this.props.mapLang === "english" ? ENGLISH_TILE_URL_UNRESOLVED : NATIVE_TILE_URL}
             />
             <MapClickHandler onSetLocation={this.props.onSetLocation} />
             <FlyToHandler target={this.props.flyToTarget} />
