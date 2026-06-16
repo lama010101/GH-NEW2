@@ -42,6 +42,7 @@ type RoundResultForClient = {
   timeScore: number;
   badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>;
   nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>;
+  cumulativeScore: number;
 };
 
 /** Player state reconstructed from session_players */
