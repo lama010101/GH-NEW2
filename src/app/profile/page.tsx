@@ -7,6 +7,7 @@ import { useIdentity } from '@/hooks/useIdentity';
 import { signOut } from '@/core/identity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import styles from './profile.module.css';
+import avatarPickerStyles from './avatarPicker.module.css';
 import TopBar from '@/components/layout/TopBar';
 
 
@@ -18,12 +19,26 @@ type ProfileHistoricalAvatar = {
   avatarImageUrl: string;
 };
 
+type Avatar = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  image_url: string | null;
+  firebase_url: string | null;
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const { playerId } = useIdentity();
   const t = useTranslations('profile');
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [avatars, setAvatars] = useState<Avatar[]>([]);
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoadingAvatars, setIsLoadingAvatars] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [progressData, setProgressData] = useState<{
     byCentury: Array<{ century: string; avgAccuracy: number; roundCount: number }>
     byContinent: Array<{ continent: string; avgAccuracy: number; roundCount: number }>
@@ -178,6 +193,28 @@ export default function ProfilePage() {
     fetchProfileData();
   }, [playerId]);
 
+  useEffect(() => {
+    if (!avatarPickerOpen) return;
+
+    const fetchAvatars = async () => {
+      setIsLoadingAvatars(true);
+      try {
+        const { data } = await supabaseBrowser
+          .from('avatars')
+          .select('id, first_name, last_name, image_url, firebase_url')
+          .eq('ready', true);
+        setAvatars(data ?? []);
+      } catch (error) {
+        console.error('Error fetching avatars:', error);
+        setAvatars([]);
+      } finally {
+        setIsLoadingAvatars(false);
+      }
+    };
+
+    fetchAvatars();
+  }, [avatarPickerOpen]);
+
   const handleSignOut = async () => {
     await signOut();
     router.push('/');
@@ -195,6 +232,58 @@ export default function ProfilePage() {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
   };
+
+  const handleAvatarClick = () => {
+    setAvatarPickerOpen(true);
+    setSelectedAvatar(profileData.avatarUrl);
+    setSearchQuery('');
+  };
+
+  const handleAvatarSelect = (avatarUrl: string) => {
+    setSelectedAvatar(avatarUrl);
+  };
+
+  const handleSaveAvatar = async () => {
+    if (!selectedAvatar) return;
+
+    setIsSavingAvatar(true);
+    try {
+      const res = await fetch('/api/user/update-avatar', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: selectedAvatar }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        console.error('Failed to update avatar:', error);
+        return;
+      }
+
+      setProfileData(prev => ({ ...prev, avatarUrl: selectedAvatar }));
+      setAvatarPickerOpen(false);
+    } catch (error) {
+      console.error('Error saving avatar:', error);
+    } finally {
+      setIsSavingAvatar(false);
+    }
+  };
+
+  const getAvatarUrl = (avatar: Avatar): string => {
+    return avatar.firebase_url || avatar.image_url || '';
+  };
+
+  const getAvatarName = (avatar: Avatar): string => {
+    const parts: string[] = [];
+    if (avatar.first_name) parts.push(avatar.first_name);
+    if (avatar.last_name) parts.push(avatar.last_name);
+    return parts.join(' ') || 'Unknown';
+  };
+
+  const filteredAvatars = avatars.filter(avatar => {
+    const name = getAvatarName(avatar).toLowerCase();
+    return name.includes(searchQuery.toLowerCase());
+  });
 
   return (
     <div className={`min-h-screen pb-[60px] relative ${styles.page}`}>
@@ -228,7 +317,10 @@ export default function ProfilePage() {
       <div className="relative z-10 max-w-[820px] mx-auto pt-16 px-6 flex flex-col items-center text-center">
         {/* Avatar with gradient border */}
         <div className="relative mb-4">
-          <div className="w-[110px] h-[110px] rounded-full p-[3px] bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center">
+          <div
+            className="w-[110px] h-[110px] rounded-full p-[3px] bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center cursor-pointer"
+            onClick={handleAvatarClick}
+          >
             {profileData.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -571,6 +663,71 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Avatar Picker Modal */}
+      {avatarPickerOpen && (
+        <div className={avatarPickerStyles.modalOverlay}>
+          <div className={avatarPickerStyles.modalCard}>
+            <div className={avatarPickerStyles.modalHeader}>
+              <h3 className={avatarPickerStyles.modalTitle}>Choose Avatar</h3>
+              <button
+                className={avatarPickerStyles.closeButton}
+                onClick={() => setAvatarPickerOpen(false)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18"/>
+                  <path d="m6 6 12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div className={avatarPickerStyles.modalContent}>
+              <input
+                type="text"
+                className={avatarPickerStyles.searchInput}
+                placeholder="Search by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {isLoadingAvatars ? (
+                <div className={avatarPickerStyles.emptyState}>Loading avatars...</div>
+              ) : filteredAvatars.length === 0 ? (
+                <div className={avatarPickerStyles.emptyState}>No avatars found</div>
+              ) : (
+                <div className={avatarPickerStyles.avatarGrid}>
+                  {filteredAvatars.map((avatar) => {
+                    const url = getAvatarUrl(avatar);
+                    const name = getAvatarName(avatar);
+                    return (
+                      <div
+                        key={avatar.id}
+                        className={`${avatarPickerStyles.avatarCell} ${selectedAvatar === url ? avatarPickerStyles.selected : ''}`}
+                        onClick={() => handleAvatarSelect(url)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={name}
+                          className={avatarPickerStyles.avatarImage}
+                        />
+                        <span className={avatarPickerStyles.avatarName}>{name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className={avatarPickerStyles.modalFooter}>
+              <button
+                className={avatarPickerStyles.saveButton}
+                onClick={handleSaveAvatar}
+                disabled={!selectedAvatar || isSavingAvatar}
+              >
+                {isSavingAvatar ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,166 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--gh-modal-overlay);
+  backdrop-filter: var(--gh-modal-blur);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalCard {
+  background: var(--gh-glass-bg);
+  border: var(--gh-modal-border);
+  border-radius: var(--gh-modal-radius);
+  box-shadow: var(--gh-modal-shadow);
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  padding: 20px;
+  border-bottom: 1px solid var(--gh-modal-divider);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--gh-modal-text-primary);
+}
+
+.closeButton {
+  background: var(--gh-modal-close-bg);
+  border: var(--gh-modal-close-border);
+  color: var(--gh-modal-close-color);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modalContent {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.searchInput {
+  width: 100%;
+  background: var(--gh-modal-input-bg);
+  border: var(--gh-modal-input-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  color: var(--gh-modal-text-primary);
+  font-size: var(--font-base);
+  margin-bottom: 16px;
+}
+
+.searchInput::placeholder {
+  color: var(--gh-modal-text-muted);
+}
+
+.avatarGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .avatarGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.avatarCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  transition: background 0.2s;
+  border: 2px solid transparent;
+}
+
+.avatarCell:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.avatarCell.selected {
+  border-color: var(--gh-orange);
+  background: rgba(251, 146, 60, 0.1);
+}
+
+.avatarImage {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+
+.avatarName {
+  font-size: var(--font-xs);
+  color: var(--gh-modal-text-secondary);
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+.modalFooter {
+  padding: 16px 20px;
+  border-top: 1px solid var(--gh-modal-divider);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.saveButton {
+  background: var(--gh-btn-action-bg);
+  color: var(--gh-btn-action-text);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--gh-btn-action-glow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.saveButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(251, 146, 60, 0.55), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gh-modal-text-muted);
+  font-size: var(--font-sm);
+}
