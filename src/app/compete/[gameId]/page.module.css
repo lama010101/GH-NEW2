@@ -141,17 +141,118 @@
   background: rgba(255, 255, 255, 0.18);
 }
 
-.selfSubmitToast {
+.submitOverlay {
   position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.75);
-  color: #ffffff;
-  font-size: var(--font-sm);
-  padding: 8px 20px;
-  border-radius: 999px;
-  z-index: 9998;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.60);
   pointer-events: none;
-  white-space: nowrap;
+}
+
+.submitOverlayCard {
+  background: var(--gh-glass-bg, rgba(20, 20, 30, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+  padding: 24px 28px;
+  min-width: 260px;
+  max-width: 340px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.submitOverlayTitle {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--gh-orange, #f97316);
+  text-align: center;
+  margin: 0;
+}
+
+.submitOverlayValues {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.submitOverlayRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.submitOverlayLabel {
+  font-size: var(--font-xs);
+  color: rgba(255, 255, 255, 0.50);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.submitOverlayValue {
+  font-size: var(--font-sm);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.submitOverlayWaiting {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.submitOverlayWaitingLabel {
+  font-size: var(--font-xs);
+  color: rgba(255, 255, 255, 0.50);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.submitOverlayPlayerList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.submitOverlayPlayerDone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-sm);
+  color: rgba(255, 255, 255, 0.90);
+}
+
+.submitOverlayPlayerPending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-sm);
+  color: rgba(255, 255, 255, 0.40);
+}
+
+.submitOverlayDotDone {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  flex-shrink: 0;
+}
+
+.submitOverlayDotPending {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.20);
+  flex-shrink: 0;
 }
