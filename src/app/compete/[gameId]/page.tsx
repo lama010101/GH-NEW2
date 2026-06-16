@@ -31,6 +31,7 @@ import SessionComplete from "@/components/compete/SessionComplete";
 import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import LobbySection from "@/components/compete/LobbySection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
+import NotificationBell from "@/components/NotificationBell";
 import useCompeteTimer from "@/hooks/useCompeteTimer";
 import useCompeteSocket from "@/hooks/useCompeteSocket";
 import btnStyles from "@/components/ui/Button.module.css";
@@ -469,6 +470,9 @@ export default function CompeteGamePage() {
 
   return (
     <main className={`app-shell ${pageStyles.pageShell}`}>
+      <div style={{ position: "fixed", top: "16px", right: "16px", zIndex: 2000 }}>
+        <NotificationBell />
+      </div>
       <div className={pageStyles.bgImage} />
       <div className={pageStyles.bgScrim} />
       {timerClamped && (
