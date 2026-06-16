@@ -32,6 +32,7 @@ import LobbySection from "@/components/compete/LobbySection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import useCompeteTimer from "@/hooks/useCompeteTimer";
 import useCompeteSocket from "@/hooks/useCompeteSocket";
+import useNavigationGuard from "@/hooks/useNavigationGuard";
 import btnStyles from "@/components/ui/Button.module.css";
 import pageStyles from './page.module.css';
 
@@ -78,6 +79,9 @@ export default function CompeteGamePage() {
   const router = useRouter();
 
   const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity();
+
+  // Block refresh / tab close / browser Back while a round is in progress.
+  useNavigationGuard(snapshot?.status === "ROUND_ACTIVE");
   // Auto-submit on timer expiry using current input values.
   // Refs are necessary because useEffect closures cannot safely read state that changes frequently.
   const guessYearRef = useRef<number | null>(null);
