@@ -509,7 +509,7 @@ export default function CompeteGamePage() {
                           : pageStyles.submitOverlayPlayerPending
                       }
                     >
-                      <span className={pageStyles.submitOverlayPlayerDot} />
+                      <span className={p.hasSubmitted ? pageStyles.submitOverlayDotDone : pageStyles.submitOverlayDotPending} />
                       <span>
                         {p.displayName}
                         {p.playerId === playerId ? ` ${t('you')}` : ''}
