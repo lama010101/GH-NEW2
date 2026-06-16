@@ -145,11 +145,16 @@ export default function RoundCompleteSection({
                 <div className={styles.eventImagePlaceholder}>No image available</div>
               )}
               <div className={styles.eventMeta}>{correctYear} · {correctName}</div>
-              <div className={styles.eventDescriptionWrap}>
-                <div className={styles.eventDescription}>
-                  {round.description ?? tc('no_description')}
-                </div>
-              </div>
+              {round.description && (
+                <button
+                  className={styles.histContextTrigger}
+                  onClick={() => setHistContextOpen(true)}
+                >
+                  <span className={styles.histContextIcon}>📖</span>
+                  <span className={styles.histContextLabel}>Historical Context</span>
+                  <span className={styles.histContextArrow}>›</span>
+                </button>
+              )}
               {(round as unknown as { sourceUrl?: string }).sourceUrl && (
                 <div className={styles.sourceButtonWrap}>
                   <button
