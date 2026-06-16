@@ -6,24 +6,11 @@ test.describe('TASK 7 - Sign-in modal sign-up visibility', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Open sign-in modal - look for sign in button/link
-    const signInButton = page.locator('button:has-text("Sign In"), button:has-text("Sign in"), a:has-text("Sign In"), a:has-text("Sign in")').first();
-    await expect(signInButton).toBeVisible();
-    await signInButton.click();
-
-    // Wait for modal to appear
+    // Wait for auth modal to appear (it auto-opens)
     await page.waitForTimeout(500);
 
-    // Find sign-up CTA element
-    // The sign-up CTA is typically a button or link that says "Sign up" or "Create account"
-    const signUpCTA = page.locator('
-      button:has-text("Sign up"),
-      a:has-text("Sign up"),
-      button:has-text("Create account"),
-      a:has-text("Create account"),
-      [class*="signup"],
-      [class*="sign-up"]
-    ').first();
+    // Find sign-up CTA element - it's a button with text "Sign Up"
+    const signUpCTA = page.locator('button:has-text("Sign Up")').first();
 
     // Assert element is visible
     await expect(signUpCTA).toBeVisible();
@@ -47,9 +34,7 @@ test.describe('TASK 7 - Sign-in modal sign-up visibility', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Open sign-in modal
-    const signInButton = page.locator('button:has-text("Sign In"), button:has-text("Sign in")').first();
-    await signInButton.click();
+    // Wait for auth modal to appear (it auto-opens)
     await page.waitForTimeout(500);
 
     // Look for modal container
