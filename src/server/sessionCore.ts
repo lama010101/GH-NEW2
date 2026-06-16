@@ -2249,7 +2249,7 @@ export async function getRoundResults(
       playerId: row.player_id,
       score: row.score,
       rank: row.rank,
-      accuracy: Math.round(((row.location_score ?? 0) + (row.time_score ?? 0)) / 2),
+      accuracy: Math.round((locationAccuracy + yearAccuracy) / 2),
       locationScore: row.location_score ?? 0,
       didSubmit: row.year_guess !== null,
       guessYear: row.year_guess ?? null,
