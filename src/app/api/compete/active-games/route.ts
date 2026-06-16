@@ -139,7 +139,10 @@ export async function GET(_request: NextRequest) {
            LIMIT 1`,
           [gameId, playerId, currentRoundIndex]
         );
-        status = commitResult.rows.length === 0 && session.mode === 'async' ? "your_turn" : "waiting";
+        // "Your turn" = the player still owes a guess for the current round, in
+        // either mode. The session is known unfinished here (latest event is not
+        // SESSION_COMPLETE), so an outstanding round means it is resumable.
+        status = commitResult.rows.length === 0 ? "your_turn" : "waiting";
       } else {
         // ROUND_COMPLETE, READY_NEXT, RESULT_STARTED
         status = "waiting";
