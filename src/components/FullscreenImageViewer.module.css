@@ -1,0 +1,57 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.img {
+  max-width: 100vw;
+  max-height: 100vh;
+  object-fit: contain;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transform-origin: center center;
+  transition: transform 0.1s ease-out;
+}
+
+.img:active {
+  cursor: grabbing;
+}
+
+.closeBtn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10000;
+}
+
+.closeBtn:hover {
+  background: var(--gh-orange, #f97316);
+  border-color: var(--gh-orange, #f97316);
+}
+
+.closeBtn:focus {
+  outline: 2px solid var(--gh-orange, #f97316);
+  outline-offset: 2px;
+}
