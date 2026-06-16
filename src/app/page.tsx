@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -40,27 +40,37 @@ function HomePageInner() {
     };
     displayName: string;
   } | null>(null)
+  const welcomeCheckedRef = useRef(false);
   useEffect(() => {
+    // Welcome modal fires on the deterministic assign-avatar `assigned` flag (a
+    // brand-new profile), not the SIGNED_IN event — which never fires for
+    // OAuth/email-confirm sign-ups that land on "/" via the auth/callback redirect.
+    const maybeShowWelcome = () => {
+      if (welcomeCheckedRef.current) return;
+      welcomeCheckedRef.current = true;
+      fetch('/api/user/assign-avatar', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.assigned && data.avatar) {
+            setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
+          }
+        })
+        .catch(() => {});
+    };
+
     bootstrapIdentity().then((state) => {
       setIdentity(state);
       if (state.status === 'unauthenticated') {
         setShowAuthModal(true);
+      } else if (state.status === 'ready') {
+        maybeShowWelcome();
       }
     })
     return subscribeToIdentityChanges((state) => {
       setIdentity(state);
       if (state.status === 'ready') {
         setShowAuthModal(false);
-        if (state.isNewUser) {
-          fetch('/api/user/assign-avatar', { method: 'POST' })
-            .then(r => r.json())
-            .then(data => {
-              if (data.avatar) {
-                setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
-              }
-            })
-            .catch(() => {});
-        }
+        maybeShowWelcome();
       } else if (state.status === 'unauthenticated') {
         setShowAuthModal(true);
       }
