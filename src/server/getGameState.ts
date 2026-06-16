@@ -299,7 +299,7 @@ export async function getGameState(
   // ───────────────────────────────────────────────────────────────────────────
   const players: PlayerState[] = playersJson.map(p => ({
     playerId: p.player_id as string,
-    displayName: (p.display_name as string) ?? "",
+    displayName: (p.display_name as string)?.trim() || `Player-${(p.player_id as string).substring(0, 6)}`,
     joinedAt: new Date(p.joined_at as string).toISOString(),
     leftAt: p.left_at ? new Date(p.left_at as string).toISOString() : null,
     ready: p.ready as boolean,
