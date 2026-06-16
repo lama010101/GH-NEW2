@@ -2082,3 +2082,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-BADGE-IMG-005 | Replace location badge chip with InlineImageBadge in WhereCard | WhereCard.tsx | done |
 | MP-UX-HIST-CONTEXT-001 | Hide event description behind Historical Context bottom sheet | RoundCompleteSection.tsx + module.css | DONE |
 | MP-FIX-TOAST-CONFIRM-001 | Add i18n self-submission confirmation toast | DONE | 2026-06-15 |
+| MP-BADGE-IMG-010 | Delete BadgePopup component files | BadgePopup.tsx, BadgePopup.module.css | done |
