@@ -26,7 +26,6 @@ import { useIdentity } from "@/hooks/useIdentity";
 import { HintModal } from "@/components/HintModal";
 import type { HintPurchaseResult } from "@/components/HintModal";
 import { RoundResult, AllRoundResult } from "@/core/competeTypes";
-import BadgePopup from "@/components/compete/BadgePopup";
 import SessionComplete from "@/components/compete/SessionComplete";
 import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import LobbySection from "@/components/compete/LobbySection";
@@ -66,7 +65,6 @@ export default function CompeteGamePage() {
   const [whenLbExpanded, setWhenLbExpanded] = useState(false);
   const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
-  const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [wsDisconnected, setWsDisconnected] = useState(false);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
@@ -75,9 +73,6 @@ export default function CompeteGamePage() {
     whereAccPenalty: 0,
     whenAccPenalty: 0,
   });
-  const badgePopupShownForRoundRef = useRef<number>(-1);
-  const whereCardSeenRef = useRef(false);
-  const whenCardSeenRef = useRef(false);
 
   const router = useRouter();
 
@@ -276,50 +271,6 @@ export default function CompeteGamePage() {
     const img = new Image();
     img.src = nextImageUrl;
   }, [snapshot?.currentRoundIndex, snapshot?.status, snapshot?.rounds]);
-
-  useEffect(() => {
-    if (snapshot?.status === "ROUND_ACTIVE") {
-      whereCardSeenRef.current = false;
-      whenCardSeenRef.current = false;
-      setShowBadgePopup(false);
-    }
-  }, [snapshot?.status, snapshot?.currentRoundIndex]);
-
-  const maybeShowBadgePopup = useCallback(() => {
-    if (badgePopupShownForRoundRef.current === (snapshot?.currentRoundIndex ?? -1)) return;
-    const myResult = roundResults?.find(r => r.playerId === playerId);
-    if (!myResult) return;
-    const badges = myResult.badges ?? [];
-    const nearMisses = myResult.nearMisses ?? [];
-    if (badges.length === 0 && nearMisses.length === 0) return;
-
-    const needsWhere = badges.some(b => b.dimension === 'location') || nearMisses.some(n => n.dimension === 'location');
-    const needsWhen = badges.some(b => b.dimension === 'year') || nearMisses.some(n => n.dimension === 'year');
-    const needsCombo = badges.some(b => b.dimension === 'combo') || nearMisses.some(n => n.dimension === 'combo');
-
-    const comboReady = !needsCombo || (whereCardSeenRef.current && whenCardSeenRef.current);
-    const whereReady = !needsWhere || whereCardSeenRef.current;
-    const whenReady = !needsWhen || whenCardSeenRef.current;
-
-    if (whereReady && whenReady && comboReady) {
-      badgePopupShownForRoundRef.current = snapshot?.currentRoundIndex ?? -1;
-      setTimeout(() => setShowBadgePopup(true), 300);
-    }
-  }, [snapshot?.currentRoundIndex, roundResults, playerId]);
-
-  const handleAccuracyCardVisible = useCallback(() => {
-    maybeShowBadgePopup();
-  }, [maybeShowBadgePopup]);
-
-  const handleWhereCardVisible = useCallback(() => {
-    whereCardSeenRef.current = true;
-    maybeShowBadgePopup();
-  }, [maybeShowBadgePopup]);
-
-  const handleWhenCardVisible = useCallback(() => {
-    whenCardSeenRef.current = true;
-    maybeShowBadgePopup();
-  }, [maybeShowBadgePopup]);
 
   const viewer = useMemo(() => {
     if (!snapshot || !playerId) return null;
@@ -610,9 +561,6 @@ export default function CompeteGamePage() {
             resultSecsLeft={resultSecsLeft}
             onAdvanceRound={handleAdvanceRound}
             setFullscreenImg={setFullscreenImg}
-            onAccuracyCardVisible={handleAccuracyCardVisible}
-            onWhereCardVisible={handleWhereCardVisible}
-            onWhenCardVisible={handleWhenCardVisible}
           />
         ) : null}
 
@@ -660,14 +608,6 @@ export default function CompeteGamePage() {
           />
         </div>
       )}
-      {showBadgePopup && (() => {
-        const myResult = roundResults?.find(r => r.playerId === playerId);
-        const badges = myResult?.badges ?? []
-        const nearMisses = myResult?.nearMisses ?? []
-        return (
-          <BadgePopup badges={badges} nearMisses={nearMisses} onDismiss={() => setShowBadgePopup(false)} />
-        )
-      })()}
       </div>
     </main>
   );
