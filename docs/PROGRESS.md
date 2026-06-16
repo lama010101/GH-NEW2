@@ -2075,4 +2075,20 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-AUTOADVANCE-001 | Fix duplicate result timer from triggerRoundExpiry fallback handler | partykit/server.ts | DONE | 1487a59 |
 | MP-FIX-AUTOADVANCE-002 | Add 500ms snapshot settle wait before calling /complete | partykit/server.ts | DONE | c2ae5ec |
 | MP-FIX-AUTOADVANCE-003 | Poll snapshot status up to 8s before calling /complete — eliminates spurious ROUND_COMPLETE→ROUND_COMPLETE FSM error | partykit/server.ts | DONE | 8ecc450 |
+
+## 2026-06-16 — MP-PLAN-DEVIN-001 execution (CTO-locked order)
+| Task ID | Status | Files Changed | Notes |
+|---------|--------|---------------|-------|
+| MP-PLAN-DEVIN-001 / Task 2 | DONE | src/app/layout.tsx | Add `export const viewport` with `viewportFit: 'cover'` so iOS resolves `env(safe-area-inset-*)`. PR #3. |
+| MP-PLAN-DEVIN-001 / Task 1 | DONE | src/hooks/useNavigationGuard.ts (new), src/app/compete/[gameId]/page.tsx | Reusable `useNavigationGuard(active)` hook intercepts beforeunload/popstate; wired to `snapshot.status === 'ROUND_ACTIVE'`. PR #4. |
+| MP-PLAN-DEVIN-001 / Task 3 | DONE | src/components/compete/RoundActiveSection.module.css | Stronger submit-ready animation (entrance pop, brighter ripple) + `prefers-reduced-motion` block. PR #5. |
+| MP-PLAN-DEVIN-001 / Task 4 | DONE | src/components/YearPicker.tsx | Remove `scrollSnapType: 'x mandatory'` and `scrollSnapAlign: 'center'` for free scrolling. PR #6. |
+| MP-PLAN-DEVIN-001 / Task 6 | DONE | src/app/page.tsx | Trigger welcome modal off the deterministic assign-avatar `assigned` flag (survives OAuth/email redirect) instead of SIGNED_IN. PR #7. |
+| MP-PLAN-DEVIN-001 / Task 7 | DONE | src/components/AuthModal.module.css | Sign-up switch link to orange accent, bold, body size. PR #8. |
+| MP-PLAN-DEVIN-001 / Task 9 | DONE | src/components/compete/RoundActiveSection.tsx | Two-finger pinch-zoom (scale 1–4, center origin) by default; pan gains Y only when zoomed; scale 1 == prior behaviour. PR #9. |
+| MP-PLAN-DEVIN-001 / Task 5 | DONE | src/app/api/compete/active-games/route.ts | Drop async-only restriction so unfinished sync games surface as `your_turn`; read-only. Note: no `sessions.completedAt` column exists — completion is event-sourced via SESSION_COMPLETE. PR #10. |
+| MP-PLAN-DEVIN-001 / Task 8 | DONE | src/components/compete/LobbySection.tsx | Resolve last-invited names/avatars from live playerPool (canonical profiles.display_name); cache = ordering + offline fallback. PR #11. |
+| MP-PLAN-DEVIN-001 / Task 10 | DONE | src/components/GameMap.tsx, src/components/compete/RoundActiveSection.tsx | "Map labels: English/Native" toggle persisted to gh_map_lang. English tile URL is an UNRESOLVED placeholder (falls back to native OSM; no API key per CTO). PR #12. |
+| MP-PLAN-DEVIN-001 / Task 11 | DEFERRED | — | Zoom toggle deferred by CTO until Task 12/DB access is sorted. Conflict: "no DB column" + broadcast-to-all forces in-memory state, which violates determinism rule and requires forbidden files (partykit/server.ts, sessionCore.ts). |
+| MP-PLAN-DEVIN-001 / Task 12 | BLOCKED | — | Verify `sessions.selected_eras` exists. Blocked: Supabase MCP not installed, no connection string in repo. Also found `getGameState.ts:229-230` does not SELECT selected_eras, so snapshot always falls back to default eras (line 291). |
 | MP-FIX-ERA-DEFAULTS-001 | Fix stale era defaults in getGameState and sessionCore | DONE | 2026-06-14 |
