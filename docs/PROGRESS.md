@@ -2104,3 +2104,10 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - Fix: accuracy now derived from locationAccuracy and yearAccuracy (one line change)
 - File: src/server/sessionCore.ts
 - Commit: 7197b47
+
+## MP-FIX-CIRCLE-ZERO-003 — Fix Accuracy Circle Stuck at 0
+- Status: COMPLETE
+- Root cause: onComplete inline function ref changed every parent re-render (timer tick), triggering useEffect cleanup and killing the running animation interval; hasAnimatedRef guard then blocked restart
+- Fix: onCompleteRef pattern — callback stored in ref, removed from dependency array so timer ticks no longer kill the animation
+- Files: RainbowRing.tsx, RoundCompleteSection.tsx
+- Commit: 2113b97
