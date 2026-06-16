@@ -2184,7 +2184,7 @@ export async function recordPressureApplied(input: {
 export async function getRoundResults(
   gameId: string,
   roundIndex: number
-): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }> }>> {
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>; cumulativeScore: number }>> {
   const result = await dbPool.query<{
     player_id: string;
     score: number;
@@ -2218,6 +2218,27 @@ export async function getRoundResults(
     [gameId, roundIndex]
   );
 
+  // Query cumulative scores for all players up to current round
+  const cumulativeResult = await dbPool.query<{
+    player_id: string;
+    cumulative_score: number;
+  }>(
+    `SELECT
+      rr.player_id,
+      COALESCE(SUM(rr.score), 0) AS cumulative_score
+    FROM round_results rr
+    WHERE rr.game_id = $1
+      AND rr.round_index <= $2
+    GROUP BY rr.player_id`,
+    [gameId, roundIndex]
+  );
+
+  // Build map of player_id -> cumulative_score
+  const cumulativeMap = new Map<string, number>();
+  for (const row of cumulativeResult.rows) {
+    cumulativeMap.set(row.player_id, row.cumulative_score);
+  }
+
   return result.rows.map((row) => {
     const locationAccuracy = Math.round(row.location_score ?? 0);
     const yearAccuracy = Math.round(row.time_score ?? 0);
@@ -2237,6 +2258,7 @@ export async function getRoundResults(
       timeScore: row.time_score ?? 0,
       badges,
       nearMisses,
+      cumulativeScore: cumulativeMap.get(row.player_id) ?? 0,
     };
   });
 }

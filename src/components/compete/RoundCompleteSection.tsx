@@ -60,7 +60,6 @@ export default function RoundCompleteSection({
 }: RoundCompleteSectionProps) {
   const router = useRouter();
   const t = useTranslations('game');
-  const tc = useTranslations('common');
 
   const accuracyCardRef = useRef<HTMLDivElement>(null);
   const whereCardRef = useRef<HTMLDivElement>(null);
