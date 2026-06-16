@@ -26,6 +26,7 @@ import { useIdentity } from "@/hooks/useIdentity";
 import { HintModal } from "@/components/HintModal";
 import type { HintPurchaseResult } from "@/components/HintModal";
 import { RoundResult, AllRoundResult } from "@/core/competeTypes";
+import BadgePopup from "@/components/compete/BadgePopup";
 import SessionComplete from "@/components/compete/SessionComplete";
 import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import LobbySection from "@/components/compete/LobbySection";
@@ -51,7 +52,6 @@ export default function CompeteGamePage() {
   const [busy, setBusy] = useState(false);
   const [localSubmitted, setLocalSubmitted] = useState(false);
   const [timerClamped, setTimerClamped] = useState(false);
-  const [selfSubmitToast, setSelfSubmitToast] = useState(false);
   const [hintModalOpen, setHintModalOpen] = useState(false);
   const [hintResult, setHintResult] = useState<HintPurchaseResult>({
     purchasedIds: [],
@@ -65,6 +65,7 @@ export default function CompeteGamePage() {
   const [whenLbExpanded, setWhenLbExpanded] = useState(false);
   const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
+  const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [wsDisconnected, setWsDisconnected] = useState(false);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
@@ -73,8 +74,12 @@ export default function CompeteGamePage() {
     whereAccPenalty: 0,
     whenAccPenalty: 0,
   });
+  const badgePopupShownForRoundRef = useRef<number>(-1);
+  const whereCardSeenRef = useRef(false);
+  const whenCardSeenRef = useRef(false);
 
   const router = useRouter();
+
   const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity();
   // Auto-submit on timer expiry using current input values.
   // Refs are necessary because useEffect closures cannot safely read state that changes frequently.
@@ -118,7 +123,6 @@ export default function CompeteGamePage() {
     setGuessLng(null);
     guessLngRef.current = null;
     setLocalSubmitted(false);
-    setSelfSubmitToast(false);
     setRoundResults(null);
     setHintResult({ purchasedIds: [], accPenalty: 0, xpPenalty: 0, whereAccPenalty: 0, whenAccPenalty: 0 });
     submittedHintPenaltyRef.current = { accPenalty: 0, xpPenalty: 0, purchasedIds: [], whereAccPenalty: 0, whenAccPenalty: 0 };
@@ -176,11 +180,30 @@ export default function CompeteGamePage() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onPlayerSubmitted: (submittedPlayerId, _playerName) => {
       if (submittedPlayerId !== playerId) {
+        // Red flash for other players
         setTimerClamped(true);
         setTimeout(() => setTimerClamped(false), 600);
-      } else {
-        setSelfSubmitToast(true);
+        // Haptic: short double pulse
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([60, 40, 60]);
+        }
+        // Alarm sound: short sharp beep via Web Audio API
+        try {
+          const ctx = new (window.AudioContext ||
+            (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = 660;
+          osc.type = 'square';
+          gain.gain.value = 0.18;
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.25);
+        } catch { /* audio not available */ }
       }
+      // Self-submission overlay is driven by localSubmitted state — no action needed here
     },
     onTimerClamped: (newPhaseEndsAt) => {
       console.log("[TIMER_CLAMP_EVENT]", {
@@ -252,6 +275,50 @@ export default function CompeteGamePage() {
     const img = new Image();
     img.src = nextImageUrl;
   }, [snapshot?.currentRoundIndex, snapshot?.status, snapshot?.rounds]);
+
+  useEffect(() => {
+    if (snapshot?.status === "ROUND_ACTIVE") {
+      whereCardSeenRef.current = false;
+      whenCardSeenRef.current = false;
+      setShowBadgePopup(false);
+    }
+  }, [snapshot?.status, snapshot?.currentRoundIndex]);
+
+  const maybeShowBadgePopup = useCallback(() => {
+    if (badgePopupShownForRoundRef.current === (snapshot?.currentRoundIndex ?? -1)) return;
+    const myResult = roundResults?.find(r => r.playerId === playerId);
+    if (!myResult) return;
+    const badges = myResult.badges ?? [];
+    const nearMisses = myResult.nearMisses ?? [];
+    if (badges.length === 0 && nearMisses.length === 0) return;
+
+    const needsWhere = badges.some(b => b.dimension === 'location') || nearMisses.some(n => n.dimension === 'location');
+    const needsWhen = badges.some(b => b.dimension === 'year') || nearMisses.some(n => n.dimension === 'year');
+    const needsCombo = badges.some(b => b.dimension === 'combo') || nearMisses.some(n => n.dimension === 'combo');
+
+    const comboReady = !needsCombo || (whereCardSeenRef.current && whenCardSeenRef.current);
+    const whereReady = !needsWhere || whereCardSeenRef.current;
+    const whenReady = !needsWhen || whenCardSeenRef.current;
+
+    if (whereReady && whenReady && comboReady) {
+      badgePopupShownForRoundRef.current = snapshot?.currentRoundIndex ?? -1;
+      setTimeout(() => setShowBadgePopup(true), 300);
+    }
+  }, [snapshot?.currentRoundIndex, roundResults, playerId]);
+
+  const handleAccuracyCardVisible = useCallback(() => {
+    maybeShowBadgePopup();
+  }, [maybeShowBadgePopup]);
+
+  const handleWhereCardVisible = useCallback(() => {
+    whereCardSeenRef.current = true;
+    maybeShowBadgePopup();
+  }, [maybeShowBadgePopup]);
+
+  const handleWhenCardVisible = useCallback(() => {
+    whenCardSeenRef.current = true;
+    maybeShowBadgePopup();
+  }, [maybeShowBadgePopup]);
 
   const viewer = useMemo(() => {
     if (!snapshot || !playerId) return null;
@@ -407,9 +474,51 @@ export default function CompeteGamePage() {
       {timerClamped && (
         <div className={pageStyles.timerFlashOverlay} />
       )}
-      {selfSubmitToast && (
-        <div className={pageStyles.selfSubmitToast}>
-          {t('guess_submitted')}
+      {/* Post-submission overlay: shown to self only, persists until round ends */}
+      {localSubmitted && snapshot?.status === 'ROUND_ACTIVE' && (
+        <div className={pageStyles.submitOverlay}>
+          <div className={pageStyles.submitOverlayCard}>
+            <p className={pageStyles.submitOverlayTitle}>{t('guess_submitted')}</p>
+            <div className={pageStyles.submitOverlayValues}>
+              <div className={pageStyles.submitOverlayRow}>
+                <span className={pageStyles.submitOverlayLabel}>{t('your_location')}</span>
+                <span className={pageStyles.submitOverlayValue}>
+                  {guessLat !== null && guessLng !== null
+                    ? `${guessLat.toFixed(2)}, ${guessLng.toFixed(2)}` 
+                    : '—'}
+                </span>
+              </div>
+              <div className={pageStyles.submitOverlayRow}>
+                <span className={pageStyles.submitOverlayLabel}>{t('your_year')}</span>
+                <span className={pageStyles.submitOverlayValue}>
+                  {guessYear !== null ? guessYear : '—'}
+                </span>
+              </div>
+            </div>
+            <div className={pageStyles.submitOverlayWaiting}>
+              <p className={pageStyles.submitOverlayWaitingLabel}>{t('waiting_for')}</p>
+              <ul className={pageStyles.submitOverlayPlayerList}>
+                {snapshot.players
+                  .filter(p => p.leftAt === null)
+                  .map(p => (
+                    <li
+                      key={p.playerId}
+                      className={
+                        p.hasSubmitted
+                          ? pageStyles.submitOverlayPlayerDone
+                          : pageStyles.submitOverlayPlayerPending
+                      }
+                    >
+                      <span className={pageStyles.submitOverlayPlayerDot} />
+                      <span>
+                        {p.displayName}
+                        {p.playerId === playerId ? ` ${t('you')}` : ''}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          </div>
         </div>
       )}
       <div className={pageStyles.pageContent}>
@@ -497,6 +606,9 @@ export default function CompeteGamePage() {
             resultSecsLeft={resultSecsLeft}
             onAdvanceRound={handleAdvanceRound}
             setFullscreenImg={setFullscreenImg}
+            onAccuracyCardVisible={handleAccuracyCardVisible}
+            onWhereCardVisible={handleWhereCardVisible}
+            onWhenCardVisible={handleWhenCardVisible}
           />
         ) : null}
 
@@ -544,6 +656,14 @@ export default function CompeteGamePage() {
           />
         </div>
       )}
+      {showBadgePopup && (() => {
+        const myResult = roundResults?.find(r => r.playerId === playerId);
+        const badges = myResult?.badges ?? []
+        const nearMisses = myResult?.nearMisses ?? []
+        return (
+          <BadgePopup badges={badges} nearMisses={nearMisses} onDismiss={() => setShowBadgePopup(false)} />
+        )
+      })()}
       </div>
     </main>
   );
