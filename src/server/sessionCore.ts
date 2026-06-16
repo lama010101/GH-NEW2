@@ -2187,8 +2187,8 @@ export async function getRoundResults(
 ): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }> }>> {
   const result = await dbPool.query<{
     player_id: string;
-    score: number | null;
-    rank: number | null;
+    score: number;
+    rank: number;
     location_score: number | null;
     time_score: number | null;
     year_guess: number | null;
@@ -2196,21 +2196,25 @@ export async function getRoundResults(
     location_lng: number | null;
   }>(
     `SELECT
-      rr.player_id,
-      rr.score,
-      rr.rank,
+      sp.player_id,
+      COALESCE(rr.score, 0) AS score,
+      COALESCE(rr.rank, 9999) AS rank,
       rr.location_score,
       rr.time_score,
       rc.year_guess,
       rc.location_lat,
       rc.location_lng
-    FROM round_results rr
+    FROM session_players sp
+    LEFT JOIN round_results rr
+      ON rr.game_id = $1
+      AND rr.round_index = $2
+      AND rr.player_id = sp.player_id
     LEFT JOIN round_commits rc
-      ON rc.game_id = rr.game_id
-      AND rc.round_index = rr.round_index
-      AND rc.player_id = rr.player_id
-    WHERE rr.game_id = $1 AND rr.round_index = $2
-    ORDER BY rr.rank ASC`,
+      ON rc.game_id = $1
+      AND rc.round_index = $2
+      AND rc.player_id = sp.player_id
+    WHERE sp.game_id = $1 AND sp.left_at IS NULL
+    ORDER BY COALESCE(rr.rank, 9999) ASC, sp.player_id ASC`,
     [gameId, roundIndex]
   );
 
@@ -2222,8 +2226,8 @@ export async function getRoundResults(
     const nearMisses = evaluateNearMisses(yearAccuracy, locationAccuracy, comboAccuracy, badges);
     return {
       playerId: row.player_id,
-      score: row.score ?? 0,
-      rank: row.rank ?? 0,
+      score: row.score,
+      rank: row.rank,
       accuracy: Math.round(((row.location_score ?? 0) + (row.time_score ?? 0)) / 2),
       locationScore: row.location_score ?? 0,
       didSubmit: row.year_guess !== null,
