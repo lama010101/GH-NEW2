@@ -31,25 +31,25 @@ Immovable architecture rules:
 
 ### Visual Confirmation Required (Not Blockers)
 
-1. **Background darkness values (TASK C1):**
-   - Home page mosaic: Current overlay rgba(0,0,0,0.58) → Proposed: brightness(0.65) on image OR increase overlay to rgba(0,0,0,0.65)
-   - Round cinematic image: No current darkening → Proposed: brightness(0.7) on image OR overlay rgba(0,0,0,0.35)
-   - Compete lobby: NO per-component background image — LobbySection renders on top of the page-level bgImage+bgScrim in compete/[gameId]/page.module.css (bgScrim = rgba(0,0,0,0.55)). Darkening this location means adjusting bgScrim in page.module.css, not LobbySection itself. Confirm whether C1.3 should adjust bgScrim, or is already dark enough, or should be removed from scope.
-   - Result screen event images: No current darkening → Proposed: brightness(0.75) on image OR overlay rgba(0,0,0,0.30)
+1. **Background darkness values — C1.2 and C1.4 use plan defaults (pending visual confirmation post-deploy):**
+   - TASK C1.2 (Round cinematic image): Implemented with `brightness(0.7)` per original plan default — distinct from the CTO-specified 0.8 value used for shared background asset
+   - TASK C1.4 (Result screen event photos): Implemented with `brightness(0.75)` per original plan default — distinct from the CTO-specified 0.8 value used for shared background asset
+   - These values are per-event photography adjustments, not the shared site background asset. Visual confirmation needed after deploy to determine if further adjustment required.
 
-2. **IMPORTANT — Divergent darkening baseline across C1 locations (TASK C1):**
-   - The home page background ALREADY has a dark overlay at rgba(0,0,0,0.58) and the compete lobby page background has a scrim at rgba(0,0,0,0.55). These locations are already moderately dark.
-   - The round cinematic image (RoundActiveSection) and the result screen event images (RoundCompleteSection) currently have ZERO darkening at all — no filter, no overlay.
-   - These are fundamentally different situations. "Make backgrounds darker" means different things at each location. The round cinematic image and result event images are the primary intended targets (they have no darkening); the home and lobby may not need further work at all.
-   - **Confirm explicitly:** Should C1.1 (home page) be excluded from or de-prioritized in this task's scope? Should C1.3 (lobby) be excluded, since its "darkening" lives at the page level and adjusting it affects the entire game screen, not just the lobby view?
-
-3. **WHERE/WHEN card border colors (TASK C2):**
+2. **WHERE/WHEN card border colors (TASK C2):**
    - WHERE card: Current uses --gh-teal (#22d3ee) → Proposed: --gh-blue (#3b82f6) per spec
    - WHEN card: Current uses --gh-violet (#8b5cf6) → Keep as-is (matches spec)
    - General cards (Accuracy, XP, Event info): White border → Proposed: rgba(255,255,255,0.8) or 1px solid #ffffff
 
-4. **Font token gaps (TASK C4):**
+3. **Font token gaps (TASK C4):**
    - If any legitimate use case lacks an existing token, list here for new token creation (do not invent silently)
+
+### Resolved Decisions
+
+- **Background darkening value (items 1–2 above):** RESOLVED at 0.8 for all pages using the shared background asset (`/home_background.webp`). Applied to:
+  - `src/app/home.module.css` — `.bgOverlay` changed from rgba(0,0,0,0.58) to rgba(0,0,0,0.8)
+  - `src/app/compete/[gameId]/page.module.css` — `.bgScrim` changed from rgba(0,0,0,0.55) to rgba(0,0,0,0.8)
+  - Note: All other usages of `home_background.webp` are in `src/app/prototype/` which is permanently off-limits per KC rules.
 
 ### Pre-Existing Build Error (Not in Scope)
 
@@ -127,7 +127,6 @@ Immovable architecture rules:
 --gh-shadow-xl:  0 -10px 40px rgba(0, 0, 0, 0.6);
 
 /* --- Border tokens --- */
---gh-border-subtle: rgba(255, 255, 255, 0.12);
 --gh-border-medium: rgba(255, 255, 255, 0.35);
 --gh-border-strong: rgba(255, 255, 255, 0.50);
 ```
@@ -135,13 +134,14 @@ Immovable architecture rules:
 **Before/After:** N/A (new tokens added)  
 **Validation commands:**
 - `grep -c -- "--gh-" src/app/globals.css` → must return ≥ 9 (pre-edit)
-- `grep -c -- "--gh-" src/app/globals.css` → must return ≥ 21 (post-edit, +12 new tokens)
+- `grep -c -- "--gh-" src/app/globals.css` → must return ≥ 20 (post-edit, +11 new tokens)
 - `npx tsc --noEmit` → exit 0
-- `rm -rf .next && npm run build` → must succeed
+- `npm run build` must show only the documented prototype baseline error (see Correction 5)
 
 **Dependencies:** None  
-**Note:** This task provides border tokens for TASK C2. Coordinate so C2 uses these tokens instead of redefining.  
-**CONFLICT FLAG:** `--gh-border-default: rgba(255, 255, 255, 0.12)` already exists in globals.css (line 229). The proposed `--gh-border-subtle` (same value) would be a semantic duplicate. When implementing B1, do NOT add `--gh-border-subtle` — instead use the existing `--gh-border-default` for that value, or rename it to `--gh-border-subtle` and update all existing consumers. This must be resolved before implementation.
+**Note:** This task provides border tokens for TASK C2. 
+- Use existing `--gh-border-default` (rgba(255, 255, 255, 0.12)) instead of creating a duplicate subtle token.
+- C2 should reference `--gh-border-default` for subtle borders, `--gh-border-medium` for medium, `--gh-border-strong` for strong.
 
 ---
 
@@ -198,7 +198,7 @@ Immovable architecture rules:
 **Before/After:** N/A (varies per file)  
 **Validation commands:** (per sub-task)
 - `npx tsc --noEmit` → exit 0
-- `rm -rf .next && npm run build` → must succeed
+- `rm -rf .next && npm run build` → must show SAME baseline error (prototype only) and NO OTHER error outside src/app/prototype/
 - `git diff --name-only` → must show ONLY the file for that sub-task
 
 **Dependencies:** B1 (for any new tokens if needed)  
@@ -241,19 +241,22 @@ Immovable architecture rules:
 - Implementation: `<img>` tag
 
 **Proposed Change:** 
-- **C1.1 (Home):** Increase `.bgOverlay` from `rgba(0, 0, 0, 0.58)` to `rgba(0, 0, 0, 0.65)` OR add `filter: brightness(0.65)` to `.bgImage`
-- **C1.2 (Cinematic):** Add `filter: brightness(0.7)` to `.eventImg` in RoundActiveSection.module.css OR add overlay div
-- **C1.3 (Lobby):** LobbySection has no background image. Page-level scrim already at rgba(0,0,0,0.55). If in scope, increase `.bgScrim` in `src/app/compete/[gameId]/page.module.css` from 0.55 → 0.65. **Decision required first — see Decisions Needed item 2.**
-- **C1.4 (Result event):** Add `filter: brightness(0.75)` to `.eventImage` in RoundCompleteSection.module.css OR add overlay div
+- **C1.1 (Home — CTO locked value 0.8):** Change `.bgOverlay` from `rgba(0, 0, 0, 0.58)` to `rgba(0, 0, 0, 0.8)` in `src/app/home.module.css`
+- **C1.2 (Cinematic — plan default brightness 0.7):** Add `filter: brightness(0.7)` to `.eventImg` in RoundActiveSection.module.css — uses plan default, pending visual confirmation post-deploy
+- **C1.3 (Lobby — CTO locked value 0.8):** Change `.bgScrim` from `rgba(0, 0, 0, 0.55)` to `rgba(0, 0, 0, 0.8)` in `src/app/compete/[gameId]/page.module.css`
+- **C1.4 (Result event — plan default brightness 0.75):** Add `filter: brightness(0.75)` to `.eventImage` in RoundCompleteSection.module.css — uses plan default, pending visual confirmation post-deploy
 
 **Before/After:** N/A (varies per location)  
 **Validation commands:** (per sub-task)
 - `npx tsc --noEmit` → exit 0
-- `rm -rf .next && npm run build` → must succeed
+- `npm run build` must show only the documented prototype baseline error
 - Visual inspection of each location
 
 **Dependencies:** None  
-**Note:** Darkness values listed in Decisions Needed for confirmation. Use overlay div where text/UI layers on top, filter where no overlay exists.
+**Note:** 
+- C1.1 and C1.3 use the shared background asset (`/home_background.webp`) and are locked at 0.8 per CTO decision.
+- C1.2 and C1.4 are per-event photography (different from the shared background) and use plan defaults (0.7 and 0.75), pending visual confirmation after deploy.
+- Use overlay div where text/UI layers on top (C1.1, C1.3), filter where no overlay exists (C1.2, C1.4).
 
 ---
 
@@ -292,12 +295,12 @@ Immovable architecture rules:
 **Sub-task C2.2 — Update WhereCard.module.css:**
 - Change `.card` background from `var(--gh-where-card-bg)` to `var(--gh-general-card-bg)` (all cards same background per spec)
 - Change `.card` border from `var(--gh-where-card-border)` to `var(--gh-where-card-border)` (already correct, just token value update)
-- Remove `--gh-where-card-glow` from box-shadow (spec doesn't mention glow for frame color)
+- **LEAVE box-shadow/glow untouched** — the locked spec covers background color + border color only. Do not remove glow unless it produces a visible conflict with the new background/border (if conflict found, stop and report instead of unilateral removal)
 
 **Sub-task C2.3 — Update WhenCard.module.css:**
 - Change `.card` background from `var(--gh-when-card-bg)` to `var(--gh-general-card-bg)` (all cards same background per spec)
 - Change `.card` border from `var(--gh-when-card-border)` to `var(--gh-when-card-border)` (already correct, just token value update)
-- Remove `--gh-when-card-glow` from box-shadow (spec doesn't mention glow for frame color)
+- **LEAVE box-shadow/glow untouched** — the locked spec covers background color + border color only. Do not remove glow unless it produces a visible conflict with the new background/border (if conflict found, stop and report instead of unilateral removal)
 
 **Sub-task C2.4 — Update RoundCompleteSection.module.css:**
 - Change all general cards (`.eventCard`, `.accuracyCard`, `.leaderboardCard`, `.hintsCard`, `.countdownCard`) from `var(--gh-glass-bg)` to `var(--gh-general-card-bg)`
@@ -311,7 +314,7 @@ Immovable architecture rules:
 - `grep -c -- "--gh-" src/app/globals.css` → must return ≥ 9 (pre-edit)
 - `grep -c -- "--gh-" src/app/globals.css` → must return ≥ 24 (post-edit, +3 new tokens)
 - `npx tsc --noEmit` → exit 0
-- `rm -rf .next && npm run build` → must succeed
+- `rm -rf .next && npm run build` → must show SAME baseline error (prototype only) and NO OTHER error outside src/app/prototype/
 
 **Dependencies:** B1 (for border tokens if needed, but using direct rgba values here)  
 **Note:** Exact hex/rgba values listed in Decisions Needed for visual confirmation. Using best proposal: --gh-blue (#3b82f6) and --gh-violet (#8b5cf6) with 0.8 opacity for borders.
@@ -343,7 +346,7 @@ Immovable architecture rules:
 
 **Validation commands:**
 - `npx tsc --noEmit` → exit 0
-- `rm -rf .next && npm run build` → must succeed
+- `rm -rf .next && npm run build` → must show SAME baseline error (prototype only) and NO OTHER error outside src/app/prototype/
 - Visual inspection of tab toggle
 
 **Dependencies:** None  
@@ -393,30 +396,25 @@ Immovable architecture rules:
 - compete/[gameId]/page.tsx: Already compliant
 - **NO CHANGES NEEDED**
 
-**Sub-task C4.6 — Page-level CSS modules (account, help, leaderboard, etc.):**
+**Sub-task C4.6 — compete/page.tsx + compete/[gameId]/page.tsx (fontSize audit):**
+- **src/app/compete/page.tsx:** AUDITED — one inline style at line 154: `fontSize: "var(--font-2xs)"` — already uses token, COMPLIANT. No changes needed.
+- **src/app/compete/[gameId]/page.tsx:** AUDITED — zero inline `fontSize` occurrences. No changes needed.
+- **NO CHANGES NEEDED**
+
+**Sub-task C4.7 — Page-level CSS modules (account, help, leaderboard, etc.):**
 - `src/app/account/account.module.css`: Lines 24, 174, 179 use hardcoded 15px, 13px → Tokenize to `var(--font-base)`, `var(--font-xs)`
 - `src/app/help/help.module.css`: Multiple hardcoded values (20px, 12px, clamp(32px, 6vw, 52px), etc.) → Tokenize where appropriate to existing tokens
 - `src/app/leaderboard/leaderboard.module.css`: Already compliant
 - Other page-level files: Investigate and tokenize hardcoded values
 
-**Sub-task C4.7 — Component CSS modules (AuthModal, HintModal, NavModal, etc.):**
+**Sub-task C4.8 — Component CSS modules (AuthModal, HintModal, NavModal, etc.):**
 - Most already compliant per MP-FIX-FONT-MOBILE-002
 - Investigate any remaining hardcoded values
-
-**Sub-task C4.8 — Inline fontSize in .tsx files (merged with B2):**
-- WhereCard.tsx: `fontSize: 25` → Tokenize to `var(--font-2xl)` (24px) or keep if 25px is intentional
-- WhenCard.tsx: `fontSize: 25` → Tokenize to `var(--font-2xl)` (24px) or keep if 25px is intentional
-- SessionComplete.tsx: No inline fontSize (all computed)
-- compete/[gameId]/page.tsx: No inline fontSize (confirmed)
-- **src/components/NavModal.tsx:** AUDITED — zero `fontSize` / `font-size` occurrences. No changes needed.
-- **src/components/compete/RoundActiveSection.tsx:** AUDITED — zero inline `fontSize` occurrences (all font sizes in its CSS module, not .tsx). No changes needed.
-- **src/app/compete/page.tsx:** AUDITED — one inline style at line 154: `fontSize: "var(--font-2xs)"` — already uses token, COMPLIANT. No changes needed.
-- **src/app/compete/[gameId]/page.tsx:** AUDITED — zero inline `fontSize` occurrences. No changes needed.
 
 **Before/After:** N/A (varies per file)  
 **Validation commands:** (per sub-task)
 - `npx tsc --noEmit` → exit 0
-- `rm -rf .next && npm run build` → must succeed
+- `rm -rf .next && npm run build` → must show SAME baseline error (prototype only) and NO OTHER error outside src/app/prototype/
 - `git diff --name-only` → must show ONLY the file(s) for that sub-task
 
 **Dependencies:** B2 (merged per-file to avoid conflicts)  
@@ -444,17 +442,17 @@ After every task above is implemented and individually committed:
 rm -rf .next && npm run build
 ```
 
-**Validation:** The batch is not complete until this exits 0 with zero errors — including pre-existing errors unrelated to this batch's original scope.
+**Validation:** The batch is not complete until the build shows zero errors outside the documented prototype baseline. The pre-existing error in `src/app/prototype/round-results/page.tsx:123` (syntax error, missing closing quote) is allowed and expected.
 
 **Exception handling:**
-- If build fails: Diagnose and fix it, scoped to the minimum change needed
+- If build fails with errors outside `src/app/prototype/`: Diagnose and fix it, scoped to the minimum change needed
 - Commit any fix as its own atomic commit with task ID format `MP-FIX-BUILD-CLEANUP-NNN`
 - Log fix in `docs/PROGRESS.md`
 - Report explicitly what was broken and why for CTO review
 - **EXCEPTION:** If build failure traces to `src/server/sessionCore.ts` or `partykit/server.ts`, STOP and report instead of fixing (these require dedicated CTO-reviewed scope)
 
 **Dependencies:** All tasks in Phases A, B, C must be completed first  
-**Note:** This is a closing step to be executed after all tasks above are committed, not during this planning step.
+**Note:** This is a closing step to be executed after all tasks above are committed, not during this planning step. Phase D's "zero errors" requirement is amended to "zero errors outside the documented prototype baseline."
 
 ---
 
@@ -491,17 +489,19 @@ rm -rf .next && npm run build
 **STEP ZERO (before any edit):**
 ```bash
 git add -A && git commit -m "wip: before [TASK-ID]"
-npm run build  # Capture and note pre-existing errors/warnings as baseline
+npm run build  # Capture baseline error output
 ```
+**Build baseline rule:** `npm run build` is allowed to show the documented pre-existing failure inside `src/app/prototype/` ONLY. Capture the exact baseline error output at STEP ZERO of the FIRST task in this batch (A1) and reuse that same baseline for comparison across all subsequent tasks — do not re-treat it as a new discovery each time.
 
 **FINAL STEPS (after edits):**
 ```bash
-npx tsc --noEmit  # Exit 0 required (excluding documented pre-existing errors)
-rm -rf .next && npm run build  # Must succeed
+npx tsc --noEmit  # Exit 0 required
+rm -rf .next && npm run build  # Must show SAME baseline error (prototype only) and NO OTHER error outside src/app/prototype/
 git diff --name-only  # Must show ONLY the files declared for that task
 git add [files] && git commit -m "[TASK-ID]: [description]"
 # Append one row to docs/PROGRESS.md
 ```
+**Build gate rule:** After any task's changes, the build must show that SAME baseline error and NO OTHER error, anywhere outside `src/app/prototype/`. If a new error appears outside prototype, that is a real FAIL for that task — fix it scoped to the minimum change (or follow the sessionCore.ts/partykit.ts STOP exception if applicable). Prototype's pre-existing error is never something to fix, and it never blocks the batch from being declared complete.
 
 ### Special guards
 
