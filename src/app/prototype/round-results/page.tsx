@@ -120,25 +120,25 @@ function WhenTimeline({ rows }: { rows: Result[] }) {
   for (let y = minY; y <= maxY; y += 10) ticks.push(y);
 
   return (
-    <div className={styles.timeline">
-      <div className={styles.timelineBar" />
+    <div className={styles.timeline}>
+      <div className={styles.timelineBar} />
       {ticks.map((y) => (
-        <div key={y} className={styles.tick" style={{ left: `${pct(y)}%` }}>
-          {y % 20 === 0 && <span className={styles.tickLabel">{y}</span>}
+        <div key={y} className={styles.tick} style={{ left: `${pct(y)}%` }}>
+          {y % 20 === 0 && <span className={styles.tickLabel}>{y}</span>}
         </div>
       ))}
-      <div className={styles.correctMarker" style={{ left: `${pct(CORRECT_YEAR)}%` }}>
-        <span className={styles.correctFlag">Correct</span>
-        <span className={styles.correctYearTl">{CORRECT_YEAR}</span>
+      <div className={styles.correctMarker} style={{ left: `${pct(CORRECT_YEAR)}%` }}>
+        <span className={styles.correctFlag}>Correct</span>
+        <span className={styles.correctYearTl}>{CORRECT_YEAR}</span>
       </div>
       {rows.map((r, i) => (
         <div
           key={r.id}
-          className={styles.tlPlayer"
+          className={styles.tlPlayer}
           style={{ left: `${Math.max(4, Math.min(96, pct(r.guessYear)))}%`, transform: `translate(-50%, ${-(i % 2) * 26}px)` }}
         >
           <Avatar id={r.id} name={r.name} size={24} />
-          <span className={styles.tlYear" style={{ fontWeight: r.isMe ? 700 : 400 }}>{r.guessYear}</span>
+          <span className={styles.tlYear} style={{ fontWeight: r.isMe ? 700 : 400 }}>{r.guessYear}</span>
         </div>
       ))}
     </div>
@@ -156,18 +156,18 @@ function WhereMap({ rows }: { rows: Result[] }) {
     p4: { x: 64, y: 33 },
   };
   return (
-    <div className={styles.map">
-      <div className={styles.mapGrid" />
+    <div className={styles.map}>
+      <div className={styles.mapGrid} />
       {/* correct location */}
-      <div className={styles.mapPin mapPinCorrect" style={{ left: `${pos.correct.x}%`, top: `${pos.correct.y}%` }}>
-        <span className={styles.mapPinDot mapPinDotCorrect" />
-        <span className={styles.mapPinLabel mapPinLabelCorrect">{CORRECT_LOCATION}</span>
+      <div className={`${styles.mapPin} ${styles.mapPinCorrect}`} style={{ left: `${pos.correct.x}%`, top: `${pos.correct.y}%` }}>
+        <span className={`${styles.mapPinDot} ${styles.mapPinDotCorrect}`} />
+        <span className={`${styles.mapPinLabel} ${styles.mapPinLabelCorrect}`}>{CORRECT_LOCATION}</span>
       </div>
       {rows.map((r) => {
         const p = pos[r.id] ?? { x: 50, y: 50 };
         return (
-          <div key={r.id} className={styles.mapPin" style={{ left: `${p.x}%`, top: `${p.y}%` }}>
-            <span className={styles.mapAvatarRing" style={{ borderColor: r.isMe ? "#22d3ee" : "rgba(255,255,255,0.6)" }}>
+          <div key={r.id} className={styles.mapPin} style={{ left: `${p.x}%`, top: `${p.y}%` }}>
+            <span className={styles.mapAvatarRing} style={{ borderColor: r.isMe ? "#22d3ee" : "rgba(255,255,255,0.6)" }}>
               <Avatar id={r.id} name={r.name} size={26} />
             </span>
           </div>
@@ -234,7 +234,7 @@ export default function RoundResultsPrototypePage() {
         </div>
 
         {/* ── Event card ── */}
-        <section className={`${styles.${styles.card} ${styles.eventCard}`}>
+        <section className={`${styles.card} ${styles.eventCard}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/home_background.webp" alt={EVENT_TITLE} className={styles.eventImg} />
           <div className={styles.eventGradient} />
@@ -246,7 +246,7 @@ export default function RoundResultsPrototypePage() {
         <p className={styles.eventDesc}>{EVENT_DESC}</p>
 
         {/* ── Score hero card ── */}
-        <section className={`${styles.${styles.card} ${styles.heroCard}`}>
+        <section className={`${styles.card} ${styles.heroCard}`}>
           <AccuracyRing value={me.accuracy} />
           <div className={styles.heroSide}>
             <div className={styles.xpBlock}>
@@ -286,27 +286,27 @@ export default function RoundResultsPrototypePage() {
             <span className={styles.accentBar} />
             <h2 className={styles.cardTitle}>Round leaderboard</h2>
           </div>
-          <div className={styles.lbList">
+          <div className={styles.lbList}>
             {ranked.map((r, i) => (
               <div key={r.id} className={`${styles.lbRow} ${r.isMe ? styles.lbRowMe : ""}`}>
                 <span className={`${styles.lbRank} ${i === 0 ? styles.lbRankGold : ""}`}>{i + 1}</span>
                 <Avatar id={r.id} name={r.name} size={32} />
-                <span className={styles.lbName">
+                <span className={styles.lbName}>
                   {r.name}
-                  {r.isMe && <span className={styles.youTag">you</span>}
+                  {r.isMe && <span className={styles.youTag}>you</span>}
                 </span>
-                <span className={styles.lbXp">+{r.score.toLocaleString()}</span>
-                <span className={styles.lbAcc" style={{ color: accColor(r.accuracy) }}>{r.accuracy}%</span>
+                <span className={styles.lbXp}>+{r.score.toLocaleString()}</span>
+                <span className={styles.lbAcc} style={{ color: accColor(r.accuracy) }}>{r.accuracy}%</span>
               </div>
             ))}
           </div>
         </section>
 
         {/* ── Where / When breakdown (tabbed) ── */}
-        <section className={styles.card">
-          <div className={styles.tabs">
+        <section className={styles.card}>
+          <div className={styles.tabs}>
             <button
-              className={`${styles.${styles.tab} ${tab === "where" ? styles.tabActive : ""}`}
+              className={`${styles.tab} ${tab === "where" ? styles.tabActive : ""}`}
               style={tab === "where" ? { color: "#22d3ee", borderColor: "#22d3ee" } : undefined}
               onClick={() => { setTab("where"); setLbOpen(false); setHintsOpen(false); }}
             >
@@ -315,7 +315,7 @@ export default function RoundResultsPrototypePage() {
               Where
             </button>
             <button
-              className={`${styles.${styles.tab} ${tab === "when" ? styles.tabActive : ""}`}
+              className={`${styles.tab} ${tab === "when" ? styles.tabActive : ""}`}
               style={tab === "when" ? { color: "#8b5cf6", borderColor: "#8b5cf6" } : undefined}
               onClick={() => { setTab("when"); setLbOpen(false); setHintsOpen(false); }}
             >
@@ -325,15 +325,15 @@ export default function RoundResultsPrototypePage() {
             </button>
           </div>
 
-          <div className={styles.breakHead">
-            <span className={styles.breakCorrect">
+          <div className={styles.breakHead}>
+            <span className={styles.breakCorrect}>
               Correct: <strong style={{ color: accent }}>{tab === "where" ? CORRECT_LOCATION : CORRECT_YEAR}</strong>
             </span>
-            <span className={styles.breakScore" style={{ color: accColor(tab === "where" ? me.locationScore : me.timeScore) }}>
+            <span className={styles.breakScore} style={{ color: accColor(tab === "where" ? me.locationScore : me.timeScore) }}>
               {tab === "where" ? me.locationScore : me.timeScore}%
             </span>
           </div>
-          <span className={styles.breakSub">
+          <span className={styles.breakSub}>
             {tab === "where"
               ? `You were ${me.distanceKm} km away`
               : `You guessed ${me.guessYear} · ${Math.abs(me.guessYear - CORRECT_YEAR)} yrs off`}
@@ -342,23 +342,23 @@ export default function RoundResultsPrototypePage() {
           {tab === "where" ? <WhereMap rows={whereRows} /> : <WhenTimeline rows={whenRows} />}
 
           {/* Expandable leaderboard */}
-          <div className={styles.expand">
-            <button className={styles.expandHead" onClick={() => setLbOpen((v) => !v)}>
-              <span className={styles.chev" style={{ transform: lbOpen ? "rotate(90deg)" : "none" }}>›</span>
+          <div className={styles.expand}>
+            <button className={styles.expandHead} onClick={() => setLbOpen((v) => !v)}>
+              <span className={styles.chev} style={{ transform: lbOpen ? "rotate(90deg)" : "none" }}>›</span>
               Leaderboard
-              <span className={styles.expandRank" style={{ color: accent }}>#{myRank}</span>
+              <span className={styles.expandRank} style={{ color: accent }}>#{myRank}</span>
             </button>
             {lbOpen && (
-              <div className={styles.subLb">
+              <div className={styles.subLb}>
                 {panelRows.map((r) => {
                   const val = tab === "where" ? r.locationScore : r.timeScore;
                   const detail = tab === "where" ? `${r.distanceKm} km` : `${Math.abs(r.guessYear - CORRECT_YEAR)} yrs off`;
                   return (
                     <div key={r.id} className={`${styles.subLbRow} ${r.isMe ? styles.lbRowMe : ""}`}>
                       <Avatar id={r.id} name={r.name} size={26} />
-                      <span className={styles.subLbName">{r.name}</span>
-                      <span className={styles.subLbDetail">{detail}</span>
-                      <span className={styles.subLbAcc" style={{ color: accColor(val) }}>{val}%</span>
+                      <span className={styles.subLbName}>{r.name}</span>
+                      <span className={styles.subLbDetail}>{detail}</span>
+                      <span className={styles.subLbAcc} style={{ color: accColor(val) }}>{val}%</span>
                     </div>
                   );
                 })}
@@ -367,17 +367,17 @@ export default function RoundResultsPrototypePage() {
           </div>
 
           {/* Expandable hints */}
-          <div className={styles.expand">
-            <button className={styles.expandHead" onClick={() => setHintsOpen((v) => !v)}>
-              <span className={styles.chev" style={{ transform: hintsOpen ? "rotate(90deg)" : "none", color: accent }}>›</span>
+          <div className={styles.expand}>
+            <button className={styles.expandHead} onClick={() => setHintsOpen((v) => !v)}>
+              <span className={styles.chev} style={{ transform: hintsOpen ? "rotate(90deg)" : "none", color: accent }}>›</span>
               <span style={{ color: accent }}>Hints</span>
             </button>
             {hintsOpen && (
-              <div className={styles.hintsList">
+              <div className={styles.hintsList}>
                 {hints.map((h) => (
-                  <div key={h.label} className={styles.hintRow">
-                    <span className={styles.hintLabel">{h.label}</span>
-                    <span className={styles.hintText">{h.text}</span>
+                  <div key={h.label} className={styles.hintRow}>
+                    <span className={styles.hintLabel}>{h.label}</span>
+                    <span className={styles.hintText}>{h.text}</span>
                   </div>
                 ))}
               </div>
@@ -386,26 +386,26 @@ export default function RoundResultsPrototypePage() {
         </section>
 
         {/* ── Countdown ── */}
-        <div className={styles.countdown">
-          <span className={styles.countdownText">Auto-advancing in <strong>8s</strong></span>
-          <span className={styles.readyNames">
+        <div className={styles.countdown}>
+          <span className={styles.countdownText}>Auto-advancing in <strong>8s</strong></span>
+          <span className={styles.readyNames}>
             <span style={{ color: "#4ade80" }}>Mina ✓</span>
             <span style={{ color: "#4ade80" }}>Sara ✓</span>
           </span>
         </div>
 
-        <div className={styles.dockSpacer" />
+        <div className={styles.dockSpacer} />
       </div>
 
       {/* ── Bottom bar ── */}
-      <div className={styles.bottomBar">
+      <div className={styles.bottomBar}>
         <button className={styles.iconBtn} aria-label="Home">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
             <polyline points="9 21 9 12 15 12 15 21" />
           </svg>
         </button>
-        <div className={styles.progress">
+        <div className={styles.progress}>
           {Array.from({ length: TOTAL_ROUNDS }).map((_, i) => (
             <span
               key={i}
