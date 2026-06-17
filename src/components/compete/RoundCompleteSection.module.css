@@ -13,8 +13,8 @@
 /* ── Event card ── */
 
 .eventCard {
-  background: var(--gh-glass-bg);
-  border: 1px solid var(--gh-glass-border);
+  background: var(--gh-general-card-bg);
+  border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   overflow: hidden;
   margin-bottom: 10px;
@@ -94,8 +94,8 @@
 /* ── Accuracy ring card ── */
 
 .accuracyCard {
-  background: var(--gh-glass-bg);
-  border: 1px solid var(--gh-glass-border);
+  background: var(--gh-general-card-bg);
+  border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;
@@ -137,8 +137,8 @@
 /* ── Round leaderboard card ── */
 
 .leaderboardCard {
-  background: var(--gh-glass-bg);
-  border: 1px solid var(--gh-glass-border);
+  background: var(--gh-general-card-bg);
+  border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;
@@ -282,8 +282,8 @@
 /* ── Hints used card ── */
 
 .hintsCard {
-  background: var(--gh-glass-bg);
-  border: 1px solid var(--gh-glass-border);
+  background: var(--gh-general-card-bg);
+  border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;
@@ -351,8 +351,8 @@
 /* ── Countdown / ready card ── */
 
 .countdownCard {
-  background: var(--gh-glass-bg);
-  border: 1px solid var(--gh-glass-border);
+  background: var(--gh-general-card-bg);
+  border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 10px;

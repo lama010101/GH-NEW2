@@ -252,11 +252,14 @@ a {
   --gh-border-medium: rgba(255, 255, 255, 0.35);
   --gh-border-strong: rgba(255, 255, 255, 0.50);
 
-  /* ── WHERE / WHEN card backgrounds ── */
-  --gh-where-card-bg:        rgba(6, 182, 212, 0.18);
-  --gh-where-card-border:    rgba(6, 182, 212, 0.50);
-  --gh-when-card-bg:         rgba(139, 92, 246, 0.18);
-  --gh-when-card-border:     rgba(139, 92, 246, 0.50);
+  /* ── Card frame colors (MP-FEAT-CARD-FRAME-COLOR-001) ── */
+  /* All cards use 80% opaque black background per spec */
+  --gh-where-card-bg:        rgba(0, 0, 0, 0.8);
+  --gh-where-card-border:    rgba(59, 130, 246, 0.8);   /* --gh-blue with opacity */
+  --gh-when-card-bg:         rgba(0, 0, 0, 0.8);
+  --gh-when-card-border:     rgba(139, 92, 246, 0.8);  /* --gh-violet with opacity */
+  --gh-general-card-bg:      rgba(0, 0, 0, 0.8);
+  --gh-general-card-border:  rgba(255, 255, 255, 0.8); /* white with opacity */
 
   /* --- Page background glow --- */
   --gh-bg-glow:         radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30, 64, 175, 0.18) 0%, transparent 70%);
