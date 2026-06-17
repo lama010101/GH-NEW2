@@ -78,7 +78,11 @@ export default function RoundCompleteSection({
     setIsWhereVisible(false);
     setIsWhenVisible(false);
     setIsRingDone(false);
-  }, [snapshot.currentRoundIndex]);
+    // Reset to 'thisRound' tab if 'allRounds' is selected but only 1 round exists
+    if (leaderboardTab === 'allRounds' && snapshot.rounds.length <= 1) {
+      setLeaderboardTab('thisRound');
+    }
+  }, [snapshot.currentRoundIndex, snapshot.rounds.length, leaderboardTab]);
 
   useEffect(() => {
     const el = accuracyCardRef.current;
@@ -225,12 +229,14 @@ export default function RoundCompleteSection({
                 >
                   This Round
                 </button>
-                <button
-                  className={`${styles.leaderboardTab} ${leaderboardTab === 'allRounds' ? styles.leaderboardTabActive : ''}`}
-                  onClick={() => setLeaderboardTab('allRounds')}
-                >
-                  All Rounds
-                </button>
+                {snapshot.rounds.length > 1 && (
+                  <button
+                    className={`${styles.leaderboardTab} ${leaderboardTab === 'allRounds' ? styles.leaderboardTabActive : ''}`}
+                    onClick={() => setLeaderboardTab('allRounds')}
+                  >
+                    All Rounds
+                  </button>
+                )}
               </div>
               <div className={styles.leaderboardHeader}>
                 <span className={styles.leaderboardHeaderRank}>#</span>
