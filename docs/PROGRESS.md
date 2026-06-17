@@ -18,6 +18,7 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | MP-FEAT-CARD-FRAME-COLOR-001 | DONE | f047ac5 | Updated card frame colors: all backgrounds to rgba(0,0,0,0.8), WHERE=blue border, WHEN=violet border, general=white border. Box-shadows left untouched. |
 | MP-FEAT-BG-DARKEN-001 | DONE | 3702ce5 | Darkened backgrounds: home/lobby 0.8 (CTO locked), cinematic 0.7, event photos 0.75 (plan defaults pending visual confirmation). |
 | MP-FEAT-LEADERBOARD-TAB-VISIBILITY-001 | DONE | f28ea5c | "All Rounds" tab now only visible when multiple rounds exist. Auto-resets to "This Round" if only 1 round. |
+| MP-FINAL-BUILD-002 | DONE | 4fb6318 | Final build verification complete. Zero errors outside documented prototype baseline (src/app/prototype/round-results/page.tsx:123 pre-existing syntax error). |
 | MP-FIX-AUTH-EMAIL-LOADING-001 | DONE | 184849a | Fixed stuck "Connecting" state via try/finally around email auth |
 | MP-FIX-AUTH-OAUTH-PKCE-001 | DONE (pending manual OAuth verification) | 9499f2e | Set flowType to pkce on browser client |
 | MP-INV-AUTH-SESSION-009 | DONE | — | Full identity.ts dump, email handler, and OAuth flow config |
