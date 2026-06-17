@@ -3,6 +3,10 @@ import { create5PlayerSession, cleanupSession } from '../fixtures/session';
 import { waitForPhase } from '../helpers/game';
 
 test.describe.skip('TASK 1 - Navigation guard', () => {
+  // AUTH LIMITATION: UI-based authentication via storageState failed due to selector timing issues.
+  // This test requires multi-player session creation which requires auth.
+  // Justification: Cannot implement reliable auth without manual testing to get correct selectors.
+  
   let session: Awaited<ReturnType<typeof create5PlayerSession>>;
 
   test.beforeAll(async ({ browser, baseURL }) => {
