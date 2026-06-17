@@ -16,6 +16,7 @@
 // ============================================================================
 
 import { useState } from "react";
+import styles from "./round-results.module.css";
 
 type Badge = { dimension: "year" | "location" | "combo"; tier: "gold" | "silver" | "bronze" } | null;
 
@@ -71,7 +72,7 @@ function accColor(acc: number): string {
 function Avatar({ id, name, size = 32 }: { id: string; name: string; size?: number }) {
   return (
     <span
-      className="avatar"
+      className={styles.avatar}
       style={{ background: gradientFor(id), width: size, height: size, fontSize: size * 0.36 }}
     >
       {initialsOf(name)}
@@ -85,7 +86,7 @@ function AccuracyRing({ value }: { value: number }) {
   const c = 2 * Math.PI * r;
   const offset = c * (1 - Math.max(0, Math.min(100, value)) / 100);
   return (
-    <div className="ringWrap">
+    <div className={styles.ringWrap}>
       <svg width="140" height="140" viewBox="0 0 140 140">
         <defs>
           <linearGradient id="accGrad" x1="0" y1="0" x2="1" y2="1">
@@ -100,9 +101,9 @@ function AccuracyRing({ value }: { value: number }) {
           transform="rotate(-90 70 70)" style={{ transition: "stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)" }}
         />
       </svg>
-      <div className="ringCenter">
-        <span className="ringValue">{Math.round(value)}</span>
-        <span className="ringPct">%</span>
+      <div className={styles.ringCenter}>
+        <span className={styles.ringValue}>{Math.round(value)}</span>
+        <span className={styles.ringPct}>%</span>
       </div>
     </div>
   );
@@ -119,25 +120,25 @@ function WhenTimeline({ rows }: { rows: Result[] }) {
   for (let y = minY; y <= maxY; y += 10) ticks.push(y);
 
   return (
-    <div className="timeline">
-      <div className="timelineBar" />
+    <div className={styles.timeline">
+      <div className={styles.timelineBar" />
       {ticks.map((y) => (
-        <div key={y} className="tick" style={{ left: `${pct(y)}%` }}>
-          {y % 20 === 0 && <span className="tickLabel">{y}</span>}
+        <div key={y} className={styles.tick" style={{ left: `${pct(y)}%` }}>
+          {y % 20 === 0 && <span className={styles.tickLabel">{y}</span>}
         </div>
       ))}
-      <div className="correctMarker" style={{ left: `${pct(CORRECT_YEAR)}%` }}>
-        <span className="correctFlag">Correct</span>
-        <span className="correctYearTl">{CORRECT_YEAR}</span>
+      <div className={styles.correctMarker" style={{ left: `${pct(CORRECT_YEAR)}%` }}>
+        <span className={styles.correctFlag">Correct</span>
+        <span className={styles.correctYearTl">{CORRECT_YEAR}</span>
       </div>
       {rows.map((r, i) => (
         <div
           key={r.id}
-          className="tlPlayer"
+          className={styles.tlPlayer"
           style={{ left: `${Math.max(4, Math.min(96, pct(r.guessYear)))}%`, transform: `translate(-50%, ${-(i % 2) * 26}px)` }}
         >
           <Avatar id={r.id} name={r.name} size={24} />
-          <span className="tlYear" style={{ fontWeight: r.isMe ? 700 : 400 }}>{r.guessYear}</span>
+          <span className={styles.tlYear" style={{ fontWeight: r.isMe ? 700 : 400 }}>{r.guessYear}</span>
         </div>
       ))}
     </div>
@@ -155,18 +156,18 @@ function WhereMap({ rows }: { rows: Result[] }) {
     p4: { x: 64, y: 33 },
   };
   return (
-    <div className="map">
-      <div className="mapGrid" />
+    <div className={styles.map">
+      <div className={styles.mapGrid" />
       {/* correct location */}
-      <div className="mapPin mapPinCorrect" style={{ left: `${pos.correct.x}%`, top: `${pos.correct.y}%` }}>
-        <span className="mapPinDot mapPinDotCorrect" />
-        <span className="mapPinLabel mapPinLabelCorrect">{CORRECT_LOCATION}</span>
+      <div className={styles.mapPin mapPinCorrect" style={{ left: `${pos.correct.x}%`, top: `${pos.correct.y}%` }}>
+        <span className={styles.mapPinDot mapPinDotCorrect" />
+        <span className={styles.mapPinLabel mapPinLabelCorrect">{CORRECT_LOCATION}</span>
       </div>
       {rows.map((r) => {
         const p = pos[r.id] ?? { x: 50, y: 50 };
         return (
-          <div key={r.id} className="mapPin" style={{ left: `${p.x}%`, top: `${p.y}%` }}>
-            <span className="mapAvatarRing" style={{ borderColor: r.isMe ? "#22d3ee" : "rgba(255,255,255,0.6)" }}>
+          <div key={r.id} className={styles.mapPin" style={{ left: `${p.x}%`, top: `${p.y}%` }}>
+            <span className={styles.mapAvatarRing" style={{ borderColor: r.isMe ? "#22d3ee" : "rgba(255,255,255,0.6)" }}>
               <Avatar id={r.id} name={r.name} size={26} />
             </span>
           </div>
@@ -204,53 +205,57 @@ export default function RoundResultsPrototypePage() {
   const hints = tab === "where" ? WHERE_HINTS : WHEN_HINTS;
 
   return (
-    <main className="screen">
-      <div className="protoBar">
-        <span className="protoTitle">Round Results — Prototype</span>
-        <span className="protoHint">Mock data · you = Alex</span>
-      </div>
+    <>
+      <style jsx global>{`
+        html, body { margin: 0; padding: 0; background: #0a0a0a; }
+      `}</style>
+      <main className={styles.screen}>
+        <div className={styles.protoBar}>
+          <span className={styles.protoTitle}>Round Results — Prototype</span>
+          <span className={styles.protoHint}>Mock data · you = Alex</span>
+        </div>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/home_background.webp" alt="" className="bgImg" draggable={false} />
-      <div className="bgScrim" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/home_background.webp" alt="" className={styles.bgImg} draggable={false} />
+        <div className={styles.bgScrim} />
 
-      <div className="scroll">
+        <div className={styles.scroll}>
         {/* ── Round banner ── */}
-        <div className="banner">
-          <span className="bannerKicker">ROUND {CURRENT_ROUND + 1} / {TOTAL_ROUNDS}</span>
-          <h1 className="bannerTitle">
-            You placed <span className="bannerRank">{myRank}{rankSuffix(myRank)}</span>
+        <div className={styles.banner}>
+          <span className={styles.bannerKicker}>ROUND {CURRENT_ROUND + 1} / {TOTAL_ROUNDS}</span>
+          <h1 className={styles.bannerTitle}>
+            You placed <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
           </h1>
-          <div className="bannerStats">
+          <div className={styles.bannerStats}>
             <span>+{me.score.toLocaleString()} XP</span>
-            <span className="bannerDot">·</span>
+            <span className={styles.bannerDot}>·</span>
             <span>{me.accuracy}% accuracy</span>
           </div>
         </div>
 
         {/* ── Event card ── */}
-        <section className="card eventCard">
+        <section className={`${styles.${styles.card} ${styles.eventCard}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/home_background.webp" alt={EVENT_TITLE} className="eventImg" />
-          <div className="eventGradient" />
-          <div className="eventOverlay">
-            <span className="eventMeta">{CORRECT_YEAR} · {CORRECT_LOCATION}</span>
-            <h1 className="eventTitle">{EVENT_TITLE}</h1>
+          <img src="/home_background.webp" alt={EVENT_TITLE} className={styles.eventImg} />
+          <div className={styles.eventGradient} />
+          <div className={styles.eventOverlay}>
+            <span className={styles.eventMeta}>{CORRECT_YEAR} · {CORRECT_LOCATION}</span>
+            <h1 className={styles.eventTitle}>{EVENT_TITLE}</h1>
           </div>
         </section>
-        <p className="eventDesc">{EVENT_DESC}</p>
+        <p className={styles.eventDesc}>{EVENT_DESC}</p>
 
         {/* ── Score hero card ── */}
-        <section className="card heroCard">
+        <section className={`${styles.${styles.card} ${styles.heroCard}`}>
           <AccuracyRing value={me.accuracy} />
-          <div className="heroSide">
-            <div className="xpBlock">
-              <span className="xpValue">+{me.score.toLocaleString()}</span>
-              <span className="xpLabel">XP earned</span>
+          <div className={styles.heroSide}>
+            <div className={styles.xpBlock}>
+              <span className={styles.xpValue}>+{me.score.toLocaleString()}</span>
+              <span className={styles.xpLabel}>XP earned</span>
             </div>
             {me.badge && (
               <span
-                className="comboBadge"
+                className={styles.comboBadge}
                 style={{
                   background: TIER_STYLE[me.badge.tier].bg,
                   border: `1px solid ${TIER_STYLE[me.badge.tier].border}`,
@@ -260,75 +265,75 @@ export default function RoundResultsPrototypePage() {
                 ★ {TIER_STYLE[me.badge.tier].label} combo
               </span>
             )}
-            <div className="splitRow">
-              <div className="splitItem">
-                <span className="splitDot" style={{ background: "#22d3ee" }} />
-                <span className="splitLabel">Where</span>
-                <span className="splitVal" style={{ color: accColor(me.locationScore) }}>{me.locationScore}%</span>
+            <div className={styles.splitRow}>
+              <div className={styles.splitItem}>
+                <span className={styles.splitDot} style={{ background: "#22d3ee" }} />
+                <span className={styles.splitLabel}>Where</span>
+                <span className={styles.splitVal} style={{ color: accColor(me.locationScore) }}>{me.locationScore}%</span>
               </div>
-              <div className="splitItem">
-                <span className="splitDot" style={{ background: "#8b5cf6" }} />
-                <span className="splitLabel">When</span>
-                <span className="splitVal" style={{ color: accColor(me.timeScore) }}>{me.timeScore}%</span>
+              <div className={styles.splitItem}>
+                <span className={styles.splitDot} style={{ background: "#8b5cf6" }} />
+                <span className={styles.splitLabel}>When</span>
+                <span className={styles.splitVal} style={{ color: accColor(me.timeScore) }}>{me.timeScore}%</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* ── Round leaderboard ── */}
-        <section className="card">
-          <div className="cardHead">
-            <span className="accentBar" />
-            <h2 className="cardTitle">Round leaderboard</h2>
+        <section className={styles.card}>
+          <div className={styles.cardHead}>
+            <span className={styles.accentBar} />
+            <h2 className={styles.cardTitle}>Round leaderboard</h2>
           </div>
-          <div className="lbList">
+          <div className={styles.lbList">
             {ranked.map((r, i) => (
-              <div key={r.id} className={`lbRow ${r.isMe ? "lbRowMe" : ""}`}>
-                <span className={`lbRank ${i === 0 ? "lbRankGold" : ""}`}>{i + 1}</span>
+              <div key={r.id} className={`${styles.lbRow} ${r.isMe ? styles.lbRowMe : ""}`}>
+                <span className={`${styles.lbRank} ${i === 0 ? styles.lbRankGold : ""}`}>{i + 1}</span>
                 <Avatar id={r.id} name={r.name} size={32} />
-                <span className="lbName">
+                <span className={styles.lbName">
                   {r.name}
-                  {r.isMe && <span className="youTag">you</span>}
+                  {r.isMe && <span className={styles.youTag">you</span>}
                 </span>
-                <span className="lbXp">+{r.score.toLocaleString()}</span>
-                <span className="lbAcc" style={{ color: accColor(r.accuracy) }}>{r.accuracy}%</span>
+                <span className={styles.lbXp">+{r.score.toLocaleString()}</span>
+                <span className={styles.lbAcc" style={{ color: accColor(r.accuracy) }}>{r.accuracy}%</span>
               </div>
             ))}
           </div>
         </section>
 
         {/* ── Where / When breakdown (tabbed) ── */}
-        <section className="card">
-          <div className="tabs">
+        <section className={styles.card">
+          <div className={styles.tabs">
             <button
-              className={`tab ${tab === "where" ? "tabActive" : ""}`}
+              className={`${styles.${styles.tab} ${tab === "where" ? styles.tabActive : ""}`}
               style={tab === "where" ? { color: "#22d3ee", borderColor: "#22d3ee" } : undefined}
               onClick={() => { setTab("where"); setLbOpen(false); setHintsOpen(false); }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/where.webp" alt="" className="tabIcon" />
+              <img src="/badges/where.webp" alt="" className={styles.tabIcon} />
               Where
             </button>
             <button
-              className={`tab ${tab === "when" ? "tabActive" : ""}`}
+              className={`${styles.${styles.tab} ${tab === "when" ? styles.tabActive : ""}`}
               style={tab === "when" ? { color: "#8b5cf6", borderColor: "#8b5cf6" } : undefined}
               onClick={() => { setTab("when"); setLbOpen(false); setHintsOpen(false); }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/when.webp" alt="" className="tabIcon" />
+              <img src="/badges/when.webp" alt="" className={styles.tabIcon} />
               When
             </button>
           </div>
 
-          <div className="breakHead">
-            <span className="breakCorrect">
+          <div className={styles.breakHead">
+            <span className={styles.breakCorrect">
               Correct: <strong style={{ color: accent }}>{tab === "where" ? CORRECT_LOCATION : CORRECT_YEAR}</strong>
             </span>
-            <span className="breakScore" style={{ color: accColor(tab === "where" ? me.locationScore : me.timeScore) }}>
+            <span className={styles.breakScore" style={{ color: accColor(tab === "where" ? me.locationScore : me.timeScore) }}>
               {tab === "where" ? me.locationScore : me.timeScore}%
             </span>
           </div>
-          <span className="breakSub">
+          <span className={styles.breakSub">
             {tab === "where"
               ? `You were ${me.distanceKm} km away`
               : `You guessed ${me.guessYear} · ${Math.abs(me.guessYear - CORRECT_YEAR)} yrs off`}
@@ -337,23 +342,23 @@ export default function RoundResultsPrototypePage() {
           {tab === "where" ? <WhereMap rows={whereRows} /> : <WhenTimeline rows={whenRows} />}
 
           {/* Expandable leaderboard */}
-          <div className="expand">
-            <button className="expandHead" onClick={() => setLbOpen((v) => !v)}>
-              <span className="chev" style={{ transform: lbOpen ? "rotate(90deg)" : "none" }}>›</span>
+          <div className={styles.expand">
+            <button className={styles.expandHead" onClick={() => setLbOpen((v) => !v)}>
+              <span className={styles.chev" style={{ transform: lbOpen ? "rotate(90deg)" : "none" }}>›</span>
               Leaderboard
-              <span className="expandRank" style={{ color: accent }}>#{myRank}</span>
+              <span className={styles.expandRank" style={{ color: accent }}>#{myRank}</span>
             </button>
             {lbOpen && (
-              <div className="subLb">
+              <div className={styles.subLb">
                 {panelRows.map((r) => {
                   const val = tab === "where" ? r.locationScore : r.timeScore;
                   const detail = tab === "where" ? `${r.distanceKm} km` : `${Math.abs(r.guessYear - CORRECT_YEAR)} yrs off`;
                   return (
-                    <div key={r.id} className={`subLbRow ${r.isMe ? "lbRowMe" : ""}`}>
+                    <div key={r.id} className={`${styles.subLbRow} ${r.isMe ? styles.lbRowMe : ""}`}>
                       <Avatar id={r.id} name={r.name} size={26} />
-                      <span className="subLbName">{r.name}</span>
-                      <span className="subLbDetail">{detail}</span>
-                      <span className="subLbAcc" style={{ color: accColor(val) }}>{val}%</span>
+                      <span className={styles.subLbName">{r.name}</span>
+                      <span className={styles.subLbDetail">{detail}</span>
+                      <span className={styles.subLbAcc" style={{ color: accColor(val) }}>{val}%</span>
                     </div>
                   );
                 })}
@@ -362,17 +367,17 @@ export default function RoundResultsPrototypePage() {
           </div>
 
           {/* Expandable hints */}
-          <div className="expand">
-            <button className="expandHead" onClick={() => setHintsOpen((v) => !v)}>
-              <span className="chev" style={{ transform: hintsOpen ? "rotate(90deg)" : "none", color: accent }}>›</span>
+          <div className={styles.expand">
+            <button className={styles.expandHead" onClick={() => setHintsOpen((v) => !v)}>
+              <span className={styles.chev" style={{ transform: hintsOpen ? "rotate(90deg)" : "none", color: accent }}>›</span>
               <span style={{ color: accent }}>Hints</span>
             </button>
             {hintsOpen && (
-              <div className="hintsList">
+              <div className={styles.hintsList">
                 {hints.map((h) => (
-                  <div key={h.label} className="hintRow">
-                    <span className="hintLabel">{h.label}</span>
-                    <span className="hintText">{h.text}</span>
+                  <div key={h.label} className={styles.hintRow">
+                    <span className={styles.hintLabel">{h.label}</span>
+                    <span className={styles.hintText">{h.text}</span>
                   </div>
                 ))}
               </div>
@@ -381,233 +386,37 @@ export default function RoundResultsPrototypePage() {
         </section>
 
         {/* ── Countdown ── */}
-        <div className="countdown">
-          <span className="countdownText">Auto-advancing in <strong>8s</strong></span>
-          <span className="readyNames">
+        <div className={styles.countdown">
+          <span className={styles.countdownText">Auto-advancing in <strong>8s</strong></span>
+          <span className={styles.readyNames">
             <span style={{ color: "#4ade80" }}>Mina ✓</span>
             <span style={{ color: "#4ade80" }}>Sara ✓</span>
           </span>
         </div>
 
-        <div className="dockSpacer" />
+        <div className={styles.dockSpacer" />
       </div>
 
       {/* ── Bottom bar ── */}
-      <div className="bottomBar">
-        <button className="iconBtn" aria-label="Home">
+      <div className={styles.bottomBar">
+        <button className={styles.iconBtn} aria-label="Home">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
             <polyline points="9 21 9 12 15 12 15 21" />
           </svg>
         </button>
-        <div className="progress">
+        <div className={styles.progress">
           {Array.from({ length: TOTAL_ROUNDS }).map((_, i) => (
             <span
               key={i}
-              className="dot"
+              className={styles.dot}
               style={{ background: i < CURRENT_ROUND ? "#22d3ee" : i === CURRENT_ROUND ? "#fff" : "rgba(255,255,255,0.2)" }}
             />
           ))}
         </div>
-        <button className="nextBtn">Next →</button>
+        <button className={styles.nextBtn}>Next →</button>
       </div>
-
-      <style jsx global>{`
-        html, body { margin: 0; padding: 0; background: #0a0a0a; }
-      `}</style>
-
-      <style jsx>{`
-        .screen {
-          position: fixed; inset: 0; overflow: hidden;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #fff;
-        }
-        .bgImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-        .bgScrim { position: absolute; inset: 0; z-index: 1; background: rgba(0,0,0,0.85); }
-
-        .protoBar {
-          position: absolute; top: 0; left: 0; right: 0; z-index: 60;
-          display: flex; align-items: center; justify-content: space-between; gap: 12px;
-          padding: 10px 14px; background: rgba(10,10,12,0.6); backdrop-filter: blur(8px); flex-wrap: wrap;
-        }
-        .protoTitle { font-size: 13px; font-weight: 600; letter-spacing: 0.3px; opacity: 0.85; }
-        .protoHint { font-size: 12px; font-weight: 600; opacity: 0.55; }
-
-        .scroll {
-          position: absolute; inset: 0; z-index: 2; overflow-y: auto;
-          padding: 56px 16px calc(96px + env(safe-area-inset-bottom));
-          display: flex; flex-direction: column; gap: 14px;
-          max-width: 560px; margin: 0 auto; box-sizing: border-box;
-        }
-
-        /* ── Banner ── */
-        .banner { text-align: center; padding: 14px 8px 4px; }
-        .bannerKicker {
-          font-size: 11px; font-weight: 800; letter-spacing: 2.5px; color: #22d3ee;
-        }
-        .bannerTitle { font-size: 30px; font-weight: 800; margin: 8px 0 0; letter-spacing: -0.5px; }
-        .bannerRank {
-          background: linear-gradient(135deg, #22d3ee, #8b5cf6);
-          -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .bannerStats { margin-top: 8px; font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); display: flex; gap: 10px; justify-content: center; }
-        .bannerDot { color: rgba(255,255,255,0.3); }
-
-        /* ── Cards ── */
-        .card {
-          background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
-          border: 1px solid rgba(255,255,255,0.1); border-radius: 18px;
-          backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0,0,0,0.35);
-        }
-        .cardHead { display: flex; align-items: center; gap: 10px; padding: 16px 18px 10px; }
-        .accentBar { width: 4px; height: 18px; border-radius: 999px; background: #22d3ee; }
-        .cardTitle { font-size: 16px; font-weight: 700; margin: 0; }
-
-        /* ── Event card ── */
-        .eventCard { position: relative; padding: 0; overflow: hidden; }
-        .eventImg { width: 100%; height: 200px; object-fit: cover; display: block; }
-        .eventGradient { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85)); }
-        .eventOverlay { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px; }
-        .eventMeta { font-size: 13px; font-weight: 700; color: #22d3ee; }
-        .eventTitle { font-size: 24px; font-weight: 800; margin: 4px 0 0; letter-spacing: -0.3px; }
-        .eventDesc { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.78); margin: -4px 4px 2px; }
-
-        /* ── Hero score ── */
-        .heroCard { display: flex; align-items: center; gap: 18px; padding: 18px; }
-        .ringWrap { position: relative; flex-shrink: 0; width: 140px; height: 140px; }
-        .ringCenter { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-        .ringValue { font-size: 38px; font-weight: 800; }
-        .ringPct { font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.6); margin-left: 2px; }
-        .heroSide { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-        .xpBlock { display: flex; flex-direction: column; }
-        .xpValue { font-size: 26px; font-weight: 800; color: #ffd54a; line-height: 1; }
-        .xpLabel { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 3px; }
-        .comboBadge { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 999px; }
-        .splitRow { display: flex; gap: 18px; }
-        .splitItem { display: flex; align-items: center; gap: 6px; }
-        .splitDot { width: 9px; height: 9px; border-radius: 50%; }
-        .splitLabel { font-size: 13px; color: rgba(255,255,255,0.65); }
-        .splitVal { font-size: 14px; font-weight: 700; }
-
-        /* ── Avatars ── */
-        .avatar {
-          flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-          font-weight: 700; color: #fff; text-transform: uppercase; border: 2px solid rgba(255,255,255,0.25);
-        }
-
-        /* ── Round leaderboard ── */
-        .lbList { display: flex; flex-direction: column; padding: 0 12px 12px; }
-        .lbRow {
-          display: flex; align-items: center; gap: 11px; padding: 9px 8px; border-radius: 10px;
-        }
-        .lbRow + .lbRow { border-top: 1px solid rgba(255,255,255,0.06); }
-        .lbRowMe { background: rgba(34,211,238,0.08); }
-        .lbRank { width: 22px; text-align: center; font-size: 15px; font-weight: 800; color: rgba(255,255,255,0.6); }
-        .lbRankGold { color: #ffd54a; }
-        .lbName { flex: 1; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 7px; min-width: 0;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .youTag { font-size: 10px; font-weight: 700; color: #22d3ee; background: rgba(34,211,238,0.15); padding: 1px 7px; border-radius: 999px; }
-        .lbXp { font-size: 13px; font-weight: 700; color: #ffd54a; }
-        .lbAcc { font-size: 14px; font-weight: 800; width: 44px; text-align: right; }
-
-        /* ── Tabs ── */
-        .tabs { display: flex; gap: 8px; padding: 14px 14px 0; }
-        .tab {
-          flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-          padding: 10px; border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: 700;
-          background: rgba(255,255,255,0.05); border: 1.5px solid rgba(255,255,255,0.12);
-          color: rgba(255,255,255,0.6); transition: all 0.18s;
-        }
-        .tabActive { background: rgba(255,255,255,0.1); }
-        .tabIcon { width: 22px; height: 22px; object-fit: contain; }
-
-        .breakHead { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 0; }
-        .breakCorrect { font-size: 14px; color: rgba(255,255,255,0.7); }
-        .breakScore { font-size: 22px; font-weight: 800; }
-        .breakSub { display: block; font-size: 12px; color: rgba(255,255,255,0.5); padding: 2px 18px 0; }
-
-        /* ── WHEN timeline ── */
-        .timeline { position: relative; height: 110px; margin: 28px 18px 8px; }
-        .timelineBar { position: absolute; left: 0; right: 0; top: 62px; height: 3px; border-radius: 999px; background: rgba(255,255,255,0.18); }
-        .tick { position: absolute; top: 58px; width: 1px; height: 10px; background: rgba(255,255,255,0.25); transform: translateX(-50%); }
-        .tickLabel { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 10px; color: rgba(255,255,255,0.4); white-space: nowrap; }
-        .correctMarker { position: absolute; top: 40px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 3; }
-        .correctFlag { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; color: #4ade80; background: rgba(74,222,128,0.15); padding: 2px 6px; border-radius: 6px; }
-        .correctYearTl { font-size: 12px; font-weight: 700; color: #4ade80; margin-top: 2px; }
-        .correctMarker::after { content: ""; width: 2px; height: 20px; background: #4ade80; margin-top: 2px; }
-        .tlPlayer { position: absolute; top: 30px; display: flex; flex-direction: column; align-items: center; gap: 2px; z-index: 2; }
-        .tlYear { font-size: 11px; color: rgba(255,255,255,0.8); }
-
-        /* ── WHERE map ── */
-        .map {
-          position: relative; height: 220px; margin: 14px 14px 4px; border-radius: 14px; overflow: hidden;
-          background: radial-gradient(circle at 50% 40%, #16384a, #0c1a24 70%);
-          border: 1px solid rgba(255,255,255,0.1);
-        }
-        .mapGrid {
-          position: absolute; inset: 0; opacity: 0.25;
-          background-image: linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px);
-          background-size: 32px 32px;
-        }
-        .mapPin { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; }
-        .mapPinDot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; }
-        .mapPinDotCorrect { background: #4ade80; box-shadow: 0 0 0 6px rgba(74,222,128,0.25); }
-        .mapPinLabel { font-size: 11px; font-weight: 700; margin-top: 4px; white-space: nowrap; }
-        .mapPinLabelCorrect { color: #4ade80; }
-        .mapPinCorrect { z-index: 4; }
-        .mapAvatarRing { border-radius: 50%; border: 2px solid; display: inline-flex; }
-
-        /* ── Expandables ── */
-        .expand { border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0 0; }
-        .expandHead {
-          width: 100%; display: flex; align-items: center; gap: 8px; padding: 13px 18px;
-          background: transparent; border: none; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
-        }
-        .chev { font-size: 18px; line-height: 1; color: rgba(255,255,255,0.5); transition: transform 0.18s; display: inline-block; }
-        .expandRank { margin-left: auto; font-weight: 800; }
-        .subLb { padding: 0 14px 12px; display: flex; flex-direction: column; }
-        .subLbRow { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 9px; }
-        .subLbRow + .subLbRow { border-top: 1px solid rgba(255,255,255,0.06); }
-        .subLbName { flex: 1; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .subLbDetail { font-size: 12px; color: rgba(255,255,255,0.5); }
-        .subLbAcc { font-size: 14px; font-weight: 800; width: 42px; text-align: right; }
-        .hintsList { padding: 0 18px 14px; display: flex; flex-direction: column; gap: 10px; }
-        .hintRow { display: flex; flex-direction: column; gap: 2px; }
-        .hintLabel { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.5); text-transform: uppercase; }
-        .hintText { font-size: 14px; color: rgba(255,255,255,0.85); }
-
-        /* ── Countdown ── */
-        .countdown {
-          display: flex; align-items: center; justify-content: space-between; gap: 12px;
-          padding: 12px 16px; border-radius: 14px; flex-wrap: wrap;
-          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-        }
-        .countdownText { font-size: 13px; color: rgba(255,255,255,0.7); }
-        .readyNames { display: flex; gap: 12px; font-size: 13px; font-weight: 600; }
-
-        .dockSpacer { height: 2px; }
-
-        /* ── Bottom bar ── */
-        .bottomBar {
-          position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
-          display: flex; align-items: center; gap: 12px;
-          padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-          background: linear-gradient(180deg, rgba(10,10,12,0), rgba(10,10,12,0.92) 45%);
-        }
-        .iconBtn {
-          width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; cursor: pointer;
-          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-          color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center;
-        }
-        .progress { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; }
-        .nextBtn {
-          flex-shrink: 0; padding: 12px 26px; border-radius: 12px; border: none; cursor: pointer;
-          font-size: 15px; font-weight: 800; color: #06181c; background: #22d3ee;
-          box-shadow: 0 6px 22px rgba(34,211,238,0.35);
-        }
-        .nextBtn:hover { opacity: 0.95; }
-      `}</style>
     </main>
+    </>
   );
 }
