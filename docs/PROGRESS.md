@@ -2121,3 +2121,8 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - Fix: onCompleteRef pattern — callback stored in ref, removed from dependency array so timer ticks no longer kill the animation
 - Files: RainbowRing.tsx, RoundCompleteSection.tsx
 - Commit: 2113b97
+
+## MP-FIX-AUTH-SIGNOUT-001 — Make signOut() update cachedState synchronously
+| Task ID | Status | Files Changed | Notes |
+|---------|--------|---------------|-------|
+| MP-FIX-AUTH-SIGNOUT-001 | DONE | 2bacbfc | Fixed double sign-out by making signOut() update cachedState synchronously |
