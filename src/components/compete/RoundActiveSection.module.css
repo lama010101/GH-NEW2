@@ -36,6 +36,7 @@
   max-width: none;
   user-select: none;
   pointer-events: none;
+  filter: brightness(0.7);
 }
 
 .imgPlaceholder {
