@@ -420,7 +420,7 @@ export default function CompeteGamePage() {
 
   return (
     <main className={`app-shell ${pageStyles.pageShell}`}>
-      <div style={{ position: "fixed", top: "16px", right: "16px", zIndex: 2000 }}>
+      <div className={pageStyles.notificationWrap}>
         <NotificationBell />
       </div>
       <div className={pageStyles.bgImage} />

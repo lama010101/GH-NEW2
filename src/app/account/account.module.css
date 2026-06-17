@@ -21,7 +21,7 @@
   border: none;
   cursor: pointer;
   color: var(--gh-text-primary);
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -171,12 +171,12 @@
 
 .saveFeedbackError {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: var(--gh-danger);
 }
 
 .fieldValue {
-  font-size: 15px;
+  font-size: var(--font-base);
   color: rgba(255, 255, 255, 0.5);
 }
 

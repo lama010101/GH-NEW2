@@ -340,6 +340,11 @@
   cursor: pointer;
 }
 
+.badgeIcon {
+  display: block;
+  margin: 0 auto 2px;
+}
+
 .roundBadge {
   position: absolute;
   top: 9px;

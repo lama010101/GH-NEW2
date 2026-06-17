@@ -27,6 +27,13 @@
   z-index: 2;
 }
 
+.notificationWrap {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2000;
+}
+
 /* ── Loading and error states (MP-STYLE-COMPETEPAGE-001) ── */
 
 @keyframes spin {
