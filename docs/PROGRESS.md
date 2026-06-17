@@ -7,6 +7,7 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 ## Log
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-PLAN-DEVIN-002 | PLAN CREATED | docs/PLAN_BATCH_UI_002.md | Plan for 7 queued/new UI + status-verification tasks |
 | MP-FIX-AUTH-EMAIL-LOADING-001 | DONE | 184849a | Fixed stuck "Connecting" state via try/finally around email auth |
 | MP-FIX-AUTH-OAUTH-PKCE-001 | DONE (pending manual OAuth verification) | 9499f2e | Set flowType to pkce on browser client |
 | MP-INV-AUTH-SESSION-009 | DONE | — | Full identity.ts dump, email handler, and OAuth flow config |
@@ -2127,3 +2128,6 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
 | MP-FIX-AUTH-SIGNOUT-001 | DONE | 2bacbfc | Fixed double sign-out by making signOut() update cachedState synchronously |
+| MP-INV-PKCE-HISTORY-001 | DONE | — | Investigated history of flowType pkce removal/re-add |
+| MP-INV-MIDDLEWARE-001 | DONE | — | Confirmed middleware gating mechanism and cookie dependency |
+| MP-INV-LOGIN-ROUTE-001 | DONE | — | Confirmed /login route existence and next-param handling for cookie-gap diagnosis | |
