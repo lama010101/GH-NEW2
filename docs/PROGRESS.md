@@ -8,6 +8,7 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
 | MP-FIX-AUTH-EMAIL-LOADING-001 | DONE | 184849a | Fixed stuck "Connecting" state via try/finally around email auth |
+| MP-FIX-AUTH-OAUTH-PKCE-001 | DONE (pending manual OAuth verification) | 9499f2e | Set flowType to pkce on browser client |
 | MP-INV-AUTH-SESSION-009 | DONE | — | Full identity.ts dump, email handler, and OAuth flow config |
 | MP-INV-AUTH-SESSION-008 | DONE | — | Confirm cookie vs localStorage session split |
 | MP-INV-AUTH-SESSION-007 | DONE | — | Raw dump of signOut implementation and all call sites |
