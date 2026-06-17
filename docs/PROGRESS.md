@@ -8,6 +8,7 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
 | MP-INV-DUPLICATE-CLIENT-001 | DONE | — | Confirmed createSupabaseBrowserClient call sites before browser client revert |
+| MP-FIX-AUTH-BROWSER-CLIENT-002 | DONE (pending manual verification) | c87e708 | Reverted to createBrowserClient for unified client/server cookie session, removed dead duplicate client function |
 | MP-INV-BROWSER-CLIENT-REVERT-001 | DONE | — | Pre-revert confirmation of supabaseBrowser.ts state and consumers |
 | MP-PLAN-DEVIN-002 | PLAN CREATED | docs/PLAN_BATCH_UI_002.md | Plan for 7 queued/new UI + status-verification tasks |
 | MP-INV-PKCE-HISTORY-001 | DONE | 66f2026 | PKCE flowType history investigation. Confirmed: commit 844b033 removed pkce, commit 9499f2e re-added pkce. Current state: flowType: "pkce" present at supabaseBrowser.ts:26. No OAuth callback route changes found. |
