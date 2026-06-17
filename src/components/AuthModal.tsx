@@ -73,38 +73,40 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     setLoading(true);
 
     let result;
-    if (mode === "signin") {
-      result = await supabaseBrowser.auth.signInWithPassword({ email, password });
-      if (!result.error && !rememberMe) {
-        // User wants session-only (no persist): remove localStorage entry after sign-in
-        // so the session is cleared when the tab closes.
-        // Supabase stores the session under a key prefixed with "sb-"
-        const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-        if (storageKey) {
-          const raw = localStorage.getItem(storageKey);
-          localStorage.removeItem(storageKey);
-          // Store in sessionStorage so the tab stays authenticated until closed
-          if (raw) sessionStorage.setItem(storageKey, raw);
+    try {
+      if (mode === "signin") {
+        result = await supabaseBrowser.auth.signInWithPassword({ email, password });
+        if (!result.error && !rememberMe) {
+          // User wants session-only (no persist): remove localStorage entry after sign-in
+          // so the session is cleared when the tab closes.
+          // Supabase stores the session under a key prefixed with "sb-"
+          const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+          if (storageKey) {
+            const raw = localStorage.getItem(storageKey);
+            localStorage.removeItem(storageKey);
+            // Store in sessionStorage so the tab stays authenticated until closed
+            if (raw) sessionStorage.setItem(storageKey, raw);
+          }
         }
+      } else {
+        result = await supabaseBrowser.auth.signUp({ email, password });
       }
-    } else {
-      result = await supabaseBrowser.auth.signUp({ email, password });
-    }
 
-    setLoading(false);
-
-    if (result.error) {
-      setError(result.error.message);
-      return;
-    }
-
-    // onAuthStateChange fires reliably with @supabase/supabase-js createClient
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") {
-        subscription.unsubscribe();
-        onClose();
+      if (result.error) {
+        setError(result.error.message);
+        return;
       }
-    });
+
+      // onAuthStateChange fires reliably with @supabase/supabase-js createClient
+      const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_IN") {
+          subscription.unsubscribe();
+          onClose();
+        }
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleForgotPassword() {
