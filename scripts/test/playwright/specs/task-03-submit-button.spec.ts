@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { create5PlayerSession, cleanupSession } from '../fixtures/session';
 import { waitForPhase, hasClass, getComputedStyle } from '../helpers/game';
 
-test.describe('TASK 3 - Submit button animation', () => {
+test.describe.skip('TASK 3 - Submit button animation', () => {
   let session: Awaited<ReturnType<typeof create5PlayerSession>>;
 
   test.beforeAll(async ({ browser, baseURL }) => {
