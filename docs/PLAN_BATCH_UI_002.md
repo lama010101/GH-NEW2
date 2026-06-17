@@ -34,15 +34,21 @@ Immovable architecture rules:
 1. **Background darkness values (TASK C1):**
    - Home page mosaic: Current overlay rgba(0,0,0,0.58) → Proposed: brightness(0.65) on image OR increase overlay to rgba(0,0,0,0.65)
    - Round cinematic image: No current darkening → Proposed: brightness(0.7) on image OR overlay rgba(0,0,0,0.35)
-   - Compete lobby: TBD after investigation
+   - Compete lobby: NO per-component background image — LobbySection renders on top of the page-level bgImage+bgScrim in compete/[gameId]/page.module.css (bgScrim = rgba(0,0,0,0.55)). Darkening this location means adjusting bgScrim in page.module.css, not LobbySection itself. Confirm whether C1.3 should adjust bgScrim, or is already dark enough, or should be removed from scope.
    - Result screen event images: No current darkening → Proposed: brightness(0.75) on image OR overlay rgba(0,0,0,0.30)
 
-2. **WHERE/WHEN card border colors (TASK C2):**
+2. **IMPORTANT — Divergent darkening baseline across C1 locations (TASK C1):**
+   - The home page background ALREADY has a dark overlay at rgba(0,0,0,0.58) and the compete lobby page background has a scrim at rgba(0,0,0,0.55). These locations are already moderately dark.
+   - The round cinematic image (RoundActiveSection) and the result screen event images (RoundCompleteSection) currently have ZERO darkening at all — no filter, no overlay.
+   - These are fundamentally different situations. "Make backgrounds darker" means different things at each location. The round cinematic image and result event images are the primary intended targets (they have no darkening); the home and lobby may not need further work at all.
+   - **Confirm explicitly:** Should C1.1 (home page) be excluded from or de-prioritized in this task's scope? Should C1.3 (lobby) be excluded, since its "darkening" lives at the page level and adjusting it affects the entire game screen, not just the lobby view?
+
+3. **WHERE/WHEN card border colors (TASK C2):**
    - WHERE card: Current uses --gh-teal (#22d3ee) → Proposed: --gh-blue (#3b82f6) per spec
    - WHEN card: Current uses --gh-violet (#8b5cf6) → Keep as-is (matches spec)
    - General cards (Accuracy, XP, Event info): White border → Proposed: rgba(255,255,255,0.8) or 1px solid #ffffff
 
-3. **Font token gaps (TASK C4):**
+4. **Font token gaps (TASK C4):**
    - If any legitimate use case lacks an existing token, list here for new token creation (do not invent silently)
 
 ### Pre-Existing Build Error (Not in Scope)
@@ -134,7 +140,8 @@ Immovable architecture rules:
 - `rm -rf .next && npm run build` → must succeed
 
 **Dependencies:** None  
-**Note:** This task provides border tokens for TASK C2. Coordinate so C2 uses these tokens instead of redefining.
+**Note:** This task provides border tokens for TASK C2. Coordinate so C2 uses these tokens instead of redefining.  
+**CONFLICT FLAG:** `--gh-border-default: rgba(255, 255, 255, 0.12)` already exists in globals.css (line 229). The proposed `--gh-border-subtle` (same value) would be a semantic duplicate. When implementing B1, do NOT add `--gh-border-subtle` — instead use the existing `--gh-border-default` for that value, or rename it to `--gh-border-subtle` and update all existing consumers. This must be resolved before implementation.
 
 ---
 
@@ -221,10 +228,11 @@ Immovable architecture rules:
 - Implementation: `<img>` tag
 
 **Sub-task C1.3 — Compete lobby:**
-- File: `src/components/compete/LobbySection.tsx` (needs investigation)
-- Current: TBD
-- Text/UI sits on top
-- Implementation: TBD
+- File: `src/app/compete/[gameId]/page.module.css` (NOT LobbySection.tsx — see below)
+- Current: LobbySection has NO background image of its own. It is a transparent component that renders on top of the page-level background in compete/[gameId]/page.tsx. The page applies `.bgImage` (CSS background-image: `/home_background.webp`) and `.bgScrim` (overlay at `rgba(0, 0, 0, 0.55)`). Darkening the lobby view requires adjusting `.bgScrim` in `page.module.css`.
+- Current darkening: `rgba(0, 0, 0, 0.55)` — already moderately dark.
+- Note: Adjusting bgScrim affects ALL game states shown on that page (lobby, active round, results), not just the lobby phase. This is a scope concern — see Decisions Needed item 2 above.
+- Implementation if in scope: increase `.bgScrim` from `rgba(0, 0, 0, 0.55)` to `rgba(0, 0, 0, 0.65)`
 
 **Sub-task C1.4 — Result screen event images:**
 - File: `src/components/compete/RoundCompleteSection.tsx` (line 151-158)
@@ -235,7 +243,7 @@ Immovable architecture rules:
 **Proposed Change:** 
 - **C1.1 (Home):** Increase `.bgOverlay` from `rgba(0, 0, 0, 0.58)` to `rgba(0, 0, 0, 0.65)` OR add `filter: brightness(0.65)` to `.bgImage`
 - **C1.2 (Cinematic):** Add `filter: brightness(0.7)` to `.eventImg` in RoundActiveSection.module.css OR add overlay div
-- **C1.3 (Lobby):** After investigation, apply appropriate darkening (filter or overlay)
+- **C1.3 (Lobby):** LobbySection has no background image. Page-level scrim already at rgba(0,0,0,0.55). If in scope, increase `.bgScrim` in `src/app/compete/[gameId]/page.module.css` from 0.55 → 0.65. **Decision required first — see Decisions Needed item 2.**
 - **C1.4 (Result event):** Add `filter: brightness(0.75)` to `.eventImage` in RoundCompleteSection.module.css OR add overlay div
 
 **Before/After:** N/A (varies per location)  
@@ -399,8 +407,11 @@ Immovable architecture rules:
 - WhereCard.tsx: `fontSize: 25` → Tokenize to `var(--font-2xl)` (24px) or keep if 25px is intentional
 - WhenCard.tsx: `fontSize: 25` → Tokenize to `var(--font-2xl)` (24px) or keep if 25px is intentional
 - SessionComplete.tsx: No inline fontSize (all computed)
-- compete/[gameId]/page.tsx: No inline fontSize
-- Other .tsx files: Investigate per prior task list (NavModal, etc.)
+- compete/[gameId]/page.tsx: No inline fontSize (confirmed)
+- **src/components/NavModal.tsx:** AUDITED — zero `fontSize` / `font-size` occurrences. No changes needed.
+- **src/components/compete/RoundActiveSection.tsx:** AUDITED — zero inline `fontSize` occurrences (all font sizes in its CSS module, not .tsx). No changes needed.
+- **src/app/compete/page.tsx:** AUDITED — one inline style at line 154: `fontSize: "var(--font-2xs)"` — already uses token, COMPLIANT. No changes needed.
+- **src/app/compete/[gameId]/page.tsx:** AUDITED — zero inline `fontSize` occurrences. No changes needed.
 
 **Before/After:** N/A (varies per file)  
 **Validation commands:** (per sub-task)
@@ -554,10 +565,17 @@ grep -c -- "--gh-" src/app/globals.css
 ### TASK C1 Findings
 
 **Background image locations:**
-- **Home page:** CSS background-image in `src/app/home.module.css` with overlay div at rgba(0,0,0,0.58)
-- **Round cinematic:** `<img>` tag in `src/components/compete/RoundActiveSection.tsx` (line 440-448), no darkening
-- **Compete lobby:** Needs investigation in `src/components/compete/LobbySection.tsx`
-- **Result event images:** `<img>` tag in `src/components/compete/RoundCompleteSection.tsx` (line 151-158), no darkening
+- **Home page:** CSS background-image in `src/app/home.module.css` with overlay div at rgba(0,0,0,0.58). ALREADY DARK.
+- **Round cinematic:** `<img>` tag in `src/components/compete/RoundActiveSection.tsx` (line 440-448), no darkening. ZERO CURRENT DARKENING — primary target.
+- **Compete lobby (INVESTIGATION COMPLETE):** LobbySection.tsx has NO background image. It renders transparent cards on top of the page-level background in `src/app/compete/[gameId]/page.tsx`. That page applies `.bgImage` (CSS background-image: `/home_background.webp`, defined in `page.module.css`) and `.bgScrim` (overlay `rgba(0, 0, 0, 0.55)`). LobbySection itself has no darkening mechanism. Adjusting `.bgScrim` would affect ALL game phases on that page (lobby, active round, results). Current scrim value (0.55) is already moderately dark.
+- **Result event images:** `<img>` tag in `src/components/compete/RoundCompleteSection.tsx` (line 151-158), no darkening. ZERO CURRENT DARKENING — primary target.
+
+**Darkening baseline divergence (see Decisions Needed item 2):**
+- Home page: rgba(0,0,0,0.58) overlay — already dark
+- Compete lobby page: rgba(0,0,0,0.55) scrim — already dark, page-level not component-level
+- Round cinematic image: NO darkening at all
+- Result event images: NO darkening at all
+- The intended targets for this task are most likely C1.2 and C1.4 (zero-darkening locations). C1.1 and C1.3 require explicit decision before touching.
 
 ### TASK C2 Findings
 
@@ -586,6 +604,12 @@ grep -c -- "--gh-" src/app/globals.css
 - **Already compliant:** Most compete components already use tokens or are marked layout-constrained
 - **Areas needing work:** Some page-level CSS modules (account, help) have hardcoded values
 - **Inline fontSize:** WhereCard and WhenCard have `fontSize: 25` (should tokenize to `var(--font-2xl)` or keep if intentional)
+
+**Flagged .tsx files — confirmed audit results:**
+- **src/components/NavModal.tsx:** Zero `fontSize`/`font-size` occurrences. COMPLIANT. No action needed.
+- **src/components/compete/RoundActiveSection.tsx:** Zero inline `fontSize` occurrences in .tsx. All font sizes are in the CSS module. COMPLIANT. No action needed.
+- **src/app/compete/page.tsx:** One inline style at line 154 using `fontSize: "var(--font-2xs)"` — already uses token. COMPLIANT. No action needed.
+- **src/app/compete/[gameId]/page.tsx:** Zero inline `fontSize` occurrences. COMPLIANT. No action needed.
 
 **Pre-existing build error:**
 - `src/app/prototype/round-results/page.tsx:123` has syntax error (missing closing quote in className)
