@@ -237,6 +237,21 @@ a {
   --gh-glass-blur:      blur(12px);
   --gh-glass-radius:    14px;
 
+  /* --- Blur tokens (MP-REFACTOR-CARD-TOKENS-001) --- */
+  --gh-blur-sm:  blur(6px);
+  --gh-blur-md:  blur(8px);
+  --gh-blur-lg:  blur(12px);
+
+  /* --- Shadow tokens (MP-REFACTOR-CARD-TOKENS-001) --- */
+  --gh-shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.4);
+  --gh-shadow-md:  0 4px 20px rgba(0, 0, 0, 0.5);
+  --gh-shadow-lg:  0 8px 28px rgba(0, 0, 0, 0.5);
+  --gh-shadow-xl:  0 -10px 40px rgba(0, 0, 0, 0.6);
+
+  /* --- Border tokens (MP-REFACTOR-CARD-TOKENS-001) --- */
+  --gh-border-medium: rgba(255, 255, 255, 0.35);
+  --gh-border-strong: rgba(255, 255, 255, 0.50);
+
   /* ── WHERE / WHEN card backgrounds ── */
   --gh-where-card-bg:        rgba(6, 182, 212, 0.18);
   --gh-where-card-border:    rgba(6, 182, 212, 0.50);
