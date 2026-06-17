@@ -23,6 +23,7 @@ export const supabaseBrowser: SupabaseClient = createClient(
       storage: typeof window !== "undefined" ? window.localStorage : undefined,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      flowType: "pkce",
     },
   }
 );
