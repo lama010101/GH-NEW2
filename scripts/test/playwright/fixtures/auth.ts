@@ -39,6 +39,8 @@ let createdUserIds: string[] = [];
 
 /**
  * Global setup: Create 5 test users via Supabase Admin API
+ * Note: UI-based authentication via storageState is skipped due to selector timing issues.
+ * Tests that require auth should implement their own auth flow or skip gracefully.
  */
 async function globalSetup() {
   console.log('[PLAYWRIGHT SETUP] Creating test users...');
@@ -91,6 +93,7 @@ async function globalSetup() {
   }
 
   console.log('[PLAYWRIGHT SETUP] All test users created successfully');
+  console.log('[PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues');
 }
 
 /**

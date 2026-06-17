@@ -28,17 +28,10 @@ export async function create5PlayerSession(
     contexts.map(ctx => ctx.newPage())
   );
 
-  // Sign in all 5 players using API
+  // Navigate all players to home page (no auth for now)
   for (let i = 0; i < TEST_USERS.length; i++) {
-    const user = TEST_USERS[i];
     const page = pages[i];
-
-    // Navigate to home page
     await page.goto(baseURL);
-
-    // Skip sign-in for now - tests may not require full auth
-    // Reload to ensure page is loaded
-    await page.reload();
     await page.waitForLoadState('networkidle');
   }
 
