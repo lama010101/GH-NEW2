@@ -7,6 +7,14 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 ## Log
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-INV-AUTH-SESSION-009 | DONE | — | Full identity.ts dump, email handler, and OAuth flow config |
+| MP-INV-AUTH-SESSION-008 | DONE | — | Confirm cookie vs localStorage session split |
+| MP-INV-AUTH-SESSION-007 | DONE | — | Raw dump of signOut implementation and all call sites |
+| MP-INV-AUTH-SESSION-006 | DONE | — | Raw NavModal dump and render-site mapping |
+| MP-INV-AUTH-SESSION-005 | DONE | — | NavModal sign-in state source identified |
+| MP-INV-AUTH-SESSION-004 | DONE | — | Confirm storage key mismatch and signed-in UI state source |
+| MP-INV-AUTH-SESSION-003 | DONE | — | Closing remaining auth investigation gaps |
+| MP-INV-AUTH-SESSION-002 | DONE | — | Auth/session root cause investigation (corrected re-issue) |
 | MP-INV-AUTH-SESSION-001 | DONE | — | Auth/session root cause investigation |
 | MP-FIX-ERA-REFETCH-001 | DONE | src/server/sessionCore.ts | Refetch events on era change and update SESSION_CREATED eventIds. After sessions table UPDATE with new year_min/year_max, reads total_rounds, fetches fresh events using fetchRandomEventsForSession with new range, validates event count matches total_rounds, then uses raw SQL (dbPool.query) to update SESSION_CREATED event payload with new eventIds JSONB array. Validates: tsc --noEmit exits 0; grep freshEvents returns line 1015; grep eventIds.*map returns line 1033; git diff shows only sessionCore.ts. Commit: de91562. | 2026-06-13 |
 | MP-FIX-FONT-MOBILE-002 | DONE | src/app/globals.css, src/app/home.module.css, src/app/leaderboard/leaderboard.module.css, src/app/account/account.module.css, src/app/compete/page.tsx, src/components/AuthModal.module.css, src/components/HintModal.module.css, src/components/NavModal.module.css, src/components/NotificationBell.module.css, src/components/WelcomeModal.module.css, src/components/compete/RoundActiveSection.module.css, src/components/layout/LanguageSwitcher.module.css, src/components/layout/TopBar.module.css | Calibrated mobile typography across all pages. Token scale: --font-2xs:12px, --font-xs:13px, --font-sm:14px, --font-base:15px, --font-lg:17px, --font-xl:20px, --font-2xl:24px, --font-3xl:28px, --font-4xl:32px. Fixed malformed font-size lines in leaderboard. Converted hardcoded px values to tokens in account, HintModal, WelcomeModal, NavModal, NotificationBell, TopBar, LanguageSwitcher, RoundActiveSection. Fixed globals.css badge to use var(--font-xs). KC-001 guard verified (z-index: 1001 present). Commit: c16ca80. | 2026-06-12 |
