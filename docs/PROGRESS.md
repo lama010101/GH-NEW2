@@ -7,6 +7,8 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 ## Log
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-INV-DUPLICATE-CLIENT-001 | DONE | — | Confirmed createSupabaseBrowserClient call sites before browser client revert |
+| MP-INV-BROWSER-CLIENT-REVERT-001 | DONE | — | Pre-revert confirmation of supabaseBrowser.ts state and consumers |
 | MP-PLAN-DEVIN-002 | PLAN CREATED | docs/PLAN_BATCH_UI_002.md | Plan for 7 queued/new UI + status-verification tasks |
 | MP-FIX-AUTH-EMAIL-LOADING-001 | DONE | 184849a | Fixed stuck "Connecting" state via try/finally around email auth |
 | MP-FIX-AUTH-OAUTH-PKCE-001 | DONE (pending manual OAuth verification) | 9499f2e | Set flowType to pkce on browser client |

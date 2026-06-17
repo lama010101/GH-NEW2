@@ -16,6 +16,7 @@
 // ============================================================================
 
 import { useMemo, useState } from "react";
+import styles from "./final-results.module.css";
 
 type RoundData = {
   index: number;
@@ -90,7 +91,7 @@ function accColor(acc: number): string {
 
 function Avatar({ id, name, size = 32 }: { id: string; name: string; size?: number }) {
   return (
-    <span className="avatar" style={{ background: gradientFor(id), width: size, height: size, fontSize: size * 0.36 }}>
+    <span className={styles.avatar} style={{ background: gradientFor(id), width: size, height: size, fontSize: size * 0.36 }}>
       {initialsOf(name)}
     </span>
   );
@@ -101,7 +102,7 @@ function AccuracyRing({ value, label }: { value: number; label: string }) {
   const c = 2 * Math.PI * r;
   const offset = c * (1 - Math.max(0, Math.min(100, value)) / 100);
   return (
-    <div className="ringWrap">
+    <div className={styles.ringWrap}>
       <svg width="150" height="150" viewBox="0 0 150 150">
         <defs>
           <linearGradient id="finalGrad" x1="0" y1="0" x2="1" y2="1">
@@ -116,9 +117,9 @@ function AccuracyRing({ value, label }: { value: number; label: string }) {
           transform="rotate(-90 75 75)" style={{ transition: "stroke-dashoffset 1s cubic-bezier(0.16,1,0.3,1)" }}
         />
       </svg>
-      <div className="ringCenter">
-        <span className="ringValue">{Math.round(value)}<span className="ringPct">%</span></span>
-        <span className="ringLabel">{label}</span>
+      <div className={styles.ringCenter}>
+        <span className={styles.ringValue}>{Math.round(value)}<span className={styles.ringPct}>%</span></span>
+        <span className={styles.ringLabel}>{label}</span>
       </div>
     </div>
   );
@@ -183,75 +184,77 @@ export default function FinalResultsPrototypePage() {
   };
 
   return (
-    <main className="screen">
-      <div className="protoBar">
-        <span className="protoTitle">Final Results — Prototype</span>
-        <span className="protoHint">Mock data · 5 rounds · you = Alex</span>
-      </div>
+    <>
+      <style jsx global>{`html, body { margin: 0; padding: 0; background: #0a0a0a; }`}</style>
+      <main className={styles.screen}>
+        <div className={styles.protoBar}>
+          <span className={styles.protoTitle}>Final Results — Prototype</span>
+          <span className={styles.protoHint}>Mock data · 5 rounds · you = Alex</span>
+        </div>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/home_background.webp" alt="" className="bgImg" draggable={false} />
-      <div className="bgScrim" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/home_background.webp" alt="" className={styles.bgImg} draggable={false} />
+        <div className={styles.bgScrim} />
 
-      <div className="scroll">
+        <div className={styles.scroll}>
         {/* ── Victory banner ── */}
-        <div className="banner">
-          <span className="bannerKicker">GAME COMPLETE</span>
-          <h1 className="bannerTitle">
-            You finished <span className="bannerRank">{myRank}{rankSuffix(myRank)}</span>
+        <div className={styles.banner}>
+          <span className={styles.bannerKicker}>GAME COMPLETE</span>
+          <h1 className={styles.bannerTitle}>
+            You finished <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
           </h1>
-          <div className="bannerStats">
+          <div className={styles.bannerStats}>
             <span>{me.totalScore.toLocaleString()} XP</span>
-            <span className="bannerDot">·</span>
+            <span className={styles.bannerDot}>·</span>
             <span>{wonRoundsByMe} round{wonRoundsByMe === 1 ? "" : "s"} won</span>
           </div>
         </div>
 
         {/* ── Hero accuracy + Where/When ── */}
-        <section className="card heroCard">
+        <section className={`${styles.card} ${styles.heroCard}`}>
           <AccuracyRing value={me.avgAccuracy} label="overall" />
-          <div className="statPair">
-            <div className="statTile">
-              <span className="statTileLabel" style={{ color: "#22d3ee" }}>WHERE</span>
-              <span className="statTileVal" style={{ color: accColor(me.avgLocation) }}>{me.avgLocation}%</span>
-              <span className="statTileSub">avg {me.avgDistanceKm} km away</span>
+          <div className={styles.statPair}>
+            <div className={styles.statTile}>
+              <span className={styles.statTileLabel} style={{ color: "#22d3ee" }}>WHERE</span>
+              <span className={styles.statTileVal} style={{ color: accColor(me.avgLocation) }}>{me.avgLocation}%</span>
+              <span className={styles.statTileSub}>avg {me.avgDistanceKm} km away</span>
             </div>
-            <div className="statTile">
-              <span className="statTileLabel" style={{ color: "#8b5cf6" }}>WHEN</span>
-              <span className="statTileVal" style={{ color: accColor(me.avgTime) }}>{me.avgTime}%</span>
-              <span className="statTileSub">avg {me.avgYearDiff} yrs off</span>
+            <div className={styles.statTile}>
+              <span className={styles.statTileLabel} style={{ color: "#8b5cf6" }}>WHEN</span>
+              <span className={styles.statTileVal} style={{ color: accColor(me.avgTime) }}>{me.avgTime}%</span>
+              <span className={styles.statTileSub}>avg {me.avgYearDiff} yrs off</span>
             </div>
           </div>
         </section>
 
         {/* ── Final rankings ── */}
-        <section className="card">
-          <div className="cardHead">
-            <span className="accentBar" />
-            <h2 className="cardTitle">Final rankings</h2>
+        <section className={styles.card}>
+          <div className={styles.cardHead}>
+            <span className={styles.accentBar} />
+            <h2 className={styles.cardTitle}>Final rankings</h2>
           </div>
-          <div className="ranks">
+          <div className={styles.ranks}>
             {leaderboard.map((p, i) => {
               const wins = [...roundWinner.entries()].filter(([, pid]) => pid === p.id).length;
               return (
-                <div key={p.id} className={`rankRow ${p.isMe ? "rankRowMe" : ""}`}>
-                  <span className={`medal ${i === 0 ? "medalGold" : i === 1 ? "medalSilver" : i === 2 ? "medalBronze" : ""}`}>
+                <div key={p.id} className={`${styles.rankRow} ${p.isMe ? styles.rankRowMe : ""}`}>
+                  <span className={`${styles.medal} ${i === 0 ? styles.medalGold : i === 1 ? styles.medalSilver : i === 2 ? styles.medalBronze : ""}`}>
                     {i + 1}
                   </span>
                   <Avatar id={p.id} name={p.name} size={38} />
-                  <div className="rankMain">
-                    <div className="rankNameLine">
-                      <span className="rankName">{p.name}</span>
-                      {p.isMe && <span className="youTag">you</span>}
-                      {wins > 0 && <span className="winTag">🏆 {wins}</span>}
+                  <div className={styles.rankMain}>
+                    <div className={styles.rankNameLine}>
+                      <span className={styles.rankName}>{p.name}</span>
+                      {p.isMe && <span className={styles.youTag}>you</span>}
+                      {wins > 0 && <span className={styles.winTag}>🏆 {wins}</span>}
                     </div>
-                    <div className="bar">
-                      <div className="barFill" style={{ width: `${p.avgAccuracy}%` }} />
+                    <div className={styles.bar}>
+                      <div className={styles.barFill} style={{ width: `${p.avgAccuracy}%` }} />
                     </div>
                   </div>
-                  <div className="rankScore">
-                    <span className="rankAcc" style={{ color: accColor(p.avgAccuracy) }}>{p.avgAccuracy}%</span>
-                    <span className="rankXp">{p.totalScore.toLocaleString()} XP</span>
+                  <div className={styles.rankScore}>
+                    <span className={styles.rankAcc} style={{ color: accColor(p.avgAccuracy) }}>{p.avgAccuracy}%</span>
+                    <span className={styles.rankXp}>{p.totalScore.toLocaleString()} XP</span>
                   </div>
                 </div>
               );
@@ -260,12 +263,12 @@ export default function FinalResultsPrototypePage() {
         </section>
 
         {/* ── Round breakdown ── */}
-        <section className="card">
-          <div className="cardHead">
-            <span className="accentBar" />
-            <h2 className="cardTitle">Round breakdown</h2>
+        <section className={styles.card}>
+          <div className={styles.cardHead}>
+            <span className={styles.accentBar} />
+            <h2 className={styles.cardTitle}>Round breakdown</h2>
           </div>
-          <div className="roundList">
+          <div className={styles.roundList}>
             {ROUNDS.map((round) => {
               const s = roundStats(round.index);
               const open = expandedRound === round.index;
@@ -273,38 +276,38 @@ export default function FinalResultsPrototypePage() {
               const myRow = RESULTS.find((r) => r.playerId === VIEWER_ID && r.roundIndex === round.index)!;
               const myAcc = Math.round((myRow.locationScore + myRow.timeScore) / 2);
               return (
-                <div key={round.index} className={`roundItem ${open ? "roundItemOpen" : ""}`}>
-                  <button className="roundTop" onClick={() => setExpandedRound(open ? null : round.index)}>
-                    <span className="roundNum">R{round.index + 1}</span>
-                    <div className="roundInfo">
-                      <span className="roundTitle">{round.title}</span>
-                      <span className="roundMeta">{round.year} · {round.location}</span>
+                <div key={round.index} className={`${styles.roundItem} ${open ? styles.roundItemOpen : ""}`}>
+                  <button className={styles.roundTop} onClick={() => setExpandedRound(open ? null : round.index)}>
+                    <span className={styles.roundNum}>R{round.index + 1}</span>
+                    <div className={styles.roundInfo}>
+                      <span className={styles.roundTitle}>{round.title}</span>
+                      <span className={styles.roundMeta}>{round.year} · {round.location}</span>
                     </div>
-                    <span className="roundMyAcc" style={{ color: accColor(myAcc) }}>{myAcc}%</span>
-                    <span className="chev" style={{ transform: open ? "rotate(90deg)" : "none" }}>›</span>
+                    <span className={styles.roundMyAcc} style={{ color: accColor(myAcc) }}>{myAcc}%</span>
+                    <span className={styles.chev} style={{ transform: open ? "rotate(90deg)" : "none" }}>›</span>
                   </button>
                   {open && (
-                    <div className="roundDetail">
-                      <div className="miniGrid">
-                        <div className="miniTile">
-                          <span className="miniVal" style={{ color: accColor(s.avgAccuracy) }}>{s.avgAccuracy}%</span>
-                          <span className="miniLabel">Group avg</span>
-                          <span className="miniSub">{s.totalScore.toLocaleString()} pts</span>
+                    <div className={styles.roundDetail}>
+                      <div className={styles.miniGrid}>
+                        <div className={styles.miniTile}>
+                          <span className={styles.miniVal} style={{ color: accColor(s.avgAccuracy) }}>{s.avgAccuracy}%</span>
+                          <span className={styles.miniLabel}>Group avg</span>
+                          <span className={styles.miniSub}>{s.totalScore.toLocaleString()} pts</span>
                         </div>
-                        <div className="miniTile">
-                          <span className="miniVal" style={{ color: accColor(s.avgLocation) }}>{s.avgLocation}%</span>
-                          <span className="miniLabel" style={{ color: "#22d3ee" }}>Where</span>
-                          <span className="miniSub">avg {s.avgDistanceKm} km</span>
+                        <div className={styles.miniTile}>
+                          <span className={styles.miniVal} style={{ color: accColor(s.avgLocation) }}>{s.avgLocation}%</span>
+                          <span className={styles.miniLabel} style={{ color: "#22d3ee" }}>Where</span>
+                          <span className={styles.miniSub}>avg {s.avgDistanceKm} km</span>
                         </div>
-                        <div className="miniTile">
-                          <span className="miniVal" style={{ color: accColor(s.avgTime) }}>{s.avgTime}%</span>
-                          <span className="miniLabel" style={{ color: "#8b5cf6" }}>When</span>
-                          <span className="miniSub">avg {s.avgYearDiff} yrs</span>
+                        <div className={styles.miniTile}>
+                          <span className={styles.miniVal} style={{ color: accColor(s.avgTime) }}>{s.avgTime}%</span>
+                          <span className={styles.miniLabel} style={{ color: "#8b5cf6" }}>When</span>
+                          <span className={styles.miniSub}>avg {s.avgYearDiff} yrs</span>
                         </div>
                       </div>
-                      <div className="bestRow">
-                        <span className="bestLabel">🏆 Best player</span>
-                        <span className={`bestName ${winner === VIEWER_ID ? "bestNameMe" : ""}`}>
+                      <div className={styles.bestRow}>
+                        <span className={styles.bestLabel}>🏆 Best player</span>
+                        <span className={`${styles.bestName} ${winner === VIEWER_ID ? styles.bestNameMe : ""}`}>
                           {nameOf(winner ?? "")}{winner === VIEWER_ID ? " (you)" : ""}
                         </span>
                       </div>
@@ -316,170 +319,15 @@ export default function FinalResultsPrototypePage() {
           </div>
         </section>
 
-        <div className="dockSpacer" />
+        <div className={styles.dockSpacer} />
       </div>
 
       {/* ── Bottom CTA ── */}
-      <div className="cta">
-        <button className="homeBtn">Home</button>
-        <button className="playBtn">Play Again</button>
+      <div className={styles.cta}>
+        <button className={styles.homeBtn}>Home</button>
+        <button className={styles.playBtn}>Play Again</button>
       </div>
-
-      <style jsx global>{`
-        html, body { margin: 0; padding: 0; background: #0a0a0a; }
-      `}</style>
-
-      <style jsx>{`
-        .screen {
-          position: fixed; inset: 0; overflow: hidden;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #fff;
-        }
-        .bgImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-        .bgScrim { position: absolute; inset: 0; z-index: 1; background: rgba(0,0,0,0.86); }
-
-        .protoBar {
-          position: absolute; top: 0; left: 0; right: 0; z-index: 60;
-          display: flex; align-items: center; justify-content: space-between; gap: 12px;
-          padding: 10px 14px; background: rgba(10,10,12,0.6); backdrop-filter: blur(8px); flex-wrap: wrap;
-        }
-        .protoTitle { font-size: 13px; font-weight: 600; letter-spacing: 0.3px; opacity: 0.85; }
-        .protoHint { font-size: 12px; font-weight: 600; opacity: 0.55; }
-
-        .scroll {
-          position: absolute; inset: 0; z-index: 2; overflow-y: auto;
-          padding: 56px 16px calc(92px + env(safe-area-inset-bottom));
-          display: flex; flex-direction: column; gap: 14px;
-          max-width: 560px; margin: 0 auto; box-sizing: border-box;
-        }
-
-        /* ── Banner ── */
-        .banner { text-align: center; padding: 14px 8px 4px; }
-        .bannerKicker {
-          font-size: 11px; font-weight: 800; letter-spacing: 2.5px; color: #22d3ee;
-        }
-        .bannerTitle { font-size: 30px; font-weight: 800; margin: 8px 0 0; letter-spacing: -0.5px; }
-        .bannerRank {
-          background: linear-gradient(135deg, #22d3ee, #8b5cf6);
-          -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .bannerStats { margin-top: 8px; font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); display: flex; gap: 10px; justify-content: center; }
-        .bannerDot { color: rgba(255,255,255,0.3); }
-
-        /* ── Cards ── */
-        .card {
-          background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
-          border: 1px solid rgba(255,255,255,0.1); border-radius: 18px;
-          backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0,0,0,0.35);
-        }
-        .cardHead { display: flex; align-items: center; gap: 10px; padding: 16px 18px 10px; }
-        .accentBar { width: 4px; height: 18px; border-radius: 999px; background: #22d3ee; }
-        .cardTitle { font-size: 16px; font-weight: 700; margin: 0; }
-
-        /* ── Hero ── */
-        .heroCard { display: flex; align-items: center; gap: 18px; padding: 20px 18px; }
-        .ringWrap { position: relative; flex-shrink: 0; width: 150px; height: 150px; }
-        .ringCenter { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .ringValue { font-size: 38px; font-weight: 800; line-height: 1; }
-        .ringPct { font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.6); }
-        .ringLabel { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-top: 4px; }
-        .statPair { flex: 1; display: flex; flex-direction: column; gap: 12px; }
-        .statTile {
-          display: flex; flex-direction: column; gap: 2px; padding: 12px 14px;
-          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-        }
-        .statTileLabel { font-size: 11px; font-weight: 800; letter-spacing: 1px; }
-        .statTileVal { font-size: 22px; font-weight: 800; }
-        .statTileSub { font-size: 12px; color: rgba(255,255,255,0.55); }
-
-        /* ── Avatars ── */
-        .avatar {
-          flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-          font-weight: 700; color: #fff; text-transform: uppercase; border: 2px solid rgba(255,255,255,0.25);
-        }
-
-        /* ── Rankings ── */
-        .ranks { display: flex; flex-direction: column; padding: 0 12px 12px; gap: 4px; }
-        .rankRow { display: flex; align-items: center; gap: 11px; padding: 10px 8px; border-radius: 12px; }
-        .rankRowMe { background: rgba(34,211,238,0.08); }
-        .medal {
-          width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.6);
-          background: rgba(255,255,255,0.08);
-        }
-        .medalGold { background: rgba(255,190,0,0.2); color: #ffcc44; border: 1px solid rgba(255,190,0,0.5); }
-        .medalSilver { background: rgba(180,195,215,0.18); color: #cdd6e3; border: 1px solid rgba(180,195,215,0.45); }
-        .medalBronze { background: rgba(180,120,60,0.2); color: #cd9a5a; border: 1px solid rgba(180,120,60,0.45); }
-        .rankMain { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-        .rankNameLine { display: flex; align-items: center; gap: 8px; }
-        .rankName { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .youTag { font-size: 10px; font-weight: 700; color: #22d3ee; background: rgba(34,211,238,0.15); padding: 1px 7px; border-radius: 999px; }
-        .winTag { font-size: 11px; font-weight: 700; color: #ffd54a; }
-        .bar { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.1); overflow: hidden; }
-        .barFill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #22d3ee, #8b5cf6); transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
-        .rankScore { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-        .rankAcc { font-size: 16px; font-weight: 800; }
-        .rankXp { font-size: 11px; font-weight: 600; color: #ffd54a; }
-
-        /* ── Round breakdown ── */
-        .roundList { display: flex; flex-direction: column; padding: 0 12px 12px; gap: 8px; }
-        .roundItem { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; background: rgba(255,255,255,0.03); }
-        .roundItemOpen { border-color: rgba(34,211,238,0.3); }
-        .roundTop {
-          width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px;
-          background: transparent; border: none; cursor: pointer; color: #fff; text-align: left;
-        }
-        .roundNum {
-          flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 13px; font-weight: 800; color: #22d3ee;
-          background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.3);
-        }
-        .roundInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        .roundTitle { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .roundMeta { font-size: 12px; color: rgba(255,255,255,0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .roundMyAcc { font-size: 16px; font-weight: 800; }
-        .chev { font-size: 18px; color: rgba(255,255,255,0.5); transition: transform 0.18s; display: inline-block; }
-
-        .roundDetail { padding: 0 12px 14px; }
-        .miniGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .miniTile {
-          display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px;
-          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
-        }
-        .miniVal { font-size: 18px; font-weight: 800; }
-        .miniLabel { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7); }
-        .miniSub { font-size: 10px; color: rgba(255,255,255,0.45); }
-        .bestRow {
-          display: flex; align-items: center; justify-content: space-between; margin-top: 10px;
-          padding: 9px 12px; border-radius: 10px; background: rgba(255,255,255,0.04);
-        }
-        .bestLabel { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); }
-        .bestName { font-size: 13px; font-weight: 700; }
-        .bestNameMe { color: #22d3ee; }
-
-        .dockSpacer { height: 2px; }
-
-        /* ── Bottom CTA ── */
-        .cta {
-          position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
-          display: flex; gap: 12px; align-items: center;
-          padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
-          background: linear-gradient(180deg, rgba(10,10,12,0), rgba(10,10,12,0.92) 45%);
-        }
-        .homeBtn {
-          flex: 0 0 auto; padding: 14px 26px; border-radius: 13px; cursor: pointer;
-          font-size: 15px; font-weight: 700; color: #fff;
-          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
-        }
-        .playBtn {
-          flex: 1; padding: 14px; border-radius: 13px; border: none; cursor: pointer;
-          font-size: 16px; font-weight: 800; color: #06181c;
-          background: linear-gradient(135deg, #22d3ee, #8b5cf6);
-          box-shadow: 0 6px 22px rgba(34,211,238,0.3);
-        }
-        .playBtn:hover, .homeBtn:hover { opacity: 0.92; }
-      `}</style>
     </main>
+    </>
   );
 }
