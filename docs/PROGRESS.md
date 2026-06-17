@@ -12,6 +12,8 @@ Status values: DONE | IN PROGRESS | BLOCKED | SKIPPED
 | MP-PLAN-DEVIN-002 | PLAN CREATED | docs/PLAN_BATCH_UI_002.md | Plan for 7 queued/new UI + status-verification tasks |
 | MP-INV-PKCE-HISTORY-001 | DONE | 66f2026 | PKCE flowType history investigation. Confirmed: commit 844b033 removed pkce, commit 9499f2e re-added pkce. Current state: flowType: "pkce" present at supabaseBrowser.ts:26. No OAuth callback route changes found. |
 | MP-REFACTOR-CARD-TOKENS-001 | DONE | 85303be | Added 9 design tokens to globals.css: 3 blur, 4 shadow, 2 border. Used existing --gh-border-default for subtle (no duplicate). KC-007 guard: 84 → 93 tokens. |
+| MP-REFACTOR-INLINE-STYLES-001 | DONE | f457b75 | Tokenized inline styles: SessionComplete.tsx cursor/display/margin, compete/[gameId]/page.tsx position wrapper. Added .badgeIcon and .notificationWrap CSS classes. |
+| MP-FIX-FONT-CONSISTENCY-001 | DONE | f457b75 | Tokenized hardcoded font sizes: account.module.css (15px, 13px), help.module.css (13/14/15/16/17/20/24px → xs/sm/base/lg/xl/2xl). |
 | MP-FIX-AUTH-EMAIL-LOADING-001 | DONE | 184849a | Fixed stuck "Connecting" state via try/finally around email auth |
 | MP-FIX-AUTH-OAUTH-PKCE-001 | DONE (pending manual OAuth verification) | 9499f2e | Set flowType to pkce on browser client |
 | MP-INV-AUTH-SESSION-009 | DONE | — | Full identity.ts dump, email handler, and OAuth flow config |
