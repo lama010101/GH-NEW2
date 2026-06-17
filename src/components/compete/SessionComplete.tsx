@@ -320,7 +320,6 @@ export default function SessionComplete({
                                 src={round.imageUrl}
                                 alt={round.title}
                                 onClick={() => { setViewerSrc(round.imageUrl); setViewerAlt(round.title); }}
-                                style={{ cursor: 'pointer' }}
                               />
                             ) : (
                               <div className={styles.photoFallback}>
@@ -341,7 +340,7 @@ export default function SessionComplete({
                               </div>
 
                               <div className={`${styles.miniTile} ${styles.miniTileWhere}`}>
-                                <img src="/badges/where.webp" alt="where" width={24} height={24} style={{ display: 'block', margin: '0 auto 2px' }} />
+                                <img src="/badges/where.webp" alt="where" width={24} height={24} className={styles.badgeIcon} />
                                 <div className={styles.percentLine}>
                                   <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgLocationScore}</span>
                                   <span className={styles.miniSymbol}>%</span>
@@ -351,7 +350,7 @@ export default function SessionComplete({
                               </div>
 
                               <div className={`${styles.miniTile} ${styles.miniTileWhen}`}>
-                                <img src="/badges/when.webp" alt="when" width={24} height={24} style={{ display: 'block', margin: '0 auto 2px' }} />
+                                <img src="/badges/when.webp" alt="when" width={24} height={24} className={styles.badgeIcon} />
                                 <div className={styles.percentLine}>
                                   <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgTimeScore}</span>
                                   <span className={styles.miniSymbol}>%</span>
