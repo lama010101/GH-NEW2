@@ -258,8 +258,11 @@ a {
   --gh-where-card-border:    rgba(59, 130, 246, 0.8);   /* --gh-blue with opacity */
   --gh-when-card-bg:         rgba(0, 0, 0, 0.8);
   --gh-when-card-border:     rgba(139, 92, 246, 0.8);  /* --gh-violet with opacity */
-  --gh-general-card-bg:      rgba(0, 0, 0, 0.8);
-  --gh-general-card-border:  rgba(255, 255, 255, 0.8); /* white with opacity */
+  --gh-general-card-bg:      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  --gh-general-card-border:  rgba(255, 255, 255, 0.1);
+  --gh-general-card-shadow:  0 8px 30px rgba(0, 0, 0, 0.35);
+  --gh-general-card-blur:    blur(10px);
+  --gh-general-card-radius:  18px;
 
   /* --- Page background glow --- */
   --gh-bg-glow:         radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30, 64, 175, 0.18) 0%, transparent 70%);
