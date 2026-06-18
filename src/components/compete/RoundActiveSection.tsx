@@ -30,6 +30,7 @@ interface RoundActiveSectionProps {
   timeRemaining: number | null;
   hintsUsedCount?: number;
   localPlayerAvatarUrl?: string | null;
+  locationName: string | null;
 }
 
 
@@ -50,6 +51,7 @@ export default function RoundActiveSection({
   timeRemaining,
   hintsUsedCount,
   localPlayerAvatarUrl,
+  locationName,
 }: RoundActiveSectionProps) {
   const t = useTranslations('game');
   const tNav = useTranslations('nav');
@@ -64,8 +66,6 @@ export default function RoundActiveSection({
   const [searchQuery, setSearchQuery] = useState("");
   const [yearEditValue, setYearEditValue] = useState("");
   const [mapFullscreen, setMapFullscreen] = useState(false);
-  const [locationName, setLocationName] = useState<string | null>(null);
-  const [locationNameLoading, setLocationNameLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<Array<{ displayName: string; lat: number; lng: number }>>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; id: number } | null>(null);
@@ -248,12 +248,6 @@ export default function RoundActiveSection({
     } catch { /* audio not available */ }
   }, [timeRemaining]);
 
-  // Reset location name when round changes
-  useEffect(() => {
-    setLocationName(null);
-    setLocationNameLoading(false);
-  }, [snapshot.currentRoundIndex]);
-
   // Persist sound/vibrate settings to localStorage
   useEffect(() => {
     localStorage.setItem('gh_sound', String(soundEnabled));
@@ -287,44 +281,6 @@ export default function RoundActiveSection({
   const handleMapSetLocation = (location: { lat: number; lng: number }) => {
     if (!isLocked) {
       onSetLocation(location);
-      reverseGeocode(location.lat, location.lng);
-    }
-  };
-
-  const reverseGeocode = async (lat: number, lng: number): Promise<void> => {
-    setLocationNameLoading(true);
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
-        {
-          headers: {
-            "Accept-Language": "en",
-            "User-Agent": "GuessHistory/1.0",
-          },
-        }
-      );
-      if (!res.ok) throw new Error("Geocode failed");
-      const data = await res.json();
-      // Build a short readable name: city + country, or state + country
-      const addr = data.address ?? {};
-      const primary =
-        addr.city ||
-        addr.town ||
-        addr.village ||
-        addr.municipality ||
-        addr.county ||
-        addr.state_district ||
-        addr.state ||
-        "";
-      const country = addr.country || "";
-      const name = primary && country
-        ? `${primary}, ${country}`
-        : primary || country || data.display_name?.split(",").slice(0, 2).join(",").trim() || "Unknown location";
-      setLocationName(name);
-    } catch {
-      setLocationName(null);
-    } finally {
-      setLocationNameLoading(false);
     }
   };
 
@@ -365,7 +321,6 @@ export default function RoundActiveSection({
     flyToIdRef.current += 1;
     setFlyToTarget({ lat: result.lat, lng: result.lng, id: flyToIdRef.current });
     handleMapSetLocation({ lat: result.lat, lng: result.lng });
-    setLocationName(result.displayName);
     setSearchQuery("");
     setSearchResults([]);
   };
@@ -699,7 +654,7 @@ export default function RoundActiveSection({
             />
             {guessLocation !== null && (
               <div className={styles.mapLocationLabel}>
-                {locationNameLoading ? "…" : locationName ? locationName : "Location set ✓"}
+                {locationName ?? "Location set ✓"}
               </div>
             )}
             <button
@@ -777,7 +732,7 @@ export default function RoundActiveSection({
           <div className={styles.circleWrap}>
             <span className={`${styles.overlayTag} ${styles.overlayTagWhere} ${guessLocation !== null ? styles.overlayTagWhereAnswer : ""}`}>
               {guessLocation !== null
-                ? (locationNameLoading ? "…" : (locationName ?? "✓").split(",")[0].trim())
+                ? (locationName ?? "✓").split(",")[0].trim()
                 : t('where')}
             </span>
             <button
@@ -870,7 +825,7 @@ export default function RoundActiveSection({
                     <div className={styles.sheetHeaderMeta}>
                       <span className={styles.sheetHeaderValue}>
                         {guessLocation !== null
-                          ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
+                          ? locationName ?? "Location set ✓"
                           : "No location set"}
                       </span>
                     </div>
