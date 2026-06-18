@@ -1,6 +1,6 @@
 import { supabaseBrowser } from "./supabaseBrowser";
 
-const NEW_USER_WINDOW_MS = 10_000;
+const NEW_USER_WINDOW_MS = 60_000;
 
 export type IdentityState =
   | { status: "loading" }
@@ -15,23 +15,43 @@ export function getCachedIdentityState(): IdentityState {
 }
 
 let resolveReady: ((playerId: string) => void) | null = null;
-const readyPromise = new Promise<string>((resolve) => {
+let readyPromise = new Promise<string>((resolve) => {
   resolveReady = resolve;
 });
 
 let bootstrapped = false;
+let signingOut = false;
+let bootstrapPromise: Promise<IdentityState> | null = null;
+
+function resetReadyPromise() {
+  readyPromise = new Promise<string>((resolve) => {
+    resolveReady = resolve;
+  });
+}
 
 async function fetchDisplayName(userId: string): Promise<string> {
-  try {
-    const { data } = await supabaseBrowser
+  const attempts = 4;
+  for (let i = 0; i < attempts; i++) {
+    const { data, error } = await supabaseBrowser
       .from("profiles")
       .select("display_name")
       .eq("id", userId)
-      .single();
-    return data?.display_name?.trim() || 'Player';
-  } catch {
-    return 'Player';
+      .maybeSingle();
+
+    if (data?.display_name) {
+      return data.display_name.trim();
+    }
+
+    if (error && error.code !== 'PGRST116') {
+      return 'Player';
+    }
+
+    if (i < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 100 * 2 ** i));
+    }
   }
+
+  return 'Player';
 }
 
 export async function bootstrapIdentity(): Promise<IdentityState> {
@@ -39,48 +59,58 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
     return cachedState;
   }
 
+  if (bootstrapPromise) {
+    return bootstrapPromise;
+  }
+
   bootstrapped = true;
 
-  try {
-    const { data: { user }, error: sessionError } =
-      await supabaseBrowser.auth.getUser();
+  bootstrapPromise = (async (): Promise<IdentityState> => {
+    try {
+      const { data: { user }, error: sessionError } =
+        await supabaseBrowser.auth.getUser();
 
-    if (sessionError) {
-      if (sessionError.message?.includes("Auth session missing") || sessionError.name === "AuthSessionMissingError") {
-        cachedState = { status: "unauthenticated" };
+      if (sessionError) {
+        if (sessionError.message?.includes("Auth session missing") || sessionError.name === "AuthSessionMissingError") {
+          cachedState = { status: "unauthenticated" };
+          return cachedState;
+        }
+        cachedState = { status: "error", error: `Session check failed: ${sessionError.message}` };
         return cachedState;
       }
-      cachedState = { status: "error", error: `Session check failed: ${sessionError.message}` };
-      return cachedState;
-    }
 
-    if (user?.id) {
-      const isAnonymous = user.is_anonymous ?? false;
-      const displayName = await fetchDisplayName(user.id);
-      const createdAt = new Date(user.created_at).getTime();
-      const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
-      const isNewUser = Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
+      if (user?.id) {
+        const isAnonymous = user.is_anonymous ?? false;
+        const displayName = await fetchDisplayName(user.id);
+        const createdAt = new Date(user.created_at).getTime();
+        const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
+        const isNewUser = Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
+        cachedState = {
+          status: "ready",
+          playerId: user.id,
+          isAnonymous,
+          displayName,
+          isNewUser
+        };
+        resolveReady?.(user.id);
+        return cachedState;
+      }
+
+      // No session — user must sign in via /login
+      cachedState = { status: "unauthenticated" };
+      return cachedState;
+    } catch (err) {
       cachedState = {
-        status: "ready",
-        playerId: user.id,
-        isAnonymous,
-        displayName,
-        isNewUser
+        status: "error",
+        error: err instanceof Error ? err.message : "Unknown identity bootstrap error",
       };
-      resolveReady?.(user.id);
       return cachedState;
+    } finally {
+      bootstrapPromise = null;
     }
+  })();
 
-    // No session — user must sign in via /login
-    cachedState = { status: "unauthenticated" };
-    return cachedState;
-  } catch (err) {
-    cachedState = {
-      status: "error",
-      error: err instanceof Error ? err.message : "Unknown identity bootstrap error",
-    };
-    return cachedState;
-  }
+  return bootstrapPromise;
 }
 
 export function getCurrentPlayerId(): string {
@@ -105,8 +135,15 @@ export async function onIdentityReady(): Promise<string> {
 }
 
 export async function signOut(): Promise<void> {
-  bootstrapped = false;
-  await supabaseBrowser.auth.signOut();
+  signingOut = true;
+  try {
+    await supabaseBrowser.auth.signOut();
+  } finally {
+    bootstrapped = false;
+    cachedState = { status: "unauthenticated" };
+    resetReadyPromise();
+    signingOut = false;
+  }
 }
 
 export function subscribeToIdentityChanges(
@@ -114,6 +151,10 @@ export function subscribeToIdentityChanges(
 ): () => void {
   const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
     async (event, session) => {
+      if (signingOut) {
+        return;
+      }
+
       if (session?.user?.id) {
         const isAnonymous = session.user.is_anonymous ?? false;
         const displayName = await fetchDisplayName(session.user.id);

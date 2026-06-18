@@ -78,7 +78,11 @@ export default function RoundCompleteSection({
     setIsWhereVisible(false);
     setIsWhenVisible(false);
     setIsRingDone(false);
-  }, [snapshot.currentRoundIndex]);
+    // Reset to 'thisRound' tab if 'allRounds' is selected but only 1 round exists
+    if (leaderboardTab === 'allRounds' && snapshot.rounds.length <= 1) {
+      setLeaderboardTab('thisRound');
+    }
+  }, [snapshot.currentRoundIndex, snapshot.rounds.length, leaderboardTab]);
 
   useEffect(() => {
     const el = accuracyCardRef.current;
@@ -105,7 +109,7 @@ export default function RoundCompleteSection({
   }, []);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-testid="round-complete-section" data-status={snapshot.status} data-round-index={snapshot.currentRoundIndex}>
       {(() => {
         const round = snapshot.rounds[snapshot.currentRoundIndex];
         if (!round) return null;
@@ -158,7 +162,7 @@ export default function RoundCompleteSection({
                   />
                 </div>
               ) : (
-                <div className={styles.eventImagePlaceholder}>No image available</div>
+                <div className={styles.eventImagePlaceholder}>{t('no_image')}</div>
               )}
               <div className={styles.eventMeta}>{correctYear} · {correctName}</div>
               {round.description && (
@@ -167,7 +171,7 @@ export default function RoundCompleteSection({
                   onClick={() => setHistContextOpen(true)}
                 >
                   <span className={styles.histContextIcon}>📖</span>
-                  <span className={styles.histContextLabel}>Historical Context</span>
+                  <span className={styles.histContextLabel}>{t('hist_context')}</span>
                   <span className={styles.histContextArrow}>›</span>
                 </button>
               )}
@@ -177,7 +181,7 @@ export default function RoundCompleteSection({
                     className={styles.sourceButton}
                     onClick={() => window.open((round as unknown as { sourceUrl?: string }).sourceUrl, "_blank")}
                   >
-                    Source ↗
+                    {t('source_link')}
                   </button>
                 </div>
               )}
@@ -204,7 +208,7 @@ export default function RoundCompleteSection({
                 }
                 return (
                   <span className={styles.nearMissChip}>
-                    Near miss
+                    {t('near_miss')}
                   </span>
                 );
               })()}
@@ -223,19 +227,21 @@ export default function RoundCompleteSection({
                   className={`${styles.leaderboardTab} ${leaderboardTab === 'thisRound' ? styles.leaderboardTabActive : ''}`}
                   onClick={() => setLeaderboardTab('thisRound')}
                 >
-                  This Round
+                  {t('this_round')}
                 </button>
-                <button
-                  className={`${styles.leaderboardTab} ${leaderboardTab === 'allRounds' ? styles.leaderboardTabActive : ''}`}
-                  onClick={() => setLeaderboardTab('allRounds')}
-                >
-                  All Rounds
-                </button>
+                {snapshot.rounds.length > 1 && (
+                  <button
+                    className={`${styles.leaderboardTab} ${leaderboardTab === 'allRounds' ? styles.leaderboardTabActive : ''}`}
+                    onClick={() => setLeaderboardTab('allRounds')}
+                  >
+                    {t('all_rounds')}
+                  </button>
+                )}
               </div>
               <div className={styles.leaderboardHeader}>
                 <span className={styles.leaderboardHeaderRank}>#</span>
-                <span className={styles.leaderboardHeaderName}>Player</span>
-                <span className={styles.leaderboardHeaderScore}>{leaderboardTab === 'thisRound' ? 'Score' : 'Total'}</span>
+                <span className={styles.leaderboardHeaderName}>{t('col_player')}</span>
+                <span className={styles.leaderboardHeaderScore}>{leaderboardTab === 'thisRound' ? t('col_score') : t('col_total')}</span>
               </div>
               {(leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows).map(row => {
                 const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
@@ -253,7 +259,7 @@ export default function RoundCompleteSection({
                           {row.displayName}
                         </span>
                       </span>
-                      {row.isMe && <span className={styles.lbYouTag}>(you)</span>}
+                      {row.isMe && <span className={styles.lbYouTag}>{t('you')}</span>}
                     </span>
                     <span className={styles.lbAccPill}>
                       <span style={{ color: accColor, fontSize: "var(--gh-font-base)" }}>{displayValue}</span>
@@ -275,7 +281,7 @@ export default function RoundCompleteSection({
                             {p.displayName || p.playerId.slice(0, 8)}
                           </span>
                         </span>
-                        {isMe && <span className={styles.lbYouTag}>(you)</span>}
+                        {isMe && <span className={styles.lbYouTag}>{t('you')}</span>}
                         <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>
                       </span>
                       <span className={styles.lbAccEmpty}>—</span>
@@ -365,7 +371,7 @@ export default function RoundCompleteSection({
               <div className={styles.countdownCard}>
                 {resultSecsLeft !== null && resultSecsLeft > 0 && (
                   <div className={snapshot.readyForNext && snapshot.readyForNext.length > 0 ? styles.countdownTextWithMargin : styles.countdownText}>
-                    Auto-advancing in {resultSecsLeft}s
+                    {t('auto_advancing_in', { n: resultSecsLeft })}
                   </div>
                 )}
                 {snapshot.readyForNext && snapshot.readyForNext.length > 0 && (
@@ -388,7 +394,7 @@ export default function RoundCompleteSection({
               <div className={styles.histSheetOverlay} onClick={() => setHistContextOpen(false)}>
                 <div className={styles.histSheet} onClick={e => e.stopPropagation()}>
                   <div className={styles.histSheetHeader}>
-                    <span className={styles.histSheetTitle}>Historical Context</span>
+                    <span className={styles.histSheetTitle}>{t('hist_context')}</span>
                     <button className={styles.histSheetClose} onClick={() => setHistContextOpen(false)}>✕</button>
                   </div>
                   <div className={styles.histSheetBody}>
@@ -422,15 +428,17 @@ export default function RoundCompleteSection({
                   );
                 })}
                 <span className={styles.roundLabel}>
-                  Round {snapshot.currentRoundIndex + 1}/{snapshot.rounds.length}
+                  {t('round_label_compact', { current: snapshot.currentRoundIndex + 1, total: snapshot.rounds.length })}
                 </span>
               </div>
               <button
                 className={`${styles.nextButton} ${snapshot.readyForNext?.includes(playerId ?? "") ? styles.nextButtonDisabled : ""}`}
                 onClick={onAdvanceRound}
                 disabled={snapshot.readyForNext?.includes(playerId ?? "")}
+                data-testid="round-next-btn"
+                data-ready={snapshot.readyForNext?.includes(playerId ?? "") ? 'true' : 'false'}
               >
-                Next →
+                {t('next_arrow')}
               </button>
             </div>
           </>

@@ -24,6 +24,7 @@ export default function AccountPage() {
   const router = useRouter()
   const { playerId } = useIdentity()
   const t = useTranslations('account')
+  const tNav = useTranslations('nav')
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
@@ -34,9 +35,14 @@ export default function AccountPage() {
   const [avatarInfo, setAvatarInfo] = useState<AvatarInfo | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveResult, setSaveResult] = useState<'idle' | 'success' | 'error'>('idle')
+  const [signOutError, setSignOutError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!playerId) return
+    if (playerId === undefined) return
+    if (!playerId) {
+      router.replace('/login')
+      return
+    }
 
     const load = async () => {
       const { data: profile } = await supabaseBrowser
@@ -45,9 +51,9 @@ export default function AccountPage() {
         .eq('id', playerId)
         .single()
 
-      const { data: sessionData } = await supabaseBrowser.auth.getSession()
-      const userEmail = sessionData.session?.user?.email ?? null
-      const userCreatedAt = sessionData.session?.user?.created_at ?? null
+      const { data: { user: authUser } } = await supabaseBrowser.auth.getUser()
+      const userEmail = authUser?.email ?? null
+      const userCreatedAt = authUser?.created_at ?? null
 
       const { data: stats } = await supabaseBrowser
         .from('player_global_stats')
@@ -96,7 +102,7 @@ export default function AccountPage() {
     }
 
     load().catch((err) => console.error('[account] load error:', err))
-  }, [playerId])
+  }, [playerId, router])
 
   const handleSave = async () => {
     if (!playerId || displayName.trim() === savedName.trim()) return
@@ -117,8 +123,13 @@ export default function AccountPage() {
   }
 
   const handleSignOut = async () => {
-    await signOut()
-    router.push('/')
+    setSignOutError(null)
+    try {
+      await signOut()
+      router.push('/')
+    } catch (err) {
+      setSignOutError(err instanceof Error ? err.message : 'Sign out failed')
+    }
   }
 
   const getInitials = (name: string): string => {
@@ -200,13 +211,13 @@ export default function AccountPage() {
                 cursor: isSaveDisabled ? 'not-allowed' : 'pointer',
               }}
             >
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? t('saving') : t('save')}
             </button>
             {saveResult === 'success' && (
-              <div className={styles.saveFeedbackSuccess}>✓ Saved</div>
+              <div className={styles.saveFeedbackSuccess}>{t('saved')}</div>
             )}
             {saveResult === 'error' && (
-              <div className={styles.saveFeedbackError}>Failed to save. Try again.</div>
+              <div className={styles.saveFeedbackError}>{t('err_save_failed')}</div>
             )}
           </div>
 
@@ -226,11 +237,14 @@ export default function AccountPage() {
 
       {/* Sign out */}
       <div className={styles.signOutSection}>
+        {signOutError && (
+          <div className={styles.saveFeedbackError}>{signOutError}</div>
+        )}
         <button
           onClick={handleSignOut}
           className={styles.signOutBtn}
         >
-          Sign out
+          {tNav('sign_out')}
         </button>
       </div>
     </div>

@@ -262,7 +262,7 @@ export default function WhereCard({
                 <div key={hint.id} className={`${styles.hintRow} ${idx < whereHints.length - 1 ? styles.hintRowDivider : ""}`}>
                   <div className={styles.hintTierLabel}>
                     <span className={styles.hintTierText}>
-                      {labelMap[hint.tier] ?? `Tier ${hint.tier}`}
+                      {labelMap[hint.tier] ?? t('tier_n', { n: hint.tier })}
                     </span>
                   </div>
                   <div className={styles.hintContent}>

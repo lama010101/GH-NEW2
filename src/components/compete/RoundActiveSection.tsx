@@ -2,7 +2,7 @@
 
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import dynamic from "next/dynamic";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslations } from 'next-intl';
 import { YearPicker } from "@/components/YearPicker";
 import styles from "./RoundActiveSection.module.css";
@@ -30,6 +30,7 @@ interface RoundActiveSectionProps {
   timeRemaining: number | null;
   hintsUsedCount?: number;
   localPlayerAvatarUrl?: string | null;
+  locationName: string | null;
 }
 
 
@@ -50,6 +51,7 @@ export default function RoundActiveSection({
   timeRemaining,
   hintsUsedCount,
   localPlayerAvatarUrl,
+  locationName,
 }: RoundActiveSectionProps) {
   const t = useTranslations('game');
   const tNav = useTranslations('nav');
@@ -64,8 +66,6 @@ export default function RoundActiveSection({
   const [searchQuery, setSearchQuery] = useState("");
   const [yearEditValue, setYearEditValue] = useState("");
   const [mapFullscreen, setMapFullscreen] = useState(false);
-  const [locationName, setLocationName] = useState<string | null>(null);
-  const [locationNameLoading, setLocationNameLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<Array<{ displayName: string; lat: number; lng: number }>>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; id: number } | null>(null);
@@ -96,19 +96,61 @@ export default function RoundActiveSection({
   const sheetDragStartY = useRef<number | null>(null);
   const sheetRawDy = useRef(0);
 
-  // Pan system refs
+  // Pan + zoom system refs
   const panX = useRef(0);
+  const panY = useRef(0);
+  const scale = useRef(1);
   const panVelX = useRef(0);
   const panRafId = useRef<number | null>(null);
   const panDragging = useRef(false);
   const panLastX = useRef(0);
+  const panLastY = useRef(0);
   const panLastTime = useRef(0);
   const panInstantVelX = useRef(0);
+  const activePointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinchPrevDist = useRef<number | null>(null);
+  const gestureMoved = useRef(0);
+  const lastTapTime = useRef(0);
+  const lastTapX = useRef(0);
+  const lastTapY = useRef(0);
   const imgContainerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
   const yearMin = snapshot.config.yearMin;
   const yearMax = snapshot.config.yearMax;
+
+  // Pan + zoom helpers
+  const getMaxPan = useCallback((): { maxX: number; maxY: number } => {
+    const img = imgRef.current;
+    const container = imgContainerRef.current;
+    if (!img || !container) return { maxX: 0, maxY: 0 };
+    const containerW = container.clientWidth;
+    const containerH = container.clientHeight;
+    const naturalW = img.naturalWidth || 1;
+    const naturalH = img.naturalHeight || 1;
+    const renderedW = (naturalW / naturalH) * containerH;
+    const s = scale.current;
+    return {
+      maxX: Math.max(0, (renderedW * s - containerW) / 2),
+      maxY: Math.max(0, (containerH * s - containerH) / 2),
+    };
+  }, []);
+
+  const applyTransform = useCallback(() => {
+    const { maxX, maxY } = getMaxPan();
+    panX.current = Math.max(-maxX, Math.min(maxX, panX.current));
+    panY.current = Math.max(-maxY, Math.min(maxY, panY.current));
+    if (imgRef.current) {
+      imgRef.current.style.transform =
+        `translate(calc(-50% + ${panX.current}px), ${panY.current}px) scale(${scale.current})`;
+    }
+  }, [getMaxPan]);
+
+  const applyPan = useCallback((x: number): number => {
+    panX.current = x;
+    applyTransform();
+    return panX.current;
+  }, [applyTransform]);
 
   const isLocked = busy || hasSubmitted || localSubmitted;
   const canSubmit = !isLocked && guessYear !== null && guessLocation !== null;
@@ -118,7 +160,7 @@ export default function RoundActiveSection({
     const img = imgRef.current;
     if (!img) return;
     const startCinematic = () => {
-      const max = getMaxPan();
+      const { maxX: max } = getMaxPan();
       if (max === 0) return;
       applyPan(-max);
       const DURATION = 5000;
@@ -144,7 +186,7 @@ export default function RoundActiveSection({
     } else {
       img.addEventListener('load', startCinematic, { once: true });
     }
-  }, []);
+  }, [applyPan, getMaxPan]);
 
   // Auto-open panel when cinematic pan finishes
   useEffect(() => {
@@ -160,6 +202,20 @@ export default function RoundActiveSection({
       if (guessHintTimer.current) clearTimeout(guessHintTimer.current);
     };
   }, []);
+
+  // Wheel zoom (desktop) — native non-passive listener so preventDefault works
+  useEffect(() => {
+    const container = imgContainerRef.current;
+    if (!container) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      scale.current = Math.min(Math.max(scale.current * delta, 1), 8);
+      applyTransform();
+    };
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [applyTransform]);
 
   // Timer urgency effects: flash, vibrate, tick sound when <= 10s
   const lastTickSecRef = useRef<number>(-1);
@@ -191,12 +247,6 @@ export default function RoundActiveSection({
       osc.onended = () => ctx.close();
     } catch { /* audio not available */ }
   }, [timeRemaining]);
-
-  // Reset location name when round changes
-  useEffect(() => {
-    setLocationName(null);
-    setLocationNameLoading(false);
-  }, [snapshot.currentRoundIndex]);
 
   // Persist sound/vibrate settings to localStorage
   useEffect(() => {
@@ -231,44 +281,6 @@ export default function RoundActiveSection({
   const handleMapSetLocation = (location: { lat: number; lng: number }) => {
     if (!isLocked) {
       onSetLocation(location);
-      reverseGeocode(location.lat, location.lng);
-    }
-  };
-
-  const reverseGeocode = async (lat: number, lng: number): Promise<void> => {
-    setLocationNameLoading(true);
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
-        {
-          headers: {
-            "Accept-Language": "en",
-            "User-Agent": "GuessHistory/1.0",
-          },
-        }
-      );
-      if (!res.ok) throw new Error("Geocode failed");
-      const data = await res.json();
-      // Build a short readable name: city + country, or state + country
-      const addr = data.address ?? {};
-      const primary =
-        addr.city ||
-        addr.town ||
-        addr.village ||
-        addr.municipality ||
-        addr.county ||
-        addr.state_district ||
-        addr.state ||
-        "";
-      const country = addr.country || "";
-      const name = primary && country
-        ? `${primary}, ${country}`
-        : primary || country || data.display_name?.split(",").slice(0, 2).join(",").trim() || "Unknown location";
-      setLocationName(name);
-    } catch {
-      setLocationName(null);
-    } finally {
-      setLocationNameLoading(false);
     }
   };
 
@@ -309,7 +321,6 @@ export default function RoundActiveSection({
     flyToIdRef.current += 1;
     setFlyToTarget({ lat: result.lat, lng: result.lng, id: flyToIdRef.current });
     handleMapSetLocation({ lat: result.lat, lng: result.lng });
-    setLocationName(result.displayName);
     setSearchQuery("");
     setSearchResults([]);
   };
@@ -359,28 +370,6 @@ export default function RoundActiveSection({
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  // Pan system helpers
-  const getMaxPan = (): number => {
-    const img = imgRef.current;
-    const container = imgContainerRef.current;
-    if (!img || !container) return 0;
-    const containerW = container.clientWidth;
-    const naturalW = img.naturalWidth || 1;
-    const naturalH = img.naturalHeight || 1;
-    const renderedW = (naturalW / naturalH) * container.clientHeight;
-    return Math.max(0, (renderedW - containerW) / 2);
-  };
-
-  const applyPan = (x: number): number => {
-    const max = getMaxPan();
-    const clamped = Math.max(-max, Math.min(max, x));
-    panX.current = clamped;
-    if (imgRef.current) {
-      imgRef.current.style.transform = `translateX(calc(-50% + ${clamped}px))`;
-    }
-    return clamped;
-  };
-
   const startInertia = () => {
     if (panRafId.current) cancelAnimationFrame(panRafId.current);
     const tick = () => {
@@ -395,47 +384,131 @@ export default function RoundActiveSection({
     panRafId.current = requestAnimationFrame(tick);
   };
 
-  const handlePanStart = (e: React.PointerEvent) => {
+  const handleZoomIn = () => {
+    scale.current = Math.min(Math.max(scale.current * 1.25, 1), 8);
+    applyTransform();
+  };
+
+  const handleZoomOut = () => {
+    scale.current = Math.min(Math.max(scale.current / 1.25, 1), 8);
+    if (scale.current === 1) {
+      panX.current = 0;
+      panY.current = 0;
+    }
+    applyTransform();
+  };
+
+  const handleDoubleClick = () => {
+    if (scale.current > 1) {
+      scale.current = 1;
+      panX.current = 0;
+      panY.current = 0;
+    } else {
+      scale.current = 2;
+    }
+    applyTransform();
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    panDragging.current = true;
-    panLastX.current = e.clientX;
-    panLastTime.current = e.timeStamp;
-    panInstantVelX.current = 0;
-    panVelX.current = 0;
-    if (panRafId.current) cancelAnimationFrame(panRafId.current);
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    gestureMoved.current = 0;
+
+    if (activePointers.current.size === 1) {
+      panDragging.current = true;
+      panLastX.current = e.clientX;
+      panLastY.current = e.clientY;
+      panLastTime.current = e.timeStamp;
+      panInstantVelX.current = 0;
+      panVelX.current = 0;
+      if (panRafId.current) cancelAnimationFrame(panRafId.current);
+    } else if (activePointers.current.size === 2) {
+      panDragging.current = false;
+      const pts = [...activePointers.current.values()];
+      pinchPrevDist.current = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      if (panRafId.current) cancelAnimationFrame(panRafId.current);
+    }
     e.preventDefault();
   };
 
-  const handlePanMove = (e: React.PointerEvent) => {
-    if (!panDragging.current) return;
-    const dx = e.clientX - panLastX.current;
-    const dt = e.timeStamp - panLastTime.current;
-    panInstantVelX.current = dt > 0 ? (dx / dt) * 16 : 0;
-    panLastX.current = e.clientX;
-    panLastTime.current = e.timeStamp;
-    applyPan(panX.current + dx);
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!activePointers.current.has(e.pointerId)) return;
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (activePointers.current.size === 2 && pinchPrevDist.current !== null) {
+      const pts = [...activePointers.current.values()];
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const ratio = dist / pinchPrevDist.current;
+      scale.current = Math.min(Math.max(scale.current * ratio, 1), 8);
+      pinchPrevDist.current = dist;
+      applyTransform();
+    } else if (panDragging.current && activePointers.current.size === 1) {
+      const dx = e.clientX - panLastX.current;
+      const dy = e.clientY - panLastY.current;
+      const dt = e.timeStamp - panLastTime.current;
+      panInstantVelX.current = dt > 0 ? (dx / dt) * 16 : 0;
+      panLastX.current = e.clientX;
+      panLastY.current = e.clientY;
+      panLastTime.current = e.timeStamp;
+      panX.current += dx;
+      if (scale.current > 1) panY.current += dy;
+      gestureMoved.current += Math.abs(dx) + Math.abs(dy);
+      applyTransform();
+    }
     e.preventDefault();
   };
 
-  const handlePanEnd = () => {
-    if (!panDragging.current) return;
-    panDragging.current = false;
-    panVelX.current = panInstantVelX.current;
-    startInertia();
+  const handlePointerUp = (e: React.PointerEvent) => {
+    activePointers.current.delete(e.pointerId);
+
+    if (activePointers.current.size < 2) {
+      pinchPrevDist.current = null;
+    }
+
+    if (activePointers.current.size === 0) {
+      if (panDragging.current) {
+        panDragging.current = false;
+        panVelX.current = panInstantVelX.current;
+        if (scale.current <= 1) startInertia();
+      }
+      if (e.pointerType !== 'mouse' && gestureMoved.current < 10) {
+        const now = performance.now();
+        const dt = now - lastTapTime.current;
+        const dx = Math.abs(e.clientX - lastTapX.current);
+        const dy = Math.abs(e.clientY - lastTapY.current);
+        if (dt < 300 && dx < 30 && dy < 30) {
+          handleDoubleClick();
+          lastTapTime.current = 0;
+        } else {
+          lastTapTime.current = now;
+          lastTapX.current = e.clientX;
+          lastTapY.current = e.clientY;
+        }
+      }
+    } else if (activePointers.current.size === 1) {
+      const [remaining] = [...activePointers.current.values()];
+      panDragging.current = true;
+      panLastX.current = remaining.x;
+      panLastY.current = remaining.y;
+      panLastTime.current = performance.now();
+      panInstantVelX.current = 0;
+      panVelX.current = 0;
+    }
   };
 
   return (
-    <section className={styles.section}>
+    <section className={styles.section} data-testid="round-active-section" data-status={snapshot.status} data-round-index={snapshot.currentRoundIndex}>
 
       {/* IMAGE CONTAINER */}
       <div
         ref={imgContainerRef}
         className={styles.imgContainer}
-        onPointerDown={handlePanStart}
-        onPointerMove={handlePanMove}
-        onPointerUp={handlePanEnd}
-        onPointerCancel={handlePanEnd}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onDoubleClick={handleDoubleClick}
+        data-testid="round-image-container"
       >
         {currentEvent?.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -449,6 +522,28 @@ export default function RoundActiveSection({
         ) : (
           <div className={styles.imgPlaceholder} />
         )}
+
+        {/* Desktop zoom controls */}
+        <div className={styles.zoomControls}>
+          <button
+            type="button"
+            className={styles.zoomBtn}
+            onClick={handleZoomIn}
+            aria-label="Zoom in"
+            title="Zoom in"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className={styles.zoomBtn}
+            onClick={handleZoomOut}
+            aria-label="Zoom out"
+            title="Zoom out"
+          >
+            −
+          </button>
+        </div>
       </div>
 
       {/* TIMER */}
@@ -499,7 +594,7 @@ export default function RoundActiveSection({
             type="button"
             onClick={() => setSettingsModalOpen(true)}
             className={styles.settingsBtn}
-            aria-label="Settings"
+            aria-label={t('settings')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -559,7 +654,7 @@ export default function RoundActiveSection({
             />
             {guessLocation !== null && (
               <div className={styles.mapLocationLabel}>
-                {locationNameLoading ? "…" : locationName ? locationName : "Location set ✓"}
+                {locationName ?? "Location set ✓"}
               </div>
             )}
             <button
@@ -577,7 +672,7 @@ export default function RoundActiveSection({
       )}
 
       {/* BOTTOM PANEL */}
-      <div className={styles.bottomPanel}>
+      <div className={styles.bottomPanel} data-testid="round-bottom-panel">
         {/* GUESS HINT */}
         {guessHint && (
           <div className={styles.guessHint}>{guessHint}</div>
@@ -593,6 +688,7 @@ export default function RoundActiveSection({
             disabled={isLocked}
             className={`${styles.circleBtn} ${styles.hintsBtn} ${isLocked ? styles.hintsBtnLocked : ""}`}
             aria-label="Hints"
+            data-testid="round-hints-btn"
           >
             <span className={styles.hintsCount}>{hintsUsedCount ?? 0}</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -624,10 +720,11 @@ export default function RoundActiveSection({
                   ? styles.whenBtnGlow
                   : ""
               }`}
-              aria-label="When"
+              aria-label={t('when')}
+              data-testid="round-when-btn"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/when.webp" alt="When" className={styles.btnIcon} />
+              <img src="/badges/when.webp" alt={t('when')} className={styles.btnIcon} />
             </button>
           </div>
 
@@ -635,7 +732,7 @@ export default function RoundActiveSection({
           <div className={styles.circleWrap}>
             <span className={`${styles.overlayTag} ${styles.overlayTagWhere} ${guessLocation !== null ? styles.overlayTagWhereAnswer : ""}`}>
               {guessLocation !== null
-                ? (locationNameLoading ? "…" : (locationName ?? "✓").split(",")[0].trim())
+                ? (locationName ?? "✓").split(",")[0].trim()
                 : t('where')}
             </span>
             <button
@@ -657,10 +754,11 @@ export default function RoundActiveSection({
                   ? styles.whereBtnGlow
                   : ""
               }`}
-              aria-label="Where"
+              aria-label={t('where')}
+              data-testid="round-where-btn"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/where.webp" alt="Where" className={styles.btnIcon} />
+              <img src="/badges/where.webp" alt={t('where')} className={styles.btnIcon} />
             </button>
           </div>
 
@@ -670,9 +768,9 @@ export default function RoundActiveSection({
             onClick={() => {
               if (!canSubmit) {
                 const missing: string[] = [];
-                if (guessLocation === null) missing.push("a location");
-                if (guessYear === null) missing.push("a year");
-                setGuessHint("Select " + missing.join(" and ") + " first");
+                if (guessLocation === null) missing.push(t('where'));
+                if (guessYear === null) missing.push(t('when'));
+                setGuessHint(t('hint_select_both', { where: t('where'), when: t('when') }));
                 if (guessHintTimer.current) clearTimeout(guessHintTimer.current);
                 guessHintTimer.current = setTimeout(() => setGuessHint(null), 2500);
                 return;
@@ -686,7 +784,8 @@ export default function RoundActiveSection({
                 ? styles.submitBtnReady
                 : ""
             }`}
-            aria-label="Submit"
+            aria-label={t('submit')}
+            data-testid="round-submit-btn"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13" />
@@ -726,7 +825,7 @@ export default function RoundActiveSection({
                     <div className={styles.sheetHeaderMeta}>
                       <span className={styles.sheetHeaderValue}>
                         {guessLocation !== null
-                          ? (locationNameLoading ? "…" : locationName ?? "Location set ✓")
+                          ? locationName ?? "Location set ✓"
                           : "No location set"}
                       </span>
                     </div>

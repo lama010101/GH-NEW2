@@ -15,7 +15,9 @@
     "party:build": "partykit build",
     "party:deploy": "partykit deploy",
     "test:e2e": "playwright test --config=scripts/test/playwright/playwright.config.ts",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "test:simulation": "playwright test --config=scripts/test/playwright/playwright.config.ts specs/multiplayer-simulation.spec.ts",
+    "test:simulation:report": "playwright show-report"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -44,6 +46,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "18.3.1",
+    "@types/ws": "^8.18.1",
     "autoprefixer": "^10.5.0",
     "concurrently": "^9.2.1",
     "dotenv": "^17.4.0",

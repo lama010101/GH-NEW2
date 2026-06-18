@@ -1,4 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 /**
  * Creates a Supabase client for use in Server Components, API routes, and
@@ -18,4 +20,34 @@ export function createSupabaseServerClient(): SupabaseClient {
       persistSession: false,
     },
   });
+}
+
+/**
+ * Creates a cookie-authenticated Supabase client for use in API routes.
+ * Reads the request cookies and writes refreshed cookies back when needed.
+ */
+export function createAuthenticatedServerClient(): SupabaseClient {
+  const cookieStore = cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `set` method was called from a Server Component.
+            // This can be ignored if middleware refreshes sessions.
+          }
+        },
+      },
+    }
+  );
 }

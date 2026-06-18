@@ -33,12 +33,14 @@ export const TEST_USERS: TestUser[] = [
   { id: '', email: 'gh-test-player-3@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer3' },
   { id: '', email: 'gh-test-player-4@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer4' },
   { id: '', email: 'gh-test-player-5@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer5' },
+  { id: '', email: 'gh-test-player-6@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer6' },
 ];
 
 let createdUserIds: string[] = [];
 
 /**
- * Global setup: Create 5 test users via Supabase Admin API
+ * Global setup: Create 6 test users via Supabase Admin API
+ * Tests that require auth should log in via the AuthModal UI helper or implement their own flow.
  */
 async function globalSetup() {
   console.log('[PLAYWRIGHT SETUP] Creating test users...');
@@ -91,6 +93,7 @@ async function globalSetup() {
   }
 
   console.log('[PLAYWRIGHT SETUP] All test users created successfully');
+  console.log('[PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues');
 }
 
 /**

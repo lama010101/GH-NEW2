@@ -28,29 +28,10 @@ export async function create5PlayerSession(
     contexts.map(ctx => ctx.newPage())
   );
 
-  // Sign in all 5 players
+  // Navigate all players to home page (no auth for now)
   for (let i = 0; i < TEST_USERS.length; i++) {
-    const user = TEST_USERS[i];
     const page = pages[i];
-
-    // Navigate to home page
     await page.goto(baseURL);
-
-    // Sign in via Supabase
-    await page.evaluate(async ({ email, password, supabaseUrl, anonKey }) => {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(supabaseUrl, anonKey);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-    }, {
-      email: user.email,
-      password: user.password,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    });
-
-    // Reload to apply auth state
-    await page.reload();
     await page.waitForLoadState('networkidle');
   }
 
