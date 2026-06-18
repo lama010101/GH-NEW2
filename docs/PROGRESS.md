@@ -2146,6 +2146,14 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - Round-complete: only-one-next, mid-results-refresh
 - Verification: TypeScript compilation passed, Next.js build passed
 - Commit: Pending (not committed)
+
+## MP-FIX-CARD-TOKENS-002 — Update glass card design tokens to prototype visual language
+- Status: COMPLETE
+- Files: src/app/globals.css
+- Changes: glass-bg→gradient, glass-border→white/0.10, shadow/blur/radius updated; defined missing --gh-card-shadow, --gh-where-card-glow, --gh-when-card-glow
+- Commit: 86f43b9
+
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
 | MP-FIX-AUTH-COOKIE-STATE-001 | DONE | src/core/identity.ts, src/core/supabaseBrowser.ts, src/core/supabaseServer.ts, src/components/NavModal.tsx, src/components/AuthModal.tsx, src/components/compete/LobbySection.tsx, src/components/home/CompetePanel.tsx, src/app/account/page.tsx, src/app/profile/page.tsx, src/app/login/page.tsx, src/app/auth/callback/route.ts, src/middleware.ts, src/app/api/compete/join/route.ts, src/app/api/compete/active-games/route.ts, src/app/api/notifications/route.ts, src/app/api/progress/route.ts, src/app/api/players/follow/route.ts, src/app/api/user/assign-avatar/route.ts, src/app/api/user/update-avatar/route.ts, src/app/api/user/update-username/route.ts | Comprehensive auth fix: signOut state mutation moved after supabase signOut; signingOut guard prevents stale onAuthStateChange reset; NavModal closes after signOut; AuthModal subscription leak fixed and dead localStorage remember-me code removed; getValidAccessToken helper added for stale token refresh; createAuthenticatedServerClient helper deduplicates API routes; middleware /api/* blanket exemption replaced with allowlist; service-role key removed from /api/compete/join; login page now renders AuthModal with next param; component-level auth guards added to /account and /profile. Build verification blocked only by pre-existing RoundActiveSection.tsx ESLint errors. | 2026-06-18 |
+| MP-FIX-CARD-TOKENS-002 | DONE | src/app/globals.css | Update glass card design tokens to prototype visual language, define missing card-shadow/glow tokens | 2026-06-18 |
