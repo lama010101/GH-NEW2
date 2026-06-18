@@ -66,6 +66,7 @@ export default function CompeteGamePage() {
   const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [wsDisconnected, setWsDisconnected] = useState(false);
+  const [locationName, setLocationName] = useState<string | null>(null);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
     xpPenalty: 0,
@@ -122,6 +123,7 @@ export default function CompeteGamePage() {
     setRoundResults(null);
     setHintResult({ purchasedIds: [], accPenalty: 0, xpPenalty: 0, whereAccPenalty: 0, whenAccPenalty: 0 });
     submittedHintPenaltyRef.current = { accPenalty: 0, xpPenalty: 0, purchasedIds: [], whereAccPenalty: 0, whenAccPenalty: 0 };
+    setLocationName(null);
   }, [snapshot?.currentRoundIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch all round results when session completes
@@ -135,6 +137,42 @@ export default function CompeteGamePage() {
         });
     }
   }, [snapshot?.status, gameId, allRoundResults]);
+
+  // Navigation guard: prevent refresh and back button during active game phases
+  // Only applies to LOBBY, ROUND_ACTIVE, and ROUND_COMPLETE (not SESSION_COMPLETE)
+  useEffect(() => {
+    const isInGamePhase = snapshot?.status === "LOBBY" || 
+                         snapshot?.status === "ROUND_ACTIVE" || 
+                         snapshot?.status === "ROUND_COMPLETE";
+    
+    if (!isInGamePhase) return;
+
+    // beforeunload: warn on refresh/close (shows native browser confirmation)
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+
+    // popstate: trap back button by re-pushing history state
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state === null) {
+        // User pressed back button - push state back to trap them
+        window.history.pushState({ gameId }, "", window.location.href);
+      }
+    };
+
+    // Set up initial history state for back-button trap
+    window.history.pushState({ gameId }, "", window.location.href);
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [snapshot?.status, gameId]);
 
   const {
     wsRef,
@@ -288,6 +326,40 @@ export default function CompeteGamePage() {
     guessLngRef.current = location.lng;
     setGuessLat(location.lat);
     setGuessLng(location.lng);
+    // Reverse geocode to get location name for submission overlay
+    const reverseGeocode = async (lat: number, lng: number) => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
+          {
+            headers: {
+              "Accept-Language": "en",
+              "User-Agent": "GuessHistory/1.0",
+            },
+          }
+        );
+        if (!res.ok) throw new Error("Geocode failed");
+        const data = await res.json();
+        const addr = data.address ?? {};
+        const primary =
+          addr.city ||
+          addr.town ||
+          addr.village ||
+          addr.municipality ||
+          addr.county ||
+          addr.state_district ||
+          addr.state ||
+          "";
+        const country = addr.country || "";
+        const name = primary && country
+          ? `${primary}, ${country}`
+          : primary || country || data.display_name?.split(",").slice(0, 2).join(",").trim() || "Unknown location";
+        setLocationName(name);
+      } catch {
+        setLocationName(null);
+      }
+    };
+    reverseGeocode(location.lat, location.lng);
   }, []);
 
   const handleSetYear = useCallback((year: number | null) => {
@@ -438,9 +510,9 @@ export default function CompeteGamePage() {
               <div className={pageStyles.submitOverlayRow}>
                 <span className={pageStyles.submitOverlayLabel}>{t('your_location')}</span>
                 <span className={pageStyles.submitOverlayValue}>
-                  {guessLat !== null && guessLng !== null
+                  {locationName ?? (guessLat !== null && guessLng !== null
                     ? `${guessLat.toFixed(2)}, ${guessLng.toFixed(2)}` 
-                    : '—'}
+                    : '—')}
                 </span>
               </div>
               <div className={pageStyles.submitOverlayRow}>
@@ -539,6 +611,7 @@ export default function CompeteGamePage() {
             guessYearRef={guessYearRef}
             viewer={viewer}
             localPlayerAvatarUrl={localPlayerAvatarUrl}
+            locationName={locationName}
           />
         ) : null}
 
