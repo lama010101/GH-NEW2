@@ -48,6 +48,13 @@ const RESULTS: Result[] = [
   { id: "p4", name: "Sara Bianchi", score: 1530, accuracy: 83, locationScore: 88, timeScore: 78, guessYear: 1994, distanceKm: 120, badge: null, isMe: false },
 ];
 
+const ALL_ROUNDS_RESULTS: Result[] = [
+  { id: "p1", name: "Alex Rivera", score: 7240, accuracy: 89, locationScore: 91, timeScore: 87, guessYear: 1991, distanceKm: 42, badge: { dimension: "combo", tier: "gold" }, isMe: true },
+  { id: "p2", name: "Mina Kovač", score: 8150, accuracy: 94, locationScore: 96, timeScore: 92, guessYear: 1989, distanceKm: 6, badge: { dimension: "combo", tier: "gold" }, isMe: false },
+  { id: "p3", name: "Theo Lambert", score: 5230, accuracy: 68, locationScore: 62, timeScore: 74, guessYear: 1978, distanceKm: 410, badge: null, isMe: false },
+  { id: "p4", name: "Sara Bianchi", score: 6480, accuracy: 79, locationScore: 84, timeScore: 74, guessYear: 1994, distanceKm: 120, badge: { dimension: "location", tier: "silver" }, isMe: false },
+];
+
 const TIER_STYLE: Record<string, { bg: string; border: string; color: string; label: string }> = {
   gold: { bg: "rgba(255,190,0,0.15)", border: "rgba(255,190,0,0.45)", color: "#ffcc44", label: "Gold" },
   silver: { bg: "rgba(180,195,215,0.14)", border: "rgba(180,195,215,0.45)", color: "#cdd6e3", label: "Silver" },
@@ -179,11 +186,13 @@ function WhereMap({ rows }: { rows: Result[] }) {
 
 export default function RoundResultsPrototypePage() {
   const [tab, setTab] = useState<"where" | "when">("where");
+  const [lbTab, setLbTab] = useState<"thisRound" | "allRounds">("thisRound");
   const [lbOpen, setLbOpen] = useState(false);
   const [hintsOpen, setHintsOpen] = useState(false);
 
-  const me = RESULTS.find((r) => r.isMe)!;
-  const ranked = [...RESULTS].sort((a, b) => b.score - a.score);
+  const currentResults = lbTab === "thisRound" ? RESULTS : ALL_ROUNDS_RESULTS;
+  const me = currentResults.find((r) => r.isMe)!;
+  const ranked = [...currentResults].sort((a, b) => b.score - a.score);
   const myRank = ranked.findIndex((r) => r.isMe) + 1;
   const rankSuffix = (n: number) => (n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th");
 
@@ -284,7 +293,23 @@ export default function RoundResultsPrototypePage() {
         <section className={styles.card}>
           <div className={styles.cardHead}>
             <span className={styles.accentBar} />
-            <h2 className={styles.cardTitle}>Round leaderboard</h2>
+            <h2 className={styles.cardTitle}>Leaderboard</h2>
+          </div>
+          <div className={styles.tabs}>
+            <button
+              className={`${styles.tab} ${lbTab === "thisRound" ? styles.tabActive : ""}`}
+              style={lbTab === "thisRound" ? { color: "#22d3ee", borderColor: "#22d3ee" } : undefined}
+              onClick={() => setLbTab("thisRound")}
+            >
+              This Round
+            </button>
+            <button
+              className={`${styles.tab} ${lbTab === "allRounds" ? styles.tabActive : ""}`}
+              style={lbTab === "allRounds" ? { color: "#8b5cf6", borderColor: "#8b5cf6" } : undefined}
+              onClick={() => setLbTab("allRounds")}
+            >
+              All Rounds
+            </button>
           </div>
           <div className={styles.lbList}>
             {ranked.map((r, i) => (
