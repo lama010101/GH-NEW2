@@ -41,6 +41,7 @@ export default function CompeteGamePage() {
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
   const t = useTranslations('game');
+  const tNav = useTranslations('nav');
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
@@ -381,9 +382,9 @@ export default function CompeteGamePage() {
       <main className="app-shell">
         <div className="shell-grid">
           <section className="hero">
-            <span className="badge">Compete</span>
-            <h1>Establishing identity…</h1>
-            <p className="small">Game ID: {gameId}</p>
+            <span className="badge">{tNav('compete')}</span>
+            <h1>{t('establishing_identity')}</h1>
+            <p className="small">{t('game_id')}: {gameId}</p>
           </section>
         </div>
       </main>
@@ -395,8 +396,8 @@ export default function CompeteGamePage() {
       <main className="app-shell">
         <div className="shell-grid">
           <section className="hero">
-            <span className="badge">Compete</span>
-            <h1>Identity error</h1>
+            <span className="badge">{tNav('compete')}</span>
+            <h1>{t('identity_error')}</h1>
             <p className={pageStyles.identityErrorText}>{identityError}</p>
           </section>
         </div>
@@ -409,7 +410,7 @@ export default function CompeteGamePage() {
       <div className={pageStyles.loadingContainer}>
         <div className={pageStyles.spinner} />
         <span className={pageStyles.loadingText}>
-          Joining room…
+          {t('joining_room')}
         </span>
         {error && (
           <span className={pageStyles.errorText}>{error}</span>

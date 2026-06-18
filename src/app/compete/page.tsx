@@ -96,16 +96,16 @@ export default function CompeteEntryPage() {
     <main className="app-shell">
       <div className="shell-grid">
         <section className="hero">
-          <span className="badge">Compete</span>
-          <h1>Multiplayer Sync Game</h1>
-          <p>Create a new 5-round sync session or join an existing one by game ID.</p>
+          <span className="badge">{t('badge')}</span>
+          <h1>{t('title')}</h1>
+          <p>{t('description')}</p>
         </section>
 
         <section className="card stack">
           {identityLoading ? (
-            <p className="small">Establishing identity…</p>
+            <p className="small">{t('establishing_identity')}</p>
           ) : identityError ? (
-            <p style={{ color: "#ff6b6b", margin: 0 }}>Identity error: {identityError}</p>
+            <p style={{ color: "#ff6b6b", margin: 0 }}>{t('identity_error')} {identityError}</p>
           ) : null}
           <div className="row">
             <button
@@ -117,7 +117,7 @@ export default function CompeteEntryPage() {
               }}
               disabled={blocked || loading}
             >
-              Create
+              {t('create')}
             </button>
             <button
               type="button"
@@ -128,7 +128,7 @@ export default function CompeteEntryPage() {
               }}
               disabled={blocked || loading}
             >
-              Join
+              {t('join')}
             </button>
           </div>
 
@@ -136,7 +136,7 @@ export default function CompeteEntryPage() {
             <div className="stack">
               <div className="field">
                 <label htmlFor="timer-slider">
-                  Round Timer: {roundTimerSec >= 60
+                  {t('round_timer')}: {roundTimerSec >= 60
                     ? `${Math.floor(roundTimerSec / 60)}m ${roundTimerSec % 60 > 0 ? `${roundTimerSec % 60}s` : ""}`.trim()
                     : `${roundTimerSec}s`}
                 </label>
@@ -176,7 +176,7 @@ export default function CompeteEntryPage() {
                   value={gameId.toUpperCase()}
                   onChange={(event) => setGameId(event.target.value)}
                   disabled={blocked || loading}
-                  placeholder="e.g. SSJC5Q"
+                  placeholder={t('room_code_placeholder')}
                 />
               </div>
               <button

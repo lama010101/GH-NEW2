@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { supabaseBrowser } from '@/core/supabaseBrowser'
+import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser'
 import cpStyles from "./CompetePanel.module.css";
 
 type ActiveGame = {
@@ -56,10 +56,10 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       return
     }
     try {
-      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      const token = await getValidAccessToken();
       const headers: Record<string, string> = {};
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
       const res = await fetch('/api/invitations/pending', { headers })
       if (!res.ok) {

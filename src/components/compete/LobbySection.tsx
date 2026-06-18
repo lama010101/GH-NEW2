@@ -6,7 +6,7 @@ import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
 import { getUsernameGradientStyle } from "@/core/competeUtils";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import styles from './LobbySection.module.css';
-import { supabaseBrowser } from '@/core/supabaseBrowser';
+import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
 
 interface LobbySectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -194,10 +194,10 @@ export default function LobbySection({
   useEffect(() => {
     let cancelled = false;
     async function fetchRecent() {
-      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      const token = await getValidAccessToken();
       const headers: Record<string, string> = {};
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
       const res = await fetch('/api/players/recent', { headers });
       if (cancelled) return;
@@ -222,10 +222,10 @@ export default function LobbySection({
     const q = searchQuery.trim();
     if (q.length < 2) return;
     searchDebounceRef.current = setTimeout(async () => {
-      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      const token = await getValidAccessToken();
       const headers: Record<string, string> = {};
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
       const res = await fetch(`/api/friends/search?q=${encodeURIComponent(q)}`, { headers });
       if (!res.ok) return;
@@ -346,12 +346,12 @@ export default function LobbySection({
   const handleSendInvite = async (player: PlayerPoolEntry) => {
     setInviteStates(prev => ({ ...prev, [player.id]: 'pending' }));
     try {
-      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      const token = await getValidAccessToken();
       const res = await fetch('/api/invitations/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ game_id: snapshot.gameId, invitee_id: player.id }),
       });
@@ -434,10 +434,10 @@ export default function LobbySection({
 
 
   return (
-    <div className={styles['lobby-shell']}>
+    <div className={styles['lobby-shell']} data-testid="lobby-shell">
       <header className={styles['lobby-header']}>
         <div className={styles['lobby-header-top']}>
-          <button className={styles['lobby-back-btn']} onClick={() => router.push("/")} aria-label="Back">
+          <button className={styles['lobby-back-btn']} onClick={() => router.push("/")} aria-label="Back" data-testid="lobby-back-btn">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
@@ -466,10 +466,10 @@ export default function LobbySection({
               <span className={styles['lobby-accent-bar-sm']} />
               <span className={styles['lobby-subsection-title']}>{t('lobby.invite_players')}</span>
               <div className={styles['lobbyShareBtnGroup']}>
-                <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyLink}>
+                <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyLink} data-testid="lobby-copy-link">
                   {t('lobby.copy_link')}
                 </button>
-                <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyCode}>
+                <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyCode} data-testid="lobby-copy-code">
                   {t('lobby.copy_code')}
                 </button>
               </div>
@@ -628,12 +628,12 @@ export default function LobbySection({
                 {t('lobby.ready_count', { count: readyCount })}
               </span>
             </div>
-            <div className={styles['lobbyRosterList']}>
+            <div className={styles['lobbyRosterList']} data-testid="lobby-roster">
               {activePlayers.map((p) => {
                 const displayName = p.displayName || p.playerId.slice(0, 8);
                 const isViewerPlayer = p.playerId === viewer?.playerId;
                 return (
-                  <div key={p.playerId} className={`${styles['lobbyRosterRow']} ${p.ready ? styles['lobbyRosterRowReady'] : ''}`}>
+                  <div key={p.playerId} className={`${styles['lobbyRosterRow']} ${p.ready ? styles['lobbyRosterRowReady'] : ''}`} data-testid={`lobby-player-${p.playerId}`} data-ready={p.ready ? 'true' : 'false'} data-host={p.isHost ? 'true' : 'false'}>
                     <div className={styles['lobbyAvatarWrap']}>
                       <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
                     </div>
@@ -655,7 +655,7 @@ export default function LobbySection({
                       {p.ready ? t('lobby.ready') : t('lobby.not_ready')}
                     </span>
                     {isHost && !p.isHost && (
-                      <button type="button" className={styles['lobby-kick-btn']} onClick={() => onKickPlayer?.(p.playerId)} disabled={busy} title={t('lobby.kick_player')}>×</button>
+                      <button type="button" className={styles['lobby-kick-btn']} onClick={() => onKickPlayer?.(p.playerId)} disabled={busy} title={t('lobby.kick_player')} data-testid={`lobby-kick-${p.playerId}`}>×</button>
                     )}
                   </div>
                 );
@@ -914,17 +914,18 @@ export default function LobbySection({
       </div>
 
       {/* Bottom Dock — single READY CTA */}
-      <div className={styles['lobby-dock']}>
+      <div className={styles['lobby-dock']} data-testid="lobby-dock">
         <div className={styles['lobby-dock-content']}>
           <button
             type="button"
             className={isReady ? styles['lobbyReadyBtnIsReady'] : styles['lobbyReadyBtnNotReady']}
             onClick={onToggleReady}
             disabled={busy}
+            data-testid="lobby-ready-btn"
           >
             {isReady ? t('lobby.ready_waiting') : t('lobby.im_ready')}
           </button>
-          <span className={styles['lobby-ready-count']}>
+          <span className={styles['lobby-ready-count']} data-testid="lobby-ready-count">
             {t('lobby.players_ready', { ready: readyCount ?? 0, total: totalPlayers ?? 0 })}
             {snapshot.allPlayersReady && totalPlayers > 0 && (
               <span className={styles['lobbyAllReadyTag']}> · starting soon</span>

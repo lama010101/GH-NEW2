@@ -58,7 +58,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
       <button
         onClick={onClose}
         className={styles.closeBtn}
-        aria-label="Close"
+        aria-label={t('close')}
       >✕</button>
 
       <div className={styles.panel}>
@@ -112,9 +112,9 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
         <button
           className={styles.signOutBtn}
           onClick={async () => {
-            onClose()
             const { signOut } = await import('@/core/identity')
             await signOut()
+            onClose()
           }}
         >
           <span className={styles.signOutIcon}>{SIGNOUT_ICON}</span>

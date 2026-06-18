@@ -153,7 +153,7 @@ export default function WhenCard({
 
       {/* Correct year */}
       <div className={styles.correctRow}>
-        <span>{t('correct_location')}:</span>
+        <span>{t('correct_year')}:</span>
         <span className={styles.correctValue}>{correctYear}</span>
       </div>
 
@@ -166,7 +166,7 @@ export default function WhenCard({
           className={styles.correctMarker}
           style={{ left: `${correctXPercent}%` }}
         >
-          <div className={styles.correctLabel}>{t('correct_location')}</div>
+          <div className={styles.correctLabel}>{t('correct_year')}</div>
           <div className={styles.correctYear}>{correctYear}</div>
         </div>
 
@@ -303,7 +303,7 @@ export default function WhenCard({
                   key={hint.id}
                   className={`${styles.hintRow} ${idx < whenHints.length - 1 ? styles.hintRowDivider : ""}`}
                 >
-                  <div className={styles.hintLabel}>{labelMap[hint.tier] ?? `Tier ${hint.tier}`}</div>
+                  <div className={styles.hintLabel}>{labelMap[hint.tier] ?? t('tier_n', { n: hint.tier })}</div>
                   <div className={styles.hintContent}>{hint.content}</div>
                 </div>
               ));

@@ -17,3 +17,14 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 );
+
+/**
+ * Returns the current access token after refreshing a stale session.
+ * Prefer this over `auth.getSession().access_token` because `getSession()`
+ * does not refresh the token, while `getUser()` does.
+ */
+export async function getValidAccessToken(): Promise<string | null> {
+  await supabaseBrowser.auth.getUser();
+  const { data: { session } } = await supabaseBrowser.auth.getSession();
+  return session?.access_token ?? null;
+}

@@ -234,11 +234,11 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
         >
           {/* Header */}
           <div className={styles.header}>
-            <div className={styles.title}>Hints</div>
+            <div className={styles.title}>{t('hints')}</div>
             <button
               className={styles.closeBtn}
               onClick={handleClose}
-              aria-label="Close hints"
+              aria-label={t('close_hints')}
             >
               <svg viewBox="0 0 10 10" fill="none">
                 <path d="M2 2l6 6M8 2L2 8" stroke="currentColor" />
@@ -249,7 +249,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
           {/* Total Penalty Strip */}
           <div className={styles.totalStrip}>
             <div className={styles.totalLeft}>
-              <div className={styles.totalLbl}>Total penalty</div>
+              <div className={styles.totalLbl}>{t('total_penalty')}</div>
               <div className={`${styles.totalBig} ${getPenaltyColor(penalties.totalAcc)}`}>
                 −{penalties.totalAcc}%
               </div>

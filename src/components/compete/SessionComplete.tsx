@@ -114,7 +114,7 @@ export default function SessionComplete({
   };
 
   return (
-    <section className={styles.section}>
+    <section className={styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
         if (!playerId || !allRoundResults) return null;
         const myStats = computePlayerStats(playerId);
@@ -168,7 +168,7 @@ export default function SessionComplete({
                   type="button"
                   className={styles.avatarBtn}
                   onClick={() => setNavModalOpen(true)}
-                  aria-label="Open profile menu"
+                  aria-label={t('open_profile_menu')}
                 >
                   {currentPlayerData?.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -210,7 +210,7 @@ export default function SessionComplete({
                       <span className={styles.statNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whereAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whereAccuracy}</span>
                       <span className={styles.statSymbol}>%</span>
                     </div>
-                    <div className={styles.statSub}>avg {Math.round(avgDistanceKm)} km away</div>
+                    <div className={styles.statSub}>{t('avg_km_away', { n: Math.round(avgDistanceKm) })}</div>
                   </div>
                   <div className={styles.statCard}>
                     <svg className={styles.statIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -221,7 +221,7 @@ export default function SessionComplete({
                       <span className={styles.statNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whenAccuracy}</span>
                       <span className={styles.statSymbol}>%</span>
                     </div>
-                    <div className={styles.statSub}>avg {Math.round(avgYearDiff)} yrs off</div>
+                    <div className={styles.statSub}>{t('avg_yrs_off', { n: Math.round(avgYearDiff) })}</div>
                   </div>
                 </div>
               </div>
@@ -401,6 +401,7 @@ export default function SessionComplete({
                     className={styles.playBtn}
                     onClick={handlePlayAgain}
                     disabled={isCreatingLobby}
+                    data-testid="session-play-again-btn"
                   >
                     {isCreatingLobby ? tGame('creating_lobby') : tGame('play_again')}
                   </button>

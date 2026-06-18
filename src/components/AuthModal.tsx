@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import styles from "./AuthModal.module.css";
@@ -21,6 +21,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotSent, setForgotSent] = useState(false);
+  const signInSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -28,6 +29,13 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
       setError(null);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      signInSubscriptionRef.current?.unsubscribe();
+      signInSubscriptionRef.current = null;
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -55,17 +63,17 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     setError(null);
 
     if (!email || !password) {
-      setError("Email and password are required");
+      setError(t('err_email_password_required'));
       return;
     }
 
     if (mode === "signup") {
       if (password !== confirmPassword) {
-        setError("Passwords do not match");
+        setError(t('err_passwords_mismatch'));
         return;
       }
       if (password.length < 6) {
-        setError("Password must be at least 6 characters");
+        setError(t('err_password_min_length'));
         return;
       }
     }
@@ -76,18 +84,6 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     try {
       if (mode === "signin") {
         result = await supabaseBrowser.auth.signInWithPassword({ email, password });
-        if (!result.error && !rememberMe) {
-          // User wants session-only (no persist): remove localStorage entry after sign-in
-          // so the session is cleared when the tab closes.
-          // Supabase stores the session under a key prefixed with "sb-"
-          const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
-          if (storageKey) {
-            const raw = localStorage.getItem(storageKey);
-            localStorage.removeItem(storageKey);
-            // Store in sessionStorage so the tab stays authenticated until closed
-            if (raw) sessionStorage.setItem(storageKey, raw);
-          }
-        }
       } else {
         result = await supabaseBrowser.auth.signUp({ email, password });
       }
@@ -97,13 +93,14 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
         return;
       }
 
-      // onAuthStateChange fires reliably with @supabase/supabase-js createClient
       const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange((event) => {
         if (event === "SIGNED_IN") {
           subscription.unsubscribe();
+          signInSubscriptionRef.current = null;
           onClose();
         }
       });
+      signInSubscriptionRef.current = subscription;
     } finally {
       setLoading(false);
     }
@@ -111,7 +108,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
 
   async function handleForgotPassword() {
     if (!email) {
-      setError("Enter your email address first, then click Forgot password.");
+      setError(t('err_enter_email_first'));
       return;
     }
     setLoading(true);
@@ -131,10 +128,12 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     <div
       className={styles.overlay}
       onClick={required ? undefined : onClose}
+      data-testid="auth-modal"
     >
       <div
         className={styles.card}
         onClick={(e) => e.stopPropagation()}
+        data-testid="auth-modal-card"
       >
         {!required && (
           <button
@@ -171,7 +170,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             <path fill="none" d="M0 0h48v48H0z"/>
           </svg>
-          {loading ? "Redirecting…" : t('continue') + " with Google"}
+          {loading ? t('redirecting') : t('continue') + " with Google"}
         </button>
 
         <div className={styles.divider}>
@@ -193,7 +192,8 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
               className={styles.input}
-              placeholder="you@example.com"
+              placeholder={t('email_placeholder')}
+              data-testid="auth-email-input"
             />
           </div>
 
@@ -209,7 +209,8 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
               className={styles.input}
-              placeholder="••••••••"
+              placeholder={t('password_placeholder')}
+              data-testid="auth-password-input"
             />
           </div>
 
@@ -217,7 +218,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
             <>
               {forgotSent ? (
                 <p className={styles.successMessage}>
-                  Password reset email sent. Check your inbox.
+                  {t('reset_email_sent')}
                 </p>
               ) : (
                 <>
@@ -233,7 +234,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
                       htmlFor="remember-me"
                       className={styles.rememberMeLabel}
                     >
-                      Remember me
+                      {t('remember_me')}
                     </label>
                   </div>
                   <button
@@ -253,7 +254,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
               <label
                 className={styles.label}
               >
-                Confirm Password
+                {t('confirm_password')}
               </label>
               <input
                 type="password"
@@ -261,7 +262,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={loading}
                 className={styles.input}
-                placeholder="••••••••"
+                placeholder={t('password_placeholder')}
               />
             </div>
           )}
@@ -270,6 +271,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
             onClick={handleEmailAuth}
             disabled={loading}
             className={styles.submitButton}
+            data-testid="auth-submit-btn"
           >
             {loading ? t('loading') : mode === "signin" ? t('sign_in') : t('sign_up')}
           </button>

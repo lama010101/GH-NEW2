@@ -313,7 +313,7 @@ function LeaderboardPageInner() {
             {getInitials(entry.display_name)}
           </div>
         )}
-        <span className={styles.playerName}>{entry.display_name ?? 'Unknown'}</span>
+        <span className={styles.playerName}>{entry.display_name ?? t('unknown_player')}</span>
       </div>
     );
   };
@@ -336,19 +336,19 @@ function LeaderboardPageInner() {
           onClick={() => setActiveTab('overall')}
           className={`${styles.tab} ${activeTab === 'overall' ? styles.tabActive : ''}`}
         >
-          Overall
+          {t('overall')}
         </button>
         <button
           onClick={() => setActiveTab('daily')}
           className={`${styles.tab} ${activeTab === 'daily' ? styles.tabActive : ''}`}
         >
-          Daily
+          {t('daily')}
         </button>
         <button
           onClick={() => setActiveTab('levelup')}
           className={`${styles.tab} ${activeTab === 'levelup' ? styles.tabActive : ''}`}
         >
-          Level Up
+          {t('level_up')}
         </button>
       </div>
 
@@ -359,13 +359,13 @@ function LeaderboardPageInner() {
             onClick={() => setActiveSubTab('today')}
             className={`${styles.subTab} ${activeSubTab === 'today' ? styles.subTabActive : ''}`}
           >
-            Today
+            {t('today')}
           </button>
           <button
             onClick={() => setActiveSubTab('alltime')}
             className={`${styles.subTab} ${activeSubTab === 'alltime' ? styles.subTabActive : ''}`}
           >
-            All-time
+            {t('all_time')}
           </button>
         </div>
       )}
@@ -380,16 +380,16 @@ function LeaderboardPageInner() {
 
         {error && !loading && (
           <div className={styles.errorState}>
-            <p>{error}</p>
+            <p>{t('err_load_failed')}</p>
             <button onClick={handleRetry} className={styles.retryBtn}>
-              Retry
+              {t('retry')}
             </button>
           </div>
         )}
 
         {!loading && !error && currentData && currentData.length === 0 && (
           <div className={styles.emptyState}>
-            <p>No results yet for today.</p>
+            <p>{t('no_results_today')}</p>
           </div>
         )}
 
@@ -402,7 +402,7 @@ function LeaderboardPageInner() {
                   <th className={styles.th}>{t('col_player')}</th>
                   {activeTab === 'daily' && activeSubTab === 'today' && (
                     <>
-                      <th className={styles.th}>Accuracy %</th>
+                      <th className={styles.th}>{t('accuracy_pct')}</th>
                       <th className={styles.th}>{t('col_xp_today')}</th>
                     </>
                   )}

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { DM_Sans } from 'next/font/google'
 import styles from './help.module.css'
 
@@ -144,6 +145,7 @@ const GETTING_STARTED_STEPS = [
 
 export default function HelpPage() {
   const router = useRouter()
+  const t = useTranslations('help')
   const [query, setQuery] = useState('')
   const [openFaq, setOpenFaq] = useState<string | null>(FAQ[0]?.id ?? null)
 
@@ -166,14 +168,14 @@ export default function HelpPage() {
             <button
               className={styles.backButton}
               onClick={() => router.back()}
-              aria-label="Go back"
+              aria-label={t('go_back')}
             >
               ←
             </button>
-            <span className={styles.kicker}>Help Center</span>
+            <span className={styles.kicker}>{t('title')}</span>
           </div>
-          <h1 className={styles.heroTitle}>How can we help?</h1>
-          <p className={styles.heroSubtitle}>Find answers, learn the rules, and get the most out of Guess-History.</p>
+          <h1 className={styles.heroTitle}>{t('hero_title')}</h1>
+          <p className={styles.heroSubtitle}>{t('hero_subtitle')}</p>
 
           <div className={styles.searchWrap}>
             <span className={styles.searchIcon} aria-hidden>🔍</span>
@@ -181,15 +183,15 @@ export default function HelpPage() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search the help center…"
+              placeholder={t('search_placeholder')}
               className={styles.searchInput}
-              aria-label="Search the help center"
+              aria-label={t('search_label')}
             />
             {query && (
               <button
                 className={styles.searchClear}
                 onClick={() => setQuery('')}
-                aria-label="Clear search"
+                aria-label={t('clear_search')}
               >
                 ✕
               </button>
