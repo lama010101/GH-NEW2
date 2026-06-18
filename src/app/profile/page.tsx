@@ -31,6 +31,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { playerId } = useIdentity();
   const t = useTranslations('profile');
+  const tNav = useTranslations('nav');
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
@@ -44,6 +45,8 @@ export default function ProfilePage() {
     byContinent: Array<{ continent: string; avgAccuracy: number; roundCount: number }>
     eventsSeenCount: number
   } | null>(null);
+
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   const [profileData, setProfileData] = useState<{
     displayName: string | null;
@@ -76,7 +79,11 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    if (!playerId) return;
+    if (playerId === undefined) return;
+    if (!playerId) {
+      router.replace('/login');
+      return;
+    }
 
     const fetchProfileData = async () => {
       try {
@@ -87,9 +94,9 @@ export default function ProfilePage() {
           .limit(1)
           .single();
 
-        const { data: sessionData } = await supabaseBrowser.auth.getSession();
-        const email = sessionData.session?.user?.email ?? null;
-        const createdAt = sessionData.session?.user?.created_at ?? null;
+        const { data: { user: authUser } } = await supabaseBrowser.auth.getUser();
+        const email = authUser?.email ?? null;
+        const createdAt = authUser?.created_at ?? null;
 
         const { data: statsResult } = await supabaseBrowser
           .from('player_global_stats')
@@ -191,7 +198,7 @@ export default function ProfilePage() {
     };
 
     fetchProfileData();
-  }, [playerId]);
+  }, [playerId, router]);
 
   useEffect(() => {
     if (!avatarPickerOpen) return;
@@ -216,8 +223,13 @@ export default function ProfilePage() {
   }, [avatarPickerOpen]);
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push('/');
+    setSignOutError(null);
+    try {
+      await signOut();
+      router.push('/');
+    } catch (err) {
+      setSignOutError(err instanceof Error ? err.message : 'Sign out failed');
+    }
   };
 
   const getInitials = (name: string | null): string => {
@@ -309,7 +321,7 @@ export default function ProfilePage() {
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m15 18-6-6 6-6"/>
           </svg>
-          Back
+          {t('back')}
         </button>
       </div>
 
@@ -325,7 +337,7 @@ export default function ProfilePage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profileData.avatarUrl}
-                alt="Avatar"
+                alt={t('avatar_alt')}
                 className="w-full h-full object-cover rounded-full"
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
@@ -344,7 +356,7 @@ export default function ProfilePage() {
 
         {/* Member since */}
         <p className="text-sm text-white/45 mb-6">
-          Member since {formatMemberSince(profileData.createdAt)}
+          {t('member_since')} {formatMemberSince(profileData.createdAt)}
         </p>
 
         {/* Historical Avatar Card */}
@@ -381,7 +393,7 @@ export default function ProfilePage() {
               : profileData.avgAccuracy !== null
                 ? Math.round(Number(profileData.avgAccuracy)) + '%'
                 : '—',
-            label: 'Avg accuracy',
+            label: t('avg_accuracy'),
             color: styles.statColorOrange
           },
           {
@@ -390,14 +402,14 @@ export default function ProfilePage() {
               : profileData.totalXp !== null
                 ? profileData.totalXp.toLocaleString() + ' XP'
                 : '—',
-            label: 'Total XP',
+            label: t('total_xp'),
             color: styles.statColorGold
           },
           {
             value: profileData.gamesPlayed === null
               ? '...'
               : profileData.gamesPlayed.toLocaleString(),
-            label: 'Games played',
+            label: t('games_played'),
             color: styles.statColorViolet
           },
           {
@@ -406,7 +418,7 @@ export default function ProfilePage() {
               : profileData.roundsPlayed !== null
                 ? profileData.roundsPlayed.toLocaleString()
                 : '—',
-            label: 'Rounds played',
+            label: t('rounds_played'),
             color: styles.statColorTeal
           }
         ].map((stat, i) => (
@@ -654,11 +666,14 @@ export default function ProfilePage() {
               <span className="text-sm text-white/70">{t('member_since')}</span>
               <span className="text-sm text-white/45">{formatMemberSince(profileData.createdAt)}</span>
             </div>
+            {signOutError && (
+              <div className="text-xs text-red-400">{signOutError}</div>
+            )}
             <button
               onClick={handleSignOut}
               className="w-full py-3 px-4 rounded-lg text-sm font-semibold bg-red-500/15 text-red-500 border border-red-500/30 cursor-pointer transition-colors hover:bg-red-500/25"
             >
-              Sign out
+              {tNav('sign_out')}
             </button>
           </div>
         </div>

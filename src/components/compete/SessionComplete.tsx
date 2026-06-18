@@ -114,7 +114,7 @@ export default function SessionComplete({
   };
 
   return (
-    <section className={styles.section}>
+    <section className={styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
         if (!playerId || !allRoundResults) return null;
         const myStats = computePlayerStats(playerId);
@@ -168,7 +168,7 @@ export default function SessionComplete({
                   type="button"
                   className={styles.avatarBtn}
                   onClick={() => setNavModalOpen(true)}
-                  aria-label="Open profile menu"
+                  aria-label={t('open_profile_menu')}
                 >
                   {currentPlayerData?.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -210,7 +210,7 @@ export default function SessionComplete({
                       <span className={styles.statNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whereAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whereAccuracy}</span>
                       <span className={styles.statSymbol}>%</span>
                     </div>
-                    <div className={styles.statSub}>avg {Math.round(avgDistanceKm)} km away</div>
+                    <div className={styles.statSub}>{t('avg_km_away', { n: Math.round(avgDistanceKm) })}</div>
                   </div>
                   <div className={styles.statCard}>
                     <svg className={styles.statIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -221,7 +221,7 @@ export default function SessionComplete({
                       <span className={styles.statNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whenAccuracy}</span>
                       <span className={styles.statSymbol}>%</span>
                     </div>
-                    <div className={styles.statSub}>avg {Math.round(avgYearDiff)} yrs off</div>
+                    <div className={styles.statSub}>{t('avg_yrs_off', { n: Math.round(avgYearDiff) })}</div>
                   </div>
                 </div>
               </div>
@@ -320,7 +320,6 @@ export default function SessionComplete({
                                 src={round.imageUrl}
                                 alt={round.title}
                                 onClick={() => { setViewerSrc(round.imageUrl); setViewerAlt(round.title); }}
-                                style={{ cursor: 'pointer' }}
                               />
                             ) : (
                               <div className={styles.photoFallback}>
@@ -341,7 +340,7 @@ export default function SessionComplete({
                               </div>
 
                               <div className={`${styles.miniTile} ${styles.miniTileWhere}`}>
-                                <img src="/badges/where.webp" alt="where" width={24} height={24} style={{ display: 'block', margin: '0 auto 2px' }} />
+                                <img src="/badges/where.webp" alt="where" width={24} height={24} className={styles.badgeIcon} />
                                 <div className={styles.percentLine}>
                                   <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgLocationScore}</span>
                                   <span className={styles.miniSymbol}>%</span>
@@ -351,7 +350,7 @@ export default function SessionComplete({
                               </div>
 
                               <div className={`${styles.miniTile} ${styles.miniTileWhen}`}>
-                                <img src="/badges/when.webp" alt="when" width={24} height={24} style={{ display: 'block', margin: '0 auto 2px' }} />
+                                <img src="/badges/when.webp" alt="when" width={24} height={24} className={styles.badgeIcon} />
                                 <div className={styles.percentLine}>
                                   <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgTimeScore}</span>
                                   <span className={styles.miniSymbol}>%</span>
@@ -402,6 +401,7 @@ export default function SessionComplete({
                     className={styles.playBtn}
                     onClick={handlePlayAgain}
                     disabled={isCreatingLobby}
+                    data-testid="session-play-again-btn"
                   >
                     {isCreatingLobby ? tGame('creating_lobby') : tGame('play_again')}
                   </button>

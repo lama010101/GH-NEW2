@@ -17,12 +17,12 @@ interface Notification {
   created_at: string;
 }
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) => string): string {
   const diff = Date.now() - new Date(iso).getTime();
-  if (diff < 60000) return 'just now';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return `${Math.floor(diff / 86400000)}d ago`;
+  if (diff < 60000) return t('just_now');
+  if (diff < 3600000) return t('m_ago', { n: Math.floor(diff / 60000) });
+  if (diff < 86400000) return t('h_ago', { n: Math.floor(diff / 3600000) });
+  return t('d_ago', { n: Math.floor(diff / 86400000) });
 }
 
 function NotificationItem({
@@ -33,6 +33,7 @@ function NotificationItem({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const t = useTranslations('notifications');
 
   if (notification.type === 'lobby_invite') {
     const inviterName = (notification.payload.inviter_name as string) ?? 'Someone';
@@ -43,9 +44,9 @@ function NotificationItem({
         {notification.read === false && <span className={styles.unreadDot} />}
         <div className={styles.notifBody}>
           <div className={styles.notifText}>
-            {inviterName} invited you to a game
+            {inviterName} {t('invited_you')}
           </div>
-          <div className={styles.notifTime}>{timeAgo(notification.created_at)}</div>
+          <div className={styles.notifTime}>{timeAgo(notification.created_at, t)}</div>
           <button
             type="button"
             className={styles.joinBtn}
@@ -54,7 +55,7 @@ function NotificationItem({
               onClose();
             }}
           >
-            Join Game
+            {t('join_game')}
           </button>
         </div>
       </div>
@@ -66,7 +67,7 @@ function NotificationItem({
       {notification.read === false && <span className={styles.unreadDot} />}
       <div className={styles.notifBody}>
         <div className={styles.notifText}>{notification.type}</div>
-        <div className={styles.notifTime}>{timeAgo(notification.created_at)}</div>
+        <div className={styles.notifTime}>{timeAgo(notification.created_at, t)}</div>
       </div>
     </div>
   );

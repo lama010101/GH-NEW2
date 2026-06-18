@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   }
 
   const cookieStore = cookies();
+  let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,8 +24,12 @@ export async function GET(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           try {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            response = NextResponse.next({ request });
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              response.cookies.set(name, value, options)
             );
           } catch {
             // The `set` method was called from a Server Component.
@@ -42,5 +47,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(`/?error=auth_failed`, request.url));
   }
 
-  return NextResponse.redirect(new URL(next, request.url));
+  return NextResponse.redirect(new URL(next, response.url));
 }

@@ -1,7 +1,5 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
-import { createSupabaseServerClient } from "@/core/supabaseServer";
+import { createAuthenticatedServerClient, createSupabaseServerClient } from "@/core/supabaseServer";
 
 export const dynamic = "force-dynamic";
 
@@ -10,30 +8,8 @@ function isValidUUID(uuid: string): boolean {
   return uuidRegex.test(uuid);
 }
 
-async function getAuthenticatedUser(): Promise<{ user: { id: string }; supabase: ReturnType<typeof createServerClient> } | null> {
-  const cookieStore = cookies();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if middleware refreshes sessions.
-          }
-        },
-      },
-    }
-  );
+async function getAuthenticatedUser(): Promise<{ user: { id: string }; supabase: ReturnType<typeof createAuthenticatedServerClient> } | null> {
+  const supabase = createAuthenticatedServerClient();
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -128,28 +104,7 @@ export async function DELETE(request: NextRequest) {
 // GET /api/players/follow - List followed players
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
-  const cookieStore = cookies();
-
-  const supabaseAuth = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // The `set` method was called from a Server Component.
-          }
-        },
-      },
-    }
-  );
+  const supabaseAuth = createAuthenticatedServerClient();
 
   const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
 
