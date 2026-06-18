@@ -229,13 +229,13 @@ a {
   --gh-border-default: rgba(255, 255, 255, 0.12);
 
   /* --- Glass surfaces (passive / containers) --- */
-  --gh-glass-bg:        rgba(30, 30, 40, 0.75);
-  --gh-glass-bg-hover:  rgba(40, 40, 55, 0.88);
-  --gh-glass-border:    rgba(99, 155, 255, 0.28);
-  --gh-glass-border-hover: rgba(99, 155, 255, 0.50);
-  --gh-glass-shadow:    0 4px 24px rgba(0, 0, 0, 0.45);
-  --gh-glass-blur:      blur(12px);
-  --gh-glass-radius:    14px;
+  --gh-glass-bg:        linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+  --gh-glass-bg-hover:  linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.06));
+  --gh-glass-border:    rgba(255,255,255,0.10);
+  --gh-glass-border-hover: rgba(255,255,255,0.20);
+  --gh-glass-shadow:    0 8px 30px rgba(0, 0, 0, 0.35);
+  --gh-glass-blur:      blur(10px);
+  --gh-glass-radius:    18px;
 
   /* --- Blur tokens (MP-REFACTOR-CARD-TOKENS-001) --- */
   --gh-blur-sm:  blur(6px);
@@ -258,6 +258,9 @@ a {
   --gh-where-card-border:    rgba(59, 130, 246, 0.8);   /* --gh-blue with opacity */
   --gh-when-card-bg:         rgba(0, 0, 0, 0.8);
   --gh-when-card-border:     rgba(139, 92, 246, 0.8);  /* --gh-violet with opacity */
+  --gh-where-card-glow:      rgba(6, 182, 212, 0.30);
+  --gh-when-card-glow:       rgba(139, 92, 246, 0.30);
+  --gh-card-shadow:          rgba(0, 0, 0, 0.35);
   --gh-general-card-bg:      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
   --gh-general-card-border:  rgba(255, 255, 255, 0.1);
   --gh-general-card-shadow:  0 8px 30px rgba(0, 0, 0, 0.35);
