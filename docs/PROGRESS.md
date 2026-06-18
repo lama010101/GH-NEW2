@@ -2141,4 +2141,5 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | MP-FIX-AUTH-SIGNOUT-001 | DONE | 2bacbfc | Fixed double sign-out by making signOut() update cachedState synchronously |
 | MP-INV-PKCE-HISTORY-001 | DONE | — | Investigated history of flowType pkce removal/re-add |
 | MP-INV-MIDDLEWARE-001 | DONE | — | Confirmed middleware gating mechanism and cookie dependency |
-| MP-INV-LOGIN-ROUTE-001 | DONE | — | Confirmed /login route existence and next-param handling for cookie-gap diagnosis | |
+| MP-INV-LOGIN-ROUTE-001 | DONE | — | Confirmed /login route existence and next-param handling for cookie-gap diagnosis |
+| 2026-06-18 | MP-INV-AUTH-SIGNOUT-002 | INVESTIGATION-ONLY (no commit) | NavModal.tsx, identity.ts, AuthModal.tsx, route.ts | Root cause: signOut() updates cachedState synchronously BEFORE awaiting supabase.auth.signOut(), and NavModal calls onClose() BEFORE awaiting signOut(), creating race where modal closes before signOut completes; subscribeToIdentityChanges onAuthStateChange handler may re-fire with stale SIGNED_IN event after signOut begins, resetting cachedState back to ready; no scope parameter passed to signOut() (defaults to 'global'), and no try/catch around signOut call | |
