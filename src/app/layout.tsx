@@ -40,7 +40,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     raw && (locales as readonly string[]).includes(raw)
       ? (raw as Locale)
       : defaultLocale;
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
 
   return (
     <html lang={locale} suppressHydrationWarning className={`${bebasNeue.variable} ${dmSans.variable} ${sora.variable}`}>

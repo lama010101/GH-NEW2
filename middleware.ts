@@ -7,11 +7,20 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help"];
 
+// Public API routes that must remain reachable without authentication.
+// All other /api/* routes are required to pass the middleware auth check.
+const PUBLIC_API_ROUTES = [
+  "/api/events",
+  "/api/compete/join",
+  "/api/compete/create",
+  "/api/geocode",
+];
+
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
   if (pathname.startsWith("/_next/")) return true;
-  if (pathname.startsWith("/api/")) return true;
   if (pathname.startsWith("/favicon")) return true;
+  if (PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))) return true;
   return false;
 }
 
