@@ -10,11 +10,11 @@ Status values: `DONE` | `IN PROGRESS` | `BLOCKED` | `SKIPPED` | `PLAN`
 - [Appendix — Detailed Task Descriptions & Notes](#appendix--detailed-task-descriptions--notes)
 
 ## Summary
-- Total log rows: **808** across **772** unique task IDs
+- Total log rows: **809** across **773** unique task IDs
 - True duplicate entries removed: **12** (identical or near-identical notes)
 - Distinct sequel tasks sharing an ID: **36** (kept as separate rows)
 - Status breakdown:
-  - DONE: 801
+  - DONE: 802
   - BLOCKED: 1
   - SKIPPED: 4
   - PLAN: 1
@@ -24,6 +24,7 @@ Status values: `DONE` | `IN PROGRESS` | `BLOCKED` | `SKIPPED` | `PLAN`
 
 | Task ID | Status | Files Changed | Notes |
 |---------|--------|---------------|-------|
+| MP-FIX-OAUTH-CALLBACK-COOKIE-001 | DONE | src/app/auth/callback/route.ts | Fixed discarded response object breaking session cookie write on OAuth exchange. Removed response reassignment inside setAll callback (line 30) that created new NextResponse.next() object, causing session cookies from exchangeCodeForSession to be set on abandoned object. Changed to mutate existing response object in place. Updated final return to create redirect response and copy all cookies from response onto it, preserving session cookies. Applied same pattern to error path for consistency. Fix based on code inspection; Vercel runtime log not retrieved (CLI unavailable). TypeScript compilation passed, Next.js build passed with only pre-existing warnings. (2026-06-19) |
 | MP-UI-LOBBY-ERA-REDESIGN-001 | DONE | src/components/compete/LobbySection.tsx, src/components/compete/LobbySection.module.css | Redesigned era preset buttons in lobby game settings as a horizontally scrollable ruler of vertical cards: era label above, colored rounded-square icon, date span below. Selected eras show their era color; unselected eras stay muted. Select all/Deselect all preserved. Native scrollbar hidden; scroll affordance comes from clipped buttons at the edge on narrow screens. Removed duplicate era CSS rules. Build passed with only pre-existing warnings. (2026-06-19) |
 | MP-MERGE-MAIN-AUTH-OAUTH-002 | DONE | — | Pushed auth fixes to main: fee2aea (MP-FIX-AUTH-SIGNOUT-NOTIFY-001) and f53bd1c (MP-FIX-OAUTH-REDIRECT-DYNAMIC-001). Both clean builds passed (STEP 1 and STEP 4) with only pre-existing ESLint warnings. No merge conflicts. Pushed commit 0079482 to origin/main. (2026-06-19) |
 | MP-FIX-OAUTH-REDIRECT-DYNAMIC-001 | DONE | src/components/AuthModal.tsx | Replaced hardcoded OAuth redirect URLs (https://guess-history.com) with runtime-derived window.location.origin. Fixes www/non-www domain mismatch and prevents breakage on Vercel preview URLs or future domain changes. Both signInWithOAuth and resetPasswordForEmail now use dynamic origin. Component has "use client" directive so window is guaranteed available. TypeScript and build verification passed. (2026-06-19) |
