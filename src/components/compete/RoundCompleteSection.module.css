@@ -4,7 +4,7 @@
 
 .container {
   padding: 0 12px;
-  padding-bottom: 72px;
+  padding-bottom: 130px;
   max-width: 720px;
   margin: 0 auto;
   width: 100%;
@@ -428,14 +428,19 @@
 /* ── Countdown / ready card ── */
 
 .countdownCard {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
   background: var(--gh-general-card-bg);
   border: 1px solid var(--gh-general-card-border);
-  border-radius: var(--gh-radius-md);
-  padding: 16px;
-  margin-bottom: 10px;
+  border-top: none;
+  border-radius: 0;
+  padding: 12px 16px;
   backdrop-filter: var(--gh-glass-blur);
   -webkit-backdrop-filter: var(--gh-glass-blur);
   box-shadow: var(--gh-glass-shadow);
+  z-index: 999;
 }
 
 .countdownText {
@@ -493,9 +498,9 @@
 }
 
 .progressDot {
-  height: 4px;
-  width: 28px;
-  border-radius: 2px;
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
   background: var(--dot-bg, #374151);
   opacity: var(--dot-opacity, 1);
 }
@@ -509,13 +514,14 @@
 .nextButton {
   background: var(--gh-orange);
   color: var(--gh-btn-text);
-  font-weight: 700;
-  font-size: var(--font-sm);
+  font-weight: 800;
+  font-size: 15px;
   border: none;
-  border-radius: 8px;
-  padding: 10px 18px;
+  border-radius: 12px;
+  padding: 12px 26px;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: 0 6px 22px rgba(249, 115, 22, 0.35);
 }
 
 .nextButtonDisabled {
