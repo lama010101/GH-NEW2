@@ -11,6 +11,17 @@
   box-shadow: 0 4px 24px var(--gh-card-shadow), 0 0 20px var(--gh-where-card-glow);
 }
 
+.cardBare {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
