@@ -118,6 +118,43 @@
   color: var(--gh-text-secondary);
 }
 
+.accuracyRank {
+  text-align: center;
+  margin-top: 2px;
+  font-size: var(--font-xs);
+  color: var(--gh-text-muted);
+}
+
+.accuracyBreakdownRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.accuracyBreakdownItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-sm);
+}
+
+.accuracyBreakdownDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.accuracyBreakdownLabel {
+  color: var(--gh-text-primary);
+}
+
+.accuracyBreakdownValue {
+  font-weight: 700;
+}
+
 .hintPenaltyBadge {
   text-align: center;
   margin-top: 4px;
