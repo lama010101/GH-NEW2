@@ -154,6 +154,15 @@ export default function LobbySection({
   );
   const suppressEraSyncRef = useRef(false);
 
+  const centerEarlyModernOnMobile = useCallback((rail: HTMLDivElement | null) => {
+    if (!rail || typeof window === 'undefined') return;
+    if (window.innerWidth >= 640) return;
+    const btn = rail.querySelector('[data-era="earlymodern"]');
+    if (btn instanceof HTMLElement) {
+      btn.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+    }
+  }, []);
+
   const toggleEra = useCallback((id: EraId) => {
     if (selectedEras.has(id) && selectedEras.size === 1) return;
     const next = new Set(selectedEras);
