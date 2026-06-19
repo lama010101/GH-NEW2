@@ -65,21 +65,25 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
 
   const clamped = Math.max(0, Math.min(100, displayed));
   const offset = circumference * (1 - clamped / 100);
-  const hue = Math.round((clamped / 100) * 120);
-  const color = `hsl(${hue}, 100%, 50%)`;
 
   return (
     <svg viewBox="0 0 200 200" style={{ width: 170, height: 170, display: "block", margin: "0 auto" }}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2a2a2a" strokeWidth={strokeWidth} />
+      <defs>
+        <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#38bdf8" />
+          <stop offset="100%" stopColor="#8b5cf6" />
+        </linearGradient>
+      </defs>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#3f3f46" strokeWidth={strokeWidth} />
       <circle
         cx={cx} cy={cy} r={r} fill="none"
-        stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+        stroke="url(#ringGradient)" strokeWidth={strokeWidth} strokeLinecap="round"
         strokeDasharray={circumference} strokeDashoffset={offset}
         transform={`rotate(-90 ${cx} ${cy})`}
       />
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central"
-        fill="white" fontSize={52} fontWeight="bold">
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={52} fontWeight="bold">
         {clamped}
+        <tspan fontSize={22} dx="2" dy="-18">%</tspan>
       </text>
     </svg>
   );
