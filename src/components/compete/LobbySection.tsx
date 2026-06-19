@@ -839,7 +839,7 @@ export default function LobbySection({
                   </button>
                 )}
               </div>
-              <div className={styles['lobbyEraGrid']}>
+              <div className={styles['lobbyEraRail']}>
                 {ERAS.map(era => {
                   const on = selectedEras.has(era.id);
                   return (
@@ -852,11 +852,9 @@ export default function LobbySection({
                       disabled={!isHost}
                       aria-pressed={on}
                     >
+                      <span className={styles['lobbyEraLabel']}>{era.label}</span>
                       <span className={styles['lobbyEraIcon']}>{era.icon}</span>
-                      <span className={styles['lobbyEraText']}>
-                        <span className={styles['lobbyEraLabel']}>{era.label}</span>
-                        <span className={styles['lobbyEraSpan']}>{era.span}</span>
-                      </span>
+                      <span className={styles['lobbyEraSpan']}>{era.span}</span>
                     </button>
                   );
                 })}
@@ -884,7 +882,7 @@ export default function LobbySection({
                   </button>
                 )}
               </div>
-              <div className={styles['lobbyEraGrid']}>
+              <div className={styles['lobbyEraRail']}>
                 {ERAS.map(era => {
                   const on = selectedEras.has(era.id);
                   return (
@@ -897,11 +895,9 @@ export default function LobbySection({
                       disabled={!isHost}
                       aria-pressed={on}
                     >
+                      <span className={styles['lobbyEraLabel']}>{era.label}</span>
                       <span className={styles['lobbyEraIcon']}>{era.icon}</span>
-                      <span className={styles['lobbyEraText']}>
-                        <span className={styles['lobbyEraLabel']}>{era.label}</span>
-                        <span className={styles['lobbyEraSpan']}>{era.span}</span>
-                      </span>
+                      <span className={styles['lobbyEraSpan']}>{era.span}</span>
                     </button>
                   );
                 })}
