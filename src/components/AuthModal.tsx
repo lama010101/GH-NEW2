@@ -46,7 +46,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     const { error } = await supabaseBrowser.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `https://guess-history.com/auth/callback?next=/`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/`,
       },
     });
 
@@ -114,7 +114,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     setLoading(true);
     setError(null);
     const { error } = await supabaseBrowser.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://guess-history.com/auth/callback?next=/account",
+      redirectTo: `${window.location.origin}/auth/callback?next=/account`,
     });
     setLoading(false);
     if (error) {
