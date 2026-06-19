@@ -38,6 +38,7 @@ interface WhereCardProps {
   snapshotPlayers: SessionPlayer[];
   currentRoundIndex: number;
   isVisible?: boolean;
+  bare?: boolean;
 }
 
 export default function WhereCard({
@@ -58,12 +59,13 @@ export default function WhereCard({
   snapshotPlayers,
   currentRoundIndex,
   isVisible,
+  bare,
 }: WhereCardProps) {
   const t = useTranslations('game');
   const myResult = roundResults?.find(r => r.playerId === playerId);
 
   return (
-    <div className={styles.card}>
+    <div className={bare ? styles.cardBare : styles.card}>
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
