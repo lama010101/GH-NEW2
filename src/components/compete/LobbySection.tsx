@@ -848,7 +848,7 @@ export default function LobbySection({
                   </button>
                 )}
               </div>
-              <div className={styles['lobbyEraRail']}>
+              <div className={styles['lobbyEraRail']} ref={centerEarlyModernOnMobile}>
                 {ERAS.map(era => {
                   const on = selectedEras.has(era.id);
                   return (
@@ -891,7 +891,7 @@ export default function LobbySection({
                   </button>
                 )}
               </div>
-              <div className={styles['lobbyEraRail']}>
+              <div className={styles['lobbyEraRail']} ref={centerEarlyModernOnMobile}>
                 {ERAS.map(era => {
                   const on = selectedEras.has(era.id);
                   return (
