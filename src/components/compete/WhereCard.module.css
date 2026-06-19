@@ -150,7 +150,7 @@
 }
 
 .correctName {
-  color: var(--gh-text-primary);
+  color: var(--gh-orange);
   font-size: var(--font-base);
   font-weight: 700;
 }
