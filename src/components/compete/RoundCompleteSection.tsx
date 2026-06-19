@@ -72,12 +72,14 @@ export default function RoundCompleteSection({
   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [leaderboardTab, setLeaderboardTab] = useState<'thisRound' | 'allRounds'>('thisRound');
+  const [whereWhenTab, setWhereWhenTab] = useState<'where' | 'when'>('where');
 
   useEffect(() => {
     setIsAccuracyVisible(false);
     setIsWhereVisible(false);
     setIsWhenVisible(false);
     setIsRingDone(false);
+    setWhereWhenTab('where');
     // Reset to 'thisRound' tab if 'allRounds' is selected but only 1 round exists
     if (leaderboardTab === 'allRounds' && snapshot.rounds.length <= 1) {
       setLeaderboardTab('thisRound');
@@ -93,20 +95,22 @@ export default function RoundCompleteSection({
   }, []);
 
   useEffect(() => {
+    if (isWhereVisible) return;
     const el = whereCardRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setIsWhereVisible(true); obs.disconnect(); } }, { threshold: 0.5 });
     obs.observe(el);
     return () => obs.disconnect();
-  }, []);
+  }, [whereWhenTab, isWhereVisible]);
 
   useEffect(() => {
+    if (isWhenVisible) return;
     const el = whenCardRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setIsWhenVisible(true); obs.disconnect(); } }, { threshold: 0.5 });
     obs.observe(el);
     return () => obs.disconnect();
-  }, []);
+  }, [whereWhenTab, isWhenVisible]);
 
   return (
     <div className={styles.container} data-testid="round-complete-section" data-status={snapshot.status} data-round-index={snapshot.currentRoundIndex}>
@@ -291,40 +295,67 @@ export default function RoundCompleteSection({
               )}
             </div>
 
-            {/* WHERE + WHEN CARDS */}
-            <div className={styles.cardsGrid}>
-              <div ref={whereCardRef}><WhereCard
-                roundResults={roundResults}
-                playerId={playerId}
-                correctLat={correctLat}
-                correctLng={correctLng}
-                correctName={correctName}
-                whereAccPenalty={submittedHintPenaltyRef.current.accPenalty}
-                guessLat={guessLat}
-                guessLng={guessLng}
-                myDistanceKm={myDistanceKm}
-                whereLbExpanded={whereLbExpanded}
-                setWhereLbExpanded={setWhereLbExpanded}
-                whereCluesExpanded={whereCluesExpanded}
-                setWhereCluesExpanded={setWhereCluesExpanded}
-                roundHints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
-                snapshotPlayers={snapshot.players}
-                currentRoundIndex={snapshot.currentRoundIndex}
-                isVisible={isWhereVisible}
-              /></div>
-              <div ref={whenCardRef}><WhenCard
-                roundResults={roundResults}
-                playerId={playerId}
-                correctYear={correctYear}
-                whenAccPenalty={submittedHintPenaltyRef.current.whenAccPenalty}
-                whenLbExpanded={whenLbExpanded}
-                setWhenLbExpanded={setWhenLbExpanded}
-                whenCluesExpanded={whenCluesExpanded}
-                setWhenCluesExpanded={setWhenCluesExpanded}
-                roundHints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
-                snapshotPlayers={snapshot.players}
-                isVisible={isWhenVisible}
-              /></div>
+            {/* WHERE + WHEN CARD (merged, tabbed) */}
+            <div className={styles.whereWhenCard}>
+              <div className={styles.whereWhenTabs}>
+                <button
+                  className={`${styles.whereWhenTab} ${whereWhenTab === 'where' ? styles.whereWhenTabActiveWhere : ''}`}
+                  onClick={() => setWhereWhenTab('where')}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/badges/where.webp" alt="" width={20} height={20} className={styles.whereWhenTabIcon} />
+                  {t('where')}
+                </button>
+                <button
+                  className={`${styles.whereWhenTab} ${whereWhenTab === 'when' ? styles.whereWhenTabActiveWhen : ''}`}
+                  onClick={() => setWhereWhenTab('when')}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/badges/when.webp" alt="" width={20} height={20} className={styles.whereWhenTabIcon} />
+                  {t('when')}
+                </button>
+              </div>
+              {whereWhenTab === 'where' ? (
+                <div ref={whereCardRef}>
+                  <WhereCard
+                    bare
+                    roundResults={roundResults}
+                    playerId={playerId}
+                    correctLat={correctLat}
+                    correctLng={correctLng}
+                    correctName={correctName}
+                    whereAccPenalty={submittedHintPenaltyRef.current.accPenalty}
+                    guessLat={guessLat}
+                    guessLng={guessLng}
+                    myDistanceKm={myDistanceKm}
+                    whereLbExpanded={whereLbExpanded}
+                    setWhereLbExpanded={setWhereLbExpanded}
+                    whereCluesExpanded={whereCluesExpanded}
+                    setWhereCluesExpanded={setWhereCluesExpanded}
+                    roundHints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
+                    snapshotPlayers={snapshot.players}
+                    currentRoundIndex={snapshot.currentRoundIndex}
+                    isVisible={isWhereVisible}
+                  />
+                </div>
+              ) : (
+                <div ref={whenCardRef}>
+                  <WhenCard
+                    bare
+                    roundResults={roundResults}
+                    playerId={playerId}
+                    correctYear={correctYear}
+                    whenAccPenalty={submittedHintPenaltyRef.current.whenAccPenalty}
+                    whenLbExpanded={whenLbExpanded}
+                    setWhenLbExpanded={setWhenLbExpanded}
+                    whenCluesExpanded={whenCluesExpanded}
+                    setWhenCluesExpanded={setWhenCluesExpanded}
+                    roundHints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
+                    snapshotPlayers={snapshot.players}
+                    isVisible={isWhenVisible}
+                  />
+                </div>
+              )}
             </div>
 
             {/* HINTS USED CARD */}
