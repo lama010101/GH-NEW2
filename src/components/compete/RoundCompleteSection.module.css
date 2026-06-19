@@ -155,6 +155,13 @@
   margin-bottom: 10px;
 }
 
+.leaderboardAccentBar {
+  width: 4px;
+  height: 18px;
+  border-radius: 999px;
+  background: #22d3ee;
+}
+
 .leaderboardTabs {
   display: flex;
   gap: 8px;
@@ -222,10 +229,18 @@
   background: var(--gh-row-self-bg);
 }
 
+.lbRowSelfAccent {
+  background: rgba(34, 211, 238, 0.08);
+}
+
 .lbRank {
   font-size: 12px; /* layout-constrained — do not tokenize */
   color: var(--gh-text-muted);
   min-width: 14px;
+}
+
+.lbRankGold {
+  color: #ffd54a;
 }
 
 .lbNameCell {
@@ -243,6 +258,15 @@
   color: var(--gh-text-muted);
   font-size: 12px; /* layout-constrained — do not tokenize */
   margin-left: 4px;
+}
+
+.lbYouPill {
+  font-size: 10px;
+  font-weight: 700;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.15);
+  padding: 1px 7px;
+  border-radius: 999px;
 }
 
 .lbNoGuessTag {
