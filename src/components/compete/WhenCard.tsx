@@ -27,6 +27,7 @@ interface WhenCardProps {
   roundHints: Hint[];
   snapshotPlayers: SessionPlayer[];
   isVisible?: boolean;
+  bare?: boolean;
 }
 
 export default function WhenCard({
@@ -41,6 +42,7 @@ export default function WhenCard({
   roundHints,
   snapshotPlayers,
   isVisible,
+  bare,
 }: WhenCardProps) {
   const t = useTranslations('game');
   // Compute whenRows
@@ -91,7 +93,7 @@ export default function WhenCard({
   });
 
   return (
-    <div className={styles.card}>
+    <div className={bare ? styles.cardBare : styles.card}>
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.titleGroup}>
