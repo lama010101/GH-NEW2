@@ -2167,4 +2167,10 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - Status: COMPLETE
 - File: src/app/globals.css
 - Change: --gh-violet #8b5cf6 → #e879f9; --gh-when-card-bg/border/glow RGB updated to match
+
+## MP-FEAT-WHEREWHEN-MERGE-001 through 006 — Merge WhereCard/WhenCard into single tabbed result card
+- Status: COMPLETE
+- Files: WhereCard.tsx/.module.css, WhenCard.tsx/.module.css, RoundCompleteSection.tsx/.module.css
+- Change: WHERE and WHEN now render inside one shared card with a tab toggle (cyan/violet active state), matching prototype structure. Both cards gained a `bare` prop to suppress their own chrome when tabbed. Fixed IntersectionObserver badge-reveal effects to re-attach on tab switch.
+- Commits: c26c9f4, ae071df, 751ec9c, c24e5c2, 9a386fd, 5b0c333
 - Commit: ef2598a
