@@ -225,7 +225,10 @@ export default function RoundCompleteSection({
 
             {/* ROUND LEADERBOARD CARD */}
             <div className={styles.leaderboardCard}>
-              <div className={styles.leaderboardTitle}>{t('round_leaderboard')}</div>
+              <div className={styles.leaderboardTitle}>
+                <span className={styles.leaderboardAccentBar} />
+                {t('round_leaderboard')}
+              </div>
               <div className={styles.leaderboardTabs}>
                 <button
                   className={`${styles.leaderboardTab} ${leaderboardTab === 'thisRound' ? styles.leaderboardTabActive : ''}`}
@@ -254,8 +257,8 @@ export default function RoundCompleteSection({
                 const displayValue = leaderboardTab === 'thisRound' ? Math.round(row.accuracy) : row.cumulativeScore;
                 const displaySuffix = leaderboardTab === 'thisRound' ? '%' : '';
                 return (
-                  <div key={row.rank} className={`${styles.lbRow} ${row.isMe ? styles.lbRowSelf : ""}`}>
-                    <span className={styles.lbRank}>{row.rank}</span>
+                  <div key={row.rank} className={`${styles.lbRow} ${row.isMe ? styles.lbRowSelfAccent : ""}`}>
+                    <span className={`${styles.lbRank} ${row.rank === 1 ? styles.lbRankGold : ""}`}>{row.rank}</span>
                     <span className={styles.lbNameCell}>
                       <span className={styles.lbNameInner}>
                         <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
@@ -263,7 +266,7 @@ export default function RoundCompleteSection({
                           {row.displayName}
                         </span>
                       </span>
-                      {row.isMe && <span className={styles.lbYouTag}>{t('you')}</span>}
+                      {row.isMe && <span className={styles.lbYouPill}>{t('you')}</span>}
                     </span>
                     <span className={styles.lbAccPill}>
                       <span style={{ color: accColor, fontSize: "var(--gh-font-base)" }}>{displayValue}</span>
@@ -276,7 +279,7 @@ export default function RoundCompleteSection({
                 snapshot.players.map((p) => {
                   const isMe = p.playerId === playerId;
                   return (
-                    <div key={p.playerId} className={`${styles.lbRow} ${isMe ? styles.lbRowSelf : ""}`}>
+                    <div key={p.playerId} className={`${styles.lbRow} ${isMe ? styles.lbRowSelfAccent : ""}`}>
                       <span className={styles.lbRank}>—</span>
                       <span className={styles.lbNameCell}>
                         <span className={styles.lbNameInner}>
@@ -285,7 +288,7 @@ export default function RoundCompleteSection({
                             {p.displayName || p.playerId.slice(0, 8)}
                           </span>
                         </span>
-                        {isMe && <span className={styles.lbYouTag}>{t('you')}</span>}
+                        {isMe && <span className={styles.lbYouPill}>{t('you')}</span>}
                         <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>
                       </span>
                       <span className={styles.lbAccEmpty}>—</span>
