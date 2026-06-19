@@ -10,8 +10,14 @@ export type IdentityState =
 
 let cachedState: IdentityState = { status: "loading" };
 
+const subscribers = new Set<(state: IdentityState) => void>();
+
 export function getCachedIdentityState(): IdentityState {
   return cachedState;
+}
+
+function notifySubscribers(state: IdentityState) {
+  subscribers.forEach(cb => cb(state));
 }
 
 let resolveReady: ((playerId: string) => void) | null = null;
@@ -142,6 +148,7 @@ export async function signOut(): Promise<void> {
     bootstrapped = false;
     cachedState = { status: "unauthenticated" };
     resetReadyPromise();
+    notifySubscribers(cachedState);
     signingOut = false;
   }
 }
@@ -149,6 +156,8 @@ export async function signOut(): Promise<void> {
 export function subscribeToIdentityChanges(
   callback: (state: IdentityState) => void
 ): () => void {
+  subscribers.add(callback);
+
   const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
     async (event, session) => {
       if (signingOut) {
@@ -181,5 +190,8 @@ export function subscribeToIdentityChanges(
     callback(cachedState);
   }
 
-  return () => subscription.unsubscribe();
+  return () => {
+    subscribers.delete(callback);
+    subscription.unsubscribe();
+  };
 }
