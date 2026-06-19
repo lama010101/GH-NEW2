@@ -274,10 +274,56 @@
   font-weight: 600;
 }
 
-/* ── Where/When grid ── */
+/* ── Where/When merged tabbed card ── */
 
-.cardsGrid {
-  /* mobile: single column, stacked — default flow */
+.whereWhenCard {
+  background: var(--gh-general-card-bg);
+  border: 1px solid var(--gh-general-card-border);
+  border-radius: var(--gh-radius-md);
+  padding: 16px;
+  margin-bottom: 10px;
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
+}
+
+.whereWhenTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.whereWhenTab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.whereWhenTabIcon {
+  object-fit: contain;
+}
+
+.whereWhenTabActiveWhere {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--gh-teal);
+  color: var(--gh-teal);
+}
+
+.whereWhenTabActiveWhen {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--gh-violet);
+  color: var(--gh-violet);
 }
 
 /* ── Hints used card ── */
@@ -450,12 +496,6 @@
 /* ── Responsive overrides ── */
 
 @media (min-width: 768px) {
-  .cardsGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
   .bottomBar {
     position: static;
     display: flex;
