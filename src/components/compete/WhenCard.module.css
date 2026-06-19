@@ -73,7 +73,7 @@
 .correctValue {
   font-size: var(--font-base);
   font-weight: 700;
-  color: var(--gh-text-primary);
+  color: var(--gh-orange);
 }
 
 /* ── Timeline ── */
