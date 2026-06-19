@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   }
 
   const cookieStore = cookies();
-  let response = NextResponse.next({ request });
+  const response = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
             cookiesToSet.forEach(({ name, value }) =>
               request.cookies.set(name, value)
             );
-            response = NextResponse.next({ request });
             cookiesToSet.forEach(({ name, value, options }) =>
               response.cookies.set(name, value, options)
             );
@@ -44,8 +43,12 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[auth/callback] exchangeCodeForSession error:", error.message);
-    return NextResponse.redirect(new URL(`/?error=auth_failed`, request.url));
+    const redirectResponse = NextResponse.redirect(new URL(`/?error=auth_failed`, request.url));
+    response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie.name, cookie.value, cookie));
+    return redirectResponse;
   }
 
-  return NextResponse.redirect(new URL(next, response.url));
+  const redirectResponse = NextResponse.redirect(new URL(next, request.url));
+  response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie.name, cookie.value, cookie));
+  return redirectResponse;
 }
