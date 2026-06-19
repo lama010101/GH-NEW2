@@ -189,6 +189,7 @@ export default function RoundResultsPrototypePage() {
   const [lbTab, setLbTab] = useState<"thisRound" | "allRounds">("thisRound");
   const [lbOpen, setLbOpen] = useState(false);
   const [hintsOpen, setHintsOpen] = useState(false);
+  const [descOpen, setDescOpen] = useState(false);
 
   const currentResults = lbTab === "thisRound" ? RESULTS : ALL_ROUNDS_RESULTS;
   const me = currentResults.find((r) => r.isMe)!;
@@ -229,38 +230,31 @@ export default function RoundResultsPrototypePage() {
         <div className={styles.bgScrim} />
 
         <div className={styles.scroll}>
-        {/* ── Round banner ── */}
-        <div className={styles.banner}>
-          <span className={styles.bannerKicker}>ROUND {CURRENT_ROUND + 1} / {TOTAL_ROUNDS}</span>
-          <h1 className={styles.bannerTitle}>
-            You placed <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
-          </h1>
-          <div className={styles.bannerStats}>
-            <span>+{me.score.toLocaleString()} XP</span>
-            <span className={styles.bannerDot}>·</span>
-            <span>{me.accuracy}% accuracy</span>
-          </div>
-        </div>
-
         {/* ── Event card ── */}
         <section className={`${styles.card} ${styles.eventCard}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/home_background.webp" alt={EVENT_TITLE} className={styles.eventImg} />
-          <div className={styles.eventGradient} />
-          <div className={styles.eventOverlay}>
-            <span className={styles.eventMeta}>{CORRECT_YEAR} · {CORRECT_LOCATION}</span>
+          <div className={styles.eventContent}>
             <h1 className={styles.eventTitle}>{EVENT_TITLE}</h1>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/home_background.webp" alt={EVENT_TITLE} className={styles.eventImg} />
+            <div className={styles.eventAnswer}>
+              <span className={styles.answerLabel}>Correct answer:</span>
+              <span className={styles.answerValue}>{CORRECT_LOCATION} · {CORRECT_YEAR}</span>
+            </div>
+            <button className={styles.descToggle} onClick={() => setDescOpen(!descOpen)}>
+              <span className={styles.chev} style={{ transform: descOpen ? "rotate(90deg)" : "none" }}>›</span>
+              {descOpen ? "Hide" : "Show"} description
+            </button>
+            {descOpen && <p className={styles.eventDesc}>{EVENT_DESC}</p>}
           </div>
         </section>
-        <p className={styles.eventDesc}>{EVENT_DESC}</p>
 
         {/* ── Score hero card ── */}
         <section className={`${styles.card} ${styles.heroCard}`}>
           <AccuracyRing value={me.accuracy} />
           <div className={styles.heroSide}>
             <div className={styles.xpBlock}>
-              <span className={styles.xpValue}>+{me.score.toLocaleString()}</span>
-              <span className={styles.xpLabel}>XP earned</span>
+              <span className={styles.xpValue}>{me.accuracy}%</span>
+              <span className={styles.xpLabel}>#{myRank}{rankSuffix(myRank)} place</span>
             </div>
             {me.badge && (
               <span
@@ -298,14 +292,14 @@ export default function RoundResultsPrototypePage() {
           <div className={styles.tabs}>
             <button
               className={`${styles.tab} ${lbTab === "thisRound" ? styles.tabActive : ""}`}
-              style={lbTab === "thisRound" ? { color: "#22d3ee", borderColor: "#22d3ee" } : undefined}
+              style={lbTab === "thisRound" ? { color: "#ffd54a", borderColor: "#ffd54a" } : undefined}
               onClick={() => setLbTab("thisRound")}
             >
               This Round
             </button>
             <button
               className={`${styles.tab} ${lbTab === "allRounds" ? styles.tabActive : ""}`}
-              style={lbTab === "allRounds" ? { color: "#8b5cf6", borderColor: "#8b5cf6" } : undefined}
+              style={lbTab === "allRounds" ? { color: "#ffd54a", borderColor: "#ffd54a" } : undefined}
               onClick={() => setLbTab("allRounds")}
             >
               All Rounds
@@ -320,7 +314,6 @@ export default function RoundResultsPrototypePage() {
                   {r.name}
                   {r.isMe && <span className={styles.youTag}>you</span>}
                 </span>
-                <span className={styles.lbXp}>+{r.score.toLocaleString()}</span>
                 <span className={styles.lbAcc} style={{ color: accColor(r.accuracy) }}>{r.accuracy}%</span>
               </div>
             ))}
