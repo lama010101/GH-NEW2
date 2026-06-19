@@ -423,25 +423,6 @@ export default function LobbySection({
   const isReady         = viewer?.ready ?? false;
   const isHost          = viewer?.isHost ?? false;
 
-  /* ── Auto-start: fire onStartGame once when all players are ready and >= 1 players ── */
-  const autoStartFiredRef = useRef(false);
-  useEffect(() => {
-    if (
-      !autoStartFiredRef.current &&
-      snapshot.players.length >= 1 &&
-      snapshot.allPlayersReady &&
-      !busy
-    ) {
-      autoStartFiredRef.current = true;
-      onStartGame();
-    }
-    // Reset guard if conditions no longer met (player un-readied)
-    if (!snapshot.allPlayersReady) {
-      autoStartFiredRef.current = false;
-    }
-  }, [snapshot.allPlayersReady, snapshot.players.length, busy, onStartGame]);
-
-
   return (
     <div className={styles['lobby-shell']} data-testid="lobby-shell">
       <header className={styles['lobby-header']}>
