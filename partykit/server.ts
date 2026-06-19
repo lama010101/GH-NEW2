@@ -223,6 +223,8 @@ export default class GameServer {
   // out of the active roster within a round.
   private static readonly LEAVE_GRACE_MS = 5_000;
   private static readonly ROUND_EXPIRY_SUBMIT_GRACE_MS = 1_000;
+  // GAME_MODES_SPEC.md Section 5.13: "Minimum 2 players to start."
+  private static readonly MIN_PLAYERS_TO_START = 2;
 
   // Runtime state — derived, rebuildable from DB at any time.
   // This is the DO's authoritative view. DB remains canonical truth.
@@ -417,6 +419,54 @@ export default class GameServer {
       status: (isRuntimeState(this.snapshot) ? this.snapshot.status : null) ?? null,
     });
     this.broadcastStateUpdate();
+  }
+
+  /**
+   * Server-authoritative auto-start: called after every TOGGLE_READY write.
+   * Re-derives the start condition from DO's own state — not from counting
+   * client messages. Shared by the TOGGLE_READY post-check and the
+   * explicit START_GAME handler. Guarded by startInFlight mutex.
+   */
+  private async attemptAutoStart(gameId: string): Promise<void> {
+    if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") return;
+    const activePlayers = this.snapshot.players.filter(p => p.leftAt === null);
+    const allReady = activePlayers.length >= GameServer.MIN_PLAYERS_TO_START &&
+      activePlayers.every(p => p.ready === true);
+    if (!allReady) return;
+    if (this.startInFlight) {
+      console.log("[PartyKit] attemptAutoStart skipped — start already in flight");
+      return;
+    }
+    this.startInFlight = true;
+    const hostPlayer = activePlayers.find(p => p.isHost);
+    const hostPlayerId = hostPlayer?.playerId;
+    if (!hostPlayerId) {
+      console.error("[PartyKit] attemptAutoStart: no host found in active players");
+      this.startInFlight = false;
+      return;
+    }
+    console.log("[PartyKit] All players ready — server-initiating auto-start");
+    try {
+      const baseUrl = this.getNextJsBaseUrl();
+      const apiUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/start`;
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+        },
+        body: JSON.stringify({ playerId: hostPlayerId })
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(`[attemptAutoStart] start API error ${response.status}: ${text}`);
+        return;
+      }
+      const snapshot = await response.json();
+      this.applySnapshotAndBroadcast(snapshot);
+    } finally {
+      this.startInFlight = false;
+    }
   }
 
   /**
@@ -948,6 +998,9 @@ export default class GameServer {
           }
           const snapshot = await response.json();
           this.applySnapshotAndBroadcast(snapshot);
+          // Server-authoritative auto-start: re-derive condition from DO state.
+          // No client message required — server checks on every ready-state change.
+          await this.attemptAutoStart(gameId);
           break;
         }
 
@@ -958,7 +1011,7 @@ export default class GameServer {
             break;
           }
 
-          // Validate: only the host can start the game
+          // Validate: only the host can manually force-start
           const senderPlayerId = this.connections.get(sender.id);
           const senderPlayer = this.snapshot.players.find(p => p.playerId === senderPlayerId);
           if (!senderPlayer || !senderPlayer.isHost) {
@@ -966,7 +1019,10 @@ export default class GameServer {
             break;
           }
 
-          // Prevent double-start: reject if another start is already in flight
+          // Delegate to attemptAutoStart which owns the startInFlight mutex.
+          // Note: attemptAutoStart checks allReady + MIN_PLAYERS; if the host
+          // wants to force-start before all are ready, that path is preserved
+          // here by bypassing the allReady guard via direct API call below.
           if (this.startInFlight) {
             console.log("[PartyKit] START_GAME ignored — start already in flight");
             break;

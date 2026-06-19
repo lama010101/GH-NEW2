@@ -82,6 +82,7 @@ export default function LobbySection({
   onSetEraSelection,
 }: LobbySectionProps) {
   void onSetYearRange;
+  void onStartGame;
   const router = useRouter();
   const t = useTranslations();
   const tGame = useTranslations('game');
