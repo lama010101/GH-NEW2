@@ -10,11 +10,11 @@ Status values: `DONE` | `IN PROGRESS` | `BLOCKED` | `SKIPPED` | `PLAN`
 - [Appendix — Detailed Task Descriptions & Notes](#appendix--detailed-task-descriptions--notes)
 
 ## Summary
-- Total log rows: **807** across **771** unique task IDs
+- Total log rows: **808** across **772** unique task IDs
 - True duplicate entries removed: **12** (identical or near-identical notes)
 - Distinct sequel tasks sharing an ID: **36** (kept as separate rows)
 - Status breakdown:
-  - DONE: 800
+  - DONE: 801
   - BLOCKED: 1
   - SKIPPED: 4
   - PLAN: 1
