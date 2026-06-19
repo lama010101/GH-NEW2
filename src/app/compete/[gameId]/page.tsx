@@ -262,11 +262,12 @@ export default function CompeteGamePage() {
   });
 
   const handleAdvanceRound = useCallback(() => {
-    if (!snapshot || snapshot.status !== 'ROUND_COMPLETE') return;
+    if (!snapshot) return;
     if (!playerId) return;
     setBusy(true);
     setError(null);
-    // Client → DO → DB: send READY_NEXT action signal via WS
+    // Client → DO → DB: send READY_NEXT action signal via WS.
+    // Server validates phase — client must NOT silently no-op on stale snapshot.status.
     readyNext(snapshot.currentRoundIndex);
     setTimeout(() => setBusy(false), 5000);
   }, [snapshot, playerId, readyNext]);
