@@ -599,9 +599,30 @@
 .histContextArrow {
   font-size: var(--gh-font-base);
   color: var(--gh-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.histContextArrowExpanded {
+  transform: rotate(90deg);
+  transition: transform 0.2s ease;
 }
 
 /* ── Historical Context bottom sheet (MP-UX-HIST-CONTEXT-001) ── */
+
+.histInlineBody {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+  padding: 0 16px;
+  font-size: var(--font-sm);
+  color: var(--gh-text-secondary);
+  line-height: 1.7;
+}
+
+.histInlineBodyExpanded {
+  max-height: 500px;
+  padding: 12px 16px 16px;
+}
 
 .histSheetOverlay {
   position: fixed;
