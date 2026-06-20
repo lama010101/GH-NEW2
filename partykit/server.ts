@@ -267,6 +267,11 @@ export default class GameServer {
   // Tracks which players have clicked "Next Round" during ROUND_COMPLETE phase.
   private readyForNext: Set<string> = new Set();
 
+  // Tracks whether we've already attempted the bounded full-flow retry for result auto-advance.
+  // Prevents unlimited rescheduling. Reset per-round when expectedRoundIndex changes.
+  private resultAdvanceRetryAttempted = false;
+  private lastResultAdvanceRoundIndex: number | null = null;
+
   // Pending results to be broadcast with next STATE_UPDATE.
   // Set when API returns results (e.g., /guess after round complete).
   // Cleared after broadcast to avoid stale results in future updates.
@@ -650,37 +655,83 @@ export default class GameServer {
     if (this.snapshot.currentRoundIndex !== expectedRoundIndex) return;
     if (this.advanceInFlight) return;
 
+    // Reset retry tracking per-round when expectedRoundIndex changes
+    if (this.lastResultAdvanceRoundIndex !== expectedRoundIndex) {
+      this.resultAdvanceRetryAttempted = false;
+      this.lastResultAdvanceRoundIndex = expectedRoundIndex;
+    }
+
     this.advanceInFlight = true;
     try {
       const baseUrl = this.getNextJsBaseUrl();
       const advanceUrl = `${baseUrl}/api/compete/${encodeURIComponent(this.room.id)}/advance`;
-      const advanceRes = await fetch(advanceUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
-        },
-        body: JSON.stringify({ cause: TransitionCause.TIMEOUT, roundIndex: expectedRoundIndex })
-      });
-      if (!advanceRes.ok) {
-        const text = await advanceRes.text();
-        throw new Error(`[triggerResultAutoAdvance] advance API error ${advanceRes.status}: ${text}`);
-      }
-      const advanceSnapshot = await advanceRes.json();
-      this.applySnapshotAndBroadcast(advanceSnapshot);
-    } catch (err) {
-      console.error("[PartyKit] Result auto-advance failed, attempting snapshot recovery:", err instanceof Error ? err.message : err);
+      
+      // Primary fetch with 10-second timeout
+      const advanceController = new AbortController();
+      const advanceTimeout = setTimeout(() => advanceController.abort(), 10000);
       try {
-        const baseUrl = this.getNextJsBaseUrl();
-        const stateRes = await fetch(`${baseUrl}/api/compete/${encodeURIComponent(this.room.id)}`, {
-          headers: { "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? "" }
+        const advanceRes = await fetch(advanceUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+          },
+          body: JSON.stringify({ cause: TransitionCause.TIMEOUT, roundIndex: expectedRoundIndex }),
+          signal: advanceController.signal
         });
-        if (stateRes.ok) {
-          const fallbackSnapshot = await stateRes.json();
-          this.applySnapshotAndBroadcast(fallbackSnapshot);
+        clearTimeout(advanceTimeout);
+        if (!advanceRes.ok) {
+          const text = await advanceRes.text();
+          throw new Error(`[triggerResultAutoAdvance] advance API error ${advanceRes.status}: ${text}`);
         }
-      } catch (fallbackErr) {
-        console.error("[PartyKit] triggerResultAutoAdvance fallback fetch threw:", fallbackErr);
+        const advanceSnapshot = await advanceRes.json();
+        this.applySnapshotAndBroadcast(advanceSnapshot);
+      } catch (err) {
+        clearTimeout(advanceTimeout);
+        console.error("[PartyKit] Result auto-advance failed, attempting snapshot recovery:", err instanceof Error ? err.message : err);
+        
+        // Fallback fetch with 10-second timeout and one bounded retry
+        let fallbackSuccess = false;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          if (attempt > 0) {
+            // Wait 2 seconds before retry
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+          try {
+            const fallbackController = new AbortController();
+            const fallbackTimeout = setTimeout(() => fallbackController.abort(), 10000);
+            try {
+              const stateRes = await fetch(`${baseUrl}/api/compete/${encodeURIComponent(this.room.id)}`, {
+                headers: { "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? "" },
+                signal: fallbackController.signal
+              });
+              clearTimeout(fallbackTimeout);
+              if (stateRes.ok) {
+                const fallbackSnapshot = await stateRes.json();
+                this.applySnapshotAndBroadcast(fallbackSnapshot);
+                fallbackSuccess = true;
+                break;
+              }
+            } catch (fallbackErr) {
+              clearTimeout(fallbackTimeout);
+              if (attempt === 1) {
+                console.error("[PartyKit] triggerResultAutoAdvance: all recovery attempts exhausted, round_index=" + expectedRoundIndex);
+              }
+            }
+          } catch (fallbackErr) {
+            if (attempt === 1) {
+              console.error("[PartyKit] triggerResultAutoAdvance: all recovery attempts exhausted, round_index=" + expectedRoundIndex);
+            }
+          }
+        }
+        
+        // If all recovery attempts failed and we haven't retried the full flow yet, reschedule once
+        if (!fallbackSuccess && !this.resultAdvanceRetryAttempted) {
+          this.resultAdvanceRetryAttempted = true;
+          setTimeout(() => {
+            this.triggerResultAutoAdvance(expectedRoundIndex);
+          }, 5000);
+        }
       }
     } finally {
       this.advanceInFlight = false;
