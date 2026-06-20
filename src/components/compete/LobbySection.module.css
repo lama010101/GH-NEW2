@@ -386,6 +386,8 @@
 .lobby-settings-grid {
   display: grid;
   gap: 0;
+  min-width: 0;
+  max-width: 100%;
 }
 .lobby-setting-item {
   display: flex;
@@ -395,6 +397,8 @@
   padding: 12px 0;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   transition: background 0.15s;
+  min-width: 0;
+  max-width: 100%;
 }
 .lobby-setting-item:last-child {
   border-bottom: none;
@@ -979,11 +983,11 @@
 .lobbyTabRow { display: flex; gap: 6px; margin-bottom: 16px; background: rgba(255,255,255,0.06); border-radius: 12px; padding: 4px; }
 .lobbyTabBtn { flex: 1; padding: 9px 0; border-radius: 9px; border: none; cursor: pointer; font-size: var(--font-xs); font-weight: 700; letter-spacing: 0.2px; color: rgba(255,255,255,0.55); background: transparent; transition: background 0.18s, color 0.18s; }
 .lobbyTabBtnActive { background: rgba(34,211,238,0.18); color: #22d3ee; border: 1px solid rgba(34,211,238,0.35); }
-.lobbySettingRowBlock { flex-direction: column; align-items: stretch; gap: 0; }
+.lobbySettingRowBlock { flex-direction: column; align-items: stretch; gap: 0; min-width: 0; max-width: 100%; }
 .lobbySettingRowHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .lobbySelectAllBtn { font-size: 12px; /* layout-constrained — do not tokenize */ font-weight: 600; color: var(--gh-teal); background: transparent; border: 1px solid var(--gh-teal); border-radius: 6px; padding: 3px 8px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
 .lobbySelectAllBtn:hover { background: rgba(34,211,238,0.10); }
-.lobbyEraRail { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; -ms-overflow-style: none; }
+.lobbyEraRail { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; -ms-overflow-style: none; min-width: 0; max-width: 100%; width: 100%; }
 .lobbyEraRail::-webkit-scrollbar { display: none; }
 .lobbyEraBtn { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 76px; flex: 0 0 auto; padding: 10px 12px; border-radius: 14px; border: 1px solid transparent; cursor: pointer; text-align: center; transition: opacity 0.15s; background: transparent; }
 .lobbyEraBtnOn { opacity: 1; }
