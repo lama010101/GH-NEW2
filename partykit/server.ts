@@ -232,6 +232,11 @@ export default class GameServer {
   private snapshot: unknown | null = null;
   private snapshotLoaded = false;
 
+  // Monotonic counter for snapshot broadcasts — increments on every snapshot update.
+  // Used as snapshotVersion to guarantee strictly increasing versions regardless of
+  // which DB table changed (round_events, session_players, etc.).
+  private broadcastVersionCounter = 0;
+
   // Timer handle for round countdown (Phase 4+ — not yet active).
   // Will be used to broadcast timer ticks and auto-advance on expiry.
   private roundTimerHandle: ReturnType<typeof setTimeout> | null = null;
@@ -316,6 +321,7 @@ export default class GameServer {
       }
     }
     this.snapshot = snapshot;
+    this.broadcastVersionCounter += 1;
     console.timeEnd("[PERF] loadFromDB:apiFetch");
     this.snapshotLoaded = true;
     // Rebuild readyForNext from READY_NEXT events for the current round only
@@ -412,6 +418,7 @@ export default class GameServer {
       }
     }
     this.snapshot = snapshot;
+    this.broadcastVersionCounter += 1;
     this.snapshotLoaded = true;
     this.scheduleRoundTimer();
     console.log("[STATE_UPDATE_OUTBOUND]", {
@@ -707,7 +714,7 @@ export default class GameServer {
         this.snapshot.players.length >= 1 &&
         this.snapshot.players.every(p => p.ready === true);
 
-      const snapshotVersion = Math.max(0, ...(this.snapshot.events?.map(e => e.id) ?? [0]));
+      const snapshotVersion = this.broadcastVersionCounter;
       snapshotWithReadyState = {
         ...this.snapshot,
         readyForNext: [...this.readyForNext],
