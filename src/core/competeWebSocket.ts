@@ -35,6 +35,7 @@ export class CompeteWebSocket {
   private reconnectDelay = 1000;
   private manuallyDisconnected = false;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+  private lastAppliedSnapshotVersion = -1;
 
   constructor(
     gameId: string,
@@ -111,13 +112,24 @@ export class CompeteWebSocket {
 
   private handleMessage(data: WebSocketMessage): void {
     switch (data.type) {
-      case "STATE_UPDATE":
+      case "STATE_UPDATE": {
+        // Monotonic version guard: reject stale out-of-order broadcasts.
+        // Only active when snapshotVersion is present on the incoming snapshot.
+        const incomingVersion = (data.snapshot as Record<string, unknown>)?.snapshotVersion;
+        if (typeof incomingVersion === "number") {
+          if (incomingVersion <= this.lastAppliedSnapshotVersion) {
+            console.warn("[CompeteWebSocket] Stale STATE_UPDATE rejected — incoming version:", incomingVersion, "last applied:", this.lastAppliedSnapshotVersion);
+            break;
+          }
+          this.lastAppliedSnapshotVersion = incomingVersion;
+        }
         // Merge results into snapshot before passing to callback
         const snapshotWithResults = data.results
           ? { ...(data.snapshot as Record<string, unknown>), results: data.results }
           : data.snapshot;
         this.callbacks.onStateUpdate?.(snapshotWithResults);
         break;
+      }
       case "PLAYER_SUBMITTED":
         this.callbacks.onPlayerSubmitted?.(data.playerId, data.playerName);
         break;

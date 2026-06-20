@@ -707,11 +707,13 @@ export default class GameServer {
         this.snapshot.players.length >= 1 &&
         this.snapshot.players.every(p => p.ready === true);
 
+      const snapshotVersion = Math.max(0, ...(this.snapshot.events?.map(e => e.id) ?? [0]));
       snapshotWithReadyState = {
         ...this.snapshot,
         readyForNext: [...this.readyForNext],
         resultPhaseEndsAt,
-        allPlayersReady
+        allPlayersReady,
+        snapshotVersion
       };
     }
     // Add readyForNext and resultPhaseEndsAt to snapshot before broadcasting
