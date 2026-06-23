@@ -12,121 +12,127 @@ test.describe('Multiplayer Simulation', () => {
   let browserPool: BrowserPool;
   let orchestrator: GameOrchestrator;
   let edgeCaseEngine: EdgeCaseEngine;
-  let chromiumBrowser: any;
-  let webkitBrowser: any;
-
-  test.beforeAll(async () => {
-    console.log('[SIMULATION] Setting up browsers...');
-    chromiumBrowser = await chromium.launch();
-    webkitBrowser = await webkit.launch();
-  });
-
-  test.afterAll(async () => {
-    console.log('[SIMULATION] Cleaning up browsers...');
-    await chromiumBrowser?.close();
-    await webkitBrowser?.close();
-  });
 
   test('6 players, 3 games, 5 rounds each, full edge-case suite', async () => {
     const stepLog: string[] = [];
     const assertionFailures: string[] = [];
 
-    // Helper to get the right browser engine for a device profile
-    const getBrowser = (device: DeviceProfile) => {
-      if (device === 'iphone-safari') {
-        return webkitBrowser;
-      }
-      return chromiumBrowser;
-    };
+    // Launch isolated browser instances for this test
+    const chromiumBrowser = await chromium.launch();
+    const webkitBrowser = await webkit.launch();
 
-    // Initialize browser pool
-    browserPool = new BrowserPool({
-      baseURL: BASE_URL,
-      users: TEST_USERS,
-      headed: false,
-    });
+    try {
+      // Helper to get the right browser engine for a device profile
+      const getBrowser = (device: DeviceProfile) => {
+        if (device === 'iphone-safari') {
+          return webkitBrowser;
+        }
+        return chromiumBrowser;
+      };
 
-    // Launch browsers and log in
-    await browserPool.launch(getBrowser);
+      // Initialize browser pool
+      browserPool = new BrowserPool({
+        baseURL: BASE_URL,
+        users: TEST_USERS,
+        headed: false,
+      });
 
-    // Initialize edge-case engine
-    edgeCaseEngine = new EdgeCaseEngine();
+      // Launch browsers and log in
+      await browserPool.launch(getBrowser);
 
-    // Initialize orchestrator
-    orchestrator = new GameOrchestrator({
-      browserPool,
-      partyKitHost: PARTYKIT_HOST,
-      totalRounds: 5,
-      totalGames: 3,
-      edgeCaseEngine,
-      onStep: (step) => {
-        console.log(`[SIMULATION] ${step}`);
-        stepLog.push(step);
-      },
-      onAssertionFailure: (failures) => {
-        assertionFailures.push(...failures);
-      },
-    });
+      // Initialize edge-case engine
+      edgeCaseEngine = new EdgeCaseEngine();
 
-    // Run the simulation
-    const results = await orchestrator.run();
+      // Initialize orchestrator
+      orchestrator = new GameOrchestrator({
+        browserPool,
+        partyKitHost: PARTYKIT_HOST,
+        totalRounds: 5,
+        totalGames: 3,
+        edgeCaseEngine,
+        onStep: (step) => {
+          console.log(`[SIMULATION] ${step}`);
+          stepLog.push(step);
+        },
+        onAssertionFailure: (failures) => {
+          assertionFailures.push(...failures);
+        },
+      });
 
-    // Report results
-    console.log('[SIMULATION] Results:', results);
-    console.log(`[SIMULATION] Edge cases injected: ${edgeCaseEngine.injectedCount}/${edgeCaseEngine.totalCount}`);
-    console.log(`[SIMULATION] Assertion failures: ${assertionFailures.length}`);
+      // Run the simulation
+      const results = await orchestrator.run();
 
-    // Assertions
-    expect(results.length).toBe(3);
-    expect(results.every((r) => r.completed)).toBe(true);
-    expect(edgeCaseEngine.injectedCount).toBeGreaterThan(0);
-    expect(assertionFailures.length).toBe(0);
+      // Report results
+      console.log('[SIMULATION] Results:', results);
+      console.log(`[SIMULATION] Edge cases injected: ${edgeCaseEngine.injectedCount}/${edgeCaseEngine.totalCount}`);
+      console.log(`[SIMULATION] Assertion failures: ${assertionFailures.length}`);
 
-    // Cleanup
-    await browserPool.closeAll();
+      // Assertions
+      expect(results.length).toBe(3);
+      expect(results.every((r) => r.completed)).toBe(true);
+      expect(edgeCaseEngine.injectedCount).toBeGreaterThan(0);
+      expect(assertionFailures.length).toBe(0);
+
+      // Cleanup
+      await browserPool.closeAll();
+    } finally {
+      // Close isolated browser instances
+      await chromiumBrowser.close();
+      await webkitBrowser.close();
+    }
   });
 
   test('resume-after-refresh: lobby, round-active, round-complete', async () => {
     // This test focuses specifically on the resume-after-refresh scenarios
     const stepLog: string[] = [];
 
-    const getBrowser = (device: DeviceProfile) => {
-      if (device === 'iphone-safari') {
-        return webkitBrowser;
-      }
-      return chromiumBrowser;
-    };
+    // Launch isolated browser instances for this test
+    const chromiumBrowser = await chromium.launch();
+    const webkitBrowser = await webkit.launch();
 
-    browserPool = new BrowserPool({
-      baseURL: BASE_URL,
-      users: TEST_USERS.slice(0, 2), // Only 2 players for this focused test
-      headed: false,
-    });
+    try {
+      const getBrowser = (device: DeviceProfile) => {
+        if (device === 'iphone-safari') {
+          return webkitBrowser;
+        }
+        return chromiumBrowser;
+      };
 
-    await browserPool.launch(getBrowser);
+      browserPool = new BrowserPool({
+        baseURL: BASE_URL,
+        users: TEST_USERS.slice(0, 2), // Only 2 players for this focused test
+        headed: false,
+      });
 
-    orchestrator = new GameOrchestrator({
-      browserPool,
-      partyKitHost: PARTYKIT_HOST,
-      totalRounds: 2, // Shorter game for focused test
-      totalGames: 1,
-      onStep: (step) => {
-        console.log(`[RESUME-TEST] ${step}`);
-        stepLog.push(step);
-      },
-    });
+      await browserPool.launch(getBrowser);
 
-    edgeCaseEngine = new EdgeCaseEngine();
+      orchestrator = new GameOrchestrator({
+        browserPool,
+        partyKitHost: PARTYKIT_HOST,
+        totalRounds: 2, // Shorter game for focused test
+        totalGames: 1,
+        onStep: (step) => {
+          console.log(`[RESUME-TEST] ${step}`);
+          stepLog.push(step);
+        },
+      });
 
-    // Run a single game with refresh edge cases
-    const results = await orchestrator.run();
+      edgeCaseEngine = new EdgeCaseEngine();
 
-    console.log('[RESUME-TEST] Results:', results);
-    console.log(`[RESUME-TEST] Edge cases injected: ${edgeCaseEngine.injectedCount}`);
+      // Run a single game with refresh edge cases
+      const results = await orchestrator.run();
 
-    expect(results.length).toBe(1);
-    expect(results[0].completed).toBe(true);
+      console.log('[RESUME-TEST] Results:', results);
+      console.log(`[RESUME-TEST] Edge cases injected: ${edgeCaseEngine.injectedCount}`);
 
-    await browserPool.closeAll();
+      expect(results.length).toBe(1);
+      expect(results[0].completed).toBe(true);
+
+      await browserPool.closeAll();
+    } finally {
+      // Close isolated browser instances
+      await chromiumBrowser.close();
+      await webkitBrowser.close();
+    }
   });
 });
