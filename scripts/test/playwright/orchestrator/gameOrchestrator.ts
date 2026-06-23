@@ -97,7 +97,7 @@ export class GameOrchestrator {
    */
   private async runGame(gameIndex: number): Promise<GameResult> {
     const errors: string[] = [];
-    const host = this.browserPool.host;
+    const host = this.browserPool.host();
     const hostClient = this.wsClients[0];
 
     // Create game via API (host)
@@ -251,7 +251,7 @@ export class GameOrchestrator {
    * Trigger PLAY_AGAIN: host creates a new game and broadcasts the new gameId.
    */
   private async playAgain(): Promise<void> {
-    const host = this.browserPool.host;
+    const host = this.browserPool.host();
     const hostClient = this.wsClients[0];
 
     // Host creates new game via API
