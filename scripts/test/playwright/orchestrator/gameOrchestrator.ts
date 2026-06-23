@@ -165,7 +165,7 @@ export class GameOrchestrator {
     // Play all rounds
     for (let roundIndex = 0; roundIndex < this.opts.totalRounds; roundIndex++) {
       this.opts.onStep?.(`Round ${roundIndex + 1}/${this.opts.totalRounds}`);
-      await this.runRound(roundIndex, errors);
+      await this.runRound(gameId, roundIndex, errors);
     }
 
     // Wait for SESSION_COMPLETE
@@ -196,7 +196,7 @@ export class GameOrchestrator {
   /**
    * Run a single round from ROUND_ACTIVE to ROUND_COMPLETE.
    */
-  private async runRound(roundIndex: number, errors: string[]): Promise<void> {
+  private async runRound(gameId: string, roundIndex: number, errors: string[]): Promise<void> {
     const hostClient = this.wsClients[0];
 
     // Assert all browsers see ROUND_ACTIVE
