@@ -252,7 +252,6 @@ export class GameOrchestrator {
    */
   private async playAgain(): Promise<void> {
     const host = this.browserPool.host();
-    const hostClient = this.wsClients[0];
 
     // Host creates new game via API
     const baseURL = this.browserPool['baseURL'] as string;
@@ -271,6 +270,10 @@ export class GameOrchestrator {
 
     const sessionData = await createResponse.json();
     const newGameId = sessionData.gameId || sessionData.id;
+
+    // Initialize WebSocket clients for the new game
+    await this.initClients(newGameId);
+    const hostClient = this.wsClients[0];
 
     // Host broadcasts PLAY_AGAIN
     hostClient.playAgain(newGameId);
