@@ -12,23 +12,12 @@
 # Error details
 
 ```
-TypeError: Cannot read properties of undefined (reading 'request')
+Error: Failed to create game: {"error":"playerId is required"}
 ```
 
 # Test source
 
 ```ts
-  6   | export interface GameOrchestratorOptions {
-  7   |   browserPool: BrowserPool;
-  8   |   partyKitHost: string;
-  9   |   totalRounds: number;
-  10  |   totalGames: number;
-  11  |   edgeCaseEngine?: EdgeCaseEngine;
-  12  |   onStep?: (step: string) => void;
-  13  |   onAssertionFailure?: (failures: string[]) => void;
-  14  | }
-  15  | 
-  16  | export interface GameResult {
   17  |   gameId: string;
   18  |   players: string[];
   19  |   rounds: number;
@@ -112,14 +101,13 @@ TypeError: Cannot read properties of undefined (reading 'request')
   97  |    */
   98  |   private async runGame(gameIndex: number): Promise<GameResult> {
   99  |     const errors: string[] = [];
-  100 |     const host = this.browserPool.host;
+  100 |     const host = this.browserPool.host();
   101 |     const hostClient = this.wsClients[0];
   102 | 
   103 |     // Create game via API (host)
   104 |     this.opts.onStep?.('Creating game via API...');
   105 |     const baseURL = this.browserPool['baseURL'] as string;
-> 106 |     const createResponse = await host.page.request.post(`${baseURL}/api/compete/create`, {
-      |                                            ^ TypeError: Cannot read properties of undefined (reading 'request')
+  106 |     const createResponse = await host.page.request.post(`${baseURL}/api/compete/create`, {
   107 |       data: {
   108 |         displayName: host.user.displayName,
   109 |         playerId: host.user.id,
@@ -130,7 +118,8 @@ TypeError: Cannot read properties of undefined (reading 'request')
   114 | 
   115 |     if (!createResponse.ok()) {
   116 |       const text = await createResponse.text();
-  117 |       throw new Error(`Failed to create game: ${text}`);
+> 117 |       throw new Error(`Failed to create game: ${text}`);
+      |             ^ Error: Failed to create game: {"error":"playerId is required"}
   118 |     }
   119 | 
   120 |     const sessionData = await createResponse.json();
@@ -181,7 +170,7 @@ TypeError: Cannot read properties of undefined (reading 'request')
   165 |     // Play all rounds
   166 |     for (let roundIndex = 0; roundIndex < this.opts.totalRounds; roundIndex++) {
   167 |       this.opts.onStep?.(`Round ${roundIndex + 1}/${this.opts.totalRounds}`);
-  168 |       await this.runRound(roundIndex, errors);
+  168 |       await this.runRound(gameId, roundIndex, errors);
   169 |     }
   170 | 
   171 |     // Wait for SESSION_COMPLETE
@@ -212,7 +201,7 @@ TypeError: Cannot read properties of undefined (reading 'request')
   196 |   /**
   197 |    * Run a single round from ROUND_ACTIVE to ROUND_COMPLETE.
   198 |    */
-  199 |   private async runRound(roundIndex: number, errors: string[]): Promise<void> {
+  199 |   private async runRound(gameId: string, roundIndex: number, errors: string[]): Promise<void> {
   200 |     const hostClient = this.wsClients[0];
   201 | 
   202 |     // Assert all browsers see ROUND_ACTIVE
@@ -220,4 +209,15 @@ TypeError: Cannot read properties of undefined (reading 'request')
   204 | 
   205 |     // Inject round-active edge cases
   206 |     if (this.opts.edgeCaseEngine) {
+  207 |       await this.opts.edgeCaseEngine.injectForPhase('round-active', this.browserPool, this.wsClients, gameId, roundIndex);
+  208 |     }
+  209 | 
+  210 |     // All players submit a guess (with some randomness to simulate real play)
+  211 |     this.opts.onStep?.('All players submitting guesses...');
+  212 |     for (let i = 0; i < this.wsClients.length; i++) {
+  213 |       const client = this.wsClients[i];
+  214 |       const year = 1900 + Math.floor(Math.random() * 100);
+  215 |       const lat = -90 + Math.random() * 180;
+  216 |       const lng = -180 + Math.random() * 360;
+  217 |       client.submitGuess(roundIndex, year, lat, lng, []);
 ```
