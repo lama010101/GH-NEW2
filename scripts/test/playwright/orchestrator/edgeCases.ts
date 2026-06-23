@@ -69,8 +69,10 @@ export const EDGE_CASES: EdgeCase[] = [
       const targetClient = clients[5];
       hostClient.kickPlayer(targetClient.user.id);
       console.log('[EDGE] Player kicked');
-      // Re-add the player for the rest of the simulation
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 500));
+      targetClient.close();
+      await targetClient.connect();
+      console.log('[EDGE] Player kicked and rejoined');
     },
   },
   {
