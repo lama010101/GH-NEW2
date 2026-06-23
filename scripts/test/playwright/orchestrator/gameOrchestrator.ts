@@ -98,7 +98,6 @@ export class GameOrchestrator {
   private async runGame(gameIndex: number): Promise<GameResult> {
     const errors: string[] = [];
     const host = this.browserPool.host();
-    const hostClient = this.wsClients[0];
 
     // Create game via API (host)
     this.opts.onStep?.('Creating game via API...');
@@ -127,6 +126,7 @@ export class GameOrchestrator {
 
     // Initialize WebSocket clients for this game
     await this.initClients(gameId);
+    const hostClient = this.wsClients[0];
 
     // Wait for LOBBY state on all clients
     this.opts.onStep?.('Waiting for LOBBY state...');
