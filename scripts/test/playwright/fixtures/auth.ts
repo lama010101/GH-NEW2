@@ -1,11 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 import * as path from 'path';
 import WebSocket from 'ws';
 
 // Load env from .env.local
 const envPath = path.resolve(process.cwd(), '.env.local');
 dotenv.config({ path: envPath });
+
+const USER_IDS_FILE = path.resolve(process.cwd(), '.test-user-ids.json');
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -31,14 +34,28 @@ export interface TestUser {
   displayName: string;
 }
 
-export const TEST_USERS: TestUser[] = [
-  { id: '', email: 'gh-test-player-1@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer1' },
-  { id: '', email: 'gh-test-player-2@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer2' },
-  { id: '', email: 'gh-test-player-3@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer3' },
-  { id: '', email: 'gh-test-player-4@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer4' },
-  { id: '', email: 'gh-test-player-5@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer5' },
-  { id: '', email: 'gh-test-player-6@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer6' },
+const BASE_TEST_USERS: Omit<TestUser, 'id'>[] = [
+  { email: 'gh-test-player-1@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer1' },
+  { email: 'gh-test-player-2@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer2' },
+  { email: 'gh-test-player-3@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer3' },
+  { email: 'gh-test-player-4@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer4' },
+  { email: 'gh-test-player-5@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer5' },
+  { email: 'gh-test-player-6@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer6' },
 ];
+
+function loadTestUsers(): TestUser[] {
+  if (fs.existsSync(USER_IDS_FILE)) {
+    try {
+      const idMap = JSON.parse(fs.readFileSync(USER_IDS_FILE, 'utf-8')) as Record<string, string>;
+      return BASE_TEST_USERS.map((u) => ({ ...u, id: idMap[u.email] || '' }));
+    } catch (err) {
+      console.warn('[AUTH] Failed to read test user IDs file, falling back to empty ids:', err);
+    }
+  }
+  return BASE_TEST_USERS.map((u) => ({ ...u, id: '' }));
+}
+
+export const TEST_USERS: TestUser[] = loadTestUsers();
 
 let createdUserIds: string[] = [];
 
@@ -96,6 +113,13 @@ async function globalSetup() {
     }
   }
 
+  const idMap: Record<string, string> = {};
+  for (const u of TEST_USERS) {
+    if (u.id) idMap[u.email] = u.id;
+  }
+  fs.writeFileSync(USER_IDS_FILE, JSON.stringify(idMap, null, 2));
+  console.log(`[PLAYWRIGHT SETUP] Wrote ${Object.keys(idMap).length} user IDs to ${USER_IDS_FILE}`);
+
   console.log('[PLAYWRIGHT SETUP] All test users created successfully');
   console.log('[PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues');
 }
@@ -138,6 +162,11 @@ async function globalTeardown() {
       await supabase.auth.admin.deleteUser(orphaned.id);
       console.log(`[PLAYWRIGHT TEARDOWN] Cleaned up orphaned user ${orphaned.email}`);
     }
+  }
+
+  if (fs.existsSync(USER_IDS_FILE)) {
+    fs.unlinkSync(USER_IDS_FILE);
+    console.log(`[PLAYWRIGHT TEARDOWN] Removed ${USER_IDS_FILE}`);
   }
 
   console.log('[PLAYWRIGHT TEARDOWN] Cleanup complete');
