@@ -51,7 +51,7 @@
 
 ## SECTION B — UIX BACKLOG (opened 2026-06-24)
 
-**Priority note:** This entire section is a parallel track to MP-AUTO-TEST-001. The harness has priority for Devin Local if both need it at the same time. Default UIX tasks to Devin Cloud or Windsurf/Cascade unless there's a specific reason to need Devin Local.
+**Priority note:** This entire section is a parallel track to MP-AUTO-TEST-001. The harness has priority for Devin Local if both need it at the same time — Devin Local is the only coder execution environment in use (Devin Cloud is not used on this project); Windsurf/Cascade handles commits/merges as usual.
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
@@ -61,6 +61,8 @@
 | B4 | Language choice at sign-in/sign-up | OPEN — new feature | Touches auth UI + i18n config. No existing spec found for language selection at auth. Distinct from the deferred local/English map-label toggle (Zustand+Supabase+Settings, not started, tracked separately). |
 | B5 | Image zoom during active round goes toward center instead of toward touch/pinch point | OPEN — in scope here (Lolo confirmed, despite styling adjacency — NOT deferred to the separate CSS conversation) | Likely a `transform-origin` bug in the image zoom component. Related to but distinct from the already-prioritized "gameplay image zoom" item (Priority #2, top-level). |
 | B6 | Welcome modal should let new users pick an avatar using the same picker UI as the profile page avatar picker | OPEN — feature/reuse | Identify the existing avatar-picker component via investigation (likely already exists, given the closed 2026-06-18 avatar/profile backfill work) and surface it in the welcome modal flow. |
+| B7 | Profile page avatar has no edit-icon visual cue — clicking the avatar opens the editor but nothing signals it's clickable | OPEN — small UI affordance fix | Add a pencil/edit icon overlay on the avatar on the profile page. Likely low complexity once the component is located. |
+| B8 | Low priority (raise if simple/quick): WHERE/WHEN result popup cards — two fixes: (1) remove/disable the bottom-sheet draggable-handle behavior entirely — sheet must only close via a clearly visible close button, never by drag; (2) any input field inside these popups must have the cursor positioned inside it by default (autofocus) — since this shifts content upward, the map section must be resized/repositioned to exactly cover the entire upper part of the screen when this happens | OPEN — needs investigation first | Scope confirmed by Lolo (2026-06-24): "input boxes" in part (2) means ANY input field that appears inside these popups, not one specific field. Distinct surface from B5 (gameplay image zoom during GUESS_PHASE) — B8 is the RESULT_PHASE WHERE/WHEN cards per CORE_UI_AND_FEATURES.md §7.3/7.4 and GAME_MODES_SPEC.md §1.2 items 5-6. Needs investigation into current bottom-sheet component (likely a shared drawer/sheet component used elsewhere too — check for blast radius before removing drag behavior) before any fix prompt. |
 
 ---
 
