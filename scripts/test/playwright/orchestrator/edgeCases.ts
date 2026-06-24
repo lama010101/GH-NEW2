@@ -351,10 +351,12 @@ export const EDGE_CASES: EdgeCase[] = [
       try {
         // Seed a syntactically-plausible but invalid stale auth-token cookie
         const staleValue = 'base64-' + Buffer.from('{"access_token":"invalid-stale-garbage","refresh_token":"garbage","expires_at":1}').toString('base64url');
+        const url = new URL(pool.baseURL);
+        const cookieDomain = url.hostname;
         await ctx.addCookies([{
           name: AUTH_COOKIE_NAME,
           value: staleValue,
-          domain: 'localhost',
+          domain: cookieDomain,
           path: '/',
           httpOnly: false,
           secure: false,
