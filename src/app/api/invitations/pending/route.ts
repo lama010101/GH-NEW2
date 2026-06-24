@@ -20,44 +20,59 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("TIMEOUT")), 8000)
+  );
 
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const handlerPromise = (async (): Promise<NextResponse> => {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  try {
-    const { data: invitations, error: dbError } = await supabase
-      .from("game_invitations")
-      .select("id, game_id, inviter_id, created_at, expires_at")
-      .eq("status", "pending")
-      .eq("invitee_id", user.id)
-      .gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    if (dbError) {
-      return NextResponse.json({ error: "Failed to fetch invitations" }, { status: 500 });
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const invitesWithNames = await Promise.all(
-      (invitations ?? []).map(async (invite) => {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("display_name, avatar_url")
-          .eq("id", invite.inviter_id)
-          .single();
+    try {
+      const { data: invitations, error: dbError } = await supabase
+        .from("game_invitations")
+        .select("id, game_id, inviter_id, created_at, expires_at")
+        .eq("status", "pending")
+        .eq("invitee_id", user.id)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(5);
 
-        return {
-          ...invite,
-          inviter_name: profile?.display_name ?? "Unknown",
-          avatar_url: profile?.avatar_url ?? undefined,
-        };
-      })
-    );
+      if (dbError) {
+        return NextResponse.json({ error: "Failed to fetch invitations" }, { status: 500 });
+      }
 
-    return NextResponse.json({ invitations: invitesWithNames });
-  } catch {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+      const invitesWithNames = await Promise.all(
+        (invitations ?? []).map(async (invite) => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, avatar_url")
+            .eq("id", invite.inviter_id)
+            .single();
+
+          return {
+            ...invite,
+            inviter_name: profile?.display_name ?? "Unknown",
+            avatar_url: profile?.avatar_url ?? undefined,
+          };
+        })
+      );
+
+      return NextResponse.json({ invitations: invitesWithNames });
+    } catch {
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+  })();
+
+  try {
+    return await Promise.race([handlerPromise, timeoutPromise]);
+  } catch (err) {
+    if (err instanceof Error && err.message === "TIMEOUT") {
+      return NextResponse.json({ error: "Request timed out" }, { status: 504 });
+    }
+    throw err;
   }
 }
