@@ -12,7 +12,7 @@
 # Error details
 
 ```
-Test timeout of 60000ms exceeded.
+Test timeout of 300000ms exceeded.
 ```
 
 # Page snapshot
