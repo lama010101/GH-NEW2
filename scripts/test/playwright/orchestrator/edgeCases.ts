@@ -1,6 +1,7 @@
 import { BrowserPool, PlayerBrowser } from './browserPool';
 import { CompeteWSClient } from './websocketClient';
 import { observeState, captureResumeToken, diffResumeTokens } from './observer';
+import { loginViaAuthModal, signOutViaUI } from '../helpers/auth-ui';
 
 export type EdgeCaseType =
   | 'late-join'
@@ -17,7 +18,53 @@ export type EdgeCaseType =
   | 'ws-drop-reconnect'
   | 'mid-round-refresh'
   | 'mid-lobby-refresh'
-  | 'mid-results-refresh';
+  | 'mid-results-refresh'
+  | 'auth-signout-resignin'
+  | 'auth-stale-cookie'
+  | 'auth-cross-user'
+  | 'auth-returning-browser';
+
+/** Supabase auth session cookie name (project ref gzvixlvkwjsrtmtybtkf). */
+const AUTH_COOKIE_NAME = 'sb-gzvixlvkwjsrtmtybtkf-auth-token';
+
+/**
+ * Filter cookies to only the Supabase auth-token cookie (including chunked
+ * variants like `.0`, `.1`, etc.).
+ */
+function findAuthCookies(cookies: { name: string }[]): { name: string }[] {
+  return cookies.filter(
+    (c) => c.name === AUTH_COOKIE_NAME || c.name.startsWith(`${AUTH_COOKIE_NAME}.`),
+  );
+}
+
+/**
+ * Attach temporary console-error and pageerror listeners to a page.
+ * Returns the collected errors and a cleanup function.
+ */
+function attachErrorListeners(page: import('@playwright/test').Page): {
+  consoleErrors: string[];
+  pageErrors: string[];
+  cleanup: () => void;
+} {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+  const onConsole = (msg: { type(): string; text(): string }) => {
+    if (msg.type() === 'error') consoleErrors.push(msg.text());
+  };
+  const onPageError = (err: Error) => {
+    pageErrors.push(err.message);
+  };
+  page.on('console', onConsole);
+  page.on('pageerror', onPageError);
+  return {
+    consoleErrors,
+    pageErrors,
+    cleanup: () => {
+      page.off('console', onConsole);
+      page.off('pageerror', onPageError);
+    },
+  };
+}
 
 export interface EdgeCase {
   type: EdgeCaseType;
@@ -237,6 +284,237 @@ export const EDGE_CASES: EdgeCase[] = [
         console.warn('[EDGE] Resume-after-refresh diffs:', diffs);
       } else {
         console.log('[EDGE] Resume-after-refresh successful (no diffs)');
+      }
+    },
+  },
+  {
+    type: 'auth-signout-resignin',
+    description: 'Sign out via UI then sign back in as the same user (SCN-AUTH-1)',
+    phase: 'lobby',
+    inject: async (pool, clients, gameId) => {
+      const player = pool.byIndex(0);
+      const user = player.user;
+      const page = player.page;
+      const { consoleErrors, pageErrors, cleanup } = attachErrorListeners(page);
+
+      try {
+        const cookiesBefore = await page.context().cookies();
+        const authBefore = findAuthCookies(cookiesBefore);
+        console.log(`[EDGE:auth-signout-resignin] Cookies BEFORE sign-out: auth-token present=${authBefore.length > 0}, chunks=${authBefore.length}`);
+
+        await signOutViaUI(page, pool.baseURL);
+
+        const cookiesAfter = await page.context().cookies();
+        const authAfter = findAuthCookies(cookiesAfter);
+        console.log(`[EDGE:auth-signout-resignin] Cookies AFTER sign-out: auth-token present=${authAfter.length > 0}, chunks=${authAfter.length}`);
+        const cookieCleared = authAfter.length === 0;
+
+        // Sign back in as the same user
+        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle').catch(() => undefined);
+        await loginViaAuthModal(page, user);
+
+        const cookiesRe = await page.context().cookies();
+        const authRe = findAuthCookies(cookiesRe);
+        console.log(`[EDGE:auth-signout-resignin] Cookies AFTER re-sign-in: auth-token present=${authRe.length > 0}, chunks=${authRe.length}`);
+        const resigninSucceeded = authRe.length > 0;
+
+        // Navigate back to the game so the suite can continue
+        await pool.navigateToGame(player, gameId).catch((e) => {
+          console.warn(`[EDGE:auth-signout-resignin] Failed to navigate back to game: ${e}`);
+        });
+
+        const pass = cookieCleared && resigninSucceeded;
+        console.log(`[EDGE:auth-signout-resignin] VERDICT: ${pass ? 'PASS' : 'FAIL'} (cookieCleared=${cookieCleared}, resigninSucceeded=${resigninSucceeded})`);
+        if (consoleErrors.length > 0) console.log(`[EDGE:auth-signout-resignin] Console errors: ${JSON.stringify(consoleErrors)}`);
+        if (pageErrors.length > 0) console.log(`[EDGE:auth-signout-resignin] Page errors: ${JSON.stringify(pageErrors)}`);
+      } finally {
+        cleanup();
+      }
+    },
+  },
+  {
+    type: 'auth-stale-cookie',
+    description: 'Pre-seed a stale auth-token cookie then attempt UI sign-in (SCN-AUTH-2)',
+    phase: 'lobby',
+    inject: async (pool, clients, gameId) => {
+      const user = pool.byIndex(0).user;
+      const browser = pool.host().context.browser();
+      if (!browser) {
+        console.warn('[EDGE:auth-stale-cookie] Could not obtain browser instance — skipping');
+        return;
+      }
+      const ctx = await browser.newContext();
+      const page = await ctx.newPage();
+      const { consoleErrors, pageErrors, cleanup } = attachErrorListeners(page);
+
+      try {
+        // Seed a syntactically-plausible but invalid stale auth-token cookie
+        const staleValue = 'base64-' + Buffer.from('{"access_token":"invalid-stale-garbage","refresh_token":"garbage","expires_at":1}').toString('base64url');
+        await ctx.addCookies([{
+          name: AUTH_COOKIE_NAME,
+          value: staleValue,
+          domain: 'localhost',
+          path: '/',
+          httpOnly: false,
+          secure: false,
+          sameSite: 'Lax',
+        }]);
+        console.log(`[EDGE:auth-stale-cookie] Seeded stale cookie: ${AUTH_COOKIE_NAME}=${staleValue.slice(0, 40)}...`);
+
+        // Navigate to the app's base URL
+        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle').catch(() => undefined);
+
+        // Check whether the auth modal appears
+        const modal = page.getByTestId('auth-modal').first();
+        const modalVisible = await modal.isVisible().catch(() => false);
+        console.log(`[EDGE:auth-stale-cookie] Auth modal visible after navigate: ${modalVisible}`);
+
+        if (!modalVisible) {
+          // The app thinks we're authenticated — this is the bug scenario
+          console.log('[EDGE:auth-stale-cookie] WARNING: Auth modal did NOT appear despite stale cookie — app may be using stale session');
+          // Check what identity the app shows
+          const bodyText = await page.textContent('body').catch(() => null);
+          console.log(`[EDGE:auth-stale-cookie] Page body text (first 500 chars): ${bodyText?.slice(0, 500) ?? 'null'}`);
+        }
+
+        // Attempt a real UI sign-in
+        let signinResult = 'unknown';
+        try {
+          await loginViaAuthModal(page, user);
+          const cookiesAfter = await ctx.cookies();
+          const authAfter = findAuthCookies(cookiesAfter);
+          signinResult = authAfter.length > 0 ? 'succeeded' : 'no-auth-cookie-after-signin';
+          console.log(`[EDGE:auth-stale-cookie] Sign-in result: ${signinResult}, auth-token present=${authAfter.length > 0}`);
+        } catch (err) {
+          signinResult = `failed: ${err instanceof Error ? err.message : String(err)}`;
+          console.log(`[EDGE:auth-stale-cookie] Sign-in FAILED: ${signinResult}`);
+        }
+
+        console.log(`[EDGE:auth-stale-cookie] VERDICT: diagnostic — signinResult=${signinResult}, modalVisible=${modalVisible}`);
+        if (consoleErrors.length > 0) console.log(`[EDGE:auth-stale-cookie] Console errors: ${JSON.stringify(consoleErrors)}`);
+        if (pageErrors.length > 0) console.log(`[EDGE:auth-stale-cookie] Page errors: ${JSON.stringify(pageErrors)}`);
+      } finally {
+        cleanup();
+        await ctx.close().catch(() => undefined);
+      }
+    },
+  },
+  {
+    type: 'auth-cross-user',
+    description: 'Sign out as Player A then sign in as Player B in the same context (SCN-AUTH-3)',
+    phase: 'lobby',
+    inject: async (pool, clients, gameId) => {
+      const playerA = pool.byIndex(0);
+      const userB = pool.byIndex(1).user;
+      const page = playerA.page;
+      const { consoleErrors, pageErrors, cleanup } = attachErrorListeners(page);
+
+      try {
+        console.log(`[EDGE:auth-cross-user] Player A: ${playerA.user.email}, Player B: ${userB.email}`);
+
+        // Sign out as Player A
+        await signOutViaUI(page, pool.baseURL);
+
+        // Sign in as Player B in the same context
+        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle').catch(() => undefined);
+        await loginViaAuthModal(page, userB);
+
+        // Verify resulting identity — check displayed username/email in the UI
+        const bodyText = await page.textContent('body').catch(() => '');
+        const showsPlayerB = bodyText?.includes(userB.displayName) || bodyText?.includes(userB.email) || false;
+        const showsPlayerA = bodyText?.includes(playerA.user.displayName) || bodyText?.includes(playerA.user.email) || false;
+        console.log(`[EDGE:auth-cross-user] Body contains Player B name/email: ${showsPlayerB}`);
+        console.log(`[EDGE:auth-cross-user] Body contains Player A name/email: ${showsPlayerA}`);
+
+        const cookiesAfter = await page.context().cookies();
+        const authAfter = findAuthCookies(cookiesAfter);
+        console.log(`[EDGE:auth-cross-user] Auth-token present after cross-user sign-in: ${authAfter.length > 0}`);
+
+        // Navigate back to the game so the suite can continue
+        await pool.navigateToGame(playerA, gameId).catch((e) => {
+          console.warn(`[EDGE:auth-cross-user] Failed to navigate back to game: ${e}`);
+        });
+
+        const pass = showsPlayerB && !showsPlayerA;
+        console.log(`[EDGE:auth-cross-user] VERDICT: ${pass ? 'PASS' : 'FAIL'} (showsPlayerB=${showsPlayerB}, showsPlayerA=${showsPlayerA})`);
+        if (consoleErrors.length > 0) console.log(`[EDGE:auth-cross-user] Console errors: ${JSON.stringify(consoleErrors)}`);
+        if (pageErrors.length > 0) console.log(`[EDGE:auth-cross-user] Page errors: ${JSON.stringify(pageErrors)}`);
+      } finally {
+        cleanup();
+      }
+    },
+  },
+  {
+    type: 'auth-returning-browser',
+    description: 'Capture storage state from a logged-in context, close it, restore in a new context (SCN-AUTH-4)',
+    phase: 'lobby',
+    inject: async (pool, clients, gameId) => {
+      const user = pool.byIndex(0).user;
+      const browser = pool.host().context.browser();
+      if (!browser) {
+        console.warn('[EDGE:auth-returning-browser] Could not obtain browser instance — skipping');
+        return;
+      }
+
+      // Context 1: fresh login as a test user
+      const ctx1 = await browser.newContext();
+      const page1 = await ctx1.newPage();
+      const { consoleErrors, pageErrors, cleanup } = attachErrorListeners(page1);
+
+      try {
+        await page1.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        await page1.waitForLoadState('networkidle').catch(() => undefined);
+        await loginViaAuthModal(page1, user);
+
+        const cookies1 = await ctx1.cookies();
+        const auth1 = findAuthCookies(cookies1);
+        console.log(`[EDGE:auth-returning-browser] Context 1 after login: auth-token present=${auth1.length > 0}, chunks=${auth1.length}`);
+
+        // Capture full storage state
+        const storageState = await ctx1.storageState();
+        console.log(`[EDGE:auth-returning-browser] Captured storageState: cookies=${storageState.cookies.length}, origins=${storageState.origins.length}`);
+
+        // Close context 1 (keep the browser instance open)
+        await ctx1.close();
+
+        // Context 2: create in the same browser with the captured storageState
+        const ctx2 = await browser.newContext({ storageState });
+        const page2 = await ctx2.newPage();
+        const listeners2 = attachErrorListeners(page2);
+
+        try {
+          await page2.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+          await page2.waitForLoadState('networkidle').catch(() => undefined);
+
+          // Check whether the session is restored (no auth modal, correct identity)
+          const modal = page2.getByTestId('auth-modal').first();
+          const modalVisible = await modal.isVisible().catch(() => false);
+          console.log(`[EDGE:auth-returning-browser] Context 2 after navigate: auth modal visible=${modalVisible}`);
+
+          const cookies2 = await ctx2.cookies();
+          const auth2 = findAuthCookies(cookies2);
+          console.log(`[EDGE:auth-returning-browser] Context 2 cookies: auth-token present=${auth2.length > 0}, chunks=${auth2.length}`);
+
+          const bodyText = await page2.textContent('body').catch(() => '');
+          const showsUser = bodyText?.includes(user.displayName) || bodyText?.includes(user.email) || false;
+          console.log(`[EDGE:auth-returning-browser] Context 2 body shows user name/email: ${showsUser}`);
+
+          const sessionRestored = !modalVisible && auth2.length > 0;
+          console.log(`[EDGE:auth-returning-browser] VERDICT: ${sessionRestored ? 'PASS' : 'FAIL'} (modalVisible=${modalVisible}, authTokenPresent=${auth2.length > 0})`);
+          if (consoleErrors.length > 0) console.log(`[EDGE:auth-returning-browser] Context 1 console errors: ${JSON.stringify(consoleErrors)}`);
+          if (pageErrors.length > 0) console.log(`[EDGE:auth-returning-browser] Context 1 page errors: ${JSON.stringify(pageErrors)}`);
+          if (listeners2.consoleErrors.length > 0) console.log(`[EDGE:auth-returning-browser] Context 2 console errors: ${JSON.stringify(listeners2.consoleErrors)}`);
+          if (listeners2.pageErrors.length > 0) console.log(`[EDGE:auth-returning-browser] Context 2 page errors: ${JSON.stringify(listeners2.pageErrors)}`);
+        } finally {
+          listeners2.cleanup();
+          await ctx2.close().catch(() => undefined);
+        }
+      } finally {
+        cleanup();
+        await ctx1.close().catch(() => undefined);
       }
     },
   },

@@ -46,3 +46,27 @@ export async function ensureLoggedIn(page: Page, user: TestUser): Promise<void> 
     console.log(`[AUTH] ${user.email} already authenticated`);
   }
 }
+
+/**
+ * Sign out the current user via the account page UI.
+ *
+ * Navigates to /account, clicks the "Sign out" button (i18n key nav.sign_out,
+ * no data-testid present — selected by accessible role + name), and waits for
+ * the redirect to the home page (router.push('/') in account/page.tsx).
+ */
+export async function signOutViaUI(page: Page, baseURL: string): Promise<void> {
+  console.log('[AUTH] Signing out via account page UI...');
+
+  await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
+  await page.waitForLoadState('networkidle').catch(() => undefined);
+
+  const signOutBtn = page.getByRole('button', { name: 'Sign out' }).first();
+  await signOutBtn.waitFor({ state: 'visible', timeout: AUTH_TIMEOUT });
+  await signOutBtn.click();
+
+  // Wait for redirect to home page (router.push('/'))
+  await page.waitForURL(`${baseURL}/`, { timeout: AUTH_TIMEOUT }).catch(() => undefined);
+  await page.waitForLoadState('networkidle').catch(() => undefined);
+
+  console.log('[AUTH] Signed out successfully');
+}
