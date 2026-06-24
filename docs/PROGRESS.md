@@ -2177,3 +2177,37 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - Change: WHERE and WHEN now render inside one shared card with a tab toggle (cyan/violet active state), matching prototype structure. Both cards gained a `bare` prop to suppress their own chrome when tabbed. Fixed IntersectionObserver badge-reveal effects to re-attach on tab switch.
 - Commits: c26c9f4, ae071df, 751ec9c, c24e5c2, 9a386fd, 5b0c333
 - Commit: ef2598a
+
+## MP-INV-HARNESS-AUTH-FRESHSESSION-A0-001 — Investigate harness auth flow and design fresh-browser sign-in/remember-me/sign-out edge case
+- **Status:** COMPLETE (read-only investigation)
+- **Files Modified:** None (read-only)
+- **Files Read:**
+  - scripts/test/playwright/fixtures/auth.ts
+  - scripts/test/playwright/orchestrator/browserPool.ts
+  - scripts/test/playwright/helpers/auth-ui.ts
+  - scripts/test/playwright/fixtures/session.ts
+  - scripts/test/playwright/playwright.config.ts
+  - scripts/test/playwright/specs/multiplayer-simulation.spec.ts
+  - src/core/supabaseBrowser.ts
+  - src/components/AuthModal.tsx
+  - src/core/identity.ts
+  - src/components/NavModal.tsx
+  - src/app/account/page.tsx
+  - src/app/profile/page.tsx
+- **Description:** Verified that globalSetup only creates users via Supabase Admin API; no storageState is persisted. BrowserPool.launch creates fresh browser contexts with no storageState and logs each user in via the AuthModal UI. AuthModal's remember-me checkbox currently only toggles local React state and does not influence persistence. Sign-out is handled by src/core/identity.ts signOut() which calls supabaseBrowser.auth.signOut() and resets local cached state but does not manually clear localStorage/cookies. Produced Phase A0 proposal for fresh-browser sign-in/remember-me/sign-out edge cases.
+
+## MP-INV-HARNESS-AUTH-FRESHSESSION-PHASEB-001 — Determine exact cookie/storage shape Supabase writes
+- **Status:** COMPLETE (read-only investigation)
+- **Files Modified:** None (read-only)
+- **Files Read:**
+  - node_modules/@supabase/ssr/package.json (version 0.10.3)
+  - node_modules/@supabase/supabase-js/package.json (version 2.106.1)
+  - node_modules/@supabase/ssr/src/createBrowserClient.ts
+  - node_modules/@supabase/ssr/src/cookies.ts
+  - node_modules/@supabase/ssr/src/utils/chunker.ts
+  - node_modules/@supabase/ssr/src/utils/constants.ts
+  - node_modules/@supabase/auth-js/src/GoTrueClient.ts
+  - node_modules/@supabase/auth-js/src/lib/constants.ts
+  - node_modules/@supabase/supabase-js/src/SupabaseClient.ts
+  - .env.local (for project ref)
+- **Description:** Confirmed exact cookie naming pattern: `sb-gzvixlvkwjsrtmtybtkf-auth-token` (single cookie if value fits within 3180 bytes, otherwise chunked as `.0`, `.1`, etc.). Cookie encoding defaults to `base64url` (values prefixed with `base64-`). No localStorage is used for session storage. No existing Playwright test inspects cookies after login.
