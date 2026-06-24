@@ -128,7 +128,12 @@ export const EDGE_CASES: EdgeCase[] = [
     phase: 'lobby',
     inject: async (pool, clients, gameId) => {
       // Create a temporary 7th context and try to join
-      const tempContext = await pool.host().context.browser.newContext();
+      const browser = pool.host().context.browser();
+      if (!browser) {
+        console.warn('[EDGE:7th-player-join] Could not obtain browser instance — skipping');
+        return;
+      }
+      const tempContext = await browser.newContext();
       const tempPage = await tempContext.newPage();
       await tempPage.goto(`${pool.baseURL}/compete/${gameId}`);
       await tempPage.waitForLoadState('networkidle').catch(() => undefined);
