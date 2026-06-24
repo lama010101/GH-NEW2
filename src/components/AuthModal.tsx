@@ -80,6 +80,18 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
 
     setLoading(true);
 
+    signInSubscriptionRef.current?.unsubscribe();
+    signInSubscriptionRef.current = null;
+
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        subscription.unsubscribe();
+        signInSubscriptionRef.current = null;
+        onClose();
+      }
+    });
+    signInSubscriptionRef.current = subscription;
+
     let result;
     try {
       if (mode === "signin") {
@@ -89,18 +101,11 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
       }
 
       if (result.error) {
+        subscription.unsubscribe();
+        signInSubscriptionRef.current = null;
         setError(result.error.message);
         return;
       }
-
-      const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange((event) => {
-        if (event === "SIGNED_IN") {
-          subscription.unsubscribe();
-          signInSubscriptionRef.current = null;
-          onClose();
-        }
-      });
-      signInSubscriptionRef.current = subscription;
     } finally {
       setLoading(false);
     }
