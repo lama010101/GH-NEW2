@@ -152,9 +152,20 @@ export class BrowserPool {
    */
   async refresh(player: PlayerBrowser): Promise<void> {
     await player.page.reload({ waitUntil: 'domcontentloaded' });
-    await player.page.waitForLoadState('networkidle').catch(() => undefined);
+    await player.page.waitForLoadState('networkidle').catch((err) => {
+      // If page is closed, surface the error immediately
+      if (player.page.isClosed() || (err instanceof Error && err.message.includes('closed'))) {
+        throw new Error(`refresh() failed: page closed during reload for player ${player.user.email}`);
+      }
+      // Otherwise, it's a benign networkidle timeout — proceed anyway
+    });
     // Identity should be restored from cookies — no re-login needed
     await ensureLoggedIn(player.page, player.user);
+
+    // Explicit liveness check before returning
+    if (player.page.isClosed()) {
+      throw new Error(`refresh() failed: page closed after ensureLoggedIn for player ${player.user.email}`);
+    }
   }
 
   /**
