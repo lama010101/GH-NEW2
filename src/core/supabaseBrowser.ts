@@ -24,7 +24,17 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
  * does not refresh the token, while `getUser()` does.
  */
 export async function getValidAccessToken(): Promise<string | null> {
-  await supabaseBrowser.auth.getUser();
+  await Promise.race([
+    supabaseBrowser.auth.getUser(),
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("getValidAccessToken: auth.getUser() timed out after 8s")),
+        8000
+      )
+    ),
+  ]).catch((err) => {
+    console.warn(err.message);
+  });
   const { data: { session } } = await supabaseBrowser.auth.getSession();
   return session?.access_token ?? null;
 }
