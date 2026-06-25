@@ -415,18 +415,28 @@ export const EDGE_CASES: EdgeCase[] = [
     inject: async (pool, clients, gameId) => {
       const playerA = pool.byIndex(0);
       const userB = pool.byIndex(1).user;
-      const page = playerA.page;
+      const browser = pool.host().context.browser();
+      if (!browser) {
+        console.warn('[EDGE:auth-cross-user] Could not obtain browser instance — skipping');
+        return;
+      }
+      const ctx = await browser.newContext();
+      const page = await ctx.newPage();
       const { consoleErrors, pageErrors, cleanup } = attachErrorListeners(page);
 
       try {
         console.log(`[EDGE:auth-cross-user] Player A: ${playerA.user.email}, Player B: ${userB.email}`);
+
+        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('domcontentloaded').catch(() => undefined);
+        await loginViaAuthModal(page, playerA.user);
 
         // Sign out as Player A
         await signOutViaUI(page, pool.baseURL);
 
         // Sign in as Player B in the same context
         await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
-        await page.waitForLoadState('networkidle').catch(() => undefined);
+        await page.waitForLoadState('domcontentloaded').catch(() => undefined);
         await loginViaAuthModal(page, userB);
 
         // Verify resulting identity — check displayed username/email in the UI
@@ -436,14 +446,9 @@ export const EDGE_CASES: EdgeCase[] = [
         console.log(`[EDGE:auth-cross-user] Body contains Player B name/email: ${showsPlayerB}`);
         console.log(`[EDGE:auth-cross-user] Body contains Player A name/email: ${showsPlayerA}`);
 
-        const cookiesAfter = await page.context().cookies();
+        const cookiesAfter = await ctx.cookies();
         const authAfter = findAuthCookies(cookiesAfter);
         console.log(`[EDGE:auth-cross-user] Auth-token present after cross-user sign-in: ${authAfter.length > 0}`);
-
-        // Navigate back to the game so the suite can continue
-        await pool.navigateToGame(playerA, gameId).catch((e) => {
-          console.warn(`[EDGE:auth-cross-user] Failed to navigate back to game: ${e}`);
-        });
 
         const pass = showsPlayerB && !showsPlayerA;
         console.log(`[EDGE:auth-cross-user] VERDICT: ${pass ? 'PASS' : 'FAIL'} (showsPlayerB=${showsPlayerB}, showsPlayerA=${showsPlayerA})`);
@@ -451,6 +456,7 @@ export const EDGE_CASES: EdgeCase[] = [
         if (pageErrors.length > 0) console.log(`[EDGE:auth-cross-user] Page errors: ${JSON.stringify(pageErrors)}`);
       } finally {
         cleanup();
+        await ctx.close().catch(() => undefined);
       }
     },
   },
