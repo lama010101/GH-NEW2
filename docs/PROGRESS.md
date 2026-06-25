@@ -2213,3 +2213,16 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - node_modules/@supabase/supabase-js/src/SupabaseClient.ts
   - .env.local (for project ref)
 - **Description:** Confirmed exact cookie naming pattern: `sb-gzvixlvkwjsrtmtybtkf-auth-token` (single cookie if value fits within 3180 bytes, otherwise chunked as `.0`, `.1`, etc.). Cookie encoding defaults to `base64url` (values prefixed with `base64-`). No localStorage is used for session storage. No existing Playwright test inspects cookies after login.
+
+## MP-FIX-APPLY-RATINGS-LOCALE-MIGRATIONS-001 — Apply pending B3/B4 migrations to live DB with CTO-ratified schema correction, verify end-to-end
+- **Status:** COMPLETE (live-applied + live-verified)
+- **Commit:** 94cddd5
+- **Files Modified:**
+  - supabase/migrations/20260625000002_create_player_event_ratings_corrected.sql (NEW — corrected B3: event_id FK to events(id) ON DELETE CASCADE + updated_at column; original 20260625000000 left untouched)
+  - src/app/api/ratings/route.ts (upsert: rated_at omitted from payload so it defaults on INSERT and is preserved on re-rate; updated_at sent on every write)
+  - docs/CTO_BACKLOG.md (B3/B4 evidence updated to reflect genuine live-verification, superseding prior false-closure finding)
+- **Live DB changes (direct pg, MCP apply_migration unavailable):**
+  - Applied 20260625000002 + recorded both 20260625000000 and 20260625000002 in supabase_migrations.schema_migrations
+  - Applied 20260625000001 (profiles.locale) + recorded
+- **Description:** Prior batch marked B3/B4 CLOSED but migrations were never applied to production Supabase (latest applied was 20260611092811). Corrected player_event_ratings schema per CTO decision (FK + updated_at), applied live, fixed API route upsert semantics, applied locale migration. End-to-end verified via authenticated HTTP + direct pg: rating upsert overwrites in place (row count stays 1, rated_at preserved, updated_at changes), auth gate returns 401 without cookie, locale round-trips fr/en/null.
+- **tsc:** only 2 known pre-existing errors in rules.correctness.test.ts.
