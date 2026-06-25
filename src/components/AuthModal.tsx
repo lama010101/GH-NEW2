@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from "@/core/supabaseBrowser";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { defaultLocale } from "@/i18n/config";
 import styles from "./AuthModal.module.css";
 
 interface AuthModalProps {
@@ -154,6 +156,10 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
         >
           {t('welcome')}
         </h2>
+
+        <div className={styles.langSwitcherWrap}>
+          <LanguageSwitcher initialLocale={defaultLocale} />
+        </div>
 
         {error && (
           <p
