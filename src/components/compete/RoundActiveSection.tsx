@@ -439,7 +439,24 @@ export default function RoundActiveSection({
       const pts = [...activePointers.current.values()];
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       const ratio = dist / pinchPrevDist.current;
-      scale.current = Math.min(Math.max(scale.current * ratio, 1), 8);
+      const oldScale = scale.current;
+      const newScale = Math.min(Math.max(oldScale * ratio, 1), 8);
+      const midX = (pts[0].x + pts[1].x) / 2;
+      const midY = (pts[0].y + pts[1].y) / 2;
+      const img = imgRef.current;
+      const container = imgContainerRef.current;
+      if (img && container && oldScale > 0) {
+        const imgRect = img.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const cx = midX - containerRect.left;
+        const cy = midY - containerRect.top;
+        const imgLeft = imgRect.left - containerRect.left;
+        const imgTop = imgRect.top - containerRect.top;
+        const zoomRatio = newScale / oldScale;
+        panX.current = (cx - imgLeft - imgRect.width / 2) * (1 - zoomRatio) + panX.current;
+        panY.current = (cy - imgTop - imgRect.height / 2) * (1 - zoomRatio) + panY.current;
+      }
+      scale.current = newScale;
       pinchPrevDist.current = dist;
       applyTransform();
     } else if (panDragging.current && activePointers.current.size === 1) {
