@@ -2,6 +2,7 @@ import { Page } from '@playwright/test';
 import { TestUser } from '../fixtures/auth';
 
 const AUTH_TIMEOUT = 20000;
+const AUTH_MODAL_APPEAR_TIMEOUT = 10000;
 
 /**
  * Log in a single user through the AuthModal UI.
@@ -38,9 +39,11 @@ export async function loginViaAuthModal(page: Page, user: TestUser): Promise<voi
  */
 export async function ensureLoggedIn(page: Page, user: TestUser): Promise<void> {
   const modal = page.getByTestId('auth-modal').first();
-  const isVisible = await modal.isVisible().catch(() => false);
+  const appeared = await modal.waitFor({ state: 'visible', timeout: AUTH_MODAL_APPEAR_TIMEOUT })
+    .then(() => true)
+    .catch(() => false);
 
-  if (isVisible) {
+  if (appeared) {
     await loginViaAuthModal(page, user);
   } else {
     console.log(`[AUTH] ${user.email} already authenticated`);
