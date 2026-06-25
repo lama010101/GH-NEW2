@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
   const serviceRoleClient = createSupabaseServerClient();
 
   try {
+    // rated_at omitted so it defaults on INSERT and is preserved on re-rate; updated_at sent every write.
+    const now = new Date().toISOString();
     const { error: upsertError } = await serviceRoleClient
       .from("player_event_ratings")
       .upsert(
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest) {
           player_id: user.id,
           event_id: eventIdRaw,
           rating: ratingRaw,
-          rated_at: new Date().toISOString(),
+          updated_at: now,
         },
         { onConflict: "player_id,event_id" }
       );
