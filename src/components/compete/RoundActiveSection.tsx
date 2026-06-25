@@ -90,12 +90,6 @@ export default function RoundActiveSection({
   const [guessHint, setGuessHint] = useState<string | null>(null);
   const guessHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sheet state
-  const [sheetExpanded, setSheetExpanded] = useState(false);
-  const [sheetDrag, setSheetDrag] = useState(0);
-  const sheetDragStartY = useRef<number | null>(null);
-  const sheetRawDy = useRef(0);
-
   // Pan + zoom system refs
   const panX = useRef(0);
   const panY = useRef(0);
@@ -326,41 +320,8 @@ export default function RoundActiveSection({
 
   const closeSheet = () => {
     setActivePanel(null);
-    setSheetExpanded(false);
-    setSheetDrag(0);
-    sheetDragStartY.current = null;
     setSearchQuery("");
     setSearchResults([]);
-  };
-
-  const onSheetHandleDown = (e: React.PointerEvent) => {
-    sheetDragStartY.current = e.clientY;
-    sheetRawDy.current = 0;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const onSheetHandleMove = (e: React.PointerEvent) => {
-    if (sheetDragStartY.current === null) return;
-    const dy = e.clientY - sheetDragStartY.current;
-    sheetRawDy.current = dy;
-    setSheetDrag(Math.max(0, dy));
-  };
-
-  const onSheetHandleUp = () => {
-    if (sheetDragStartY.current === null) return;
-    const dy = sheetRawDy.current;
-    const canExpand = activePanel === "where";
-
-    if (canExpand && !sheetExpanded && dy < -70) {
-      setSheetExpanded(true);
-    } else if (canExpand && sheetExpanded && dy > 120) {
-      setSheetExpanded(false);
-    } else if (!sheetExpanded && dy > 140) {
-      closeSheet();
-    }
-    sheetDragStartY.current = null;
-    sheetRawDy.current = 0;
-    setSheetDrag(0);
   };
 
   const formatTime = (s: number) => {
@@ -724,8 +685,6 @@ export default function RoundActiveSection({
                   closeSheet();
                 } else {
                   setActivePanel('when');
-                  setSheetExpanded(false);
-                  setSheetDrag(0);
                 }
               }}
               disabled={isLocked}
@@ -758,8 +717,6 @@ export default function RoundActiveSection({
                   closeSheet();
                 } else {
                   setActivePanel('where');
-                  setSheetExpanded(false);
-                  setSheetDrag(0);
                 }
               }}
               disabled={isLocked}
@@ -817,20 +774,8 @@ export default function RoundActiveSection({
         <>
           <div className={styles.sheetBackdrop} onClick={closeSheet} />
           <div
-            className={`${styles.sheet} ${activePanel === 'where' && sheetExpanded ? styles.sheetFull : ""} ${activePanel === 'when' ? styles.sheetWhen : ""}`}
-            style={{ "--sheet-drag": `${sheetDrag}px` } as React.CSSProperties}
+            className={`${styles.sheet} ${activePanel === 'where' ? styles.sheetFull : ""} ${activePanel === 'when' ? styles.sheetWhen : ""}`}
           >
-            {/* Drag handle — only element that controls sheet drag */}
-            <div
-              className={styles.dragZone}
-              onPointerDown={onSheetHandleDown}
-              onPointerMove={onSheetHandleMove}
-              onPointerUp={onSheetHandleUp}
-              onPointerCancel={onSheetHandleUp}
-            >
-              <div className={styles.dragHandle} />
-            </div>
-
             {/* WHERE sheet */}
             {activePanel === 'where' && (
               <>

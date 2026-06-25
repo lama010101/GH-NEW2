@@ -546,7 +546,6 @@
   border-top-right-radius: 22px;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
   padding: 0 16px 8px;
-  transform: translateY(var(--sheet-drag, 0px));
   animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -565,27 +564,7 @@
 
 @keyframes slideUpSheet {
   from { transform: translateY(100%); }
-  to   { transform: translateY(var(--sheet-drag, 0px)); }
-}
-
-/* ── Drag zone ── */
-.dragZone {
-  padding: 12px 0 8px;
-  display: flex;
-  justify-content: center;
-  cursor: grab;
-  touch-action: none;
-}
-
-.dragZone:active {
-  cursor: grabbing;
-}
-
-.dragHandle {
-  width: 44px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.3);
+  to   { transform: translateY(0); }
 }
 
 /* ── Sheet header ── */
