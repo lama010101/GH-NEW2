@@ -83,6 +83,8 @@
     "compete_invited_you": "Vous a invité à une partie",
     "compete_round_label": "Manche {current} / {total}",
     "compete_play": "JOUER",
+    "compete_mode_rush": "Rush",
+    "compete_mode_relax": "Relax",
     "compete_completed": "Terminé",
     "compete_join_game": "REJOINDRE",
     "compete_create_game": "CRÉER",

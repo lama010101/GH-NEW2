@@ -83,6 +83,8 @@
     "compete_invited_you": "Invited you to a game",
     "compete_round_label": "Round {current} / {total}",
     "compete_play": "PLAY",
+    "compete_mode_rush": "Rush",
+    "compete_mode_relax": "Relax",
     "compete_completed": "Completed",
     "compete_join_game": "JOIN GAME",
     "compete_create_game": "CREATE GAME",
