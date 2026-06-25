@@ -35,9 +35,9 @@ export async function observeState(page: Page): Promise<ObservedState> {
     };
   }
 
-  const testid = await section.getAttribute('data-testid');
-  const statusAttr = await section.getAttribute('data-status');
-  const roundAttr = await section.getAttribute('data-round-index');
+  const testid = await section.getAttribute('data-testid', { timeout: 5000 }).catch(() => null);
+  const statusAttr = await section.getAttribute('data-status', { timeout: 5000 }).catch(() => null);
+  const roundAttr = await section.getAttribute('data-round-index', { timeout: 5000 }).catch(() => null);
 
   let status: SnapshotStatus | 'UNKNOWN' = 'UNKNOWN';
   if (testid === 'lobby-shell') status = 'LOBBY';
@@ -150,9 +150,9 @@ export async function captureResumeToken(page: Page): Promise<{
     .locator('[data-testid="lobby-shell"], [data-testid="round-active-section"], [data-testid="round-complete-section"], [data-testid="session-complete-section"]')
     .first();
 
-  const testid = await section.getAttribute('data-testid').catch(() => null);
-  const status = await section.getAttribute('data-status').catch(() => '') ?? '';
-  const roundIndex = await section.getAttribute('data-round-index').catch(() => null);
+  const testid = await section.getAttribute('data-testid', { timeout: 5000 }).catch(() => null);
+  const status = await section.getAttribute('data-status', { timeout: 5000 }).catch(() => '') ?? '';
+  const roundIndex = await section.getAttribute('data-round-index', { timeout: 5000 }).catch(() => null);
 
   // Sample the first 200 chars of body text — enough to detect phase changes
   const bodyTextSample = await Promise.race([
