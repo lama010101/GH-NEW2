@@ -123,13 +123,13 @@ export class BrowserPool {
 
       // Navigate to the home page first to trigger any auth gate
       await page.goto(this.opts.baseURL, { waitUntil: 'domcontentloaded' });
-      await page.waitForLoadState('networkidle').catch(() => undefined);
+      await page.waitForLoadState('domcontentloaded').catch(() => undefined);
 
       // Log in via the AuthModal UI
       await ensureLoggedIn(page, user);
 
       // Wait for identity to be ready (no auth modal visible)
-      await page.waitForLoadState('networkidle').catch(() => undefined);
+      await page.waitForLoadState('domcontentloaded').catch(() => undefined);
 
       this.players.push({ user, context, page, device, index: i });
       console.log(`[BROWSER_POOL] Player ${i + 1} (${user.displayName}, ${device}) ready`);
@@ -144,7 +144,7 @@ export class BrowserPool {
   async navigateToGame(player: PlayerBrowser, gameId: string): Promise<void> {
     const url = `${this.opts.baseURL}/compete/${gameId}`;
     await player.page.goto(url, { waitUntil: 'domcontentloaded' });
-    await player.page.waitForLoadState('networkidle').catch(() => undefined);
+    await player.page.waitForLoadState('domcontentloaded').catch(() => undefined);
   }
 
   /**
@@ -152,7 +152,7 @@ export class BrowserPool {
    */
   async refresh(player: PlayerBrowser): Promise<void> {
     await player.page.reload({ waitUntil: 'domcontentloaded' });
-    await player.page.waitForLoadState('networkidle').catch((err) => {
+    await player.page.waitForLoadState('domcontentloaded').catch((err) => {
       // If page is closed, surface the error immediately
       if (player.page.isClosed() || (err instanceof Error && err.message.includes('closed'))) {
         throw new Error(`refresh() failed: page closed during reload for player ${player.user.email}`);
