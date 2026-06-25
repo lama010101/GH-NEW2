@@ -150,7 +150,7 @@ export class GameOrchestrator {
 
     // Wait for allPlayersReady
     this.opts.onStep?.('Waiting for all players ready...');
-    await hostClient.waitForState((s) => s.allPlayersReady && s.players.length === 6, 15000);
+    await hostClient.waitForState((s) => s.allPlayersReady && s.players.length === this.wsClients.length, 15000);
 
     // Host starts game (or auto-start)
     this.opts.onStep?.('Starting game...');
