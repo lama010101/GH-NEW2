@@ -297,8 +297,7 @@ export default function RoundActiveSection({
       setSearchLoading(true);
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&limit=5`,
-          { headers: { "Accept-Language": "en", "User-Agent": "GuessHistory/1.0" } }
+          `/api/geocode/search?q=${encodeURIComponent(value)}`
         );
         if (!res.ok) throw new Error();
         const data = await res.json();
