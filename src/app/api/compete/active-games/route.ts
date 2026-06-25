@@ -44,6 +44,7 @@ export async function GET(_request: NextRequest) {
       round_current: number;
       round_total: number;
       status: "your_turn" | "waiting" | "completed";
+      mode: "sync" | "async";
       score_you?: number;
       score_them?: number;
       accuracy_you: number;
@@ -116,7 +117,7 @@ export async function GET(_request: NextRequest) {
            LIMIT 1`,
           [gameId, playerId, currentRoundIndex]
         );
-        status = commitResult.rows.length === 0 && session.mode === 'async' ? "your_turn" : "waiting";
+        status = commitResult.rows.length === 0 ? "your_turn" : "waiting";
       } else {
         // ROUND_COMPLETE, READY_NEXT, RESULT_STARTED
         status = "waiting";
@@ -160,6 +161,7 @@ export async function GET(_request: NextRequest) {
         round_current: currentRoundIndex + 1,
         round_total: session.total_rounds,
         status,
+        mode: session.mode === "sync" ? "sync" : "async",
         score_you: scoreYou,
         score_them: scoreThem,
         accuracy_you: accuracyYou,

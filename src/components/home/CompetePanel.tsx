@@ -13,6 +13,7 @@ type ActiveGame = {
   round_current: number
   round_total: number
   status: 'your_turn' | 'waiting' | 'completed'
+  mode?: 'sync' | 'async'
   score_you?: number
   score_them?: number
   accuracy_you?: number
@@ -304,6 +305,9 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     <span className={cpStyles.gameName}>{game.opponent_name}</span>
                     <span className={cpStyles.gameSub}>Round {game.round_current} / {game.round_total}</span>
                   </div>
+                  {game.mode && (
+                    <span className={cpStyles.modeBadge}>{game.mode === 'sync' ? t('home.compete_mode_rush') : t('home.compete_mode_relax')}</span>
+                  )}
                   <span className={cpStyles.playBadge}>{t('home.compete_play')}</span>
                 </div>
               ))}
