@@ -83,4 +83,14 @@
 
 ---
 
+## SECTION C — CORE CORRECTNESS TESTS
+
+### Test Coverage Status
+
+| # | Test Suite | Status | Commit | Notes |
+|---|------------|--------|--------|-------|
+| 1 | Scoring, badges, near-miss, combo, stats aggregation | CLOSED | 155a694 | 36 tests passed, fixture-based, no browser/multiplayer dependency. File: src/core/rules.correctness.test.ts. No genuine bugs found — all initial failures were test expectation errors (incorrect hand computations of year accuracy formula). |
+
+---
+
 *File created 2026-06-24 by Claude (CTO) to replace long-form bug/status tracking in the `memory_user_edits` tool, which is capped at 30 entries. Memory now holds only compressed pointers to this file plus standing process rules. Coders update this file as instructed by prompt validation steps; Claude reviews and corrects status changes, coders never self-certify a CLOSED status.*
