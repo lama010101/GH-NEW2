@@ -155,9 +155,12 @@ export async function captureResumeToken(page: Page): Promise<{
   const roundIndex = await section.getAttribute('data-round-index').catch(() => null);
 
   // Sample the first 200 chars of body text — enough to detect phase changes
-  const bodyTextSample = await page.evaluate(() => {
-    return (document.body.innerText || '').slice(0, 200);
-  });
+  const bodyTextSample = await Promise.race([
+    page.evaluate(() => {
+      return (document.body.innerText || '').slice(0, 200);
+    }),
+    new Promise<string>((resolve) => setTimeout(() => resolve(''), 5000)),
+  ]);
 
   return {
     url: page.url(),
