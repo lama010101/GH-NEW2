@@ -299,35 +299,40 @@ export const EDGE_CASES: EdgeCase[] = [
     inject: async (pool, clients, gameId) => {
       const player = pool.byIndex(0);
       const user = player.user;
-      const page = player.page;
+      const browser = pool.host().context.browser();
+      if (!browser) {
+        console.warn('[EDGE:auth-signout-resignin] Could not obtain browser instance — skipping');
+        return;
+      }
+      const ctx = await browser.newContext();
+      const page = await ctx.newPage();
       const { consoleErrors, pageErrors, cleanup } = attachErrorListeners(page);
 
       try {
-        const cookiesBefore = await page.context().cookies();
+        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('domcontentloaded').catch(() => undefined);
+        await loginViaAuthModal(page, user);
+
+        const cookiesBefore = await ctx.cookies();
         const authBefore = findAuthCookies(cookiesBefore);
         console.log(`[EDGE:auth-signout-resignin] Cookies BEFORE sign-out: auth-token present=${authBefore.length > 0}, chunks=${authBefore.length}`);
 
         await signOutViaUI(page, pool.baseURL);
 
-        const cookiesAfter = await page.context().cookies();
+        const cookiesAfter = await ctx.cookies();
         const authAfter = findAuthCookies(cookiesAfter);
         console.log(`[EDGE:auth-signout-resignin] Cookies AFTER sign-out: auth-token present=${authAfter.length > 0}, chunks=${authAfter.length}`);
         const cookieCleared = authAfter.length === 0;
 
         // Sign back in as the same user
         await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
-        await page.waitForLoadState('networkidle').catch(() => undefined);
+        await page.waitForLoadState('domcontentloaded').catch(() => undefined);
         await loginViaAuthModal(page, user);
 
-        const cookiesRe = await page.context().cookies();
+        const cookiesRe = await ctx.cookies();
         const authRe = findAuthCookies(cookiesRe);
         console.log(`[EDGE:auth-signout-resignin] Cookies AFTER re-sign-in: auth-token present=${authRe.length > 0}, chunks=${authRe.length}`);
         const resigninSucceeded = authRe.length > 0;
-
-        // Navigate back to the game so the suite can continue
-        await pool.navigateToGame(player, gameId).catch((e) => {
-          console.warn(`[EDGE:auth-signout-resignin] Failed to navigate back to game: ${e}`);
-        });
 
         const pass = cookieCleared && resigninSucceeded;
         console.log(`[EDGE:auth-signout-resignin] VERDICT: ${pass ? 'PASS' : 'FAIL'} (cookieCleared=${cookieCleared}, resigninSucceeded=${resigninSucceeded})`);
@@ -335,6 +340,7 @@ export const EDGE_CASES: EdgeCase[] = [
         if (pageErrors.length > 0) console.log(`[EDGE:auth-signout-resignin] Page errors: ${JSON.stringify(pageErrors)}`);
       } finally {
         cleanup();
+        await ctx.close().catch(() => undefined);
       }
     },
   },
