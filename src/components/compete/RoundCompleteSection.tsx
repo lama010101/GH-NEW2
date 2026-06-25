@@ -8,6 +8,7 @@ import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereCard from "@/components/compete/WhereCard";
 import WhenCard from "@/components/compete/WhenCard";
 import InlineImageBadge from "@/components/compete/InlineImageBadge";
+import RatingControl from "@/components/compete/RatingControl";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
@@ -189,6 +190,9 @@ export default function RoundCompleteSection({
                   </button>
                 </div>
               )}
+              <div className={styles.sourceButtonWrap}>
+                <RatingControl eventId={round.eventId} />
+              </div>
             </div>
 
             {/* ACCURACY RING CARD */}

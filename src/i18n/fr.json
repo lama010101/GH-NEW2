@@ -212,6 +212,8 @@
     "round_label": "Manche {current} / {total}",
     "round_label_compact": "Manche {current}/{total}",
     "source_link": "Source ↗",
+    "rate": "Noter",
+    "rate_saved": "Enregistré",
     "this_round": "Cette manche",
     "total_penalty": "Pénalité totale",
     "loading": "Chargement...",
