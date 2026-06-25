@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import styles from "./WelcomeModal.module.css";
+import { AvatarPickerModal } from "./AvatarPickerModal";
 
 export interface WelcomeModalProps {
   isOpen: boolean;
@@ -24,6 +25,8 @@ export interface WelcomeModalProps {
 
 export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSaved }: WelcomeModalProps) {
   const [usernameValue, setUsernameValue] = useState(initialDisplayName);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(avatar.image_url);
 
   if (!isOpen) return null;
 
@@ -80,19 +83,23 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
         <p className={styles.avatarIntro}>Your historical avatar</p>
 
         <div className={styles.avatarWrap}>
-          {avatar.image_url ? (
+          {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={avatar.image_url}
+              src={avatarUrl}
               alt={fullName}
               className={styles.avatarImg}
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }}
             />
           ) : null}
-          <span className={styles.avatarInitials} style={{ display: avatar.image_url ? "none" : "inline" }}>{initials.toUpperCase()}</span>
+          <span className={styles.avatarInitials} style={{ display: avatarUrl ? "none" : "inline" }}>{initials.toUpperCase()}</span>
         </div>
 
         <div className={styles.avatarName}>{fullName}</div>
+
+        <button onClick={() => setAvatarPickerOpen(true)} className={styles.skipLink} style={{ marginBottom: 16 }}>
+          Choose a different avatar
+        </button>
 
         {bioLine && <div className={styles.bioLine}>{bioLine}</div>}
 
@@ -117,6 +124,23 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
           Skip for now
         </span>
       </div>
+
+      <AvatarPickerModal
+        isOpen={avatarPickerOpen}
+        currentAvatarUrl={avatarUrl}
+        showSkip={true}
+        onSkip={() => setAvatarPickerOpen(false)}
+        onClose={() => setAvatarPickerOpen(false)}
+        onSave={async (url) => {
+          await fetch("/api/user/update-avatar", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ avatar_url: url }),
+          });
+          setAvatarUrl(url);
+          setAvatarPickerOpen(false);
+        }}
+      />
     </div>
   );
 }
