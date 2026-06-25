@@ -212,6 +212,8 @@
     "round_label": "Round {current} / {total}",
     "round_label_compact": "Round {current}/{total}",
     "source_link": "Source ↗",
+    "rate": "Rate",
+    "rate_saved": "Saved",
     "this_round": "This Round",
     "total_penalty": "Total penalty",
     "loading": "Loading...",
