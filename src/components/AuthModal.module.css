@@ -43,6 +43,12 @@
   margin-top: 0;
 }
 
+.langSwitcherWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
 .error {
   color: #f87171;
   font-size: var(--font-sm);
