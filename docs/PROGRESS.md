@@ -2320,3 +2320,10 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - **Files Modified:** none
 - **Description:** Confirmed src/app/account/page.tsx line 129 reads `router.push('/')` after `await signOut()` — already correct per CTO decision. Post-signOut, user lands on "/" (public landing page), NOT "/home" (which would bounce to /login via middleware — pointless extra hop). No correction needed.
 - **Validation:** grep router.push → line 129: `router.push('/')` (target is '/', not '/home'); git diff --name-only → zero source files modified; tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in account/page.tsx).
+
+## MP-UPD-PROFILE-SIGNOUT-CONFIRM-001 — Confirm post-signOut target in profile page stays at landing page
+- **Status:** COMPLETE (confirmation-only, no code change)
+- **Commit:** none (no change needed)
+- **Files Modified:** none
+- **Description:** Confirmed src/app/profile/page.tsx line 194 reads `router.push('/');` after `await signOut();` — already correct per CTO decision. Post-signOut lands on "/" (public landing page), NOT "/home". No correction needed.
+- **Validation:** grep router.push → line 194: `router.push('/')` (target is '/', not '/home'); git diff --name-only → zero files modified; tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in profile/page.tsx).
