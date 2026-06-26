@@ -2327,3 +2327,11 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - **Files Modified:** none
 - **Description:** Confirmed src/app/profile/page.tsx line 194 reads `router.push('/');` after `await signOut();` — already correct per CTO decision. Post-signOut lands on "/" (public landing page), NOT "/home". No correction needed.
 - **Validation:** grep router.push → line 194: `router.push('/')` (target is '/', not '/home'); git diff --name-only → zero files modified; tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in profile/page.tsx).
+
+## MP-UPD-AUTHMODAL-HOME-001 — Update OAuth callback next param to /home
+- **Status:** COMPLETE
+- **Commit:** 33d70da
+- **Files Modified:**
+  - src/components/AuthModal.tsx (line 51: next=/ → next=/home in OAuth redirectTo)
+- **Description:** Single-line change. OAuth sign-in redirectTo now points to /auth/callback?next=/home instead of /auth/callback?next=/. Correct because OAuth sign-in is an auth action — successful completion means user has a session, so landing on /home (permitted by middleware) is correct. Line 124 (next=/account for account-linking flow) left untouched — not in scope.
+- **Validation:** grep next=/[bare] → 0 matches (only next=/home and next=/account remain); grep next=/home → 1 match (line 51); git diff --name-only → only AuthModal.tsx; tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in AuthModal.tsx).
