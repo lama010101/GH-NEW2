@@ -14,6 +14,7 @@ const PUBLIC_API_ROUTES = [
   "/api/compete/join",
   "/api/compete/create",
   "/api/geocode",
+  "/api/waitlist",
 ];
 
 function isPublicPath(pathname: string): boolean {
