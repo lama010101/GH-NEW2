@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
-import { AuthModal } from '@/components/AuthModal'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
 import { PracticePanel } from '@/components/home/PracticePanel'
@@ -22,7 +21,6 @@ function HomePageInner() {
   const t = useTranslations()
 
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
-  const [showAuthModal, setShowAuthModal] = useState(false)
   const [welcomeData, setWelcomeData] = useState<{
     avatar: {
       id: string;
@@ -43,14 +41,10 @@ function HomePageInner() {
   useEffect(() => {
     bootstrapIdentity().then((state) => {
       setIdentity(state);
-      if (state.status === 'unauthenticated') {
-        setShowAuthModal(true);
-      }
     })
     return subscribeToIdentityChanges((state) => {
       setIdentity(state);
       if (state.status === 'ready') {
-        setShowAuthModal(false);
         if (state.isNewUser) {
           fetch('/api/user/assign-avatar', { method: 'POST' })
             .then(r => r.json())
@@ -61,8 +55,6 @@ function HomePageInner() {
             })
             .catch(() => {});
         }
-      } else if (state.status === 'unauthenticated') {
-        setShowAuthModal(true);
       }
     });
   }, [])
@@ -124,7 +116,6 @@ function HomePageInner() {
   const [showNavModal, setShowNavModal] = useState(false)
 
   const handleNav = (path: string) => {
-    if (identity.status !== 'ready') { setShowAuthModal(true); return }
     router.push(path)
   }
 
@@ -144,7 +135,7 @@ function HomePageInner() {
         xp={xp}
         avatarUrl={avatarUrl}
         initials={initials}
-        onAvatarClick={() => { if (identity.status !== 'ready') { setShowAuthModal(true); return } setShowNavModal(true) }}
+        onAvatarClick={() => setShowNavModal(true)}
       />
 
       {/* Scrollable content area */}
@@ -162,7 +153,7 @@ function HomePageInner() {
               mode={mode}
               playerId={playerId}
               displayName={displayName}
-              onRequireAuth={() => setShowAuthModal(true)}
+              onRequireAuth={() => {}}
               onNavigate={handleNav}
               onLobby={(gameId) => router.push(`/compete/${gameId}`)}
             />
@@ -177,7 +168,6 @@ function HomePageInner() {
         initials={initials}
         displayName={(identity as { status: string; playerId: string; displayName: string }).displayName ?? initials}
       />
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} required={true} />
       {welcomeData && (
         <WelcomeModal
           isOpen={true}
