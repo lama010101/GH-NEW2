@@ -12,9 +12,9 @@
 # Error details
 
 ```
-Error: page.goto: Navigation to "http://localhost:3000/compete/46a31b10-e7c7-4621-b07a-856e8227fd0d" is interrupted by another navigation to "http://localhost:3000/"
+Error: page.goto: Navigation to "http://localhost:3000/compete/858cc0ec-24d2-4a3c-97ae-875a32b03947" is interrupted by another navigation to "http://localhost:3000/"
 Call log:
-  - navigating to "http://localhost:3000/compete/46a31b10-e7c7-4621-b07a-856e8227fd0d", waiting until "domcontentloaded"
+  - navigating to "http://localhost:3000/compete/858cc0ec-24d2-4a3c-97ae-875a32b03947", waiting until "domcontentloaded"
 
 ```
 
@@ -101,13 +101,13 @@ Call log:
   123 | 
   124 |       // Navigate to the home page first to trigger any auth gate
   125 |       await page.goto(this.opts.baseURL, { waitUntil: 'domcontentloaded' });
-  126 |       await page.waitForLoadState('networkidle').catch(() => undefined);
+  126 |       await page.waitForLoadState('domcontentloaded').catch(() => undefined);
   127 | 
   128 |       // Log in via the AuthModal UI
   129 |       await ensureLoggedIn(page, user);
   130 | 
   131 |       // Wait for identity to be ready (no auth modal visible)
-  132 |       await page.waitForLoadState('networkidle').catch(() => undefined);
+  132 |       await page.waitForLoadState('domcontentloaded').catch(() => undefined);
   133 | 
   134 |       this.players.push({ user, context, page, device, index: i });
   135 |       console.log(`[BROWSER_POOL] Player ${i + 1} (${user.displayName}, ${device}) ready`);
@@ -122,8 +122,8 @@ Call log:
   144 |   async navigateToGame(player: PlayerBrowser, gameId: string): Promise<void> {
   145 |     const url = `${this.opts.baseURL}/compete/${gameId}`;
 > 146 |     await player.page.goto(url, { waitUntil: 'domcontentloaded' });
-      |                       ^ Error: page.goto: Navigation to "http://localhost:3000/compete/46a31b10-e7c7-4621-b07a-856e8227fd0d" is interrupted by another navigation to "http://localhost:3000/"
-  147 |     await player.page.waitForLoadState('networkidle').catch(() => undefined);
+      |                       ^ Error: page.goto: Navigation to "http://localhost:3000/compete/858cc0ec-24d2-4a3c-97ae-875a32b03947" is interrupted by another navigation to "http://localhost:3000/"
+  147 |     await player.page.waitForLoadState('domcontentloaded').catch(() => undefined);
   148 |   }
   149 | 
   150 |   /**
@@ -131,7 +131,7 @@ Call log:
   152 |    */
   153 |   async refresh(player: PlayerBrowser): Promise<void> {
   154 |     await player.page.reload({ waitUntil: 'domcontentloaded' });
-  155 |     await player.page.waitForLoadState('networkidle').catch((err) => {
+  155 |     await player.page.waitForLoadState('domcontentloaded').catch((err) => {
   156 |       // If page is closed, surface the error immediately
   157 |       if (player.page.isClosed() || (err instanceof Error && err.message.includes('closed'))) {
   158 |         throw new Error(`refresh() failed: page closed during reload for player ${player.user.email}`);
