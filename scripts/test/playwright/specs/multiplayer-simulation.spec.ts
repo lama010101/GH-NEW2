@@ -106,18 +106,19 @@ test.describe('Multiplayer Simulation', () => {
 
       await browserPool.launch(getBrowser);
 
+      edgeCaseEngine = new EdgeCaseEngine();
+
       orchestrator = new GameOrchestrator({
         browserPool,
         partyKitHost: PARTYKIT_HOST,
         totalRounds: 2, // Shorter game for focused test
         totalGames: 1,
+        edgeCaseEngine,
         onStep: (step) => {
           console.log(`[RESUME-TEST] ${step}`);
           stepLog.push(step);
         },
       });
-
-      edgeCaseEngine = new EdgeCaseEngine();
 
       // Run a single game with refresh edge cases
       const results = await orchestrator.run();

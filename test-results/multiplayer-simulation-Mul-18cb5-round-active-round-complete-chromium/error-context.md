@@ -12,182 +12,125 @@
 # Error details
 
 ```
-Error: Timeout waiting for state match (20000ms)
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
 ```
 
 # Test source
 
 ```ts
-  147 |         console.log(`[WS:${this.opts.user.displayName}] Connected`);
-  148 |         this.reconnectAttempts = 0;
-  149 |         this.opts.onConnect?.();
-  150 |         // Send JOIN_ROOM
-  151 |         this.send({
-  152 |           type: 'JOIN_ROOM',
-  153 |           playerId: this.opts.user.id,
-  154 |           displayName: this.opts.displayName ?? this.opts.user.displayName,
-  155 |         });
-  156 |         // Start heartbeat
-  157 |         const hb = this.opts.heartbeatMs ?? 20000;
-  158 |         this.heartbeat = setInterval(() => {
-  159 |           if (this.ws?.readyState === WebSocket.OPEN) {
-  160 |             this.ws.send(JSON.stringify({ type: 'PING' }));
-  161 |           }
-  162 |         }, hb);
-  163 |       });
-  164 | 
-  165 |       ws.on('message', (raw: WebSocket.RawData) => {
-  166 |         try {
-  167 |           const msg = JSON.parse(raw.toString()) as ClientMessage;
-  168 |           this.handleMessage(msg, resolveOnce);
-  169 |         } catch (err) {
-  170 |           console.error(`[WS:${this.opts.user.displayName}] Failed to parse message:`, err);
-  171 |         }
-  172 |       });
-  173 | 
-  174 |       ws.on('close', (code: number, reason: Buffer) => {
-  175 |         this.clearHeartbeat();
-  176 |         console.log(`[WS:${this.opts.user.displayName}] Closed code=${code} reason=${reason.toString()}`);
-  177 |         this.opts.onDisconnect?.();
-  178 |         if (!this.manuallyClosed) {
-  179 |           this.attemptReconnect().catch((err) => {
-  180 |             if (!firstStateResolved) {
-  181 |               firstStateResolved = true;
-  182 |               reject(err);
-  183 |             }
-  184 |           });
-  185 |         }
-  186 |       });
-  187 | 
-  188 |       ws.on('error', (err: Error) => {
-  189 |         console.error(`[WS:${this.opts.user.displayName}] Error:`, err.message);
-  190 |         if (!firstStateResolved) {
-  191 |           firstStateResolved = true;
-  192 |           reject(err);
-  193 |         }
-  194 |       });
-  195 |     });
-  196 |     return this.connectPromise;
-  197 |   }
-  198 | 
-  199 |   private attemptReconnect(): Promise<void> {
-  200 |     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-  201 |       return Promise.reject(new Error(`Max reconnect attempts reached for ${this.opts.user.displayName}`));
-  202 |     }
-  203 |     this.reconnectAttempts++;
-  204 |     const delay = this.reconnectDelayMs * this.reconnectAttempts;
-  205 |     console.log(`[WS:${this.opts.user.displayName}] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
-  206 |     return new Promise((resolve) => setTimeout(resolve, delay)).then(() => {
-  207 |       this.connectPromise = null;
-  208 |       return this.connect();
-  209 |     });
-  210 |   }
-  211 | 
-  212 |   private handleMessage(msg: ClientMessage, resolveOnce: () => void): void {
-  213 |     switch (msg.type) {
-  214 |       case 'STATE_UPDATE':
-  215 |         this.opts.onStateUpdate?.(msg.snapshot as CompeteSnapshot);
-  216 |         resolveOnce();
-  217 |         break;
-  218 |       case 'ERROR':
-  219 |         console.warn(`[WS:${this.opts.user.displayName}] ERROR: ${msg.message}`);
-  220 |         this.opts.onError?.(msg.message);
-  221 |         break;
-  222 |       case 'PLAYER_SUBMITTED':
-  223 |         this.opts.onPlayerSubmitted?.(msg.playerId, msg.playerName);
-  224 |         break;
-  225 |       case 'TIMER_CLAMPED':
-  226 |         this.opts.onTimerClamped?.(msg.newPhaseEndsAt, msg.clampedToSec);
-  227 |         break;
-  228 |       case 'PLAY_AGAIN':
-  229 |         this.opts.onPlayAgain?.(msg.newGameId);
-  230 |         break;
-  231 |     }
-  232 |   }
-  233 | 
-  234 |   private send(msg: ServerMessage): void {
-  235 |     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-  236 |       console.warn(`[WS:${this.opts.user.displayName}] Cannot send — socket not open`);
-  237 |       return;
-  238 |     }
-  239 |     this.ws.send(JSON.stringify(msg));
-  240 |   }
-  241 | 
-  242 |   /** Wait for the next STATE_UPDATE matching a predicate. */
-  243 |   waitForState(predicate: (s: CompeteSnapshot) => boolean, timeoutMs = 30000): Promise<CompeteSnapshot> {
-  244 |     return new Promise((resolve, reject) => {
-  245 |       const timer = setTimeout(() => {
-  246 |         this.opts.onStateUpdate = originalHandler;
-> 247 |         reject(new Error(`Timeout waiting for state match (${timeoutMs}ms)`));
-      |                ^ Error: Timeout waiting for state match (20000ms)
-  248 |       }, timeoutMs);
-  249 | 
-  250 |       const originalHandler = this.opts.onStateUpdate;
-  251 |       this.opts.onStateUpdate = (snapshot: CompeteSnapshot) => {
-  252 |         originalHandler?.(snapshot);
-  253 |         if (predicate(snapshot)) {
-  254 |           clearTimeout(timer);
-  255 |           this.opts.onStateUpdate = originalHandler;
-  256 |           resolve(snapshot);
-  257 |         }
-  258 |       };
-  259 |     });
-  260 |   }
-  261 | 
-  262 |   // ── Action helpers ──────────────────────────────────────────────────────
-  263 |   toggleReady(ready = true): void {
-  264 |     this.send({ type: 'TOGGLE_READY', playerId: this.opts.user.id, ready });
-  265 |   }
-  266 | 
-  267 |   startGame(): void {
-  268 |     this.send({ type: 'START_GAME', playerId: this.opts.user.id });
-  269 |   }
-  270 | 
-  271 |   submitGuess(roundIndex: number, year: number | null, lat: number | null, lng: number | null, hintsUsed: string[] = []): void {
-  272 |     this.send({ type: 'SUBMIT_GUESS', playerId: this.opts.user.id, roundIndex, year, lat, lng, hintsUsed });
-  273 |   }
-  274 | 
-  275 |   readyNext(roundIndex: number): void {
-  276 |     this.send({ type: 'READY_NEXT', playerId: this.opts.user.id, roundIndex });
-  277 |   }
-  278 | 
-  279 |   advanceRound(roundIndex: number, cause = 'PLAYER'): void {
-  280 |     this.send({ type: 'ADVANCE_ROUND', playerId: this.opts.user.id, roundIndex, cause });
-  281 |   }
-  282 | 
-  283 |   setTimer(roundTimerSec: number): void {
-  284 |     this.send({ type: 'SET_TIMER', playerId: this.opts.user.id, roundTimerSec });
-  285 |   }
-  286 | 
-  287 |   setYearRange(yearMin: number, yearMax: number): void {
-  288 |     this.send({ type: 'SET_YEAR_RANGE', playerId: this.opts.user.id, yearMin, yearMax });
-  289 |   }
-  290 | 
-  291 |   kickPlayer(targetPlayerId: string): void {
-  292 |     this.send({ type: 'KICK_PLAYER', playerId: this.opts.user.id, targetPlayerId });
-  293 |   }
-  294 | 
-  295 |   playAgain(newGameId: string): void {
-  296 |     this.send({ type: 'PLAY_AGAIN', playerId: this.opts.user.id, newGameId });
-  297 |   }
-  298 | 
-  299 |   /** Forcefully close the WebSocket (e.g. to simulate a network drop). */
-  300 |   close(): void {
-  301 |     this.manuallyClosed = true;
-  302 |     this.clearHeartbeat();
-  303 |     if (this.ws) {
-  304 |       this.ws.close();
-  305 |       this.ws = null;
-  306 |     }
-  307 |     this.connectPromise = null;
-  308 |   }
-  309 | 
-  310 |   private clearHeartbeat(): void {
-  311 |     if (this.heartbeat) {
-  312 |       clearInterval(this.heartbeat);
-  313 |       this.heartbeat = null;
-  314 |     }
-  315 |   }
-  316 | }
-  317 | 
+  30  |         return chromiumBrowser;
+  31  |       };
+  32  | 
+  33  |       // Initialize browser pool
+  34  |       browserPool = new BrowserPool({
+  35  |         baseURL: BASE_URL,
+  36  |         users: TEST_USERS,
+  37  |         headed: false,
+  38  |       });
+  39  | 
+  40  |       // Launch browsers and log in
+  41  |       await browserPool.launch(getBrowser);
+  42  | 
+  43  |       // Initialize edge-case engine
+  44  |       edgeCaseEngine = new EdgeCaseEngine();
+  45  | 
+  46  |       // Initialize orchestrator
+  47  |       orchestrator = new GameOrchestrator({
+  48  |         browserPool,
+  49  |         partyKitHost: PARTYKIT_HOST,
+  50  |         totalRounds: 5,
+  51  |         totalGames: 3,
+  52  |         edgeCaseEngine,
+  53  |         onStep: (step) => {
+  54  |           console.log(`[SIMULATION] ${step}`);
+  55  |           stepLog.push(step);
+  56  |         },
+  57  |         onAssertionFailure: (failures) => {
+  58  |           assertionFailures.push(...failures);
+  59  |         },
+  60  |       });
+  61  | 
+  62  |       // Run the simulation
+  63  |       const results = await orchestrator.run();
+  64  | 
+  65  |       // Report results
+  66  |       console.log('[SIMULATION] Results:', results);
+  67  |       console.log(`[SIMULATION] Edge cases injected: ${edgeCaseEngine.injectedCount}/${edgeCaseEngine.totalCount}`);
+  68  |       console.log(`[SIMULATION] Assertion failures: ${assertionFailures.length}`);
+  69  | 
+  70  |       // Assertions
+  71  |       expect(results.length).toBe(3);
+  72  |       expect(results.every((r) => r.completed)).toBe(true);
+  73  |       expect(edgeCaseEngine.injectedCount).toBeGreaterThan(0);
+  74  |       expect(assertionFailures.length).toBe(0);
+  75  | 
+  76  |       // Cleanup
+  77  |       await browserPool.closeAll();
+  78  |     } finally {
+  79  |       // Close isolated browser instances
+  80  |       await chromiumBrowser.close();
+  81  |       await webkitBrowser.close();
+  82  |     }
+  83  |   });
+  84  | 
+  85  |   test('resume-after-refresh: lobby, round-active, round-complete', async () => {
+  86  |     // This test focuses specifically on the resume-after-refresh scenarios
+  87  |     const stepLog: string[] = [];
+  88  | 
+  89  |     // Launch isolated browser instances for this test
+  90  |     const chromiumBrowser = await chromium.launch();
+  91  |     const webkitBrowser = await webkit.launch();
+  92  | 
+  93  |     try {
+  94  |       const getBrowser = (device: DeviceProfile) => {
+  95  |         if (device === 'iphone-safari') {
+  96  |           return webkitBrowser;
+  97  |         }
+  98  |         return chromiumBrowser;
+  99  |       };
+  100 | 
+  101 |       browserPool = new BrowserPool({
+  102 |         baseURL: BASE_URL,
+  103 |         users: TEST_USERS.slice(0, 2), // Only 2 players for this focused test
+  104 |         headed: false,
+  105 |       });
+  106 | 
+  107 |       await browserPool.launch(getBrowser);
+  108 | 
+  109 |       edgeCaseEngine = new EdgeCaseEngine();
+  110 | 
+  111 |       orchestrator = new GameOrchestrator({
+  112 |         browserPool,
+  113 |         partyKitHost: PARTYKIT_HOST,
+  114 |         totalRounds: 2, // Shorter game for focused test
+  115 |         totalGames: 1,
+  116 |         edgeCaseEngine,
+  117 |         onStep: (step) => {
+  118 |           console.log(`[RESUME-TEST] ${step}`);
+  119 |           stepLog.push(step);
+  120 |         },
+  121 |       });
+  122 | 
+  123 |       // Run a single game with refresh edge cases
+  124 |       const results = await orchestrator.run();
+  125 | 
+  126 |       console.log('[RESUME-TEST] Results:', results);
+  127 |       console.log(`[RESUME-TEST] Edge cases injected: ${edgeCaseEngine.injectedCount}`);
+  128 | 
+  129 |       expect(results.length).toBe(1);
+> 130 |       expect(results[0].completed).toBe(true);
+      |                                    ^ Error: expect(received).toBe(expected) // Object.is equality
+  131 | 
+  132 |       await browserPool.closeAll();
+  133 |     } finally {
+  134 |       // Close isolated browser instances
+  135 |       await chromiumBrowser.close();
+  136 |       await webkitBrowser.close();
+  137 |     }
+  138 |   });
+  139 | });
+  140 | 
 ```
