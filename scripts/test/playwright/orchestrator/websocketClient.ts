@@ -250,11 +250,15 @@ export class CompeteWSClient {
 
       const originalHandler = this.opts.onStateUpdate;
       this.opts.onStateUpdate = (snapshot: CompeteSnapshot) => {
-        originalHandler?.(snapshot);
-        if (predicate(snapshot)) {
-          clearTimeout(timer);
-          this.opts.onStateUpdate = originalHandler;
-          resolve(snapshot);
+        try {
+          originalHandler?.(snapshot);
+          if (predicate(snapshot)) {
+            clearTimeout(timer);
+            this.opts.onStateUpdate = originalHandler;
+            resolve(snapshot);
+          }
+        } catch (err) {
+          console.error(`[WS] waitForState handler error:`, err instanceof Error ? err.message : err);
         }
       };
     });
