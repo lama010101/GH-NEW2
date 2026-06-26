@@ -100,16 +100,16 @@
 - **MP-ADD-LANDING-PAGE-001** (2026-06-26): Replaced `src/app/page.tsx` with new SEO-optimized public landing page (server component, Next.js Metadata API with title/description/OG tags, semantic HTML, existing CSS variables + gradient conventions). Created `src/components/landing/WaitlistForm.tsx` (client component) — POSTs to /api/waitlist with inline states (idle/submitting/success/already/error). curl / → 200 with title, OG tags, email input. Form flow verified: 201 on fresh email, 409 on duplicate. Test row cleaned up. `next build` fails due to pre-existing CSS path issue in `src/app/home/page.tsx` (from MP-MOVE-HOME-PAGE-001, not caused by this task). tsc: no new errors. Commit `b26ebb2`.
 
 ### WAITLIST LANDING PAGE INITIATIVE — E2E VERIFICATION (MP-VERIFY-WAITLIST-E2E-001, 2026-06-26)
-**Status: PARTIAL PASS — 8/15 checks passed, 7/15 FAILED due to 2 pre-existing issues blocking the entire dev server + build.**
+**Status: PARTIAL PASS — 10/15 checks passed, 5/15 FAILED. Initiative NOT fully closed — 3 remaining issues require separate tasks.**
 
 Tasks in this initiative:
 - MP-ADD-WAITLIST-TBL-001 (waitlist table migration) — CLOSED
 - MP-ADD-ADMIN-BYPASS-ENV-001 (admin bypass env var) — BLOCKED (already existed)
-- MP-MOVE-HOME-PAGE-001 (move home page to /home) — CLOSED (but introduced CSS path bug)
+- MP-MOVE-HOME-PAGE-001 (move home page to /home) — CLOSED (introduced CSS path bug, later fixed)
 - MP-FIX-HOME-STRIP-GATING-001 (remove client-side auth gate from /home) — CLOSED
-- MP-UPD-MIDDLEWARE-HOME-AUTH-001 (server-side auth on /home) — STOPPED (middleware not loaded)
-- MP-ADD-MIDDLEWARE-BYPASS-001 (admin bypass cookie) — BLOCKED (depends on stopped middleware task)
-- MP-ADD-WAITLIST-API-001 (waitlist email submission API) — CLOSED
+- MP-UPD-MIDDLEWARE-HOME-AUTH-001 (server-side auth on /home) — CLOSED (logic written, was dormant until MP-FIX-MIDDLEWARE-LOCATION-001)
+- MP-ADD-MIDDLEWARE-BYPASS-001 (admin bypass cookie) — BLOCKED (never implemented in middleware file)
+- MP-ADD-WAITLIST-API-001 (waitlist email submission API) — CLOSED (but now auth-gated by middleware — see NEW REGRESSION below)
 - MP-UPD-LOBBY-HOME-001 (LobbySection nav / → /home) — CLOSED
 - MP-UPD-ROUNDCOMP-HOME-001 (RoundCompleteSection nav / → /home) — CLOSED
 - MP-UPD-SESSIONCOMP-HOME-001 (SessionComplete nav / → /home) — CLOSED
@@ -118,33 +118,35 @@ Tasks in this initiative:
 - MP-UPD-PROFILE-SIGNOUT-CONFIRM-001 (profile signOut stays at /) — CLOSED (confirmation-only)
 - MP-UPD-AUTHMODAL-HOME-001 (OAuth callback next=/home) — CLOSED
 - MP-ADD-LANDING-PAGE-001 (public SEO landing page) — CLOSED
+- MP-FIX-HOME-CSS-IMPORT-001 (fix CSS path bug from MP-MOVE-HOME-PAGE-001) — CLOSED
+- MP-FIX-MIDDLEWARE-LOCATION-001 (move middleware.ts to src/) — CLOSED
 
-E2E verification results (15 checks):
+E2E verification results — RE-RUN after MP-FIX-HOME-CSS-IMPORT-001 + MP-FIX-MIDDLEWARE-LOCATION-001 (15 checks):
 1. PASS — grep compete-area router.push("/") → 0 matches
 2. PASS — grep AuthModal next=/ bare → 0 matches
 3. PASS — account + profile signOut targets both show '/'
-4. PASS — PUBLIC_PATHS has "/", absent "/home"
-5. PASS — curl / → 200, landing page HTML (first request before /home compilation poisoned dev server)
-6. **FAIL** — curl /home (no cookies) → 500 (expected 302 to /login). Root cause: `src/app/home/page.tsx` line 15 `import styles from './home.module.css'` resolves to non-existent `src/app/home/home.module.css` (CSS is at `src/app/home.module.css`). Pre-existing from MP-MOVE-HOME-PAGE-001.
-7. **FAIL** — curl /?admin=WRONGTOKEN → 500 (expected 200). Dev server poisoned by /home compilation failure.
-8. **FAIL** — curl -b gh_admin_bypass=1 / → 500 (expected 302 to /home). Middleware not loaded (at root, not src/) AND dev server poisoned.
-9. **FAIL** — curl -b gh_admin_bypass=1 /home → 500 (expected 302 to /login). Same root causes as #6 + #8.
-10. **FAIL** — POST /api/waitlist → 500 (expected 201). Dev server poisoned by /home compilation failure (API route itself is correct — verified working in MP-ADD-WAITLIST-API-001 before /home was compiled).
+4. PASS — PUBLIC_PATHS (in src/middleware.ts) has "/", absent "/home"
+5. PASS — curl / → 200, landing page HTML
+6. PASS — curl /home (no cookies) → 307 to /login?next=%2Fhome (middleware auth-gating now LIVE)
+7. PASS — curl /?admin=WRONGTOKEN → 200 (landing served, no bypass — but only because no bypass logic exists)
+8. **FAIL** — curl -b gh_admin_bypass=1 / → 200 (expected 302 to /home). Admin bypass logic does NOT exist in middleware (MP-ADD-MIDDLEWARE-BYPASS-001 never implemented). Cookie ignored.
+9. **FAIL** — curl -b gh_admin_bypass=1 /home → 307 to /login (expected 302 to /login as "bypass ≠ auth"). Result is 307→/login which is correct auth-gating, but NOT for the expected reason — there is no bypass logic at all, not "bypass ≠ auth" logic.
+10. **FAIL** — POST /api/waitlist → 307 to /login?next=%2Fapi%2Fwaitlist (expected 201). **NEW REGRESSION: now that middleware loads (MP-FIX-MIDDLEWARE-LOCATION-001), /api/waitlist is auth-gated because it is NOT in PUBLIC_API_ROUTES in src/middleware.ts.** The waitlist API was only working before because middleware was never loaded. Fix: add "/api/waitlist" to PUBLIC_API_ROUTES in src/middleware.ts.
 11. PASS — psql \d waitlist → table exists with id/email/created_at + unique constraint on email + RLS enabled
-12. **FAIL** — tsc --noEmit → exit 2 (expected 0). 2 pre-existing errors in rules.correctness.test.ts (unused imports).
-13. **FAIL** — next build → fails (expected green). Same CSS path issue as #6.
+12. **FAIL** — tsc --noEmit → exit 2 (expected 0). 2 pre-existing errors in rules.correctness.test.ts (unused imports calculateLocationAccuracy, calculateYearAccuracy).
+13. **FAIL** — next build → exit 1 (expected green). Webpack compiles successfully (no Module not found — CSS path bug fixed), but ESLint errors cause build failure: 2 errors in WaitlistForm.tsx (unescaped apostrophes, from MP-ADD-LANDING-PAGE-001) + 2 pre-existing errors in rules.correctness.test.ts.
 14. PASS — grep bootstrapIdentity in src/app/home/page.tsx → present (preserved)
 15. PASS — diff HEAD:src/app/home/page.tsx vs working file → empty (no drift)
 
-**BLOCKING ISSUES (must be fixed in separate tasks before initiative can be fully verified):**
-1. **CSS path bug** (from MP-MOVE-HOME-PAGE-001): `src/app/home/page.tsx` line 15 imports `'./home.module.css'` but CSS is at `src/app/home.module.css`. Fix: change import to `'../home.module.css'` or copy CSS file. This breaks `next build` and poisons the dev server for ALL routes after /home is first compiled.
-2. **Middleware not loaded** (from MP-UPD-MIDDLEWARE-HOME-AUTH-001): `middleware.ts` is at project root but project uses `src/` directory, so Next.js 14 ignores it. Fix: move to `src/middleware.ts`. Until fixed, no route has server-side auth protection and admin bypass logic (MP-ADD-MIDDLEWARE-BYPASS-001) cannot be implemented.
-3. **Pre-existing tsc errors** in `src/core/rules.correctness.test.ts` (unused imports `calculateLocationAccuracy`, `calculateYearAccuracy`). Fix: remove unused imports or prefix with underscore.
+**REMAINING ISSUES (require separate tasks before initiative can be fully closed):**
+1. **NEW REGRESSION — /api/waitlist auth-gated by middleware** (introduced by MP-FIX-MIDDLEWARE-LOCATION-001): `/api/waitlist` is NOT in `PUBLIC_API_ROUTES` in `src/middleware.ts`. Now that middleware loads, POST /api/waitlist → 307 to /login instead of 201. Fix: add `"/api/waitlist"` to `PUBLIC_API_ROUTES` array in `src/middleware.ts`. **This is the most critical remaining issue — the waitlist landing page form is non-functional.**
+2. **Admin bypass logic never implemented** (MP-ADD-MIDDLEWARE-BYPASS-001 was BLOCKED, never written): No admin token check, no gh_admin_bypass cookie setting, no bypass logic exists in `src/middleware.ts`. grep for "admin"/"bypass"/"france" → 0 matches. A new task is needed to implement this now that the middleware location blocker is resolved.
+3. **Pre-existing tsc + ESLint errors**: 2 unused imports in `rules.correctness.test.ts` (tsc TS6133 + ESLint), 2 unescaped apostrophes in `WaitlistForm.tsx` (ESLint, from MP-ADD-LANDING-PAGE-001). These cause `tsc --noEmit` exit 2 and `next build` exit 1.
 
 ### POST-INITIATIVE FIXES
-- **MP-FIX-HOME-CSS-IMPORT-001** (2026-06-26): **RESOLVED BLOCKING ISSUE #1 from E2E verification.** Moved `src/app/home.module.css` → `src/app/home/home.module.css` (Option A — grep confirmed only `src/app/home/page.tsx` references it; landing page does NOT). Import line `'./home.module.css'` unchanged, now resolves correctly. `next build` webpack compiles successfully (no Module not found). `curl /home` → 200 (no longer 500). tsc: no new errors. Commit `0585c5e`. **Remaining blockers: middleware not loaded (issue #2), pre-existing tsc errors (issue #3).**
+- **MP-FIX-HOME-CSS-IMPORT-001** (2026-06-26): **RESOLVED BLOCKING ISSUE #1 from first E2E run.** Moved `src/app/home.module.css` → `src/app/home/home.module.css` (Option A — grep confirmed only `src/app/home/page.tsx` references it; landing page does NOT). Import line `'./home.module.css'` unchanged, now resolves correctly. `next build` webpack compiles successfully (no Module not found). `curl /home` → 200 (no longer 500). tsc: no new errors. Commit `0585c5e`.
 
-- **MP-FIX-MIDDLEWARE-LOCATION-001** (2026-06-26): **RESOLVED BLOCKING ISSUE #2 from E2E verification.** Moved `middleware.ts` → `src/middleware.ts` via `git mv` (R100 rename, 0 content changes). Next.js 14 requires middleware at `src/middleware.ts` when using `src/` directory — root-level middleware.ts is silently ignored. **CRITICAL FINDING: auth-gating logic from MP-UPD-MIDDLEWARE-HOME-AUTH-001 and admin-bypass logic from MP-ADD-MIDDLEWARE-BYPASS-001 have been DORMANT/non-functional since they were written — middleware was never loaded until this fix.** Dev server log now shows `Compiling /src/middleware` (previously never appeared). Auth-gating is now LIVE: `curl /home` (no session) → 307 to `/login?next=%2Fhome`. **However: MP-ADD-MIDDLEWARE-BYPASS-001 was BLOCKED and never implemented — no admin bypass logic exists in the middleware file (grep for "admin"/"bypass"/"france" → 0 matches). V5/V6/V7 from this task's validation could not pass because they test admin bypass behavior that was never written. A new task is needed to actually implement MP-ADD-MIDDLEWARE-BYPASS-001.** tsc: no new errors. Commit `8acb34c`. **Remaining blocker: pre-existing tsc errors (issue #3), admin bypass logic not implemented (MP-ADD-MIDDLEWARE-BYPASS-001 still BLOCKED).**
+- **MP-FIX-MIDDLEWARE-LOCATION-001** (2026-06-26): **RESOLVED BLOCKING ISSUE #2 from first E2E run.** Moved `middleware.ts` → `src/middleware.ts` via `git mv` (R100 rename, 0 content changes). Next.js 14 requires middleware at `src/middleware.ts` when using `src/` directory — root-level middleware.ts is silently ignored. **CRITICAL FINDING: auth-gating logic from MP-UPD-MIDDLEWARE-HOME-AUTH-001 had been DORMANT/non-functional since it was written — middleware was never loaded until this fix.** Auth-gating is now LIVE: `curl /home` (no session) → 307 to `/login?next=%2Fhome`. **However: MP-ADD-MIDDLEWARE-BYPASS-001 was BLOCKED and never implemented — no admin bypass logic exists in the middleware file.** tsc: no new errors. Commit `8acb34c`. **Side effect: /api/waitlist now auth-gated (NEW REGRESSION — see remaining issue #1 above).**
 
 ---
 
