@@ -17,7 +17,7 @@ export default function CompeteEntryPage() {
   
   // Redirect to home page - this route is deprecated
   useEffect(() => {
-    router.push("/");
+    router.push("/home");
   }, [router]);
   const { playerId, isReady, isLoading: identityLoading, error: identityError } = useIdentity();
   const [mode, setMode] = useState<Mode>("create");
