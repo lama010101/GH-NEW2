@@ -93,6 +93,7 @@
 - **MP-UPD-LOBBY-HOME-001** (2026-06-26): Single-line change in `src/components/compete/LobbySection.tsx` line 431 — `router.push("/")` → `router.push("/home")`. Back button now navigates to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `9e0e254`.
 - **MP-UPD-ROUNDCOMP-HOME-001** (2026-06-26): Single-line change in `src/components/compete/RoundCompleteSection.tsx` line 447 — `router.push("/")` → `router.push("/home")`. Home button now navigates to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `31e1a2a`.
 - **MP-UPD-SESSIONCOMP-HOME-001** (2026-06-26): Single-line change in `src/components/compete/SessionComplete.tsx` line 394 — `router.push("/")` → `router.push("/home")`. Home button now navigates to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `380c62a`.
+- **MP-UPD-COMPETE-HOME-001** (2026-06-26): Single-line change in `src/app/compete/page.tsx` line 20 — `router.push("/")` → `router.push("/home")`. Compete page redirect now goes to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `e3fe2fc`.
 
 ---
 
