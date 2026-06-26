@@ -1,0 +1,88 @@
+6/26/2026, 11:28:44.111 ◇ injecting env (14) from .env.local // tip: ⌘ suppress logs { quiet: true }
+6/26/2026, 11:28:46.109 ◇ injecting env (0) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+6/26/2026, 11:28:46.169 [PLAYWRIGHT SETUP] Creating test users...
+6/26/2026, 11:28:49.351 [PLAYWRIGHT SETUP] User gh-test-player-1@test.guess-history.com already exists, deleting...
+6/26/2026, 11:28:52.162 [PLAYWRIGHT SETUP] Created user gh-test-player-1@test.guess-history.com with ID c34a827f-9485-4371-8b86-5e5758fc41e6
+6/26/2026, 11:28:52.597 [PLAYWRIGHT SETUP] User gh-test-player-2@test.guess-history.com already exists, deleting...
+6/26/2026, 11:28:53.609 [PLAYWRIGHT SETUP] Created user gh-test-player-2@test.guess-history.com with ID 4c2146c9-262b-4fb2-af68-b610507cbfad
+6/26/2026, 11:28:54.051 [PLAYWRIGHT SETUP] User gh-test-player-3@test.guess-history.com already exists, deleting...
+6/26/2026, 11:28:54.900 [PLAYWRIGHT SETUP] Created user gh-test-player-3@test.guess-history.com with ID 3f7fb95d-2c97-4938-8c55-7c1e16cba92d
+6/26/2026, 11:28:55.288 [PLAYWRIGHT SETUP] User gh-test-player-4@test.guess-history.com already exists, deleting...
+6/26/2026, 11:28:56.190 [PLAYWRIGHT SETUP] Created user gh-test-player-4@test.guess-history.com with ID 72a8c0c2-a598-41c5-83c4-75dddc74380b
+6/26/2026, 11:28:56.602 [PLAYWRIGHT SETUP] User gh-test-player-5@test.guess-history.com already exists, deleting...
+6/26/2026, 11:28:57.245 [PLAYWRIGHT SETUP] Created user gh-test-player-5@test.guess-history.com with ID 032f6839-54d8-4a9b-abc8-6c9d6f7e30b0
+6/26/2026, 11:28:57.576 [PLAYWRIGHT SETUP] User gh-test-player-6@test.guess-history.com already exists, deleting...
+6/26/2026, 11:28:58.596 [PLAYWRIGHT SETUP] Created user gh-test-player-6@test.guess-history.com with ID dedf19a4-7be7-40fa-a5e8-3c5a54f27a02
+6/26/2026, 11:28:58.783 [PLAYWRIGHT SETUP] Wrote 6 user IDs to /Users/lolo/GH-new/GH-NEW/.test-user-ids.json
+6/26/2026, 11:28:58.784 [PLAYWRIGHT SETUP] All test users created successfully
+6/26/2026, 11:28:58.786 [PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues
+6/26/2026, 11:29:03.269 
+6/26/2026, 11:29:03.272 Running 2 tests using 1 worker
+6/26/2026, 11:29:03.290 
+6/26/2026, 11:29:09.936 ◇ injecting env (0) from .env.local // tip: ⌘ override existing { override: true }
+6/26/2026, 11:29:13.934 ◇ injecting env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+6/26/2026, 11:29:31.733 [BROWSER_POOL] Launching 6 browsers...
+6/26/2026, 11:30:34.348 [AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+6/26/2026, 11:30:37.654 [AUTH] gh-test-player-1@test.guess-history.com logged in successfully
+6/26/2026, 11:30:37.659 [BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+6/26/2026, 11:30:48.516 [AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+6/26/2026, 11:30:49.976 [AUTH] gh-test-player-2@test.guess-history.com logged in successfully
+6/26/2026, 11:30:49.977 [BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+6/26/2026, 11:30:55.452 [AUTH] Logging in gh-test-player-3@test.guess-history.com via AuthModal...
+6/26/2026, 11:30:56.657 [AUTH] gh-test-player-3@test.guess-history.com logged in successfully
+6/26/2026, 11:30:56.662 [BROWSER_POOL] Player 3 (TestPlayer3, desktop-chrome) ready
+6/26/2026, 11:31:09.489 [AUTH] Logging in gh-test-player-4@test.guess-history.com via AuthModal...
+6/26/2026, 11:31:11.024 [AUTH] gh-test-player-4@test.guess-history.com logged in successfully
+6/26/2026, 11:31:11.041 [BROWSER_POOL] Player 4 (TestPlayer4, iphone-safari) ready
+6/26/2026, 11:31:17.641 [AUTH] Logging in gh-test-player-5@test.guess-history.com via AuthModal...
+6/26/2026, 11:31:18.639 [AUTH] gh-test-player-5@test.guess-history.com logged in successfully
+6/26/2026, 11:31:18.644 [BROWSER_POOL] Player 5 (TestPlayer5, iphone-safari) ready
+6/26/2026, 11:31:26.161 [AUTH] Logging in gh-test-player-6@test.guess-history.com via AuthModal...
+6/26/2026, 11:31:27.140 [AUTH] gh-test-player-6@test.guess-history.com logged in successfully
+6/26/2026, 11:31:27.144 [BROWSER_POOL] Player 6 (TestPlayer6, iphone-safari) ready
+6/26/2026, 11:31:27.145 [BROWSER_POOL] All 6 browsers launched and authenticated
+6/26/2026, 11:31:27.147 [ORCHESTRATOR] Starting 3 games of 5 rounds each...
+6/26/2026, 11:31:27.147 [SIMULATION] Game 1/3
+6/26/2026, 11:31:27.148 [SIMULATION] Creating game via API...
+6/26/2026, 11:31:32.944 [ORCHESTRATOR] Game 1 created: dee37619-b73e-4d02-80d3-068f990037c2
+6/26/2026, 11:31:32.945 [SIMULATION] Navigating all browsers to game...
+6/26/2026, 11:31:47.585 [BROWSER_POOL] navigateToGame attempt 1 interrupted, retrying...
+6/26/2026, 11:31:47.587 [BROWSER_POOL] navigateToGame attempt 1 interrupted, retrying...
+6/26/2026, 11:31:47.693 [BROWSER_POOL] navigateToGame attempt 1 interrupted, retrying...
+6/26/2026, 11:31:51.985 [ORCHESTRATOR] Initializing 6 WebSocket clients for game dee37619-b73e-4d02-80d3-068f990037c2...
+6/26/2026, 11:31:51.987 [WS:TestPlayer1] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/dee37619-b73e-4d02-80d3-068f990037c2
+6/26/2026, 11:31:53.429 [WS:TestPlayer2] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/dee37619-b73e-4d02-80d3-068f990037c2
+6/26/2026, 11:31:53.431 [WS:TestPlayer3] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/dee37619-b73e-4d02-80d3-068f990037c2
+6/26/2026, 11:31:53.434 [WS:TestPlayer4] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/dee37619-b73e-4d02-80d3-068f990037c2
+6/26/2026, 11:31:53.439 [WS:TestPlayer5] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/dee37619-b73e-4d02-80d3-068f990037c2
+6/26/2026, 11:31:53.443 [WS:TestPlayer6] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/dee37619-b73e-4d02-80d3-068f990037c2
+6/26/2026, 11:31:54.175 [WS:TestPlayer2] Connected
+6/26/2026, 11:31:54.183 [WS:TestPlayer4] Connected
+6/26/2026, 11:31:54.259 [WS:TestPlayer1] Connected
+6/26/2026, 11:31:54.272 [WS:TestPlayer6] Connected
+6/26/2026, 11:31:54.292 [WS:TestPlayer5] Connected
+6/26/2026, 11:32:58.938 [WS:TestPlayer1] State update: LOBBY round=0
+6/26/2026, 11:32:58.972 [WS:TestPlayer1] State update: LOBBY round=0
+6/26/2026, 11:32:58.975 [WS:TestPlayer1] State update: LOBBY round=0
+6/26/2026, 11:32:58.976 [WS:TestPlayer1] State update: LOBBY round=0
+6/26/2026, 11:32:58.977 [WS:TestPlayer1] State update: LOBBY round=0
+6/26/2026, 11:32:59.230 [WS:TestPlayer5] State update: LOBBY round=0
+6/26/2026, 11:32:59.233 [WS:TestPlayer5] State update: LOBBY round=0
+6/26/2026, 11:32:59.237 [WS:TestPlayer5] State update: LOBBY round=0
+6/26/2026, 11:32:59.241 [WS:TestPlayer5] State update: LOBBY round=0
+6/26/2026, 11:32:59.243 [WS:TestPlayer5] State update: LOBBY round=0
+6/26/2026, 11:32:59.765 [WS:TestPlayer2] State update: LOBBY round=0
+6/26/2026, 11:32:59.771 [WS:TestPlayer2] State update: LOBBY round=0
+6/26/2026, 11:32:59.775 [WS:TestPlayer2] State update: LOBBY round=0
+6/26/2026, 11:32:59.777 [WS:TestPlayer2] State update: LOBBY round=0
+6/26/2026, 11:32:59.793 [WS:TestPlayer2] State update: LOBBY round=0
+6/26/2026, 11:33:00.741 [WS:TestPlayer6] State update: LOBBY round=0
+6/26/2026, 11:33:00.743 [WS:TestPlayer6] State update: LOBBY round=0
+6/26/2026, 11:33:00.744 [WS:TestPlayer6] State update: LOBBY round=0
+6/26/2026, 11:33:00.746 [WS:TestPlayer6] State update: LOBBY round=0
+6/26/2026, 11:33:00.748 [WS:TestPlayer6] State update: LOBBY round=0
+6/26/2026, 11:33:06.629 [WS:TestPlayer4] State update: LOBBY round=0
+6/26/2026, 11:33:06.631 [WS:TestPlayer4] State update: LOBBY round=0
+6/26/2026, 11:33:06.632 [WS:TestPlayer4] State update: LOBBY round=0
+6/26/2026, 11:33:06.633 [WS:TestPlayer4] State update: LOBBY round=0
+6/26/2026, 11:33:06.639 [WS:TestPlayer4] State update: LOBBY round=0
