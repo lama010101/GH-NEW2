@@ -150,7 +150,11 @@ export class GameOrchestrator {
 
     // Wait for allPlayersReady
     this.opts.onStep?.('Waiting for all players ready...');
-    await hostClient.waitForState((s) => s.allPlayersReady && s.players.length === this.wsClients.length, 15000);
+    await hostClient.waitForState((s) => {
+      const activePlayers = s.players.filter((p) => p.leftAt === null);
+      console.log(`[ORCH-DEBUG] allReady check: allPlayersReady=${s.allPlayersReady} players.length=${s.players.length} active=${activePlayers.length} wsClients=${this.wsClients.length} readyStates=[${activePlayers.map((p) => `${p.displayName}:${p.ready}`).join(',')}] leftAt=[${s.players.filter((p) => p.leftAt !== null).map((p) => p.displayName).join(',')}]`);
+      return s.allPlayersReady && s.players.length === this.wsClients.length;
+    }, 15000);
 
     // Host starts game (or auto-start)
     this.opts.onStep?.('Starting game...');
