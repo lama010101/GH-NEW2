@@ -140,11 +140,25 @@ export class BrowserPool {
 
   /**
    * Navigate a player's page to a specific game URL.
+   * Retries on navigation interruption (auth redirect race).
    */
   async navigateToGame(player: PlayerBrowser, gameId: string): Promise<void> {
     const url = `${this.opts.baseURL}/compete/${gameId}`;
-    await player.page.goto(url, { waitUntil: 'domcontentloaded' });
-    await player.page.waitForLoadState('domcontentloaded').catch(() => undefined);
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await player.page.goto(url, { waitUntil: 'domcontentloaded' });
+        await player.page.waitForLoadState('domcontentloaded').catch(() => undefined);
+        return;
+      } catch (err) {
+        if (attempt < maxAttempts && err instanceof Error && err.message.includes('interrupted')) {
+          console.warn(`[BROWSER_POOL] navigateToGame attempt ${attempt} interrupted, retrying...`);
+          await new Promise((r) => setTimeout(r, 500));
+          continue;
+        }
+        throw err;
+      }
+    }
   }
 
   /**
