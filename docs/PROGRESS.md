@@ -2350,3 +2350,11 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - **Commit:** none (read-only verification task)
 - **Files Modified:** none (CTO_BACKLOG.md update only)
 - **Description:** Ran all 15 verification checks across the waitlist landing page initiative. 8 passed (static greps, DB schema, file diff, identity preservation). 7 failed due to two pre-existing issues: (1) CSS path bug in src/app/home/page.tsx from MP-MOVE-HOME-PAGE-001 breaks next build and poisons dev server, (2) middleware not loaded (at root, not src/) so no server-side auth or admin bypass. No fixes attempted per task instructions.
+
+## MP-FIX-HOME-CSS-IMPORT-001 — Fix broken relative CSS import path in relocated home page
+- **Status:** COMPLETE
+- **Commit:** 0585c5e
+- **Files Modified:**
+  - src/app/home.module.css → src/app/home/home.module.css (moved via git mv, co-located with page)
+- **Description:** Option A chosen — grep confirmed only src/app/home/page.tsx references home.module.css (landing page src/app/page.tsx does NOT use it). Moved CSS file from src/app/home.module.css to src/app/home/home.module.css so the existing import './home.module.css' in src/app/home/page.tsx line 15 resolves correctly. No import line change needed. This fixes the "Module not found: Can't resolve './home.module.css'" error that broke next build and poisoned the dev server for all routes.
+- **Validation:** grep home.module.css in src/app/ → only src/app/home/page.tsx (Option A confirmed). next build: webpack "Compiled successfully" (no Module not found — ESLint errors from WaitlistForm.tsx + rules.correctness.test.ts are pre-existing/other-task, not this task). curl /home → 200 OK (no longer 500 — page renders with CSS styles applied). tsc: only 2 pre-existing errors in rules.correctness.test.ts (no new errors).
