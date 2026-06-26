@@ -58,6 +58,27 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Admin bypass: only on exact path "/".
+  if (pathname === "/") {
+    const adminParam = request.nextUrl.searchParams.get("admin");
+    if (adminParam !== null) {
+      if (adminParam === process.env.ADMIN_BYPASS_TOKEN) {
+        const bypassResponse = NextResponse.redirect(
+          new URL("/home", request.url),
+          302
+        );
+        bypassResponse.cookies.set("gh_admin_bypass", "1", {
+          httpOnly: true,
+          maxAge: 90 * 24 * 60 * 60,
+        });
+        return bypassResponse;
+      }
+      // Wrong value: fall through silently to normal landing page serving.
+    } else if (request.cookies.get("gh_admin_bypass")?.value === "1") {
+      return NextResponse.redirect(new URL("/home", request.url), 302);
+    }
+  }
+
   if (isPublicPath(pathname)) {
     return response;
   }
