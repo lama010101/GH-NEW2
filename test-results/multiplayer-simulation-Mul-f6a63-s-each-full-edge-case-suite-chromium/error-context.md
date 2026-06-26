@@ -12,36 +12,15 @@
 # Error details
 
 ```
-Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/
+Error: page.goto: Navigation to "http://localhost:3000/compete/f4b07fb4-7868-4557-b5d2-58e594f3a641" is interrupted by another navigation to "http://localhost:3000/"
 Call log:
-  - navigating to "http://localhost:3000/", waiting until "domcontentloaded"
+  - navigating to "http://localhost:3000/compete/f4b07fb4-7868-4557-b5d2-58e594f3a641", waiting until "domcontentloaded"
 
 ```
 
 # Test source
 
 ```ts
-  25  |   'desktop-chrome',
-  26  |   'desktop-chrome',
-  27  |   'iphone-safari',
-  28  |   'iphone-safari',
-  29  |   'iphone-safari',
-  30  | ];
-  31  | 
-  32  | const DEVICE_PRESETS: Record<DeviceProfile, {
-  33  |   userAgent?: string;
-  34  |   viewport: { width: number; height: number };
-  35  |   deviceScaleFactor: number;
-  36  |   isMobile: boolean;
-  37  |   hasTouch: boolean;
-  38  | }> = {
-  39  |   'desktop-chrome': {
-  40  |     viewport: { width: 1280, height: 800 },
-  41  |     deviceScaleFactor: 1,
-  42  |     isMobile: false,
-  43  |     hasTouch: false,
-  44  |   },
-  45  |   'iphone-safari': {
   46  |     userAgent:
   47  |       'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
   48  |     viewport: { width: 390, height: 844 },
@@ -121,15 +100,14 @@ Call log:
   122 |       const page = await context.newPage();
   123 | 
   124 |       // Navigate to the home page first to trigger any auth gate
-> 125 |       await page.goto(this.opts.baseURL, { waitUntil: 'domcontentloaded' });
-      |                  ^ Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/
-  126 |       await page.waitForLoadState('networkidle').catch(() => undefined);
+  125 |       await page.goto(this.opts.baseURL, { waitUntil: 'domcontentloaded' });
+  126 |       await page.waitForLoadState('domcontentloaded').catch(() => undefined);
   127 | 
   128 |       // Log in via the AuthModal UI
   129 |       await ensureLoggedIn(page, user);
   130 | 
   131 |       // Wait for identity to be ready (no auth modal visible)
-  132 |       await page.waitForLoadState('networkidle').catch(() => undefined);
+  132 |       await page.waitForLoadState('domcontentloaded').catch(() => undefined);
   133 | 
   134 |       this.players.push({ user, context, page, device, index: i });
   135 |       console.log(`[BROWSER_POOL] Player ${i + 1} (${user.displayName}, ${device}) ready`);
@@ -143,8 +121,9 @@ Call log:
   143 |    */
   144 |   async navigateToGame(player: PlayerBrowser, gameId: string): Promise<void> {
   145 |     const url = `${this.opts.baseURL}/compete/${gameId}`;
-  146 |     await player.page.goto(url, { waitUntil: 'domcontentloaded' });
-  147 |     await player.page.waitForLoadState('networkidle').catch(() => undefined);
+> 146 |     await player.page.goto(url, { waitUntil: 'domcontentloaded' });
+      |                       ^ Error: page.goto: Navigation to "http://localhost:3000/compete/f4b07fb4-7868-4557-b5d2-58e594f3a641" is interrupted by another navigation to "http://localhost:3000/"
+  147 |     await player.page.waitForLoadState('domcontentloaded').catch(() => undefined);
   148 |   }
   149 | 
   150 |   /**
@@ -152,7 +131,7 @@ Call log:
   152 |    */
   153 |   async refresh(player: PlayerBrowser): Promise<void> {
   154 |     await player.page.reload({ waitUntil: 'domcontentloaded' });
-  155 |     await player.page.waitForLoadState('networkidle').catch((err) => {
+  155 |     await player.page.waitForLoadState('domcontentloaded').catch((err) => {
   156 |       // If page is closed, surface the error immediately
   157 |       if (player.page.isClosed() || (err instanceof Error && err.message.includes('closed'))) {
   158 |         throw new Error(`refresh() failed: page closed during reload for player ${player.user.email}`);

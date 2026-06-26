@@ -1,4 +1,5 @@
 {
+  "$schema": "https://www.partykit.io/schema.json",
   "name": "guess-history-multiplayer",
   "main": "partykit/server.ts",
   "compatibilityDate": "2024-04-01",
@@ -6,5 +7,17 @@
   "parties": {
     "lobby": "partykit/server.ts"
   },
-  "vars": {}
+  "vars": {
+    "production": "1",
+    "INVITE_HMAC_SECRET": "${INVITE_HMAC_SECRET}",
+    "MAX_PLAYERS": "8",
+    "SUPABASE_SERVER_USER_ID": "${SUPABASE_SERVER_USER_ID}",
+    "ENABLE_AUTH_TIMER": "1",
+    "ENABLE_ROOM_ROUND_PERSIST": "1",
+    "NEXT_PUBLIC_APP_URL": "https://gh-new2-git-main-lolos-projects-dc7e07be.vercel.app",
+    "PARTYKIT_SECRET": "76d9112bdb5c5705394f224de2f2d4dcbb53c63baf297b524412e771acf3d104\n",
+    "SUPABASE_URL": "https://gzvixlvkwjsrtmtybtkf.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dml4bHZrd2pzcnRtdHlidGtmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjU5NjA5MCwiZXhwIjoyMDg4MTcyMDkwfQ.KtWirgShikH2QSwWPjGURsL1BV4bXi_6mjk9nxd6M6w",
+    "NEXTJS_BASE_URL": "https://guess-history.com"
+  }
 }
