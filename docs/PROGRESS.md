@@ -2335,3 +2335,12 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - src/components/AuthModal.tsx (line 51: next=/ → next=/home in OAuth redirectTo)
 - **Description:** Single-line change. OAuth sign-in redirectTo now points to /auth/callback?next=/home instead of /auth/callback?next=/. Correct because OAuth sign-in is an auth action — successful completion means user has a session, so landing on /home (permitted by middleware) is correct. Line 124 (next=/account for account-linking flow) left untouched — not in scope.
 - **Validation:** grep next=/[bare] → 0 matches (only next=/home and next=/account remain); grep next=/home → 1 match (line 51); git diff --name-only → only AuthModal.tsx; tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in AuthModal.tsx).
+
+## MP-ADD-LANDING-PAGE-001 — Build SEO-optimized public landing page at "/" with waitlist email capture
+- **Status:** COMPLETE (live-verified via curl; next build blocked by pre-existing CSS issue)
+- **Commit:** b26ebb2
+- **Files Modified:**
+  - src/app/page.tsx (full replace — old home page content replaced with new server-component landing page)
+  - src/components/landing/WaitlistForm.tsx (NEW — client component for email capture)
+- **Description:** New public landing page at "/" — server component with Next.js Metadata API (title, description, OG tags). Semantic HTML (main, h1, section). Uses existing CSS variables (--font-bebas, --font-sora, --gh-bg-base, --gh-text-primary, etc.) and MODE_CARD_GRADIENT color conventions for visual consistency. WaitlistForm is a separate 'use client' component that POSTs to /api/waitlist with inline states: idle, submitting, success (201 → "You're on the list!"), already (409 → "You're already on the list!"), error (400/500 → inline error, form stays editable). No router, no AuthModal, no identity bootstrap.
+- **Validation:** tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in new files). next build FAILS due to pre-existing CSS path issue in src/app/home/page.tsx (from MP-MOVE-HOME-PAGE-001 — not caused by this task). grep "use client" page.tsx → 0; grep "use client" WaitlistForm → 1; grep bootstrapIdentity/AuthModal/ModeCard → 0; grep "export const metadata" → 1. curl / → 200, HTML contains title "Guess-History — Test Your Knowledge of When and Where", OG tags, email input (type="email", placeholder="you@example.com"), "Join Waitlist" button. Form flow: POST fresh email → 201, POST same → 409. Test row cleaned up (DELETE 1, verified 0 remaining).
