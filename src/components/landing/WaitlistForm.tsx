@@ -40,11 +40,11 @@ export function WaitlistForm() {
   }
 
   if (status === 'success') {
-    return <p className="text-lg font-semibold" style={{ color: 'var(--gh-success)' }}>You're on the list!</p>
+    return <p className="text-lg font-semibold" style={{ color: 'var(--gh-success)' }}>You&apos;re on the list!</p>
   }
 
   if (status === 'already') {
-    return <p className="text-lg font-semibold" style={{ color: 'var(--gh-teal)' }}>You're already on the list!</p>
+    return <p className="text-lg font-semibold" style={{ color: 'var(--gh-teal)' }}>You&apos;re already on the list!</p>
   }
 
   return (
