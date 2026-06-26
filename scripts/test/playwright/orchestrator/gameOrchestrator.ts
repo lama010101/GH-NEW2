@@ -243,12 +243,15 @@ export class GameOrchestrator {
       client.readyNext(roundIndex);
     }
 
-    // Wait for a moment before advancing
-    await new Promise((r) => setTimeout(r, 1000));
+    // Skip advancing on the last round — server auto-transitions to SESSION_COMPLETE
+    if (roundIndex < this.opts.totalRounds - 1) {
+      // Wait for a moment before advancing
+      await new Promise((r) => setTimeout(r, 1000));
 
-    // Host advances round
-    this.opts.onStep?.('Advancing to next round...');
-    hostClient.advanceRound(roundIndex, 'PLAYER');
+      // Host advances round
+      this.opts.onStep?.('Advancing to next round...');
+      hostClient.advanceRound(roundIndex, 'PLAYER');
+    }
   }
 
   /**
