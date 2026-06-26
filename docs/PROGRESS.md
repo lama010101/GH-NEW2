@@ -2371,3 +2371,10 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - **Commit:** none (read-only verification task, CTO_BACKLOG.md update only)
 - **Files Modified:** docs/CTO_BACKLOG.md (E2E results updated)
 - **Description:** Re-ran all 15 verification checks after MP-FIX-HOME-CSS-IMPORT-001 and MP-FIX-MIDDLEWARE-LOCATION-001. 10 passed (up from 8 in first run). 5 failed: (8) admin bypass not implemented, (9) same, (10) NEW REGRESSION — /api/waitlist now auth-gated by middleware because not in PUBLIC_API_ROUTES, (12) pre-existing tsc errors, (13) ESLint errors in WaitlistForm.tsx + rules.correctness.test.ts. The most critical new finding: the waitlist landing page form is non-functional because POST /api/waitlist gets 307→/login instead of 201.
+
+## MP-FIX-LANDING-VISUALS-001 — Landing page visual cleanup
+- **Status:** COMPLETE
+- **Commit:** 3154e01
+- **Files Modified:** src/app/page.tsx, src/components/landing/WaitlistForm.tsx
+- **Description:** Three visual changes to landing page: (1) Removed Features section (3 FeatureCard components with CHALLENGE FRIENDS / DAILY COMPETITION / LEVEL UP titles + descriptions) and the FeatureCard function — nothing renders below the waitlist button now. (2) Added logo image using same asset as TopBar: next/image Image component with src="/icons/logo.webp" (180x48, priority). (3) Replaced radial-gradient background with same background image + overlay as /home: fixed-position div with background-image url(/home_background.webp) + dark overlay rgba(0,0,0,0.8), content at zIndex:2 for legibility. Also fixed 2 ESLint errors in WaitlistForm.tsx (unescaped apostrophes in "You're" → "You&apos;re" on lines 43, 47) that were causing next build to fail.
+- **Validation:** next build: webpack compiles successfully, no errors from page.tsx or WaitlistForm.tsx (only 2 pre-existing rules.correctness.test.ts ESLint errors remain). curl / → 200, HTML contains logo img tag with src="/icons/logo.webp" (via Next.js Image optimization), background-image url(/home_background.webp), rgba(0,0,0,0.8) overlay. No FeatureCard content in <main>. tsc: only 2 pre-existing errors, no new errors.
