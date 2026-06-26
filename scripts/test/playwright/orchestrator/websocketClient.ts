@@ -165,7 +165,6 @@ export class CompeteWSClient {
       ws.on('message', (raw: WebSocket.RawData) => {
         try {
           const msg = JSON.parse(raw.toString()) as ClientMessage;
-          console.log(`[WS:${this.opts.user.displayName}] RAW MSG: ${msg.type}`);
           this.handleMessage(msg, resolveOnce);
         } catch (err) {
           console.error(`[WS:${this.opts.user.displayName}] Failed to parse message:`, err);
@@ -250,15 +249,11 @@ export class CompeteWSClient {
 
       const originalHandler = this.opts.onStateUpdate;
       this.opts.onStateUpdate = (snapshot: CompeteSnapshot) => {
-        try {
-          originalHandler?.(snapshot);
-          if (predicate(snapshot)) {
-            clearTimeout(timer);
-            this.opts.onStateUpdate = originalHandler;
-            resolve(snapshot);
-          }
-        } catch (err) {
-          console.error(`[WS] waitForState handler error:`, err instanceof Error ? err.message : err);
+        originalHandler?.(snapshot);
+        if (predicate(snapshot)) {
+          clearTimeout(timer);
+          this.opts.onStateUpdate = originalHandler;
+          resolve(snapshot);
         }
       };
     });
