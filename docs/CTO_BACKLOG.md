@@ -92,6 +92,7 @@
 - **MP-ADD-WAITLIST-API-001** (2026-06-26): Created `src/app/api/waitlist/route.ts` — POST-only endpoint for waitlist email submission. Validates email via regex, uses service-role Supabase client (`createSupabaseServerClient`), returns 201/409/400/405/500 per contract. Live-verified via curl: 201 on valid insert, 409 on duplicate, 400 on invalid email, 405 on GET. Test row cleaned up. tsc: no new errors (2 pre-existing in `rules.correctness.test.ts`). Commit `ac73135`.
 - **MP-UPD-LOBBY-HOME-001** (2026-06-26): Single-line change in `src/components/compete/LobbySection.tsx` line 431 — `router.push("/")` → `router.push("/home")`. Back button now navigates to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `9e0e254`.
 - **MP-UPD-ROUNDCOMP-HOME-001** (2026-06-26): Single-line change in `src/components/compete/RoundCompleteSection.tsx` line 447 — `router.push("/")` → `router.push("/home")`. Home button now navigates to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `31e1a2a`.
+- **MP-UPD-SESSIONCOMP-HOME-001** (2026-06-26): Single-line change in `src/components/compete/SessionComplete.tsx` line 394 — `router.push("/")` → `router.push("/home")`. Home button now navigates to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `380c62a`.
 
 ---
 
