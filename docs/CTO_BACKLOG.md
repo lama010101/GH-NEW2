@@ -120,6 +120,7 @@ Tasks in this initiative:
 - MP-ADD-LANDING-PAGE-001 (public SEO landing page) — CLOSED
 - MP-FIX-HOME-CSS-IMPORT-001 (fix CSS path bug from MP-MOVE-HOME-PAGE-001) — CLOSED
 - MP-FIX-MIDDLEWARE-LOCATION-001 (move middleware.ts to src/) — CLOSED
+- MP-FIX-WAITLIST-PUBLIC-ROUTE-001 (add /api/waitlist to PUBLIC_API_ROUTES) — CLOSED
 
 E2E verification results — RE-RUN after MP-FIX-HOME-CSS-IMPORT-001 + MP-FIX-MIDDLEWARE-LOCATION-001 (15 checks):
 1. PASS — grep compete-area router.push("/") → 0 matches
@@ -139,7 +140,7 @@ E2E verification results — RE-RUN after MP-FIX-HOME-CSS-IMPORT-001 + MP-FIX-MI
 15. PASS — diff HEAD:src/app/home/page.tsx vs working file → empty (no drift)
 
 **REMAINING ISSUES (require separate tasks before initiative can be fully closed):**
-1. **NEW REGRESSION — /api/waitlist auth-gated by middleware** (introduced by MP-FIX-MIDDLEWARE-LOCATION-001): `/api/waitlist` is NOT in `PUBLIC_API_ROUTES` in `src/middleware.ts`. Now that middleware loads, POST /api/waitlist → 307 to /login instead of 201. Fix: add `"/api/waitlist"` to `PUBLIC_API_ROUTES` array in `src/middleware.ts`. **This is the most critical remaining issue — the waitlist landing page form is non-functional.**
+1. ~~**NEW REGRESSION — /api/waitlist auth-gated by middleware**~~ **RESOLVED by MP-FIX-WAITLIST-PUBLIC-ROUTE-001 (commit 34ca77c):** Added `"/api/waitlist"` to `PUBLIC_API_ROUTES` in `src/middleware.ts`. Re-verified: POST /api/waitlist (fresh email) → 201 `{"ok":true}`; repeat → 409 `{"error":"already_registered"}`; test row cleaned via psql DELETE. tsc: no new errors. Waitlist landing form is functional again.
 2. **Admin bypass logic never implemented** (MP-ADD-MIDDLEWARE-BYPASS-001 was BLOCKED, never written): No admin token check, no gh_admin_bypass cookie setting, no bypass logic exists in `src/middleware.ts`. grep for "admin"/"bypass"/"france" → 0 matches. A new task is needed to implement this now that the middleware location blocker is resolved.
 3. **Pre-existing tsc + ESLint errors**: 2 unused imports in `rules.correctness.test.ts` (tsc TS6133 + ESLint), 2 unescaped apostrophes in `WaitlistForm.tsx` (ESLint, from MP-ADD-LANDING-PAGE-001). These cause `tsc --noEmit` exit 2 and `next build` exit 1.
 
@@ -147,6 +148,8 @@ E2E verification results — RE-RUN after MP-FIX-HOME-CSS-IMPORT-001 + MP-FIX-MI
 - **MP-FIX-HOME-CSS-IMPORT-001** (2026-06-26): **RESOLVED BLOCKING ISSUE #1 from first E2E run.** Moved `src/app/home.module.css` → `src/app/home/home.module.css` (Option A — grep confirmed only `src/app/home/page.tsx` references it; landing page does NOT). Import line `'./home.module.css'` unchanged, now resolves correctly. `next build` webpack compiles successfully (no Module not found). `curl /home` → 200 (no longer 500). tsc: no new errors. Commit `0585c5e`.
 
 - **MP-FIX-MIDDLEWARE-LOCATION-001** (2026-06-26): **RESOLVED BLOCKING ISSUE #2 from first E2E run.** Moved `middleware.ts` → `src/middleware.ts` via `git mv` (R100 rename, 0 content changes). Next.js 14 requires middleware at `src/middleware.ts` when using `src/` directory — root-level middleware.ts is silently ignored. **CRITICAL FINDING: auth-gating logic from MP-UPD-MIDDLEWARE-HOME-AUTH-001 had been DORMANT/non-functional since it was written — middleware was never loaded until this fix.** Auth-gating is now LIVE: `curl /home` (no session) → 307 to `/login?next=%2Fhome`. **However: MP-ADD-MIDDLEWARE-BYPASS-001 was BLOCKED and never implemented — no admin bypass logic exists in the middleware file.** tsc: no new errors. Commit `8acb34c`. **Side effect: /api/waitlist now auth-gated (NEW REGRESSION — see remaining issue #1 above).**
+
+- **MP-FIX-WAITLIST-PUBLIC-ROUTE-001** (2026-06-26): **RESOLVED REMAINING ISSUE #1 (critical regression from MP-FIX-MIDDLEWARE-LOCATION-001).** Added `"/api/waitlist"` to `PUBLIC_API_ROUTES` array in `src/middleware.ts` (one-line addition, no other lines touched). `git diff --name-only` → only `src/middleware.ts`. Re-verified E2E against clean dev server: POST /api/waitlist with fresh email `e2e-fix-verify-1@test.example` → 201 `{"ok":true}`; repeat POST → 409 `{"error":"already_registered"}`; test row cleaned via `psql DELETE FROM waitlist WHERE email=...` (DELETE 1). tsc --noEmit: only 2 pre-existing `rules.correctness.test.ts` errors (TS6133 unused imports), no new errors. Commit `34ca77c`, pushed to origin/main.
 
 - **MP-FIX-LANDING-VISUALS-001** (2026-06-26): Landing page visual cleanup. (1) Removed Features section (3 FeatureCard components: CHALLENGE FRIENDS, DAILY COMPETITION, LEVEL UP) and FeatureCard function — nothing renders below waitlist button. (2) Added logo using same asset as TopBar: `next/image` with `src="/icons/logo.webp"` (180x48, priority). (3) Replaced radial-gradient background with same bg image + overlay as /home: fixed div with `background-image: url(/home_background.webp)` + `rgba(0,0,0,0.8)` overlay, content at zIndex:2. Also fixed 2 ESLint errors in WaitlistForm.tsx (unescaped apostrophes → `&apos;`). `next build` webpack compiles, no errors from landing files. curl / → 200 with logo, background, no FeatureCard content. tsc: no new errors. Commit `3154e01`.
 
