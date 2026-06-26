@@ -150,6 +150,8 @@ export class GameOrchestrator {
       client.close();
     }
     await Promise.all(this.wsClients.map((c) => c.connect()));
+    // Allow server to finish processing all JOIN_ROOM broadcasts before sending actions
+    await new Promise((r) => setTimeout(r, 2000));
 
     // All players ready
     this.opts.onStep?.('All players marking ready...');
