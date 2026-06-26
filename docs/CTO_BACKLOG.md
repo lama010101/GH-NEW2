@@ -86,6 +86,7 @@
 - **RainbowRing.tsx styling** (2026-06-19, commit `6386583`): Track stroke + center text. Color logic FINAL: `hsl(round((clamped/100)*120), 100%, 50%)` — value-based red→green hue. Gradient version explicitly REJECTED — do not reintroduce.
 - **MP-REFACTOR-CARD-TOKENS-001**: Card design tokens into `globals.css`. Commit `85303be`. Done.
 - **MP-ADD-WAITLIST-TBL-001** (2026-06-26): Created `public.waitlist` table (id UUID PK default gen_random_uuid(), email TEXT NOT NULL, created_at TIMESTAMPTZ default now(), UNIQUE(email)) with RLS enabled and no authenticated policies (implicit deny; service role bypasses). Migration applied via Supabase MCP (schema_migrations version `20260626111106` `create_waitlist`); file `supabase/migrations/20260626000000_create_waitlist.sql`. Validated: \d waitlist shows columns + `waitlist_email_unique` UNIQUE; duplicate insert rejected; RLS `relrowsecurity=t`; exactly one migration file. Commit `ebb346d`.
+- **MP-MOVE-HOME-PAGE-001** (2026-06-26): Pure relocation — copied `src/app/page.tsx` → `src/app/home/page.tsx` byte-identical. `src/app/page.tsx` left untouched (will be overwritten by later MP-ADD-LANDING-PAGE-001). `diff` empty; `git diff --name-only` shows only the new file. tsc introduces zero new errors (2 pre-existing errors in `rules.correctness.test.ts` are unrelated and pre-existed on prior commit). Commit `872c2aa`.
 
 ---
 
