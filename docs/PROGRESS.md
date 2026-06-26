@@ -2305,3 +2305,11 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - src/components/compete/SessionComplete.tsx (line 394: router.push("/") → router.push("/home"))
 - **Description:** Single-line change. Home button in SessionComplete now navigates to /home instead of / (landing page).
 - **Validation:** grep router.push("/") → 0 matches; grep router.push("/home") → 1 match (line 394); tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in SessionComplete.tsx).
+
+## MP-UPD-COMPETE-HOME-001 — Update navigation target in compete page
+- **Status:** COMPLETE
+- **Commit:** e3fe2fc
+- **Files Modified:**
+  - src/app/compete/page.tsx (line 20: router.push("/") → router.push("/home"))
+- **Description:** Single-line change. Compete page redirect now goes to /home instead of / (landing page).
+- **Validation:** grep router.push("/") → 0 matches; grep router.push("/home") → 1 match (line 20); tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in compete/page.tsx).
