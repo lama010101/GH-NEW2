@@ -2313,3 +2313,10 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - src/app/compete/page.tsx (line 20: router.push("/") → router.push("/home"))
 - **Description:** Single-line change. Compete page redirect now goes to /home instead of / (landing page).
 - **Validation:** grep router.push("/") → 0 matches; grep router.push("/home") → 1 match (line 20); tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in compete/page.tsx).
+
+## MP-UPD-ACCOUNT-SIGNOUT-CONFIRM-001 — Confirm post-signOut target in account page stays at landing page
+- **Status:** COMPLETE (confirmation-only, no code change)
+- **Commit:** none (no change needed)
+- **Files Modified:** none
+- **Description:** Confirmed src/app/account/page.tsx line 129 reads `router.push('/')` after `await signOut()` — already correct per CTO decision. Post-signOut, user lands on "/" (public landing page), NOT "/home" (which would bounce to /login via middleware — pointless extra hop). No correction needed.
+- **Validation:** grep router.push → line 129: `router.push('/')` (target is '/', not '/home'); git diff --name-only → zero source files modified; tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in account/page.tsx).
