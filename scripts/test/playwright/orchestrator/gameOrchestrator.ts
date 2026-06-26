@@ -142,30 +142,15 @@ export class GameOrchestrator {
       await this.opts.edgeCaseEngine.injectForPhase('lobby', this.browserPool, this.wsClients, gameId, 0);
     }
 
-    // Force-reconnect all WS clients after edge cases to ensure fresh connections.
-    // Kick/rejoin/refresh/auth edge cases can cause PartyKit to stop broadcasting
-    // to certain connections even though the WS appears open.
-    this.opts.onStep?.('Reconnecting WS clients after edge cases...');
-    for (const client of this.wsClients) {
-      client.close();
-    }
-    await Promise.all(this.wsClients.map((c) => c.connect()));
-    // Allow server to finish processing all JOIN_ROOM broadcasts before sending actions
-    await new Promise((r) => setTimeout(r, 2000));
-
     // All players ready
     this.opts.onStep?.('All players marking ready...');
     for (const client of this.wsClients) {
       client.toggleReady(true);
     }
 
-    // Wait for allPlayersReady (extended timeout for reconnect after edge cases)
+    // Wait for allPlayersReady (extended timeout: edge cases may trigger WS reconnects)
     this.opts.onStep?.('Waiting for all players ready...');
-    await hostClient.waitForState((s) => {
-      const active = s.players.filter((p) => p.leftAt === null);
-      console.log(`[ORCH-DEBUG] allReady=${s.allPlayersReady} players=${s.players.length} active=${active.length} wsClients=${this.wsClients.length} ready=[${active.map((p) => `${p.displayName.slice(0,8)}:${p.ready}`).join(',')}] left=[${s.players.filter((p) => p.leftAt !== null).map((p) => p.displayName.slice(0,8)).join(',')}]`);
-      return s.allPlayersReady && s.players.length === this.wsClients.length;
-    }, 30000);
+    await hostClient.waitForState((s) => s.allPlayersReady && s.players.length === this.wsClients.length, 30000);
 
     // Host starts game (or auto-start)
     this.opts.onStep?.('Starting game...');
