@@ -2241,3 +2241,11 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - Recorded in supabase_migrations.schema_migrations as version 20260626111106 (name: create_waitlist)
 - **Description:** New waitlist table for email signups. PK is a stable surrogate UUID; email dedup enforced at DB layer via separate UNIQUE constraint. RLS enabled with no policies for authenticated role (implicit deny), consistent with DATABASE_SCHEMA_STATE.md conventions; service role bypasses RLS automatically.
 - **Validation:** \d waitlist shows id/email/created_at + waitlist_email_unique UNIQUE; first insert succeeds; duplicate insert rejected with duplicate key violation; relrowsecurity=t; exactly one migration file matches grep -rl "waitlist" supabase/migrations/.
+
+## MP-MOVE-HOME-PAGE-001 — Move home page file to new path (pure relocation)
+- **Status:** COMPLETE
+- **Commit:** 872c2aa
+- **Files Modified:**
+  - src/app/home/page.tsx (NEW — byte-identical copy of src/app/page.tsx)
+- **Description:** Pure relocation. src/app/page.tsx left untouched (will be overwritten by later MP-ADD-LANDING-PAGE-001). src/app/home/page.tsx is a byte-identical duplicate of src/app/page.tsx (intentional, temporary). No logic changes.
+- **Validation:** diff src/app/page.tsx src/app/home/page.tsx → empty (byte-identical); git diff --name-only → only src/app/home/page.tsx; src/app/page.tsx shows zero diff. tsc --noEmit exits 1 due to 2 pre-existing known errors in src/core/rules.correctness.test.ts (documented pre-existing, unrelated to this task — confirmed identical errors on prior commit 7f3ed77 via git stash); the relocation introduces zero new type errors.
