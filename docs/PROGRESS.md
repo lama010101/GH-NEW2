@@ -2297,3 +2297,11 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - src/components/compete/RoundCompleteSection.tsx (line 447: router.push("/") → router.push("/home"))
 - **Description:** Single-line change. Home button in RoundCompleteSection bottom bar now navigates to /home instead of / (landing page).
 - **Validation:** grep router.push("/") → 0 matches; grep router.push("/home") → 1 match (line 447); tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in RoundCompleteSection.tsx).
+
+## MP-UPD-SESSIONCOMP-HOME-001 — Update post-game navigation target in SessionComplete
+- **Status:** COMPLETE
+- **Commit:** 380c62a
+- **Files Modified:**
+  - src/components/compete/SessionComplete.tsx (line 394: router.push("/") → router.push("/home"))
+- **Description:** Single-line change. Home button in SessionComplete now navigates to /home instead of / (landing page).
+- **Validation:** grep router.push("/") → 0 matches; grep router.push("/home") → 1 match (line 394); tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in SessionComplete.tsx).
