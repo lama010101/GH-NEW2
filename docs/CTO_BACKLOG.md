@@ -141,6 +141,9 @@ E2E verification results (15 checks):
 2. **Middleware not loaded** (from MP-UPD-MIDDLEWARE-HOME-AUTH-001): `middleware.ts` is at project root but project uses `src/` directory, so Next.js 14 ignores it. Fix: move to `src/middleware.ts`. Until fixed, no route has server-side auth protection and admin bypass logic (MP-ADD-MIDDLEWARE-BYPASS-001) cannot be implemented.
 3. **Pre-existing tsc errors** in `src/core/rules.correctness.test.ts` (unused imports `calculateLocationAccuracy`, `calculateYearAccuracy`). Fix: remove unused imports or prefix with underscore.
 
+### POST-INITIATIVE FIXES
+- **MP-FIX-HOME-CSS-IMPORT-001** (2026-06-26): **RESOLVED BLOCKING ISSUE #1 from E2E verification.** Moved `src/app/home.module.css` → `src/app/home/home.module.css` (Option A — grep confirmed only `src/app/home/page.tsx` references it; landing page does NOT). Import line `'./home.module.css'` unchanged, now resolves correctly. `next build` webpack compiles successfully (no Module not found). `curl /home` → 200 (no longer 500). tsc: no new errors. Commit `0585c5e`. **Remaining blockers: middleware not loaded (issue #2), pre-existing tsc errors (issue #3).**
+
 ---
 
 ## SECTION C — CORE CORRECTNESS TESTS
