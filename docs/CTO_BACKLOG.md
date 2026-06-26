@@ -148,6 +148,8 @@ E2E verification results — RE-RUN after MP-FIX-HOME-CSS-IMPORT-001 + MP-FIX-MI
 
 - **MP-FIX-MIDDLEWARE-LOCATION-001** (2026-06-26): **RESOLVED BLOCKING ISSUE #2 from first E2E run.** Moved `middleware.ts` → `src/middleware.ts` via `git mv` (R100 rename, 0 content changes). Next.js 14 requires middleware at `src/middleware.ts` when using `src/` directory — root-level middleware.ts is silently ignored. **CRITICAL FINDING: auth-gating logic from MP-UPD-MIDDLEWARE-HOME-AUTH-001 had been DORMANT/non-functional since it was written — middleware was never loaded until this fix.** Auth-gating is now LIVE: `curl /home` (no session) → 307 to `/login?next=%2Fhome`. **However: MP-ADD-MIDDLEWARE-BYPASS-001 was BLOCKED and never implemented — no admin bypass logic exists in the middleware file.** tsc: no new errors. Commit `8acb34c`. **Side effect: /api/waitlist now auth-gated (NEW REGRESSION — see remaining issue #1 above).**
 
+- **MP-FIX-LANDING-VISUALS-001** (2026-06-26): Landing page visual cleanup. (1) Removed Features section (3 FeatureCard components: CHALLENGE FRIENDS, DAILY COMPETITION, LEVEL UP) and FeatureCard function — nothing renders below waitlist button. (2) Added logo using same asset as TopBar: `next/image` with `src="/icons/logo.webp"` (180x48, priority). (3) Replaced radial-gradient background with same bg image + overlay as /home: fixed div with `background-image: url(/home_background.webp)` + `rgba(0,0,0,0.8)` overlay, content at zIndex:2. Also fixed 2 ESLint errors in WaitlistForm.tsx (unescaped apostrophes → `&apos;`). `next build` webpack compiles, no errors from landing files. curl / → 200 with logo, background, no FeatureCard content. tsc: no new errors. Commit `3154e01`.
+
 ---
 
 ## SECTION C — CORE CORRECTNESS TESTS
