@@ -56,10 +56,10 @@ export function WaitlistForm() {
         placeholder="you@example.com"
         disabled={status === 'submitting'}
         required
-        className="flex-1 px-4 py-3 rounded-lg text-white outline-none"
+        className="flex-1 px-4 py-3 rounded-lg text-white outline-none placeholder-white/60"
         style={{
-          backgroundColor: 'var(--gh-bg-input)',
-          border: '1px solid var(--gh-border-default)',
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.4)',
         }}
       />
       <button
