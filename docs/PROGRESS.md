@@ -2273,3 +2273,11 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - V4: `npx tsc --noEmit` → exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in middleware.ts)
 - **REQUIRED FIX (separate task):** Move `middleware.ts` from project root to `src/middleware.ts`. This is a file relocation, not a logic change. Until this is done, no route in the app has server-side auth protection.
 - **ALSO BLOCKING:** `src/app/home/page.tsx` has broken CSS import `./home.module.css` (resolves to `src/app/home/home.module.css` which doesn't exist; CSS is at `src/app/home.module.css`) — introduced by MP-MOVE-HOME-PAGE-001. This breaks `next build` and the dev server for ALL routes. Needs separate fix (change import to `../home.module.css` or copy CSS file).
+
+## MP-ADD-WAITLIST-API-001 — Create waitlist email submission API route
+- **Status:** COMPLETE (live-verified via curl against dev server)
+- **Commit:** ac73135
+- **Files Modified:**
+  - src/app/api/waitlist/route.ts (NEW — POST-only handler)
+- **Description:** New POST /api/waitlist endpoint. Validates email via /^[^\s@]+@[^\s@]+\.[^\s@]+$/ regex. Uses createSupabaseServerClient() (service-role, bypasses RLS) following existing pattern from src/app/api/ratings/route.ts. Contract: 405 for non-POST (Next.js default), 400 invalid_email, 201 {ok:true} on success, 409 already_registered on unique violation (PG code 23505), 500 internal_error on other DB errors (real error logged server-side only). No auth required (public waitlist signup).
+- **Validation:** tsc exit 2 (2 pre-existing errors in rules.correctness.test.ts, no errors in new file). curl V2: 201 {"ok":true}. curl V3: 409 {"error":"already_registered"}. curl V4: 400 {"error":"invalid_email"}. curl V5: 405 Method Not Allowed. grep service_role/SUPABASE_SERVICE_ROLE_KEY present (createSupabaseServerClient import + usage). Test row cleaned up via psql DELETE (verified 0 rows remaining).
