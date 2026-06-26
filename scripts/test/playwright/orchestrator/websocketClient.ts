@@ -165,6 +165,7 @@ export class CompeteWSClient {
       ws.on('message', (raw: WebSocket.RawData) => {
         try {
           const msg = JSON.parse(raw.toString()) as ClientMessage;
+          console.log(`[WS:${this.opts.user.displayName}] RAW MSG: ${msg.type}`);
           this.handleMessage(msg, resolveOnce);
         } catch (err) {
           console.error(`[WS:${this.opts.user.displayName}] Failed to parse message:`, err);
