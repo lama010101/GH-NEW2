@@ -428,7 +428,7 @@ export default function LobbySection({
     <div className={styles['lobby-shell']} data-testid="lobby-shell">
       <header className={styles['lobby-header']}>
         <div className={styles['lobby-header-top']}>
-          <button className={styles['lobby-back-btn']} onClick={() => router.push("/")} aria-label="Back" data-testid="lobby-back-btn">
+          <button className={styles['lobby-back-btn']} onClick={() => router.push("/home")} aria-label="Back" data-testid="lobby-back-btn">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
