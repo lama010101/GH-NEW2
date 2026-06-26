@@ -391,7 +391,7 @@ export default function SessionComplete({
                 <button
                   type="button"
                   className={styles.homeBtn}
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push("/home")}
                 >
                   {tGame('home')}
                 </button>
