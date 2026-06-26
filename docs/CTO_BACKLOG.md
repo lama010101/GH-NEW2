@@ -94,6 +94,7 @@
 - **MP-UPD-ROUNDCOMP-HOME-001** (2026-06-26): Single-line change in `src/components/compete/RoundCompleteSection.tsx` line 447 — `router.push("/")` → `router.push("/home")`. Home button now navigates to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `31e1a2a`.
 - **MP-UPD-SESSIONCOMP-HOME-001** (2026-06-26): Single-line change in `src/components/compete/SessionComplete.tsx` line 394 — `router.push("/")` → `router.push("/home")`. Home button now navigates to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `380c62a`.
 - **MP-UPD-COMPETE-HOME-001** (2026-06-26): Single-line change in `src/app/compete/page.tsx` line 20 — `router.push("/")` → `router.push("/home")`. Compete page redirect now goes to /home instead of landing page. grep verified: 0 old matches, 1 new match. tsc: no new errors. Commit `e3fe2fc`.
+- **MP-UPD-ACCOUNT-SIGNOUT-CONFIRM-001** (2026-06-26): **Confirmation-only, no code change.** Verified `src/app/account/page.tsx` line 129 reads `router.push('/')` after `await signOut()` — already correct per CTO decision (post-signOut lands on "/" public landing page, NOT "/home" which would bounce to /login via middleware). No correction needed. tsc: no new errors. PROGRESS.md updated with commit `78f6d34`.
 
 ---
 
