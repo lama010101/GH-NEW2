@@ -1,0 +1,728 @@
+
+> guess-history@0.1.0 dev
+> npx kill-port 3000 1999 && concurrently -n next,party -c cyan,magenta "next dev" "partykit dev"
+
+Could not kill process on port 3000,1999. No process running on port.
+Could not kill process on port 3000,1999. No process running on port.
+[party] 🎈 PartyKit v0.0.115
+[party] ---------------------
+[party] Loading environment variables from .env.local
+[party] 
+[party] [2K[1A[2K[GBuild succeeded, starting server...
+[party] 
+[next]   ▲ Next.js 14.2.35
+[next]   - Local:        http://localhost:3000
+[next]   - Environments: .env.local
+[next] 
+[next]  ✓ Starting...
+[party] [2K[1A[2K[G[pk:inf] Ready on http://0.0.0.0:1999
+[party] 
+[party] [2K[1A[2K[G[pk:inf] - http://127.0.0.1:1999
+[party] 
+[party] [2K[1A[2K[G[pk:inf] - http://10.235.1.241:1999
+[party] 
+[next]  ✓ Ready in 6.1s
+[next]  ○ Compiling / ...
+[next]  ✓ Compiled / in 12.4s (955 modules)
+[next]  GET / 200 in 14683ms
+[next]  ✓ Compiled in 3s (394 modules)
+[next]  ○ Compiling /api/notifications ...
+[next]  ✓ Compiled /api/notifications in 2.6s (641 modules)
+[next]  GET /api/notifications 401 in 3420ms
+[next]  ✓ Compiled in 1031ms (394 modules)
+[next]  GET / 200 in 1080ms
+[next]  ○ Compiling /api/invitations/pending ...
+[next]  ✓ Compiled /api/invitations/pending in 1027ms (643 modules)
+[next]  ✓ Compiled (652 modules)
+[next]  GET /api/invitations/pending 200 in 3058ms
+[next]  POST /api/user/assign-avatar 200 in 3980ms
+[next]  GET /api/notifications 401 in 28ms
+[next] [DB][ENFORCEMENT] ✅ Connected to postgres
+[next] [DB][ENFORCEMENT] PostgreSQL PostgreSQL
+[next]  GET /api/compete/active-games 200 in 4650ms
+[next]  GET /api/compete/active-games 200 in 300ms
+[next]  ○ Compiling /api/compete/create ...
+[next]  POST /api/user/assign-avatar 200 in 893ms
+[next]  ✓ Compiled /api/compete/create in 799ms (663 modules)
+[next]  GET /api/invitations/pending 200 in 1758ms
+[next] [PERF] createCompeteSession:fetchEvents: 503.138ms
+[next] [2026-06-26T10:53:40.374Z] [VERIFY] INSERT sessions OK — game_id=07f59f8f-3845-4af1-9714-3c38e727c550 — executing
+[next] [2026-06-26T10:53:40.618Z] [VERIFY] INSERT session_players OK — host player_id=87bf02cd-33e3-49be-bcba-b884c41e5227 — executing
+[next]  ✓ Compiled in 590ms (394 modules)
+[next] [2026-06-26T10:53:41.977Z] [VERIFY] COMMIT sessions+session_players OK — game_id=07f59f8f-3845-4af1-9714-3c38e727c550
+[next] [PERF] createCompeteSession:transaction: 1.839s
+[next] [PERF] createCompeteSession:verify: 0.971ms
+[next] [SNAPSHOT_PLAYERS] {
+[next]   gameId: '07f59f8f-3845-4af1-9714-3c38e727c550',
+[next]   totalPlayers: 1,
+[next]   players: [
+[next]     {
+[next]       playerId: '87bf02cd-33e3-49be-bcba-b884c41e5227',
+[next]       displayName: 'Malala Yousafzai 4611',
+[next]       leftAt: null,
+[next]       ready: false,
+[next]       isHost: true
+[next]     }
+[next]   ]
+[next] }
+[next] [REPLAY_VALIDATION][PASS] gameId=07f59f8f-3845-4af1-9714-3c38e727c550 phase=LOBBY round=0 commits=0
+[next] [PERF] createCompeteSession:snapshot: 377.673ms
+[next]  POST /api/compete/create 200 in 4223ms
+[next]  ○ Compiling /compete/[gameId] ...
+[next]  ✓ Compiled /compete/[gameId] in 4.2s (1233 modules)
+[next]  GET /api/invitations/pending 200 in 309ms
+[next]  GET /api/notifications 200 in 4849ms
+[next] IntlError: MISSING_MESSAGE: Could not resolve `nav.compete` in messages for locale `en`.
+[next]     at getFallbackFromErrorAndNotify (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:159:19)
+[next]     at translateBaseFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:184:14)
+[next]     at translateFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:258:20)
+[next]     at CompeteGamePage (webpack-internal:///(ssr)/./src/app/compete/[gameId]/page.tsx:483:39)
+[next]     at au (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:45321)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ac (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11400)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:14707)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776) {
+[next]   code: 'MISSING_MESSAGE',
+[next]   originalMessage: 'Could not resolve `nav.compete` in messages for locale `en`.'
+[next] }
+[next] IntlError: MISSING_MESSAGE: Could not resolve `nav.compete` in messages for locale `en`.
+[next]     at getFallbackFromErrorAndNotify (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:159:19)
+[next]     at translateBaseFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:184:14)
+[next]     at translateFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:258:20)
+[next]     at CompeteGamePage (webpack-internal:///(ssr)/./src/app/compete/[gameId]/page.tsx:483:39)
+[next]     at au (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:45321)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ac (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11400)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:14707)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776) {
+[next]   code: 'MISSING_MESSAGE',
+[next]   originalMessage: 'Could not resolve `nav.compete` in messages for locale `en`.'
+[next] }
+[next]  GET /compete/07f59f8f-3845-4af1-9714-3c38e727c550 200 in 7352ms
+[next]  GET /compete/07f59f8f-3845-4af1-9714-3c38e727c550 200 in 7367ms
+[next]  ✓ Compiled in 793ms (495 modules)
+[next]  ✓ Compiled in 1062ms (495 modules)
+[next]  ✓ Compiled in 661ms (495 modules)
+[next]  ✓ Compiled in 645ms (495 modules)
+[next]  ✓ Compiled in 534ms (495 modules)
+[next]  ✓ Compiled in 1306ms (495 modules)
+[next]  GET / 200 in 1486ms
+[next]  ✓ Compiled in 1812ms (495 modules)
+[next]  ✓ Compiled in 1219ms (495 modules)
+[next]  ✓ Compiled in 957ms (495 modules)
+[next]  ✓ Compiled in 1266ms (495 modules)
+[next]  ✓ Compiled in 1102ms (495 modules)
+[next]  ✓ Compiled in 1050ms (495 modules)
+[next]  ✓ Compiled in 623ms (495 modules)
+[next]  ✓ Compiled in 676ms (495 modules)
+[next]  ✓ Compiled in 719ms (495 modules)
+[next]  ✓ Compiled in 596ms (495 modules)
+[next]  ✓ Compiled in 934ms (495 modules)
+[next]  GET /api/notifications 401 in 256ms
+[next]  ✓ Compiled in 765ms (495 modules)
+[next]  ✓ Compiled in 800ms (495 modules)
+[next]  GET / 200 in 1015ms
+[next]  ✓ Compiled in 2.4s (495 modules)
+[next]  ✓ Compiled in 1252ms (495 modules)
+[next]  ✓ Compiled in 995ms (495 modules)
+[next]  ✓ Compiled in 1378ms (495 modules)
+[next]  ✓ Compiled in 728ms (495 modules)
+[next]  ✓ Compiled in 1227ms (495 modules)
+[next]  ✓ Compiled in 906ms (495 modules)
+[next]  ✓ Compiled in 743ms (495 modules)
+[next]  ✓ Compiled in 826ms (495 modules)
+[next]  ✓ Compiled in 929ms (495 modules)
+[next]  ✓ Compiled in 558ms (495 modules)
+[next]  GET /api/notifications 401 in 46ms
+[next]  ✓ Compiled in 815ms (495 modules)
+[next] [PERF] createCompeteSession:fetchEvents: 1.211s
+[next]  GET /api/notifications 401 in 1301ms
+[next] [2026-06-26T10:54:47.718Z] [VERIFY] INSERT sessions OK — game_id=9ecd1bd2-a774-4760-8eea-b5a793fb7bb8 — executing
+[next]  ✓ Compiled in 2s (495 modules)
+[next] [2026-06-26T10:54:48.222Z] [VERIFY] INSERT session_players OK — host player_id=87bf02cd-33e3-49be-bcba-b884c41e5227 — executing
+[next]  ✓ Compiled in 1144ms (495 modules)
+[next] [2026-06-26T10:54:49.530Z] [VERIFY] COMMIT sessions+session_players OK — game_id=9ecd1bd2-a774-4760-8eea-b5a793fb7bb8
+[next] [PERF] createCompeteSession:transaction: 2.128s
+[next] [PERF] createCompeteSession:verify: 1.631ms
+[next] [SNAPSHOT_PLAYERS] {
+[next]   gameId: '9ecd1bd2-a774-4760-8eea-b5a793fb7bb8',
+[next]   totalPlayers: 1,
+[next]   players: [
+[next]     {
+[next]       playerId: '87bf02cd-33e3-49be-bcba-b884c41e5227',
+[next]       displayName: 'Malala Yousafzai 4611',
+[next]       leftAt: null,
+[next]       ready: false,
+[next]       isHost: true
+[next]     }
+[next]   ]
+[next] }
+[next] [REPLAY_VALIDATION][PASS] gameId=9ecd1bd2-a774-4760-8eea-b5a793fb7bb8 phase=LOBBY round=0 commits=0
+[next] [PERF] createCompeteSession:snapshot: 879.437ms
+[next]  POST /api/compete/create 200 in 4619ms
+[next]  ✓ Compiled in 1339ms (495 modules)
+[next] IntlError: MISSING_MESSAGE: Could not resolve `nav.compete` in messages for locale `en`.
+[next]     at getFallbackFromErrorAndNotify (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:159:19)
+[next]     at translateBaseFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:184:14)
+[next]     at translateFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:258:20)
+[next]     at CompeteGamePage (webpack-internal:///(ssr)/./src/app/compete/[gameId]/page.tsx:483:39)
+[next]     at au (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:45321)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ac (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11400)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:14707)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776) {
+[next]   code: 'MISSING_MESSAGE',
+[next]   originalMessage: 'Could not resolve `nav.compete` in messages for locale `en`.'
+[next] }
+[next]  ✓ Compiled in 1193ms (495 modules)
+[next] IntlError: MISSING_MESSAGE: Could not resolve `nav.compete` in messages for locale `en`.
+[next]     at getFallbackFromErrorAndNotify (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:159:19)
+[next]     at translateBaseFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:184:14)
+[next]     at translateFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:258:20)
+[next]     at CompeteGamePage (webpack-internal:///(ssr)/./src/app/compete/[gameId]/page.tsx:483:39)
+[next]     at au (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:45321)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ac (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11400)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:14707)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776) {
+[next]   code: 'MISSING_MESSAGE',
+[next]   originalMessage: 'Could not resolve `nav.compete` in messages for locale `en`.'
+[next] }
+[next]  GET /compete/9ecd1bd2-a774-4760-8eea-b5a793fb7bb8 200 in 1379ms
+[next]  GET /compete/9ecd1bd2-a774-4760-8eea-b5a793fb7bb8 200 in 1175ms
+[next]  ✓ Compiled in 1043ms (495 modules)
+[next]  ✓ Compiled in 723ms (495 modules)
+[next]  ✓ Compiled in 792ms (495 modules)
+[next]  ✓ Compiled in 761ms (495 modules)
+[next]  ✓ Compiled in 688ms (495 modules)
+[next]  ✓ Compiled in 427ms (495 modules)
+[next]  ✓ Compiled in 2.1s (495 modules)
+[next]  ✓ Compiled in 789ms (495 modules)
+[next]  ✓ Compiled in 988ms (495 modules)
+[next]  ✓ Compiled in 739ms (495 modules)
+[next]  ✓ Compiled in 1006ms (495 modules)
+[next]  ✓ Compiled in 1374ms (495 modules)
+[next]  ✓ Compiled in 1328ms (495 modules)
+[next]  ✓ Compiled in 1169ms (495 modules)
+[next]  ✓ Compiled in 954ms (495 modules)
+[next]  ✓ Compiled in 751ms (495 modules)
+[next]  ✓ Compiled in 1448ms (495 modules)
+[next]  GET / 200 in 151ms
+[next]  GET /api/notifications 401 in 23ms
+[next]  GET / 200 in 218ms
+[next]  GET /api/compete/active-games 200 in 1011ms
+[next]  GET /api/invitations/pending 200 in 3010ms
+[next]  GET /api/notifications 401 in 59ms
+[next]  ✓ Compiled in 804ms (495 modules)
+[next]  GET /api/compete/active-games 200 in 497ms
+[next] [PERF] createCompeteSession:fetchEvents: 663.252ms
+[next]  GET /api/invitations/pending 200 in 532ms
+[next] [2026-06-26T10:55:27.988Z] [VERIFY] INSERT sessions OK — game_id=d64a46f6-a8e2-4e29-9fdb-d54980b8e002 — executing
+[next] [2026-06-26T10:55:28.229Z] [VERIFY] INSERT session_players OK — host player_id=87bf02cd-33e3-49be-bcba-b884c41e5227 — executing
+[next] [2026-06-26T10:55:29.126Z] [VERIFY] COMMIT sessions+session_players OK — game_id=d64a46f6-a8e2-4e29-9fdb-d54980b8e002
+[next] [PERF] createCompeteSession:transaction: 1.447s
+[next] [PERF] createCompeteSession:verify: 0.242ms
+[next] [SNAPSHOT_PLAYERS] {
+[next]   gameId: 'd64a46f6-a8e2-4e29-9fdb-d54980b8e002',
+[next]   totalPlayers: 1,
+[next]   players: [
+[next]     {
+[next]       playerId: '87bf02cd-33e3-49be-bcba-b884c41e5227',
+[next]       displayName: 'Malala Yousafzai 4611',
+[next]       leftAt: null,
+[next]       ready: false,
+[next]       isHost: true
+[next]     }
+[next]   ]
+[next] }
+[next] [REPLAY_VALIDATION][PASS] gameId=d64a46f6-a8e2-4e29-9fdb-d54980b8e002 phase=LOBBY round=0 commits=0
+[next] [PERF] createCompeteSession:snapshot: 375.314ms
+[next]  POST /api/compete/create 200 in 2520ms
+[next] IntlError: MISSING_MESSAGE: Could not resolve `nav.compete` in messages for locale `en`.
+[next]     at getFallbackFromErrorAndNotify (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:159:19)
+[next]     at translateBaseFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:184:14)
+[next]     at translateFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:258:20)
+[next]     at CompeteGamePage (webpack-internal:///(ssr)/./src/app/compete/[gameId]/page.tsx:483:39)
+[next]     at au (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:45321)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ac (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11400)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:14707)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776) {
+[next]   code: 'MISSING_MESSAGE',
+[next]   originalMessage: 'Could not resolve `nav.compete` in messages for locale `en`.'
+[next] }
+[next] IntlError: MISSING_MESSAGE: Could not resolve `nav.compete` in messages for locale `en`.
+[next]     at getFallbackFromErrorAndNotify (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:159:19)
+[next]     at translateBaseFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:184:14)
+[next]     at translateFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:258:20)
+[next]     at CompeteGamePage (webpack-internal:///(ssr)/./src/app/compete/[gameId]/page.tsx:483:39)
+[next]     at au (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:45321)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ac (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11400)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:14707)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776) {
+[next]   code: 'MISSING_MESSAGE',
+[next]   originalMessage: 'Could not resolve `nav.compete` in messages for locale `en`.'
+[next] }
+[next]  GET /compete/d64a46f6-a8e2-4e29-9fdb-d54980b8e002 200 in 428ms
+[next]  GET /compete/d64a46f6-a8e2-4e29-9fdb-d54980b8e002 200 in 578ms
+[next]  ✓ Compiled in 658ms (495 modules)
+[next]  ✓ Compiled in 538ms (495 modules)
+[next]  ✓ Compiled in 752ms (495 modules)
+[next]  ✓ Compiled in 936ms (495 modules)
+[next]  ✓ Compiled in 929ms (495 modules)
+[next]  ✓ Compiled in 679ms (495 modules)
+[next]  ✓ Compiled in 2.1s (495 modules)
+[next]  GET / 200 in 2235ms
+[next]  ✓ Compiled in 2.4s (495 modules)
+[next]  ✓ Compiled in 1604ms (495 modules)
+[next]  ✓ Compiled in 1738ms (495 modules)
+[next]  ✓ Compiled in 1211ms (495 modules)
+[next]  ✓ Compiled in 1142ms (495 modules)
+[next]  ✓ Compiled in 1206ms (495 modules)
+[next]  ✓ Compiled in 1227ms (495 modules)
+[next]  ✓ Compiled in 1015ms (495 modules)
+[next]  ✓ Compiled in 1073ms (495 modules)
+[next]  ✓ Compiled in 932ms (495 modules)
+[next]  ✓ Compiled in 1155ms (495 modules)
+[next]  ✓ Compiled in 1265ms (495 modules)
+[next]  ✓ Compiled in 2.1s (495 modules)
+[next]  GET /api/notifications 401 in 1297ms
+[next]  ✓ Compiled in 1548ms (495 modules)
+[next]  GET / 200 in 1624ms
+[next]  ✓ Compiled in 2.1s (495 modules)
+[next]  ✓ Compiled in 1684ms (495 modules)
+[next]  ✓ Compiled in 2.1s (495 modules)
+[next]  ⨯ SyntaxError: Unexpected end of JSON input
+[next]     at JSON.parse (<anonymous>)
+[next]     at loadManifest (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/load-manifest.js:36:25)
+[next]     at DevServer.getNextFontManifest (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/next-server.js:750:47)
+[next]     at DevServer.findPageComponents (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/dev/next-dev-server.js:571:43)
+[next]     at async DevServer.renderPageComponent (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/base-server.js:1910:24)
+[next]     at async DevServer.renderToResponseImpl (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/base-server.js:1962:32)
+[next]     at async DevServer.pipeImpl (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/base-server.js:922:25)
+[next]     at async NextNodeServer.handleCatchallRenderRequest (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/next-server.js:272:17)
+[next]     at async DevServer.handleRequestImpl (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/base-server.js:818:17)
+[next]     at async /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+[next]     at async Span.traceAsyncFn (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/trace/trace.js:154:20)
+[next]     at async DevServer.handleRequest (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+[next]     at async invokeRender (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/lib/router-server.js:179:21)
+[next]     at async handleRequest (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/lib/router-server.js:359:24)
+[next]     at async requestHandlerImpl (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/lib/router-server.js:383:13)
+[next]     at async Server.requestListener (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/server/lib/start-server.js:141:13) {
+[next]   page: '/'
+[next] }
+[next]  ✓ Compiled in 2.2s (495 modules)
+[next]  ○ Compiling /_error ...
+[next]  ✓ Compiled /api/compete/create in 32s (1467 modules)
+[next]  GET /api/notifications 401 in 182286ms
+[next]  GET /api/notifications 401 in 171853ms
+[next]  ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[next]  ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[next] [PERF] createCompeteSession:fetchEvents: 4.265s
+[next] [2026-06-26T10:59:57.458Z] [VERIFY] INSERT sessions OK — game_id=97fd9559-caed-4e06-ac22-75e72b77e980 — executing
+[next] [2026-06-26T11:00:01.084Z] [VERIFY] INSERT session_players OK — host player_id=87bf02cd-33e3-49be-bcba-b884c41e5227 — executing
+[next]  GET /api/notifications 401 in 154713ms
+[next] [2026-06-26T11:00:02.909Z] [VERIFY] COMMIT sessions+session_players OK — game_id=97fd9559-caed-4e06-ac22-75e72b77e980
+[next] [PERF] createCompeteSession:transaction: 7.180s
+[next] [PERF] createCompeteSession:verify: 5.506ms
+[next]  GET /api/notifications 401 in 7911ms
+[next]  GET /api/notifications 401 in 7387ms
+[next] [SNAPSHOT_PLAYERS] {
+[next]   gameId: '97fd9559-caed-4e06-ac22-75e72b77e980',
+[next]   totalPlayers: 1,
+[next]   players: [
+[next]     {
+[next]       playerId: '87bf02cd-33e3-49be-bcba-b884c41e5227',
+[next]       displayName: 'Malala Yousafzai 4611',
+[next]       leftAt: null,
+[next]       ready: false,
+[next]       isHost: true
+[next]     }
+[next]   ]
+[next] }
+[next] [REPLAY_VALIDATION][PASS] gameId=97fd9559-caed-4e06-ac22-75e72b77e980 phase=LOBBY round=0 commits=0
+[next] [PERF] createCompeteSession:snapshot: 5.800s
+[next]  POST /api/compete/create 200 in 196432ms
+[next]  GET / 200 in 13127ms
+[next]  GET / 200 in 13266ms
+[next]  GET /api/notifications 401 in 8919ms
+[next]  GET /api/notifications 401 in 8667ms
+[next]  GET /api/notifications 401 in 8591ms
+[next]  GET /api/notifications 401 in 8544ms
+[next]  GET /api/notifications 401 in 8565ms
+[next]  GET /api/notifications 401 in 8387ms
+[next]  GET /api/notifications 401 in 8530ms
+[next]  GET /api/notifications 401 in 3351ms
+[next]  GET /api/notifications 401 in 3352ms
+[next]  GET /api/notifications 401 in 3920ms
+[next]  GET /api/notifications 401 in 3044ms
+[next]  GET /api/notifications 401 in 3032ms
+[next]  GET /api/notifications 401 in 3031ms
+[next]  GET /api/notifications 401 in 3028ms
+[next]  GET /api/notifications 401 in 3025ms
+[next]  GET /api/notifications 401 in 3023ms
+[next]  GET /compete/97fd9559-caed-4e06-ac22-75e72b77e980 200 in 5868ms
+[next]  GET /compete/97fd9559-caed-4e06-ac22-75e72b77e980 200 in 5614ms
+[next]  GET /api/notifications 200 in 4866ms
+[next]  GET /api/notifications 200 in 3943ms
+[next]  GET /api/notifications 200 in 3941ms
+[next] IntlError: MISSING_MESSAGE: Could not resolve `nav.compete` in messages for locale `en`.
+[next]     at getFallbackFromErrorAndNotify (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:159:19)
+[next]     at translateBaseFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:184:14)
+[next]     at translateFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:258:20)
+[next]     at CompeteGamePage (webpack-internal:///(ssr)/./src/app/compete/[gameId]/page.tsx:483:39)
+[next]     at au (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:45321)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ac (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11400)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:14707)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776) {
+[next]   code: 'MISSING_MESSAGE',
+[next]   originalMessage: 'Could not resolve `nav.compete` in messages for locale `en`.'
+[next] }
+[next] IntlError: MISSING_MESSAGE: Could not resolve `nav.compete` in messages for locale `en`.
+[next]     at getFallbackFromErrorAndNotify (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:159:19)
+[next]     at translateBaseFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:184:14)
+[next]     at translateFn (webpack-internal:///(ssr)/./node_modules/use-intl/dist/development/createFormatter-QqAaZwGD.js:258:20)
+[next]     at CompeteGamePage (webpack-internal:///(ssr)/./src/app/compete/[gameId]/page.tsx:483:39)
+[next]     at au (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:10446)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:15122
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:46505)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aj (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:53793)
+[next]     at aC (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:52874)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:50095)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:45321)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ac (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11400)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:14707)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:42922)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776)
+[next]     at ab (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:11808)
+[next]     at /Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16871
+[next]     at aw (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:16908)
+[next]     at a_ (/Users/lolo/GH-new/GH-NEW/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:35:49776) {
+[next]   code: 'MISSING_MESSAGE',
+[next]   originalMessage: 'Could not resolve `nav.compete` in messages for locale `en`.'
+[next] }
+[next]  ✓ Compiled in 178.1s (681 modules)
+[next]  ✓ Compiled in 3.8s (681 modules)
+[next] [?25h
+[next] next dev exited with code 0
+[party] partykit dev exited with code 0

@@ -86,3 +86,50 @@
 6/26/2026, 11:33:06.632 [WS:TestPlayer4] State update: LOBBY round=0
 6/26/2026, 11:33:06.633 [WS:TestPlayer4] State update: LOBBY round=0
 6/26/2026, 11:33:06.639 [WS:TestPlayer4] State update: LOBBY round=0
+6/26/2026, 11:39:30.213   ✘  1 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (10.1m)
+6/26/2026, 11:40:08.228 ◇ injecting env (1) from .env.local // tip: ⌘ suppress logs { quiet: true }
+6/26/2026, 11:40:08.905 ◇ injecting env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+6/26/2026, 11:40:20.683 [BROWSER_POOL] Launching 6 browsers...
+6/26/2026, 11:40:46.369 [AUTH] gh-test-player-1@test.guess-history.com already authenticated
+6/26/2026, 11:40:46.377 [BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+6/26/2026, 11:41:07.415 [AUTH] gh-test-player-2@test.guess-history.com already authenticated
+6/26/2026, 11:41:07.416 [BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+6/26/2026, 11:41:41.114 [AUTH] gh-test-player-3@test.guess-history.com already authenticated
+6/26/2026, 11:41:41.505 [BROWSER_POOL] Player 3 (TestPlayer3, desktop-chrome) ready
+6/26/2026, 11:42:15.909 [AUTH] gh-test-player-4@test.guess-history.com already authenticated
+6/26/2026, 11:42:15.918 [BROWSER_POOL] Player 4 (TestPlayer4, iphone-safari) ready
+6/26/2026, 11:42:42.407 [AUTH] gh-test-player-5@test.guess-history.com already authenticated
+6/26/2026, 11:42:42.417 [BROWSER_POOL] Player 5 (TestPlayer5, iphone-safari) ready
+6/26/2026, 11:43:19.957 [AUTH] gh-test-player-6@test.guess-history.com already authenticated
+6/26/2026, 11:43:20.199 [BROWSER_POOL] Player 6 (TestPlayer6, iphone-safari) ready
+6/26/2026, 11:43:20.202 [BROWSER_POOL] All 6 browsers launched and authenticated
+6/26/2026, 11:43:20.203 [ORCHESTRATOR] Starting 3 games of 5 rounds each...
+6/26/2026, 11:43:20.205 [SIMULATION] Game 1/3
+6/26/2026, 11:43:20.206 [SIMULATION] Creating game via API...
+6/26/2026, 11:45:08.597   ✘  2 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (retry #1) (5.0m)
+6/26/2026, 11:45:14.817 ◇ injecting env (1) from .env.local // tip: ⌘ suppress logs { quiet: true }
+6/26/2026, 11:45:15.194 ◇ injecting env (0) from .env.local // tip: ⌘ override existing { override: true }
+6/26/2026, 11:45:18.172 [BROWSER_POOL] Launching 6 browsers...
+6/26/2026, 11:45:26.856 [AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+6/26/2026, 11:45:50.746   ✘  3 [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (35.2s)
+6/26/2026, 11:45:54.166 ◇ injecting env (1) from .env.local // tip: ⌘ suppress logs { quiet: true }
+6/26/2026, 11:45:54.438 ◇ injecting env (0) from .env.local // tip: ⌘ override existing { override: true }
+6/26/2026, 11:45:57.937 [BROWSER_POOL] Launching 6 browsers...
+6/26/2026, 11:46:17.703 [AUTH] gh-test-player-1@test.guess-history.com already authenticated
+6/26/2026, 11:46:17.711 [BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+6/26/2026, 11:46:31.685 [AUTH] gh-test-player-2@test.guess-history.com already authenticated
+6/26/2026, 11:46:31.688 [BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+6/26/2026, 11:47:07.436 [AUTH] gh-test-player-3@test.guess-history.com already authenticated
+6/26/2026, 11:47:07.459 [BROWSER_POOL] Player 3 (TestPlayer3, desktop-chrome) ready
+6/26/2026, 11:47:48.321 [AUTH] gh-test-player-4@test.guess-history.com already authenticated
+6/26/2026, 11:47:48.500 [BROWSER_POOL] Player 4 (TestPlayer4, iphone-safari) ready
+6/26/2026, 11:48:47.574 [AUTH] gh-test-player-5@test.guess-history.com already authenticated
+6/26/2026, 11:48:47.598 [BROWSER_POOL] Player 5 (TestPlayer5, iphone-safari) ready
+6/26/2026, 11:49:31.552 [AUTH] gh-test-player-6@test.guess-history.com already authenticated
+6/26/2026, 11:49:31.723 [BROWSER_POOL] Player 6 (TestPlayer6, iphone-safari) ready
+6/26/2026, 11:49:31.731 [BROWSER_POOL] All 6 browsers launched and authenticated
+6/26/2026, 11:49:31.737 [ORCHESTRATOR] Starting 3 games of 5 rounds each...
+6/26/2026, 11:49:31.772 [SIMULATION] Game 1/3
+6/26/2026, 11:49:31.970 [SIMULATION] Creating game via API...
+6/26/2026, 11:51:14.044   ✘  4 [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (retry #1) (5.3m)
+6/26/2026, 11:51:15.328 [PLAYWRIGHT SETUP] Creating test users...

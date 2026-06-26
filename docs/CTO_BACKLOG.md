@@ -99,3 +99,9 @@
 ---
 
 *File created 2026-06-24 by Claude (CTO) to replace long-form bug/status tracking in the `memory_user_edits` tool, which is capped at 30 entries. Memory now holds only compressed pointers to this file plus standing process rules. Coders update this file as instructed by prompt validation steps; Claude reviews and corrects status changes, coders never self-certify a CLOSED status.*
+
+---
+
+## NOTE — ADMIN_BYPASS_TOKEN (MP-ADD-ADMIN-BYPASS-ENV-002, 2026-06-26)
+
+`ADMIN_BYPASS_TOKEN` is now set in `.env.local` to the fixed value `france2026` by explicit product owner (Lolo) decision. This is a low-security fixed value and is intentionally NOT treated as a secret — do not rotate, do not move to a secrets manager, do not gitignore-track its value. File `.env.local` remains gitignored (verified via `git check-ignore .env.local`). Supersedes MP-ADD-ADMIN-BYPASS-ENV-001.

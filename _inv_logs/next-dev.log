@@ -587,3 +587,251 @@
 6/26/2026, 11:31:51.134  GET /compete/dee37619-b73e-4d02-80d3-068f990037c2 200 in 2543ms
 6/26/2026, 11:31:51.135  GET /compete/dee37619-b73e-4d02-80d3-068f990037c2 200 in 2562ms
 6/26/2026, 11:31:51.135  GET /compete/dee37619-b73e-4d02-80d3-068f990037c2 200 in 2573ms
+6/26/2026, 11:34:10.864  ✓ Compiled in 11.3s (495 modules)
+6/26/2026, 11:34:14.990    Reload env: .env.local
+6/26/2026, 11:34:26.636  ✓ Compiled in 11.6s (1131 modules)
+6/26/2026, 11:34:49.255  ✓ Compiled in 1780ms (495 modules)
+6/26/2026, 11:34:53.687  ✓ Compiled in 4.4s (495 modules)
+6/26/2026, 11:39:40.356  ✓ Compiled in 21.1s (495 modules)
+6/26/2026, 11:39:47.216  ✓ Compiled in 6.2s (495 modules)
+6/26/2026, 11:39:59.391  ✓ Compiled in 1692ms (495 modules)
+6/26/2026, 11:40:01.996  ✓ Compiled in 2.5s (495 modules)
+6/26/2026, 11:40:27.333  ✓ Compiled in 6.6s (495 modules)
+6/26/2026, 11:40:31.114  GET / 200 in 7734ms
+6/26/2026, 11:40:34.148  ✓ Compiled in 6.8s (495 modules)
+6/26/2026, 11:40:37.581  ✓ Compiled in 3.2s (495 modules)
+6/26/2026, 11:40:40.558  ✓ Compiled in 2.9s (495 modules)
+6/26/2026, 11:40:44.462  ✓ Compiled in 3.9s (495 modules)
+6/26/2026, 11:40:47.172  ✓ Compiled in 2.7s (495 modules)
+6/26/2026, 11:40:50.263  ✓ Compiled in 3.1s (495 modules)
+6/26/2026, 11:40:57.228  GET / 200 in 8296ms
+6/26/2026, 11:41:01.157  ✓ Compiled in 10.8s (495 modules)
+6/26/2026, 11:41:02.947  ○ Compiling /api/notifications ...
+6/26/2026, 11:41:23.223  ✓ Compiled /api/notifications in 22s (1225 modules)
+6/26/2026, 11:41:25.173  GET /api/notifications 401 in 23881ms
+6/26/2026, 11:41:26.747  GET / 200 in 16526ms
+6/26/2026, 11:41:27.244  ✓ Compiled in 4s (495 modules)
+6/26/2026, 11:41:27.275  GET /api/notifications 401 in 1155ms
+6/26/2026, 11:41:30.221  ✓ Compiled in 3s (495 modules)
+6/26/2026, 11:41:30.867  GET /api/notifications 401 in 2404ms
+6/26/2026, 11:41:33.727  GET /api/notifications 401 in 2385ms
+6/26/2026, 11:41:33.883  ✓ Compiled in 3.5s (495 modules)
+6/26/2026, 11:41:41.270  ✓ Compiled in 7.2s (495 modules)
+6/26/2026, 11:41:49.443  GET /api/notifications 401 in 6346ms
+6/26/2026, 11:41:52.200  ✓ Compiled in 10.4s (495 modules)
+6/26/2026, 11:41:52.595  GET /api/notifications 401 in 4492ms
+6/26/2026, 11:41:58.467  ✓ Compiled in 6s (495 modules)
+6/26/2026, 11:42:01.688  GET /api/notifications 401 in 3610ms
+6/26/2026, 11:42:02.696  GET / 200 in 5521ms
+6/26/2026, 11:42:03.275  ✓ Compiled in 4.8s (495 modules)
+6/26/2026, 11:42:05.786  GET /api/notifications 401 in 4304ms
+6/26/2026, 11:42:13.652  ✓ Compiled in 9.7s (495 modules)
+6/26/2026, 11:42:15.053  GET /api/notifications 401 in 5070ms
+6/26/2026, 11:42:17.071  GET /api/notifications 401 in 3395ms
+6/26/2026, 11:42:18.891  GET /api/notifications 401 in 2006ms
+6/26/2026, 11:42:18.914  ✓ Compiled in 5.2s (495 modules)
+6/26/2026, 11:42:25.444  ✓ Compiled in 6.4s (495 modules)
+6/26/2026, 11:42:29.132  GET / 200 in 8372ms
+6/26/2026, 11:42:29.260  GET /api/notifications 401 in 2843ms
+6/26/2026, 11:42:32.548  ✓ Compiled in 6.8s (495 modules)
+6/26/2026, 11:42:33.227  GET /api/notifications 401 in 4616ms
+6/26/2026, 11:42:35.451  GET /api/notifications 401 in 3339ms
+6/26/2026, 11:42:38.490  ✓ Compiled in 5.8s (495 modules)
+6/26/2026, 11:42:45.269  GET /api/notifications 401 in 4993ms
+6/26/2026, 11:42:47.347  ✓ Compiled in 8.8s (495 modules)
+6/26/2026, 11:42:48.440  GET /api/notifications 401 in 5180ms
+6/26/2026, 11:42:53.356  GET /api/notifications 401 in 6793ms
+6/26/2026, 11:42:53.363  GET /api/notifications 401 in 6559ms
+6/26/2026, 11:42:58.112  ✓ Compiled in 10.3s (495 modules)
+6/26/2026, 11:43:01.165  GET /api/notifications 401 in 5726ms
+6/26/2026, 11:43:02.235  GET /api/notifications 401 in 3098ms
+6/26/2026, 11:43:03.482  GET / 200 in 7873ms
+6/26/2026, 11:43:03.601  ✓ Compiled in 5.1s (495 modules)
+6/26/2026, 11:43:04.036  GET /api/notifications 401 in 2622ms
+6/26/2026, 11:43:04.041  GET /api/notifications 401 in 2393ms
+6/26/2026, 11:43:10.743  ✓ Compiled in 6.9s (495 modules)
+6/26/2026, 11:43:11.849  GET /api/notifications 401 in 3874ms
+6/26/2026, 11:43:14.185  GET /api/notifications 401 in 3962ms
+6/26/2026, 11:43:17.623  ✓ Compiled in 6.4s (495 modules)
+6/26/2026, 11:43:19.390  GET /api/notifications 401 in 5436ms
+6/26/2026, 11:43:22.149  GET /api/notifications 401 in 6158ms
+6/26/2026, 11:43:22.150  GET /api/notifications 401 in 5300ms
+6/26/2026, 11:43:24.244  ○ Compiling /api/compete/create ...
+6/26/2026, 11:43:51.182  ✓ Compiled /api/compete/create in 33.2s (1241 modules)
+6/26/2026, 11:43:52.115  GET /api/notifications 401 in 29131ms
+6/26/2026, 11:43:52.555  GET /api/notifications 401 in 26985ms
+6/26/2026, 11:43:52.558  GET /api/notifications 401 in 20777ms
+6/26/2026, 11:43:52.558  GET /api/notifications 401 in 19292ms
+6/26/2026, 11:43:52.559  GET /api/notifications 401 in 18946ms
+6/26/2026, 11:43:52.561  GET /api/notifications 401 in 14726ms
+6/26/2026, 11:43:52.562  GET /api/notifications 401 in 10449ms
+6/26/2026, 11:43:52.563  GET /api/notifications 401 in 6118ms
+6/26/2026, 11:43:54.595  GET /api/notifications 401 in 1132ms
+6/26/2026, 11:43:55.339  ✓ Compiled in 3.3s (495 modules)
+6/26/2026, 11:43:55.851  GET /api/notifications 401 in 2384ms
+6/26/2026, 11:43:55.854  GET /api/notifications 401 in 2322ms
+6/26/2026, 11:43:55.855  GET /api/notifications 401 in 2321ms
+6/26/2026, 11:43:58.638  GET /api/notifications 401 in 2582ms
+6/26/2026, 11:43:59.127  ✓ Compiled in 3.7s (495 modules)
+6/26/2026, 11:43:59.926  GET /api/notifications 401 in 1931ms
+6/26/2026, 11:43:59.927  GET /api/notifications 401 in 1930ms
+6/26/2026, 11:44:02.395  ✓ Compiled in 3.2s (495 modules)
+6/26/2026, 11:44:03.403  GET /api/notifications 401 in 2547ms
+6/26/2026, 11:44:04.835  GET /api/notifications 401 in 3318ms
+6/26/2026, 11:44:05.376  ✓ Compiled in 3s (495 modules)
+6/26/2026, 11:44:10.186  ✓ Compiled in 4.8s (495 modules)
+6/26/2026, 11:44:11.296  GET /api/notifications 401 in 3207ms
+6/26/2026, 11:44:13.006  GET /api/notifications 401 in 2948ms
+6/26/2026, 11:44:17.783  ✓ Compiled in 7.4s (495 modules)
+6/26/2026, 11:44:19.100  GET /api/notifications 401 in 6084ms
+6/26/2026, 11:44:19.103  GET /api/notifications 401 in 6029ms
+6/26/2026, 11:44:21.424  GET /api/notifications 401 in 4365ms
+6/26/2026, 11:44:21.425  GET /api/notifications 401 in 3888ms
+6/26/2026, 11:44:23.413  ✓ Compiled in 5.3s (495 modules)
+6/26/2026, 11:44:27.495  GET /api/notifications 401 in 4148ms
+6/26/2026, 11:44:29.731  GET /api/notifications 401 in 4800ms
+6/26/2026, 11:44:30.987  ✓ Compiled in 7.6s (495 modules)
+6/26/2026, 11:44:32.428  GET /api/notifications 401 in 5202ms
+6/26/2026, 11:44:35.172  GET /api/notifications 401 in 6678ms
+6/26/2026, 11:44:35.290  GET /api/notifications 401 in 3465ms
+6/26/2026, 11:44:36.120  GET /api/notifications 401 in 3650ms
+6/26/2026, 11:44:36.437  POST /api/compete/create 400 in 74250ms
+6/26/2026, 11:44:37.097  ✓ Compiled in 5.8s (495 modules)
+6/26/2026, 11:44:38.586  ✓ Compiled in 1417ms (495 modules)
+6/26/2026, 11:44:38.984  GET /api/notifications 401 in 996ms
+6/26/2026, 11:44:40.255  ✓ Compiled in 1643ms (495 modules)
+6/26/2026, 11:44:41.769  ✓ Compiled in 1483ms (495 modules)
+6/26/2026, 11:44:43.127  ✓ Compiled in 1343ms (495 modules)
+6/26/2026, 11:44:43.767  GET /api/notifications 401 in 1404ms
+6/26/2026, 11:44:44.966  ✓ Compiled in 1533ms (495 modules)
+6/26/2026, 11:44:46.714  GET /api/notifications 401 in 586ms
+6/26/2026, 11:44:46.721  ✓ Compiled in 1733ms (495 modules)
+6/26/2026, 11:44:47.659  ✓ Compiled in 922ms (495 modules)
+6/26/2026, 11:44:51.162  ✓ Compiled in 3.5s (495 modules)
+6/26/2026, 11:44:54.415  ✓ Compiled in 3s (495 modules)
+6/26/2026, 11:44:54.454  GET /api/notifications 401 in 1242ms
+6/26/2026, 11:44:57.528  ✓ Compiled in 3.1s (495 modules)
+6/26/2026, 11:44:59.172  GET /api/notifications 401 in 1685ms
+6/26/2026, 11:44:59.701  ✓ Compiled in 1907ms (495 modules)
+6/26/2026, 11:45:01.091  ✓ Compiled in 1376ms (495 modules)
+6/26/2026, 11:45:01.332  GET /api/notifications 401 in 669ms
+6/26/2026, 11:45:02.113  ✓ Compiled in 972ms (495 modules)
+6/26/2026, 11:45:03.304  ✓ Compiled in 1179ms (495 modules)
+6/26/2026, 11:45:04.675  ✓ Compiled in 1317ms (495 modules)
+6/26/2026, 11:45:06.983  ✓ Compiled in 2.2s (495 modules)
+6/26/2026, 11:45:10.008  ✓ Compiled in 3s (495 modules)
+6/26/2026, 11:45:10.987  ✓ Compiled in 969ms (495 modules)
+6/26/2026, 11:45:20.478  GET / 200 in 1891ms
+6/26/2026, 11:45:26.515  GET /api/notifications 401 in 44ms
+6/26/2026, 11:45:41.711  GET /api/notifications 401 in 232ms
+6/26/2026, 11:45:51.865  ✓ Compiled in 1188ms (495 modules)
+6/26/2026, 11:45:52.703  ✓ Compiled in 827ms (495 modules)
+6/26/2026, 11:45:59.465  ✓ Compiled in 1425ms (495 modules)
+6/26/2026, 11:46:00.497  GET / 200 in 1258ms
+6/26/2026, 11:46:01.480  ✓ Compiled in 2s (495 modules)
+6/26/2026, 11:46:02.938  ✓ Compiled in 1438ms (495 modules)
+6/26/2026, 11:46:04.484  ✓ Compiled in 1526ms (495 modules)
+6/26/2026, 11:46:06.255  ✓ Compiled in 1745ms (495 modules)
+6/26/2026, 11:46:08.453  ✓ Compiled in 2.2s (495 modules)
+6/26/2026, 11:46:10.304  ✓ Compiled in 1698ms (495 modules)
+6/26/2026, 11:46:11.924  ✓ Compiled in 1607ms (495 modules)
+6/26/2026, 11:46:12.893  ✓ Compiled in 951ms (495 modules)
+6/26/2026, 11:46:14.588  ✓ Compiled in 1687ms (495 modules)
+6/26/2026, 11:46:16.145  ✓ Compiled in 1480ms (495 modules)
+6/26/2026, 11:46:17.764  GET /api/notifications 401 in 1601ms
+6/26/2026, 11:46:18.398  ✓ Compiled in 2.2s (495 modules)
+6/26/2026, 11:46:20.028  ✓ Compiled in 1531ms (495 modules)
+6/26/2026, 11:46:21.593  GET / 200 in 2317ms
+6/26/2026, 11:46:22.996  ✓ Compiled in 2.9s (495 modules)
+6/26/2026, 11:46:28.745  ✓ Compiled in 5.7s (495 modules)
+6/26/2026, 11:46:32.024  ✓ Compiled in 3.2s (495 modules)
+6/26/2026, 11:46:35.072  GET /api/notifications 401 in 3379ms
+6/26/2026, 11:46:38.628  ✓ Compiled in 6.4s (495 modules)
+6/26/2026, 11:46:51.065  GET / 200 in 16180ms
+6/26/2026, 11:46:59.314  GET /api/notifications 401 in 8800ms
+6/26/2026, 11:46:59.370  ✓ Compiled in 20.2s (495 modules)
+6/26/2026, 11:47:16.203  ✓ Compiled in 16.8s (495 modules)
+6/26/2026, 11:47:18.234  GET /api/notifications 401 in 11299ms
+6/26/2026, 11:47:18.270  GET /api/notifications 401 in 10955ms
+6/26/2026, 11:47:29.171  GET /api/notifications 401 in 10618ms
+6/26/2026, 11:47:29.176  GET /api/notifications 401 in 10404ms
+6/26/2026, 11:47:29.452  ✓ Compiled in 12.9s (495 modules)
+6/26/2026, 11:47:34.355  GET / 200 in 12355ms
+6/26/2026, 11:47:44.588  GET /api/notifications 401 in 13403ms
+6/26/2026, 11:47:44.593  GET /api/notifications 401 in 11031ms
+6/26/2026, 11:47:45.634  ✓ Compiled in 16.1s (495 modules)
+6/26/2026, 11:48:03.368  GET /api/notifications 401 in 16457ms
+6/26/2026, 11:48:03.370  GET /api/notifications 401 in 16454ms
+6/26/2026, 11:48:10.404  ✓ Compiled in 24.6s (495 modules)
+6/26/2026, 11:48:20.891  GET /api/notifications 401 in 11736ms
+6/26/2026, 11:48:20.893  GET /api/notifications 401 in 11582ms
+6/26/2026, 11:48:25.737  GET /api/notifications 401 in 11902ms
+6/26/2026, 11:48:29.762  ✓ Compiled in 19.1s (495 modules)
+6/26/2026, 11:48:31.500  GET / 200 in 21112ms
+6/26/2026, 11:48:34.291  GET /api/notifications 401 in 12573ms
+6/26/2026, 11:48:34.296  GET /api/notifications 401 in 12570ms
+6/26/2026, 11:48:44.207  GET /api/notifications 401 in 16051ms
+6/26/2026, 11:48:46.336  GET /api/notifications 401 in 9133ms
+6/26/2026, 11:48:46.339  GET /api/notifications 401 in 8595ms
+6/26/2026, 11:48:49.576  GET /api/notifications 401 in 4124ms
+6/26/2026, 11:48:49.980  ✓ Compiled in 19.6s (495 modules)
+6/26/2026, 11:48:51.925  GET /api/notifications 401 in 4172ms
+6/26/2026, 11:48:51.927  GET /api/notifications 401 in 4159ms
+6/26/2026, 11:49:02.987  ✓ Compiled in 12.9s (495 modules)
+6/26/2026, 11:49:06.113  GET /api/notifications 401 in 8284ms
+6/26/2026, 11:49:12.054  GET /api/notifications 401 in 9472ms
+6/26/2026, 11:49:12.056  GET /api/notifications 401 in 9434ms
+6/26/2026, 11:49:18.092  GET / 200 in 19494ms
+6/26/2026, 11:49:19.041  GET /api/notifications 401 in 14629ms
+6/26/2026, 11:49:20.467  ✓ Compiled in 17.4s (495 modules)
+6/26/2026, 11:49:31.258  GET /api/notifications 401 in 17691ms
+6/26/2026, 11:49:31.262  GET /api/notifications 401 in 12847ms
+6/26/2026, 11:49:31.265  GET /api/notifications 401 in 12824ms
+6/26/2026, 11:49:35.948  GET /api/notifications 401 in 15548ms
+6/26/2026, 11:49:41.028  GET /api/notifications 401 in 8765ms
+6/26/2026, 11:49:41.030  GET /api/notifications 401 in 8530ms
+6/26/2026, 11:49:41.043  GET /api/notifications 401 in 8529ms
+6/26/2026, 11:49:41.272  ✓ Compiled in 20.5s (495 modules)
+6/26/2026, 11:49:43.751 (node:17264) Warning: Label '[PERF] createCompeteSession:fetchEvents' already exists for console.time()
+6/26/2026, 11:49:43.752 (Use `node --trace-warnings ...` to show where the warning was created)
+6/26/2026, 11:49:44.309  GET /api/notifications 401 in 9158ms
+6/26/2026, 11:49:50.022  GET /api/notifications 401 in 6997ms
+6/26/2026, 11:49:50.024  GET /api/notifications 401 in 3056ms
+6/26/2026, 11:49:50.025  GET /api/notifications 401 in 3042ms
+6/26/2026, 11:49:50.782  ✓ Compiled in 8.9s (495 modules)
+6/26/2026, 11:49:51.277  GET /api/notifications 401 in 4260ms
+6/26/2026, 11:49:53.856  GET /api/notifications 401 in 4953ms
+6/26/2026, 11:50:03.269  ✓ Compiled in 12.4s (495 modules)
+6/26/2026, 11:50:09.543  GET /api/notifications 401 in 10005ms
+6/26/2026, 11:50:09.545  GET /api/notifications 401 in 5859ms
+6/26/2026, 11:50:09.547  GET /api/notifications 401 in 5325ms
+6/26/2026, 11:50:09.550  GET /api/notifications 401 in 5323ms
+6/26/2026, 11:50:10.343  GET /api/notifications 401 in 5386ms
+6/26/2026, 11:50:14.195  ✓ Compiled in 10.6s (495 modules)
+6/26/2026, 11:50:24.200  GET /api/notifications 401 in 10815ms
+6/26/2026, 11:50:27.250  GET /api/notifications 401 in 10427ms
+6/26/2026, 11:50:27.251  GET /api/notifications 401 in 10223ms
+6/26/2026, 11:50:27.252  GET /api/notifications 401 in 10222ms
+6/26/2026, 11:50:27.253  GET /api/notifications 401 in 4952ms
+6/26/2026, 11:50:28.430  ✓ Compiled in 13.9s (495 modules)
+6/26/2026, 11:50:30.252  GET /api/notifications 401 in 7512ms
+6/26/2026, 11:50:33.203  GET /api/notifications 401 in 5199ms
+6/26/2026, 11:50:36.659  GET /api/notifications 401 in 5429ms
+6/26/2026, 11:50:36.661  GET /api/notifications 401 in 3577ms
+6/26/2026, 11:50:36.662  GET /api/notifications 401 in 3535ms
+6/26/2026, 11:50:39.948  ✓ Compiled in 11.3s (495 modules)
+6/26/2026, 11:50:41.142  POST /api/compete/create 400 in 66325ms
+6/26/2026, 11:50:44.699  GET /api/notifications 401 in 10913ms
+6/26/2026, 11:50:51.489  GET /api/notifications 401 in 15289ms
+6/26/2026, 11:50:53.557  GET /api/notifications 401 in 3503ms
+6/26/2026, 11:50:54.428  ✓ Compiled in 14s (495 modules)
+6/26/2026, 11:50:55.270  GET /api/notifications 401 in 4955ms
+6/26/2026, 11:50:55.272  GET /api/notifications 401 in 4937ms
+6/26/2026, 11:51:00.456  ✓ Compiled in 6s (495 modules)
+6/26/2026, 11:51:09.964  ✓ Compiled in 9.5s (495 modules)
+6/26/2026, 11:51:11.302  GET /api/notifications 401 in 7307ms
+6/26/2026, 11:51:11.304  GET /api/notifications 401 in 7309ms
+6/26/2026, 11:51:12.489  GET /api/notifications 200 in 7073ms
+6/26/2026, 11:51:17.849  ✓ Compiled in 7.4s (495 modules)
+6/26/2026, 11:51:19.891  ✓ Compiled in 1873ms (495 modules)
+6/26/2026, 11:54:53.696 [?25h
