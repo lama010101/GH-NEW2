@@ -99,6 +99,48 @@
 - **MP-UPD-AUTHMODAL-HOME-001** (2026-06-26): Single-line change in `src/components/AuthModal.tsx` line 51 — OAuth `redirectTo` `next=/` → `next=/home`. Post-OAuth-success user has a session, so /home is correct (middleware permits). Line 124 (`next=/account` for account-linking) untouched. grep verified: no bare `next=/` remains. tsc: no new errors. Commit `33d70da`.
 - **MP-ADD-LANDING-PAGE-001** (2026-06-26): Replaced `src/app/page.tsx` with new SEO-optimized public landing page (server component, Next.js Metadata API with title/description/OG tags, semantic HTML, existing CSS variables + gradient conventions). Created `src/components/landing/WaitlistForm.tsx` (client component) — POSTs to /api/waitlist with inline states (idle/submitting/success/already/error). curl / → 200 with title, OG tags, email input. Form flow verified: 201 on fresh email, 409 on duplicate. Test row cleaned up. `next build` fails due to pre-existing CSS path issue in `src/app/home/page.tsx` (from MP-MOVE-HOME-PAGE-001, not caused by this task). tsc: no new errors. Commit `b26ebb2`.
 
+### WAITLIST LANDING PAGE INITIATIVE — E2E VERIFICATION (MP-VERIFY-WAITLIST-E2E-001, 2026-06-26)
+**Status: PARTIAL PASS — 8/15 checks passed, 7/15 FAILED due to 2 pre-existing issues blocking the entire dev server + build.**
+
+Tasks in this initiative:
+- MP-ADD-WAITLIST-TBL-001 (waitlist table migration) — CLOSED
+- MP-ADD-ADMIN-BYPASS-ENV-001 (admin bypass env var) — BLOCKED (already existed)
+- MP-MOVE-HOME-PAGE-001 (move home page to /home) — CLOSED (but introduced CSS path bug)
+- MP-FIX-HOME-STRIP-GATING-001 (remove client-side auth gate from /home) — CLOSED
+- MP-UPD-MIDDLEWARE-HOME-AUTH-001 (server-side auth on /home) — STOPPED (middleware not loaded)
+- MP-ADD-MIDDLEWARE-BYPASS-001 (admin bypass cookie) — BLOCKED (depends on stopped middleware task)
+- MP-ADD-WAITLIST-API-001 (waitlist email submission API) — CLOSED
+- MP-UPD-LOBBY-HOME-001 (LobbySection nav / → /home) — CLOSED
+- MP-UPD-ROUNDCOMP-HOME-001 (RoundCompleteSection nav / → /home) — CLOSED
+- MP-UPD-SESSIONCOMP-HOME-001 (SessionComplete nav / → /home) — CLOSED
+- MP-UPD-COMPETE-HOME-001 (compete page nav / → /home) — CLOSED
+- MP-UPD-ACCOUNT-SIGNOUT-CONFIRM-001 (account signOut stays at /) — CLOSED (confirmation-only)
+- MP-UPD-PROFILE-SIGNOUT-CONFIRM-001 (profile signOut stays at /) — CLOSED (confirmation-only)
+- MP-UPD-AUTHMODAL-HOME-001 (OAuth callback next=/home) — CLOSED
+- MP-ADD-LANDING-PAGE-001 (public SEO landing page) — CLOSED
+
+E2E verification results (15 checks):
+1. PASS — grep compete-area router.push("/") → 0 matches
+2. PASS — grep AuthModal next=/ bare → 0 matches
+3. PASS — account + profile signOut targets both show '/'
+4. PASS — PUBLIC_PATHS has "/", absent "/home"
+5. PASS — curl / → 200, landing page HTML (first request before /home compilation poisoned dev server)
+6. **FAIL** — curl /home (no cookies) → 500 (expected 302 to /login). Root cause: `src/app/home/page.tsx` line 15 `import styles from './home.module.css'` resolves to non-existent `src/app/home/home.module.css` (CSS is at `src/app/home.module.css`). Pre-existing from MP-MOVE-HOME-PAGE-001.
+7. **FAIL** — curl /?admin=WRONGTOKEN → 500 (expected 200). Dev server poisoned by /home compilation failure.
+8. **FAIL** — curl -b gh_admin_bypass=1 / → 500 (expected 302 to /home). Middleware not loaded (at root, not src/) AND dev server poisoned.
+9. **FAIL** — curl -b gh_admin_bypass=1 /home → 500 (expected 302 to /login). Same root causes as #6 + #8.
+10. **FAIL** — POST /api/waitlist → 500 (expected 201). Dev server poisoned by /home compilation failure (API route itself is correct — verified working in MP-ADD-WAITLIST-API-001 before /home was compiled).
+11. PASS — psql \d waitlist → table exists with id/email/created_at + unique constraint on email + RLS enabled
+12. **FAIL** — tsc --noEmit → exit 2 (expected 0). 2 pre-existing errors in rules.correctness.test.ts (unused imports).
+13. **FAIL** — next build → fails (expected green). Same CSS path issue as #6.
+14. PASS — grep bootstrapIdentity in src/app/home/page.tsx → present (preserved)
+15. PASS — diff HEAD:src/app/home/page.tsx vs working file → empty (no drift)
+
+**BLOCKING ISSUES (must be fixed in separate tasks before initiative can be fully verified):**
+1. **CSS path bug** (from MP-MOVE-HOME-PAGE-001): `src/app/home/page.tsx` line 15 imports `'./home.module.css'` but CSS is at `src/app/home.module.css`. Fix: change import to `'../home.module.css'` or copy CSS file. This breaks `next build` and poisons the dev server for ALL routes after /home is first compiled.
+2. **Middleware not loaded** (from MP-UPD-MIDDLEWARE-HOME-AUTH-001): `middleware.ts` is at project root but project uses `src/` directory, so Next.js 14 ignores it. Fix: move to `src/middleware.ts`. Until fixed, no route has server-side auth protection and admin bypass logic (MP-ADD-MIDDLEWARE-BYPASS-001) cannot be implemented.
+3. **Pre-existing tsc errors** in `src/core/rules.correctness.test.ts` (unused imports `calculateLocationAccuracy`, `calculateYearAccuracy`). Fix: remove unused imports or prefix with underscore.
+
 ---
 
 ## SECTION C — CORE CORRECTNESS TESTS
