@@ -2227,3 +2227,17 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - Applied 20260625000001 (profiles.locale) + recorded
 - **Description:** Prior batch marked B3/B4 CLOSED but migrations were never applied to production Supabase (latest applied was 20260611092811). Corrected player_event_ratings schema per CTO decision (FK + updated_at), applied live, fixed API route upsert semantics, applied locale migration. End-to-end verified via authenticated HTTP + direct pg: rating upsert overwrites in place (row count stays 1, rated_at preserved, updated_at changes), auth gate returns 401 without cookie, locale round-trips fr/en/null.
 - **tsc:** only 2 known pre-existing errors in rules.correctness.test.ts.
+
+## MP-ADD-WAITLIST-TBL-001 — Create waitlist table migration
+- **Status:** COMPLETE (live-applied + live-verified)
+- **Commit:** ebb346d (migration) / 0008b9b (CTO_BACKLOG close)
+- **Files Modified:**
+  - supabase/migrations/20260626000000_create_waitlist.sql (NEW)
+  - docs/CTO_BACKLOG.md (task closed in CLOSED LOG)
+- **Live DB changes (Supabase MCP apply_migration):**
+  - Created public.waitlist (id UUID PK default gen_random_uuid(), email TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL default now())
+  - Added UNIQUE constraint waitlist_email_unique on email
+  - ENABLE ROW LEVEL SECURITY (no authenticated policies -> implicit deny; service role bypasses)
+  - Recorded in supabase_migrations.schema_migrations as version 20260626111106 (name: create_waitlist)
+- **Description:** New waitlist table for email signups. PK is a stable surrogate UUID; email dedup enforced at DB layer via separate UNIQUE constraint. RLS enabled with no policies for authenticated role (implicit deny), consistent with DATABASE_SCHEMA_STATE.md conventions; service role bypasses RLS automatically.
+- **Validation:** \d waitlist shows id/email/created_at + waitlist_email_unique UNIQUE; first insert succeeds; duplicate insert rejected with duplicate key violation; relrowsecurity=t; exactly one migration file matches grep -rl "waitlist" supabase/migrations/.
