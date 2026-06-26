@@ -1,285 +1,101 @@
-'use client'
+import type { Metadata } from 'next'
+import { WaitlistForm } from '@/components/landing/WaitlistForm'
 
-import { useState, useEffect, Suspense } from 'react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
-import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
-import { supabaseBrowser } from '@/core/supabaseBrowser'
-import { AuthModal } from '@/components/AuthModal'
-import { WelcomeModal } from '@/components/WelcomeModal'
-import { DailyPanel } from '@/components/home/DailyPanel'
-import { PracticePanel } from '@/components/home/PracticePanel'
-import { LevelUpPanel } from '@/components/home/LevelUpPanel'
-import { CompetePanel } from '@/components/home/CompetePanel'
-import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
-import styles from './home.module.css'
-import { NavModal } from '@/components/NavModal'
-import TopBar from '@/components/layout/TopBar'
+export const metadata: Metadata = {
+  title: 'Guess-History — Test Your Knowledge of When and Where',
+  description:
+    'A historical guessing game. See real events from history and guess the exact year and location. Challenge friends, climb the leaderboard, and prove your history skills.',
+  openGraph: {
+    title: 'Guess-History — Test Your Knowledge of When and Where',
+    description:
+      'A historical guessing game. See real events from history and guess the exact year and location. Challenge friends, climb the leaderboard, and prove your history skills.',
+    type: 'website',
+  },
+}
 
-function HomePageInner() {
-  const router = useRouter()
-  const t = useTranslations()
-
-  const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const [welcomeData, setWelcomeData] = useState<{
-    avatar: {
-      id: string;
-      first_name: string;
-      last_name: string | null;
-      description: string | null;
-      gender: string | null;
-      birth_city: string | null;
-      birth_country: string | null;
-      death_city: string | null;
-      death_country: string | null;
-      birth_day: string | null;
-      death_day: string | null;
-      image_url: string | null;
-    };
-    displayName: string;
-  } | null>(null)
-  useEffect(() => {
-    bootstrapIdentity().then((state) => {
-      setIdentity(state);
-      if (state.status === 'unauthenticated') {
-        setShowAuthModal(true);
-      }
-    })
-    return subscribeToIdentityChanges((state) => {
-      setIdentity(state);
-      if (state.status === 'ready') {
-        setShowAuthModal(false);
-        if (state.isNewUser) {
-          fetch('/api/user/assign-avatar', { method: 'POST' })
-            .then(r => r.json())
-            .then(data => {
-              if (data.avatar) {
-                setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
-              }
-            })
-            .catch(() => {});
-        }
-      } else if (state.status === 'unauthenticated') {
-        setShowAuthModal(true);
-      }
-    });
-  }, [])
-
-  const [accuracy, setAccuracy] = useState('--')
-  const [xp, setXp] = useState('--')
-
-  const [avatarUrl, setAvatarUrl] = useState<string|null>(null)
-  const [initials, setInitials] = useState('')
-  const [profileVersion, setProfileVersion] = useState(0)
-
-  useEffect(() => {
-    if (identity.status !== 'ready') {
-      setAvatarUrl(null)
-      setInitials('PL')
-      setAccuracy('--')
-      setXp('--')
-      return
-    }
-    const pid = (identity as { status: string; playerId?: string }).playerId
-    ;(async () => {
-      try {
-        const { data: stats } = await supabaseBrowser.from('player_global_stats').select('avg_accuracy,total_xp').eq('player_id', pid).single()
-        if (stats) {
-          setAccuracy(String(Math.round(Number(stats.avg_accuracy))))
-          setXp(Number(stats.total_xp).toLocaleString('fr-FR'))
-        }
-      } catch {}
-      try {
-        const { data: profile } = await supabaseBrowser.from('profiles').select('display_name,avatar_url').eq('id', pid).single()
-        if (profile) {
-          if (profile.avatar_url) setAvatarUrl(profile.avatar_url)
-          if (profile.display_name) setInitials(profile.display_name.slice(0,2).toUpperCase())
-        }
-      } catch {}
-      if (initials === '') {
-        const dn = (identity as { status: string; playerId: string; displayName: string }).displayName
-        if (dn && dn !== 'Player') {
-          setInitials(dn.slice(0,2).toUpperCase())
-        } else {
-          setInitials('PL')
-        }
-      }
-      // profileVersion is used to force re-fetch when WelcomeModal saves
-      void profileVersion
-    })()
-  }, [identity, profileVersion])
-
-  const [, setMosaicUrls] = useState<string[]>([])
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const { data } = await supabaseBrowser.from('images').select('url').limit(15)
-        if (data?.length) setMosaicUrls(data.map((r: { url: string }) => r.url))
-      } catch {}
-    })()
-  }, [])
-
-  const [showNavModal, setShowNavModal] = useState(false)
-
-  const handleNav = (path: string) => {
-    if (identity.status !== 'ready') { setShowAuthModal(true); return }
-    router.push(path)
-  }
-
-  const playerId = (identity as { status: string; playerId: string; displayName: string }).playerId ?? ''
-  const displayName = (identity as { status: string; playerId: string; displayName: string }).displayName ?? 'Player'
-
+export default function LandingPage() {
   return (
-    <div className={styles.pageRoot}>
+    <main
+      className="min-h-screen flex flex-col items-center justify-center px-4 py-16"
+      style={{
+        background:
+          'radial-gradient(ellipse at 50% 0%, rgba(8, 47, 73, 0.6) 0%, var(--gh-bg-base) 60%)',
+      }}
+    >
+      {/* Hero */}
+      <section className="flex flex-col items-center text-center max-w-2xl gap-6">
+        <h1
+          className="text-5xl sm:text-7xl leading-none tracking-wide"
+          style={{
+            fontFamily: 'var(--font-bebas), sans-serif',
+            background: 'linear-gradient(135deg, #22d3ee 0%, #0369a1 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
+        >
+          Guess-History
+        </h1>
 
-      {/* Background */}
-      <div aria-hidden="true" className={styles.bgImage} />
-      <div className={styles.bgOverlay} />
+        <p
+          className="text-xl sm:text-2xl"
+          style={{ fontFamily: 'var(--font-sora), sans-serif', color: 'var(--gh-text-primary)' }}
+        >
+          Where and when did it happen?
+        </p>
 
-      {/* Top bar */}
-      <TopBar
-        accuracy={accuracy}
-        xp={xp}
-        avatarUrl={avatarUrl}
-        initials={initials}
-        onAvatarClick={() => { if (identity.status !== 'ready') { setShowAuthModal(true); return } setShowNavModal(true) }}
-      />
+        <p
+          className="text-base sm:text-lg max-w-xl"
+          style={{ color: 'var(--gh-text-secondary)' }}
+        >
+          Test your knowledge of history. See real events and guess the exact year and location.
+          Challenge your friends, climb the leaderboard, and prove you know your history.
+        </p>
 
-      {/* Scrollable content area */}
-      <div className={styles['page-scroll']}>
-        {/* Tagline */}
-        <div className={styles.tagline}>
-          {t('home.tagline')}
+        {/* Waitlist capture */}
+        <div className="flex flex-col items-center gap-2 mt-4 w-full">
+          <p className="text-sm" style={{ color: 'var(--gh-text-muted)' }}>
+            Join the waitlist to get early access:
+          </p>
+          <WaitlistForm />
         </div>
+      </section>
 
-        {/* Vertical card stack */}
-        <div className={styles['cards-stack']}>
-          {VERTICAL_CARD_ORDER.map(mode => (
-            <ModeCard
-              key={mode}
-              mode={mode}
-              playerId={playerId}
-              displayName={displayName}
-              onRequireAuth={() => setShowAuthModal(true)}
-              onNavigate={handleNav}
-              onLobby={(gameId) => router.push(`/compete/${gameId}`)}
-            />
-          ))}
-        </div>
-      </div>
-
-      <NavModal
-        isOpen={showNavModal}
-        onClose={() => setShowNavModal(false)}
-        avatarUrl={avatarUrl}
-        initials={initials}
-        displayName={(identity as { status: string; playerId: string; displayName: string }).displayName ?? initials}
-      />
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} required={true} />
-      {welcomeData && (
-        <WelcomeModal
-          isOpen={true}
-          onClose={() => setWelcomeData(null)}
-          avatar={welcomeData.avatar}
-          initialDisplayName={welcomeData.displayName}
-          onSaved={() => setProfileVersion(v => v + 1)}
+      {/* Features */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mt-20 w-full">
+        <FeatureCard
+          title="CHALLENGE FRIENDS"
+          desc="Play against your friends in real-time or turn-based matches."
+          gradient="linear-gradient(135deg, #0369a1 0%, #0891b2 40%, #22d3ee 100%)"
         />
-      )}
-    </div>
+        <FeatureCard
+          title="DAILY COMPETITION"
+          desc="A new challenge every day. Same events for everyone. Climb the leaderboard."
+          gradient="linear-gradient(135deg, #7a0a0a 0%, #b01010 50%, #c81818 100%)"
+        />
+        <FeatureCard
+          title="LEVEL UP"
+          desc="Progressive difficulty. Train your intuition across centuries of history."
+          gradient="linear-gradient(135deg, #2d1060 0%, #5b21b6 50%, #7c3aed 100%)"
+        />
+      </section>
+    </main>
   )
 }
 
-function ModeCard({
-  mode,
-  playerId,
-  displayName,
-  onRequireAuth,
-  onNavigate,
-  onLobby
-}: {
-  mode: Mode
-  playerId: string
-  displayName: string
-  onRequireAuth: () => void
-  onNavigate: (path: string) => void
-  onLobby: (gameId: string) => void
-}) {
-  const t = useTranslations()
-  const gradient = MODE_CARD_GRADIENT[mode]
-  const title = t(`home.${mode}_name`)
-  const subtitle = t(`home.${mode}_subtitle`)
-  const desc = t(`home.${mode}_desc`)
-
-  const getIconSrc = () => {
-    switch (mode) {
-      case 'compete': return '/icons/compete_large.webp'
-      case 'daily': return '/icons/daily_large.webp'
-      case 'levelup': return '/icons/levels_large.webp'
-      case 'practice': return '/icons/practice_large.webp'
-      default: return '/icons/daily_large.webp'
-    }
-  }
-
+function FeatureCard({ title, desc, gradient }: { title: string; desc: string; gradient: string }) {
   return (
-    <div className={styles['mode-card']}>
-      {/* Card background with clip */}
-      <div className={styles['card-bg']} style={{ background: gradient }}>
-        <div className={styles['card-inner']}>
-          {/* Header: title only */}
-          <div className={styles['card-header']}>
-            <div className={styles['card-title-section']}>
-              <h2 className={styles['card-title']}>{subtitle}</h2>
-              <div className={styles['card-desc-wrap']}>
-                <p className={styles['card-desc']}>
-                  {desc.split('\n').map((line, i) => (
-                    <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
-                  ))}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Mode-specific panel content */}
-          {mode === 'compete' && (
-            <CompetePanel
-              playerId={playerId}
-              displayName={displayName}
-              onLobby={onLobby}
-              onRequireAuth={onRequireAuth}
-            />
-          )}
-          {mode === 'daily' && (
-            <DailyPanel onPlay={() => onNavigate('/daily')} />
-          )}
-          {mode === 'levelup' && (
-            <LevelUpPanel onStart={() => onNavigate('/levelup')} />
-          )}
-          {mode === 'practice' && (
-            <PracticePanel onStart={() => onNavigate('/practice')} />
-          )}
-        </div>
-
-        {/* Icon inside card — positioned absolute top-right */}
-        <div className={styles['card-icon-wrap']}>
-          <Image
-            src={getIconSrc()}
-            alt={title}
-            fill
-            className={styles.cardIconImg}
-            sizes="110px"
-          />
-        </div>
-      </div>
+    <div
+      className="rounded-2xl p-6 flex flex-col gap-3"
+      style={{ background: gradient }}
+    >
+      <h2
+        className="text-xl tracking-wide"
+        style={{ fontFamily: 'var(--font-bebas), sans-serif' }}
+      >
+        {title}
+      </h2>
+      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.85)' }}>{desc}</p>
     </div>
-  )
-}
-
-export default function HomePage() {
-  return (
-    <Suspense fallback={null}>
-      <HomePageInner />
-    </Suspense>
   )
 }
