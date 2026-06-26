@@ -1,0 +1,223 @@
+
+> guess-history@0.1.0 test:simulation
+> playwright test --config=scripts/test/playwright/playwright.config.ts specs/multiplayer-simulation.spec.ts -g resume-after-refresh
+
+◇ injecting env (15) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injecting env (0) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+[PLAYWRIGHT SETUP] Creating test users...
+[PLAYWRIGHT SETUP] User gh-test-player-1@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-1@test.guess-history.com with ID 87bf02cd-33e3-49be-bcba-b884c41e5227
+[PLAYWRIGHT SETUP] User gh-test-player-2@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-2@test.guess-history.com with ID fb6017f2-fed7-47bb-804c-081b8fe7e51f
+[PLAYWRIGHT SETUP] User gh-test-player-3@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-3@test.guess-history.com with ID 614e0090-d75f-40d4-8e66-6018531727d3
+[PLAYWRIGHT SETUP] User gh-test-player-4@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-4@test.guess-history.com with ID 99d7ad82-e6e9-4e80-bb84-258017294e72
+[PLAYWRIGHT SETUP] User gh-test-player-5@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-5@test.guess-history.com with ID 39679084-6ed2-4382-8d27-30dd8185cf52
+[PLAYWRIGHT SETUP] User gh-test-player-6@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-6@test.guess-history.com with ID a30137d4-2878-4178-96f6-9946a41fc538
+[PLAYWRIGHT SETUP] Wrote 6 user IDs to /Users/lolo/GH-new/GH-NEW/.test-user-ids.json
+[PLAYWRIGHT SETUP] All test users created successfully
+[PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues
+
+Running 2 tests using 1 worker
+
+◇ injecting env (0) from .env.local // tip: ⌘ enable debugging { debug: true }
+◇ injecting env (0) from .env.local // tip: ⌘ enable debugging { debug: true }
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[RESUME-TEST] Creating game via API...
+[ORCHESTRATOR] Game 1 created: 07f59f8f-3845-4af1-9714-3c38e727c550
+[RESUME-TEST] Navigating all browsers to game...
+[ORCHESTRATOR] Initializing 2 WebSocket clients for game 07f59f8f-3845-4af1-9714-3c38e727c550...
+[WS:TestPlayer1] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/07f59f8f-3845-4af1-9714-3c38e727c550
+[WS:TestPlayer2] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/07f59f8f-3845-4af1-9714-3c38e727c550
+[WS:TestPlayer1] Connected
+[WS:TestPlayer2] Connected
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer1] State update: LOBBY round=0
+[ORCHESTRATOR] All WebSocket clients connected
+[RESUME-TEST] Waiting for LOBBY state...
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer1] State update: LOBBY round=0
+[WS:TestPlayer2] State update: LOBBY round=0
+[RESUME-TEST] All players marking ready...
+[RESUME-TEST] Waiting for all players ready...
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer1] State update: LOBBY round=0
+[WS:TestPlayer1] State update: LOBBY round=0
+[RESUME-TEST] Starting game...
+[RESUME-TEST] Waiting for ROUND_ACTIVE...
+[WS:TestPlayer2] State update: LOBBY round=0
+  ✘  1 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:85:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete (1.2m)
+◇ injecting env (0) from .env.local // tip: ⌁ auth for agents [www.vestauth.com]
+◇ injecting env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] gh-test-player-1@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] gh-test-player-2@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[RESUME-TEST] Creating game via API...
+[ORCHESTRATOR] Game 1 created: 9ecd1bd2-a774-4760-8eea-b5a793fb7bb8
+[RESUME-TEST] Navigating all browsers to game...
+[ORCHESTRATOR] Initializing 2 WebSocket clients for game 9ecd1bd2-a774-4760-8eea-b5a793fb7bb8...
+[WS:TestPlayer1] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/9ecd1bd2-a774-4760-8eea-b5a793fb7bb8
+[WS:TestPlayer2] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/9ecd1bd2-a774-4760-8eea-b5a793fb7bb8
+[WS:TestPlayer1] Connected
+[WS:TestPlayer2] Connected
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer1] State update: LOBBY round=0
+[ORCHESTRATOR] All WebSocket clients connected
+[RESUME-TEST] Waiting for LOBBY state...
+[WS:TestPlayer1] State update: LOBBY round=0
+[WS:TestPlayer2] State update: LOBBY round=0
+[RESUME-TEST] All players marking ready...
+[RESUME-TEST] Waiting for all players ready...
+[WS:TestPlayer1] State update: LOBBY round=0
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer1] State update: LOBBY round=0
+[RESUME-TEST] Starting game...
+[RESUME-TEST] Waiting for ROUND_ACTIVE...
+[WS:TestPlayer2] State update: ROUND_ACTIVE round=0
+[WS:TestPlayer1] State update: ROUND_ACTIVE round=0
+[RESUME-TEST] Round 1/2
+[RESUME-TEST] All players submitting guesses...
+[RESUME-TEST] Waiting for ROUND_COMPLETE...
+[WS:TestPlayer1] State update: ROUND_ACTIVE round=0
+[WS:TestPlayer2] State update: ROUND_ACTIVE round=0
+[WS:TestPlayer2] State update: ROUND_COMPLETE round=0
+[WS:TestPlayer1] State update: ROUND_COMPLETE round=0
+[RESUME-TEST] All players ready for next round...
+[WS:TestPlayer1] State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] State update: ROUND_COMPLETE round=0
+[WS:TestPlayer1] State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] State update: ROUND_ACTIVE round=1
+[WS:TestPlayer1] State update: ROUND_ACTIVE round=1
+[RESUME-TEST] Advancing to next round...
+[RESUME-TEST] Round 2/2
+[RESUME-TEST] All players submitting guesses...
+[WS:TestPlayer1] State update: ROUND_ACTIVE round=1
+[RESUME-TEST] Waiting for ROUND_COMPLETE...
+[WS:TestPlayer2] State update: ROUND_ACTIVE round=1
+[WS:TestPlayer1] State update: ROUND_ACTIVE round=1
+[WS:TestPlayer1] State update: ROUND_COMPLETE round=1
+[WS:TestPlayer2] State update: ROUND_COMPLETE round=1
+[RESUME-TEST] All players ready for next round...
+[RESUME-TEST] Waiting for SESSION_COMPLETE...
+[WS:TestPlayer2] State update: ROUND_COMPLETE round=1
+[WS:TestPlayer1] State update: ROUND_COMPLETE round=1
+[WS:TestPlayer2] State update: ROUND_COMPLETE round=1
+[WS:TestPlayer1] State update: ROUND_COMPLETE round=1
+[WS:TestPlayer2] State update: SESSION_COMPLETE round=1
+[WS:TestPlayer1] State update: SESSION_COMPLETE round=1
+[RESUME-TEST] Closing WebSocket clients...
+[ORCHESTRATOR] All games completed
+[RESUME-TEST] Results: [
+  {
+    gameId: '9ecd1bd2-a774-4760-8eea-b5a793fb7bb8',
+    players: [
+      '87bf02cd-33e3-49be-bcba-b884c41e5227',
+      'fb6017f2-fed7-47bb-804c-081b8fe7e51f'
+    ],
+    rounds: 2,
+    completed: false,
+    errors: [
+      '[TestPlayer1] Expected status LOBBY, got UNKNOWN',
+      '[TestPlayer2] Expected status LOBBY, got UNKNOWN',
+      '[TestPlayer1] Expected status ROUND_ACTIVE, got UNKNOWN',
+      '[TestPlayer2] Expected status ROUND_ACTIVE, got UNKNOWN',
+      '[TestPlayer1] Expected status ROUND_COMPLETE, got UNKNOWN',
+      '[TestPlayer2] Expected status ROUND_COMPLETE, got UNKNOWN',
+      '[TestPlayer1] Expected status ROUND_ACTIVE, got UNKNOWN',
+      '[TestPlayer2] Expected status ROUND_ACTIVE, got UNKNOWN',
+      '[TestPlayer1] Expected status ROUND_COMPLETE, got UNKNOWN',
+      '[TestPlayer2] Expected status ROUND_COMPLETE, got UNKNOWN',
+      '[TestPlayer1] Expected status SESSION_COMPLETE, got UNKNOWN',
+      '[TestPlayer2] Expected status SESSION_COMPLETE, got UNKNOWN'
+    ]
+  }
+]
+[RESUME-TEST] Edge cases injected: 0
+  ✘  2 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:85:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete (retry #1) (52.0s)
+◇ injecting env (0) from .env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injecting env (0) from .env.local // tip: ⌘ override existing { override: true }
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[RESUME-TEST] Creating game via API...
+[ORCHESTRATOR] Game 1 created: d64a46f6-a8e2-4e29-9fdb-d54980b8e002
+[RESUME-TEST] Navigating all browsers to game...
+[ORCHESTRATOR] Initializing 2 WebSocket clients for game d64a46f6-a8e2-4e29-9fdb-d54980b8e002...
+[WS:TestPlayer1] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/d64a46f6-a8e2-4e29-9fdb-d54980b8e002
+[WS:TestPlayer2] Connecting to wss://guess-history-multiplayer.lama010101.partykit.dev/parties/lobby/d64a46f6-a8e2-4e29-9fdb-d54980b8e002
+[WS:TestPlayer2] Connected
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer1] Connected
+[WS:TestPlayer1] State update: LOBBY round=0
+[ORCHESTRATOR] All WebSocket clients connected
+[RESUME-TEST] Waiting for LOBBY state...
+[WS:TestPlayer1] State update: LOBBY round=0
+[WS:TestPlayer1] State update: LOBBY round=0
+[WS:TestPlayer2] State update: LOBBY round=0
+[RESUME-TEST] All players marking ready...
+[RESUME-TEST] Waiting for all players ready...
+[WS:TestPlayer1] State update: LOBBY round=0
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer2] State update: LOBBY round=0
+[WS:TestPlayer1] State update: LOBBY round=0
+[RESUME-TEST] Starting game...
+[RESUME-TEST] Waiting for ROUND_ACTIVE...
+[WS:TestPlayer1] State update: ROUND_ACTIVE round=0
+[WS:TestPlayer2] State update: ROUND_ACTIVE round=0
+[RESUME-TEST] Round 1/2
+[RESUME-TEST] All players submitting guesses...
+[RESUME-TEST] Waiting for ROUND_COMPLETE...
+[WS:TestPlayer2] State update: ROUND_ACTIVE round=0
+[WS:TestPlayer1] State update: ROUND_ACTIVE round=0
+[WS:TestPlayer2] State update: ROUND_COMPLETE round=0
+[WS:TestPlayer1] State update: ROUND_COMPLETE round=0
+[RESUME-TEST] All players ready for next round...
+[WS:TestPlayer1] State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] State update: ROUND_COMPLETE round=0
+[WS:TestPlayer1] State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] State update: ROUND_COMPLETE round=0
+[RESUME-TEST] Advancing to next round...
+[RESUME-TEST] Round 2/2
+[RESUME-TEST] All players submitting guesses...
+[RESUME-TEST] Waiting for ROUND_COMPLETE...
+  ✘  3 [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:85:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete (54.5s)
+◇ injecting env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+◇ injecting env (0) from .env.local // tip: ⌘ override existing { override: true }
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] gh-test-player-1@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] gh-test-player-2@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[RESUME-TEST] Creating game via API...
+[ORCHESTRATOR] Game 1 created: 97fd9559-caed-4e06-ac22-75e72b77e980
+[RESUME-TEST] Navigating all browsers to game...
