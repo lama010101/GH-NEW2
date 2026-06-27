@@ -154,7 +154,8 @@ export const EDGE_CASES: EdgeCase[] = [
     description: 'Attempt to join with a 7th player (should fail)',
     phase: 'lobby',
     inject: async (pool, clients, gameId) => {
-      // Create a temporary 7th context and try to join
+      // Create a temporary 7th context and try to join. (H8 fix —
+      // replaces no-assertion version with one that verifies rejection.)
       const browser = pool.host().context.browser();
       if (!browser) {
         console.warn('[EDGE:7th-player-join] Could not obtain browser instance — skipping');
@@ -162,11 +163,39 @@ export const EDGE_CASES: EdgeCase[] = [
       }
       const tempContext = await browser.newContext();
       const tempPage = await tempContext.newPage();
-      await tempPage.goto(`${pool.baseURL}/compete/${gameId}`);
-      await tempPage.waitForLoadState('networkidle').catch(() => undefined);
-      // Should see an error or be unable to join
-      await tempContext.close();
-      console.log('[EDGE] 7th player join attempt completed');
+      try {
+        await tempPage.goto(`${pool.baseURL}/compete/${gameId}`);
+        await tempPage.waitForLoadState('networkidle').catch(() => undefined);
+
+        // Check if the lobby-shell is visible (7th player joined = BAD)
+        const lobbyShell = tempPage.locator('[data-testid="lobby-shell"]').first();
+        const lobbyVisible = await lobbyShell.isVisible().catch(() => false);
+
+        if (lobbyVisible) {
+          throw new Error('[7th-player-join] 7th player joined the lobby — should have been rejected');
+        }
+
+        // Check for an error message in the DOM
+        const bodyText = await tempPage.evaluate(() =>
+          (document.body.innerText || '').slice(0, 500),
+        ).catch(() => '');
+        const hasErrorText = bodyText.toLowerCase().includes('error') ||
+          bodyText.toLowerCase().includes('full') ||
+          bodyText.toLowerCase().includes('cannot') ||
+          bodyText.toLowerCase().includes('unable');
+
+        console.log(`[EDGE:7th-player-join] Lobby visible=${lobbyVisible}, hasErrorText=${hasErrorText}, bodySample="${bodyText.slice(0, 200)}"`);
+
+        if (!hasErrorText) {
+          // No lobby and no error text — ambiguous. Log but don't throw
+          // (the 7th player may have been redirected or shown a non-error page).
+          console.warn('[EDGE:7th-player-join] No lobby and no error text detected — rejection method unclear');
+        } else {
+          console.log('[EDGE:7th-player-join] Rejection verified: error text detected, lobby not visible');
+        }
+      } finally {
+        await tempContext.close().catch(() => undefined);
+      }
     },
   },
   {
