@@ -41,7 +41,8 @@ export class CompeteWebSocket {
     gameId: string,
     playerId: string,
     callbacks: CompeteWebSocketCallbacks,
-    private partyKitHost: string = process.env.NEXT_PUBLIC_PARTY_KIT_HOST || "localhost:1999"
+    private partyKitHost: string = process.env.NEXT_PUBLIC_PARTY_KIT_HOST || "localhost:1999",
+    private accessToken: string | null = null
   ) {
     this.gameId = gameId;
     this.playerId = playerId;
@@ -61,7 +62,8 @@ export class CompeteWebSocket {
     const isLocalhost =
       this.partyKitHost.includes("localhost") || this.partyKitHost.includes("127.0.0.1");
     const protocol = isLocalhost ? "ws" : "wss";
-    const url = `${protocol}://${this.partyKitHost}/parties/lobby/${this.gameId}`;
+    const tokenParam = this.accessToken ? `?token=${encodeURIComponent(this.accessToken)}` : "";
+    const url = `${protocol}://${this.partyKitHost}/parties/lobby/${this.gameId}${tokenParam}`;
     console.log("[WS_CONNECT_URL]", { url });
     console.log("[CompeteWebSocket] Connecting to:", url);
     this.ws = new WebSocket(url);
