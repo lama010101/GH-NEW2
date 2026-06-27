@@ -91,6 +91,21 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Server-to-server calls from the PartyKit Durable Object carry a valid
+  // x-partykit-secret header. These are legitimate service calls (cold-start
+  // session load, join/state mutations) with no browser session cookie, so
+  // they must NOT be redirected to /login. Routes whose handlers also
+  // validate this secret (e.g. /api/compete/[gameId]/join) keep their own
+  // enforcement; this only skips the middleware redirect for the secret path.
+  const partykitSecret = request.headers.get("x-partykit-secret");
+  if (
+    partykitSecret &&
+    process.env.PARTYKIT_SECRET &&
+    partykitSecret === process.env.PARTYKIT_SECRET
+  ) {
+    return response;
+  }
+
   if (!user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
