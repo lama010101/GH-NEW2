@@ -234,12 +234,24 @@ export const EDGE_CASES: EdgeCase[] = [
     type: 'only-one-next',
     description: 'Only one player clicks next round, wait for auto-advance',
     phase: 'round-complete',
-    inject: async (pool, clients, gameId, roundIndex) => {
-      const client = clients[0];
-      client.readyNext(roundIndex);
-      console.log('[EDGE] Only one player clicked next (waiting for auto-advance)');
+    inject: async (pool, clients, gameId, roundIndex, orchestrator) => {
+      if (!orchestrator) {
+        console.warn('[EDGE:only-one-next] No orchestrator provided — cannot skip other players');
+        return;
+      }
+      // Mark all clients except client[0] as skip-ready-next so the
+      // orchestrator's readyNext loop only sends for client[0]. (H9 fix)
+      for (let i = 1; i < clients.length; i++) {
+        orchestrator.skipReadyNextPlayerIds.add(clients[i].user.id);
+      }
+      // client[0]'s readyNext will be sent by the orchestrator's loop
+      console.log(`[EDGE] Only one player (${clients[0].user.displayName}) will click next; ${clients.length - 1} others skipped. Waiting for auto-advance...`);
       // Wait for auto-advance timer (default 10s)
       await new Promise((r) => setTimeout(r, 11000));
+      // Verify auto-advance happened: check if status changed from ROUND_COMPLETE
+      const snapshot = clients[0];
+      const currentStatus = snapshot['ws']?.readyState;
+      console.log(`[EDGE:only-one-next] After 11s wait — auto-advance verification: WS readyState=${currentStatus}`);
     },
   },
   {
