@@ -120,7 +120,7 @@ export const EDGE_CASES: EdgeCase[] = [
     phase: 'lobby',
     inject: async (pool, clients) => {
       const hostClient = clients[0];
-      const targetClient = clients[5];
+      const targetClient = clients[safeIndex(5, clients.length)];
       hostClient.kickPlayer(targetClient.user.id);
       console.log('[EDGE] Player kicked');
       await new Promise((r) => setTimeout(r, 500));
@@ -163,7 +163,7 @@ export const EDGE_CASES: EdgeCase[] = [
     description: 'A player submits only a year (no location)',
     phase: 'round-active',
     inject: async (pool, clients, gameId, roundIndex) => {
-      const client = clients[2];
+      const client = clients[safeIndex(2, clients.length)];
       const year = 1950;
       client.submitGuess(roundIndex, year, null, null, []);
       console.log('[EDGE] Partial guess (year only) submitted');
@@ -174,7 +174,7 @@ export const EDGE_CASES: EdgeCase[] = [
     description: 'A player submits only a location (no year)',
     phase: 'round-active',
     inject: async (pool, clients, gameId, roundIndex) => {
-      const client = clients[3];
+      const client = clients[safeIndex(3, clients.length)];
       const lat = 40.7128;
       const lng = -74.006;
       client.submitGuess(roundIndex, null, lat, lng, []);
@@ -199,7 +199,7 @@ export const EDGE_CASES: EdgeCase[] = [
     description: 'A player submits the same guess twice',
     phase: 'round-active',
     inject: async (pool, clients, gameId, roundIndex) => {
-      const client = clients[4];
+      const client = clients[safeIndex(4, clients.length)];
       const year = 2000;
       const lat = 0;
       const lng = 0;
@@ -214,7 +214,7 @@ export const EDGE_CASES: EdgeCase[] = [
     description: 'A player submits multiple guesses rapidly',
     phase: 'round-active',
     inject: async (pool, clients, gameId, roundIndex) => {
-      const client = clients[5];
+      const client = clients[safeIndex(5, clients.length)];
       for (let i = 0; i < 3; i++) {
         client.submitGuess(roundIndex, 1900 + i * 10, 0, 0, []);
         await new Promise((r) => setTimeout(r, 50));
@@ -270,7 +270,7 @@ export const EDGE_CASES: EdgeCase[] = [
     description: 'A player refreshes the page in lobby',
     phase: 'lobby',
     inject: async (pool, clients, gameId) => {
-      const player = pool.byIndex(2);
+      const player = pool.byIndex(safeIndex(2, pool.count));
       const before = await captureResumeToken(player.page);
       await pool.refresh(player);
       const after = await captureResumeToken(player.page);
@@ -287,7 +287,7 @@ export const EDGE_CASES: EdgeCase[] = [
     description: 'A player refreshes the page during round results',
     phase: 'round-complete',
     inject: async (pool, clients, gameId, roundIndex) => {
-      const player = pool.byIndex(3);
+      const player = pool.byIndex(safeIndex(3, pool.count));
       const before = await captureResumeToken(player.page);
       await pool.refresh(player);
       const after = await captureResumeToken(player.page);
