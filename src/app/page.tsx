@@ -22,23 +22,10 @@ export default function LandingPage() {
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0, 0, 0, 0.8)' }} />
 
       {/* Logo (same asset as TopBar) */}
-      <Image src="/icons/logo.webp" alt="Guess-History" width={180} height={48} priority style={{ position: 'relative', zIndex: 2, marginBottom: '2rem' }} />
+      <Image src="/icons/logo.webp" alt="Guess-History" width={360} height={96} priority style={{ position: 'relative', zIndex: 2, marginBottom: '2rem' }} />
 
       {/* Hero */}
       <section className="flex flex-col items-center text-center max-w-2xl gap-6" style={{ position: 'relative', zIndex: 2 }}>
-        <h1
-          className="text-5xl sm:text-7xl leading-none tracking-wide"
-          style={{
-            fontFamily: 'var(--font-bebas), sans-serif',
-            background: 'linear-gradient(135deg, #22d3ee 0%, #0369a1 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          Guess-History
-        </h1>
-
         <p
           className="text-xl sm:text-2xl"
           style={{ fontFamily: 'var(--font-sora), sans-serif', color: 'var(--gh-text-primary)' }}
