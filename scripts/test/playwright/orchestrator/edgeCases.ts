@@ -66,6 +66,13 @@ function attachErrorListeners(page: import('@playwright/test').Page): {
   };
 }
 
+// Clamps a hardcoded edge-case target index to the actual pool/client size.
+// NOTE: in pools smaller than 6 players, clamping can cause two or more edge
+// cases to silently target the SAME player in the same run. This is accepted
+// (no crash) but means edge cases may interact/overlap in small-pool runs —
+// do not assume each edge case below always hits a distinct player.
+const safeIndex = (n: number, len: number): number => (len > 0 ? Math.min(n, len - 1) : 0);
+
 export interface EdgeCase {
   type: EdgeCaseType;
   description: string;
