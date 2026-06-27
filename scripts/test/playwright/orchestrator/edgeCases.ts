@@ -259,7 +259,7 @@ export const EDGE_CASES: EdgeCase[] = [
       const after = await captureResumeToken(player.page);
       const diffs = diffResumeTokens(before, after, 'mid-round-refresh');
       if (diffs.length > 0) {
-        console.warn('[EDGE] Resume-after-refresh diffs:', diffs);
+        throw new Error(`[mid-round-refresh] Resume-after-refresh diffs: ${JSON.stringify(diffs)}`);
       } else {
         console.log('[EDGE] Resume-after-refresh successful (no diffs)');
       }
@@ -276,7 +276,7 @@ export const EDGE_CASES: EdgeCase[] = [
       const after = await captureResumeToken(player.page);
       const diffs = diffResumeTokens(before, after, 'mid-lobby-refresh');
       if (diffs.length > 0) {
-        console.warn('[EDGE] Resume-after-refresh diffs:', diffs);
+        throw new Error(`[mid-lobby-refresh] Resume-after-refresh diffs: ${JSON.stringify(diffs)}`);
       } else {
         console.log('[EDGE] Resume-after-refresh successful (no diffs)');
       }
@@ -293,7 +293,7 @@ export const EDGE_CASES: EdgeCase[] = [
       const after = await captureResumeToken(player.page);
       const diffs = diffResumeTokens(before, after, 'mid-results-refresh');
       if (diffs.length > 0) {
-        console.warn('[EDGE] Resume-after-refresh diffs:', diffs);
+        throw new Error(`[mid-results-refresh] Resume-after-refresh diffs: ${JSON.stringify(diffs)}`);
       } else {
         console.log('[EDGE] Resume-after-refresh successful (no diffs)');
       }
@@ -345,6 +345,9 @@ export const EDGE_CASES: EdgeCase[] = [
         console.log(`[EDGE:auth-signout-resignin] VERDICT: ${pass ? 'PASS' : 'FAIL'} (cookieCleared=${cookieCleared}, resigninSucceeded=${resigninSucceeded})`);
         if (consoleErrors.length > 0) console.log(`[EDGE:auth-signout-resignin] Console errors: ${JSON.stringify(consoleErrors)}`);
         if (pageErrors.length > 0) console.log(`[EDGE:auth-signout-resignin] Page errors: ${JSON.stringify(pageErrors)}`);
+        if (!pass) {
+          throw new Error(`[auth-signout-resignin] FAIL: cookieCleared=${cookieCleared}, resigninSucceeded=${resigninSucceeded}`);
+        }
       } finally {
         cleanup();
         await ctx.close().catch(() => undefined);
@@ -415,6 +418,9 @@ export const EDGE_CASES: EdgeCase[] = [
         console.log(`[EDGE:auth-stale-cookie] VERDICT: diagnostic — signinResult=${signinResult}, modalVisible=${modalVisible}`);
         if (consoleErrors.length > 0) console.log(`[EDGE:auth-stale-cookie] Console errors: ${JSON.stringify(consoleErrors)}`);
         if (pageErrors.length > 0) console.log(`[EDGE:auth-stale-cookie] Page errors: ${JSON.stringify(pageErrors)}`);
+        if (signinResult !== 'succeeded') {
+          throw new Error(`[auth-stale-cookie] Sign-in failed: signinResult=${signinResult}, modalVisible=${modalVisible}`);
+        }
       } finally {
         cleanup();
         await ctx.close().catch(() => undefined);
@@ -467,6 +473,9 @@ export const EDGE_CASES: EdgeCase[] = [
         console.log(`[EDGE:auth-cross-user] VERDICT: ${pass ? 'PASS' : 'FAIL'} (showsPlayerB=${showsPlayerB}, showsPlayerA=${showsPlayerA})`);
         if (consoleErrors.length > 0) console.log(`[EDGE:auth-cross-user] Console errors: ${JSON.stringify(consoleErrors)}`);
         if (pageErrors.length > 0) console.log(`[EDGE:auth-cross-user] Page errors: ${JSON.stringify(pageErrors)}`);
+        if (!pass) {
+          throw new Error(`[auth-cross-user] FAIL: showsPlayerB=${showsPlayerB}, showsPlayerA=${showsPlayerA}`);
+        }
       } finally {
         cleanup();
         await ctx.close().catch(() => undefined);
@@ -534,6 +543,9 @@ export const EDGE_CASES: EdgeCase[] = [
           if (pageErrors.length > 0) console.log(`[EDGE:auth-returning-browser] Context 1 page errors: ${JSON.stringify(pageErrors)}`);
           if (listeners2.consoleErrors.length > 0) console.log(`[EDGE:auth-returning-browser] Context 2 console errors: ${JSON.stringify(listeners2.consoleErrors)}`);
           if (listeners2.pageErrors.length > 0) console.log(`[EDGE:auth-returning-browser] Context 2 page errors: ${JSON.stringify(listeners2.pageErrors)}`);
+          if (!sessionRestored) {
+            throw new Error(`[auth-returning-browser] FAIL: modalVisible=${modalVisible}, authTokenPresent=${auth2.length > 0}`);
+          }
         } finally {
           listeners2.cleanup();
           await ctx2.close().catch(() => undefined);
@@ -551,6 +563,7 @@ export const EDGE_CASES: EdgeCase[] = [
  */
 export class EdgeCaseEngine {
   private injected: Set<EdgeCaseType> = new Set();
+  private failures: string[] = [];
 
   /**
    * Inject edge cases for a specific phase.
@@ -571,13 +584,19 @@ export class EdgeCaseEngine {
         await ec.inject(pool, clients, gameId, roundIndex);
         this.injected.add(ec.type);
       } catch (err) {
-        console.error(`[EDGE] Failed to inject ${ec.type}:`, err);
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[EDGE] Failed to inject ${ec.type}: ${msg}`);
+        this.failures.push(`[${ec.type}] ${msg}`);
       }
     }
   }
 
   get injectedCount(): number {
     return this.injected.size;
+  }
+
+  get failuresList(): string[] {
+    return this.failures;
   }
 
   get totalCount(): number {
