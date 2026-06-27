@@ -488,13 +488,17 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     // Replay equivalence check: if last event is ROUND_COMPLETE, status MUST be ROUND_COMPLETE
     if (lastEvent.eventType === "ROUND_COMPLETE" && status !== "ROUND_COMPLETE") {
       // Transient: ROUND_COMPLETE event written but round_results not yet committed.
-      // Return null so caller can retry.
+      // Return null so caller can retry. Callers (e.g. submitGuess) already retry
+      // on null — do not retry here (see sessionCore.ts submitGuess 2-attempt
+      // retry loop). Adding an internal retry would create a second retry layer
+      // (nested waits → unpredictable latency) and violate single-retry-location
+      // discipline.
       return null;
     }
 
     // Replay equivalence check: if last event is SESSION_COMPLETE, status MUST be SESSION_COMPLETE
     if (lastEvent.eventType === "SESSION_COMPLETE" && status !== "SESSION_COMPLETE") {
-      // Same pattern for SESSION_COMPLETE.
+      // Same pattern for SESSION_COMPLETE. Callers retry on null — do not retry here.
       return null;
     }
   }
@@ -503,6 +507,53 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   console.log(`[REPLAY_VALIDATION][PASS] gameId=${gameId} phase=${status} round=${currentRound} commits=${expectedCommits}`);
 
   return snapshot;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PARTICIPANT AUTHORIZATION HELPER (MP-EXEC-COMPETE-CONSOLIDATED-001 B2)
+// Single shared function for Broken Object-Level Authorization (BOLA) checks
+// on GET routes that return game data. Verifies the caller's playerId is an
+// active row in session_players for that gameId. PartyKit DO server-to-server
+// calls bypass via x-partykit-secret (mirrors middleware.ts:100-107).
+//
+// NOTE: player_id is client-supplied and NOT bound to auth uid (join route
+// accepts playerId from request body with no auth-uid binding). This is a
+// partial BOLA mitigation — full binding is a separate effort.
+// ═════════════════════════════════════════════════════════════════════════════
+export async function assertParticipantOrPartyKit(
+  request: Request,
+  gameId: string
+): Promise<{ ok: true; playerId: string | null } | { ok: false; status: number; error: string }> {
+  // PartyKit DO bypass
+  const partykitSecret = request.headers.get("x-partykit-secret");
+  if (partykitSecret && process.env.PARTYKIT_SECRET && partykitSecret === process.env.PARTYKIT_SECRET) {
+    return { ok: true, playerId: null };
+  }
+
+  // Resolve playerId from header or query param
+  const viewerPlayerIdHeader = request.headers.get("x-viewer-player-id");
+  const url = new URL(request.url);
+  const viewerPlayerIdQuery = url.searchParams.get("playerId");
+  const playerId = viewerPlayerIdQuery || viewerPlayerIdHeader;
+
+  if (!playerId) {
+    return { ok: false, status: 401, error: "playerId required" };
+  }
+
+  // Verify active participation
+  const result = await dbPool.query<{ exists: boolean }>(
+    `SELECT EXISTS(
+      SELECT 1 FROM session_players
+      WHERE game_id = $1 AND player_id = $2 AND left_at IS NULL
+    ) AS exists`,
+    [gameId, playerId]
+  );
+
+  if (!result.rows[0]?.exists) {
+    return { ok: false, status: 403, error: "not a participant" };
+  }
+
+  return { ok: true, playerId };
 }
 
 const RESULTS_AUTO_ADVANCE_DEFAULT = 90;
