@@ -29,6 +29,9 @@ export class GameOrchestrator {
   private wsClients: CompeteWSClient[] = [];
   private results: GameResult[] = [];
   private readonly opts: GameOrchestratorOptions;
+  // Per-client PLAY_AGAIN receipt resolvers, keyed by user.id.
+  // Set in playAgain(), resolved by onPlayAgain callbacks wired in initClients().
+  private playAgainWaiters: Map<string, (newGameId: string) => void> = new Map();
 
   constructor(opts: GameOrchestratorOptions) {
     this.opts = opts;
@@ -60,6 +63,11 @@ export class GameOrchestrator {
         },
         onError: (msg) => {
           console.error(`[WS:${player.user.displayName}] Error: ${msg}`);
+        },
+        onPlayAgain: (newGameId: string) => {
+          console.log(`[WS:${player.user.displayName}] PLAY_AGAIN received: newGameId=${newGameId}`);
+          const resolver = this.playAgainWaiters.get(player.user.id);
+          if (resolver) resolver(newGameId);
         },
       });
       this.wsClients.push(client);
@@ -281,22 +289,30 @@ export class GameOrchestrator {
     // Host broadcasts PLAY_AGAIN
     hostClient.playAgain(newGameId);
 
-    // Wait for PLAY_AGAIN message on all clients
+    // Wait for PLAY_AGAIN receipt on all clients with real verification.
+    // Each client's onPlayAgain callback (wired in initClients) resolves its
+    // entry in playAgainWaiters. Rejects on timeout if any client doesn't
+    // receive the message. (H1 fix — replaces the former no-op blind-sleep wait)
+    const PLAY_AGAIN_TIMEOUT = 10000;
+    this.playAgainWaiters.clear();
     await Promise.all(
       this.wsClients.map((c) =>
-        new Promise<void>((resolve) => {
-          const handler = (msg: any) => {
-            if (msg.type === 'PLAY_AGAIN' && msg.newGameId === newGameId) {
+        new Promise<void>((resolve, reject) => {
+          const timer = setTimeout(() => {
+            this.playAgainWaiters.delete(c.user.id);
+            reject(new Error(`[PLAY_AGAIN] Timeout (${PLAY_AGAIN_TIMEOUT}ms) waiting for receipt on ${c.user.displayName}`));
+          }, PLAY_AGAIN_TIMEOUT);
+          this.playAgainWaiters.set(c.user.id, (receivedGameId: string) => {
+            if (receivedGameId === newGameId) {
+              clearTimeout(timer);
+              this.playAgainWaiters.delete(c.user.id);
               resolve();
             }
-          };
-          // Attach a temporary handler
-          // (In a real implementation, we'd add a onPlayAgain callback to the client)
-          // For now, just wait a fixed time
-          setTimeout(resolve, 2000);
+          });
         }),
       ),
     );
+    console.log('[ORCHESTRATOR] All clients received PLAY_AGAIN');
 
     // Navigate all browsers to the new game
     await Promise.all(this.browserPool.all.map((p) => this.browserPool.navigateToGame(p, newGameId)));
