@@ -106,7 +106,7 @@ Shown at the bottom of the result screen after the WHEN card.
 - Near-miss indicators shown for dimensions where accuracy was 88–89% and no badge was earned
 - See `BADGE_SYSTEM.md` for full evaluation rules
 
-**Navigation:** The "Next Round" button in the top bar is the only way to advance. No auto-advance in solo modes. In Compete Rush, the 30-second timeout also triggers advance (see Section 5.7).
+**Navigation:** The "Next Round" button in the top bar is the only way to advance. No auto-advance in solo modes. In Compete Rush, the Rush round-advance timeout (30s) also triggers advance (see Section 5.7). This is distinct from the results-screen auto-advance timeout (host-configurable `resultsAutoAdvanceSec`, default 90s).
 
 ### 1.3 Scoring
 
@@ -193,7 +193,7 @@ Evaluated server-side at the end of every RESULT_PHASE in every mode. Never pers
 **Compete Rush (sync):**
 - Round ends when all players have submitted OR timer expires
 - RESULT_PHASE shown to all players simultaneously
-- Round advances when ALL players have tapped "Next Round" OR the 30-second results timeout expires — whichever comes first
+- Round advances when ALL players have tapped "Next Round" OR the results-screen auto-advance timeout expires (host-configurable `resultsAutoAdvanceSec`, default 90s) — whichever comes first
 - When a player submits, in-app broadcast sent to all connected players: "Player X has submitted" (score not revealed)
 
 **Compete Relax (async):**
@@ -472,9 +472,9 @@ Real-time multiplayer. 2 to 8 players in a shared session, guessing the same eve
 |---|---|---|
 | **Timing** | Synchronous — all players live simultaneously | Asynchronous — players submit independently |
 | **Round timer** | Yes, per-round countdown (10s–5min) | No round timer |
-| **Pressure mechanic** | First-submission clamp to 20s | None |
+| **Pressure mechanic** | First-submission clamp to 30s | None |
 | **Session deadline** | None | 1–7 days |
-| **Round advance** | All tap Next OR 30s timeout | Each player independently |
+| **Round advance** | All tap Next OR Rush round-advance timeout (30s) | Each player independently |
 | **Submission notify** | In-app broadcast | In-app + push notification |
 
 ### 5.3 Configuration
@@ -532,11 +532,11 @@ LOBBY → STARTING → QUESTION → ANSWER → LOCKED → RESULT → SCOREBOARD
 
 **QUESTION:** Cinematic image, 5 seconds. Timer not yet started.
 
-**ANSWER:** Per-round timer starts. Server-authoritative `phaseEndsAt` broadcast. No client timer authority. First-submission clamp: if the first player submits with >20s remaining, time is clamped to 20s and broadcast as `PHASE_CHANGE`, persisted as `TIMER_CLAMPED` in `round_events`. Fires once per round. In-app broadcast sent when any player submits: "Player X has submitted."
+**ANSWER:** Per-round timer starts. Server-authoritative `phaseEndsAt` broadcast. No client timer authority. First-submission clamp: if the first player submits with >30s remaining, time is clamped to 30s and broadcast as `TIMER_CLAMPED` (WS message), persisted as `PRESSURE_APPLIED` in `round_events`. Fires once per round. In-app broadcast sent when any player submits: "Player X has submitted."
 
 **LOCKED:** No further submissions. Timer reached 0 or all submitted.
 
-**RESULT:** Each player sees their own result screen (Section 1.2). Partial leaderboard shown. 30-second timeout or all tap "Next Round" — whichever first.
+**RESULT:** Each player sees their own result screen (Section 1.2). Partial leaderboard shown. Results-screen auto-advance timeout (host-configurable `resultsAutoAdvanceSec`, default 90s) or all tap "Next Round" — whichever first. This is a SEPARATE mechanism from the Rush round-advance timeout (30s, Section 5.7) — do not conflate the two.
 
 **SCOREBOARD:** Full round leaderboard. 15-second timeout or all tap "Next".
 
@@ -611,7 +611,7 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 | History Collection | Yes | Yes | Yes | Yes | Yes |
 | Deduplication | Last 500 (player) | N/A (fixed) | None (pool ≥ 100) | Last 500 (host) | Last 500 (host) |
 | Submission broadcast | N/A | N/A | N/A | In-app | In-app + push |
-| Round advance | Manual | Manual | Manual | All Next + 30s timeout | Individual, independent |
+| Round advance | Manual | Manual | Manual | All Next + Rush round-advance timeout (30s) | Individual, independent |
 | Level degradation | N/A | N/A | Never | N/A | N/A |
 | Stack | Direct API | Direct API | Direct API | PartyKit + WS | PartyKit + WS |
 
