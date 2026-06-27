@@ -50,7 +50,7 @@ Defects found in the harness itself (not app bugs). Plan: `docs/MP-PLAN-TESTHARN
 
 | ID | Defect | Status | Commit | Task |
 |----|--------|--------|--------|------|
-| H1 | PLAY_AGAIN wait is no-op setTimeout(2000); handler never attached | FIX-APPLIED | (pending T2) | T2 |
+| H1 | PLAY_AGAIN wait is no-op setTimeout(2000); handler never attached | CLOSED | fe58ac6 | T2 |
 | H2 | Dead `roster` locator in observer.ts (created, never used) | CLOSED | 0bad7f1 | T1 |
 | H3 | readyForNext in ROUND_COMPLETE is placeholder, never asserted | OPEN | — | T10 |
 | H4 | hasSubmitted depends on CSS class name, never asserted | OPEN | — | T10 |
