@@ -66,7 +66,7 @@ Defects found in the harness itself (not app bugs). Plan: `docs/MP-PLAN-TESTHARN
 | H14 | No pre-flight load check (load <10 rule human-only) | CLOSED | aacd954 | T6 |
 | H15 | Edge cases only run in game 1 of 3 (injected Set persists) | OPEN | — | T9 |
 | H16 | refresh() no auth-modal-never-detaches diagnostics | CLOSED | ef366a3 | T7 |
-| H17 | submitGuess fire-and-forget, rejection undetected | OPEN | — | T8a/T8b |
+| H17 | submitGuess fire-and-forget, rejection undetected | CLOSED | b8e48d4 | T8a/T8b |
 
 ### Other Active Multiplayer Issues
 | Issue | Status | Notes |
