@@ -2,6 +2,7 @@ import { BrowserPool, PlayerBrowser } from './browserPool';
 import { CompeteWSClient } from './websocketClient';
 import { observeState, captureResumeToken, diffResumeTokens } from './observer';
 import { loginViaAuthModal, signOutViaUI } from '../helpers/auth-ui';
+import type { GameOrchestrator } from './gameOrchestrator';
 
 export type EdgeCaseType =
   | 'late-join'
@@ -82,6 +83,7 @@ export interface EdgeCase {
     clients: CompeteWSClient[],
     gameId: string,
     roundIndex: number,
+    orchestrator?: GameOrchestrator,
   ) => Promise<void>;
 }
 
@@ -153,9 +155,15 @@ export const EDGE_CASES: EdgeCase[] = [
     type: 'timeout',
     description: 'A player does not submit before the timer expires',
     phase: 'round-active',
-    inject: async (pool, clients, gameId, roundIndex) => {
-      // One player simply does not submit
-      console.log('[EDGE] Player will timeout (no submission)');
+    inject: async (pool, clients, gameId, roundIndex, orchestrator) => {
+      if (!orchestrator) {
+        console.warn('[EDGE:timeout] No orchestrator provided — cannot skip submission');
+        return;
+      }
+      // Pick the last client (not the host) to skip submission
+      const skipClient = clients[safeIndex(clients.length - 1, clients.length)];
+      orchestrator.skipSubmissionPlayerIds.add(skipClient.user.id);
+      console.log(`[EDGE] Player ${skipClient.user.displayName} will timeout (submission skipped)`);
     },
   },
   {
@@ -574,6 +582,7 @@ export class EdgeCaseEngine {
     clients: CompeteWSClient[],
     gameId: string,
     roundIndex: number,
+    orchestrator?: GameOrchestrator,
   ): Promise<void> {
     const applicable = EDGE_CASES.filter((ec) => ec.phase === phase && !this.injected.has(ec.type));
     console.log(`[EDGE] Injecting ${applicable.length} edge cases for phase ${phase}`);
@@ -581,7 +590,7 @@ export class EdgeCaseEngine {
     for (const ec of applicable) {
       console.log(`[EDGE] Injecting: ${ec.type} - ${ec.description}`);
       try {
-        await ec.inject(pool, clients, gameId, roundIndex);
+        await ec.inject(pool, clients, gameId, roundIndex, orchestrator);
         this.injected.add(ec.type);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
