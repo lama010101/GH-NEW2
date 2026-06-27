@@ -221,6 +221,28 @@ E2E verification results — RE-RUN after MP-FIX-HOME-CSS-IMPORT-001 + MP-FIX-MI
 
 ---
 
+## SECTION D — COMPETE MODE AUDIT FINDINGS (opened 2026-06-27)
+
+Consolidated fix batch: MP-EXEC-COMPETE-CONSOLIDATED-001.
+
+| # | Item | Status | Notes |
+|---|------|--------|-------|
+| A0 | Pressure-clamp race condition root cause | CLOSED | Confirmed: `trg_validate_event` trigger rejected `PRESSURE_APPLIED` events (0 rows in live DB vs 1707 `ROUND_COMPLETE`). Old trigger whitelisted `TIMER_CLAMPED` (legacy name). Not a race condition — a trigger rejection. |
+| A1 | Migration 038 — FSM trigger fix + idempotency index | CLOSED | Re-created `trg_validate_event()` to whitelist `PRESSURE_APPLIED` (replacing `TIMER_CLAMPED`). Added `idx_round_events_unique_pressure` partial unique index on `(game_id, round_index) WHERE event_type = 'PRESSURE_APPLIED'`. Applied live, verified via `pg_proc`/`pg_indexes`. |
+| A2 | Inline clamp in `submitGuess` + delete `recordPressureApplied` | CLOSED | Clamp now applied atomically inside `submitGuess` transaction (same txn as first `round_commit`). New `appendPressureAppliedIfNotExists` helper (ON CONFLICT DO NOTHING). `PRESSURE_CLAMP_SECONDS` 20→30. `RESULTS_COUNTDOWN_SECONDS` deleted (unused). `recordPressureApplied` deleted. 2-player behavioral proof: ALL 5 ASSERTIONS PASS. |
+| A3 | partykit — remove post-/guess clamp block | CLOSED | Removed separate `/pressure` HTTP write + in-memory `roundEndsAt` mutation. `TIMER_CLAMPED` UX flash now fired from DB-authoritative `PRESSURE_APPLIED` event in snapshot.events. |
+| A4 | Delete `/pressure` route | CLOSED | Dead after A2/A3. |
+| B1 | Answer reveal existence check | CLOSED | `shouldRevealAnswer` changed from recency-based (latest event) to existence-based (at least one `ROUND_COMPLETE`/`SESSION_COMPLETE` exists for roundIndex). Fixes answer nulling after `READY_NEXT`. |
+| B2 | BOLA participant checks on 4 GET routes | CLOSED | New `assertParticipantOrPartyKit` helper in `sessionCore.ts`. 4 GET routes (`[gameId]`, `snapshot`, `all-results`, `round/[roundIndex]/results`) now verify caller is an active participant. 2 client call sites pass `playerId`. NOTE: partial — `player_id` not bound to auth uid. |
+| B3 | Reverse geocode server proxy (KC-003) | CLOSED | New `/api/geocode/reverse` route. `page.tsx` `reverseGeocode` switched from direct browser→Nominatim to server proxy. |
+| B4 | `didSubmit` uses `year_guess` | CLOSED | Changed from `year_diff !== null` (always true for non-submitters) to `year_guess !== null` (NULL for non-submitters). Extended `results_data` CTE to JOIN `round_commits`. |
+| B5 | Stale 40s comment in partykit | CLOSED | Updated `triggerRoundExpiry` docblock to reflect actual `ROUND_EXPIRY_SUBMIT_GRACE_MS` (1s) + separate result-phase auto-advance. |
+| B6 | Dead `logRoundEvent` | CLOSED | Removed from `eventStore.ts` (zero callers repo-wide). |
+| B7 | Transient null return comments | CLOSED | Clarified `loadCompeteSessionSnapshot` transient null returns — callers retry, no internal retry (single-retry-location discipline). |
+| C | GAME_MODES_SPEC.md doc pass | CLOSED | C-RULING-1: clamp 20s→30s. C-RULING-2: distinguished Rush round-advance timeout (30s) from results-screen auto-advance (`resultsAutoAdvanceSec`, default 90s). C-RULING-3: event name `TIMER_CLAMPED`→`PRESSURE_APPLIED` (WS message type `TIMER_CLAMPED` retained, correctly labeled). |
+
+---
+
 *File created 2026-06-24 by Claude (CTO) to replace long-form bug/status tracking in the `memory_user_edits` tool, which is capped at 30 entries. Memory now holds only compressed pointers to this file plus standing process rules. Coders update this file as instructed by prompt validation steps; Claude reviews and corrects status changes, coders never self-certify a CLOSED status.*
 
 ---
