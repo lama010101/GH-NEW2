@@ -259,6 +259,21 @@ export class CompeteWSClient {
     });
   }
 
+  /**
+   * Wait for a STATE_UPDATE confirming this player's guess was acknowledged
+   * (hasSubmitted === true). Used by the orchestrator to detect rejected
+   * guesses instead of fire-and-forget. (H17 fix — part 1)
+   */
+  waitForSubmissionAck(timeoutMs = 10000): Promise<CompeteSnapshot> {
+    return this.waitForState(
+      (s) => {
+        const me = s.players.find((p) => p.playerId === this.opts.user.id);
+        return me?.hasSubmitted === true;
+      },
+      timeoutMs,
+    );
+  }
+
   // ── Action helpers ──────────────────────────────────────────────────────
   toggleReady(ready = true): void {
     this.send({ type: 'TOGGLE_READY', playerId: this.opts.user.id, ready });
