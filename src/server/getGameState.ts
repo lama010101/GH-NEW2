@@ -246,11 +246,16 @@ export async function getGameState(
         ORDER BY round_index ASC, submitted_at ASC, player_id ASC
       ),
       results_data AS (
-        SELECT round_index, player_id, score, rank,
-               distance_km, year_diff, location_score, time_score
-        FROM round_results
-        WHERE game_id = $1
-        ORDER BY round_index ASC, rank ASC, player_id ASC
+        SELECT rr.round_index, rr.player_id, rr.score, rr.rank,
+               rr.distance_km, rr.year_diff, rr.location_score, rr.time_score,
+               rc.year_guess
+        FROM round_results rr
+        LEFT JOIN round_commits rc
+          ON rc.game_id = rr.game_id
+         AND rc.round_index = rr.round_index
+         AND rc.player_id = rr.player_id
+        WHERE rr.game_id = $1
+        ORDER BY rr.round_index ASC, rr.rank ASC, rr.player_id ASC
       ),
       events_data AS (
         SELECT id, round_index, event_type, payload, created_at
@@ -347,7 +352,7 @@ export async function getGameState(
       yearDiff: r.year_diff as number | null,
       locationScore: r.location_score as number | null,
       timeScore: r.time_score as number | null,
-      didSubmit: (r.year_diff as number | null) !== null,
+      didSubmit: (r.year_guess as number | null) !== null,
       badges,
       nearMisses,
     };
@@ -478,13 +483,16 @@ export async function getGameState(
     const hiddenAnswerValue = null as unknown as number;
     roundEventContent = eventIds.map((id, roundIndex) => {
       const ev = eventMap.get(id);
-      const latestRoundEvent = events
-        .filter(event => event.roundIndex === roundIndex)
-        .reduce<RoundEvent | null>(
-          (latest, event) => latest === null || event.id > latest.id ? event : latest,
-          null
-        );
-      const shouldRevealAnswer = latestRoundEvent?.eventType === "ROUND_COMPLETE" || latestRoundEvent?.eventType === "SESSION_COMPLETE";
+      // Reveal answer if AT LEAST ONE ROUND_COMPLETE or SESSION_COMPLETE event
+      // EXISTS for this roundIndex (existence check, not recency). Events that
+      // can be appended AFTER ROUND_COMPLETE with the same roundIndex and would
+      // become "latest" (READY_NEXT, SESSION_COMPLETE) must NOT null out the
+      // answer. Previous recency-based check failed once any player clicked
+      // Next Round (READY_NEXT became latest).
+      const shouldRevealAnswer = events.some(
+        event => event.roundIndex === roundIndex &&
+                 (event.eventType === "ROUND_COMPLETE" || event.eventType === "SESSION_COMPLETE")
+      );
       return {
         eventId: id,
         title: ev?.title ?? '',
