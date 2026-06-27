@@ -667,6 +667,16 @@ export class EdgeCaseEngine {
     return this.failures;
   }
 
+  /**
+   * Reset the engine for a new game. Clears the injected Set so edge cases
+   * run again in the next game, and clears the failures array. (H15 fix)
+   */
+  resetForNewGame(): void {
+    this.injected.clear();
+    this.failures = [];
+    console.log('[EDGE] Engine reset for new game — injected and failures cleared');
+  }
+
   get totalCount(): number {
     return EDGE_CASES.length;
   }

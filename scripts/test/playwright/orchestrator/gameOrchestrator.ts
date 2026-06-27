@@ -117,6 +117,10 @@ export class GameOrchestrator {
     const errors: string[] = [];
     const host = this.browserPool.host();
 
+    // Reset edge case engine for each new game so edge cases run across
+    // all 3 games, not just game 1. (H15 fix)
+    this.opts.edgeCaseEngine?.resetForNewGame();
+
     // Create game via API (host)
     this.opts.onStep?.('Creating game via API...');
     const baseURL = this.browserPool['baseURL'] as string;
