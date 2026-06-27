@@ -100,27 +100,39 @@
 - **MP-ADD-LANDING-PAGE-001** (2026-06-26): Replaced `src/app/page.tsx` with new SEO-optimized public landing page (server component, Next.js Metadata API with title/description/OG tags, semantic HTML, existing CSS variables + gradient conventions). Created `src/components/landing/WaitlistForm.tsx` (client component) — POSTs to /api/waitlist with inline states (idle/submitting/success/already/error). curl / → 200 with title, OG tags, email input. Form flow verified: 201 on fresh email, 409 on duplicate. Test row cleaned up. `next build` fails due to pre-existing CSS path issue in `src/app/home/page.tsx` (from MP-MOVE-HOME-PAGE-001, not caused by this task). tsc: no new errors. Commit `b26ebb2`.
 
 ### WAITLIST LANDING PAGE INITIATIVE — E2E VERIFICATION (MP-VERIFY-WAITLIST-E2E-001, 2026-06-26)
-**Status: PARTIAL PASS — 10/15 checks passed, 5/15 FAILED. Initiative NOT fully closed — 3 remaining issues require separate tasks.**
+**Status: CLOSED — confirmed by direct manual verification (Lolo), 2026-06-27.**
 
-Tasks in this initiative:
-- MP-ADD-WAITLIST-TBL-001 (waitlist table migration) — CLOSED
-- MP-ADD-ADMIN-BYPASS-ENV-001 (admin bypass env var) — BLOCKED (already existed)
-- MP-MOVE-HOME-PAGE-001 (move home page to /home) — CLOSED (introduced CSS path bug, later fixed)
-- MP-FIX-HOME-STRIP-GATING-001 (remove client-side auth gate from /home) — CLOSED
-- MP-UPD-MIDDLEWARE-HOME-AUTH-001 (server-side auth on /home) — CLOSED (logic written, was dormant until MP-FIX-MIDDLEWARE-LOCATION-001)
-- MP-ADD-MIDDLEWARE-BYPASS-001 (admin bypass cookie) — SUPERSEDED by MP-ADD-MIDDLEWARE-BYPASS-002 (was BLOCKED: never implemented because middleware.ts was at repo root and never loaded by Next.js; reported done but never actually shipped)
-- MP-ADD-WAITLIST-API-001 (waitlist email submission API) — CLOSED (but now auth-gated by middleware — see NEW REGRESSION below)
-- MP-UPD-LOBBY-HOME-001 (LobbySection nav / → /home) — CLOSED
-- MP-UPD-ROUNDCOMP-HOME-001 (RoundCompleteSection nav / → /home) — CLOSED
-- MP-UPD-SESSIONCOMP-HOME-001 (SessionComplete nav / → /home) — CLOSED
-- MP-UPD-COMPETE-HOME-001 (compete page nav / → /home) — CLOSED
-- MP-UPD-ACCOUNT-SIGNOUT-CONFIRM-001 (account signOut stays at /) — CLOSED (confirmation-only)
-- MP-UPD-PROFILE-SIGNOUT-CONFIRM-001 (profile signOut stays at /) — CLOSED (confirmation-only)
-- MP-UPD-AUTHMODAL-HOME-001 (OAuth callback next=/home) — CLOSED
-- MP-ADD-LANDING-PAGE-001 (public SEO landing page) — CLOSED
-- MP-FIX-HOME-CSS-IMPORT-001 (fix CSS path bug from MP-MOVE-HOME-PAGE-001) — CLOSED
-- MP-FIX-MIDDLEWARE-LOCATION-001 (move middleware.ts to src/) — CLOSED
-- MP-FIX-WAITLIST-PUBLIC-ROUTE-001 (add /api/waitlist to PUBLIC_API_ROUTES) — CLOSED
+Tasks in this initiative (final task chain):
+- MP-ADD-WAITLIST-TBL-001
+- MP-MOVE-HOME-PAGE-001
+- MP-FIX-HOME-STRIP-GATING-001
+- MP-UPD-MIDDLEWARE-HOME-AUTH-001
+- MP-ADD-MIDDLEWARE-BYPASS-001 (blocked, never shipped)
+- MP-ADD-WAITLIST-API-001
+- MP-UPD-LOBBY-HOME-001
+- MP-UPD-ROUNDCOMP-HOME-001
+- MP-UPD-SESSIONCOMP-HOME-001
+- MP-UPD-COMPETE-HOME-001
+- MP-UPD-ACCOUNT-SIGNOUT-CONFIRM-001
+- MP-UPD-PROFILE-SIGNOUT-CONFIRM-001
+- MP-UPD-AUTHMODAL-HOME-001
+- MP-ADD-LANDING-PAGE-001
+- MP-VERIFY-WAITLIST-E2E-001 (first run, 8/15)
+- MP-FIX-HOME-CSS-IMPORT-001
+- MP-FIX-MIDDLEWARE-LOCATION-001
+- MP-VERIFY-WAITLIST-E2E-001 (re-run, 10/15)
+- MP-FIX-WAITLIST-PUBLIC-ROUTE-001
+- MP-ADD-MIDDLEWARE-BYPASS-002
+- MP-FIX-WAITLIST-LINT-001
+- MP-FIX-LANDING-VISUALS-001
+- MP-FIX-LANDING-LOGO-CONTRAST-001 (initially incorrect "no bug" finding on logo)
+- MP-INV-LOGO-RENDER-MISMATCH-001 (found real root cause)
+- MP-FIX-MIDDLEWARE-STATIC-ASSETS-001 (actual fix)
+
+**Lessons learned:**
+- A file move that is byte-identical in content can still break at runtime if it has location-dependent behavior (relative imports, platform-specific file placement conventions like Next.js middleware location).
+- DOM load-state properties (complete, visibility, opacity) on an <img> do not prove valid image content — only that the element finished a load attempt. Pixel-level verification (actual decoded content, not just element state) is required to close out a "is this image broken" question.
+- Middleware path-allowlist changes need a static-asset smoke test, not just route-level checks — this gap let public/ assets stay broken for two full verification rounds before being caught by manual screenshot inspection, not automated checks.
 
 E2E verification results — RE-RUN after MP-FIX-HOME-CSS-IMPORT-001 + MP-FIX-MIDDLEWARE-LOCATION-001 (15 checks):
 1. PASS — grep compete-area router.push("/") → 0 matches
