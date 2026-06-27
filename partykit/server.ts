@@ -217,6 +217,11 @@ export default class GameServer {
   // Debounced /leave timers keyed by playerId. Cancelled on reconnect.
   private leaveTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
+  // Verified auth uids keyed by connection.id. Set in onConnect from the
+  // x-verified-uid header stamped by static onBeforeConnect. Used in onMessage
+  // to override client-supplied playerId with the verified Supabase auth uid.
+  private verifiedUids: Map<string, string> = new Map();
+
   // Grace period before marking a player as left. Must be long enough to
   // absorb React StrictMode double-mount, HMR reloads, tab refreshes, and
   // normal network blips — but short enough that real disconnects flush
@@ -284,6 +289,53 @@ export default class GameServer {
 
   // Loading lock to prevent concurrent loadFromDB calls on cold start.
   private snapshotLoading = false;
+
+  // ─────────────────────────────────────────────────────────────────────
+  // WS AUTH GATE (MP-FIX-COMPETE-LIFECYCLE-BATCH-001 M1)
+  // Verifies the Supabase access token from the WS URL ?token= query param
+  // before the connection is established. Stamps x-verified-uid header on
+  // the forwarded request so onConnect can bind connection.id → auth uid.
+  // Returns 401 Response to reject unauthorized connection attempts.
+  // ─────────────────────────────────────────────────────────────────────
+  static async onBeforeConnect(
+    req: Request,
+    lobby: { env: Record<string, unknown> }
+  ): Promise<Request | Response> {
+    const url = new URL(req.url);
+    const token = url.searchParams.get("token");
+    if (!token) {
+      return new Response("Unauthorized: no token", { status: 401 });
+    }
+
+    const supabaseUrl = lobby.env.SUPABASE_URL as string | undefined;
+    const serviceKey = lobby.env.SUPABASE_SERVICE_ROLE_KEY as string | undefined;
+    if (!supabaseUrl || !serviceKey) {
+      console.error("[PartyKit] onBeforeConnect: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured");
+      return new Response("Server auth configuration error", { status: 500 });
+    }
+
+    try {
+      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: serviceKey,
+        },
+      });
+      if (!userRes.ok) {
+        return new Response("Unauthorized: invalid token", { status: 401 });
+      }
+      const user = await userRes.json() as { id?: string };
+      if (!user?.id) {
+        return new Response("Unauthorized: no user identity", { status: 401 });
+      }
+      const headers = new Headers(req.headers);
+      headers.set("x-verified-uid", user.id);
+      return new Request(req, { headers });
+    } catch (err) {
+      console.error("[PartyKit] onBeforeConnect: token verification failed:", err);
+      return new Response("Unauthorized: token verification failed", { status: 401 });
+    }
+  }
 
   constructor(readonly room: Room) {
     console.log("[DO_INSTANCE]", {
@@ -864,6 +916,13 @@ export default class GameServer {
       }
     }
 
+    // Store verified auth uid for this connection (stamped by onBeforeConnect).
+    // Used in onMessage to override client-supplied playerId with verified uid.
+    const verifiedUid = ctx.request.headers.get("x-verified-uid");
+    if (verifiedUid) {
+      this.verifiedUids.set(connection.id, verifiedUid);
+    }
+
     // Cold start: if DO just woke up and has no snapshot, load from DB.
     // Uses a lock to prevent concurrent loads if multiple clients connect simultaneously.
     if (!this.snapshotLoaded && !this.snapshotLoading) {
@@ -904,6 +963,7 @@ export default class GameServer {
 
     const playerId = this.connections.get(connection.id);
     this.connections.delete(connection.id);
+    this.verifiedUids.delete(connection.id);
 
     if (!playerId) return;
 
@@ -991,6 +1051,18 @@ export default class GameServer {
     }
 
     const gameId = this.room.id;
+
+    // AUTH GATE (M1): Override client-supplied playerId with the verified
+    // Supabase auth uid for this connection. onBeforeConnect verified the
+    // token and onConnect stored the uid. If no verified uid exists, reject.
+    const verifiedUid = this.verifiedUids.get(sender.id);
+    if (!verifiedUid) {
+      this.sendError(sender, "Unauthorized: no verified identity for this connection");
+      return;
+    }
+    if ("playerId" in data && typeof data.playerId === "string") {
+      (data as Record<string, unknown>).playerId = verifiedUid;
+    }
 
     // Register connection → playerId mapping for routing purposes only.
     // First time we see this connection, bump the player's live-connection

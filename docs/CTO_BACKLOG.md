@@ -261,3 +261,25 @@ Verification (MP-VERIFY-EXEC-COMPETE-CONSOLIDATED-001) found the batch was repor
 ## NOTE — ADMIN_BYPASS_TOKEN (MP-ADD-ADMIN-BYPASS-ENV-002, 2026-06-26)
 
 `ADMIN_BYPASS_TOKEN` is now set in `.env.local` to the fixed value `france2026` by explicit product owner (Lolo) decision. This is a low-security fixed value and is intentionally NOT treated as a secret — do not rotate, do not move to a secrets manager, do not gitignore-track its value. File `.env.local` remains gitignored (verified via `git check-ignore .env.local`). Supersedes MP-ADD-ADMIN-BYPASS-ENV-001.
+
+---
+
+## Section F — Compete Lifecycle Review Findings (MP-REVIEW-COMPETE-FULLLIFECYCLE-001B, 2026-06-27)
+
+Full logic review of Compete mode (signup → 6-player 5-round sync game → completion). Findings prioritized H/M/L.
+
+| # | Item | Status | Notes |
+|---|------|--------|-------|
+| M1 | playerId not bound to auth uid (impersonation/BOLA on actions) | CLOSED (MP-FIX-COMPETE-LIFECYCLE-BATCH-001 Item 1) | 4 files changed: `src/app/api/compete/create/route.ts` (added `supabase.auth.getUser()` + `body.playerId !== user.id` → 403), `partykit/server.ts` (added `static onBeforeConnect` verifying Supabase JWT from WS `?token=` query param, stamps `x-verified-uid` header; `onConnect` stores `connection.id → verifiedUid`; `onMessage` overrides `data.playerId` with verified uid; `onClose` cleans up), `src/core/competeWebSocket.ts` (added `accessToken` constructor param, appends `?token=` to WS URL), `src/hooks/useCompeteSocket.ts` (calls `getValidAccessToken()` before constructing WS, passes token). Validation: 5 curl tests — no-auth→401, wrong-playerId→403, no-token-WS→401, bad-token-WS→401, valid-token-WS→101 Switching Protocols. `npx tsc --noEmit` 0 errors. |
+| H2 | Premature round completion when submit-then-leave | OPEN | Pending fix in MP-FIX-COMPETE-LIFECYCLE-BATCH-001 Item 2. |
+| H3 | Final leaderboard ranks by avgAccuracy not totalScore; inflates for early-leavers | OPEN | Pending fix in MP-FIX-COMPETE-LIFECYCLE-BATCH-001 Item 3. |
+| H1 | Future-round answer content broadcast to clients (cheating vector) | OPEN | Pending fix in MP-FIX-COMPETE-LIFECYCLE-BATCH-001 Item 4. |
+| M2 | MIN_PLAYERS_TO_START=1 (temp); no 8-player cap | OPEN | Pending fix in MP-FIX-COMPETE-LIFECYCLE-BATCH-001 Item 5. |
+| M3 | Rush round-advance-timeout / SCOREBOARD phase spec-vs-code divergence | OPEN — awaiting CTO product ruling | Do not implement either direction until ruling. |
+| M4 | Misleading START_GAME comment (claims force-start bypasses all-ready) | OPEN | Pending fix in MP-FIX-COMPETE-LIFECYCLE-BATCH-001 Item 6. |
+| L1 | Client timer clock-skew risk | OPEN | Low priority. |
+| L2 | Per-round rank no tie handling | OPEN | Low priority. |
+| L3 | /active-games hard-coded 2-player | OPEN | Low priority. |
+| L4 | era-selection non-transactional | OPEN | Low priority. |
+| L5 | MAX_ROUNDS/spec mismatches | OPEN | Low priority. |
+| L6 | Abandoned game stall (no server cron) | OPEN | Low priority. |

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { CompeteWebSocket } from "@/core/competeWebSocket";
 import { isCompeteSessionSnapshot } from "@/core/competeApi";
+import { getValidAccessToken } from "@/core/supabaseBrowser";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 
@@ -46,62 +47,76 @@ export default function useCompeteSocket({
   useEffect(() => {
     if (!gameId || !playerId) return;
 
-    const ws = new CompeteWebSocket(gameId, playerId, {
-      onConnect: () => {
-        // Signal intent to join (PartyKit → API → DB → broadcast STATE_UPDATE).
-        ws.joinRoom(displayName);
-      },
-      onStateUpdate: (rawSnapshot) => {
-        // DO-authoritative: apply snapshot directly from WS.
-        // Validate before accepting — never trust unvalidated payloads.
-        if (isCompeteSessionSnapshot(rawSnapshot)) {
-          console.log("[CompeteGamePage] State update received, players:", rawSnapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
-          onStateUpdate(rawSnapshot);
+    let cancelled = false;
+    let ws: CompeteWebSocket | null = null;
 
-          // If the snapshot includes pre-fetched results (from /complete route), apply them directly
-          if (
-            isCompeteSessionSnapshot(rawSnapshot) &&
-            (rawSnapshot.status === "ROUND_COMPLETE" || rawSnapshot.status === "SESSION_COMPLETE") &&
-            Array.isArray((rawSnapshot as unknown as { results?: unknown }).results)
-          ) {
-            const results = (rawSnapshot as unknown as { results: RoundResult[] }).results;
-            const ranked = [...results].sort((a, b) => a.rank - b.rank);
-            onRoundResults(ranked);
-            onSetLocalSubmitted(false);
-            onClearSubmissionToasts();
-          }
-
-          onSetBusy(false); // Action completed — clear busy flag
-        } else {
-          console.warn("[CompeteGamePage] Invalid STATE_UPDATE payload — ignoring, waiting for next update:", rawSnapshot);
-          onSetBusy(false);
-        }
-      },
-      onPlayerSubmitted: (submittedPlayerId, playerName) => {
-        onPlayerSubmitted(submittedPlayerId, playerName);
-      },
-      onTimerClamped: (newPhaseEndsAt) => {
-        onTimerClamped(newPhaseEndsAt);
-      },
-      onError: (message) => {
-        onError(message);
-        onSetBusy(false); // Action failed — clear busy flag
-      },
-      onDisconnect: () => {
-        onDisconnect?.();
-      },
-      onPlayAgain: (newGameId) => {
-        onPlayAgain?.(newGameId);
+    getValidAccessToken().then(token => {
+      if (cancelled) return;
+      if (!token) {
+        console.error("[useCompeteSocket] No access token — cannot connect to DO");
+        onError("Authentication required to connect");
+        return;
       }
-    });
 
-    wsRef.current = ws;
-    ws.connect();
+      const socket = new CompeteWebSocket(gameId, playerId, {
+        onConnect: () => {
+          // Signal intent to join (PartyKit → API → DB → broadcast STATE_UPDATE).
+          socket.joinRoom(displayName);
+        },
+        onStateUpdate: (rawSnapshot) => {
+          // DO-authoritative: apply snapshot directly from WS.
+          // Validate before accepting — never trust unvalidated payloads.
+          if (isCompeteSessionSnapshot(rawSnapshot)) {
+            console.log("[CompeteGamePage] State update received, players:", rawSnapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
+            onStateUpdate(rawSnapshot);
+
+            // If the snapshot includes pre-fetched results (from /complete route), apply them directly
+            if (
+              isCompeteSessionSnapshot(rawSnapshot) &&
+              (rawSnapshot.status === "ROUND_COMPLETE" || rawSnapshot.status === "SESSION_COMPLETE") &&
+              Array.isArray((rawSnapshot as unknown as { results?: unknown }).results)
+            ) {
+              const results = (rawSnapshot as unknown as { results: RoundResult[] }).results;
+              const ranked = [...results].sort((a, b) => a.rank - b.rank);
+              onRoundResults(ranked);
+              onSetLocalSubmitted(false);
+              onClearSubmissionToasts();
+            }
+
+            onSetBusy(false); // Action completed — clear busy flag
+          } else {
+            console.warn("[CompeteGamePage] Invalid STATE_UPDATE payload — ignoring, waiting for next update:", rawSnapshot);
+            onSetBusy(false);
+          }
+        },
+        onPlayerSubmitted: (submittedPlayerId, playerName) => {
+          onPlayerSubmitted(submittedPlayerId, playerName);
+        },
+        onTimerClamped: (newPhaseEndsAt) => {
+          onTimerClamped(newPhaseEndsAt);
+        },
+        onError: (message) => {
+          onError(message);
+          onSetBusy(false); // Action failed — clear busy flag
+        },
+        onDisconnect: () => {
+          onDisconnect?.();
+        },
+        onPlayAgain: (newGameId) => {
+          onPlayAgain?.(newGameId);
+        }
+      }, undefined, token);
+
+      ws = socket;
+      wsRef.current = socket;
+      socket.connect();
+    });
 
     // DO sends STATE_UPDATE on connect — no REST fetch needed.
 
     return () => {
-      ws.disconnect();
+      cancelled = true;
+      if (ws) ws.disconnect();
       wsRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
