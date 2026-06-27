@@ -545,8 +545,10 @@ export default class GameServer {
 
   /**
    * Called when a round timer expires. First completes the round (scores + ROUND_COMPLETE),
-   * waits 40 seconds for clients to display results and optionally click "Next Round",
-   * then advances to next round. Uses API-returned snapshots — no re-fetch.
+   * waits ROUND_EXPIRY_SUBMIT_GRACE_MS (1s) for in-flight submissions to settle,
+   * then broadcasts the ROUND_COMPLETE snapshot. Result-phase auto-advance is handled
+   * separately by triggerResultAutoAdvance using resultsAutoAdvanceSec. Uses API-returned
+   * snapshots — no re-fetch.
    */
   private async triggerRoundExpiry(expectedRoundIndex: number): Promise<void> {
     const currentRoundIndex = isRuntimeState(this.snapshot) ? this.snapshot.currentRoundIndex : null;
