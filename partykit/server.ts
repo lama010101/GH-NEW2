@@ -229,8 +229,7 @@ export default class GameServer {
   private static readonly LEAVE_GRACE_MS = 5_000;
   private static readonly ROUND_EXPIRY_SUBMIT_GRACE_MS = 1_000;
   // GAME_MODES_SPEC.md Section 5.13: "Minimum 2 players to start."
-  // TEMP: min players lowered to 1 for solo testing (MP-FIX-COMPETE-SOLO-START-TEMP-001) — revert to 2 before multi-player launch
-  private static readonly MIN_PLAYERS_TO_START = 1;
+  private static readonly MIN_PLAYERS_TO_START = 2;
 
   // Runtime state — derived, rebuildable from DB at any time.
   // This is the DO's authoritative view. DB remains canonical truth.
@@ -1154,10 +1153,11 @@ export default class GameServer {
             break;
           }
 
-          // Delegate to attemptAutoStart which owns the startInFlight mutex.
-          // Note: attemptAutoStart checks allReady + MIN_PLAYERS; if the host
-          // wants to force-start before all are ready, that path is preserved
-          // here by bypassing the allReady guard via direct API call below.
+          // Directly call the /start API (same endpoint as attemptAutoStart).
+          // The /start API (startCompeteSession) enforces allPlayersReady and
+          // host check — there is no bypass. The only difference from
+          // attemptAutoStart is that this is triggered by the host's explicit
+          // START_GAME message rather than automatically on all-ready.
           if (this.startInFlight) {
             console.log("[PartyKit] START_GAME ignored — start already in flight");
             break;
