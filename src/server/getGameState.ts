@@ -493,16 +493,23 @@ export async function getGameState(
         event => event.roundIndex === roundIndex &&
                  (event.eventType === "ROUND_COMPLETE" || event.eventType === "SESSION_COMPLETE")
       );
+      // H1 FIX: Only reveal content (title, description, imageUrl, hints) for
+      // rounds that have been started (ROUND_STARTED event exists). Future
+      // rounds' content is hidden to prevent cheating via WS traffic inspection.
+      const shouldRevealContent = events.some(
+        event => event.roundIndex === roundIndex &&
+                 event.eventType === "ROUND_STARTED"
+      );
       return {
         eventId: id,
-        title: ev?.title ?? '',
+        title: shouldRevealContent ? (ev?.title ?? '') : '',
         year: shouldRevealAnswer ? ev?.event_year ?? 0 : hiddenAnswerValue,
         latitude: shouldRevealAnswer ? ev?.latitude ?? 0 : hiddenAnswerValue,
         longitude: shouldRevealAnswer ? ev?.longitude ?? 0 : hiddenAnswerValue,
         locationName: shouldRevealAnswer ? ev?.display_name ?? null : null,
-        imageUrl: ev?.image_url ?? null,
-        description: ev?.description ?? null,
-        hints: hintsByEventId.get(id) ?? [],
+        imageUrl: shouldRevealContent ? (ev?.image_url ?? null) : null,
+        description: shouldRevealContent ? (ev?.description ?? null) : null,
+        hints: shouldRevealContent ? (hintsByEventId.get(id) ?? []) : [],
       };
     });
   }

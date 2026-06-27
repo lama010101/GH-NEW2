@@ -753,6 +753,24 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
   }
   // If snapshot does not exist: allow through (session is being created)
 
+  // M2 FIX: 8-player cap per GAME_MODES_SPEC.md Section 5.13.
+  // Only applies to NEW joiners — rejoining players (row exists with left_at)
+  // are always allowed through so they don't get locked out of their own game.
+  if (currentSnapshot && currentSnapshot.status === "LOBBY") {
+    const activeCountResult = await dbPool.query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM session_players WHERE game_id = $1 AND left_at IS NULL`,
+      [gameId]
+    );
+    const activeCount = parseInt(activeCountResult.rows[0]?.count || "0", 10);
+    const isRejoining = (await dbPool.query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM session_players WHERE game_id = $1 AND player_id = $2`,
+      [gameId, playerId]
+    )).rows[0]?.count !== "0";
+    if (!isRejoining && activeCount >= 8) {
+      throw new Error("Session is full (8 players max)");
+    }
+  }
+
   verifyLog("INSERT", "session_players", "OK", `joining player_id=${playerId} game_id=${gameId} — executing`);
   // Rejoin-aware upsert:
   //   - Fresh join: inserts with left_at=NULL, ready=false, is_host=false.
@@ -1568,7 +1586,18 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   const finalCommitCount = await loadRoundCommitCount(gameId, roundIndex, dbPool);
   const finalPlayerRows = await loadSessionPlayerRows(gameId, dbPool);
   const finalActivePlayers = finalPlayerRows.filter((p) => p.left_at === null);
-  const finalAllActiveSubmitted = finalActivePlayers.length > 0 && finalCommitCount >= finalActivePlayers.length;
+  // H2 FIX: Gate on whether every ACTIVE player has a commit row, not raw commit
+  // count (which includes left players' commits). Prevents premature round
+  // completion when a player submits then leaves — consistent with the
+  // timer-expiry path (insertMissingCommits) which checks active players only.
+  const finalCommittedPlayerIds = new Set(
+    (await dbPool.query<{ player_id: string }>(
+      `SELECT player_id FROM round_commits WHERE game_id = $1 AND round_index = $2`,
+      [gameId, roundIndex]
+    )).rows.map(r => r.player_id)
+  );
+  const finalAllActiveSubmitted = finalActivePlayers.length > 0 &&
+    finalActivePlayers.every(p => finalCommittedPlayerIds.has(p.player_id));
 
   if (finalAllActiveSubmitted) {
     verifyLog("INSERT", "round_results", "OK", `round=${roundIndex} all ${finalActivePlayers.length} active players submitted — computing`);

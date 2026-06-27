@@ -154,8 +154,8 @@ export default function SessionComplete({
             };
           })
           .sort((a, b) => {
-            if (b.avgAccuracy !== a.avgAccuracy) return b.avgAccuracy - a.avgAccuracy;
-            return b.totalScore - a.totalScore;
+            if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+            return b.avgAccuracy - a.avgAccuracy;
           });
 
         return (
