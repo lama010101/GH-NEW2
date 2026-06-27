@@ -1,7 +1,7 @@
 /* WhereCard */
 
 .card {
-  background: var(--gh-where-card-bg);
+  background: rgba(0, 0, 0, 0.90);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 10px;
@@ -237,9 +237,9 @@
 .lbRow {
   display: flex;
   align-items: center;
-  padding: 7px 8px;
-  gap: 6px;
-  border-radius: 6px;
+  padding: 10px 12px;
+  gap: 12px;
+  border-radius: 14px;
 }
 
 .lbRank {

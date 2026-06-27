@@ -139,7 +139,7 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
         <div style={{ width: "100%", height: "100%", borderRadius: 0, overflow: "hidden" }}>
           <MapContainer
             center={[20, 0]}
-            zoom={2}
+            zoom={1}
             style={{ width: "100%", height: "100%" }}
             zoomControl={!this.props.hideZoomControls}
             scrollWheelZoom={true}

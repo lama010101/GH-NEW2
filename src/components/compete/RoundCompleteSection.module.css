@@ -13,7 +13,7 @@
 /* ── Event card ── */
 
 .eventCard {
-  background: var(--gh-general-card-bg);
+  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   overflow: hidden;
@@ -95,7 +95,7 @@
 /* ── Accuracy ring card ── */
 
 .accuracyCard {
-  background: var(--gh-general-card-bg);
+  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
@@ -175,7 +175,7 @@
 /* ── Round leaderboard card ── */
 
 .leaderboardCard {
-  background: var(--gh-general-card-bg);
+  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
@@ -262,10 +262,10 @@
 .lbRow {
   display: flex;
   align-items: center;
-  padding: 7px 8px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
   margin-bottom: 3px;
-  gap: 6px;
+  gap: 12px;
 }
 
 .lbRowSelf {
@@ -294,7 +294,7 @@
 .lbNameInner {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 12px;
 }
 
 .lbYouTag {
@@ -344,7 +344,7 @@
 /* ── Where/When merged tabbed card ── */
 
 .whereWhenCard {
-  background: var(--gh-general-card-bg);
+  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
@@ -396,7 +396,7 @@
 /* ── Hints used card ── */
 
 .hintsCard {
-  background: var(--gh-general-card-bg);
+  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
@@ -469,7 +469,7 @@
   left: 0;
   right: 0;
   bottom: calc(56px + env(safe-area-inset-bottom, 0px));
-  background: var(--gh-general-card-bg);
+  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-general-card-border);
   border-top: none;
   border-radius: 0;
@@ -535,15 +535,15 @@
 }
 
 .progressDot {
-  height: 8px;
-  width: 8px;
+  height: 10px;
+  width: 10px;
   border-radius: 50%;
   background: var(--dot-bg, #374151);
   opacity: var(--dot-opacity, 1);
 }
 
 .roundLabel {
-  font-size: var(--font-2xs);
+  font-size: var(--font-base);
   color: var(--gh-text-secondary);
   white-space: nowrap;
 }
@@ -667,55 +667,8 @@
   padding: 12px 16px 16px;
 }
 
-.histSheetOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 1);
-  z-index: 1100;
+.histInlineRate {
+  margin-top: 12px;
   display: flex;
-  align-items: flex-end;
-}
-
-.histSheet {
-  background: var(--gh-bg-card);
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  width: 100%;
-  max-height: 65vh;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.histSheetHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid var(--gh-border-subtle);
-  flex-shrink: 0;
-}
-
-.histSheetTitle {
-  font-size: var(--gh-font-base);
-  font-weight: 700;
-  color: var(--gh-text-primary);
-}
-
-.histSheetClose {
-  background: transparent;
-  border: none;
-  color: var(--gh-text-muted);
-  font-size: var(--gh-font-base);
-  cursor: pointer;
-  padding: 4px 8px;
-  line-height: 1;
-}
-
-.histSheetBody {
-  overflow-y: auto;
-  padding: 16px 20px;
-  font-size: var(--font-sm);
-  color: var(--gh-text-secondary);
-  line-height: 1.7;
+  justify-content: center;
 }

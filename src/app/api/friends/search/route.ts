@@ -48,6 +48,9 @@ export async function GET(request: NextRequest) {
        AND (
          p.display_name ILIKE $2
          OR u.raw_user_meta_data->>'display_name' ILIKE $2
+         OR u.raw_user_meta_data->>'full_name' ILIKE $2
+         OR u.raw_user_meta_data->>'name' ILIKE $2
+         OR u.raw_user_meta_data->>'username' ILIKE $2
        )
        LIMIT 10`,
       [user.id, searchPattern]

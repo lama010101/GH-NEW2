@@ -171,14 +171,23 @@ export default function RoundCompleteSection({
               )}
               <div className={styles.eventMeta}>{correctYear} · {correctName}</div>
               {round.description && (
-                <button
-                  className={styles.histContextTrigger}
-                  onClick={() => setHistContextOpen(true)}
-                >
-                  <span className={styles.histContextIcon}>📖</span>
-                  <span className={styles.histContextLabel}>{t('hist_context')}</span>
-                  <span className={styles.histContextArrow}>›</span>
-                </button>
+                <>
+                  <button
+                    className={styles.histContextTrigger}
+                    onClick={() => setHistContextOpen(prev => !prev)}
+                    aria-expanded={histContextOpen}
+                  >
+                    <span className={styles.histContextIcon}>📖</span>
+                    <span className={styles.histContextLabel}>{t('hist_context')}</span>
+                    <span className={`${styles.histContextArrow} ${histContextOpen ? styles.histContextArrowExpanded : ''}`}>›</span>
+                  </button>
+                  <div className={`${styles.histInlineBody} ${histContextOpen ? styles.histInlineBodyExpanded : ''}`}>
+                    {round.description}
+                    <div className={styles.histInlineRate}>
+                      <RatingControl eventId={round.eventId} />
+                    </div>
+                  </div>
+                </>
               )}
               {(round as unknown as { sourceUrl?: string }).sourceUrl && (
                 <div className={styles.sourceButtonWrap}>
@@ -190,9 +199,11 @@ export default function RoundCompleteSection({
                   </button>
                 </div>
               )}
-              <div className={styles.sourceButtonWrap}>
-                <RatingControl eventId={round.eventId} />
-              </div>
+              {!round.description && (
+                <div className={styles.sourceButtonWrap}>
+                  <RatingControl eventId={round.eventId} />
+                </div>
+              )}
             </div>
 
             {/* ACCURACY RING CARD */}
@@ -265,7 +276,7 @@ export default function RoundCompleteSection({
                     <span className={`${styles.lbRank} ${row.rank === 1 ? styles.lbRankGold : ""}`}>{row.rank}</span>
                     <span className={styles.lbNameCell}>
                       <span className={styles.lbNameInner}>
-                        <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
+                        <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} size={40} />
                         <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
                           {row.displayName}
                         </span>
@@ -287,7 +298,7 @@ export default function RoundCompleteSection({
                       <span className={styles.lbRank}>—</span>
                       <span className={styles.lbNameCell}>
                         <span className={styles.lbNameInner}>
-                          <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} />
+                          <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} size={40} />
                           <span style={{ ...getUsernameGradientStyle(p.playerId), fontWeight: isMe ? 700 : 500 }}>
                             {p.displayName || p.playerId.slice(0, 8)}
                           </span>
@@ -304,6 +315,10 @@ export default function RoundCompleteSection({
 
             {/* WHERE + WHEN CARD (merged, tabbed) */}
             <div className={styles.whereWhenCard}>
+              <div className={styles.leaderboardTitle}>
+                <span className={styles.leaderboardAccentBar} />
+                {t('breakdown')}
+              </div>
               <div className={styles.whereWhenTabs}>
                 <button
                   className={`${styles.whereWhenTab} ${whereWhenTab === 'where' ? styles.whereWhenTabActiveWhere : ''}`}
@@ -427,25 +442,10 @@ export default function RoundCompleteSection({
               </div>
             ) : null}
 
-            {/* HISTORICAL CONTEXT BOTTOM SHEET */}
-            {histContextOpen && round.description && (
-              <div className={styles.histSheetOverlay} onClick={() => setHistContextOpen(false)}>
-                <div className={styles.histSheet} onClick={e => e.stopPropagation()}>
-                  <div className={styles.histSheetHeader}>
-                    <span className={styles.histSheetTitle}>{t('hist_context')}</span>
-                    <button className={styles.histSheetClose} onClick={() => setHistContextOpen(false)}>✕</button>
-                  </div>
-                  <div className={styles.histSheetBody}>
-                    {round.description}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* FIXED BOTTOM BAR */}
             <div className={styles.bottomBar}>
               <button className={styles.homeButton} onClick={() => router.push("/home")}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
                   <polyline points="9 21 9 12 15 12 15 21" />
                 </svg>

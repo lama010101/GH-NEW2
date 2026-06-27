@@ -95,7 +95,7 @@
 }
 
 .card {
-  background: var(--gh-glass-bg);
+  background: var(--gh-glass-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-glass-border);
   border-radius: 14px;
   backdrop-filter: var(--gh-glass-blur);
@@ -118,7 +118,7 @@
   align-items: center;
   justify-content: center;
   padding: 15px 10px;
-  background: var(--gh-glass-bg);
+  background: var(--gh-glass-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-glass-border);
   border-radius: 14px;
   backdrop-filter: var(--gh-glass-blur);
@@ -164,7 +164,7 @@
 .panel {
   overflow: hidden;
   margin-bottom: 12px;
-  background: var(--gh-glass-bg);
+  background: var(--gh-glass-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-glass-border);
   border-radius: 14px;
   backdrop-filter: var(--gh-glass-blur);
@@ -185,7 +185,7 @@
 
 .rankRow {
   display: grid;
-  grid-template-columns: 22px 30px minmax(0, 1fr) auto;
+  grid-template-columns: 22px 40px minmax(0, 1fr) auto;
   align-items: center;
   gap: 9px;
   padding: 11px 12px;
@@ -209,8 +209,8 @@
 }
 
 .rankAvatar {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   background: #1a1a1a;
   color: #ffffff;
@@ -218,7 +218,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  font-size: var(--font-2xs);
+  font-size: var(--font-base);
   font-weight: 700;
 }
 
@@ -248,7 +248,7 @@
 
 .rankName {
   min-width: 0;
-  font-size: var(--font-xs);
+  font-size: var(--font-sm);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -316,7 +316,7 @@
 
 .roundCard {
   overflow: hidden;
-  background: var(--gh-glass-bg);
+  background: var(--gh-glass-bg), rgba(15, 25, 50, 0.90);
   border: 1px solid var(--gh-glass-border);
   border-radius: 14px;
   backdrop-filter: var(--gh-glass-blur);
@@ -404,19 +404,13 @@
 }
 
 .miniTileWhere {
-  background: var(--gh-where-card-bg);
-  border: 1px solid var(--gh-where-card-border);
-  backdrop-filter: var(--gh-glass-blur);
-  -webkit-backdrop-filter: var(--gh-glass-blur);
-  box-shadow: 0 4px 16px var(--gh-card-shadow), 0 0 14px var(--gh-where-card-glow);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
 }
 
 .miniTileWhen {
-  background: var(--gh-when-card-bg);
-  border: 1px solid var(--gh-when-card-border);
-  backdrop-filter: var(--gh-glass-blur);
-  -webkit-backdrop-filter: var(--gh-glass-blur);
-  box-shadow: 0 4px 16px var(--gh-card-shadow), 0 0 14px var(--gh-when-card-glow);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
 }
 
 .miniNumber {

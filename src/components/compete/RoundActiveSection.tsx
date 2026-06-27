@@ -103,6 +103,10 @@ export default function RoundActiveSection({
     const val = match?.split('=')[1]?.trim();
     return val && (locales as readonly string[]).includes(val) ? (val as Locale) : 'en';
   });
+  // Running total accuracy across completed rounds of the current game (viewer).
+  // Source of truth: round_results table via /all-results endpoint (DB-backed).
+  // Formula mirrors server session-accuracy: avg of (location_score + time_score) / 2.
+  const [runningAccuracy, setRunningAccuracy] = useState<number | null>(null);
 
   // Pan + zoom system refs
   const panX = useRef(0);
@@ -223,6 +227,39 @@ export default function RoundActiveSection({
       if (guessHintTimer.current) clearTimeout(guessHintTimer.current);
     };
   }, []);
+
+  // Fetch running total accuracy across completed rounds during ROUND_ACTIVE.
+  // DB = source of truth (round_results). No client fabrication.
+  useEffect(() => {
+    if (snapshot.status !== "ROUND_ACTIVE") return;
+    const currentRoundIndex = snapshot.currentRoundIndex;
+    if (typeof currentRoundIndex !== "number" || currentRoundIndex <= 0) {
+      setRunningAccuracy(null);
+      return;
+    }
+    if (!snapshot.gameId || !playerId) {
+      setRunningAccuracy(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/compete/${snapshot.gameId}/all-results?playerId=${playerId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        const rows: Array<{ playerId: string; roundIndex: number; locationScore: number | null; timeScore: number | null }> = Array.isArray(data.results) ? data.results : [];
+        const completed = rows.filter(r => r.playerId === playerId && r.roundIndex < currentRoundIndex);
+        if (completed.length === 0) {
+          setRunningAccuracy(null);
+          return;
+        }
+        const sum = completed.reduce((acc, r) => acc + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0);
+        setRunningAccuracy(Math.round(sum / completed.length));
+      })
+      .catch(() => {
+        if (!cancelled) setRunningAccuracy(null);
+      });
+    return () => { cancelled = true; };
+  }, [snapshot.status, snapshot.currentRoundIndex, snapshot.gameId, playerId]);
 
   // Wheel zoom (desktop) — native non-passive listener so preventDefault works
   useEffect(() => {
@@ -606,6 +643,10 @@ export default function RoundActiveSection({
             </svg>
           </button>
           <span>{snapshot.currentRoundIndex + 1} / {snapshot.config.totalRounds}</span>
+          {runningAccuracy !== null && (() => {
+            const hue = Math.round((Math.max(0, Math.min(100, runningAccuracy)) / 100) * 120);
+            return <span style={{ color: `hsl(${hue}, 100%, 50%)` }}>· {runningAccuracy}%</span>;
+          })()}
         </div>
       )}
 

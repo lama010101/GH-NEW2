@@ -73,17 +73,25 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
 
   bootstrapPromise = (async (): Promise<IdentityState> => {
     try {
-      const { data: { user }, error: sessionError } =
-        await supabaseBrowser.auth.getUser();
+      // Read the session from local storage/cookies (no network refresh) and
+      // bound it with a timeout. The server-side middleware already validates
+      // and refreshes the session cookie on every page load, so getSession()
+      // is reliable here. We deliberately avoid getUser(), whose underlying
+      // network call can hang indefinitely while holding the GoTrue lock —
+      // which previously left identity stuck in "loading" after a refresh.
+      const { data: { session }, error: sessionError } = await Promise.race([
+        supabaseBrowser.auth.getSession(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Identity bootstrap timed out")), 8000)
+        ),
+      ]);
 
       if (sessionError) {
-        if (sessionError.message?.includes("Auth session missing") || sessionError.name === "AuthSessionMissingError") {
-          cachedState = { status: "unauthenticated" };
-          return cachedState;
-        }
         cachedState = { status: "error", error: `Session check failed: ${sessionError.message}` };
         return cachedState;
       }
+
+      const user = session?.user;
 
       if (user?.id) {
         const isAnonymous = user.is_anonymous ?? false;

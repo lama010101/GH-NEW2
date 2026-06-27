@@ -6,6 +6,7 @@ import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import InlineImageBadge from './InlineImageBadge';
+import PlayerAvatar from './PlayerAvatar';
 import styles from "./WhereCard.module.css";
 
 const StaticResultMap = dynamic(
@@ -209,6 +210,11 @@ export default function WhereCard({
                     <span className={styles.lbRank}>
                       {r.rank ?? "—"}
                     </span>
+                    <PlayerAvatar
+                      avatarUrl={snapshotPlayers.find(p => p.playerId === r.playerId)?.avatarUrl ?? null}
+                      displayName={snapshotPlayers.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
+                      size={40}
+                    />
                     <span className={styles.lbName}>
                       <span style={{ ...getUsernameGradientStyle(r.playerId), fontWeight: r.playerId === playerId ? 600 : 400 }}>
                         {snapshotPlayers.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}

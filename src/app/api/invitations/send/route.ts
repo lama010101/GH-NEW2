@@ -87,7 +87,17 @@ export async function POST(request: NextRequest) {
 
     const inviterName = profileData.display_name || user.email?.split("@")[0] || "Unknown";
 
-    // Step 3: Insert into notifications
+    // Step 3: Resolve game mode (sync = rush, async = relax) so the recipient's
+    // notification can display the game type instead of generic invite text.
+    const { data: sessionData } = await serviceRoleClient
+      .from("sessions")
+      .select("mode")
+      .eq("game_id", game_id)
+      .single();
+
+    const mode = sessionData?.mode ?? undefined;
+
+    // Step 4: Insert into notifications
     const { error: notificationError } = await serviceRoleClient
       .from("notifications")
       .insert({
@@ -98,6 +108,7 @@ export async function POST(request: NextRequest) {
           inviter_id: user.id,
           inviter_name: inviterName,
           invitation_id: invitationId,
+          mode,
         },
       });
 
