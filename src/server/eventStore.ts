@@ -221,23 +221,3 @@ export async function appendEvent(
   // STEP 5: Insert the validated event
   await insertEvent(client, gameId, roundIndex, eventType, payload);
 }
-
-// ═════════════════════════════════════════════════════════════════════════════
-// LEGACY COMPATIBILITY — REMOVE AFTER MIGRATION
-// ═════════════════════════════════════════════════════════════════════════════
-
-/**
- * @deprecated Use appendEvent() instead. This function exists only for backward
- * compatibility during migration and will be removed.
- */
-export async function logRoundEvent(
-  gameId: string,
-  roundIndex: number | null,
-  eventType: string,
-  payload: Record<string, unknown>,
-  client: DbTransactionClient
-): Promise<void> {
-  // eslint-disable-next-line no-console
-  console.warn("[DEPRECATED] logRoundEvent() called - migrate to appendEvent()");
-  await appendEvent(client, gameId, eventType as EventType, payload, roundIndex);
-}
