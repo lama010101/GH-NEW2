@@ -241,6 +241,17 @@ Consolidated fix batch: MP-EXEC-COMPETE-CONSOLIDATED-001.
 | B7 | Transient null return comments | CLOSED | Clarified `loadCompeteSessionSnapshot` transient null returns — callers retry, no internal retry (single-retry-location discipline). |
 | C | GAME_MODES_SPEC.md doc pass | CLOSED | C-RULING-1: clamp 20s→30s. C-RULING-2: distinguished Rush round-advance timeout (30s) from results-screen auto-advance (`resultsAutoAdvanceSec`, default 90s). C-RULING-3: event name `TIMER_CLAMPED`→`PRESSURE_APPLIED` (WS message type `TIMER_CLAMPED` retained, correctly labeled). |
 
+### Section D — Closeout (MP-CLOSEOUT-COMPETE-CONSOLIDATED-001, 2026-06-27)
+
+Verification (MP-VERIFY-EXEC-COMPETE-CONSOLIDATED-001) found the batch was reported complete but was NOT actually closed. Closeout corrections:
+
+| # | Item | Status | Notes |
+|---|------|--------|-------|
+| D-C1 | Push gap | CLOSED | Verification found 7 of 11 task commits (18e15d6..fa4317b) were local-only, not on origin/main. By closeout time they had been pushed (now ancestors of 02e9dbe on origin/main). `git log origin/main..main` confirmed empty after a fresh `git fetch`. |
+| D-C2 | Build break from "pre-existing" tsc errors | CLOSED | The 2 unused-import errors in `rules.correctness.test.ts` (calculateLocationAccuracy/calculateYearAccuracy) were build-fatal under Vercel ESLint `no-unused-vars` and broke `next build` when the task commits landed. Fixed by separate commit 02e9dbe (MP-FIX-VERCEL-BUILD-001). `npx tsc --noEmit` now 0 errors. Lesson: "pre-existing tsc errors" must be checked for build-fatalness, not dismissed. |
+| D-C3 | B3 scope leak — undocumented NotificationBell hunk | CLOSED | Commit 6bb4805 (B3, labeled KC-003 geocode) also gated `<NotificationBell/>` behind `snapshot?.status !== "ROUND_ACTIVE"` in `page.tsx`. Investigated: REAL dedup fix (RoundActiveSection renders its own bell during ROUND_ACTIVE; page-level bell would duplicate; line 551 has pre-existing "REMOVED: Duplicate notification" comment). Kept. Retroactively logged as its own task `UI-COMPETE-NOTIFBELL-ROUNDACTIVE-DEDUP-001` in PROGRESS.md. One-behavior-per-commit discipline was violated; no revert needed. |
+| D-C4 | A2 proof artifact missing | CLOSED | Original 2-player pressure-clamp proof had no retained raw output / no saved script. Wrote permanent reusable proof `scripts/test/_scratch/verify-pressure-clamp-001.ts` importing the REAL `submitGuess` code path. Ran against live DB: ALL 7 ASSERTIONS PASS. Test game_id `bad1f8ff-db0b-4897-b179-97150d77937a` (tagged MP-CLOSEOUT-PROOF-TEST). INSERT-only. P1 120s→clamped 30s (1 PRESSURE_APPLIED row); P2 200ms later → roundEndsAt unchanged, still 1 row, ROUND_COMPLETE. |
+
 ---
 
 *File created 2026-06-24 by Claude (CTO) to replace long-form bug/status tracking in the `memory_user_edits` tool, which is capped at 30 entries. Memory now holds only compressed pointers to this file plus standing process rules. Coders update this file as instructed by prompt validation steps; Claude reviews and corrects status changes, coders never self-certify a CLOSED status.*
