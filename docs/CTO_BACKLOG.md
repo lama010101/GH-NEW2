@@ -56,7 +56,7 @@ Defects found in the harness itself (not app bugs). Plan: `docs/MP-PLAN-TESTHARN
 | H4 | hasSubmitted depends on CSS class name, never asserted | OPEN | — | T10 |
 | H5 | observeState single-read no retry → DOM/WS race | CLOSED | 0bad7f1 | T1 |
 | H6 | late-join edge case is no-op (logs "skipping") | OPEN | — | T5a |
-| H7 | timeout edge case does nothing (no submission skipped) | OPEN | — | T5c |
+| H7 | timeout edge case does nothing (no submission skipped) | CLOSED | 3dcb326 | T5c |
 | H8 | 7th-player-join never asserts rejection | OPEN | — | T5b |
 | H9 | only-one-next undone by orchestrator's readyNext loop | OPEN | — | T5d |
 | H10 | 3 refresh edge cases log diffs but never fail test | CLOSED | 2d7113a | T3 |
