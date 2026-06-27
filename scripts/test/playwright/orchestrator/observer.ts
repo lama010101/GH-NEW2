@@ -17,12 +17,22 @@ export interface ObservedState {
  * The browser is an observer — actions are driven via WebSocket. This module
  * verifies that the browser-visible state matches the WebSocket snapshot.
  */
-export async function observeState(page: Page): Promise<ObservedState> {
+export async function observeState(page: Page, opts?: { pollTimeoutMs?: number }): Promise<ObservedState> {
+  const pollTimeoutMs = opts?.pollTimeoutMs ?? 5000;
   const section = await page
     .locator('[data-testid="lobby-shell"], [data-testid="round-active-section"], [data-testid="round-complete-section"], [data-testid="session-complete-section"]')
     .first();
 
-  const present = await section.isVisible().catch(() => false);
+  // Poll for visibility instead of single read — fixes DOM/WS race (H5).
+  // The WS snapshot may update before the DOM renders; a single read can
+  // return UNKNOWN spuriously. Poll every 100ms up to pollTimeoutMs.
+  const deadline = Date.now() + pollTimeoutMs;
+  let present = false;
+  while (Date.now() < deadline) {
+    present = await section.isVisible().catch(() => false);
+    if (present) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
   if (!present) {
     // MP-INSTRUMENT-DOMRACE-TIMESTAMPS-001: diagnostic logging for UNKNOWN branch
     try {
@@ -77,7 +87,6 @@ export async function observeState(page: Page): Promise<ObservedState> {
   let readyCount = 0;
   let playerCount = 0;
   if (status === 'LOBBY') {
-    const roster = page.locator('[data-testid="lobby-player-"]');
     const players = await page.locator('[data-testid^="lobby-player-"]').count();
     playerCount = players;
     for (let i = 0; i < players; i++) {
