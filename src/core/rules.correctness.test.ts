@@ -3,8 +3,6 @@ import {
   evaluateRound,
   calculateBadges,
   evaluateNearMisses,
-  calculateLocationAccuracy,
-  calculateYearAccuracy
 } from "./rules";
 
 const MOON_LANDING_EVENT = {
