@@ -56,7 +56,7 @@ export class GameOrchestrator {
         user: player.user,
         displayName: player.user.displayName,
         onStateUpdate: (snapshot) => {
-          console.log(`[WS:${player.user.displayName}] State update: ${snapshot.status} round=${snapshot.currentRoundIndex}`);
+          console.log(`[WS:${player.user.displayName}] ts=${Date.now()} State update: ${snapshot.status} round=${snapshot.currentRoundIndex}`);
         },
         onError: (msg) => {
           console.error(`[WS:${player.user.displayName}] Error: ${msg}`);
@@ -306,6 +306,7 @@ export class GameOrchestrator {
    * Assert that all browsers see a specific status.
    */
   private async assertAllBrowsersSeeStatus(expected: SnapshotStatus, errors: string[]): Promise<void> {
+    console.log(`[ASSERT-STATUS] ts=${Date.now()} expected=${expected}`);
     const observedStates = await Promise.all(
       this.browserPool.all.map((p) => observeState(p.page)),
     );

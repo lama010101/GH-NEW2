@@ -24,6 +24,34 @@ export async function observeState(page: Page): Promise<ObservedState> {
 
   const present = await section.isVisible().catch(() => false);
   if (!present) {
+    // MP-INSTRUMENT-DOMRACE-TIMESTAMPS-001: diagnostic logging for UNKNOWN branch
+    try {
+      const ts = Date.now();
+      const url = page.url();
+      let testids: string[] = [];
+      let bodySample = '';
+      try {
+        testids = await page.evaluate(() =>
+          Array.from(document.querySelectorAll('[data-testid]')).map((e) =>
+            e.getAttribute('data-testid'),
+          ),
+        );
+      } catch {
+        testids = [];
+      }
+      try {
+        bodySample = await page.evaluate(() =>
+          (document.body.innerText || '').slice(0, 200),
+        );
+      } catch {
+        bodySample = '';
+      }
+      console.log(
+        `[OBSERVE-UNKNOWN] ts=${ts} url=${url} testids=${JSON.stringify(testids)} bodySample="${bodySample}"`,
+      );
+    } catch {
+      // best-effort logging; never change return behavior
+    }
     return {
       status: 'UNKNOWN',
       currentRoundIndex: null,
