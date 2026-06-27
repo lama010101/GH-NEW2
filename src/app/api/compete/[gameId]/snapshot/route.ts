@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { loadCompeteSessionSnapshot } from "@/server/sessionCore";
+import { loadCompeteSessionSnapshot, assertParticipantOrPartyKit } from "@/server/sessionCore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,14 +10,17 @@ export async function GET(
 ) {
   try {
     const gameId = params.gameId.trim();
-    const url = new URL(request.url);
-    const playerId = url.searchParams.get("playerId");
 
     if (gameId.length === 0) {
       return NextResponse.json({ error: "gameId is required" }, { status: 400 });
     }
 
-    const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+    const auth = await assertParticipantOrPartyKit(request, gameId);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const snapshot = await loadCompeteSessionSnapshot(gameId, auth.playerId);
 
     if (!snapshot) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });

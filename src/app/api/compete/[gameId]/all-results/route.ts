@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/server/db";
+import { assertParticipantOrPartyKit } from "@/server/sessionCore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { gameId: string } }
 ) {
   try {
@@ -13,6 +14,11 @@ export async function GET(
 
     if (gameId.length === 0) {
       return NextResponse.json({ error: "gameId is required" }, { status: 400 });
+    }
+
+    const auth = await assertParticipantOrPartyKit(request, gameId);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const result = await dbPool.query<{
