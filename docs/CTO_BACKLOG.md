@@ -58,7 +58,7 @@ Defects found in the harness itself (not app bugs). Plan: `docs/MP-PLAN-TESTHARN
 | H6 | late-join edge case is no-op (logs "skipping") | OPEN | — | T5a |
 | H7 | timeout edge case does nothing (no submission skipped) | CLOSED | 3dcb326 | T5c |
 | H8 | 7th-player-join never asserts rejection | OPEN | — | T5b |
-| H9 | only-one-next undone by orchestrator's readyNext loop | OPEN | — | T5d |
+| H9 | only-one-next undone by orchestrator's readyNext loop | CLOSED | f0ef378 | T5d |
 | H10 | 3 refresh edge cases log diffs but never fail test | CLOSED | 2d7113a | T3 |
 | H11 | 4 auth edge cases log verdict but never fail test | CLOSED | 2d7113a | T3 |
 | H12 | EdgeCaseEngine swallows inject errors | CLOSED | 2d7113a | T3 |
