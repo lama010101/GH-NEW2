@@ -96,9 +96,27 @@ export const EDGE_CASES: EdgeCase[] = [
     description: 'A player joins after the lobby is already populated',
     phase: 'lobby',
     inject: async (pool, clients, gameId) => {
-      // This is already covered by the normal flow (all 6 join before ready)
-      // Simulate by having one player toggle ready, then another join (not possible in current flow)
-      console.log('[EDGE] Skipping late-join (already covered by normal flow)');
+      // Simulate a late join by having one client disconnect, wait, then
+      // reconnect. After reconnecting, verify the client receives a
+      // STATE_UPDATE with status LOBBY. (H6 fix — replaces no-op)
+      const client = clients[safeIndex(1, clients.length)];
+      console.log(`[EDGE:late-join] Disconnecting ${client.user.displayName} to simulate late join...`);
+      client.close();
+      await new Promise((r) => setTimeout(r, 1000));
+      console.log(`[EDGE:late-join] Reconnecting ${client.user.displayName}...`);
+      await client.connect();
+      // Verify the client receives LOBBY state after reconnecting
+      try {
+        const snapshot = await client.waitForState((s) => s.status === 'LOBBY', 10000);
+        const playerCount = snapshot.players.length;
+        console.log(`[EDGE:late-join] ${client.user.displayName} rejoined — LOBBY confirmed, players=${playerCount}`);
+        if (playerCount < 2) {
+          throw new Error(`[late-join] Rejoined but player count is ${playerCount} (expected >= 2)`);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`[late-join] Reconnect verification failed: ${msg}`);
+      }
     },
   },
   {
