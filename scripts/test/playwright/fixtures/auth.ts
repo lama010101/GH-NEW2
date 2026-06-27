@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import WebSocket from 'ws';
 
@@ -64,6 +65,15 @@ let createdUserIds: string[] = [];
  * Tests that require auth should log in via the AuthModal UI helper or implement their own flow.
  */
 async function globalSetup() {
+  // Pre-flight load check — enforces "load < 10" rule in code, not just
+  // human discipline. Aborts the suite before launching browsers if the
+  // 1-minute load average exceeds the threshold. (H14)
+  const load = os.loadavg();
+  const LOAD_THRESHOLD = 10;
+  console.log(`[PREFLIGHT] Load average: 1min=${load[0].toFixed(2)} 5min=${load[1].toFixed(2)} 15min=${load[2].toFixed(2)}`);
+  if (load[0] > LOAD_THRESHOLD) {
+    throw new Error(`[PREFLIGHT] Aborting: 1-min load average ${load[0].toFixed(2)} exceeds threshold ${LOAD_THRESHOLD}. Wait for machine load to drop before running the suite.`);
+  }
   console.log('[PLAYWRIGHT SETUP] Creating test users...');
 
   for (let i = 0; i < TEST_USERS.length; i++) {
