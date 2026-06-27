@@ -44,6 +44,30 @@
 - Execution environment: Devin Local (MacBook Air) — required for persistent env / production Supabase access
 - 6 disposable test accounts: `gh-test-player-N@test.guess-history.com`, recreated by `globalSetup()` every run
 
+### Harness-Itself Defects (MP-PLAN-TESTHARNESS-FULL-FIX-001 / MP-EXEC-TESTHARNESS-FULL-FIX-001)
+
+Defects found in the harness itself (not app bugs). Plan: `docs/MP-PLAN-TESTHARNESS-FULL-FIX-001.md`.
+
+| ID | Defect | Status | Commit | Task |
+|----|--------|--------|--------|------|
+| H1 | PLAY_AGAIN wait is no-op setTimeout(2000); handler never attached | FIX-APPLIED | (pending T2) | T2 |
+| H2 | Dead `roster` locator in observer.ts (created, never used) | CLOSED | 0bad7f1 | T1 |
+| H3 | readyForNext in ROUND_COMPLETE is placeholder, never asserted | OPEN | — | T10 |
+| H4 | hasSubmitted depends on CSS class name, never asserted | OPEN | — | T10 |
+| H5 | observeState single-read no retry → DOM/WS race | CLOSED | 0bad7f1 | T1 |
+| H6 | late-join edge case is no-op (logs "skipping") | OPEN | — | T5a |
+| H7 | timeout edge case does nothing (no submission skipped) | OPEN | — | T5c |
+| H8 | 7th-player-join never asserts rejection | OPEN | — | T5b |
+| H9 | only-one-next undone by orchestrator's readyNext loop | OPEN | — | T5d |
+| H10 | 3 refresh edge cases log diffs but never fail test | CLOSED | 2d7113a | T3 |
+| H11 | 4 auth edge cases log verdict but never fail test | CLOSED | 2d7113a | T3 |
+| H12 | EdgeCaseEngine swallows inject errors | CLOSED | 2d7113a | T3 |
+| H13 | Spec assertions don't check edge case outcomes | OPEN | — | T4 |
+| H14 | No pre-flight load check (load <10 rule human-only) | CLOSED | aacd954 | T6 |
+| H15 | Edge cases only run in game 1 of 3 (injected Set persists) | OPEN | — | T9 |
+| H16 | refresh() no auth-modal-never-detaches diagnostics | CLOSED | ef366a3 | T7 |
+| H17 | submitGuess fire-and-forget, rejection undetected | OPEN | — | T8a/T8b |
+
 ### Other Active Multiplayer Issues
 | Issue | Status | Notes |
 |-------|--------|-------|
