@@ -92,6 +92,14 @@ BEGIN
     IF new_event_type NOT IN ('GUESS_SUBMITTED', 'ROUND_COMPLETE') THEN
       RAISE EXCEPTION 'Invalid FSM transition: % → % is not allowed. Allowed: GUESS_SUBMITTED, ROUND_COMPLETE', prev_event_type, new_event_type;
     END IF;
+  ELSIF prev_event_type = 'PRESSURE_APPLIED' THEN
+    -- PRESSURE_APPLIED is a side-effect event during ROUND_ACTIVE (after a
+    -- GUESS_SUBMITTED). It does not change the phase, so transitions FROM it
+    -- are the same as FROM GUESS_SUBMITTED (→ GUESS_SUBMITTED, ROUND_COMPLETE).
+    -- Also allow another PRESSURE_APPLIED (idempotent no-op via unique index).
+    IF new_event_type NOT IN ('GUESS_SUBMITTED', 'ROUND_COMPLETE', 'PRESSURE_APPLIED') THEN
+      RAISE EXCEPTION 'Invalid FSM transition: % → % is not allowed. Allowed: GUESS_SUBMITTED, ROUND_COMPLETE, PRESSURE_APPLIED', prev_event_type, new_event_type;
+    END IF;
   ELSIF prev_event_type = 'ROUND_COMPLETE' THEN
     IF new_event_type NOT IN ('ROUND_STARTED', 'SESSION_COMPLETE') THEN
       RAISE EXCEPTION 'Invalid FSM transition: % → % is not allowed. Allowed: ROUND_STARTED, SESSION_COMPLETE', prev_event_type, new_event_type;

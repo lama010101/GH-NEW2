@@ -72,8 +72,7 @@ function compareTransitionEvents(
 export const PRACTICE_PLAYER_ID = "00000000-0000-0000-0000-000000000000";
 export const PRACTICE_PLAYER_NAME = "Practice Player";
 
-export const PRESSURE_CLAMP_SECONDS = 20;
-export const RESULTS_COUNTDOWN_SECONDS = 30;
+export const PRESSURE_CLAMP_SECONDS = 30;
 
 const TIER_PENALTY: Record<number, number> = { 1: 10, 2: 20, 3: 30, 4: 40, 5: 50 };
 
@@ -1269,18 +1268,19 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       throw new Error("Use practice session endpoints for practice mode");
     }
 
-    // Consolidated guard queries — single CTE to check round start, round complete, existing commit, and fetch session event IDs
+    // Consolidated guard queries — single CTE to check round start, round complete, existing commit, fetch session event IDs, and fetch the ROUND_STARTED phaseEndsAt (needed for the inline pressure clamp on the first submission).
     const guardResult = await client.query<{
       round_started: boolean;
       round_complete: boolean;
       has_existing_commit: boolean;
       session_event_ids: string[] | null;
+      round_started_phase_ends_at: string | null;
     }>(
       `WITH
         round_started AS (
-          SELECT 1 FROM round_events
+          SELECT payload->>'phaseEndsAt' AS phase_ends_at FROM round_events
           WHERE game_id = $1 AND round_index = $2 AND event_type = 'ROUND_STARTED'
-          LIMIT 1
+          ORDER BY id ASC LIMIT 1
         ),
         round_complete AS (
           SELECT 1 FROM round_events
@@ -1301,7 +1301,8 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         EXISTS(SELECT 1 FROM round_started)     AS round_started,
         EXISTS(SELECT 1 FROM round_complete)    AS round_complete,
         EXISTS(SELECT 1 FROM existing_commit)   AS has_existing_commit,
-        (SELECT payload->'eventIds' FROM session_created)::jsonb AS session_event_ids`,
+        (SELECT payload->'eventIds' FROM session_created)::jsonb AS session_event_ids,
+        (SELECT phase_ends_at FROM round_started) AS round_started_phase_ends_at`,
       [gameId, roundIndex, playerId]
     );
 
@@ -1474,6 +1475,30 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       }
     );
     compareTransitionEvents("submitGuess", existingEvents, transitionResult.events);
+
+    // ═════════════════════════════════════════════════════════════════════════════
+    // INLINE PRESSURE CLAMP (MP-EXEC-COMPETE-CONSOLIDATED-001 A2)
+    // Applied atomically inside the same transaction as the first round_commit,
+    // so the clamp is committed before any concurrent/later submitGuess can read
+    // the snapshot. Single source of truth: ONE PRESSURE_APPLIED event per round
+    // (idempotency via idx_round_events_unique_pressure partial unique index +
+    // appendPressureAppliedIfNotExists ON CONFLICT DO NOTHING). Replaces the old
+    // separate /pressure HTTP write that was rejected by the FSM trigger (root
+    // cause of the pressure-clamp race — see A0/A1).
+    // ═════════════════════════════════════════════════════════════════════════════
+    if (commitCount === 1 && guard.round_started_phase_ends_at) {
+      const remainingMs = Date.parse(guard.round_started_phase_ends_at) - Date.now();
+      if (remainingMs > PRESSURE_CLAMP_SECONDS * 1000) {
+        const newRoundEndsAt = new Date(Date.now() + PRESSURE_CLAMP_SECONDS * 1000).toISOString();
+        const inserted = await appendPressureAppliedIfNotExists(
+          client, gameId, roundIndex,
+          { newRoundEndsAt, clampedToSec: PRESSURE_CLAMP_SECONDS }
+        );
+        if (inserted) {
+          console.log(`[PRESSURE_CLAMP] gameId=${gameId} round=${roundIndex} clamped to ${PRESSURE_CLAMP_SECONDS}s (newRoundEndsAt=${newRoundEndsAt})`);
+        }
+      }
+    }
 
     await client.query("COMMIT");
     console.timeEnd("[PERF] submitGuess:transaction");
@@ -2151,36 +2176,6 @@ export async function recordReadyNext(input: {
   }
 }
 
-export async function recordPressureApplied(input: {
-  gameId: string;
-  roundIndex: number;
-  newRoundEndsAt: string;
-  clampedToSec: number;
-  _executionContext?: string;
-}): Promise<void> {
-  assertValidExecutionContext(input);
-  const client = await getTransactionClient();
-  try {
-    await client.query("BEGIN");
-    await appendEvent(
-      client,
-      input.gameId,
-      "PRESSURE_APPLIED",
-      {
-        newRoundEndsAt: input.newRoundEndsAt,
-        clampedToSec: input.clampedToSec
-      },
-      input.roundIndex
-    );
-    await client.query("COMMIT");
-  } catch (err) {
-    await client.query("ROLLBACK");
-    throw err;
-  } finally {
-    client.release();
-  }
-}
-
 export async function getRoundResults(
   gameId: string,
   roundIndex: number
@@ -2300,6 +2295,31 @@ async function appendEventIfNotExists(
      ON CONFLICT (game_id, round_index) WHERE event_type = 'ROUND_COMPLETE' DO NOTHING
      RETURNING id`,
     [gameId, roundIndex, eventType, JSON.stringify(payload)]
+  );
+  return result.rows.length > 0;
+}
+
+/**
+ * Atomic insert for PRESSURE_APPLIED event with idempotency via unique partial
+ * index (idx_round_events_unique_pressure). Returns true if the event was
+ * inserted (caller won the race), false if it already exists (caller lost).
+ * Used by submitGuess to apply the first-submission timer clamp atomically
+ * inside the same transaction as the first round_commit, so concurrent
+ * first-submission clamp attempts resolve to exactly one PRESSURE_APPLIED row
+ * per round. Single source of truth: ONE PRESSURE_APPLIED event per round.
+ */
+async function appendPressureAppliedIfNotExists(
+  client: DbTransactionClient,
+  gameId: string,
+  roundIndex: number,
+  payload: { newRoundEndsAt: string; clampedToSec: number }
+): Promise<boolean> {
+  const result = await client.query<{ id: string }>(
+    `INSERT INTO round_events (game_id, round_index, event_type, payload, created_at)
+     VALUES ($1, $2, 'PRESSURE_APPLIED', $3::jsonb, now())
+     ON CONFLICT (game_id, round_index) WHERE event_type = 'PRESSURE_APPLIED' DO NOTHING
+     RETURNING id`,
+    [gameId, roundIndex, JSON.stringify(payload)]
   );
   return result.rows.length > 0;
 }
