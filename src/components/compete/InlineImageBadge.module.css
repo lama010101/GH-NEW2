@@ -5,22 +5,33 @@
   opacity: 0;
 }
 
-.badgeVisible {
+.badgeStatic {
   opacity: 1;
-  animation: badgePopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-@keyframes badgePopIn {
+.badgeAnimated {
+  opacity: 1;
+  animation: badgeZoomReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes badgeZoomReveal {
   0% {
     opacity: 0;
-    transform: scale(0.4) rotate(-8deg);
+    transform: scale(3.2) rotate(-12deg);
+    filter: brightness(2.4) drop-shadow(0 0 20px rgba(255, 215, 0, 0.95));
   }
-  60% {
+  30% {
     opacity: 1;
-    transform: scale(1.15) rotate(3deg);
+    transform: scale(1.4) rotate(5deg);
+    filter: brightness(1.7) drop-shadow(0 0 14px rgba(255, 215, 0, 0.7));
+  }
+  55% {
+    transform: scale(1.12) rotate(-3deg);
+    filter: brightness(1.25) drop-shadow(0 0 7px rgba(255, 215, 0, 0.35));
   }
   100% {
     opacity: 1;
     transform: scale(1) rotate(0deg);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(255, 215, 0, 0));
   }
 }
