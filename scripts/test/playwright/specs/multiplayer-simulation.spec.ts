@@ -72,6 +72,16 @@ test.describe('Multiplayer Simulation', () => {
       expect(results.every((r) => r.completed)).toBe(true);
       expect(edgeCaseEngine.injectedCount).toBeGreaterThan(0);
       expect(assertionFailures.length).toBe(0);
+      // Assert no edge case failures (H13 fix — T3 added failuresList but
+      // the spec never checked it, so edge case failures couldn't fail the test)
+      const edgeFailures = edgeCaseEngine.failuresList;
+      if (edgeFailures.length > 0) {
+        console.error(`[SIMULATION] Edge case failures (${edgeFailures.length}):`);
+        for (const f of edgeFailures) {
+          console.error(`  - ${f}`);
+        }
+      }
+      expect(edgeFailures.length).toBe(0);
 
       // Cleanup
       await browserPool.closeAll();
