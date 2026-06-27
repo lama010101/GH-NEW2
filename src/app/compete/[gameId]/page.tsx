@@ -129,7 +129,7 @@ export default function CompeteGamePage() {
   // Fetch all round results when session completes
   useEffect(() => {
     if (snapshot?.status === "SESSION_COMPLETE" && gameId && !allRoundResults) {
-      fetch(`/api/compete/${gameId}/all-results`)
+      fetch(`/api/compete/${gameId}/all-results?playerId=${playerId}`)
         .then(r => r.json())
         .then(data => setAllRoundResults(data.results ?? []))
         .catch(err => {

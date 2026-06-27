@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getRoundResults } from "@/server/sessionCore";
+import { getRoundResults, assertParticipantOrPartyKit } from "@/server/sessionCore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { gameId: string; roundIndex: string } }
 ) {
   try {
@@ -18,6 +18,11 @@ export async function GET(
 
     if (!Number.isInteger(roundIndex) || roundIndex < 0) {
       return NextResponse.json({ error: "roundIndex must be a non-negative integer" }, { status: 400 });
+    }
+
+    const auth = await assertParticipantOrPartyKit(request, gameId);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     const results = await getRoundResults(gameId, roundIndex);
