@@ -1147,74 +1147,35 @@ export default class GameServer {
             const results = Array.isArray(fullResponse.results) ? fullResponse.results : null;
             this.pendingResults = results;
 
-            // Check if this is the first submission of the round and apply timer clamp
+            // Clamp is now applied atomically inside submitGuess (sessionCore.ts)
+            // and persisted as a PRESSURE_APPLIED event in the same transaction as
+            // the first round_commit. The /guess response snapshot already carries
+            // the clamped roundEndsAt (derived from PRESSURE_APPLIED.payload.
+            // newRoundEndsAt by loadCompeteSessionSnapshot). No separate clamp
+            // write, no in-memory mutation — DB is the single source of truth.
+            //
+            // Detect the clamp from the DB-authoritative snapshot to fire the
+            // TIMER_CLAMPED UX flash (visual only; correctness is already in the
+            // broadcast snapshot).
             if (isRuntimeState(fullResponse) &&
                 fullResponse.status === "ROUND_ACTIVE" &&
                 fullResponse.currentRoundIndex === data.roundIndex &&
-                fullResponse.roundEndsAt) {
-              // Count submitted players in updated snapshot (includes current submitter)
-              const submittedCount = fullResponse.players.filter(p => p.hasSubmitted && p.leftAt === null).length;
-
-              // Fire clamp only on exactly the first submission (submittedCount === 1)
-              if (submittedCount === 1) {
-                const CLAMP_SEC = 30;
-                const remainingMs = new Date(fullResponse.roundEndsAt).getTime() - Date.now();
-
-                if (remainingMs > CLAMP_SEC * 1000) {
-                  const newRoundEndsAt = new Date(Date.now() + CLAMP_SEC * 1000);
-                  const clampTo = CLAMP_SEC;
-                  console.log("[CLAMP_BEFORE]", {
-                    gameId: this.room.id,
-                    roundIndex: fullResponse.currentRoundIndex,
-                    currentRoundEndsAt: fullResponse.roundEndsAt,
-                    remainingMs,
-                    clampTo,
-                    now: new Date().toISOString(),
-                  });
-                  const pressureRes = await fetch(`${this.getNextJsBaseUrl()}/api/compete/${this.room.id}/pressure`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
-                    },
-                    body: JSON.stringify({
-                      roundIndex: data.roundIndex,
-                      newRoundEndsAt: newRoundEndsAt.toISOString(),
-                      clampedToSec: clampTo,
-                      _executionContext: "partykit"
-                    })
-                  });
-                  if (!pressureRes.ok) {
-                    const text = await pressureRes.text();
-                    console.error(`[PartyKit] PRESSURE_APPLIED persist failed ${pressureRes.status}: ${text}`);
-                    // Do NOT break — fall through to applySnapshotAndBroadcast
-                    // so clients still receive the updated snapshot with hasSubmitted=true
-                  }
-                  console.log("[CLAMP_AFTER_API]", {
-                    newRoundEndsAt: newRoundEndsAt.toISOString(),
-                    apiStatus: pressureRes.status,
-                  });
-
-                  // Update RuntimeState
-                  if (isRuntimeState(fullResponse)) {
-                    (fullResponse as RuntimeState).roundEndsAt = newRoundEndsAt.toISOString();
-                  }
-
-                  // Broadcast TIMER_CLAMPED
-                  const timerClampedMsg: ClientMessage = {
-                    type: "TIMER_CLAMPED",
-                    newPhaseEndsAt: newRoundEndsAt.toISOString(),
-                    clampedToSec: clampTo
-                  };
-                  for (const connection of this.room.getConnections()) {
-                    connection.send(JSON.stringify(timerClampedMsg));
-                  }
-                  console.log(`[PartyKit] Timer clamped from ${Math.round(remainingMs / 1000)}s to ${clampTo}s`);
-                }
+                Array.isArray(fullResponse.events) &&
+                fullResponse.events.some(e =>
+                  e.eventType === "PRESSURE_APPLIED" &&
+                  e.roundIndex === data.roundIndex)) {
+              const timerClampedMsg: ClientMessage = {
+                type: "TIMER_CLAMPED",
+                newPhaseEndsAt: fullResponse.roundEndsAt as string,
+                clampedToSec: 30
+              };
+              for (const connection of this.room.getConnections()) {
+                connection.send(JSON.stringify(timerClampedMsg));
               }
+              console.log(`[PartyKit] TIMER_CLAMPED UX flash fired from DB-authoritative PRESSURE_APPLIED event`);
             }
 
-            // Apply snapshot after clamp shaping so clients see hasSubmitted=true and clamped timer together
+            // Apply snapshot (roundEndsAt already clamped in the snapshot from DB)
             console.log(`[SUBMIT_GUESS] response status=${(fullResponse as {status?: string}).status} isRuntimeState=${isRuntimeState(fullResponse)}`);
             this.applySnapshotAndBroadcast(fullResponse);
 
