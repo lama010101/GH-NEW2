@@ -165,6 +165,7 @@ export class BrowserPool {
    * Reload a player's page (simulates a refresh) and re-establish identity.
    */
   async refresh(player: PlayerBrowser): Promise<void> {
+    console.log(`[REFRESH] Reloading page for player ${player.user.email}...`);
     await player.page.reload({ waitUntil: 'domcontentloaded' });
     await player.page.waitForLoadState('domcontentloaded').catch((err) => {
       // If page is closed, surface the error immediately
@@ -173,13 +174,32 @@ export class BrowserPool {
       }
       // Otherwise, it's a benign networkidle timeout — proceed anyway
     });
+
+    // Diagnostic: check if auth modal appears (session not restored from cookies)
+    const modal = player.page.getByTestId('auth-modal').first();
+    const modalVisible = await modal.isVisible().catch(() => false);
+    console.log(`[REFRESH] player=${player.user.email} auth modal visible=${modalVisible} url=${player.page.url()}`);
+
+    if (modalVisible) {
+      console.log(`[REFRESH] Auth modal appeared after refresh — session not restored from cookies. Waiting for login...`);
+    }
+
     // Identity should be restored from cookies — no re-login needed
-    await ensureLoggedIn(player.page, player.user);
+    try {
+      await ensureLoggedIn(player.page, player.user);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Timeout') || msg.includes('timeout')) {
+        console.error(`[REFRESH-AUTH-MODAL-STUCK] player=${player.user.email} url=${player.page.url()} error=${msg}`);
+      }
+      throw err;
+    }
 
     // Explicit liveness check before returning
     if (player.page.isClosed()) {
       throw new Error(`refresh() failed: page closed after ensureLoggedIn for player ${player.user.email}`);
     }
+    console.log(`[REFRESH] Player ${player.user.email} refresh complete.`);
   }
 
   /**
