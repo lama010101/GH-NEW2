@@ -33,6 +33,11 @@ export class GameOrchestrator {
   // Set in playAgain(), resolved by onPlayAgain callbacks wired in initClients().
   private playAgainWaiters: Map<string, (newGameId: string) => void> = new Map();
 
+  // Player IDs that should be skipped during guess submission in runRound.
+  // Populated by the 'timeout' edge case to simulate a player not submitting.
+  // Cleared at the start of each round. (H7 fix)
+  skipSubmissionPlayerIds: Set<string> = new Set();
+
   constructor(opts: GameOrchestratorOptions) {
     this.opts = opts;
   }
@@ -147,7 +152,7 @@ export class GameOrchestrator {
 
     // Inject lobby edge cases
     if (this.opts.edgeCaseEngine) {
-      await this.opts.edgeCaseEngine.injectForPhase('lobby', this.browserPool, this.wsClients, gameId, 0);
+      await this.opts.edgeCaseEngine.injectForPhase('lobby', this.browserPool, this.wsClients, gameId, 0, this);
     }
 
     // All players ready
@@ -207,18 +212,25 @@ export class GameOrchestrator {
   private async runRound(gameId: string, roundIndex: number, errors: string[]): Promise<void> {
     const hostClient = this.wsClients[0];
 
+    // Clear any skip-submission flags from prior rounds
+    this.skipSubmissionPlayerIds.clear();
+
     // Assert all browsers see ROUND_ACTIVE
     await this.assertAllBrowsersSeeStatus('ROUND_ACTIVE', errors);
 
     // Inject round-active edge cases
     if (this.opts.edgeCaseEngine) {
-      await this.opts.edgeCaseEngine.injectForPhase('round-active', this.browserPool, this.wsClients, gameId, roundIndex);
+      await this.opts.edgeCaseEngine.injectForPhase('round-active', this.browserPool, this.wsClients, gameId, roundIndex, this);
     }
 
     // All players submit a guess (with some randomness to simulate real play)
     this.opts.onStep?.('All players submitting guesses...');
     for (let i = 0; i < this.wsClients.length; i++) {
       const client = this.wsClients[i];
+      if (this.skipSubmissionPlayerIds.has(client.user.id)) {
+        console.log(`[ORCHESTRATOR] Skipping submission for ${client.user.displayName} (timeout edge case)`);
+        continue;
+      }
       const year = 1900 + Math.floor(Math.random() * 100);
       const lat = -90 + Math.random() * 180;
       const lng = -180 + Math.random() * 360;
@@ -238,7 +250,7 @@ export class GameOrchestrator {
 
     // Inject round-complete edge cases
     if (this.opts.edgeCaseEngine) {
-      await this.opts.edgeCaseEngine.injectForPhase('round-complete', this.browserPool, this.wsClients, gameId, roundIndex);
+      await this.opts.edgeCaseEngine.injectForPhase('round-complete', this.browserPool, this.wsClients, gameId, roundIndex, this);
     }
 
     // All players ready for next round
