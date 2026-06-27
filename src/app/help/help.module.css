@@ -72,12 +72,22 @@
   max-width: 520px;
 }
 
-/* ---------- Search ---------- */
+/* ---------- Sticky search bar ---------- */
+.searchBar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  padding: 12px 20px;
+  background: var(--gh-bg-base);
+  border-bottom: 1px solid var(--gh-border-default);
+}
+
 .searchWrap {
   position: relative;
   width: 100%;
   max-width: 480px;
-  margin-top: 10px;
 }
 
 .searchIcon {
@@ -151,8 +161,95 @@
   letter-spacing: -0.01em;
 }
 
+/* ---------- Collapsible sections ---------- */
+.collapsible {
+  margin-top: 36px;
+}
+
+.sectionToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--gh-border-default);
+  padding: 0 0 14px;
+  cursor: pointer;
+  color: var(--gh-text-primary);
+  text-align: left;
+}
+
+.sectionToggle .sectionTitle {
+  margin: 0;
+}
+
+.sectionChevron {
+  flex: 0 0 auto;
+  font-size: 24px;
+  color: var(--gh-orange);
+  line-height: 1;
+}
+
+.sectionContent {
+  padding-top: 18px;
+}
+
+.collapsed .sectionContent {
+  display: none;
+}
+
+/* ---------- Search results ---------- */
+.resultsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resultCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 20px;
+  border-radius: var(--gh-glass-radius);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-glass-border);
+  text-decoration: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.resultCard:hover {
+  border-color: var(--gh-glass-border-hover);
+  background: var(--gh-glass-bg-hover);
+}
+
+.resultSection {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gh-orange);
+}
+
+.resultTitle {
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
+.resultBody {
+  font-size: var(--font-sm);
+  color: var(--gh-text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ---------- Quick links ---------- */
-.quickGrid {
+.quickScroll {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 14px;
@@ -593,9 +690,91 @@
 /* ---------- Responsive ---------- */
 @media (max-width: 600px) {
   .hero {
-    padding: 48px 18px 36px;
+    padding: 40px 16px 28px;
+  }
+  .heroTitle {
+    font-size: clamp(26px, 7vw, 36px);
+  }
+  .searchBar {
+    padding: 10px 16px;
+  }
+  .main {
+    padding: 0 16px;
   }
   .section {
-    margin-top: 36px;
+    margin-top: 32px;
+  }
+  .collapsible {
+    margin-top: 24px;
+  }
+  .sectionTitle {
+    font-size: 18px;
+  }
+  /* Quick links: horizontal scroll on mobile */
+  .quickScroll {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .quickCard {
+    flex: 0 0 78%;
+    scroll-snap-align: start;
+  }
+  /* Game modes: single column stack */
+  .modeGrid {
+    grid-template-columns: 1fr;
+  }
+  /* Categories: single column */
+  .catGrid {
+    grid-template-columns: 1fr;
+  }
+  /* Steps: single column */
+  .steps {
+    grid-template-columns: 1fr;
+  }
+  /* Getting started: tighter padding */
+  .gsStep {
+    padding: 16px 18px;
+    gap: 12px;
+  }
+  .gsNum {
+    font-size: var(--font-lg);
+  }
+  /* Troubleshooting: tighter padding */
+  .troubleItem {
+    padding: 16px 18px;
+  }
+  /* Contact: tighter padding */
+  .contact {
+    padding: 28px 18px;
+  }
+  .contactTitle {
+    font-size: var(--font-lg);
+  }
+}
+
+@media (max-width: 400px) {
+  .hero {
+    padding: 32px 14px 24px;
+  }
+  .searchBar {
+    padding: 8px 14px;
+  }
+  .main {
+    padding: 0 14px;
+  }
+  .quickCard {
+    flex: 0 0 85%;
+  }
+  .faqQuestion {
+    padding: 14px 16px;
+    font-size: var(--font-sm);
+  }
+  .faqAnswer {
+    padding: 0 16px 16px;
+    font-size: var(--font-xs);
   }
 }

@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 type Status = 'idle' | 'submitting' | 'success' | 'already' | 'error'
 
 export function WaitlistForm() {
+  const t = useTranslations('landing')
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -28,23 +30,23 @@ export function WaitlistForm() {
         setStatus('already')
       } else if (res.status === 400) {
         setStatus('error')
-        setErrorMsg('Please enter a valid email address.')
+        setErrorMsg(t('waitlist_err_invalid_email'))
       } else {
         setStatus('error')
-        setErrorMsg('Something went wrong. Please try again.')
+        setErrorMsg(t('waitlist_err_generic'))
       }
     } catch {
       setStatus('error')
-      setErrorMsg('Network error. Please try again.')
+      setErrorMsg(t('waitlist_err_network'))
     }
   }
 
   if (status === 'success') {
-    return <p className="text-lg font-semibold" style={{ color: 'var(--gh-success)' }}>You&apos;re on the list!</p>
+    return <p className="text-lg font-semibold" style={{ color: 'var(--gh-success)' }}>{t('waitlist_success')}</p>
   }
 
   if (status === 'already') {
-    return <p className="text-lg font-semibold" style={{ color: 'var(--gh-teal)' }}>You&apos;re already on the list!</p>
+    return <p className="text-lg font-semibold" style={{ color: 'var(--gh-teal)' }}>{t('waitlist_already')}</p>
   }
 
   return (
@@ -53,7 +55,7 @@ export function WaitlistForm() {
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="you@example.com"
+        placeholder={t('waitlist_email_placeholder')}
         disabled={status === 'submitting'}
         required
         className="flex-1 px-4 py-3 rounded-lg text-white outline-none placeholder-white/60"
@@ -70,7 +72,7 @@ export function WaitlistForm() {
           background: 'linear-gradient(135deg, #0369a1 0%, #0891b2 40%, #22d3ee 100%)',
         }}
       >
-        {status === 'submitting' ? 'Joining…' : 'Join Waitlist'}
+        {status === 'submitting' ? t('waitlist_submitting') : t('waitlist_submit')}
       </button>
       {status === 'error' && errorMsg && (
         <p className="text-sm mt-1" style={{ color: 'var(--gh-danger)' }}>{errorMsg}</p>

@@ -7,6 +7,7 @@ import styles from './NotificationBell.module.css';
 
 interface NotificationBellProps {
   className?: string;
+  onlyShowWhenUnread?: boolean;
 }
 
 interface Notification {
@@ -73,7 +74,7 @@ function NotificationItem({
   );
 }
 
-export default function NotificationBell({ className }: NotificationBellProps) {
+export default function NotificationBell({ className, onlyShowWhenUnread }: NotificationBellProps) {
   const t = useTranslations('notifications');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -139,8 +140,11 @@ export default function NotificationBell({ className }: NotificationBellProps) {
     }
   }
 
+  const showBell = !onlyShowWhenUnread || unreadCount > 0;
+
   return (
     <div className={`${styles.wrapper} ${className ?? ''}`.trim()}>
+      {showBell && (
       <button type="button" className={styles.bellBtn} onClick={toggleOpen}>
         <svg
           width="20"
@@ -159,6 +163,7 @@ export default function NotificationBell({ className }: NotificationBellProps) {
           <span className={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>
         )}
       </button>
+      )}
 
       {open && (
         <div className={styles.drawer}>
