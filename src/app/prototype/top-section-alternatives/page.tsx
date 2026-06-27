@@ -9,7 +9,7 @@ const WHERE_DIST = 120;
 const WHEN_DIFF = 3;
 const XP = 4500;
 const TITLE = "Great round!";
-const BADGE = "/badges/calendar_gold.webp";
+const BADGE = "/badges/year_gold.webp";
 const WHERE_ICON = "/badges/where.webp";
 const WHEN_ICON = "/badges/when.webp";
 
