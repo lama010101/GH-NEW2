@@ -27,7 +27,7 @@ const WHEN_SUB = "3 yrs off";
 const XP = 4500;
 const TITLE = "Great round!";
 const SUBTITLE = "Round 3 of 5";
-const BADGE = "/badges/calendar_gold.webp";
+const BADGE = "/badges/year_gold.webp";
 const WHERE_ICON = "/badges/where.webp";
 const WHEN_ICON = "/badges/when.webp";
 
