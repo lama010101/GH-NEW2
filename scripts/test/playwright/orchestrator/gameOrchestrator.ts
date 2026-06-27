@@ -242,6 +242,18 @@ export class GameOrchestrator {
       const lat = -90 + Math.random() * 180;
       const lng = -180 + Math.random() * 360;
       client.submitGuess(roundIndex, year, lat, lng, []);
+      // Wait for submission ack — detects rejected guesses instead of
+      // fire-and-forget. (H17 fix — part 2)
+      try {
+        await client.waitForSubmissionAck(10000);
+        console.log(`[SUBMIT-ACK] player=${client.user.displayName} round=${roundIndex} confirmed`);
+      } catch (ackErr) {
+        const ackMsg = ackErr instanceof Error ? ackErr.message : String(ackErr);
+        const msg = `[${client.user.displayName}] Submit ack failed round ${roundIndex}: ${ackMsg}`;
+        errors.push(msg);
+        this.opts.onAssertionFailure?.([msg]);
+        console.error(`[SUBMIT-ACK] player=${client.user.displayName} round=${roundIndex} TIMEOUT: ${ackMsg}`);
+      }
       // Small delay between submissions
       await new Promise((r) => setTimeout(r, 200));
     }
