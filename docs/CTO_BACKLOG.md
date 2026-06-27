@@ -73,6 +73,14 @@
 ---
 
 ## SECTION C — TOP-LEVEL PRIORITIES (set 2026-06-18)
+
+> ⚠️ **REVERT-BEFORE-LAUNCH ITEM (TEMPORARY)** — MP-FIX-COMPETE-SOLO-START-TEMP-001 (commit `8cfc42c`, 2026-06-27):
+> Min players lowered to 1 for solo testing. **MUST be reverted to 2 before any multi-player/production testing or launch.**
+> Changed locations:
+> - `partykit/server.ts:227` — `MIN_PLAYERS_TO_START` constant `2` → `1` (the only remaining hardcoded start-gating threshold; all other start-gating sites — `src/server/sessionCore.ts:461` allPlayersReady derivation, `src/server/sessionCore.ts:1139` startCompeteSession validation, `partykit/server.ts:765` broadcastStateUpdate allPlayersReady — were already at `1` from prior fix MP-FIX-START-MIN-PLAYERS-001).
+> - The constant is consumed at `partykit/server.ts:445` (attemptAutoStart allReady check), which inherits the change.
+> Note: this same fix will need `npx partykit deploy` to take effect in production (local `partykit dev` hot-reloads).
+
 1. MP-AUTO-TEST-001 — automated 6-concurrent-user test harness (Section A)
 2. Gameplay image zoom during active round (relates to B5 above but is the original, broader priority item)
 
