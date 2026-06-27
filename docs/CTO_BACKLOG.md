@@ -52,8 +52,8 @@ Defects found in the harness itself (not app bugs). Plan: `docs/MP-PLAN-TESTHARN
 |----|--------|--------|--------|------|
 | H1 | PLAY_AGAIN wait is no-op setTimeout(2000); handler never attached | CLOSED | fe58ac6 | T2 |
 | H2 | Dead `roster` locator in observer.ts (created, never used) | CLOSED | 0bad7f1 | T1 |
-| H3 | readyForNext in ROUND_COMPLETE is placeholder, never asserted | OPEN | — | T10 |
-| H4 | hasSubmitted depends on CSS class name, never asserted | OPEN | — | T10 |
+| H3 | readyForNext in ROUND_COMPLETE is placeholder, never asserted | CLOSED | cbe7966 | T10 |
+| H4 | hasSubmitted depends on CSS class name, never asserted | CLOSED | cbe7966 | T10 |
 | H5 | observeState single-read no retry → DOM/WS race | CLOSED | 0bad7f1 | T1 |
 | H6 | late-join edge case is no-op (logs "skipping") | CLOSED | 499624b | T5a |
 | H7 | timeout edge case does nothing (no submission skipped) | CLOSED | 3dcb326 | T5c |
@@ -62,7 +62,7 @@ Defects found in the harness itself (not app bugs). Plan: `docs/MP-PLAN-TESTHARN
 | H10 | 3 refresh edge cases log diffs but never fail test | CLOSED | 2d7113a | T3 |
 | H11 | 4 auth edge cases log verdict but never fail test | CLOSED | 2d7113a | T3 |
 | H12 | EdgeCaseEngine swallows inject errors | CLOSED | 2d7113a | T3 |
-| H13 | Spec assertions don't check edge case outcomes | OPEN | — | T4 |
+| H13 | Spec assertions don't check edge case outcomes | CLOSED | 7827d19 | T4 |
 | H14 | No pre-flight load check (load <10 rule human-only) | CLOSED | aacd954 | T6 |
 | H15 | Edge cases only run in game 1 of 3 (injected Set persists) | CLOSED | 59b4cc4 | T9 |
 | H16 | refresh() no auth-modal-never-detaches diagnostics | CLOSED | ef366a3 | T7 |
