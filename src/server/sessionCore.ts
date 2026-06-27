@@ -1534,7 +1534,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     // the snapshot. Single source of truth: ONE PRESSURE_APPLIED event per round
     // (idempotency via idx_round_events_unique_pressure partial unique index +
     // appendPressureAppliedIfNotExists ON CONFLICT DO NOTHING). Replaces the old
-    // separate /pressure HTTP write that was rejected by the FSM trigger (root
+    // separate clamp HTTP write that was rejected by the FSM trigger (root
     // cause of the pressure-clamp race — see A0/A1).
     // ═════════════════════════════════════════════════════════════════════════════
     if (commitCount === 1 && guard.round_started_phase_ends_at) {
