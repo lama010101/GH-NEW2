@@ -8,156 +8,225 @@ import styles from './help.module.css'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500', '700'] })
 
-type QuickLink = {
-  id: string
-  icon: string
-  title: string
-  blurb: string
-}
+/* ---------- Static config (icons + gradients only — no user-facing strings) ---------- */
 
-type Category = {
-  id: string
-  icon: string
-  title: string
-  description: string
+type QuickLink = { id: string; icon: string; titleKey: string; blurbKey: string }
+type Step = { id: string; titleKey: string; blurbKey: string }
+type GameMode = {
+  key: string
+  titleKey: string
+  subKey: string
+  descKey: string
+  featuresKey: string
+  gradient: string
 }
-
-type FaqItem = {
-  id: string
-  question: string
-  answer: string
-}
-
+type Category = { id: string; icon: string; titleKey: string; descKey: string }
+type FaqItem = { id: string; qKey: string; aKey: string }
+type Shortcut = { key: string; actionKey: string }
+type Trouble = { id: string; problemKey: string; solutionKey: string }
+type GsStep = { num: string; titleKey: string; descKey: string }
 
 const QUICK_LINKS: QuickLink[] = [
-  { id: 'gs-heading', icon: '🚀', title: 'Getting Started', blurb: 'Learn the basics and start your first game in under a minute.' },
-  { id: 'steps-heading', icon: '🎯', title: 'How to Play', blurb: 'Understand the map, year slider, hints, and submission flow.' },
-  { id: 'faq-heading', icon: '🏆', title: 'Scoring & XP', blurb: 'See how location and time accuracy translate into points.' },
-  { id: 'gm-heading', icon: '👥', title: 'Multiplayer', blurb: 'Create a lobby, invite friends, and compete in real time.' },
+  { id: 'gs-heading', icon: '🚀', titleKey: 'ql_gs_title', blurbKey: 'ql_gs_blurb' },
+  { id: 'steps-heading', icon: '🎯', titleKey: 'ql_steps_title', blurbKey: 'ql_steps_blurb' },
+  { id: 'faq-heading', icon: '🏆', titleKey: 'ql_faq_title', blurbKey: 'ql_faq_blurb' },
+  { id: 'gm-heading', icon: '👥', titleKey: 'ql_mp_title', blurbKey: 'ql_mp_blurb' },
 ]
 
-const CATEGORIES: Category[] = [
-  { id: 'c1', icon: '🗺️', title: 'Placing Your Guess', description: 'Click anywhere on the world map to drop a pin. You can zoom, pan, and search for locations. The closer your pin is to the actual event location, the higher your score. You can move the pin as many times as you want before submitting.' },
-  { id: 'c2', icon: '📅', title: 'Choosing the Year', description: 'Use the year slider or type directly to pick when you think the event occurred. The year range is customizable per game (default is from 400 BC to the current year). The smaller the gap between your guess and the actual year, the more points you earn.' },
-  { id: 'c3', icon: '💡', title: 'Using Hints', description: 'Each round offers hints organized by tier (Basic, Advanced, Expert). Hints are independently purchasable—no dependencies required. Each hint costs accuracy and XP penalty. Use them wisely to reveal landmarks, distances, centuries, or other clues.' },
-  { id: 'c4', icon: '🥇', title: 'Badges & Rewards', description: 'Earn Gold (100%), Silver (95–99%), or Bronze (90–94%) badges for Year accuracy, Location accuracy, or a balanced Combo score. Near-misses (88–89%) are shown when you just miss a badge. Badges are for instant feedback; your stats and XP are what persist.' },
-  { id: 'c5', icon: '⚙️', title: 'Account & Settings', description: 'Set your display name and choose a historical figure as your avatar. View your overall accuracy, total XP, member since date, and manage your account details from the Account page.' },
-  { id: 'c6', icon: '🔔', title: 'Notifications', description: 'Get notified when a friend invites you to a game, when it is your turn in an async match, or when a daily challenge resets. Tap the bell icon on the top bar to view recent activity.' },
+const GS_STEPS: GsStep[] = [
+  { num: '01', titleKey: 'gs_01_title', descKey: 'gs_01_desc' },
+  { num: '02', titleKey: 'gs_02_title', descKey: 'gs_02_desc' },
+  { num: '03', titleKey: 'gs_03_title', descKey: 'gs_03_desc' },
+  { num: '04', titleKey: 'gs_04_title', descKey: 'gs_04_desc' },
 ]
 
-const FAQ: FaqItem[] = [
-  { id: 'f1', question: 'How is my score calculated?', answer: 'Each round gives you up to 200 XP: 100 for location accuracy and 100 for year accuracy. Location score decays with distance from the actual place (max 20,000 km). Year score decays with the difference from the actual year (max 200 years). Hint penalties are subtracted after the round.' },
-  { id: 'f2', question: 'Can I play without an account?', answer: 'You can browse the home page, but you need an account to play games, save progress, earn XP, and compete against friends. Signing up is free and only takes a moment.' },
-  { id: 'f3', question: 'What are the different game modes?', answer: 'Practice is a solo warm-up with unlimited retries. Daily Challenge offers the same events for everyone every 24 hours with a global leaderboard. Level Up is a progressive run where you beat levels to unlock harder challenges. Compete lets you face friends in real-time Blitz or turn-based Relax matches.' },
-  { id: 'f4', question: 'How do hints work?', answer: 'Hints are purchased per round using accuracy debt. Each hint reveals information like nearby landmarks, country, century clues, or distances. Hints are organized by tier and are independently purchasable—no dependencies. The total hint debt is subtracted from your round score.' },
-  { id: 'f5', question: 'How do multiplayer games work?', answer: 'In Compete mode, create a lobby and invite friends via a 6-character room code. You can play synchronous Blitz (timed, all players guess together) or asynchronous Relax (take turns at your own pace). Games support up to 12 players with host-controlled settings.' },
-  { id: 'f6', question: 'Can I zoom into the image?', answer: 'No, the historical image cannot be zoomed. Study the photo carefully at its default size—look for architecture, clothing, vegetation, landmarks, and any visible text or flags to help you guess the location and year.' },
-  { id: 'f7', question: 'What happens if the timer runs out?', answer: 'In Blitz mode, if you do not submit before the timer expires, your guess is automatically submitted at the current pin location and selected year. In Relax mode, there is no timer—take your time.' },
-  { id: 'f8', question: 'Why did not my invite arrive?', answer: 'Make sure your friend has an account and is logged in. Invites appear in the notification bell. If they still do not see it, try refreshing the page or sending the room code directly via chat.' },
-  { id: 'f9', question: 'How do I earn badges?', answer: 'Badges are awarded based on accuracy per round: Gold (100%), Silver (95–99%), Bronze (90–94%). You can earn Year badges, Location badges, or Combo badges when both scores are high. Near-misses at 88–89% are also shown.' },
+const STEPS: Step[] = [
+  { id: 's1', titleKey: 'step_observe', blurbKey: 'step_observe_blurb' },
+  { id: 's2', titleKey: 'step_locate', blurbKey: 'step_locate_blurb' },
+  { id: 's3', titleKey: 'step_date', blurbKey: 'step_date_blurb' },
+  { id: 's4', titleKey: 'step_submit', blurbKey: 'step_submit_blurb' },
 ]
 
-const STEPS = [
-  { id: 's1', title: 'Observe', blurb: 'Study the historical image and any visible clues in the photo.' },
-  { id: 's2', title: 'Locate', blurb: 'Drop a pin on the map where you believe the event took place.' },
-  { id: 's3', title: 'Date It', blurb: 'Set the year using the slider or by typing directly.' },
-  { id: 's4', title: 'Submit', blurb: 'Lock in your guess before the timer runs out (if enabled).' },
-]
-
-const GAME_MODES = [
+const GAME_MODES: GameMode[] = [
   {
     key: 'practice',
-    title: 'Practice',
-    subtitle: 'Solo warm-up',
-    desc: 'Hone your skills with unlimited practice games. No pressure, no timer required.',
-    features: ['Unlimited retries', 'No timer', 'Custom era filters', 'Instant feedback'],
+    titleKey: 'practice',
+    subKey: 'solo_warmup',
+    descKey: 'gm_practice_desc',
+    featuresKey: 'gm_practice_features',
     gradient: 'linear-gradient(135deg, #7c3008, #ea6820)',
   },
   {
     key: 'daily',
-    title: 'Daily Challenge',
-    subtitle: 'Same events for everyone',
-    desc: 'A new challenge every day. Same events for everyone. Climb the global leaderboard.',
-    features: ['24-hour window', 'Global leaderboard', 'One attempt per day', 'XP multiplier'],
+    titleKey: 'daily_challenge',
+    subKey: 'same_events',
+    descKey: 'gm_daily_desc',
+    featuresKey: 'gm_daily_features',
     gradient: 'linear-gradient(135deg, #7a0a0a, #c81818)',
   },
   {
     key: 'levelup',
-    title: 'Level Up',
-    subtitle: 'Progressive runs',
-    desc: 'Beat levels and earn XP to unlock harder challenges. A true test of skill.',
-    features: ['Progressive difficulty', 'Unlockable content', 'Streak bonuses', 'Level-specific eras'],
+    titleKey: 'level_up',
+    subKey: 'progressive_runs',
+    descKey: 'gm_levelup_desc',
+    featuresKey: 'gm_levelup_features',
     gradient: 'linear-gradient(135deg, #2d1060, #7c3aed)',
   },
   {
     key: 'compete',
-    title: 'Compete',
-    subtitle: 'Play with friends',
-    desc: 'Real-time Blitz or turn-based Relax. Create a lobby, invite friends, compete.',
-    features: ['Blitz (timed)', 'Relax (async)', 'Up to 12 players', 'Room codes'],
+    titleKey: 'compete',
+    subKey: 'play_with_friends',
+    descKey: 'gm_compete_desc',
+    featuresKey: 'gm_compete_features',
     gradient: 'linear-gradient(135deg, #22d3ee, #0891b2)',
   },
 ]
 
-const KEYBOARD_SHORTCUTS = [
-  { key: 'Space', action: 'Submit guess' },
-  { key: 'H', action: 'Open hints panel' },
-  { key: 'M', action: 'Toggle map zoom' },
-  { key: 'Esc', action: 'Close modals / Cancel' },
-  { key: '↑ / ↓', action: 'Adjust year (when focused)' },
-  { key: 'Tab', action: 'Navigate between inputs' },
+const CATEGORIES: Category[] = [
+  { id: 'c1', icon: '🗺️', titleKey: 'cat_placing', descKey: 'cat_placing_desc' },
+  { id: 'c2', icon: '📅', titleKey: 'cat_year', descKey: 'cat_year_desc' },
+  { id: 'c3', icon: '💡', titleKey: 'cat_hints', descKey: 'cat_hints_desc' },
+  { id: 'c4', icon: '🥇', titleKey: 'cat_badges', descKey: 'cat_badges_desc' },
+  { id: 'c5', icon: '⚙️', titleKey: 'cat_account', descKey: 'cat_account_desc' },
+  { id: 'c6', icon: '🔔', titleKey: 'cat_notifications', descKey: 'cat_notifications_desc' },
 ]
 
-const TROUBLESHOOTING = [
-  {
-    id: 't1',
-    problem: 'Game is not loading or stuck on black screen',
-    solution: 'Try refreshing the page. If the issue persists, clear your browser cache and cookies, then reload. Ensure you are using a modern browser (Chrome, Firefox, Safari, Edge).',
-  },
-  {
-    id: 't2',
-    problem: 'My friend did not receive the invite',
-    solution: 'Make sure your friend is logged in. Invites appear in the notification bell at the top right. As a fallback, copy the 6-character room code and share it directly via any messaging app.',
-  },
-  {
-    id: 't3',
-    problem: 'Timer ran out before I could submit',
-    solution: 'In Blitz mode, guesses are auto-submitted when time expires. If you need more time, ask the host to disable the timer or switch to Relax mode which has no time limit.',
-  },
-  {
-    id: 't4',
-    problem: 'Hints are not showing any information',
-    solution: 'Hints must be purchased before they reveal content. Click the hint button, confirm the purchase, and the information will appear. Each hint reduces your final score.',
-  },
-  {
-    id: 't5',
-    problem: 'Score seems lower than expected',
-    solution: 'Check if you used hints—they apply penalties to both accuracy and XP. Also verify your distance from the actual location and year difference. The max per round is 200 XP (100 location + 100 year).',
-  },
+const FAQ: FaqItem[] = [
+  { id: 'f1', qKey: 'faq_q1', aKey: 'faq_a1' },
+  { id: 'f2', qKey: 'faq_q2', aKey: 'faq_a2' },
+  { id: 'f3', qKey: 'faq_q3', aKey: 'faq_a3' },
+  { id: 'f4', qKey: 'faq_q4', aKey: 'faq_a4' },
+  { id: 'f5', qKey: 'faq_q5', aKey: 'faq_a5' },
+  { id: 'f6', qKey: 'faq_q6', aKey: 'faq_a6' },
+  { id: 'f7', qKey: 'faq_q7', aKey: 'faq_a7' },
+  { id: 'f8', qKey: 'faq_q8', aKey: 'faq_a8' },
+  { id: 'f9', qKey: 'faq_q9', aKey: 'faq_a9' },
 ]
 
-const GETTING_STARTED_STEPS = [
-  { num: '01', title: 'Create your account', desc: 'Sign up with email or use a social login. Choose a display name and pick a historical figure as your avatar.' },
-  { num: '02', title: 'Play a Practice round', desc: 'Start with Practice mode to learn the ropes. No timer, unlimited retries—just explore and get comfortable.' },
-  { num: '03', title: 'Try the Daily Challenge', desc: 'Once ready, tackle the Daily Challenge. Same events as everyone else—see how you rank on the global leaderboard.' },
-  { num: '04', title: 'Invite friends', desc: 'Create a Compete lobby, copy the room code, and invite friends. Choose Blitz for real-time action or Relax for turn-based play.' },
+const SHORTCUTS: Shortcut[] = [
+  { key: 'Esc', actionKey: 'kb_esc_action' },
 ]
+
+const TROUBLESHOOTING: Trouble[] = [
+  { id: 't1', problemKey: 'ts_t1_problem', solutionKey: 'ts_t1_solution' },
+  { id: 't2', problemKey: 'ts_t2_problem', solutionKey: 'ts_t2_solution' },
+  { id: 't3', problemKey: 'ts_t3_problem', solutionKey: 'ts_t3_solution' },
+  { id: 't4', problemKey: 'ts_t4_problem', solutionKey: 'ts_t4_solution' },
+  { id: 't5', problemKey: 'ts_t5_problem', solutionKey: 'ts_t5_solution' },
+]
+
+/* ---------- Search index ---------- */
+/* Each entry maps to a translatable string. We search against the resolved
+   translation so the search respects the active locale. */
+
+type SearchEntry = {
+  id: string
+  section: string
+  title: string
+  body: string
+  anchor?: string
+}
+
+/* Sections that are open by default (others start collapsed on mobile). */
+const DEFAULT_OPEN: string[] = ['quick', 'faq']
 
 export default function HelpPage() {
   const router = useRouter()
   const t = useTranslations('help')
   const [query, setQuery] = useState('')
   const [openFaq, setOpenFaq] = useState<string | null>(FAQ[0]?.id ?? null)
+  const [openSections, setOpenSections] = useState<Set<string>>(
+    () => new Set(DEFAULT_OPEN),
+  )
 
-  const filteredFaq = useMemo(() => {
+  /* Build the search index from resolved translations. */
+  const searchIndex = useMemo<SearchEntry[]>(() => {
+    const entries: SearchEntry[] = []
+
+    GS_STEPS.forEach((s) => {
+      entries.push({
+        id: s.num,
+        section: t('getting_started_walkthrough'),
+        title: t(s.titleKey),
+        body: t(s.descKey),
+        anchor: 'gs-heading',
+      })
+    })
+
+    STEPS.forEach((s) => {
+      entries.push({
+        id: s.id,
+        section: t('play_four_steps'),
+        title: t(s.titleKey),
+        body: t(s.blurbKey),
+        anchor: 'steps-heading',
+      })
+    })
+
+    GAME_MODES.forEach((m) => {
+      entries.push({
+        id: m.key,
+        section: t('game_modes'),
+        title: t(m.titleKey),
+        body: `${t(m.subKey)} — ${t(m.descKey)} ${t(m.featuresKey)}`,
+        anchor: 'gm-heading',
+      })
+    })
+
+    CATEGORIES.forEach((c) => {
+      entries.push({
+        id: c.id,
+        section: t('browse_by_topic'),
+        title: t(c.titleKey),
+        body: t(c.descKey),
+        anchor: 'cat-heading',
+      })
+    })
+
+    FAQ.forEach((f) => {
+      entries.push({
+        id: f.id,
+        section: t('faq_title'),
+        title: t(f.qKey),
+        body: t(f.aKey),
+        anchor: 'faq-heading',
+      })
+    })
+
+    TROUBLESHOOTING.forEach((tr) => {
+      entries.push({
+        id: tr.id,
+        section: t('troubleshooting'),
+        title: t(tr.problemKey),
+        body: t(tr.solutionKey),
+        anchor: 'troubleshooting-heading',
+      })
+    })
+
+    return entries
+  }, [t])
+
+  const results = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return FAQ
-    return FAQ.filter(
-      (f) =>
-        f.question.toLowerCase().includes(q) ||
-        f.answer.toLowerCase().includes(q),
+    if (!q) return null
+    return searchIndex.filter(
+      (e) =>
+        e.title.toLowerCase().includes(q) ||
+        e.body.toLowerCase().includes(q) ||
+        e.section.toLowerCase().includes(q),
     )
-  }, [query])
+  }, [query, searchIndex])
+
+  const toggleSection = (id: string) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const isSearching = results !== null
 
   return (
     <div className={`${dmSans.className} ${styles.page}`}>
@@ -176,193 +245,246 @@ export default function HelpPage() {
           </div>
           <h1 className={styles.heroTitle}>{t('hero_title')}</h1>
           <p className={styles.heroSubtitle}>{t('hero_subtitle')}</p>
-
-          <div className={styles.searchWrap}>
-            <span className={styles.searchIcon} aria-hidden>🔍</span>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('search_placeholder')}
-              className={styles.searchInput}
-              aria-label={t('search_label')}
-            />
-            {query && (
-              <button
-                className={styles.searchClear}
-                onClick={() => setQuery('')}
-                aria-label={t('clear_search')}
-              >
-                ✕
-              </button>
-            )}
-          </div>
         </div>
       </header>
 
+      {/* Sticky search bar */}
+      <div className={styles.searchBar}>
+        <div className={styles.searchWrap}>
+          <span className={styles.searchIcon} aria-hidden>🔍</span>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('search_placeholder')}
+            className={styles.searchInput}
+            aria-label={t('search_label')}
+          />
+          {query && (
+            <button
+              className={styles.searchClear}
+              onClick={() => setQuery('')}
+              aria-label={t('clear_search')}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
       <main className={styles.main}>
-        {/* Quick links */}
-        <section className={styles.section} aria-labelledby="quick-heading">
-          <h2 id="quick-heading" className={styles.sectionTitle}>
-            Quick Start
-          </h2>
-          <div className={styles.quickGrid}>
-            {QUICK_LINKS.map((link) => (
-              <a key={link.id} href={`#${link.id}`} className={styles.quickCard}>
-                <span className={styles.quickIcon} aria-hidden>{link.icon}</span>
-                <span className={styles.quickTitle}>{link.title}</span>
-                <span className={styles.quickBlurb}>{link.blurb}</span>
-              </a>
-            ))}
-          </div>
-        </section>
-
-        {/* Getting Started Walkthrough */}
-        <section className={styles.section} aria-labelledby="gs-heading">
-          <h2 id="gs-heading" className={styles.sectionTitle}>
-            Getting Started Walkthrough
-          </h2>
-          <div className={styles.gsTimeline}>
-            {GETTING_STARTED_STEPS.map((step) => (
-              <div key={step.num} className={styles.gsStep}>
-                <span className={styles.gsNum}>{step.num}</span>
-                <div className={styles.gsBody}>
-                  <span className={styles.gsTitle}>{step.title}</span>
-                  <span className={styles.gsDesc}>{step.desc}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Step-by-step */}
-        <section className={styles.section} aria-labelledby="steps-heading">
-          <h2 id="steps-heading" className={styles.sectionTitle}>
-            Play in Four Steps
-          </h2>
-          <ol className={styles.steps}>
-            {STEPS.map((step, i) => (
-              <li key={step.id} className={styles.step}>
-                <span className={styles.stepNumber}>{i + 1}</span>
-                <div className={styles.stepBody}>
-                  <span className={styles.stepTitle}>{step.title}</span>
-                  <span className={styles.stepBlurb}>{step.blurb}</span>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* Game Modes */}
-        <section className={styles.section} aria-labelledby="gm-heading">
-          <h2 id="gm-heading" className={styles.sectionTitle}>
-            Game Modes
-          </h2>
-          <div className={styles.modeGrid}>
-            {GAME_MODES.map((m) => (
-              <div key={m.key} className={styles.modeCard} style={{ background: m.gradient }}>
-                <span className={styles.modeTitle}>{m.title}</span>
-                <span className={styles.modeSub}>{m.subtitle}</span>
-                <span className={styles.modeDesc}>{m.desc}</span>
-                <ul className={styles.modeFeatures}>
-                  {m.features.map((f, i) => (
-                    <li key={i}>{f}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Categories */}
-        <section className={styles.section} aria-labelledby="cat-heading">
-          <h2 id="cat-heading" className={styles.sectionTitle}>
-            Browse by Topic
-          </h2>
-          <div className={styles.catGrid}>
-            {CATEGORIES.map((cat) => (
-              <article key={cat.id} id={cat.id} className={styles.catCard}>
-                <span className={styles.catIcon} aria-hidden>{cat.icon}</span>
-                <h3 className={styles.catTitle}>{cat.title}</h3>
-                <p className={styles.catText}>{cat.description}</p>
-                <span className={styles.catLink}>Read more →</span>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section className={styles.section} aria-labelledby="faq-heading">
-          <h2 id="faq-heading" className={styles.sectionTitle}>
-            Frequently Asked Questions
-          </h2>
-          <div className={styles.faqList}>
-            {filteredFaq.length === 0 && (
-              <p className={styles.faqEmpty}>No results. Try another search.</p>
-            )}
-            {filteredFaq.map((item) => {
-              const open = openFaq === item.id
-              return (
-                <div
-                  key={item.id}
-                  className={`${styles.faqItem} ${open ? styles.faqItemOpen : ''}`}
-                >
-                  <button
-                    className={styles.faqQuestion}
-                    onClick={() => setOpenFaq(open ? null : item.id)}
-                    aria-expanded={open}
+        {isSearching ? (
+          /* ---------- Unified search results ---------- */
+          <section className={styles.section} aria-label={t('results_for', { q: query })}>
+            <h2 className={styles.sectionTitle}>
+              {t('results_for', { q: query })}
+            </h2>
+            {results.length === 0 ? (
+              <p className={styles.faqEmpty}>{t('no_results')}</p>
+            ) : (
+              <div className={styles.resultsList}>
+                {results.map((r) => (
+                  <a
+                    key={`${r.id}-${r.anchor}`}
+                    href={r.anchor ? `#${r.anchor}` : undefined}
+                    className={styles.resultCard}
+                    onClick={() => {
+                      setQuery('')
+                      if (r.anchor) {
+                        const el = document.getElementById(r.anchor)
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      }
+                    }}
                   >
-                    <span>{item.question}</span>
-                    <span className={styles.faqChevron} aria-hidden>
-                      {open ? '−' : '+'}
-                    </span>
-                  </button>
-                  {open && <p className={styles.faqAnswer}>{item.answer}</p>}
-                </div>
-              )
-            })}
-          </div>
-        </section>
-
-        {/* Keyboard Shortcuts */}
-        <section className={styles.section} aria-labelledby="shortcuts-heading">
-          <h2 id="shortcuts-heading" className={styles.sectionTitle}>
-            Keyboard Shortcuts
-          </h2>
-          <div className={styles.shortcutsGrid}>
-            {KEYBOARD_SHORTCUTS.map((shortcut, i) => (
-              <div key={i} className={styles.shortcutItem}>
-                <kbd className={styles.shortcutKey}>{shortcut.key}</kbd>
-                <span className={styles.shortcutAction}>{shortcut.action}</span>
+                    <span className={styles.resultSection}>{r.section}</span>
+                    <span className={styles.resultTitle}>{r.title}</span>
+                    <span className={styles.resultBody}>{r.body}</span>
+                  </a>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Troubleshooting */}
-        <section className={styles.section} aria-labelledby="troubleshooting-heading">
-          <h2 id="troubleshooting-heading" className={styles.sectionTitle}>
-            Troubleshooting
-          </h2>
-          <div className={styles.troubleList}>
-            {TROUBLESHOOTING.map((item) => (
-              <div key={item.id} className={styles.troubleItem}>
-                <div className={styles.troubleProblem}>{item.problem}</div>
-                <div className={styles.troubleSolution}>{item.solution}</div>
+            )}
+          </section>
+        ) : (
+          <>
+            {/* Quick links */}
+            <section className={styles.section} aria-labelledby="quick-heading">
+              <h2 id="quick-heading" className={styles.sectionTitle}>
+                {t('quick_start')}
+              </h2>
+              <div className={styles.quickScroll}>
+                {QUICK_LINKS.map((link) => (
+                  <a key={link.id} href={`#${link.id}`} className={styles.quickCard}>
+                    <span className={styles.quickIcon} aria-hidden>{link.icon}</span>
+                    <span className={styles.quickTitle}>{t(link.titleKey)}</span>
+                    <span className={styles.quickBlurb}>{t(link.blurbKey)}</span>
+                  </a>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+
+            {/* Getting Started Walkthrough */}
+            <CollapsibleSection
+              id="gs"
+              headingId="gs-heading"
+              title={t('getting_started_walkthrough')}
+              open={openSections.has('gs')}
+              onToggle={() => toggleSection('gs')}
+            >
+              <div className={styles.gsTimeline}>
+                {GS_STEPS.map((step) => (
+                  <div key={step.num} className={styles.gsStep}>
+                    <span className={styles.gsNum}>{step.num}</span>
+                    <div className={styles.gsBody}>
+                      <span className={styles.gsTitle}>{t(step.titleKey)}</span>
+                      <span className={styles.gsDesc}>{t(step.descKey)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            {/* Step-by-step */}
+            <CollapsibleSection
+              id="steps"
+              headingId="steps-heading"
+              title={t('play_four_steps')}
+              open={openSections.has('steps')}
+              onToggle={() => toggleSection('steps')}
+            >
+              <ol className={styles.steps}>
+                {STEPS.map((step, i) => (
+                  <li key={step.id} className={styles.step}>
+                    <span className={styles.stepNumber}>{i + 1}</span>
+                    <div className={styles.stepBody}>
+                      <span className={styles.stepTitle}>{t(step.titleKey)}</span>
+                      <span className={styles.stepBlurb}>{t(step.blurbKey)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </CollapsibleSection>
+
+            {/* Game Modes */}
+            <CollapsibleSection
+              id="gm"
+              headingId="gm-heading"
+              title={t('game_modes')}
+              open={openSections.has('gm')}
+              onToggle={() => toggleSection('gm')}
+            >
+              <div className={styles.modeGrid}>
+                {GAME_MODES.map((m) => (
+                  <div key={m.key} className={styles.modeCard} style={{ background: m.gradient }}>
+                    <span className={styles.modeTitle}>{t(m.titleKey)}</span>
+                    <span className={styles.modeSub}>{t(m.subKey)}</span>
+                    <span className={styles.modeDesc}>{t(m.descKey)}</span>
+                    <ul className={styles.modeFeatures}>
+                      {t(m.featuresKey).split(',').map((f, i) => (
+                        <li key={i}>{f.trim()}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            {/* Categories */}
+            <CollapsibleSection
+              id="cat"
+              headingId="cat-heading"
+              title={t('browse_by_topic')}
+              open={openSections.has('cat')}
+              onToggle={() => toggleSection('cat')}
+            >
+              <div className={styles.catGrid}>
+                {CATEGORIES.map((cat) => (
+                  <article key={cat.id} id={cat.id} className={styles.catCard}>
+                    <span className={styles.catIcon} aria-hidden>{cat.icon}</span>
+                    <h3 className={styles.catTitle}>{t(cat.titleKey)}</h3>
+                    <p className={styles.catText}>{t(cat.descKey)}</p>
+                    <span className={styles.catLink}>{t('cat_read_more')} →</span>
+                  </article>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            {/* FAQ */}
+            <section className={styles.section} aria-labelledby="faq-heading">
+              <h2 id="faq-heading" className={styles.sectionTitle}>
+                {t('faq_title')}
+              </h2>
+              <div className={styles.faqList}>
+                {FAQ.map((item) => {
+                  const open = openFaq === item.id
+                  return (
+                    <div
+                      key={item.id}
+                      className={`${styles.faqItem} ${open ? styles.faqItemOpen : ''}`}
+                    >
+                      <button
+                        className={styles.faqQuestion}
+                        onClick={() => setOpenFaq(open ? null : item.id)}
+                        aria-expanded={open}
+                      >
+                        <span>{t(item.qKey)}</span>
+                        <span className={styles.faqChevron} aria-hidden>
+                          {open ? '−' : '+'}
+                        </span>
+                      </button>
+                      {open && <p className={styles.faqAnswer}>{t(item.aKey)}</p>}
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+
+            {/* Keyboard Shortcuts */}
+            <CollapsibleSection
+              id="kb"
+              headingId="shortcuts-heading"
+              title={t('keyboard_shortcuts')}
+              open={openSections.has('kb')}
+              onToggle={() => toggleSection('kb')}
+            >
+              <div className={styles.shortcutsGrid}>
+                {SHORTCUTS.map((shortcut, i) => (
+                  <div key={i} className={styles.shortcutItem}>
+                    <kbd className={styles.shortcutKey}>{shortcut.key}</kbd>
+                    <span className={styles.shortcutAction}>{t(shortcut.actionKey)}</span>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            {/* Troubleshooting */}
+            <CollapsibleSection
+              id="ts"
+              headingId="troubleshooting-heading"
+              title={t('troubleshooting')}
+              open={openSections.has('ts')}
+              onToggle={() => toggleSection('ts')}
+            >
+              <div className={styles.troubleList}>
+                {TROUBLESHOOTING.map((item) => (
+                  <div key={item.id} className={styles.troubleItem}>
+                    <div className={styles.troubleProblem}>{t(item.problemKey)}</div>
+                    <div className={styles.troubleSolution}>{t(item.solutionKey)}</div>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
+          </>
+        )}
 
         {/* Contact CTA */}
         <section className={styles.contact} aria-labelledby="contact-heading">
           <h2 id="contact-heading" className={styles.contactTitle}>
-            Still need help?
+            {t('still_need_help')}
           </h2>
-          <p className={styles.contactText}>Cannot find what you are looking for? Reach out and we will get back to you shortly.</p>
+          <p className={styles.contactText}>{t('contact_text')}</p>
           <div className={styles.contactActions}>
-            <a href="mailto:support@guess-history.com" className={styles.contactPrimary}>Contact Support</a>
-            <a href="https://discord.gg/guess-history" target="_blank" rel="noopener noreferrer" className={styles.contactSecondary}>Join Community</a>
+            <a href="mailto:support@guess-history.com" className={styles.contactPrimary}>{t('contact_support')}</a>
+            <a href="https://discord.gg/guess-history" target="_blank" rel="noopener noreferrer" className={styles.contactSecondary}>{t('join_community')}</a>
           </div>
         </section>
 
@@ -370,11 +492,51 @@ export default function HelpPage() {
         <button
           className={styles.backToTop}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          aria-label="Back to top"
+          aria-label={t('back_to_top')}
         >
-          ↑ Back to top
+          ↑ {t('back_to_top')}
         </button>
       </main>
     </div>
+  )
+}
+
+/* ---------- Collapsible section helper ---------- */
+
+function CollapsibleSection({
+  id,
+  headingId,
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string
+  headingId: string
+  title: string
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <section
+      className={`${styles.section} ${styles.collapsible} ${open ? '' : styles.collapsed}`}
+      aria-labelledby={headingId}
+    >
+      <button
+        className={styles.sectionToggle}
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`${id}-content`}
+      >
+        <h2 id={headingId} className={styles.sectionTitle}>{title}</h2>
+        <span className={styles.sectionChevron} aria-hidden>
+          {open ? '−' : '+'}
+        </span>
+      </button>
+      <div id={`${id}-content`} className={styles.sectionContent}>
+        {children}
+      </div>
+    </section>
   )
 }

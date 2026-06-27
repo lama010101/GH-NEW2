@@ -2,9 +2,12 @@
 
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import dynamic from "next/dynamic";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useTransition } from "react";
 import { useTranslations } from 'next-intl';
 import { YearPicker } from "@/components/YearPicker";
+import NotificationBell from "@/components/NotificationBell";
+import { setLocale } from "@/actions/setLocale";
+import { LOCALE_COOKIE, locales, type Locale } from "@/i18n/config";
 import styles from "./RoundActiveSection.module.css";
 
 const GameMap = dynamic(
@@ -89,6 +92,17 @@ export default function RoundActiveSection({
   const toastTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [guessHint, setGuessHint] = useState<string | null>(null);
   const guessHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const whereSearchInputRef = useRef<HTMLInputElement>(null);
+  const yearEditInputRef = useRef<HTMLInputElement>(null);
+  const [localePending, startLocaleTransition] = useTransition();
+  const [currentLocale, setCurrentLocale] = useState<Locale>(() => {
+    if (typeof document === 'undefined') return 'en';
+    const match = document.cookie
+      .split(';')
+      .find(c => c.trim().startsWith(LOCALE_COOKIE + '='));
+    const val = match?.split('=')[1]?.trim();
+    return val && (locales as readonly string[]).includes(val) ? (val as Locale) : 'en';
+  });
 
   // Pan + zoom system refs
   const panX = useRef(0);
@@ -186,6 +200,19 @@ export default function RoundActiveSection({
   useEffect(() => {
     // Cinematic done — do not auto-open any panel
   }, [cinematicDone]);
+
+  // Auto-focus the relevant input field when a panel opens
+  useEffect(() => {
+    if (activePanel === null) return;
+    const id = window.setTimeout(() => {
+      if (activePanel === 'where') {
+        whereSearchInputRef.current?.focus();
+      } else if (activePanel === 'when') {
+        yearEditInputRef.current?.focus();
+      }
+    }, 120);
+    return () => window.clearTimeout(id);
+  }, [activePanel]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -582,6 +609,11 @@ export default function RoundActiveSection({
         </div>
       )}
 
+      {/* NOTIFICATION BELL — under the settings gear, only when unread */}
+      <div className={styles.settingsBellWrap}>
+        <NotificationBell onlyShowWhenUnread />
+      </div>
+
       {/* OPPONENT AVATARS */}
       {snapshot.players && snapshot.players.length >= 2 && playerId && (
         <div className={styles.opponentList}>
@@ -816,6 +848,7 @@ export default function RoundActiveSection({
                       <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
                     <input
+                      ref={whereSearchInputRef}
                       type="text"
                       value={searchQuery}
                       onChange={(e) => handleSearchChange(e.target.value)}
@@ -891,6 +924,7 @@ export default function RoundActiveSection({
                 {!isLocked && (
                   <div className={styles.sheetFieldWrap}>
                     <input
+                      ref={yearEditInputRef}
                       type="number"
                       value={yearEditValue}
                       onChange={(e) => {
@@ -980,26 +1014,24 @@ export default function RoundActiveSection({
                 <button
                   type="button"
                   onClick={() => {
-                    const locale = 'en';
-                    if (typeof document !== 'undefined') {
-                      document.cookie = `gh_locale=${locale}; path=/; max-age=31536000`;
-                    }
-                    window.location.reload();
+                    if (currentLocale === 'en' || localePending) return;
+                    setCurrentLocale('en');
+                    startLocaleTransition(() => { setLocale('en'); });
                   }}
-                  className={`${styles.settingsLanguageOption} ${(typeof document !== 'undefined' && document.cookie.includes('gh_locale=en')) || (!document.cookie.includes('gh_locale=')) ? styles.settingsLanguageOptionActive : ''}`}
+                  disabled={localePending}
+                  className={`${styles.settingsLanguageOption} ${currentLocale === 'en' ? styles.settingsLanguageOptionActive : ''}`}
                 >
                   EN
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    const locale = 'fr';
-                    if (typeof document !== 'undefined') {
-                      document.cookie = `gh_locale=${locale}; path=/; max-age=31536000`;
-                    }
-                    window.location.reload();
+                    if (currentLocale === 'fr' || localePending) return;
+                    setCurrentLocale('fr');
+                    startLocaleTransition(() => { setLocale('fr'); });
                   }}
-                  className={`${styles.settingsLanguageOption} ${typeof document !== 'undefined' && document.cookie.includes('gh_locale=fr') ? styles.settingsLanguageOptionActive : ''}`}
+                  disabled={localePending}
+                  className={`${styles.settingsLanguageOption} ${currentLocale === 'fr' ? styles.settingsLanguageOptionActive : ''}`}
                 >
                   FR
                 </button>

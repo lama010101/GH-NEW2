@@ -1,20 +1,26 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
+import { getTranslations } from 'next-intl/server'
 import { WaitlistForm } from '@/components/landing/WaitlistForm'
 
-export const metadata: Metadata = {
-  title: 'Guess-History — Test Your Knowledge of When and Where',
-  description:
-    'A historical guessing game. See real events from history and guess the exact year and location. Challenge friends, climb the leaderboard, and prove your history skills.',
-  openGraph: {
-    title: 'Guess-History — Test Your Knowledge of When and Where',
-    description:
-      'A historical guessing game. See real events from history and guess the exact year and location. Challenge friends, climb the leaderboard, and prove your history skills.',
-    type: 'website',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('landing')
+  const title = t('meta_title')
+  const description = t('meta_description')
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+    },
+  }
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const t = await getTranslations('landing')
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
       {/* Background image + dark overlay (same as /home) */}
@@ -22,7 +28,7 @@ export default function LandingPage() {
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0, 0, 0, 0.8)' }} />
 
       {/* Logo (same asset as TopBar) */}
-      <Image src="/icons/logo.webp" alt="Guess-History" width={360} height={96} priority style={{ position: 'relative', zIndex: 2, marginBottom: '2rem' }} />
+      <Image src="/icons/logo.webp" alt={t('logo_alt')} width={360} height={96} priority style={{ position: 'relative', zIndex: 2, marginBottom: '2rem' }} />
 
       {/* Hero */}
       <section className="flex flex-col items-center text-center max-w-2xl gap-6" style={{ position: 'relative', zIndex: 2 }}>
@@ -30,21 +36,20 @@ export default function LandingPage() {
           className="text-xl sm:text-2xl"
           style={{ fontFamily: 'var(--font-sora), sans-serif', color: 'var(--gh-text-primary)' }}
         >
-          Where and when did it happen?
+          {t('tagline')}
         </p>
 
         <p
           className="text-base sm:text-lg max-w-xl"
           style={{ color: 'var(--gh-text-secondary)' }}
         >
-          Test your knowledge of history. See real events and guess the exact year and location.
-          Challenge your friends, climb the leaderboard, and prove you know your history.
+          {t('hero_description')}
         </p>
 
         {/* Waitlist capture */}
         <div className="flex flex-col items-center gap-2 mt-4 w-full">
           <p className="text-sm" style={{ color: 'var(--gh-text-muted)' }}>
-            Join the waitlist to get early access:
+            {t('waitlist_prompt')}
           </p>
           <WaitlistForm />
         </div>
