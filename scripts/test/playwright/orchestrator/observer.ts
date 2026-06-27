@@ -96,26 +96,33 @@ export async function observeState(page: Page, opts?: { pollTimeoutMs?: number }
     }
   }
 
-  // Check ready-for-next in round-complete
+  // Check ready-for-next in round-complete (H3 fix — replaces placeholder
+  // with a more robust check using button disabled state + text content)
   let readyForNext: string[] = [];
   if (status === 'ROUND_COMPLETE') {
     const nextBtn = page.locator('[data-testid="round-next-btn"]').first();
     const present = await nextBtn.isVisible().catch(() => false);
     if (present) {
-      // We can't easily read the readyForNext array from DOM; just check the
-      // disabled state of the local viewer's next button.
       const disabled = await nextBtn.isDisabled().catch(() => false);
-      const ready = disabled ? 'viewer' : '';
-      readyForNext = ready ? [ready] : [];
+      const text = await nextBtn.textContent().catch(() => '');
+      // If button is disabled or text indicates "waiting", viewer has clicked next
+      const isReady = disabled || text.toLowerCase().includes('waiting');
+      readyForNext = isReady ? ['viewer'] : [];
+      console.log(`[OBSERVE] readyForNext: disabled=${disabled} text="${text}" → ${isReady ? 'READY' : 'NOT READY'}`);
     }
   }
 
   // hasSubmitted: in round-active, check if submit button is in submitted state
+  // (H4 fix — replaces single CSS-class check with multi-indicator approach)
   let hasSubmitted = false;
   if (status === 'ROUND_ACTIVE') {
     const submitBtn = page.locator('[data-testid="round-submit-btn"]').first();
+    const dataSubmitted = await submitBtn.getAttribute('data-submitted').catch(() => null);
+    const disabled = await submitBtn.isDisabled().catch(() => false);
     const cls = await submitBtn.getAttribute('class').catch(() => '');
-    hasSubmitted = !!cls && cls.includes('submitBtnSubmitted');
+    // Check multiple indicators: data-submitted attribute, disabled state, CSS class
+    hasSubmitted = dataSubmitted === 'true' || disabled || (!!cls && cls.includes('submitBtnSubmitted'));
+    console.log(`[OBSERVE] hasSubmitted: dataSubmitted=${dataSubmitted} disabled=${disabled} cls="${cls}" → ${hasSubmitted}`);
   }
 
   return {
