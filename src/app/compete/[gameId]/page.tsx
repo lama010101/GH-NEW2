@@ -31,6 +31,9 @@ import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import LobbySection from "@/components/compete/LobbySection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
+import TopBar from "@/components/layout/TopBar";
+import { NavModal } from "@/components/NavModal";
+import { supabaseBrowser } from "@/core/supabaseBrowser";
 import useCompeteTimer from "@/hooks/useCompeteTimer";
 import useCompeteSocket from "@/hooks/useCompeteSocket";
 import btnStyles from "@/components/ui/Button.module.css";
@@ -61,12 +64,18 @@ export default function CompeteGamePage() {
     whereAccPenalty: 0,
     whenAccPenalty: 0,
   });
-  const [whereLbExpanded, setWhereLbExpanded] = useState(false);
-  const [whenLbExpanded, setWhenLbExpanded] = useState(false);
+  const [whereLbExpanded, setWhereLbExpanded] = useState(true);
+  const [whenLbExpanded, setWhenLbExpanded] = useState(true);
   const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [wsDisconnected, setWsDisconnected] = useState(false);
   const [locationName, setLocationName] = useState<string | null>(null);
+  // Lobby TopBar data (mirrors home page sourcing)
+  const [showNavModal, setShowNavModal] = useState(false);
+  const [topbarAccuracy, setTopbarAccuracy] = useState("--");
+  const [topbarXp, setTopbarXp] = useState("--");
+  const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
+  const [topbarInitials, setTopbarInitials] = useState("PL");
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
     xpPenalty: 0,
@@ -85,6 +94,35 @@ export default function CompeteGamePage() {
   const guessLngRef = useRef<number | null>(null);
 
 
+  // Lobby TopBar: fetch viewer stats + profile (mirrors home page sourcing)
+  useEffect(() => {
+    if (!playerId) return;
+    (async () => {
+      try {
+        const { data: stats } = await supabaseBrowser
+          .from('player_global_stats')
+          .select('avg_accuracy,total_xp')
+          .eq('player_id', playerId)
+          .single();
+        if (stats) {
+          setTopbarAccuracy(String(Math.round(Number(stats.avg_accuracy))));
+          setTopbarXp(Number(stats.total_xp).toLocaleString('fr-FR'));
+        }
+      } catch {}
+      try {
+        const { data: profile } = await supabaseBrowser
+          .from('profiles')
+          .select('display_name,avatar_url')
+          .eq('id', playerId)
+          .single();
+        if (profile) {
+          if (profile.avatar_url) setTopbarAvatarUrl(profile.avatar_url);
+          if (profile.display_name) setTopbarInitials(profile.display_name.slice(0, 2).toUpperCase());
+        }
+      } catch {}
+    })();
+  }, [playerId]);
+
   // Global error capture for React minified errors
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
@@ -100,8 +138,8 @@ export default function CompeteGamePage() {
 
   // Reset card expansion when round changes
   useEffect(() => {
-    setWhereLbExpanded(false);
-    setWhenLbExpanded(false);
+    setWhereLbExpanded(true);
+    setWhenLbExpanded(true);
     setWhereCluesExpanded(false);
     setWhenCluesExpanded(false);
   }, [snapshot?.currentRoundIndex]);
@@ -488,10 +526,28 @@ export default function CompeteGamePage() {
 
   return (
     <main className={`app-shell ${pageStyles.pageShell}`}>
-      {snapshot?.status !== "ROUND_ACTIVE" && (
+      {snapshot?.status !== "ROUND_ACTIVE" && snapshot?.status !== "LOBBY" && (
         <div className={pageStyles.notificationWrap}>
           <NotificationBell />
         </div>
+      )}
+      {snapshot?.status === "LOBBY" && (
+        <>
+          <TopBar
+            accuracy={topbarAccuracy}
+            xp={topbarXp}
+            avatarUrl={topbarAvatarUrl}
+            initials={topbarInitials}
+            onAvatarClick={() => setShowNavModal(true)}
+          />
+          <NavModal
+            isOpen={showNavModal}
+            onClose={() => setShowNavModal(false)}
+            avatarUrl={topbarAvatarUrl}
+            initials={topbarInitials}
+            displayName={displayName ?? ""}
+          />
+        </>
       )}
       <div className={pageStyles.bgImage} />
       <div className={pageStyles.bgScrim} />
@@ -553,6 +609,7 @@ export default function CompeteGamePage() {
 
         {snapshot.status === "LOBBY" ? (
           <>
+            <div className={pageStyles.lobbyTopBarSpacer} />
             {wsDisconnected && (
               <section
                 className={`card ${pageStyles.connectionLostCard}`}

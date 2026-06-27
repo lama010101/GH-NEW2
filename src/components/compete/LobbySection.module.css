@@ -73,7 +73,7 @@
   align-items: start;
 }
 .lobby-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+  background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03)), rgba(15, 25, 50, 0.90);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 18px;
   padding: 18px;
@@ -125,7 +125,7 @@
 .lobby-subsection-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
 }
 .lobby-subsection-title {
@@ -359,6 +359,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
+  margin-left: auto;
   font-size: var(--font-2xs);
   font-weight: 600;
   color: rgba(255,255,255,0.55);
@@ -777,6 +778,7 @@
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 .lobbyShareBtn {
   font-size: var(--font-2xs);

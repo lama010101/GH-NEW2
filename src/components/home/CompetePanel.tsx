@@ -26,6 +26,14 @@ function getAccuracyColor(pct: number): string {
   return '#ef4444'
 }
 
+function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) => string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  if (diff < 60000) return t('notifications.just_now')
+  if (diff < 3600000) return t('notifications.m_ago', { n: Math.floor(diff / 60000) })
+  if (diff < 86400000) return t('notifications.h_ago', { n: Math.floor(diff / 3600000) })
+  return t('notifications.d_ago', { n: Math.floor(diff / 86400000) })
+}
+
 export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: {
   onLobby: (gameId: string) => void
   playerId: string
@@ -45,6 +53,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     avatar_url?: string
     created_at: string
     expires_at: string
+    mode?: 'sync' | 'async'
   }>>([])
   const [invitesLoading, setInvitesLoading] = useState(true)
   const [tab, setTab] = useState<'invitations'|'your_turn'|'completed'>('invitations')
@@ -268,7 +277,14 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                   </div>
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>{invite.inviter_name ?? 'Unknown'}</span>
-                    <span className={cpStyles.gameSub}>{t('home.compete_invited_you')}</span>
+                    <span className={cpStyles.gameSub}>
+                      {invite.mode
+                        ? t('home.compete_invite_meta', {
+                            mode: invite.mode === 'sync' ? t('home.compete_mode_rush') : t('home.compete_mode_relax'),
+                            time: timeAgo(invite.created_at, t),
+                          })
+                        : t('home.compete_invite_sent', { time: timeAgo(invite.created_at, t) })}
+                    </span>
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDecline(invite.id) }}

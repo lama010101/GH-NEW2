@@ -35,19 +35,24 @@ function NotificationItem({
 }) {
   const router = useRouter();
   const t = useTranslations('notifications');
+  const tHome = useTranslations('home');
 
   if (notification.type === 'lobby_invite') {
     const inviterName = (notification.payload.inviter_name as string) ?? 'Someone';
     const gameId = notification.payload.game_id as string;
+    const mode = notification.payload.mode as ('sync' | 'async' | undefined);
+    const modeLabel = mode
+      ? (mode === 'sync' ? tHome('compete_mode_rush') : tHome('compete_mode_relax'))
+      : null;
 
     return (
       <div className={styles.notifItem}>
         {notification.read === false && <span className={styles.unreadDot} />}
         <div className={styles.notifBody}>
           <div className={styles.notifText}>
-            {inviterName} {t('invited_you')}
+            {modeLabel ? `${inviterName} · ${modeLabel}` : inviterName}
           </div>
-          <div className={styles.notifTime}>{timeAgo(notification.created_at, t)}</div>
+          <div className={styles.notifTime}>{t('sent', { time: timeAgo(notification.created_at, t) })}</div>
           <button
             type="button"
             className={styles.joinBtn}

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { getDbPool } from "@/server/db";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,22 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Failed to fetch invitations" }, { status: 500 });
       }
 
+      // Resolve each invitation's game mode (sync = rush, async = relax) from
+      // the sessions table via the direct DB pool. The token-scoped Supabase
+      // client is RLS-bound and may not read sessions, so we use the pool here.
+      const gameIds = Array.from(new Set((invitations ?? []).map((i) => i.game_id)));
+      const modeByGameId = new Map<string, string>();
+      if (gameIds.length > 0) {
+        const pool = getDbPool();
+        const modeResult = await pool.query<{ game_id: string; mode: string }>(
+          `SELECT game_id, mode FROM sessions WHERE game_id = ANY($1)`,
+          [gameIds]
+        );
+        for (const row of modeResult.rows) {
+          modeByGameId.set(row.game_id, row.mode);
+        }
+      }
+
       const invitesWithNames = await Promise.all(
         (invitations ?? []).map(async (invite) => {
           const { data: profile } = await supabase
@@ -57,6 +74,7 @@ export async function GET(request: NextRequest) {
             ...invite,
             inviter_name: profile?.display_name ?? "Unknown",
             avatar_url: profile?.avatar_url ?? undefined,
+            mode: modeByGameId.get(invite.game_id) ?? undefined,
           };
         })
       );

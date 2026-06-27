@@ -253,7 +253,7 @@ export default function WhenCard({
                 >
                   <span className={styles.lbRank}>{rank ?? "—"}</span>
                   <span className={styles.lbNameGroup}>
-                    <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} />
+                    <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} size={40} />
                     <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
                       {row.displayName}
                     </span>

@@ -153,6 +153,8 @@
     "compete_no_your_turn": "Aucune partie en attente",
     "compete_no_completed": "Aucune partie terminée",
     "compete_invited_you": "Vous a invité à une partie",
+    "compete_invite_meta": "{mode} · envoyé {time}",
+    "compete_invite_sent": "envoyé {time}",
     "compete_round_label": "Manche {current} / {total}",
     "compete_play": "JOUER",
     "compete_mode_rush": "Rush",
@@ -344,6 +346,7 @@
     "no_image": "Aucune image disponible",
     "hint_penalties": "Pénalités d'indices déduites",
     "round_leaderboard": "Classement du round",
+    "breakdown": "Détail",
     "hints_used": "Indices utilisés",
     "era_presets": "Préréglages d'ère",
     "hint_desc_broad_era": "Indice d'ère général",
@@ -465,6 +468,7 @@
     "h_ago": "il y a {n} h",
     "d_ago": "il y a {n} j",
     "invited_you": "vous a invité à une partie",
+    "sent": "envoyé {time}",
     "join_game": "Rejoindre"
   },
   "landing": {

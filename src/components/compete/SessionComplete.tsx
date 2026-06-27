@@ -304,7 +304,7 @@ export default function SessionComplete({
                         })}
                         aria-expanded={openRounds.has(i)}
                       >
-                        <span className={styles.roundCardHeaderLabel}>{tGame('round_label_short', { n: i + 1 })}</span>
+                        <span className={styles.roundCardHeaderLabel}>#{i + 1}</span>
                         <span className={styles.roundCardHeaderTitle}>{round.title}</span>
                         <span className={styles.roundCardChevron} aria-hidden="true">
                           {openRounds.has(i) ? '▲' : '▼'}
@@ -336,7 +336,7 @@ export default function SessionComplete({
                                   <span className={styles.miniSymbol}>%</span>
                                 </div>
                                 <div className={styles.miniLabel}>{tGame('total')}</div>
-                                <div className={styles.miniSub}>{roundStats.totalScore} pts</div>
+                                <div className={styles.miniSub}>{roundStats.totalScore} XP</div>
                               </div>
 
                               <div className={`${styles.miniTile} ${styles.miniTileWhere}`}>

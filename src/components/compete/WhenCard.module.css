@@ -1,7 +1,7 @@
 /* WhenCard — uses tokens from gh-card--when set in globals.css */
 
 .card {
-  background: var(--gh-when-card-bg);
+  background: rgba(0, 0, 0, 0.90);
   border: 1px solid var(--gh-when-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
@@ -228,9 +228,9 @@
 .lbRow {
   display: flex;
   align-items: center;
-  padding: 7px 8px;
-  gap: 6px;
-  border-radius: 6px;
+  padding: 10px 12px;
+  gap: 12px;
+  border-radius: 14px;
 }
 
 .lbRowSelf {
@@ -253,7 +253,7 @@
   font-size: var(--font-sm);
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 12px;
 }
 
 .lbYouTag {

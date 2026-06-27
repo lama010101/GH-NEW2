@@ -332,11 +332,22 @@
 /* ── Guess hint ── */
 
 .guessHint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 31;
+  pointer-events: none;
   text-align: center;
-  font-size: var(--font-xs);
-  font-weight: 600;
-  color: var(--gh-orange);
-  padding: 4px 0 2px;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid var(--gh-orange);
+  border-radius: 999px;
+  padding: 8px 16px;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Navbar ── */

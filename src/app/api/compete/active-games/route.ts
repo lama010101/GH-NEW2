@@ -18,7 +18,10 @@ export async function GET(_request: NextRequest) {
   const pool = getDbPool();
 
   try {
-    // Step 1: Fetch all sessions where this player is active
+    // Step 1: Fetch all sessions this player participates in — including ones
+    // they have left (left_at IS NOT NULL). Surfacing left-but-in-progress
+    // games lets the player resume from the Home → Compete → Your Turn list;
+    // re-joining the game clears left_at server-side.
     const sessionsResult = await pool.query<{
       game_id: string;
       total_rounds: number;
@@ -29,7 +32,6 @@ export async function GET(_request: NextRequest) {
        FROM sessions s
        JOIN session_players sp ON sp.game_id = s.game_id
        WHERE sp.player_id = $1
-         AND sp.left_at IS NULL
          AND s.mode IN ('sync', 'async')
        ORDER BY s.created_at DESC
        LIMIT 20`,
@@ -53,7 +55,8 @@ export async function GET(_request: NextRequest) {
     for (const session of sessionsResult.rows) {
       const gameId = session.game_id;
 
-      // Step 2: Get opponent
+      // Step 2: Get opponent. Prefer an active opponent, but still return one
+      // that has left so a session the player can resume is not skipped.
       const opponentResult = await pool.query<{
         player_id: string;
         display_name: string;
@@ -63,7 +66,7 @@ export async function GET(_request: NextRequest) {
          FROM session_players sp
          WHERE sp.game_id = $1
            AND sp.player_id != $2
-           AND sp.left_at IS NULL
+         ORDER BY (sp.left_at IS NULL) DESC, sp.joined_at ASC
          LIMIT 1`,
         [gameId, playerId]
       );

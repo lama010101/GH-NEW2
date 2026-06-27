@@ -153,6 +153,8 @@
     "compete_no_your_turn": "No games waiting for your turn",
     "compete_no_completed": "No completed games yet",
     "compete_invited_you": "Invited you to a game",
+    "compete_invite_meta": "{mode} · sent {time}",
+    "compete_invite_sent": "sent {time}",
     "compete_round_label": "Round {current} / {total}",
     "compete_play": "PLAY",
     "compete_mode_rush": "Rush",
@@ -344,6 +346,7 @@
     "no_image": "No image available",
     "hint_penalties": "Hint penalties deducted",
     "round_leaderboard": "Round leaderboard",
+    "breakdown": "Breakdown",
     "hints_used": "Hints used",
     "era_presets": "Era Presets",
     "hint_desc_broad_era": "Broad era clue",
@@ -465,6 +468,7 @@
     "h_ago": "{n}h ago",
     "d_ago": "{n}d ago",
     "invited_you": "invited you to a game",
+    "sent": "sent {time}",
     "join_game": "Join Game"
   },
   "landing": {
