@@ -331,13 +331,7 @@ export default function CompeteGamePage() {
     const reverseGeocode = async (lat: number, lng: number) => {
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
-          {
-            headers: {
-              "Accept-Language": "en",
-              "User-Agent": "GuessHistory/1.0",
-            },
-          }
+          `/api/geocode/reverse?lat=${lat}&lon=${lng}&zoom=10`
         );
         if (!res.ok) throw new Error("Geocode failed");
         const data = await res.json();
@@ -494,9 +488,11 @@ export default function CompeteGamePage() {
 
   return (
     <main className={`app-shell ${pageStyles.pageShell}`}>
-      <div className={pageStyles.notificationWrap}>
-        <NotificationBell />
-      </div>
+      {snapshot?.status !== "ROUND_ACTIVE" && (
+        <div className={pageStyles.notificationWrap}>
+          <NotificationBell />
+        </div>
+      )}
       <div className={pageStyles.bgImage} />
       <div className={pageStyles.bgScrim} />
       {timerClamped && (
