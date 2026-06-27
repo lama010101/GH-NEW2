@@ -38,6 +38,11 @@ export class GameOrchestrator {
   // Cleared at the start of each round. (H7 fix)
   skipSubmissionPlayerIds: Set<string> = new Set();
 
+  // Player IDs that should be skipped during readyNext in runRound.
+  // Populated by the 'only-one-next' edge case to simulate only one player
+  // clicking next round. Cleared at the start of each round. (H9 fix)
+  skipReadyNextPlayerIds: Set<string> = new Set();
+
   constructor(opts: GameOrchestratorOptions) {
     this.opts = opts;
   }
@@ -214,6 +219,8 @@ export class GameOrchestrator {
 
     // Clear any skip-submission flags from prior rounds
     this.skipSubmissionPlayerIds.clear();
+    // Clear any skip-ready-next flags from prior rounds
+    this.skipReadyNextPlayerIds.clear();
 
     // Assert all browsers see ROUND_ACTIVE
     await this.assertAllBrowsersSeeStatus('ROUND_ACTIVE', errors);
@@ -256,6 +263,10 @@ export class GameOrchestrator {
     // All players ready for next round
     this.opts.onStep?.('All players ready for next round...');
     for (const client of this.wsClients) {
+      if (this.skipReadyNextPlayerIds.has(client.user.id)) {
+        console.log(`[ORCHESTRATOR] Skipping readyNext for ${client.user.displayName} (only-one-next edge case)`);
+        continue;
+      }
       client.readyNext(roundIndex);
     }
 
