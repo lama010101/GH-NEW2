@@ -127,6 +127,13 @@ const SetResultsTimerSchema = z.object({
   resultsAutoAdvanceSec: z.number().int().min(0).max(300)
 });
 
+const SetSubModeSchema = z.object({
+  type: z.literal("SET_SUB_MODE"),
+  playerId: z.string().uuid(),
+  mode: z.enum(["sync", "async"]),
+  sessionDeadlineDays: z.number().int().min(0).max(14)
+});
+
 const KickPlayerSchema = z.object({
   type: z.literal("KICK_PLAYER"),
   playerId: z.string().uuid(),
@@ -154,6 +161,7 @@ const ServerMessageSchema = z.discriminatedUnion("type", [
   SetYearRangeSchema,
   SetEraSelectionSchema,
   SetResultsTimerSchema,
+  SetSubModeSchema,
   KickPlayerSchema,
   PlayAgainSchema,
   PingSchema
@@ -192,6 +200,7 @@ export type ServerMessage =
   | { type: "SET_TIMER"; playerId: string; roundTimerSec: number }
   | { type: "SET_YEAR_RANGE"; playerId: string; yearMin: number; yearMax: number }
   | { type: "SET_RESULTS_TIMER"; playerId: string; resultsAutoAdvanceSec: number }
+  | { type: "SET_SUB_MODE"; playerId: string; mode: "sync" | "async"; sessionDeadlineDays: number }
   | { type: "SET_ERA_SELECTION"; playerId: string; selectedEras: string[]; yearMin: number; yearMax: number }
   | { type: "KICK_PLAYER"; playerId: string; targetPlayerId: string }
   | { type: "PLAY_AGAIN"; playerId: string; newGameId: string }
@@ -228,8 +237,8 @@ export default class GameServer {
   // out of the active roster within a round.
   private static readonly LEAVE_GRACE_MS = 5_000;
   private static readonly ROUND_EXPIRY_SUBMIT_GRACE_MS = 1_000;
-  // GAME_MODES_SPEC.md Section 5.13: "Minimum 2 players to start."
-  private static readonly MIN_PLAYERS_TO_START = 2;
+  // Solo play allowed: host may start alone (no minimum 2 players).
+  private static readonly MIN_PLAYERS_TO_START = 1;
 
   // Runtime state — derived, rebuildable from DB at any time.
   // This is the DO's authoritative view. DB remains canonical truth.
@@ -1510,6 +1519,36 @@ export default class GameServer {
           if (!response.ok) {
             const text = await response.text();
             console.error(`[SET_RESULTS_TIMER] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
+          this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "SET_SUB_MODE": {
+          // Validate: only allowed in LOBBY phase (before game starts)
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "SET_SUB_MODE only allowed in LOBBY phase");
+            break;
+          }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/sub-mode`;
+
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              mode: data.mode,
+              sessionDeadlineDays: data.sessionDeadlineDays
+            })
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[SET_SUB_MODE] API error ${response.status}: ${text}`);
             break;
           }
           const snapshot = await response.json();

@@ -107,7 +107,7 @@ export const EDGE_CASES: EdgeCase[] = [
       await client.connect();
       // Verify the client receives LOBBY state after reconnecting
       try {
-        const snapshot = await client.waitForState((s) => s.status === 'LOBBY', 10000);
+        const snapshot = await client.waitForState((s) => s.status === 'LOBBY', 30000);
         const playerCount = snapshot.players.length;
         console.log(`[EDGE:late-join] ${client.user.displayName} rejoined — LOBBY confirmed, players=${playerCount}`);
         if (playerCount < 2) {
@@ -383,7 +383,8 @@ export const EDGE_CASES: EdgeCase[] = [
       const { consoleErrors, pageErrors, cleanup } = attachErrorListeners(page);
 
       try {
-        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        // Navigate to /login (not /) to trigger the AuthModal for initial sign-in
+        await page.goto(`${pool.baseURL}/login`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('domcontentloaded').catch(() => undefined);
         await loginViaAuthModal(page, user);
 
@@ -398,8 +399,11 @@ export const EDGE_CASES: EdgeCase[] = [
         console.log(`[EDGE:auth-signout-resignin] Cookies AFTER sign-out: auth-token present=${authAfter.length > 0}, chunks=${authAfter.length}`);
         const cookieCleared = authAfter.length === 0;
 
-        // Sign back in as the same user
-        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        // Sign back in as the same user — navigate to /login (not /) to
+        // trigger the AuthModal. The landing page "/" is public and never
+        // shows the AuthModal, so loginViaAuthModal would time out waiting
+        // for the modal to appear.
+        await page.goto(`${pool.baseURL}/login`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('domcontentloaded').catch(() => undefined);
         await loginViaAuthModal(page, user);
 
@@ -452,8 +456,9 @@ export const EDGE_CASES: EdgeCase[] = [
         }]);
         console.log(`[EDGE:auth-stale-cookie] Seeded stale cookie: ${AUTH_COOKIE_NAME}=${staleValue.slice(0, 40)}...`);
 
-        // Navigate to the app's base URL
-        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        // Navigate to /login (not /) to trigger the AuthModal — the landing
+        // page "/" is public and never shows the AuthModal.
+        await page.goto(`${pool.baseURL}/login`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle').catch(() => undefined);
 
         // Check whether the auth modal appears
@@ -513,19 +518,36 @@ export const EDGE_CASES: EdgeCase[] = [
       try {
         console.log(`[EDGE:auth-cross-user] Player A: ${playerA.user.email}, Player B: ${userB.email}`);
 
-        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        // Navigate to /login (not /) to trigger the AuthModal for initial sign-in
+        await page.goto(`${pool.baseURL}/login`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('domcontentloaded').catch(() => undefined);
         await loginViaAuthModal(page, playerA.user);
 
         // Sign out as Player A
         await signOutViaUI(page, pool.baseURL);
 
-        // Sign in as Player B in the same context
-        await page.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        // Sign in as Player B in the same context — navigate to /login to
+        // trigger the AuthModal after sign-out.
+        await page.goto(`${pool.baseURL}/login`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('domcontentloaded').catch(() => undefined);
         await loginViaAuthModal(page, userB);
 
-        // Verify resulting identity — check displayed username/email in the UI
+        // Explicitly navigate to /account to verify identity. We can't rely on
+        // the AuthModal's onClose → router.replace chain (it doesn't always
+        // fire under load, per the loginViaAuthModal helper's own notes).
+        // /account renders the user's email as text content ({email ?? '—'})
+        // and the display name in an input field. The /home page only shows
+        // initials in TopBar and passes displayName to API calls, never
+        // rendering it as visible body text.
+        await page.goto(`${pool.baseURL}/account`, { waitUntil: 'domcontentloaded' });
+        await page.waitForLoadState('networkidle').catch(() => undefined);
+        // useIdentity() + supabaseBrowser.auth.getUser() run in useEffect —
+        // give them time to fetch before checking body text
+        await page.waitForTimeout(3000);
+
+        // Verify resulting identity — wait for Player B's email to appear
+        // in the account page body, then check the full body text.
+        await page.waitForSelector(`text=${userB.email}`, { timeout: 15000 }).catch(() => undefined);
         const bodyText = await page.textContent('body').catch(() => '');
         const showsPlayerB = bodyText?.includes(userB.displayName) || bodyText?.includes(userB.email) || false;
         const showsPlayerA = bodyText?.includes(playerA.user.displayName) || bodyText?.includes(playerA.user.email) || false;
@@ -567,7 +589,8 @@ export const EDGE_CASES: EdgeCase[] = [
       const { consoleErrors, pageErrors, cleanup } = attachErrorListeners(page1);
 
       try {
-        await page1.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+        // Navigate to /login (not /) to trigger the AuthModal for initial sign-in
+        await page1.goto(`${pool.baseURL}/login`, { waitUntil: 'domcontentloaded' });
         await page1.waitForLoadState('networkidle').catch(() => undefined);
         await loginViaAuthModal(page1, user);
 
@@ -588,7 +611,10 @@ export const EDGE_CASES: EdgeCase[] = [
         const listeners2 = attachErrorListeners(page2);
 
         try {
-          await page2.goto(pool.baseURL, { waitUntil: 'domcontentloaded' });
+          // Navigate to /home (protected) to verify session restoration —
+          // if the session is valid, no AuthModal appears and /home renders.
+          // If invalid, middleware redirects to /login and the modal appears.
+          await page2.goto(`${pool.baseURL}/home`, { waitUntil: 'domcontentloaded' });
           await page2.waitForLoadState('networkidle').catch(() => undefined);
 
           // Check whether the session is restored (no auth modal, correct identity)

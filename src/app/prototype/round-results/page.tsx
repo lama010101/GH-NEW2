@@ -15,10 +15,12 @@
 // Does NOT touch or import any existing app files.
 // ============================================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./round-results.module.css";
 
 type Badge = { dimension: "year" | "location" | "combo"; tier: "gold" | "silver" | "bronze" } | null;
+
+type CategoryBadges = { tier: "gold" | "silver" | "bronze"; count: number } | null;
 
 type Result = {
   id: string;
@@ -31,6 +33,10 @@ type Result = {
   distanceKm: number;
   badge: Badge;
   isMe: boolean;
+  whereBadges?: CategoryBadges;
+  whenBadges?: CategoryBadges;
+  whereXp?: number;
+  whenXp?: number;
 };
 
 const CORRECT_YEAR = 1989;
@@ -42,24 +48,18 @@ const TOTAL_ROUNDS = 5;
 const CURRENT_ROUND = 3; // 0-indexed -> round 4 of 5 display below uses +1
 
 const RESULTS: Result[] = [
-  { id: "p1", name: "Alex Rivera", score: 1840, accuracy: 94, locationScore: 96, timeScore: 92, guessYear: 1991, distanceKm: 42, badge: { dimension: "combo", tier: "silver" }, isMe: true },
+  { id: "p1", name: "Alex Rivera", score: 1840, accuracy: 94, locationScore: 96, timeScore: 92, guessYear: 1991, distanceKm: 42, badge: { dimension: "combo", tier: "silver" }, isMe: true, whereBadges: { tier: "gold", count: 2 }, whenBadges: { tier: "gold", count: 1 }, whereXp: 960, whenXp: 880 },
   { id: "p2", name: "Mina Kovač", score: 1980, accuracy: 99, locationScore: 100, timeScore: 98, guessYear: 1989, distanceKm: 6, badge: { dimension: "combo", tier: "gold" }, isMe: false },
   { id: "p3", name: "Theo Lambert", score: 1210, accuracy: 71, locationScore: 64, timeScore: 78, guessYear: 1978, distanceKm: 410, badge: null, isMe: false },
   { id: "p4", name: "Sara Bianchi", score: 1530, accuracy: 83, locationScore: 88, timeScore: 78, guessYear: 1994, distanceKm: 120, badge: null, isMe: false },
 ];
 
 const ALL_ROUNDS_RESULTS: Result[] = [
-  { id: "p1", name: "Alex Rivera", score: 7240, accuracy: 89, locationScore: 91, timeScore: 87, guessYear: 1991, distanceKm: 42, badge: { dimension: "combo", tier: "gold" }, isMe: true },
+  { id: "p1", name: "Alex Rivera", score: 7240, accuracy: 89, locationScore: 91, timeScore: 87, guessYear: 1991, distanceKm: 42, badge: { dimension: "combo", tier: "gold" }, isMe: true, whereBadges: { tier: "gold", count: 3 }, whenBadges: { tier: "gold", count: 2 }, whereXp: 3620, whenXp: 3620 },
   { id: "p2", name: "Mina Kovač", score: 8150, accuracy: 94, locationScore: 96, timeScore: 92, guessYear: 1989, distanceKm: 6, badge: { dimension: "combo", tier: "gold" }, isMe: false },
   { id: "p3", name: "Theo Lambert", score: 5230, accuracy: 68, locationScore: 62, timeScore: 74, guessYear: 1978, distanceKm: 410, badge: null, isMe: false },
   { id: "p4", name: "Sara Bianchi", score: 6480, accuracy: 79, locationScore: 84, timeScore: 74, guessYear: 1994, distanceKm: 120, badge: { dimension: "location", tier: "silver" }, isMe: false },
 ];
-
-const TIER_STYLE: Record<string, { bg: string; border: string; color: string; label: string }> = {
-  gold: { bg: "rgba(255,190,0,0.15)", border: "rgba(255,190,0,0.45)", color: "#ffcc44", label: "Gold" },
-  silver: { bg: "rgba(180,195,215,0.14)", border: "rgba(180,195,215,0.45)", color: "#cdd6e3", label: "Silver" },
-  bronze: { bg: "rgba(180,120,60,0.15)", border: "rgba(180,120,60,0.45)", color: "#cd9a5a", label: "Bronze" },
-};
 
 function gradientFor(id: string): string {
   let hash = 0;
@@ -87,31 +87,73 @@ function Avatar({ id, name, size = 32 }: { id: string; name: string; size?: numb
   );
 }
 
-// Animated SVG accuracy ring.
+// Animated SVG accuracy ring — mirrors prod RainbowRing visual:
+// single hue-based stroke (red→green), dark gray track, % rendered inside.
 function AccuracyRing({ value }: { value: number }) {
-  const r = 54;
+  const r = 80;
+  const cx = 100;
+  const cy = 100;
+  const strokeWidth = 15;
+  const circumference = 2 * Math.PI * r;
+  const [displayed, setDisplayed] = useState(0);
+
+  useEffect(() => {
+    if (value <= 0) return;
+    const steps = Math.round(value);
+    if (steps <= 0) return;
+    const totalDuration = 900;
+    const stepDuration = totalDuration / steps;
+    let current = 0;
+    const interval = setInterval(() => {
+      current += 1;
+      setDisplayed(current);
+      if (current >= steps) clearInterval(interval);
+    }, stepDuration);
+    return () => clearInterval(interval);
+  }, [value]);
+
+  const clamped = Math.max(0, Math.min(100, displayed));
+  const offset = circumference * (1 - clamped / 100);
+  const hue = Math.round((clamped / 100) * 120);
+  const color = `hsl(${hue}, 100%, 50%)`;
+
+  return (
+    <div className={styles.ringWrap}>
+      <svg viewBox="0 0 200 200" style={{ width: 150, height: 150, display: "block" }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#3f3f46" strokeWidth={strokeWidth} />
+        <circle
+          cx={cx} cy={cy} r={r} fill="none"
+          stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          transform={`rotate(-90 ${cx} ${cy})`}
+        />
+        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={52} fontWeight="bold">
+          {clamped}
+          <tspan fontSize={22} dx="2" dy="-18">%</tspan>
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+// Small % ring for Where/When mini cards — colored stroke + value text.
+function MiniRing({ value, color }: { value: number; color: string }) {
+  const size = 56;
+  const sw = 5;
+  const r = size / 2 - sw;
   const c = 2 * Math.PI * r;
   const offset = c * (1 - Math.max(0, Math.min(100, value)) / 100);
   return (
-    <div className={styles.ringWrap}>
-      <svg width="140" height="140" viewBox="0 0 140 140">
-        <defs>
-          <linearGradient id="accGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="100%" stopColor="#8b5cf6" />
-          </linearGradient>
-        </defs>
-        <circle cx="70" cy="70" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="11" />
+    <div className={styles.miniRingWrap} style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={sw} />
         <circle
-          cx="70" cy="70" r={r} fill="none" stroke="url(#accGrad)" strokeWidth="11"
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw}
           strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset}
-          transform="rotate(-90 70 70)" style={{ transition: "stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)" }}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
-      <div className={styles.ringCenter}>
-        <span className={styles.ringValue}>{Math.round(value)}</span>
-        <span className={styles.ringPct}>%</span>
-      </div>
+      <span className={styles.miniRingVal} style={{ color }}>{Math.round(value)}%</span>
     </div>
   );
 }
@@ -252,32 +294,62 @@ export default function RoundResultsPrototypePage() {
         <section className={`${styles.card} ${styles.heroCard}`}>
           <AccuracyRing value={me.accuracy} />
           <div className={styles.heroSide}>
-            <div className={styles.xpBlock}>
-              <span className={styles.xpValue}>{me.accuracy}%</span>
-              <span className={styles.xpLabel}>#{myRank}{rankSuffix(myRank)} place</span>
+            <div className={styles.rankBlock}>
+              <span className={styles.rankBig}>#{myRank}{rankSuffix(myRank)}</span>
+              <span className={styles.rankLabel}>place</span>
             </div>
-            {me.badge && (
-              <span
-                className={styles.comboBadge}
-                style={{
-                  background: TIER_STYLE[me.badge.tier].bg,
-                  border: `1px solid ${TIER_STYLE[me.badge.tier].border}`,
-                  color: TIER_STYLE[me.badge.tier].color,
-                }}
-              >
-                ★ {TIER_STYLE[me.badge.tier].label} combo
-              </span>
-            )}
-            <div className={styles.splitRow}>
-              <div className={styles.splitItem}>
-                <span className={styles.splitDot} style={{ background: "#22d3ee" }} />
-                <span className={styles.splitLabel}>Where</span>
-                <span className={styles.splitVal} style={{ color: accColor(me.locationScore) }}>{me.locationScore}%</span>
+
+            <div className={styles.miniCardsRow}>
+              {/* ── Where mini card ── */}
+              <div className={styles.miniCard}>
+                <div className={styles.miniCardHead}>
+                  <span className={styles.miniCardDot} style={{ background: "#22d3ee" }} />
+                  <span className={styles.miniCardTitle}>Where</span>
+                </div>
+                <MiniRing value={me.locationScore} color={accColor(me.locationScore)} />
+                {me.whereBadges && (
+                  <div className={styles.miniBadges}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/badges/location_${me.whereBadges.tier}.webp`}
+                      alt={`${me.whereBadges.tier} location badge`}
+                      className={styles.miniBadgeImg}
+                    />
+                    {me.whereBadges.count > 1 && (
+                      <span className={styles.miniBadgeCount}>×{me.whereBadges.count}</span>
+                    )}
+                  </div>
+                )}
+                <div className={styles.miniXp}>
+                  <span className={styles.miniXpVal}>+{me.whereXp ?? 0}</span>
+                  <span className={styles.miniXpLabel}>XP</span>
+                </div>
               </div>
-              <div className={styles.splitItem}>
-                <span className={styles.splitDot} style={{ background: "#8b5cf6" }} />
-                <span className={styles.splitLabel}>When</span>
-                <span className={styles.splitVal} style={{ color: accColor(me.timeScore) }}>{me.timeScore}%</span>
+
+              {/* ── When mini card ── */}
+              <div className={styles.miniCard}>
+                <div className={styles.miniCardHead}>
+                  <span className={styles.miniCardDot} style={{ background: "#8b5cf6" }} />
+                  <span className={styles.miniCardTitle}>When</span>
+                </div>
+                <MiniRing value={me.timeScore} color={accColor(me.timeScore)} />
+                {me.whenBadges && (
+                  <div className={styles.miniBadges}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/badges/year_${me.whenBadges.tier}.webp`}
+                      alt={`${me.whenBadges.tier} year badge`}
+                      className={styles.miniBadgeImg}
+                    />
+                    {me.whenBadges.count > 1 && (
+                      <span className={styles.miniBadgeCount}>×{me.whenBadges.count}</span>
+                    )}
+                  </div>
+                )}
+                <div className={styles.miniXp}>
+                  <span className={styles.miniXpVal}>+{me.whenXp ?? 0}</span>
+                  <span className={styles.miniXpLabel}>XP</span>
+                </div>
               </div>
             </div>
           </div>

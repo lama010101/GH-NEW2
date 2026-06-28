@@ -1,9 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { DM_Sans } from 'next/font/google'
+import { useIdentity } from '@/hooks/useIdentity'
+import { supabaseBrowser } from '@/core/supabaseBrowser'
+import TopBar from '@/components/layout/TopBar'
+import { NavModal } from '@/components/NavModal'
 import styles from './help.module.css'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500', '700'] })
@@ -133,11 +137,52 @@ const DEFAULT_OPEN: string[] = ['quick', 'faq']
 export default function HelpPage() {
   const router = useRouter()
   const t = useTranslations('help')
+  const { playerId, displayName } = useIdentity()
   const [query, setQuery] = useState('')
   const [openFaq, setOpenFaq] = useState<string | null>(FAQ[0]?.id ?? null)
   const [openSections, setOpenSections] = useState<Set<string>>(
     () => new Set(DEFAULT_OPEN),
   )
+
+  const [accuracy, setAccuracy] = useState('--')
+  const [xp, setXp] = useState('--')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [initials, setInitials] = useState('PL')
+  const [showNavModal, setShowNavModal] = useState(false)
+
+  useEffect(() => {
+    if (!playerId) {
+      setAvatarUrl(null)
+      setInitials('PL')
+      setAccuracy('--')
+      setXp('--')
+      return
+    }
+    (async () => {
+      try {
+        const { data: stats } = await supabaseBrowser
+          .from('player_global_stats')
+          .select('avg_accuracy,total_xp')
+          .eq('player_id', playerId)
+          .single()
+        if (stats) {
+          setAccuracy(String(Math.round(Number(stats.avg_accuracy))))
+          setXp(Number(stats.total_xp).toLocaleString('fr-FR'))
+        }
+      } catch {}
+      try {
+        const { data: profile } = await supabaseBrowser
+          .from('profiles')
+          .select('display_name,avatar_url')
+          .eq('id', playerId)
+          .single()
+        if (profile) {
+          if (profile.avatar_url) setAvatarUrl(profile.avatar_url)
+          if (profile.display_name) setInitials(profile.display_name.slice(0, 2).toUpperCase())
+        }
+      } catch {}
+    })()
+  }, [playerId])
 
   /* Build the search index from resolved translations. */
   const searchIndex = useMemo<SearchEntry[]>(() => {
@@ -230,6 +275,14 @@ export default function HelpPage() {
 
   return (
     <div className={`${dmSans.className} ${styles.page}`}>
+      <TopBar
+        accuracy={accuracy}
+        xp={xp}
+        avatarUrl={avatarUrl}
+        initials={initials}
+        onAvatarClick={() => setShowNavModal(true)}
+      />
+
       {/* Hero */}
       <header className={styles.hero}>
         <div className={styles.heroInner}>
@@ -497,6 +550,14 @@ export default function HelpPage() {
           ↑ {t('back_to_top')}
         </button>
       </main>
+
+      <NavModal
+        isOpen={showNavModal}
+        onClose={() => setShowNavModal(false)}
+        avatarUrl={avatarUrl}
+        initials={initials}
+        displayName={displayName ?? initials}
+      />
     </div>
   )
 }

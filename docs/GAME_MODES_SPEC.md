@@ -1,9 +1,14 @@
 # GAME MODES SPECIFICATION
 **Project:** Guess-History  
 **Document:** GAME_MODES_SPEC.md  
-**Version:** 1.3  
+**Version:** 1.4  
 **Status:** AUTHORITATIVE  
-**Date:** 2026-04-28
+**Date:** 2026-06-28
+
+**Changes from v1.3:**
+- Compete Relax (async) gains an **optional Round Timer** (host-configurable in lobby, reuses Rush slider 10s–5min, default 2min / OFF). Bounds each player's GUESS_PHASE independently while the session deadline still bounds the whole session.
+- Compete Relax session deadline range extended from 1–7 days to **1–14 days** (default 3 days).
+- §5.2, §5.3, §5.8, §6 updated accordingly. No other behavioral changes.
 
 **Changes from v1.2:**
 - Compete sub-modes renamed: Blitz → **Rush** (sync), Daily/Async → **Relax** (async)
@@ -113,14 +118,15 @@ Shown at the bottom of the result screen after the WHEN card.
 Computed server-side only. Never recomputed on client.
 
 ```
-Location score:  0–100 XP  (haversine distance decay)
-Year score:      0–100 XP  (absolute year difference decay)
-Hint penalty:    deducted from both XP and accuracy %
-Round total:     0–200 XP before penalty
-Round accuracy:  0–100% before penalty
+Location score:  0–100 XP  (exponential haversine distance decay)
+Year score:      0–100 XP  (exponential year-diff decay, era-scaled)
+Hint penalty:    proportional rate per axis (age-discounted for WHEN)
+Round total:     0–200 XP after penalty
+Round accuracy:  0–100% after penalty
 ```
 
-Final values written to `round_commits.score` and `round_results.score`. Fully recomputable from DB.
+Final values written to `round_commits.score` and `round_results.score`. Fully
+recomputable from DB (including `sessions.scoring_reference_year`).
 
 ### 1.4 Hint System
 
@@ -136,26 +142,47 @@ Example: "Remote Landmark" (prerequisite) → "Distance to Remote Landmark" (dep
 
 Assigned at content creation time. Fixed permanently per hint.
 
-| Tier | Accuracy Penalty | XP Penalty (on 200 max) | Typical hint type |
-|---|---|---|---|
-| 1 | 10% | 20 XP | Vague — era, broad continent |
-| 2 | 20% | 40 XP | Moderate — decade, region |
-| 3 | 30% | 60 XP | Strong — country, approximate year |
-| 4 | 40% | 80 XP | Near-definitive — city, specific era |
-| 5 | 50% | 100 XP | Definitive — exact location or year |
+Penalties are RATES (0–100 = 0%–100%), applied PROPORTIONALLY to raw accuracy
+(not flat point subtraction). This is fair to both strong and weak players and
+guarantees a hint can never make you worse than 0.
 
-Penalties are additive. Total capped at 100% accuracy. Floor is 0, never negative.
+| Tier | Rate (per-axis) | Typical hint type |
+|---|---|---|
+| 1 | 10% | Vague — era, broad continent |
+| 2 | 20% | Moderate — decade, region |
+| 3 | 30% | Strong — country, approximate year |
+| 4 | 40% | Near-definitive — city, specific era |
+| 5 | 50% | Definitive — exact location or year |
 
-#### 1.4.3 Penalty Application (Debt System)
+Rates are additive per axis (WHEN / WHERE independently), capped at 100.
 
-Hints purchased during GUESS_PHASE. Penalty applied at round end. The XP card in RESULT_PHASE shows raw XP, hint deduction, and final XP as separate line items when hints were used.
+XP impact: since `roundXp = yearAccuracyFinal + locationAccuracyFinal`, a tier-N
+WHEN hint reduces yearAccuracyFinal by ~(N*10)% of raw year accuracy, which
+reduces roundXp by the same amount. The XP penalty is NOT doubled — it affects
+only the axis the hint belongs to.
+
+#### 1.4.3 Penalty Application (Proportional + Age-Discounted)
+
+Hints purchased during GUESS_PHASE. Penalty applied at round end. The XP card
+in RESULT_PHASE shows raw XP, hint deduction, and final XP as separate line
+items when hints were used.
+
+WHEN (year) penalties are age-discounted by eraScale: older events are harder
+to guess the year for, so the same hint costs less. WHERE (location) penalties
+are NOT age-discounted (location difficulty does not track event age).
 
 ```
-raw_accuracy    = (location_accuracy + year_accuracy) / 2
-hint_penalty    = sum of all tier penalties used this round
-final_accuracy  = max(0, raw_accuracy − hint_penalty)
-final_xp        = max(0, raw_xp − hint_xp_penalty)
+eraScale        = sqrt(max(50, referenceYear − eventYear) / 50)
+whenRate        = clamp(penaltyWhenRate / eraScale, 0, 100) / 100   // age-discounted
+whereRate       = penaltyWhereRate / 100                            // no age discount
+yearAccFinal    = floor(yearAccuracy     × (1 − whenRate))
+locAccFinal     = floor(locationAccuracy × (1 − whereRate))
+final_accuracy  = round((yearAccFinal + locAccFinal) / 2)
+final_xp        = yearAccFinal + locAccFinal
 ```
+
+`referenceYear` is frozen at session creation (`sessions.scoring_reference_year`)
+to guarantee recomputability from DB. See `docs/backend/scoring_spec.md`.
 
 #### 1.4.4 Hints in All Modes
 
@@ -471,9 +498,9 @@ Real-time multiplayer. 2 to 8 players in a shared session, guessing the same eve
 | | Rush | Relax |
 |---|---|---|
 | **Timing** | Synchronous — all players live simultaneously | Asynchronous — players submit independently |
-| **Round timer** | Yes, per-round countdown (10s–5min) | No round timer |
+| **Round timer** | Yes, per-round countdown (10s–5min) | Optional — host may enable per-round countdown (10s–5min) or leave OFF |
 | **Pressure mechanic** | First-submission clamp to 30s | None |
-| **Session deadline** | None | 1–7 days |
+| **Session deadline** | None | 1–14 days |
 | **Round advance** | All tap Next OR Rush round-advance timeout (30s) | Each player independently |
 | **Submission notify** | In-app broadcast | In-app + push notification |
 
@@ -484,14 +511,16 @@ Set by the host in the lobby. Other players cannot modify settings.
 | Parameter | Rush options | Relax options | Default |
 |---|---|---|---|
 | Rounds | 3, 5, or 10 | 3, 5, or 10 | 5 |
-| Round Timer | Slider: 10s to 5min | N/A | 2min |
-| Session Deadline | N/A | Slider: 1–7 days | 3 days |
+| Round Timer | Slider: 10s to 5min | Slider: 10s to 5min, or OFF | 2min (Rush) / OFF (Relax) |
+| Session Deadline | N/A | Slider: 1–14 days | 3 days |
 | Year Range | Preset ranges or custom | Same | Full range |
 | Player limit | 2–8 | 2–8 | 8 |
 
 **Rush timer slider:** Non-linear scale — 10s, 15s, 20s, 30s, 45s, 60s, 90s, 2min, 3min, 5min.
 
-**Relax deadline slider:** 1, 2, 3, 4, 5, 6, 7 days. Displayed as "X days".
+**Relax Round Timer:** Reuses the Rush slider scale (10s–5min). Host may toggle it OFF (default). When enabled, each player's GUESS_PHASE is independently bounded by the per-round countdown; the session deadline still bounds the whole session. Timer expiry auto-submits that player's current inputs (per §1.6 / §7 shared rules). Pressure clamp (first-submission → 30s) does NOT apply in Relax — it is Rush-only (see §5.2).
+
+**Relax deadline slider:** 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 days. Displayed as "X days". The duration is anchored at START_GAME: `session_deadline = startedAt + X days`. Before the game starts, only the duration is stored; the absolute deadline is computed when the host starts the session.
 
 ### 5.4 Event Deduplication
 
@@ -542,7 +571,8 @@ LOBBY → STARTING → QUESTION → ANSWER → LOCKED → RESULT → SCOREBOARD
 
 ### 5.8 Relax Round Flow
 
-- No per-round timer. Session deadline only.
+- Session deadline bounds the whole session (1–14 days, anchored at START_GAME).
+- Per-round timer is **optional** (host-configurable in lobby). When OFF (default), no per-round countdown — players submit independently within the session deadline. When enabled (10s–5min), each player's GUESS_PHASE is independently bounded by the countdown; timer expiry auto-submits that player's current inputs.
 - Each player submits independently.
 - On submission: RESULT_PHASE shown to that player immediately. Push notification + in-app broadcast to all others: "Player X submitted round N."
 - Player taps "Next Round" immediately — does not wait for others.
@@ -598,8 +628,8 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 |---|---|---|---|---|---|
 | Players | 1 | 1 | 1 | 2–8 | 2–8 |
 | Rounds | 5 | 5 | 5 | 3, 5, or 10 | 3, 5, or 10 |
-| Timer | Optional 10s–5min | Mandatory 90s | Mandatory (formula) | Mandatory 10s–5min | None |
-| Deadline | None | None | None | None | 1–7 days |
+| Timer | Optional 10s–5min | Mandatory 90s | Mandatory (formula) | Mandatory 10s–5min | Optional 10s–5min (default OFF) |
+| Deadline | None | None | None | None | 1–14 days |
 | Year range | Player sets | Full range | Formula-computed | Host sets | Host sets |
 | Same events for all | No | Yes (globally) | No | Yes (per session) | Yes (per session) |
 | Min accuracy to advance | None | None | 50–80% (L1–99) / 95% (L100) | None | None |
@@ -633,4 +663,4 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 
 ---
 
-*Spec version 1.3 — Guess-History Game Modes — authored 2026-04-28*
+*Spec version 1.4 — Guess-History Game Modes — authored 2026-04-28, updated 2026-06-28*

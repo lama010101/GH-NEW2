@@ -224,6 +224,10 @@ export class CompeteWebSocket {
     this.send({ type: "SET_RESULTS_TIMER", playerId: this.playerId, resultsAutoAdvanceSec });
   }
 
+  setSubMode(mode: "sync" | "async", sessionDeadlineDays: number): void {
+    this.send({ type: "SET_SUB_MODE", playerId: this.playerId, mode, sessionDeadlineDays });
+  }
+
   kickPlayer(targetPlayerId: string): void {
     this.send({ type: "KICK_PLAYER", playerId: this.playerId, targetPlayerId });
   }

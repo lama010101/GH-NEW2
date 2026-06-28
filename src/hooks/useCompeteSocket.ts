@@ -203,6 +203,13 @@ export default function useCompeteSocket({
     wsRef.current.setResultsTimer(resultsAutoAdvanceSec);
   };
 
+  const setSubMode = (mode: "sync" | "async", sessionDeadlineDays: number) => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    // Client → DO → DB: send SET_SUB_MODE action signal via WS
+    wsRef.current.setSubMode(mode, sessionDeadlineDays);
+  };
+
   const kickPlayer = (targetPlayerId: string) => {
     if (!playerId || !wsRef.current) return;
     onSetBusy(true);
@@ -224,6 +231,7 @@ export default function useCompeteSocket({
     setTimer,
     setYearRange,
     setResultsTimer,
+    setSubMode,
     kickPlayer,
     playAgain,
   };

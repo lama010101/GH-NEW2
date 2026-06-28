@@ -143,6 +143,7 @@ export type SessionConfig = {
   selectedEras: string[];
   hostPlayerId: string | null;
   sessionDeadline: string | null;
+  sessionDeadlineDays: number | null;
   startedAt: string | null;
   completedAt: string | null;
 };
@@ -223,6 +224,13 @@ export type SetCompeteTimerInput = {
   gameId: string;
   playerId: string;
   roundTimerSec: number;
+};
+
+export type SetCompeteSubModeInput = {
+  gameId: string;
+  playerId: string;
+  mode: Exclude<SessionMode, "practice">;
+  sessionDeadlineDays: number;
 };
 
 export type SetCompeteYearRangeInput = {

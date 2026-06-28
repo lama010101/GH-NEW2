@@ -18,6 +18,7 @@ import {
   KickCompetePlayerInput,
   SetCompeteReadyInput,
   SetCompeteResultsTimerInput,
+  SetCompeteSubModeInput,
   SetCompeteTimerInput,
   SetCompeteYearRangeInput,
   StartCompeteSessionInput
@@ -74,7 +75,10 @@ export const PRACTICE_PLAYER_NAME = "Practice Player";
 
 export const PRESSURE_CLAMP_SECONDS = 30;
 
-const TIER_PENALTY: Record<number, number> = { 1: 10, 2: 20, 3: 30, 4: 40, 5: 50 };
+// Hint tier penalty RATES (0-100 integer = 0%-100% of raw accuracy).
+// Applied proportionally in evaluateRound (not flat point subtraction).
+// WHEN (year) rates are age-discounted by eraScale inside evaluateRound.
+const TIER_PENALTY_RATE: Record<number, number> = { 1: 10, 2: 20, 3: 30, 4: 40, 5: 50 };
 
 export type DbExecutor = Pick<Pool, "query">;
 export type DbTransactionClient = DbExecutor & { release(): void };
@@ -91,6 +95,7 @@ export type SessionRow = {
   results_auto_advance_sec: number;
   selected_eras: string[];
   session_deadline: Date | null;
+  session_deadline_days: number | null;
   created_at: Date;
   seed: bigint;
   room_code: string;
@@ -258,6 +263,7 @@ export function mapSessionRowToConfig(row: SessionRow): SessionConfig {
     resultsAutoAdvanceSec: row.results_auto_advance_sec,
     hostPlayerId: null,
     sessionDeadline: toIsoString(row.session_deadline),
+    sessionDeadlineDays: row.session_deadline_days,
     startedAt: null,
     completedAt: null
   };
@@ -303,6 +309,7 @@ export async function loadSessionRow(gameId: string, executor: DbExecutor = dbPo
         year_max,
         results_auto_advance_sec,
         session_deadline,
+        session_deadline_days,
         created_at,
         seed,
         room_code
@@ -450,6 +457,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
       selectedEras: Array.isArray(gameState.session.selectedEras) ? gameState.session.selectedEras : ['ancient','medieval','earlymodern','modern','contemporary'],
       hostPlayerId: hostPlayer ? hostPlayer.playerId : null,
       sessionDeadline: gameState.session.sessionDeadline,
+      sessionDeadlineDays: gameState.session.sessionDeadlineDays,
       startedAt: null,
       completedAt: null
     },
@@ -560,6 +568,21 @@ const RESULTS_AUTO_ADVANCE_DEFAULT = 90;
 const RESULTS_AUTO_ADVANCE_MIN = 0;
 const RESULTS_AUTO_ADVANCE_MAX = 300;
 
+// Relax (async) session deadline duration bounds (GAME_MODES_SPEC.md v1.4 §5.3).
+// session_deadline_days stores the host-configured duration; the absolute
+// session_deadline is computed at START_GAME (see startCompeteSession).
+const SESSION_DEADLINE_DAYS_MIN = 1;
+const SESSION_DEADLINE_DAYS_MAX = 14;
+const SESSION_DEADLINE_DAYS_DEFAULT = 3;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function clampSessionDeadlineDays(value: number | undefined): number {
+  if (value === undefined || value === null) return SESSION_DEADLINE_DAYS_DEFAULT;
+  const num = Math.round(Number(value));
+  if (!Number.isFinite(num)) return SESSION_DEADLINE_DAYS_DEFAULT;
+  return Math.max(SESSION_DEADLINE_DAYS_MIN, Math.min(SESSION_DEADLINE_DAYS_MAX, num));
+}
+
 function clampResultsAutoAdvanceSec(value: number | undefined): number {
   if (value === undefined || value === null) return RESULTS_AUTO_ADVANCE_DEFAULT;
   const num = Math.round(Number(value));
@@ -610,8 +633,8 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
         await client.query(`SAVEPOINT room_code_attempt`);
         verifyLog("INSERT", "sessions", "OK", `game_id=${gameId} — executing`);
         await client.query(
-          `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, results_auto_advance_sec, seed, room_code)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, results_auto_advance_sec, seed, room_code, scoring_reference_year)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, EXTRACT(YEAR FROM now())::INT)`,
           [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, resultsAutoAdvanceSec, seed, roomCode]
         );
         await client.query(`RELEASE SAVEPOINT room_code_attempt`);
@@ -916,6 +939,49 @@ export async function setCompeteTimer(input: SetCompeteTimerInput): Promise<Comp
   await dbPool.query(
     `UPDATE sessions SET round_timer_sec = $2 WHERE game_id = $1`,
     [gameId, clamped]
+  );
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    throw new Error("Session not found");
+  }
+
+  return snapshot;
+}
+
+export async function setCompeteSubMode(input: SetCompeteSubModeInput): Promise<CompeteSessionSnapshot> {
+  const gameId = input.gameId.trim();
+  const playerId = input.playerId.trim();
+
+  if (gameId.length === 0) {
+    throw new Error("gameId is required");
+  }
+
+  if (playerId.length === 0) {
+    throw new Error("playerId is required");
+  }
+
+  if (input.mode !== "sync" && input.mode !== "async") {
+    throw new Error("mode must be 'sync' or 'async'");
+  }
+
+  // Verify host authority
+  const hostCheck = await dbPool.query<{ player_id: string }>(
+    `SELECT player_id FROM session_players
+     WHERE game_id = $1 AND player_id = $2 AND is_host = true`,
+    [gameId, playerId]
+  );
+
+  if (hostCheck.rows.length === 0) {
+    throw new Error("Only the host can change the sub-mode");
+  }
+
+  // sync → no deadline duration (NULL); async → clamped 1-14 days
+  const deadlineDays = input.mode === "async" ? clampSessionDeadlineDays(input.sessionDeadlineDays) : null;
+
+  await dbPool.query(
+    `UPDATE sessions SET mode = $2, session_deadline_days = $3 WHERE game_id = $1`,
+    [gameId, input.mode, deadlineDays]
   );
 
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
@@ -1243,6 +1309,19 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
     const startPhaseEndsAt = session.round_timer_sec === 0
       ? null
       : new Date(startNow.getTime() + session.round_timer_sec * 1000).toISOString();
+
+    // Relax (async) deadline anchoring (GAME_MODES_SPEC.md v1.4 §5.3):
+    // session_deadline_days stores the host-configured duration; the absolute
+    // session_deadline is computed here at START_GAME = startedAt + days.
+    // Sync sessions have session_deadline_days = NULL → no deadline written.
+    if (session.mode === "async" && session.session_deadline_days !== null) {
+      const deadlineMs = startNow.getTime() + session.session_deadline_days * MS_PER_DAY;
+      await client.query(
+        `UPDATE sessions SET session_deadline = $2 WHERE game_id = $1`,
+        [gameId, new Date(deadlineMs)]
+      );
+    }
+
     await appendEvent(client, gameId, "ROUND_STARTED", {
       roundIndex: 0,
       eventId: startEventIds[0],
@@ -1337,13 +1416,14 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       throw new Error("Use practice session endpoints for practice mode");
     }
 
-    // Consolidated guard queries — single CTE to check round start, round complete, existing commit, fetch session event IDs, and fetch the ROUND_STARTED phaseEndsAt (needed for the inline pressure clamp on the first submission).
+    // Consolidated guard queries — single CTE to check round start, round complete, existing commit, fetch session event IDs, fetch the ROUND_STARTED phaseEndsAt (needed for the inline pressure clamp on the first submission), and fetch scoring_reference_year (frozen at session creation for deterministic era scaling).
     const guardResult = await client.query<{
       round_started: boolean;
       round_complete: boolean;
       has_existing_commit: boolean;
       session_event_ids: string[] | null;
       round_started_phase_ends_at: string | null;
+      scoring_reference_year: number;
     }>(
       `WITH
         round_started AS (
@@ -1365,13 +1445,17 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
           SELECT payload FROM round_events
           WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
           ORDER BY id ASC LIMIT 1
+        ),
+        session_meta AS (
+          SELECT scoring_reference_year FROM sessions WHERE game_id = $1
         )
       SELECT
         EXISTS(SELECT 1 FROM round_started)     AS round_started,
         EXISTS(SELECT 1 FROM round_complete)    AS round_complete,
         EXISTS(SELECT 1 FROM existing_commit)   AS has_existing_commit,
         (SELECT payload->'eventIds' FROM session_created)::jsonb AS session_event_ids,
-        (SELECT phase_ends_at FROM round_started) AS round_started_phase_ends_at`,
+        (SELECT phase_ends_at FROM round_started) AS round_started_phase_ends_at,
+        (SELECT scoring_reference_year FROM session_meta) AS scoring_reference_year`,
       [gameId, roundIndex, playerId]
     );
 
@@ -1436,23 +1520,26 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         )).rows
       : [];
 
-    let whenPenalty = 0;
-    let wherePenalty = 0;
+    let whenPenaltyRate = 0;
+    let wherePenaltyRate = 0;
     for (const h of hintRows) {
-      const p = TIER_PENALTY[h.tier] ?? 0;
-      if (h.type === 'when')  whenPenalty  += p;
-      if (h.type === 'where') wherePenalty += p;
+      const p = TIER_PENALTY_RATE[h.tier] ?? 0;
+      if (h.type === 'when')  whenPenaltyRate  += p;
+      if (h.type === 'where') wherePenaltyRate += p;
     }
-    whenPenalty  = Math.min(whenPenalty,  100);
-    wherePenalty = Math.min(wherePenalty, 100);
+    whenPenaltyRate  = Math.min(whenPenaltyRate,  100);
+    wherePenaltyRate = Math.min(wherePenaltyRate, 100);
+
+    const referenceYear = guard.scoring_reference_year ?? 2025;
 
     const result = evaluateRound(
       event,
       { year: yearGuess, location: locationGuess },
       roundIndex,
       false,
-      whenPenalty,
-      wherePenalty
+      whenPenaltyRate,
+      wherePenaltyRate,
+      referenceYear
     );
 
     const score = result.roundXp;
@@ -1480,8 +1567,10 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       `INSERT INTO round_commits
          (game_id, player_id, round_index, submitted_at, year_guess,
           location_lat, location_lng, hints_used, score,
-          acc_penalty, acc_penalty_when, acc_penalty_where, verification_token)
-       VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          acc_penalty, acc_penalty_when, acc_penalty_where,
+          acc_penalty_when_rate, acc_penalty_where_rate,
+          verification_token)
+       VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        ON CONFLICT (game_id, player_id, round_index) DO NOTHING`,
       [
         gameId,
@@ -1492,9 +1581,11 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         locationGuess?.lng ?? null,
         hintsUsedCount,
         score,
-        whenPenalty + wherePenalty,
-        whenPenalty,
-        wherePenalty,
+        whenPenaltyRate + wherePenaltyRate,
+        whenPenaltyRate,
+        wherePenaltyRate,
+        whenPenaltyRate,
+        wherePenaltyRate,
         commitToken
       ]
     );
@@ -2418,9 +2509,12 @@ async function computeAndWriteRoundResults(
     acc_penalty: number | null;
     acc_penalty_when: number | null;
     acc_penalty_where: number | null;
+    acc_penalty_when_rate: number | null;
+    acc_penalty_where_rate: number | null;
   }>(
     `SELECT player_id, score, year_guess, location_lat, location_lng,
-            acc_penalty, acc_penalty_when, acc_penalty_where
+            acc_penalty, acc_penalty_when, acc_penalty_where,
+            acc_penalty_when_rate, acc_penalty_where_rate
      FROM round_commits
      WHERE game_id = $1 AND round_index = $2
      ORDER BY score DESC NULLS LAST`,
@@ -2439,6 +2533,13 @@ async function computeAndWriteRoundResults(
   );
 
   if (sessionCreatedEvent.rows.length === 0) return roundResultsToken;
+
+  // Fetch scoring_reference_year (frozen at session creation) for deterministic era scaling
+  const sessionMeta = await executor.query<{ scoring_reference_year: number }>(
+    `SELECT scoring_reference_year FROM sessions WHERE game_id = $1`,
+    [gameId]
+  );
+  const referenceYear = sessionMeta.rows[0]?.scoring_reference_year ?? 2025;
 
   const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
   if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) return roundResultsToken;
@@ -2463,8 +2564,9 @@ async function computeAndWriteRoundResults(
       guessState,
       roundIndex,
       false,
-      row.acc_penalty_when ?? 0,
-      row.acc_penalty_where ?? 0
+      row.acc_penalty_when_rate ?? 0,
+      row.acc_penalty_where_rate ?? 0,
+      referenceYear
     );
 
     // Insert with all replay fields and verification token

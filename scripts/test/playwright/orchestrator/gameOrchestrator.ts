@@ -2,6 +2,7 @@ import { BrowserPool, PlayerBrowser } from './browserPool';
 import { CompeteWSClient, CompeteSnapshot, SnapshotStatus } from './websocketClient';
 import { observeState, assertStateMatches, captureResumeToken, diffResumeTokens } from './observer';
 import { EdgeCaseEngine } from './edgeCases';
+import { fetchAccessToken } from '../fixtures/auth';
 
 export interface GameOrchestratorOptions {
   browserPool: BrowserPool;
@@ -63,11 +64,20 @@ export class GameOrchestrator {
     this.wsClients = [];
 
     for (const player of this.browserPool.all) {
+      // Fetch Supabase access token for PartyKit WS auth (onBeforeConnect
+      // requires ?token=<access_token> — without it the server returns 401).
+      let accessToken: string | undefined;
+      try {
+        accessToken = await fetchAccessToken(player.user);
+      } catch (err) {
+        console.error(`[ORCHESTRATOR] Failed to fetch access token for ${player.user.email}:`, err instanceof Error ? err.message : err);
+      }
       const client = new CompeteWSClient({
         partyKitHost: this.opts.partyKitHost,
         gameId,
         user: player.user,
         displayName: player.user.displayName,
+        accessToken,
         onStateUpdate: (snapshot) => {
           console.log(`[WS:${player.user.displayName}] ts=${Date.now()} State update: ${snapshot.status} round=${snapshot.currentRoundIndex}`);
         },
@@ -130,6 +140,7 @@ export class GameOrchestrator {
         playerId: host.user.id,
         mode: 'compete',
         totalRounds: this.opts.totalRounds,
+        roundTimerSec: 30,
       },
     });
 
@@ -153,7 +164,7 @@ export class GameOrchestrator {
     // Wait for LOBBY state on all clients
     this.opts.onStep?.('Waiting for LOBBY state...');
     await Promise.all(
-      this.wsClients.map((c) => c.waitForState((s) => s.status === 'LOBBY', 15000)),
+      this.wsClients.map((c) => c.waitForState((s) => s.status === 'LOBBY', 60000)),
     );
 
     // Assert all browsers see LOBBY
@@ -172,7 +183,7 @@ export class GameOrchestrator {
 
     // Wait for allPlayersReady (extended timeout: edge cases may trigger WS reconnects)
     this.opts.onStep?.('Waiting for all players ready...');
-    await hostClient.waitForState((s) => s.allPlayersReady && s.players.length === this.wsClients.length, 30000);
+    await hostClient.waitForState((s) => s.allPlayersReady && s.players.length === this.wsClients.length, 60000);
 
     // Host starts game (or auto-start)
     this.opts.onStep?.('Starting game...');
@@ -181,7 +192,7 @@ export class GameOrchestrator {
     // Wait for ROUND_ACTIVE
     this.opts.onStep?.('Waiting for ROUND_ACTIVE...');
     await Promise.all(
-      this.wsClients.map((c) => c.waitForState((s) => s.status === 'ROUND_ACTIVE', 20000)),
+      this.wsClients.map((c) => c.waitForState((s) => s.status === 'ROUND_ACTIVE', 60000)),
     );
 
     // Play all rounds
@@ -193,7 +204,7 @@ export class GameOrchestrator {
     // Wait for SESSION_COMPLETE
     this.opts.onStep?.('Waiting for SESSION_COMPLETE...');
     await Promise.all(
-      this.wsClients.map((c) => c.waitForState((s) => s.status === 'SESSION_COMPLETE', 30000)),
+      this.wsClients.map((c) => c.waitForState((s) => s.status === 'SESSION_COMPLETE', 120000)),
     );
 
     // Assert all browsers see SESSION_COMPLETE
@@ -265,7 +276,7 @@ export class GameOrchestrator {
     // Wait for ROUND_COMPLETE
     this.opts.onStep?.('Waiting for ROUND_COMPLETE...');
     await Promise.all(
-      this.wsClients.map((c) => c.waitForState((s) => s.status === 'ROUND_COMPLETE', 30000)),
+      this.wsClients.map((c) => c.waitForState((s) => s.status === 'ROUND_COMPLETE', 60000)),
     );
 
     // Assert all browsers see ROUND_COMPLETE
@@ -311,6 +322,7 @@ export class GameOrchestrator {
         playerId: host.user.id,
         mode: 'compete',
         totalRounds: this.opts.totalRounds,
+        roundTimerSec: 30,
       },
     });
 

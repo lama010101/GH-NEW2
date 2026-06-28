@@ -19,6 +19,7 @@ interface LobbySectionProps {
   onSetTimer?: (roundTimerSec: number) => void;
   onSetYearRange?: (yearMin: number, yearMax: number) => void;
   onSetResultsTimer?: (resultsAutoAdvanceSec: number) => void;
+  onSetSubMode?: (mode: "sync" | "async", sessionDeadlineDays: number) => void;
   onKickPlayer?: (targetPlayerId: string) => void;
   onSetEraSelection?: (selectedEras: string[], yearMin: number, yearMax: number) => void;
 }
@@ -78,6 +79,7 @@ export default function LobbySection({
   onSetTimer,
   onSetYearRange,
   onSetResultsTimer,
+  onSetSubMode,
   onKickPlayer,
   onSetEraSelection,
 }: LobbySectionProps) {
@@ -148,8 +150,20 @@ export default function LobbySection({
   const [showAllModal, setShowAllModal] = useState(false);
 
   /* ── Settings tab UI state ── */
-  const [settingsTab, setSettingsTab] = useState<'realtime' | 'turnturn'>('realtime');
-  const [maxTurnDays, setMaxTurnDays] = useState(3);
+  // Tab is derived from the authoritative snapshot.config.mode (single source of truth).
+  // sync → realtime tab, async → turnturn tab. Host click dispatches onSetSubMode (WS → DB → broadcast).
+  const settingsTab: 'realtime' | 'turnturn' = snapshot.config.mode === "async" ? 'turnturn' : 'realtime';
+
+  /* Max turn days transient state — synced from snapshot on every update.
+     Local value is ONLY for drag feedback; authority stays in snapshot. */
+  const [maxTurnDays, setMaxTurnDays] = useState(snapshot.config.sessionDeadlineDays ?? 3);
+  const deadlineDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync max turn days to authoritative snapshot value whenever it changes externally.
+  useEffect(() => {
+    setMaxTurnDays(snapshot.config.sessionDeadlineDays ?? 3);
+  }, [snapshot.config.sessionDeadlineDays]);
+
   const [selectedEras, setSelectedEras] = useState<Set<EraId>>(
     () => new Set((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[])
   );
@@ -684,8 +698,16 @@ export default function LobbySection({
             <h3>{t('lobby.game_settings')}</h3>
           </div>
           <div className={styles['lobbyTabRow']}>
-            <button className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`} onClick={() => setSettingsTab('realtime')}>{t('lobby.realtime')}</button>
-            <button className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`} onClick={() => setSettingsTab('turnturn')}>{t('lobby.turn_by_turn')}</button>
+            <button
+              className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
+              onClick={() => isHost && onSetSubMode?.("sync", maxTurnDays)}
+              disabled={!isHost || busy}
+            >{t('lobby.realtime')}</button>
+            <button
+              className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`}
+              onClick={() => isHost && onSetSubMode?.("async", maxTurnDays)}
+              disabled={!isHost || busy}
+            >{t('lobby.turn_by_turn')}</button>
           </div>
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
@@ -855,15 +877,101 @@ export default function LobbySection({
             {settingsTab === 'turnturn' && (<>
               <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
                 <span className={styles['lobby-setting-label']}>{t('lobby.max_time_per_turn')}</span>
+                {isHost ? (
                 <span className={styles['lobbyRowLeft']}>
                   <span className={styles['lobby-timer-slider-wrap']}>
                     <div className={styles['lobby-timer-slider-track']} />
                     <div className={styles['lobby-timer-slider-fill']} style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }} />
-                    <input type="range" className={styles['lobby-timer-slider']} min={1} max={14} step={1} value={maxTurnDays} onChange={(e) => setMaxTurnDays(Number(e.target.value))} />
+                    <input
+                      type="range"
+                      className={styles['lobby-timer-slider']}
+                      min={1}
+                      max={14}
+                      step={1}
+                      value={maxTurnDays}
+                      disabled={busy}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setMaxTurnDays(val);
+                        if (deadlineDebounceRef.current) clearTimeout(deadlineDebounceRef.current);
+                        deadlineDebounceRef.current = setTimeout(() => {
+                          onSetSubMode?.("async", val);
+                        }, 400);
+                      }}
+                    />
                   </span>
                   <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
                 </span>
+                ) : (
+                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
+                )}
               </div>
+            <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
+              <span className={styles['lobby-setting-label']}>{t('lobby.round_timer')}</span>
+              {isHost ? (
+                <span className={styles['lobbyRowLeftWrap']}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = sliderValue > 0 ? 0 : 120;
+                      setSliderValue(val);
+                      if (timerDebounceRef.current) clearTimeout(timerDebounceRef.current);
+                      timerDebounceRef.current = setTimeout(() => {
+                        onSetTimer?.(val);
+                      }, 400);
+                    }}
+                    disabled={busy}
+                    className={sliderValue > 0 ? styles['lobbyToggleBtnOn'] : styles['lobbyToggleBtnOff']}
+                  >
+                    <span
+                      className={styles['lobbyToggleKnob']}
+                      style={{ left: sliderValue > 0 ? 22 : 2 }}
+                    />
+                  </button>
+                  {sliderValue > 0 ? (
+                    <span className={styles['lobbyRowLeft']}>
+                      <span className={styles['lobby-timer-slider-wrap']}>
+                        <div className={styles['lobby-timer-slider-track']} />
+                        <div
+                          className={styles['lobby-timer-slider-fill']}
+                          style={{
+                            width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%`,
+                          }}
+                        />
+                        <input
+                          type="range"
+                          className={styles['lobby-timer-slider']}
+                          min={TIMER_MIN_SEC}
+                          max={TIMER_MAX_SEC}
+                          step={5}
+                          value={sliderValue}
+                          disabled={busy}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setSliderValue(val);
+                            if (timerDebounceRef.current) clearTimeout(timerDebounceRef.current);
+                            timerDebounceRef.current = setTimeout(() => {
+                              onSetTimer?.(val);
+                            }, 400);
+                          }}
+                        />
+                      </span>
+                      <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
+                        {formatTimerDisplay(sliderValue)}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
+                      OFF
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className={styles['lobby-setting-value']}>
+                  {snapshot.config.roundTimerSec === 0 ? "OFF" : formatTimerDisplay(snapshot.config.roundTimerSec)}
+                </span>
+              )}
+            </div>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
               <div className={styles['lobbySettingRowHead']}>
                 <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>

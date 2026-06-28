@@ -42,6 +42,10 @@ MAX_YEAR_DIFF = 200
 MAX_LOCATION_SCORE = 100
 MAX_TIME_SCORE = 100
 
+DISTANCE_DECAY_KM = 1500      // exp decay constant for location
+YEAR_DECAY = 40               // exp decay constant for year
+ERA_SCALE_FLOOR = 50          // events younger than this get no era forgiveness
+
 ---
 
 ## 3. DISTANCE CALCULATION
@@ -56,12 +60,15 @@ Constraint:
 
 ## 4. LOCATION SCORE
 
-locationAccuracy = max(
-  0,
-  100 - (distanceKm / MAX_DISTANCE_KM) * 100
-)
+Exponential decay (NOT linear):
 
-locationScore = round(locationAccuracy)
+locationAccuracy = floor(clamp(100 * exp(-distanceKm / DISTANCE_DECAY_KM), 0, 100))
+
+- 0 km → 100%
+- ~1500 km → ~37%
+- ~20000 km (antipodal) → 0%
+
+locationScore = locationAccuracy
 
 ---
 
@@ -69,38 +76,73 @@ locationScore = round(locationAccuracy)
 
 yearDiff = abs(guess_year - actual_year)
 
-yearAccuracy = max(
-  0,
-  100 - (yearDiff / MAX_YEAR_DIFF) * 100
-)
+Era scaling: older events are harder to guess the year for, so the effective
+year difference is divided by eraScale (>= 1). referenceYear is frozen at
+session creation (sessions.scoring_reference_year) to guarantee recomputability
+from DB — never use wall-clock time.
 
-timeScore = round(yearAccuracy)
+eraScale = sqrt(max(ERA_SCALE_FLOOR, referenceYear - eventYear) / ERA_SCALE_FLOOR)
+
+effectiveDiff = yearDiff / eraScale
+
+yearAccuracy = floor(clamp(100 * exp(-effectiveDiff / YEAR_DECAY), 0, 100))
+
+- exact match → 100%
+- 1 year off on recent event (eraScale=1) → 97%
+- 100 years off on 1969 event (eraScale≈1.06) → 9%
+- 100 years off on 1500 event (eraScale≈3.24) → 46% (forgiveness for old event)
+
+timeScore = yearAccuracy
 
 ---
 
-## 6. HINT PENALTY
+## 6. HINT PENALTY (PROPORTIONAL + AGE-DISCOUNTED)
 
 Definition:
 - hints reduce score deterministically
+- penalties are RATES (0-100 integer = 0%-100%), NOT flat point subtraction
+- applied PROPORTIONALLY to raw accuracy (fair to both strong and weak players)
+- WHEN (year) penalties are age-discounted by eraScale (older events → smaller
+  effective penalty, since year-guessing is harder)
+- WHERE (location) penalties are NOT age-discounted (location difficulty does
+  not track event age)
 
-Rule:
-- penalty must be derived ONLY from hints_used
+Tier penalty rates (fixed per hint at content creation time):
 
-Example (baseline, can be tuned):
+| Tier | Rate | Typical hint type |
+|---|---|---|
+| 1 | 10% | Vague — era, broad continent |
+| 2 | 20% | Moderate — decade, region |
+| 3 | 30% | Strong — country, approximate year |
+| 4 | 40% | Near-definitive — city, specific era |
+| 5 | 50% | Definitive — exact location or year |
 
-penaltyPerHint = 5
+Rates are additive per axis, capped at 100.
 
-penalty = hints_used * penaltyPerHint
+penaltyWhenRate  = sum of tier rates for 'when' hints,  capped 100
+penaltyWhereRate = sum of tier rates for 'where' hints, capped 100
 
 ---
 
 ## 7. FINAL SCORE
 
-rawScore = locationScore + timeScore   // 0 → 200
+eraScale = sqrt(max(ERA_SCALE_FLOOR, referenceYear - eventYear) / ERA_SCALE_FLOOR)
 
-finalScore = max(0, rawScore - penalty)
+whenRate  = clamp(penaltyWhenRate  / eraScale, 0, 100) / 100   // age-discounted
+whereRate = clamp(penaltyWhereRate, 0, 100) / 100              // no age discount
 
-accuracy = round((rawScore / 200) * 100)
+yearAccuracyFinal     = floor(yearAccuracy     * (1 - whenRate))
+locationAccuracyFinal = floor(locationAccuracy * (1 - whereRate))
+
+rawScore = yearAccuracyFinal + locationAccuracyFinal   // 0 → 200
+
+finalScore = rawScore
+
+accuracy = round((yearAccuracyFinal + locationAccuracyFinal) / 2)
+
+Note: proportional application guarantees a hint can never make you worse than 0
+(you always keep (1 - rate) of your raw accuracy). This fixes the regressive
+punishment of the old flat-subtraction model.
 
 ---
 
@@ -123,12 +165,16 @@ For each player:
 ## 9. DETERMINISM GUARANTEE
 
 Given:
-- same inputs from DB
+- same inputs from DB (including sessions.scoring_reference_year)
 - same constants
 
 Output MUST be identical.
 
 No randomness allowed.
+
+The scoring reference year is frozen at session creation
+(sessions.scoring_reference_year) and read from the DB at computation time.
+Wall-clock time (e.g. `new Date().getFullYear()`) MUST NOT influence scoring.
 
 ---
 
@@ -137,8 +183,9 @@ No randomness allowed.
 - Client-side scoring
 - Multiple scoring formulas
 - Hidden modifiers
-- Time-based score variation
+- Time-based score variation (wall-clock dependent scoring)
 - Non-deterministic math
+- Hardcoded CURRENT_YEAR constants in scoring functions
 
 ---
 

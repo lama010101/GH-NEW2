@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
-import { signOut } from '@/core/identity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import styles from './profile.module.css';
 import TopBar from '@/components/layout/TopBar';
+import { NavModal } from '@/components/NavModal';
 import { AvatarPickerModal } from '@/components/AvatarPickerModal';
 
 
@@ -19,21 +19,26 @@ type ProfileHistoricalAvatar = {
   avatarImageUrl: string;
 };
 
+function accColor(acc: number): string {
+  const hue = Math.round((Math.max(0, Math.min(100, acc)) / 100) * 120);
+  return `hsl(${hue}, 90%, 52%)`;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const { playerId } = useIdentity();
   const t = useTranslations('profile');
-  const tNav = useTranslations('nav');
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [showNavModal, setShowNavModal] = useState(false);
+  const [accuracyTab, setAccuracyTab] = useState<'era' | 'region'>('era');
+  const [experienceTab, setExperienceTab] = useState<'era' | 'region'>('era');
   const [progressData, setProgressData] = useState<{
     byCentury: Array<{ century: string; avgAccuracy: number; roundCount: number }>
     byContinent: Array<{ continent: string; avgAccuracy: number; roundCount: number }>
     eventsSeenCount: number
   } | null>(null);
-
-  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   const [profileData, setProfileData] = useState<{
     displayName: string | null;
@@ -187,16 +192,6 @@ export default function ProfilePage() {
     fetchProfileData();
   }, [playerId, router]);
 
-  const handleSignOut = async () => {
-    setSignOutError(null);
-    try {
-      await signOut();
-      router.push('/');
-    } catch (err) {
-      setSignOutError(err instanceof Error ? err.message : 'Sign out failed');
-    }
-  };
-
   const getInitials = (name: string | null): string => {
     if (!name) return '??';
     const words = name.trim().split(/\s+/);
@@ -243,7 +238,7 @@ export default function ProfilePage() {
         xp={xp}
         avatarUrl={profileData.avatarUrl}
         initials={getInitials(profileData.displayName)}
-        onAvatarClick={() => router.push('/account')}
+        onAvatarClick={() => setShowNavModal(true)}
       />
 
       {/* 3. BACK BUTTON */}
@@ -376,98 +371,101 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* 6. TWO-COLUMN ROW */}
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
-        {/* Left: Accuracy breakdown */}
+      {/* 6. BADGE COLLECTION */}
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('accuracy_breakdown')}</h3>
-          {progressData && progressData.byContinent.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {progressData.byContinent.map((item) => (
-                <div key={item.continent}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-white/70">{item.continent}</span>
-                    <span className="text-white/45">{item.avgAccuracy}%</span>
-                  </div>
-                  <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${styles.barFillViolet}`}
-                      style={{ width: `${item.avgAccuracy}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2 py-6">
-              <div className="text-sm text-white/35">—</div>
-              <div className="text-xs text-white/35">{progressData === null ? 'Loading…' : 'No data yet'}</div>
-            </div>
-          )}
-        </div>
-        
-        {/* Right: Badge collection */}
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('badge_collection')}</h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className={styles.sectionHead}>
+            <span className={styles.sectionAccentBar} />
+            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('badge_collection')}</h3>
+          </div>
+          <div className={styles.badgeTierRow}>
             {[
-              { label: 'Gold', count: null, colorClass: styles.badgeColorGold },
-              { label: 'Silver', count: null, colorClass: styles.badgeColorSilver },
-              { label: 'Bronze', count: null, colorClass: styles.badgeColorBronze },
-              { label: 'Year', count: null, colorClass: styles.badgeColorGold, sub: 'gold' },
-              { label: 'Location', count: null, colorClass: styles.badgeColorGold, sub: 'gold' },
-              { label: 'Combo', count: null, colorClass: styles.badgeColorGold, sub: 'gold' }
-            ].map((badge, i) => (
-              <div 
-                key={i}
-                className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]"
+              { label: 'Gold', tier: 'gold', color: 'var(--gh-badge-gold, #ffd700)', bg: 'rgba(255,215,0,0.10)', border: 'rgba(255,215,0,0.30)' },
+              { label: 'Silver', tier: 'silver', color: 'var(--gh-badge-silver, #c0c0c0)', bg: 'rgba(192,192,192,0.10)', border: 'rgba(192,192,192,0.30)' },
+              { label: 'Bronze', tier: 'bronze', color: 'var(--gh-badge-bronze, #cd7f32)', bg: 'rgba(205,127,50,0.10)', border: 'rgba(205,127,50,0.30)' },
+            ].map((b) => (
+              <div
+                key={b.label}
+                className={styles.badgeTier}
+                style={{ background: b.bg, border: `1px solid ${b.border}` }}
               >
-                <div className={`font-bebas text-lg font-bold ${badge.colorClass}`}>
-                  {badge.count ?? '—'}
-                </div>
-                <div className="text-[10px] mt-1 text-white/45">
-                  {badge.label}
-                  {badge.sub && <span className="ml-0.5 opacity-70">({badge.sub})</span>}
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/badges/combo_${b.tier}.webp`} alt={`${b.label} badge`} className={styles.badgeTierImg} />
+                <span className={styles.badgeTierCount} style={{ color: b.color }}>—</span>
+                <span className={styles.badgeTierLabel}>{b.label}</span>
+              </div>
+            ))}
+          </div>
+          <div className={styles.badgeDimRow}>
+            {[
+              { label: 'Year', dim: 'year', accent: 'var(--gh-violet, #8b5cf6)' },
+              { label: 'Location', dim: 'location', accent: 'var(--gh-teal, #22d3ee)' },
+              { label: 'Combo', dim: 'combo', accent: 'var(--gh-gold, #ffd54a)' },
+            ].map((d) => (
+              <div key={d.label} className={styles.badgeDim}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/badges/${d.dim}_gold.webp`} alt={`${d.label} gold badge`} className={styles.badgeDimImg} />
+                <span className={styles.badgeDimLabel}>{d.label}</span>
+                <span className={styles.badgeDimCount}>—</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* 7. FULL-WIDTH PANEL - Performance by mode */}
+      {/* 7. PERFORMANCE BY MODE */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('performance_by_mode')}</h3>
-          <div className="grid grid-cols-3 gap-[10px]">
+          <div className={styles.sectionHead}>
+            <span className={styles.sectionAccentBar} />
+            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('performance_by_mode')}</h3>
+          </div>
+          <div className={styles.modeRow}>
             {/* Daily */}
-            <div className="p-4 rounded-xl relative overflow-hidden bg-blue-900/40 border border-blue-500/30">
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500" />
-              <div className={`font-bebas text-lg font-bold mb-2`}>{t('daily')}</div>
-              <div className="flex flex-col gap-1 items-center py-4">
-                <div className="text-sm text-white/35">—</div>
-                <div className="text-xs text-white/35">{t('coming_soon')}</div>
-              </div>
+            <div
+              className={styles.modeCard}
+              style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.30)' }}
+            >
+              <span className={styles.modeAccent} style={{ background: '#3b82f6' }} />
+              <span className={styles.modeName}>{t('daily')}</span>
+              <span
+                className={styles.modeAcc}
+                style={{ color: profileData.dailyAvgAccuracy !== null ? accColor(profileData.dailyAvgAccuracy) : 'rgba(255,255,255,0.35)' }}
+              >
+                {profileData.dailyAvgAccuracy !== null ? `${Math.round(profileData.dailyAvgAccuracy)}%` : '—'}
+              </span>
+              <span className={styles.modeGames}>
+                {profileData.dailyGamesPlayed !== null ? `${profileData.dailyGamesPlayed} ${t('games')}` : t('coming_soon')}
+              </span>
             </div>
-            
+
             {/* Level Up */}
-            <div className="p-4 rounded-xl relative overflow-hidden bg-purple-900/30 border border-purple-400/30">
-              <div className={`absolute top-0 left-0 right-0 h-0.5 ${styles.accentBarViolet}`} />
-              <div className={`font-bebas text-lg font-bold mb-2`}>{t('level_up')}</div>
-              <div className="flex flex-col gap-1 items-center py-4">
-                <div className="text-sm text-white/35">—</div>
-                <div className="text-xs text-white/35">{t('coming_soon')}</div>
-              </div>
+            <div
+              className={styles.modeCard}
+              style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.30)' }}
+            >
+              <span className={styles.modeAccent} style={{ background: 'var(--gh-violet, #8b5cf6)' }} />
+              <span className={styles.modeName}>{t('level_up')}</span>
+              <span
+                className={styles.modeAcc}
+                style={{ color: profileData.levelUpBestAccuracy !== null ? accColor(profileData.levelUpBestAccuracy) : 'rgba(255,255,255,0.35)' }}
+              >
+                {profileData.levelUpBestAccuracy !== null ? `${Math.round(profileData.levelUpBestAccuracy)}%` : '—'}
+              </span>
+              <span className={styles.modeGames}>
+                {profileData.levelUpCurrentLevel !== null ? `${t('level_up')} ${profileData.levelUpCurrentLevel}` : t('coming_soon')}
+              </span>
             </div>
-            
+
             {/* Compete */}
-            <div className="p-4 rounded-xl relative overflow-hidden bg-teal-500/25 border border-teal-500/30">
-              <div className={`absolute top-0 left-0 right-0 h-0.5 ${styles.accentBarTeal}`} />
-              <div className={`font-bebas text-lg font-bold mb-2`}>{t('compete')}</div>
-              <div className="flex flex-col gap-1 items-center py-4">
-                <div className="text-sm text-white/35">—</div>
-                <div className="text-xs text-white/35">{t('coming_soon')}</div>
-              </div>
+            <div
+              className={styles.modeCard}
+              style={{ background: 'rgba(34,211,238,0.10)', border: '1px solid rgba(34,211,238,0.30)' }}
+            >
+              <span className={styles.modeAccent} style={{ background: 'var(--gh-teal, #22d3ee)' }} />
+              <span className={styles.modeName}>{t('compete')}</span>
+              <span className={styles.modeAcc} style={{ color: 'rgba(255,255,255,0.35)' }}>—</span>
+              <span className={styles.modeGames}>{t('coming_soon')}</span>
             </div>
           </div>
         </div>
@@ -506,10 +504,13 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 9. FULL-WIDTH PANEL - History collection */}
+      {/* 9. EXPERIENCE (was History collection) */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('history_collection')}</h3>
+          <div className={styles.sectionHead}>
+            <span className={styles.sectionAccentBar} />
+            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('experience')}</h3>
+          </div>
           <div className="grid grid-cols-4 gap-3 mb-6">
             <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorOrange}`}>
@@ -531,90 +532,127 @@ export default function ProfilePage() {
               </div>
             ))}
           </div>
-          <div className="mt-6">
-            <h4 className="text-xs font-bold mb-3 text-white/70">{t('by_century')}</h4>
-            <div className="flex flex-col gap-2">
-              {progressData && progressData.byCentury.length > 0 ? (
+          <div className={styles.tabBar}>
+            <button
+              className={`${styles.tabBtn} ${experienceTab === 'era' ? styles.tabActive : ''}`}
+              onClick={() => setExperienceTab('era')}
+            >
+              {t('era')}
+            </button>
+            <button
+              className={`${styles.tabBtn} ${experienceTab === 'region' ? styles.tabActive : ''}`}
+              onClick={() => setExperienceTab('region')}
+            >
+              {t('region')}
+            </button>
+          </div>
+          <div className={styles.regionWrap}>
+            {experienceTab === 'era' && (
+              progressData && progressData.byCentury.length > 0 ? (
                 progressData.byCentury.map((item) => (
-                  <div key={item.century}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-white/70">{item.century}</span>
-                      <span className="text-white/45">{item.roundCount} rounds · {item.avgAccuracy}%</span>
+                  <div key={item.century} className={styles.regionRowWithCount}>
+                    <div className={styles.regionLabelWrap}>
+                      <span className={styles.regionLabel}>{item.century}</span>
+                      <div className={styles.regionBar}>
+                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
+                      </div>
                     </div>
-                    <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${styles.barFillOrange}`}
-                        style={{ width: `${item.avgAccuracy}%` }}
-                      />
-                    </div>
+                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
+                    <span className={styles.regionCount}>{item.roundCount}</span>
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-white/35 py-2">
+                <div className={styles.regionEmpty}>
                   {progressData === null ? 'Loading…' : 'No data yet'}
                 </div>
-              )}
-            </div>
+              )
+            )}
+            {experienceTab === 'region' && (
+              progressData && progressData.byContinent.length > 0 ? (
+                progressData.byContinent.map((item) => (
+                  <div key={item.continent} className={styles.regionRowWithCount}>
+                    <div className={styles.regionLabelWrap}>
+                      <span className={styles.regionLabel}>{item.continent}</span>
+                      <div className={styles.regionBar}>
+                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
+                      </div>
+                    </div>
+                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
+                    <span className={styles.regionCount}>{item.roundCount}</span>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.regionEmpty}>
+                  {progressData === null ? 'Loading…' : 'No data yet'}
+                </div>
+              )
+            )}
           </div>
         </div>
       </div>
 
-      {/* 10. FULL-WIDTH PANEL - Accuracy by century */}
+      {/* 10. ACCURACY (era / region tabs) */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8">
         <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('accuracy_by_century')}</h3>
-          <div className="flex flex-wrap gap-2">
-            {progressData && progressData.byCentury.length > 0 ? (
-              progressData.byCentury.map((item) => (
-                <div
-                  key={item.century}
-                  className={`py-3 px-3 rounded-lg text-center border ${styles.centuryChip}`}
-                >
-                  <div className={`font-bebas text-sm font-bold ${styles.historyColorOrange}`}>
-                    {item.century}
-                  </div>
-                  <div className="text-xs mt-0.5 text-white/45">
-                    {item.avgAccuracy}%
-                  </div>
-                </div>
-              ))
-            ) : (
-              ['2000s', '1900s', '1800s', '1700s', '1500s', 'pre-1500'].map((label) => (
-                <div
-                  key={label}
-                  className={`py-3 px-3 rounded-lg text-center border ${styles.centuryChip}`}
-                >
-                  <div className={`font-bebas text-sm font-bold ${styles.historyColorOrange}`}>{label}</div>
-                  <div className="text-xs mt-0.5 text-white/45">—</div>
-                </div>
-              ))
-            )}
+          <div className={styles.sectionHead}>
+            <span className={styles.sectionAccentBar} />
+            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('accuracy')}</h3>
           </div>
-        </div>
-      </div>
-
-      {/* 11. ACCOUNT SECTION */}
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('account')}</h3>
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-white/70">{t('email')}</span>
-              <span className="text-sm text-white/45">{profileData.email ?? '—'}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-white/70">{t('member_since')}</span>
-              <span className="text-sm text-white/45">{formatMemberSince(profileData.createdAt)}</span>
-            </div>
-            {signOutError && (
-              <div className="text-xs text-red-400">{signOutError}</div>
-            )}
+          <div className={styles.tabBar}>
             <button
-              onClick={handleSignOut}
-              className="w-full py-3 px-4 rounded-lg text-sm font-semibold bg-red-500/15 text-red-500 border border-red-500/30 cursor-pointer transition-colors hover:bg-red-500/25"
+              className={`${styles.tabBtn} ${accuracyTab === 'era' ? styles.tabActive : ''}`}
+              onClick={() => setAccuracyTab('era')}
             >
-              {tNav('sign_out')}
+              {t('era')}
             </button>
+            <button
+              className={`${styles.tabBtn} ${accuracyTab === 'region' ? styles.tabActive : ''}`}
+              onClick={() => setAccuracyTab('region')}
+            >
+              {t('region')}
+            </button>
+          </div>
+          <div className={styles.regionWrap}>
+            {accuracyTab === 'era' && (
+              progressData && progressData.byCentury.length > 0 ? (
+                progressData.byCentury.map((item) => (
+                  <div key={item.century} className={styles.regionRowWithCount}>
+                    <div className={styles.regionLabelWrap}>
+                      <span className={styles.regionLabel}>{item.century}</span>
+                      <div className={styles.regionBar}>
+                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
+                      </div>
+                    </div>
+                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
+                    <span className={styles.regionCount}>{item.roundCount}</span>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.regionEmpty}>
+                  {progressData === null ? 'Loading…' : 'No data yet'}
+                </div>
+              )
+            )}
+            {accuracyTab === 'region' && (
+              progressData && progressData.byContinent.length > 0 ? (
+                progressData.byContinent.map((item) => (
+                  <div key={item.continent} className={styles.regionRowWithCount}>
+                    <div className={styles.regionLabelWrap}>
+                      <span className={styles.regionLabel}>{item.continent}</span>
+                      <div className={styles.regionBar}>
+                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
+                      </div>
+                    </div>
+                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
+                    <span className={styles.regionCount}>{item.roundCount}</span>
+                  </div>
+                ))
+              ) : (
+                <div className={styles.regionEmpty}>
+                  {progressData === null ? 'Loading…' : 'No data yet'}
+                </div>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -625,6 +663,14 @@ export default function ProfilePage() {
         currentAvatarUrl={profileData.avatarUrl}
         onSave={handleSaveAvatar}
         onClose={() => setAvatarPickerOpen(false)}
+      />
+
+      <NavModal
+        isOpen={showNavModal}
+        onClose={() => setShowNavModal(false)}
+        avatarUrl={profileData.avatarUrl}
+        initials={getInitials(profileData.displayName)}
+        displayName={profileData.displayName ?? getInitials(profileData.displayName)}
       />
     </div>
   );

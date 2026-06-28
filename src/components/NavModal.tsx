@@ -4,6 +4,7 @@ import React, { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import styles from './NavModal.module.css'
+import { ThemeToggle } from './layout/ThemeToggle'
 
 interface NavModalProps {
   isOpen: boolean
@@ -107,6 +108,14 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
           </span>
         </div>
 
+        <div className={`${styles.menuItem} ${styles.navCursorDefault}`}>
+          <span className={styles.menuItemIcon}>
+            {THEME_ICON}
+          </span>
+          {t('theme')}
+          <ThemeToggle />
+        </div>
+
         <div className={styles.dividerBottom} />
 
         <button
@@ -173,5 +182,12 @@ const LANGUAGE_ICON = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <circle cx="12" cy="12" r="10"/>
     <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>
+)
+
+const THEME_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
   </svg>
 )

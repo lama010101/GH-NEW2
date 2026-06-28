@@ -79,6 +79,10 @@ export interface CompeteWSClientOptions {
   gameId: string;
   user: TestUser;
   displayName?: string;
+  /** Supabase access token for PartyKit onBeforeConnect auth. Required when
+   *  the PartyKit server enforces token-based WS auth (onBeforeConnect checks
+   *  ?token= query param). */
+  accessToken?: string;
   onStateUpdate?: (snapshot: CompeteSnapshot) => void;
   onError?: (message: string) => void;
   onPlayerSubmitted?: (playerId: string, playerName: string) => void;
@@ -103,6 +107,10 @@ export class CompeteWSClient {
   private readonly maxReconnectAttempts = 10;
   private readonly reconnectDelayMs = 1000;
   private connectPromise: Promise<void> | null = null;
+  // Last received snapshot — used by waitForState to check the current state
+  // immediately, avoiding a race where the state already matches but
+  // waitForState only listens for FUTURE updates (which never come).
+  private lastSnapshot: CompeteSnapshot | null = null;
 
   constructor(private opts: CompeteWSClientOptions) {}
 
@@ -129,7 +137,10 @@ export class CompeteWSClient {
       const host = this.opts.partyKitHost;
       const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
       const protocol = isLocal ? 'ws' : 'wss';
-      const url = `${protocol}://${host}/parties/lobby/${this.opts.gameId}`;
+      // PartyKit onBeforeConnect requires ?token=<supabase access token> for auth.
+      // Without it the server returns 401 and the WS handshake never completes.
+      const tokenParam = this.opts.accessToken ? `?token=${encodeURIComponent(this.opts.accessToken)}` : '';
+      const url = `${protocol}://${host}/parties/lobby/${this.opts.gameId}${tokenParam}`;
       console.log(`[WS:${this.opts.user.displayName}] Connecting to ${url}`);
 
       const ws = new WebSocket.WebSocket(url);
@@ -212,7 +223,8 @@ export class CompeteWSClient {
   private handleMessage(msg: ClientMessage, resolveOnce: () => void): void {
     switch (msg.type) {
       case 'STATE_UPDATE':
-        this.opts.onStateUpdate?.(msg.snapshot as CompeteSnapshot);
+        this.lastSnapshot = msg.snapshot as CompeteSnapshot;
+        this.opts.onStateUpdate?.(this.lastSnapshot);
         resolveOnce();
         break;
       case 'ERROR':
@@ -241,6 +253,14 @@ export class CompeteWSClient {
 
   /** Wait for the next STATE_UPDATE matching a predicate. */
   waitForState(predicate: (s: CompeteSnapshot) => boolean, timeoutMs = 30000): Promise<CompeteSnapshot> {
+    // Check the current state first — if it already matches, resolve immediately.
+    // This prevents a race where the state was received before waitForState was
+    // called (e.g., ROUND_COMPLETE arrives during the submission loop, but the
+    // orchestrator calls waitForState(ROUND_COMPLETE) afterwards).
+    if (this.lastSnapshot && predicate(this.lastSnapshot)) {
+      return Promise.resolve(this.lastSnapshot);
+    }
+
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.opts.onStateUpdate = originalHandler;

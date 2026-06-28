@@ -346,7 +346,7 @@ export default function RoundCompleteSection({
                     correctLat={correctLat}
                     correctLng={correctLng}
                     correctName={correctName}
-                    whereAccPenalty={submittedHintPenaltyRef.current.accPenalty}
+                    whereAccPenalty={submittedHintPenaltyRef.current.whereAccPenalty}
                     guessLat={guessLat}
                     guessLng={guessLng}
                     myDistanceKm={myDistanceKm}

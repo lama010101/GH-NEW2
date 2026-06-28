@@ -46,9 +46,9 @@ function enforceDbConnection(): Pool {
     ssl: {
       rejectUnauthorized: false
     },
-    max: 50,
+    max: 20,
     min: 2,
-    connectionTimeoutMillis: 15000,
+    connectionTimeoutMillis: 60000,
     idleTimeoutMillis: 30000,
     allowExitOnIdle: false,
     keepAlive: true,
@@ -941,6 +941,8 @@ type RoundCommitFull = {
   hints_used: number | null;
   score: number | null;
   submitted_at: Date | null;
+  acc_penalty_when_rate: number | null;
+  acc_penalty_where_rate: number | null;
 };
 
 // Extended RoundResult with all fields needed for replay
@@ -988,7 +990,8 @@ export async function verifyFullReplay(
 
     // 1. Load round_commits from DB
     const commitsResult = await verifyClient.query<RoundCommitFull>(
-      `SELECT player_id, year_guess, location_lat, location_lng, hints_used, score, submitted_at
+      `SELECT player_id, year_guess, location_lat, location_lng, hints_used, score, submitted_at,
+              acc_penalty_when_rate, acc_penalty_where_rate
        FROM round_commits
        WHERE game_id = $1 AND round_index = $2
        ORDER BY player_id ASC`,
@@ -1021,6 +1024,13 @@ export async function verifyFullReplay(
       [gameId, roundIndex]
     );
 
+    // Fetch scoring_reference_year (frozen at session creation) for deterministic era scaling
+    const sessionMeta = await verifyClient.query<{ scoring_reference_year: number }>(
+      `SELECT scoring_reference_year FROM sessions WHERE game_id = $1`,
+      [gameId]
+    );
+    const referenceYear = sessionMeta.rows[0]?.scoring_reference_year ?? 2025;
+
     // 3. Recompute for each player and compare
     for (const commit of commitsResult.rows) {
       const playerId = commit.player_id;
@@ -1033,14 +1043,15 @@ export async function verifyFullReplay(
           : null
       };
 
-      // Recompute using evaluateRound
+      // Recompute using evaluateRound with stored penalty rates + session reference year
       const evaluation = evaluateRound(
         event,
         guessState,
         roundIndex,
         false,
-        0,
-        0
+        commit.acc_penalty_when_rate ?? 0,
+        commit.acc_penalty_where_rate ?? 0,
+        referenceYear
       );
 
       // Find stored result
