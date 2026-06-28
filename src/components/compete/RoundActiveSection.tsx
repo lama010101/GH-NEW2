@@ -95,6 +95,7 @@ export default function RoundActiveSection({
   const guessHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const whereSearchInputRef = useRef<HTMLInputElement>(null);
   const yearEditInputRef = useRef<HTMLInputElement>(null);
+  const [sheetViewportStyle, setSheetViewportStyle] = useState<React.CSSProperties>({});
   const [localePending, startLocaleTransition] = useTransition();
   const [currentLocale, setCurrentLocale] = useState<Locale>(() => {
     if (typeof document === 'undefined') return 'en';
@@ -217,6 +218,44 @@ export default function RoundActiveSection({
       }
     }, 120);
     return () => window.clearTimeout(id);
+  }, [activePanel]);
+
+  // Constrain sheet to the visual viewport so the confirm button (both
+  // sheets) and the header (WHEN sheet) stay visible above the mobile
+  // soft keyboard.  dvh alone is unreliable on iOS Safari — the layout
+  // viewport does not shrink when the keyboard appears, so a sheet
+  // anchored to bottom:0 is partially hidden behind it.  The VisualViewport
+  // API reports the actual visible area, letting us pin the sheet inside it.
+  useEffect(() => {
+    if (activePanel === null) {
+      setSheetViewportStyle({});
+      return;
+    }
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const update = () => {
+      const keyboardOpen = vv.height < window.innerHeight - 10;
+      if (keyboardOpen) {
+        setSheetViewportStyle({
+          position: 'fixed',
+          top: `${vv.offsetTop}px`,
+          height: `${vv.height}px`,
+          maxHeight: `${vv.height}px`,
+          transition: 'none',
+        });
+      } else {
+        setSheetViewportStyle({});
+      }
+    };
+
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
   }, [activePanel]);
 
   // Cleanup on unmount
@@ -849,6 +888,7 @@ export default function RoundActiveSection({
           <div className={styles.sheetBackdrop} onClick={closeSheet} />
           <div
             className={`${styles.sheet} ${activePanel === 'where' ? styles.sheetFull : ""} ${activePanel === 'when' ? styles.sheetWhen : ""}`}
+            style={sheetViewportStyle}
           >
             {/* WHERE sheet */}
             {activePanel === 'where' && (
@@ -948,47 +988,49 @@ export default function RoundActiveSection({
                   </button>
                 </div>
 
-                <div className={styles.sheetPickerWrap}>
-                  <YearPicker
-                    value={guessYear ?? Math.min(yearMax, 2000)}
-                    onChange={(year) => {
-                      onSetYear(year);
-                      guessYearRef.current = year;
-                    }}
-                    min={yearMin}
-                    max={yearMax}
-                    defaultScale="century"
-                    valueIsCommitted={guessYear !== null}
-                    className="w-full"
-                  />
-                </div>
-
-                {!isLocked && (
-                  <div className={styles.sheetFieldWrap}>
-                    <input
-                      ref={yearEditInputRef}
-                      type="number"
-                      value={yearEditValue}
-                      onChange={(e) => {
-                        setYearEditValue(e.target.value);
-                        const parsed = parseInt(e.target.value, 10);
-                        if (!isNaN(parsed)) {
-                          const clamped = Math.max(yearMin, Math.min(yearMax, parsed));
-                          onSetYear(clamped);
-                          guessYearRef.current = clamped;
-                        }
+                <div className={styles.sheetScrollBody}>
+                  <div className={styles.sheetPickerWrap}>
+                    <YearPicker
+                      value={guessYear ?? Math.min(yearMax, 2000)}
+                      onChange={(year) => {
+                        onSetYear(year);
+                        guessYearRef.current = year;
                       }}
-                      onFocus={(e) => {
-                        setYearEditValue(guessYear !== null ? String(guessYear) : "");
-                        setTimeout(() => e.target.select(), 10);
-                      }}
-                      placeholder={`Enter year (${yearMin}–${yearMax})`}
                       min={yearMin}
                       max={yearMax}
-                      className={styles.sheetField}
+                      defaultScale="century"
+                      valueIsCommitted={guessYear !== null}
+                      className="w-full"
                     />
                   </div>
-                )}
+
+                  {!isLocked && (
+                    <div className={styles.sheetFieldWrap}>
+                      <input
+                        ref={yearEditInputRef}
+                        type="number"
+                        value={yearEditValue}
+                        onChange={(e) => {
+                          setYearEditValue(e.target.value);
+                          const parsed = parseInt(e.target.value, 10);
+                          if (!isNaN(parsed)) {
+                            const clamped = Math.max(yearMin, Math.min(yearMax, parsed));
+                            onSetYear(clamped);
+                            guessYearRef.current = clamped;
+                          }
+                        }}
+                        onFocus={(e) => {
+                          setYearEditValue(guessYear !== null ? String(guessYear) : "");
+                          setTimeout(() => e.target.select(), 10);
+                        }}
+                        placeholder={`Enter year (${yearMin}–${yearMax})`}
+                        min={yearMin}
+                        max={yearMax}
+                        className={styles.sheetField}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 <button
                   type="button"

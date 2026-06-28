@@ -48,12 +48,21 @@ function enforceDbConnection(): Pool {
     },
     max: 20,
     min: 2,
-    connectionTimeoutMillis: 60000,
+    connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     allowExitOnIdle: false,
     keepAlive: true,
     keepAliveInitialDelayMillis: 10000
   } as PoolConfig);
+
+  // Set statement_timeout on every new connection so stuck queries are
+  // aborted automatically, releasing the connection back to the pool.
+  // Without this, a slow query (e.g. leave API during ws-drop-reconnect)
+  // can hold a pool slot indefinitely, causing pool exhaustion.
+  const poolEmitter = pool as unknown as import("events").EventEmitter;
+  poolEmitter.on("connect", (client: { query: (text: string) => Promise<unknown> }) => {
+    client.query("SET statement_timeout = 15000").catch(() => undefined);
+  });
 
   // IMMEDIATE connection test — no lazy loading
   pool.query<{ db_alive: number; db_name: string; version: string }>(

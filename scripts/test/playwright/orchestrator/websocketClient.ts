@@ -319,6 +319,10 @@ export class CompeteWSClient {
     this.send({ type: 'SET_TIMER', playerId: this.opts.user.id, roundTimerSec });
   }
 
+  setResultsTimer(resultsAutoAdvanceSec: number): void {
+    this.send({ type: 'SET_RESULTS_TIMER', playerId: this.opts.user.id, resultsAutoAdvanceSec });
+  }
+
   setYearRange(yearMin: number, yearMax: number): void {
     this.send({ type: 'SET_YEAR_RANGE', playerId: this.opts.user.id, yearMin, yearMax });
   }
