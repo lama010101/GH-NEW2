@@ -5,7 +5,19 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { defaultLocale, LOCALE_COOKIE, locales, type Locale } from '@/i18n/config';
+import { THEME_COOKIE, type Theme, resolveTheme } from '@/lib/theme';
 import "./globals.css";
+
+/**
+ * Anti-FOUC + hydration-reconcile script.
+ * layout.tsx sets data-theme from the gh_theme cookie on the server. The client
+ * may have a newer override in localStorage (written by useTheme). This script
+ * runs before paint and reconciles the <html data-theme> attribute with
+ * localStorage so the first paint matches the user's last choice and there is
+ * no flash. localStorage is the client override source; cookie is the SSR
+ * source of truth. Single write path for client mutation lives in useTheme.
+ */
+const THEME_INIT_SCRIPT = `(function(){try{var k='gh_theme';var ls=localStorage.getItem(k);if(ls==='light'||ls==='dark'){document.documentElement.setAttribute('data-theme',ls);}}catch(e){}})();`;
 
 const bebasNeue = Bebas_Neue({
   subsets: ['latin'],
@@ -40,14 +52,22 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     raw && (locales as readonly string[]).includes(raw)
       ? (raw as Locale)
       : defaultLocale;
+  const themeRaw = cookieStore.get(THEME_COOKIE)?.value;
+  const theme: Theme = resolveTheme(themeRaw);
   const messages = await getMessages({ locale });
 
   return (
-    <html lang={locale} suppressHydrationWarning className={`${bebasNeue.variable} ${dmSans.variable} ${sora.variable}`}>
+    <html
+      lang={locale}
+      data-theme={theme}
+      suppressHydrationWarning
+      className={`${bebasNeue.variable} ${dmSans.variable} ${sora.variable}`}
+    >
       <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </body>
     </html>
   );

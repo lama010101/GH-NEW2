@@ -18,8 +18,8 @@ test.describe('Multiplayer Simulation', () => {
     const assertionFailures: string[] = [];
 
     // Launch isolated browser instances for this test
-    const chromiumBrowser = await chromium.launch();
-    const webkitBrowser = await webkit.launch();
+    const chromiumBrowser = await chromium.launch({ headless: true });
+    const webkitBrowser = await webkit.launch({ headless: true });
 
     try {
       // Helper to get the right browser engine for a device profile
@@ -97,8 +97,8 @@ test.describe('Multiplayer Simulation', () => {
     const stepLog: string[] = [];
 
     // Launch isolated browser instances for this test
-    const chromiumBrowser = await chromium.launch();
-    const webkitBrowser = await webkit.launch();
+    const chromiumBrowser = await chromium.launch({ headless: true });
+    const webkitBrowser = await webkit.launch({ headless: true });
 
     try {
       const getBrowser = (device: DeviceProfile) => {

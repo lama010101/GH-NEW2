@@ -369,3 +369,151 @@ a {
   0% { transform: translate(0,0) scale(1); opacity: 1; }
   100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
 }
+
+/* ============================================================
+   LIGHT THEME — overrides --gh-* tokens when <html data-theme="light">
+   Dark remains the default (:root above). Only presentation tokens
+   are overridden; accent colors (orange/blue/violet/gold/teal/success/danger)
+   are kept brand-consistent. Single source of truth: the cookie gh_theme
+   is read in layout.tsx and reflected as data-theme on <html>.
+   ============================================================ */
+[data-theme="light"] {
+  /* --- Semantic accent colors (kept brand-consistent, slightly deepened for light-bg contrast) --- */
+  --gh-orange:   #ea7a1c;
+  --gh-blue:     #2563eb;
+  --gh-violet:   #c026d3;
+  --gh-gold:     #b8860b;
+  --gh-teal:     #0891b2;
+  --gh-success:  #16a34a;
+  --gh-danger:   #dc2626;
+
+  /* --- Backgrounds --- */
+  --gh-bg-base:     #f4f6fb;
+  --gh-bg-surface:  rgba(255, 255, 255, 0.85);
+  --gh-bg-elevated: rgba(255, 255, 255, 0.95);
+  --gh-bg-input:    rgba(15, 23, 42, 0.06);
+
+  /* --- Text --- */
+  --gh-text-primary:   #0f172a;
+  --gh-text-secondary: rgba(15, 23, 42, 0.62);
+  --gh-text-muted:     rgba(15, 23, 42, 0.45);
+
+  /* --- Borders --- */
+  --gh-border-default: rgba(15, 23, 42, 0.14);
+  --gh-border-medium:  rgba(15, 23, 42, 0.30);
+  --gh-border-strong:  rgba(15, 23, 42, 0.50);
+
+  /* --- Glass surfaces --- */
+  --gh-glass-bg:           linear-gradient(180deg, rgba(15,23,42,0.04), rgba(15,23,42,0.02));
+  --gh-glass-bg-hover:     linear-gradient(180deg, rgba(15,23,42,0.07), rgba(15,23,42,0.04));
+  --gh-glass-border:       rgba(15, 23, 42, 0.10);
+  --gh-glass-border-hover: rgba(15, 23, 42, 0.22);
+  --gh-glass-shadow:       0 8px 30px rgba(15, 23, 42, 0.12);
+
+  /* --- Shadows (lighter for light bg) --- */
+  --shadow:           0 24px 80px rgba(15, 23, 42, 0.12);
+  --gh-shadow-sm:     0 2px 8px rgba(15, 23, 42, 0.10);
+  --gh-shadow-md:     0 4px 20px rgba(15, 23, 42, 0.12);
+  --gh-shadow-lg:     0 8px 28px rgba(15, 23, 42, 0.14);
+  --gh-shadow-xl:     0 -10px 40px rgba(15, 23, 42, 0.10);
+
+  /* --- Card frame colors --- */
+  --gh-where-card-bg:        rgba(255, 255, 255, 0.92);
+  --gh-where-card-border:    rgba(37, 99, 235, 0.55);
+  --gh-when-card-bg:         rgba(192, 38, 211, 0.10);
+  --gh-when-card-border:     rgba(192, 38, 211, 0.40);
+  --gh-where-card-glow:      rgba(8, 145, 178, 0.18);
+  --gh-when-card-glow:       rgba(192, 38, 211, 0.18);
+  --gh-card-shadow:          rgba(15, 23, 42, 0.12);
+  --gh-general-card-bg:      linear-gradient(180deg, rgba(15,23,42,0.04), rgba(15,23,42,0.02));
+  --gh-general-card-border:  rgba(15, 23, 42, 0.10);
+  --gh-general-card-shadow:  0 8px 30px rgba(15, 23, 42, 0.12);
+
+  /* --- Page background glow --- */
+  --gh-bg-glow:         radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.10) 0%, transparent 70%);
+
+  /* --- Orange action glow --- */
+  --gh-glow-orange:        rgba(234, 122, 28, 0.20);
+  --gh-glow-orange-strong: rgba(234, 122, 28, 0.40);
+
+  /* --- Action button (orange) --- */
+  --gh-btn-action-bg:   linear-gradient(135deg, #ea7a1c, #f97316);
+  --gh-btn-action-glow: 0 0 16px rgba(234, 122, 28, 0.30), 0 2px 8px rgba(15, 23, 42, 0.12);
+  --gh-btn-action-text: #ffffff;
+
+  /* --- Outline button --- */
+  --gh-btn-outline-bg:      transparent;
+  --gh-btn-outline-border:  rgba(8, 145, 178, 0.55);
+  --gh-btn-outline-text:    #0891b2;
+  --gh-btn-outline-glow:    0 0 10px rgba(8, 145, 178, 0.15);
+  --gh-btn-outline-hover-bg: rgba(8, 145, 178, 0.10);
+
+  /* --- Friend card --- */
+  --gh-friend-card-bg:           rgba(255, 255, 255, 0.92);
+  --gh-friend-card-border:       rgba(37, 99, 235, 0.20);
+  --gh-friend-card-border-hover: rgba(37, 99, 235, 0.45);
+  --gh-friend-card-shadow:       0 2px 16px rgba(15, 23, 42, 0.10);
+  --gh-friend-card-glow-hover:   0 0 18px rgba(37, 99, 235, 0.12);
+
+  /* --- Typography in glass context --- */
+  --gh-text-dim: rgba(15, 23, 42, 0.40);
+  --gh-text-tag: rgba(15, 23, 42, 0.62);
+
+  /* --- Badge metals (kept, slightly deepened) --- */
+  --gh-badge-gold:   #b8860b;
+  --gh-badge-silver: #6b7280;
+  --gh-badge-bronze: #92400e;
+
+  /* --- Modal system --- */
+  --gh-modal-overlay: rgba(15, 23, 42, 0.45);
+  --gh-modal-blur: blur(8px);
+  --gh-modal-bg: #ffffff;
+  --gh-modal-border: 1px solid rgba(15, 23, 42, 0.12);
+  --gh-modal-shadow: 0 8px 48px rgba(15, 23, 42, 0.18), 0 0 0 0.5px rgba(15, 23, 42, 0.06);
+  --gh-modal-radius: 20px;
+  --gh-modal-divider: rgba(15, 23, 42, 0.08);
+  --gh-modal-close-bg: rgba(15, 23, 42, 0.06);
+  --gh-modal-close-border: rgba(15, 23, 42, 0.12);
+  --gh-modal-close-color: rgba(15, 23, 42, 0.70);
+  --gh-modal-input-bg: rgba(15, 23, 42, 0.04);
+  --gh-modal-input-border: rgba(15, 23, 42, 0.14);
+  --gh-modal-toggle-off: rgba(15, 23, 42, 0.15);
+  --gh-modal-lang-bg: rgba(15, 23, 42, 0.05);
+  --gh-modal-lang-border: rgba(15, 23, 42, 0.12);
+  --gh-modal-text-primary: #0f172a;
+  --gh-modal-text-secondary: rgba(15, 23, 42, 0.70);
+  --gh-modal-text-muted: rgba(15, 23, 42, 0.45);
+
+  /* --- Particle colors (kept) --- */
+  --gh-particle-gold:  #b8860b;
+  --gh-particle-red:   #dc2626;
+  --gh-particle-teal:  #0891b2;
+  --gh-particle-white: #0f172a;
+}
+
+/* Map grid + a few legacy surfaces use literal dark colors in globals;
+   override them for light theme so the map/playfield reads on light bg. */
+[data-theme="light"] .map-grid {
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    linear-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+    linear-gradient(135deg, #e6ecf5, #eef2f9 60%, #f4f6fb);
+}
+[data-theme="light"] .map-marker {
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 8px rgba(234, 122, 28, 0.18);
+}
+[data-theme="light"] .input {
+  background: rgba(15, 23, 42, 0.04);
+}
+[data-theme="light"] .metric {
+  background: rgba(15, 23, 42, 0.04);
+}
+[data-theme="light"] .progress {
+  background: rgba(15, 23, 42, 0.08);
+}
+[data-theme="light"] .badge {
+  background: rgba(234, 122, 28, 0.14);
+  border: 1px solid rgba(234, 122, 28, 0.28);
+  color: var(--gh-orange);
+}

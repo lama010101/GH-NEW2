@@ -9,6 +9,7 @@ import { signOut } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
+import { NavModal } from '@/components/NavModal'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
 
@@ -36,6 +37,7 @@ export default function AccountPage() {
   const [saving, setSaving] = useState(false)
   const [saveResult, setSaveResult] = useState<'idle' | 'success' | 'error'>('idle')
   const [signOutError, setSignOutError] = useState<string | null>(null)
+  const [showNavModal, setShowNavModal] = useState(false)
 
   useEffect(() => {
     if (playerId === undefined) return
@@ -126,7 +128,7 @@ export default function AccountPage() {
     setSignOutError(null)
     try {
       await signOut()
-      router.push('/')
+      window.location.href = '/'
     } catch (err) {
       setSignOutError(err instanceof Error ? err.message : 'Sign out failed')
     }
@@ -154,7 +156,7 @@ export default function AccountPage() {
         xp={xp}
         avatarUrl={avatarInfo?.imageUrl ?? null}
         initials={getInitials(displayName)}
-        onAvatarClick={() => {}}
+        onAvatarClick={() => setShowNavModal(true)}
       />
 
       {/* Avatar card */}
@@ -247,6 +249,14 @@ export default function AccountPage() {
           {tNav('sign_out')}
         </button>
       </div>
+
+      <NavModal
+        isOpen={showNavModal}
+        onClose={() => setShowNavModal(false)}
+        avatarUrl={avatarInfo?.imageUrl ?? null}
+        initials={getInitials(displayName)}
+        displayName={displayName || getInitials(displayName)}
+      />
     </div>
   )
 }

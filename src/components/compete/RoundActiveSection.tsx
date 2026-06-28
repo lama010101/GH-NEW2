@@ -8,6 +8,7 @@ import { YearPicker } from "@/components/YearPicker";
 import NotificationBell from "@/components/NotificationBell";
 import { setLocale } from "@/actions/setLocale";
 import { LOCALE_COOKIE, locales, type Locale } from "@/i18n/config";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import styles from "./RoundActiveSection.module.css";
 
 const GameMap = dynamic(
@@ -1077,6 +1078,11 @@ export default function RoundActiveSection({
                   FR
                 </button>
               </div>
+            </div>
+
+            <div className={styles.settingsLanguageRow}>
+              <span className={styles.settingsLanguageLabel}>{tNav('theme')}</span>
+              <ThemeToggle />
             </div>
 
             <div className={styles.settingsDivider} />

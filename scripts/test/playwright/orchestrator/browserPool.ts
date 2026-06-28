@@ -121,8 +121,15 @@ export class BrowserPool {
 
       const page = await context.newPage();
 
-      // Navigate to the home page first to trigger any auth gate
-      await page.goto(this.opts.baseURL, { waitUntil: 'domcontentloaded' });
+      // Navigate to /login directly to trigger the AuthModal.
+      // The landing page ("/") is public and never shows the AuthModal, so
+      // ensureLoggedIn would falsely report "already authenticated" without
+      // logging in. Using /login directly (instead of /home which redirects
+      // to /login?next=/home) avoids a cold-compile delay on /home after
+      // login — the modal's onClose navigates to next="/" (already compiled)
+      // instead of next="/home" (cold compile, 30+s), keeping the modal
+      // detach within the 20s AUTH_TIMEOUT.
+      await page.goto(`${this.opts.baseURL}/login`, { waitUntil: 'domcontentloaded' });
       await page.waitForLoadState('domcontentloaded').catch(() => undefined);
 
       // Log in via the AuthModal UI

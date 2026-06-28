@@ -10,6 +10,9 @@
     "help": "Aide",
     "sign_out": "Se déconnecter",
     "language": "Langue",
+    "theme": "Thème",
+    "dark": "Sombre",
+    "light": "Clair",
     "coming_soon": "{label} — bientôt disponible !",
     "close": "Fermer"
   },
@@ -449,7 +452,13 @@
     "games_played": "Parties jouées",
     "rounds_played": "Manches jouées",
     "no_games_yet": "Aucune partie",
-    "sign_out": "Se déconnecter"
+    "sign_out": "Se déconnecter",
+    "experience": "Expérience",
+    "accuracy": "Précision",
+    "era": "Époque",
+    "region": "Région",
+    "games": "parties",
+    "best": "meilleur"
   },
   "account": {
     "username": "Nom d'utilisateur",

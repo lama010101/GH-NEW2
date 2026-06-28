@@ -6,6 +6,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
+import TopBar from '@/components/layout/TopBar';
+import { NavModal } from '@/components/NavModal';
 import styles from './leaderboard.module.css';
 
 type LeaderboardTab = 'daily' | 'levelup' | 'overall';
@@ -61,7 +63,7 @@ type LeaderboardEntry = {
 function LeaderboardPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { playerId } = useIdentity();
+  const { playerId, displayName } = useIdentity();
   const t = useTranslations('leaderboard');
   
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('overall');
@@ -74,6 +76,46 @@ function LeaderboardPageInner() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [accuracy, setAccuracy] = useState('--');
+  const [xp, setXp] = useState('--');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [initials, setInitials] = useState('PL');
+  const [showNavModal, setShowNavModal] = useState(false);
+
+  useEffect(() => {
+    if (!playerId) {
+      setAvatarUrl(null);
+      setInitials('PL');
+      setAccuracy('--');
+      setXp('--');
+      return;
+    }
+    (async () => {
+      try {
+        const { data: stats } = await supabaseBrowser
+          .from('player_global_stats')
+          .select('avg_accuracy,total_xp')
+          .eq('player_id', playerId)
+          .single();
+        if (stats) {
+          setAccuracy(String(Math.round(Number(stats.avg_accuracy))));
+          setXp(Number(stats.total_xp).toLocaleString('fr-FR'));
+        }
+      } catch {}
+      try {
+        const { data: profile } = await supabaseBrowser
+          .from('profiles')
+          .select('display_name,avatar_url')
+          .eq('id', playerId)
+          .single();
+        if (profile) {
+          if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
+          if (profile.display_name) setInitials(profile.display_name.slice(0, 2).toUpperCase());
+        }
+      } catch {}
+    })();
+  }, [playerId]);
 
   const getInitials = (name: string | null): string => {
     if (!name) return '?';
@@ -319,7 +361,15 @@ function LeaderboardPageInner() {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} style={{ paddingTop: 64 }}>
+      <TopBar
+        accuracy={accuracy}
+        xp={xp}
+        avatarUrl={avatarUrl}
+        initials={initials}
+        onAvatarClick={() => setShowNavModal(true)}
+      />
+
       {/* Header */}
       <div className={styles.header}>
         <button onClick={() => router.back()} className={styles.backBtn}>
@@ -495,6 +545,14 @@ function LeaderboardPageInner() {
           </div>
         )}
       </div>
+
+      <NavModal
+        isOpen={showNavModal}
+        onClose={() => setShowNavModal(false)}
+        avatarUrl={avatarUrl}
+        initials={initials}
+        displayName={displayName ?? initials}
+      />
     </div>
   );
 }

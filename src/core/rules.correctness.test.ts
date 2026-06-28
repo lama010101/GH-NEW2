@@ -48,8 +48,8 @@ describe("breadth correctness tests", () => {
     });
 
     it("200 years off on 1969 event → 0% year accuracy", () => {
-      // Hand computation:
-      // CURRENT_YEAR = 2025, eventYear = 1969
+      // Hand computation (referenceYear defaults to 2025):
+      // eventYear = 1969, referenceYear = 2025
       // age = max(50, 2025 - 1969) = max(50, 56) = 56
       // eraScale = sqrt(56 / 50) = sqrt(1.12) ≈ 1.0583
       // yearDiff = 1769 - 1969 = -200, abs = 200
@@ -240,30 +240,32 @@ describe("breadth correctness tests", () => {
   });
 
   describe("hint penalty application", () => {
-    it("penaltyWhen reduces year accuracy only", () => {
+    it("penaltyWhen reduces year accuracy only (proportional + age-discounted)", () => {
       // Base: year=100, location=100
-      // penaltyWhen=30, penaltyWhere=0
-      // Expected: year=100-30=70, location=100-0=100
-      // roundAccuracy = (70+100)/2 = 85
-      // roundXp = 70+100 = 170
+      // penaltyWhenRate=30, penaltyWhereRate=0, referenceYear=2025 (default)
+      // eraScale = sqrt(56/50) = 1.0583
+      // whenRate = 30/1.0583/100 = 0.2835
+      // yearFinal = floor(100 * 0.7165) = 71
+      // roundAccuracy = round((71+100)/2) = 86
+      // roundXp = 71+100 = 171
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        30,  // penaltyWhen
-        0    // penaltyWhere
+        30,  // penaltyWhenRate
+        0    // penaltyWhereRate
       );
-      expect(result.yearAccuracy).toBe(70);
+      expect(result.yearAccuracy).toBe(71);
       expect(result.locationAccuracy).toBe(100);
-      expect(result.roundAccuracy).toBe(85);
-      expect(result.roundXp).toBe(170);
+      expect(result.roundAccuracy).toBe(86);
+      expect(result.roundXp).toBe(171);
     });
 
-    it("penaltyWhere reduces location accuracy only", () => {
+    it("penaltyWhere reduces location accuracy only (proportional, no age-discount)", () => {
       // Base: year=100, location=100
-      // penaltyWhen=0, penaltyWhere=20
-      // Expected: year=100-0=100, location=100-20=80
+      // penaltyWhenRate=0, penaltyWhereRate=20
+      // whereRate = 20/100 = 0.2, locFinal = floor(100 * 0.8) = 80
       // roundAccuracy = (100+80)/2 = 90
       // roundXp = 100+80 = 180
       const result = evaluateRound(
@@ -271,8 +273,8 @@ describe("breadth correctness tests", () => {
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        0,   // penaltyWhen
-        20   // penaltyWhere
+        0,   // penaltyWhenRate
+        20   // penaltyWhereRate
       );
       expect(result.yearAccuracy).toBe(100);
       expect(result.locationAccuracy).toBe(80);
@@ -282,8 +284,9 @@ describe("breadth correctness tests", () => {
 
     it("both penalties applied independently", () => {
       // Base: year=100, location=100
-      // penaltyWhen=10, penaltyWhere=40
-      // Expected: year=100-10=90, location=100-40=60
+      // penaltyWhenRate=10, penaltyWhereRate=40
+      // whenRate = 10/1.0583/100 = 0.0945, yearFinal = floor(100 * 0.9055) = 90
+      // whereRate = 40/100 = 0.4, locFinal = floor(100 * 0.6) = 60
       // roundAccuracy = (90+60)/2 = 75
       // roundXp = 90+60 = 150
       const result = evaluateRound(
@@ -291,8 +294,8 @@ describe("breadth correctness tests", () => {
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        10,  // penaltyWhen
-        40   // penaltyWhere
+        10,  // penaltyWhenRate
+        40   // penaltyWhereRate
       );
       expect(result.yearAccuracy).toBe(90);
       expect(result.locationAccuracy).toBe(60);
@@ -302,8 +305,9 @@ describe("breadth correctness tests", () => {
 
     it("penalty floor at 0 (cannot go negative)", () => {
       // Base: year=100, location=100
-      // penaltyWhen=150, penaltyWhere=200
-      // Expected: year=max(0, 100-150)=0, location=max(0, 100-200)=0
+      // penaltyWhenRate=150 → clamp(150/1.0583, 0, 100) = 100 → whenRate = 1.0
+      // penaltyWhereRate=200 → clamp(200, 0, 100) = 100 → whereRate = 1.0
+      // yearFinal = floor(100 * 0) = 0, locFinal = floor(100 * 0) = 0
       // roundAccuracy = (0+0)/2 = 0
       // roundXp = 0+0 = 0
       const result = evaluateRound(
@@ -311,8 +315,8 @@ describe("breadth correctness tests", () => {
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        150,  // penaltyWhen
-        200   // penaltyWhere
+        150,  // penaltyWhenRate
+        200   // penaltyWhereRate
       );
       expect(result.yearAccuracy).toBe(0);
       expect(result.locationAccuracy).toBe(0);
@@ -390,16 +394,17 @@ describe("breadth correctness tests", () => {
   describe("integration: badges with penalties", () => {
     it("penalty pushes gold to silver → silver badge awarded", () => {
       // Base: year=100, location=100
-      // penaltyWhen=5, penaltyWhere=0
-      // Expected: year=95, location=100
+      // penaltyWhenRate=5, penaltyWhereRate=0, referenceYear=2025
+      // eraScale=1.0583, whenRate=5/1.0583/100=0.0472
+      // yearFinal = floor(100 * 0.9528) = 95
       // Year should get silver badge (95), location gold (100)
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        5,   // penaltyWhen
-        0    // penaltyWhere
+        5,   // penaltyWhenRate
+        0    // penaltyWhereRate
       );
       expect(result.yearAccuracy).toBe(95);
       expect(result.locationAccuracy).toBe(100);
@@ -408,34 +413,34 @@ describe("breadth correctness tests", () => {
     });
 
     it("penalty pushes silver to bronze → bronze badge awarded", () => {
-      // Base: year=97, location=100 (year silver, location gold)
-      // penaltyWhen=7, penaltyWhere=0
-      // Expected: year=90, location=100
+      // Base: year=97 (1yr off), location=100 (year silver, location gold)
+      // penaltyWhenRate=7, penaltyWhereRate=0
+      // whenRate=7/1.0583/100=0.0661, yearFinal=floor(97*0.9339)=90
       // Year should get bronze badge (90), location gold (100)
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1970, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        7,   // penaltyWhen: 97-7=90
-        0    // penaltyWhere
+        7,   // penaltyWhenRate
+        0    // penaltyWhereRate
       );
       expect(result.yearAccuracy).toBe(90);
       expect(result.badges.find(b => b.dimension === "year")?.tier).toBe("bronze");
     });
 
     it("penalty pushes bronze to near-miss → near-miss instead of badge", () => {
-      // Base: year=97, location=100 (year silver, location gold)
-      // penaltyWhen=9, penaltyWhere=0
-      // Expected: year=88, location=100
+      // Base: year=97 (1yr off), location=100 (year silver, location gold)
+      // penaltyWhenRate=9, penaltyWhereRate=0
+      // whenRate=9/1.0583/100=0.0850, yearFinal=floor(97*0.9150)=88
       // Year should get near-miss (88), location gold (100)
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1970, location: { lat: 0.67408, lng: 23.47297 } },
         0,
         false,
-        9,   // penaltyWhen: 97-9=88
-        0    // penaltyWhere
+        9,   // penaltyWhenRate
+        0    // penaltyWhereRate
       );
       expect(result.yearAccuracy).toBe(88);
       expect(result.badges.find(b => b.dimension === "year")).toBeUndefined();

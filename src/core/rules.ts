@@ -37,10 +37,17 @@ export function calculateLocationAccuracy(distanceKm: number): number {
   return distanceKm === 0 ? 100 : Math.floor(clamp(100 * Math.exp(-distanceKm / 1500), 0, 100));
 }
 
-export function calculateYearAccuracy(yearDiff: number, eventYear: number): number {
-  const CURRENT_YEAR = 2025;
-  const age = Math.max(50, CURRENT_YEAR - eventYear);
-  const eraScale = Math.sqrt(age / 50);
+// Era scale: older events are harder to guess the year for, so the effective
+// year difference is divided by eraScale (>=1) to forgive wider misses.
+// referenceYear is frozen at session creation (stored in sessions.scoring_reference_year)
+// to guarantee recomputability-from-DB — never use wall-clock time here.
+export function getEraScale(eventYear: number, referenceYear: number): number {
+  const age = Math.max(50, referenceYear - eventYear);
+  return Math.sqrt(age / 50);
+}
+
+export function calculateYearAccuracy(yearDiff: number, eventYear: number, referenceYear: number): number {
+  const eraScale = getEraScale(eventYear, referenceYear);
   const effectiveDiff = Math.abs(yearDiff) / eraScale;
   return effectiveDiff === 0 ? 100 : Math.floor(clamp(100 * Math.exp(-effectiveDiff / 40), 0, 100));
 }
@@ -94,8 +101,9 @@ export function evaluateRound(
   guess: GuessState,
   roundIndex: number,
   didTimeout = false,
-  penaltyWhen: number = 0,
-  penaltyWhere: number = 0
+  penaltyWhenRate: number = 0,
+  penaltyWhereRate: number = 0,
+  referenceYear: number = 2025
 ) {
   const fallbackGuess: GuessState = {
     year: guess.year,
@@ -126,11 +134,20 @@ export function evaluateRound(
 
   const yearAccuracy = fallbackGuess.year === null
     ? 0
-    : calculateYearAccuracy(yearDiff, event.year);
+    : calculateYearAccuracy(yearDiff, event.year, referenceYear);
   const locationAccuracy = calculateLocationAccuracy(distanceKm);
 
-  const yearAccuracyFinal   = Math.max(0, yearAccuracy - penaltyWhen);
-  const locationAccuracyFinal = Math.max(0, locationAccuracy - penaltyWhere);
+  // Penalties are RATES (0-100 integer = 0%-100%), applied proportionally to raw
+  // accuracy (not flat point subtraction). Proportional application is fair to both
+  // strong and weak players and guarantees a hint can never make you worse than 0.
+  // WHEN (year) penalties are age-discounted by eraScale: older events are harder
+  // to guess the year for, so the same hint costs less. WHERE (location) penalties
+  // are not age-discounted (location difficulty does not track event age).
+  const eraScale = getEraScale(event.year, referenceYear);
+  const whenRate  = clamp(penaltyWhenRate  / eraScale, 0, 100) / 100;
+  const whereRate = clamp(penaltyWhereRate, 0, 100) / 100;
+  const yearAccuracyFinal     = Math.floor(yearAccuracy     * (1 - whenRate));
+  const locationAccuracyFinal = Math.floor(locationAccuracy * (1 - whereRate));
   const comboAccuracy = Math.min(yearAccuracyFinal, locationAccuracyFinal);
   const roundAccuracy = Math.round((yearAccuracyFinal + locationAccuracyFinal) / 2);
   const roundXp       = yearAccuracyFinal + locationAccuracyFinal;

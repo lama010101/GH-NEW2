@@ -96,3 +96,253 @@
   pointer-events: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
+
+/* ── Section header (accent bar + title) ── */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.sectionAccentBar {
+  width: 4px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--gh-teal, #22d3ee);
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+/* ── Badge collection ── */
+.badgeTierRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.badgeTier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 6px 12px;
+  border-radius: 14px;
+}
+
+.badgeTierImg {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+
+.badgeTierCount {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.badgeTierLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.badgeDimRow {
+  display: flex;
+  gap: 8px;
+}
+
+.badgeDim {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.badgeDimImg {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+.badgeDimLabel {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  flex: 1;
+}
+
+.badgeDimCount {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* ── Performance by mode ── */
+.modeRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.modeCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 16px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.modeAccent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.modeName {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.modeAcc {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.modeGames {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── Tabs (era / region) ── */
+.tabBar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tabBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tabActive {
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.35);
+  color: var(--gh-teal, #22d3ee);
+}
+
+.tabActive:hover {
+  background: rgba(34, 211, 238, 0.18);
+  color: #67e8f9;
+}
+
+/* ── Region / era rows ── */
+.regionWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.regionRow {
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.regionRowWithCount {
+  display: grid;
+  grid-template-columns: 1fr 44px 36px;
+  align-items: center;
+  gap: 10px;
+}
+
+.regionLabelWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.regionLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.regionSpan {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.regionBar {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.regionBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gh-teal, #22d3ee), var(--gh-violet, #8b5cf6));
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.regionPct {
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.regionCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: right;
+}
+
+.regionEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 24px 0;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+}

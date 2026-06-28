@@ -1,0 +1,101 @@
+
+> guess-history@0.1.0 test:e2e
+> playwright test --config=scripts/test/playwright/playwright.config.ts
+
+◇ injecting env (16) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injecting env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+[PREFLIGHT] Load average: 1min=20.97 5min=43.60 15min=54.39
+[PLAYWRIGHT SETUP] Creating test users...
+[PLAYWRIGHT SETUP] User gh-test-player-1@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-1@test.guess-history.com with ID 446e151b-0332-4c49-b90d-9b6a4a019076
+[PLAYWRIGHT SETUP] User gh-test-player-2@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-2@test.guess-history.com with ID 67c7fea4-2ef6-408b-b2ed-1a37af12766e
+[PLAYWRIGHT SETUP] User gh-test-player-3@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-3@test.guess-history.com with ID daf92edf-df8a-499b-ad4e-88c47d5f313c
+[PLAYWRIGHT SETUP] User gh-test-player-4@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-4@test.guess-history.com with ID cd2703bb-c730-4468-a431-549d2c8ce58a
+[PLAYWRIGHT SETUP] User gh-test-player-5@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-5@test.guess-history.com with ID 622d8a29-e745-4397-963e-537e3f5d7de0
+[PLAYWRIGHT SETUP] User gh-test-player-6@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-6@test.guess-history.com with ID 1d3afc76-1a47-4d96-89c4-0222659bc93c
+[PLAYWRIGHT SETUP] Wrote 6 user IDs to /Users/lolo/GH-new/GH-NEW/.test-user-ids.json
+[PLAYWRIGHT SETUP] All test users created successfully
+[PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues
+
+Running 46 tests using 1 worker
+
+◇ injecting env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injecting env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+[BROWSER_POOL] Launching 6 browsers...
+[AUTH] gh-test-player-1@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] gh-test-player-2@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[AUTH] gh-test-player-3@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 3 (TestPlayer3, desktop-chrome) ready
+[AUTH] gh-test-player-4@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 4 (TestPlayer4, iphone-safari) ready
+[AUTH] gh-test-player-5@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 5 (TestPlayer5, iphone-safari) ready
+[AUTH] gh-test-player-6@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 6 (TestPlayer6, iphone-safari) ready
+[BROWSER_POOL] All 6 browsers launched and authenticated
+[ORCHESTRATOR] Starting 3 games of 5 rounds each...
+[SIMULATION] Game 1/3
+[EDGE] Engine reset for new game — injected and failures cleared
+[SIMULATION] Creating game via API...
+  ✘   1 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (1.3m)
+◇ injecting env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injecting env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+[BROWSER_POOL] Launching 6 browsers...
+[AUTH] gh-test-player-1@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] gh-test-player-2@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[AUTH] gh-test-player-3@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 3 (TestPlayer3, desktop-chrome) ready
+[AUTH] gh-test-player-4@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 4 (TestPlayer4, iphone-safari) ready
+[AUTH] gh-test-player-5@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 5 (TestPlayer5, iphone-safari) ready
+[AUTH] gh-test-player-6@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 6 (TestPlayer6, iphone-safari) ready
+[BROWSER_POOL] All 6 browsers launched and authenticated
+[ORCHESTRATOR] Starting 3 games of 5 rounds each...
+[SIMULATION] Game 1/3
+[EDGE] Engine reset for new game — injected and failures cleared
+[SIMULATION] Creating game via API...
+  ✘   2 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (retry #1) (1.2m)
+◇ injecting env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+◇ injecting env (0) from .env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] gh-test-player-1@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] gh-test-player-2@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[EDGE] Engine reset for new game — injected and failures cleared
+[RESUME-TEST] Creating game via API...
+  ✘   3 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete (22.3s)
+◇ injecting env (0) from .env.local // tip: ⌘ enable debugging { debug: true }
+◇ injecting env (0) from .env.local // tip: ⌁ auth for agents [www.vestauth.com]
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] gh-test-player-1@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] gh-test-player-2@test.guess-history.com already authenticated
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[EDGE] Engine reset for new game — injected and failures cleared
+[RESUME-TEST] Creating game via API...
+  ✘   4 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete (retry #1) (22.1s)
+  -   5 [chromium] › scripts/test/playwright/specs/task-01-nav-guard.spec.ts:22:7 › TASK 1 - Navigation guard › onbeforeunload is registered during ROUND_ACTIVE
+  -   6 [chromium] › scripts/test/playwright/specs/task-01-nav-guard.spec.ts:36:7 › TASK 1 - Navigation guard › browser back does not navigate away from game during active round
+◇ injecting env (0) from .env.local // tip: ⌘ enable debugging { debug: true }
+Body styles: { paddingBottom: '0px', marginBottom: '8px' }
+  ✓   7 [chromium] › scripts/test/playwright/specs/task-02-iphone-navbar.spec.ts:4:7 › TASK 2 - iPhone safe-area › navbar has computed padding-bottom > 0px on iPhone 14 (1.5s)
+  ✘   8 [chromium] › scripts/test/playwright/specs/task-02-iphone-navbar.spec.ts:65:7 › TASK 2 - iPhone safe-area › viewport meta tag includes viewport-fit=cover for safe areas (11.6m)
+◇ injecting env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }

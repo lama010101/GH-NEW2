@@ -992,7 +992,7 @@
 .lobbyEraRail { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; -ms-overflow-style: none; min-width: 0; max-width: 100%; width: 100%; }
 .lobbyEraRail::-webkit-scrollbar { display: none; }
 .lobbyEraBtn { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 76px; flex: 0 0 auto; padding: 10px 12px; border-radius: 14px; border: 1px solid transparent; cursor: pointer; text-align: center; transition: opacity 0.15s; background: transparent; }
-.lobbyEraBtnOn { opacity: 1; }
+.lobbyEraBtnOn { opacity: 0.85; }
 .lobbyEraBtnOff { opacity: 0.5; }
 .lobbyEraBtn:disabled { cursor: default; }
 .lobbyEraIcon { flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1; background: rgba(255,255,255,0.08); }

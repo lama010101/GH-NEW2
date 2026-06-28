@@ -10,6 +10,9 @@
     "help": "Help",
     "sign_out": "Sign Out",
     "language": "Language",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
     "coming_soon": "{label} — coming soon!",
     "close": "Close"
   },
@@ -449,7 +452,13 @@
     "games_played": "Games played",
     "rounds_played": "Rounds played",
     "no_games_yet": "No games yet",
-    "sign_out": "Sign out"
+    "sign_out": "Sign out",
+    "experience": "Experience",
+    "accuracy": "Accuracy",
+    "era": "Era",
+    "region": "Region",
+    "games": "games",
+    "best": "best"
   },
   "account": {
     "username": "Username",

@@ -221,6 +221,7 @@ export default function CompeteGamePage() {
     setTimer,
     setYearRange,
     setResultsTimer,
+    setSubMode,
     kickPlayer,
     playAgain,
   } = useCompeteSocket({
@@ -447,6 +448,14 @@ export default function CompeteGamePage() {
     setResultsTimer(resultsAutoAdvanceSec);
   }, [playerId, setResultsTimer]);
 
+  const handleSetSubMode = useCallback((mode: "sync" | "async", sessionDeadlineDays: number) => {
+    if (!playerId) return;
+    setBusy(true);
+    setError(null);
+    // Client → DO → DB: send SET_SUB_MODE action signal via WS
+    setSubMode(mode, sessionDeadlineDays);
+  }, [playerId, setSubMode]);
+
   const handleKickPlayer = useCallback((targetPlayerId: string) => {
     if (!playerId) return;
     setBusy(true);
@@ -640,6 +649,7 @@ export default function CompeteGamePage() {
               onSetTimer={handleSetTimer}
               onSetYearRange={handleSetYearRange}
               onSetResultsTimer={handleSetResultsTimer}
+              onSetSubMode={handleSetSubMode}
               onKickPlayer={handleKickPlayer}
               onSetEraSelection={handleSetEraSelection}
             />

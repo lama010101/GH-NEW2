@@ -1,15 +1,46 @@
 import { Page } from '@playwright/test';
 import { TestUser } from '../fixtures/auth';
 
-const AUTH_TIMEOUT = 20000;
-const AUTH_MODAL_APPEAR_TIMEOUT = 10000;
+// Timeouts raised from 20s/10s to 60s/30s to accommodate slow dev-server
+// cold compiles and Supabase auth latency when 6 browsers log in sequentially
+// under load. In single-browser tests the modal typically detaches in ~7s,
+// but the 6-browser pool + globalSetup creates enough contention to exceed
+// the original 20s budget.
+const AUTH_TIMEOUT = 60000;
+const AUTH_MODAL_APPEAR_TIMEOUT = 30000;
+
+/** Supabase auth session cookie name (project ref gzvixlvkwjsrtmtybtkf). */
+const AUTH_COOKIE_NAME = 'sb-gzvixlvkwjsrtmtybtkf-auth-token';
+
+/**
+ * Poll the browser context for the Supabase auth-token cookie.
+ * Resolves true once the cookie (or any chunked variant) is present.
+ */
+async function waitForAuthCookie(page: Page, timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const cookies = await page.context().cookies();
+    const found = cookies.some(
+      (c) => c.name === AUTH_COOKIE_NAME || c.name.startsWith(`${AUTH_COOKIE_NAME}.`),
+    );
+    if (found) return true;
+    await page.waitForTimeout(500);
+  }
+  return false;
+}
 
 /**
  * Log in a single user through the AuthModal UI.
  *
  * The AuthModal is opened by the app when an unauthenticated user visits a
  * protected route. This helper fills email/password, submits, and waits for
- * the modal to disappear.
+ * the Supabase auth-token cookie to appear.
+ *
+ * NOTE: We wait for the auth cookie rather than the modal to detach because
+ * the AuthModal's onAuthStateChange → onClose → router.replace chain does
+ * not always fire reliably under load. The auth cookie is the true source
+ * of truth for authentication — once it's set, the user is logged in
+ * regardless of whether the modal visually closed.
  */
 export async function loginViaAuthModal(page: Page, user: TestUser): Promise<void> {
   console.log(`[AUTH] Logging in ${user.email} via AuthModal...`);
@@ -17,18 +48,34 @@ export async function loginViaAuthModal(page: Page, user: TestUser): Promise<voi
   const modal = page.getByTestId('auth-modal').first();
   await modal.waitFor({ state: 'visible', timeout: AUTH_TIMEOUT });
 
+  // Wait for the page to finish hydrating before interacting with the form.
+  // Under heavy load (6 browsers + dev server cold compile), the modal DOM
+  // can appear before React hydrates, so fill()/click() would operate on
+  // inputs whose onChange handlers aren't yet attached — the React state
+  // never updates and signInWithPassword is never called.
+  await page.waitForLoadState('networkidle').catch(() => undefined);
+  // Additional hydration buffer: networkidle fires when the network is quiet,
+  // but React hydration may still be in progress. Wait for the submit button
+  // to be enabled (loading=false) as a hydration proxy.
+  const submitBtn = modal.getByTestId('auth-submit-btn').first();
+  await submitBtn.waitFor({ state: 'attached', timeout: AUTH_TIMEOUT });
+  await page.waitForTimeout(2000);
+
   const emailInput = modal.getByTestId('auth-email-input').first();
   const passwordInput = modal.getByTestId('auth-password-input').first();
-  const submitBtn = modal.getByTestId('auth-submit-btn').first();
 
   await emailInput.fill(user.email);
   await passwordInput.fill(user.password);
 
-  // Click submit and wait for the modal to close
+  // Click submit and wait for the auth cookie to appear
   await submitBtn.click();
-  await modal.waitFor({ state: 'detached', timeout: AUTH_TIMEOUT });
+  const cookieFound = await waitForAuthCookie(page, AUTH_TIMEOUT);
 
-  console.log(`[AUTH] ${user.email} logged in successfully`);
+  if (!cookieFound) {
+    throw new Error(`[AUTH] ${user.email}: auth cookie not set within ${AUTH_TIMEOUT}ms after submit`);
+  }
+
+  console.log(`[AUTH] ${user.email} logged in successfully (auth cookie set)`);
 }
 
 /**

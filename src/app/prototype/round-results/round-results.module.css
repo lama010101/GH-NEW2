@@ -191,89 +191,133 @@
 .ringWrap {
   position: relative;
   flex-shrink: 0;
-  width: 140px;
-  height: 140px;
-}
-
-.ringCenter {
-  position: absolute;
-  inset: 0;
+  width: 150px;
+  height: 150px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.ringValue {
-  font-size: 38px;
-  font-weight: 800;
-}
-
-.ringPct {
-  font-size: 16px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
-  margin-left: 2px;
 }
 
 .heroSide {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
-.xpBlock {
+/* Rank block — "2nd place" big */
+.rankBlock {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 6px;
 }
 
-.xpValue {
-  font-size: 26px;
+.rankBig {
+  font-size: 32px;
   font-weight: 800;
   color: #ffd54a;
   line-height: 1;
 }
 
-.xpLabel {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
-  margin-top: 3px;
+.rankLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.comboBadge {
-  align-self: flex-start;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 11px;
-  border-radius: 999px;
-}
-
-.splitRow {
+/* Where / When mini cards */
+.miniCardsRow {
   display: flex;
-  gap: 18px;
+  gap: 10px;
 }
 
-.splitItem {
+.miniCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 0;
+}
+
+.miniCardHead {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.splitDot {
-  width: 9px;
-  height: 9px;
+.miniCardDot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 
-.splitLabel {
+.miniCardTitle {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.65);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.splitVal {
-  font-size: 14px;
+/* Mini ring */
+.miniRingWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.miniRingVal {
+  position: absolute;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Mini badges */
+.miniBadges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+}
+
+.miniBadgeImg {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.miniBadgeCount {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffd54a;
+}
+
+/* Mini XP — value + label both white */
+.miniXp {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.miniXpVal {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.miniXpLabel {
+  font-size: 11px;
   font-weight: 700;
+  color: #fff;
 }
 
 /* ── Avatars ── */

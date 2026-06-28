@@ -16,9 +16,9 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
 
   return (
     <div className={styles.topbar}>
-      <div className={styles.topbarLeft}>
+      <button className={styles.topbarLeft} onClick={() => router.push('/home')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
         <Image src="/icons/logo.webp" alt="Guess-History" width={120} height={32} className={styles.logoImg} priority />
-      </div>
+      </button>
       <button
         onClick={() => router.push('/leaderboard?tab=overall')}
         className={styles.xpPill}

@@ -117,7 +117,7 @@ export default function WhereCard({
       {whereAccPenalty > 0 && (
         <div className={styles.hintPenaltyWrap}>
           <span className={styles.hintPenalty}>
-            −{Math.round(whereAccPenalty / 2)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
+            −{Math.round(whereAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
           </span>
         </div>
       )}

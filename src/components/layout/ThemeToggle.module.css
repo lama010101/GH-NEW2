@@ -1,0 +1,33 @@
+/* ThemeToggle — reuses the modal language-toggle token namespace so it
+   renders identically inside NavModal and the in-game settings modal. */
+
+.toggle {
+  background: var(--gh-modal-lang-bg);
+  border: 1px solid var(--gh-modal-lang-border);
+  border-radius: 10px;
+  padding: 3px;
+  display: flex;
+  gap: 2px;
+}
+
+.option {
+  padding: 5px 14px;
+  border-radius: 7px;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  color: var(--gh-modal-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.option:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.optionActive {
+  background: var(--gh-orange);
+  color: #ffffff;
+}

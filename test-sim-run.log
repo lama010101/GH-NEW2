@@ -1,0 +1,1135 @@
+
+> guess-history@0.1.0 test:simulation
+> playwright test --config=scripts/test/playwright/playwright.config.ts specs/multiplayer-simulation.spec.ts
+
+◇ injecting env (16) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injecting env (0) from .env.local // tip: ⌁ auth for agents [www.vestauth.com]
+[PREFLIGHT] Load average: 1min=62.86 5min=106.06 15min=116.57
+[PLAYWRIGHT SETUP] Creating test users...
+[PLAYWRIGHT SETUP] User gh-test-player-1@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-1@test.guess-history.com with ID f7a6e7fd-982b-425d-93a7-2cd8bc8d0bf4
+[PLAYWRIGHT SETUP] User gh-test-player-2@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-2@test.guess-history.com with ID 89469702-7bbb-4119-abcc-75169cc9f8c6
+[PLAYWRIGHT SETUP] User gh-test-player-3@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-3@test.guess-history.com with ID dcd4d119-b836-4bf4-8dd5-e666ce0174ec
+[PLAYWRIGHT SETUP] User gh-test-player-4@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-4@test.guess-history.com with ID a188c5f3-a195-4993-b69f-0a0529150f0b
+[PLAYWRIGHT SETUP] User gh-test-player-5@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-5@test.guess-history.com with ID 310a59c0-4555-4464-9777-667ba51ee569
+[PLAYWRIGHT SETUP] User gh-test-player-6@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-6@test.guess-history.com with ID 027932ea-1bb9-4713-bb8b-1d47c404f95d
+[PLAYWRIGHT SETUP] Wrote 6 user IDs to /Users/lolo/GH-new/GH-NEW/.test-user-ids.json
+[PLAYWRIGHT SETUP] All test users created successfully
+[PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues
+
+Running 4 tests using 1 worker
+
+◇ injecting env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injecting env (0) from .env.local // tip: ⌘ enable debugging { debug: true }
+[BROWSER_POOL] Launching 6 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-3@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-3@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 3 (TestPlayer3, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-4@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-4@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 4 (TestPlayer4, iphone-safari) ready
+[AUTH] Logging in gh-test-player-5@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-5@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 5 (TestPlayer5, iphone-safari) ready
+[AUTH] Logging in gh-test-player-6@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-6@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 6 (TestPlayer6, iphone-safari) ready
+[BROWSER_POOL] All 6 browsers launched and authenticated
+[ORCHESTRATOR] Starting 3 games of 5 rounds each...
+[SIMULATION] Game 1/3
+[EDGE] Engine reset for new game — injected and failures cleared
+[SIMULATION] Creating game via API...
+[ORCHESTRATOR] Game 1 created: 2d8ce0d1-266e-4e17-be5a-434f6ce8b516
+[SIMULATION] Navigating all browsers to game...
+[BROWSER_POOL] navigateToGame attempt 1 interrupted, retrying...
+[BROWSER_POOL] navigateToGame attempt 1 interrupted, retrying...
+[BROWSER_POOL] navigateToGame attempt 1 interrupted, retrying...
+[ORCHESTRATOR] Initializing 6 WebSocket clients for game 2d8ce0d1-266e-4e17-be5a-434f6ce8b516...
+[WS:TestPlayer1] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJmN2E2ZTdmZC05ODJiLTQyNWQtOTNhNy0yY2Q4YmM4ZDBiZjQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc2LCJpYXQiOjE3ODI2NTAzNzYsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMUB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3Nn1dLCJzZXNzaW9uX2lkIjoiZjExMzg1NmYtNGM5NS00NzIyLTk3NDYtN2FlNDM0Nzg2MjE1IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.orrT9xZw33eLXy3h_b9BANrp2Aj_OgDB3HJNxe7YXxXP1DN2VEqpTJ4M7PiBLv2oKvAl0ZAn1VN7EPFcC1lKfg
+[WS:TestPlayer2] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI4OTQ2OTcwMi03YmJiLTQxMTktYWJjYy03NTE2OWNjOWY4YzYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc3LCJpYXQiOjE3ODI2NTAzNzcsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3N31dLCJzZXNzaW9uX2lkIjoiNjIxMzBmMjctYWMxMi00ZmNlLWI4YjMtNmQ2MzE1NWU2M2IwIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.UUd24ouI7JF7fz7kSdzBiST3ra0lrQNPimR-wxJcCnIolWyIlhUL071re45Ve95YUqE9IxStE60i8E9mA-f4xQ
+[WS:TestPlayer3] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJkY2Q0ZDExOS1iODM2LTRiZjQtOGRkNS1lNjY2Y2UwMTc0ZWMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc3LCJpYXQiOjE3ODI2NTAzNzcsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItM0B0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3N31dLCJzZXNzaW9uX2lkIjoiMTEzYmUzYzktOWM1NC00MzNmLWI1ZjQtMzFkZjI1OTM2Yjc2IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.zbJdVOVAqpXgOJnylTW0qFVjNKdB5hc0FkpdTjQVOPFm4iaVGezu9GGyID1owvuADeW0hgMHvtvuG1Rr4aWLrg
+[WS:TestPlayer4] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJhMTg4YzVmMy1hMTk1LTQ5OTMtYjY5Zi0wYTA1MjkxNTBmMGIiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc3LCJpYXQiOjE3ODI2NTAzNzcsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItNEB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyNCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3N31dLCJzZXNzaW9uX2lkIjoiYjllNGZjYzEtZjIxZC00MmQwLTlkZjQtMWNhNjc2MmMyODU3IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.LETsbfYIiBrJGE8GwF0bNesncobsai6CsIbEc-K0hCTm1nCVmosdBnn74caANDUQRp6MB3FiKymjDlnyX0BJNQ
+[WS:TestPlayer5] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIzMTBhNTljMC00NTU1LTQ0NjQtOTc3Ny02NjdiYTUxZWU1NjkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc4LCJpYXQiOjE3ODI2NTAzNzgsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItNUB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyNSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3OH1dLCJzZXNzaW9uX2lkIjoiZjYyNmIzMGUtNWIzYi00MDgzLWI4NWEtZmI3YjBkMWUwMzA5IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.d3oZqyj173qIbi3TcbNR9-by5rIw-QhtaVjoR6szh_Gc96vqcxJN_FU14ZOzjWdrKNjm6gIsZS2IT3dVCfNJ0w
+[WS:TestPlayer6] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwMjc5MzJlYS0xYmI5LTQ3MTMtYmI4Yi0xZDQ3YzQwNGY5NWQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc4LCJpYXQiOjE3ODI2NTAzNzgsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItNkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyNiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3OH1dLCJzZXNzaW9uX2lkIjoiZDg3ZTI2MWYtNjMxYi00YmFiLWEzOWItNGM2NjUyMDI3MzkyIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.KDHH-DWzqtNSK60RMjz22TLgiN7SzzG3CqW-6rd1qsTUz5pffVWDIMrPHMMD5yzT5cOY36aHuCkHlZcEAwKEPw
+[WS:TestPlayer6] Connected
+[WS:TestPlayer3] Connected
+[WS:TestPlayer5] Connected
+[WS:TestPlayer4] Connected
+[WS:TestPlayer2] Connected
+[WS:TestPlayer1] Connected
+[WS:TestPlayer1] ts=1782650381420 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650381635 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650381636 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650381636 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650381636 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650381636 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650381637 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650381637 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650381638 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650381638 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650381638 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650381639 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650381639 State update: LOBBY round=0
+[ORCHESTRATOR] All WebSocket clients connected
+[SIMULATION] Waiting for LOBBY state...
+[ASSERT-STATUS] ts=1782650381640 expected=LOBBY
+[WS:TestPlayer1] ts=1782650382109 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650382109 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650382109 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650382110 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650382110 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650382110 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650382111 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650382111 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650382111 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650382112 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650382113 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650382114 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650382114 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650382114 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650382114 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650382115 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650382115 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650382115 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650382159 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650382160 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650382161 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650382161 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650382162 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650382163 State update: LOBBY round=0
+[OBSERVE-UNKNOWN] ts=1782650386715 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650386728 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650386734 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650386746 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650387012 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650387015 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 9 edge cases for phase lobby
+[EDGE] Injecting: late-join - A player joins after the lobby is already populated
+[EDGE:late-join] Disconnecting TestPlayer2 to simulate late join...
+[EDGE:late-join] Reconnecting TestPlayer2...
+[WS:TestPlayer2] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI4OTQ2OTcwMi03YmJiLTQxMTktYWJjYy03NTE2OWNjOWY4YzYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc3LCJpYXQiOjE3ODI2NTAzNzcsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3N31dLCJzZXNzaW9uX2lkIjoiNjIxMzBmMjctYWMxMi00ZmNlLWI4YjMtNmQ2MzE1NWU2M2IwIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.UUd24ouI7JF7fz7kSdzBiST3ra0lrQNPimR-wxJcCnIolWyIlhUL071re45Ve95YUqE9IxStE60i8E9mA-f4xQ
+[WS:TestPlayer2] Connected
+[WS:TestPlayer2] ts=1782650388209 State update: LOBBY round=0
+[EDGE:late-join] TestPlayer2 rejoined — LOBBY confirmed, players=6
+[EDGE] Injecting: duplicate-ready - A player toggles ready multiple times
+[EDGE] Duplicate ready toggles sent
+[EDGE] Injecting: kick-player - Host kicks a non-host player
+[EDGE] Player kicked
+[WS:TestPlayer6] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwMjc5MzJlYS0xYmI5LTQ3MTMtYmI4Yi0xZDQ3YzQwNGY5NWQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc4LCJpYXQiOjE3ODI2NTAzNzgsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItNkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyNiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3OH1dLCJzZXNzaW9uX2lkIjoiZDg3ZTI2MWYtNjMxYi00YmFiLWEzOWItNGM2NjUyMDI3MzkyIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.KDHH-DWzqtNSK60RMjz22TLgiN7SzzG3CqW-6rd1qsTUz5pffVWDIMrPHMMD5yzT5cOY36aHuCkHlZcEAwKEPw
+[WS:TestPlayer6] Connected
+[WS:TestPlayer6] ts=1782650389477 State update: LOBBY round=0
+[EDGE] Player kicked and rejoined
+[EDGE] Injecting: 7th-player-join - Attempt to join with a 7th player (should fail)
+[WS:TestPlayer1] ts=1782650395549 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650395550 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650395550 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650395550 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650395551 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650395551 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650395629 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650395630 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650395630 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650395630 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650395631 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650395631 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650396395 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650396396 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650396397 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650396397 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650396399 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650396400 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650396429 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650396429 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650396429 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650396430 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650396430 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650396431 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650396467 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650396473 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650396474 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650396474 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650396476 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650396476 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650396521 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650396522 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650396523 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650396524 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650396530 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650396533 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650396654 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650396655 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650396655 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650396656 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650396658 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650396658 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650397143 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650397144 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650397145 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650397145 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650397146 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650397146 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650397582 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650397583 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650397583 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650397584 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650397586 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650397587 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650397604 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650397605 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650397605 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650397605 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650397608 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650397609 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650397617 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650397618 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650397619 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650397620 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650397620 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650397623 State update: LOBBY round=0
+[EDGE:7th-player-join] Lobby visible=false, hasErrorText=false, bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[EDGE:7th-player-join] No lobby and no error text detected — rejection method unclear
+[EDGE] Injecting: mid-lobby-refresh - A player refreshes the page in lobby
+[WS:TestPlayer1] ts=1782650399164 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650399165 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650399165 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650399166 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650399171 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650399172 State update: LOBBY round=0
+[REFRESH] Reloading page for player gh-test-player-3@test.guess-history.com...
+[REFRESH] player=gh-test-player-3@test.guess-history.com auth modal visible=false url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516
+[WS:TestPlayer2] Closed code=1006 reason=
+[WS:TestPlayer2] Reconnecting in 1000ms (attempt 1)
+[WS:TestPlayer2] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI4OTQ2OTcwMi03YmJiLTQxMTktYWJjYy03NTE2OWNjOWY4YzYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc3LCJpYXQiOjE3ODI2NTAzNzcsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3N31dLCJzZXNzaW9uX2lkIjoiNjIxMzBmMjctYWMxMi00ZmNlLWI4YjMtNmQ2MzE1NWU2M2IwIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.UUd24ouI7JF7fz7kSdzBiST3ra0lrQNPimR-wxJcCnIolWyIlhUL071re45Ve95YUqE9IxStE60i8E9mA-f4xQ
+[WS:TestPlayer2] Connected
+[WS:TestPlayer2] ts=1782650418324 State update: LOBBY round=0
+[WS:TestPlayer6] Closed code=1006 reason=
+[WS:TestPlayer6] Reconnecting in 1000ms (attempt 1)
+[WS:TestPlayer6] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwMjc5MzJlYS0xYmI5LTQ3MTMtYmI4Yi0xZDQ3YzQwNGY5NWQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc4LCJpYXQiOjE3ODI2NTAzNzgsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItNkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyNiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3OH1dLCJzZXNzaW9uX2lkIjoiZDg3ZTI2MWYtNjMxYi00YmFiLWEzOWItNGM2NjUyMDI3MzkyIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.KDHH-DWzqtNSK60RMjz22TLgiN7SzzG3CqW-6rd1qsTUz5pffVWDIMrPHMMD5yzT5cOY36aHuCkHlZcEAwKEPw
+[WS:TestPlayer1] ts=1782650420428 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650420429 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650420429 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650420429 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650420429 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650420430 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650420431 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650420479 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650420479 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650420479 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650420482 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650420482 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650420482 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650420483 State update: LOBBY round=0
+[WS:TestPlayer6] Connected
+[WS:TestPlayer6] ts=1782650420490 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650422111 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650422116 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650422116 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650422119 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650422119 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650422119 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650422120 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650422120 State update: LOBBY round=0
+[AUTH] gh-test-player-3@test.guess-history.com already authenticated
+[REFRESH] Player gh-test-player-3@test.guess-history.com refresh complete.
+[EDGE] Resume-after-refresh successful (no diffs)
+[EDGE] Injecting: auth-signout-resignin - Sign out via UI then sign back in as the same user (SCN-AUTH-1)
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[EDGE:auth-signout-resignin] Cookies BEFORE sign-out: auth-token present=true, chunks=1
+[AUTH] Signing out via account page UI...
+[AUTH] Signed out successfully
+[EDGE:auth-signout-resignin] Cookies AFTER sign-out: auth-token present=false, chunks=0
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[EDGE:auth-signout-resignin] Cookies AFTER re-sign-in: auth-token present=true, chunks=1
+[EDGE:auth-signout-resignin] VERDICT: PASS (cookieCleared=true, resigninSucceeded=true)
+[EDGE:auth-signout-resignin] Console errors: ["Failed to load resource: the server responded with a status of 406 ()","Failed to load resource: the server responded with a status of 406 ()","Failed to load resource: the server responded with a status of 401 (Unauthorized)"]
+[EDGE] Injecting: auth-stale-cookie - Pre-seed a stale auth-token cookie then attempt UI sign-in (SCN-AUTH-2)
+[EDGE:auth-stale-cookie] Seeded stale cookie: sb-gzvixlvkwjsrtmtybtkf-auth-token=base64-eyJhY2Nlc3NfdG9rZW4iOiJpbnZhbGlkL...
+[EDGE:auth-stale-cookie] Auth modal visible after navigate: true
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[EDGE:auth-stale-cookie] Sign-in result: succeeded, auth-token present=true
+[EDGE:auth-stale-cookie] VERDICT: diagnostic — signinResult=succeeded, modalVisible=true
+[EDGE] Injecting: auth-cross-user - Sign out as Player A then sign in as Player B in the same context (SCN-AUTH-3)
+[EDGE:auth-cross-user] Player A: gh-test-player-1@test.guess-history.com, Player B: gh-test-player-2@test.guess-history.com
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[AUTH] Signing out via account page UI...
+[AUTH] Signed out successfully
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[EDGE:auth-cross-user] Body contains Player B name/email: false
+[EDGE:auth-cross-user] Body contains Player A name/email: false
+[EDGE:auth-cross-user] Auth-token present after cross-user sign-in: true
+[EDGE:auth-cross-user] VERDICT: FAIL (showsPlayerB=false, showsPlayerA=false)
+[EDGE:auth-cross-user] Console errors: ["Failed to fetch RSC payload for http://localhost:3000/. Falling back to browser navigation. TypeError: Failed to fetch\n    at fetchServerResponse (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/router-reducer/fetch-server-response.js:59:27)\n    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:305:90)\n    at renderWithHooks (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:11121:18)\n    at mountIndeterminateComponent (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:16869:13)\n    at beginWork$1 (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:18458:16)\n    at beginWork (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:26927:14)\n    at performUnitOfWork (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:25748:12)\n    at workLoopConcurrent (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:25734:5)\n    at renderRootConcurrent (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:25690:9)\n    at performConcurrentWorkOnRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js:24504:38)\n    at workLoop (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/scheduler/cjs/scheduler.development.js:256:34)\n    at flushWork (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/scheduler/cjs/scheduler.development.js:225:14)\n    at MessagePort.performWorkUntilDeadline (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/scheduler/cjs/scheduler.development.js:534:21)","Failed to load resource: the server responded with a status of 401 (Unauthorized)"]
+[EDGE] Failed to inject auth-cross-user: [auth-cross-user] FAIL: showsPlayerB=false, showsPlayerA=false
+[EDGE] Injecting: auth-returning-browser - Capture storage state from a logged-in context, close it, restore in a new context (SCN-AUTH-4)
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[EDGE:auth-returning-browser] Context 1 after login: auth-token present=true, chunks=1
+[EDGE:auth-returning-browser] Captured storageState: cookies=1, origins=0
+[EDGE:auth-returning-browser] Context 2 after navigate: auth modal visible=false
+[EDGE:auth-returning-browser] Context 2 cookies: auth-token present=true, chunks=1
+[EDGE:auth-returning-browser] Context 2 body shows user name/email: false
+[EDGE:auth-returning-browser] VERDICT: PASS (modalVisible=false, authTokenPresent=true)
+[SIMULATION] All players marking ready...
+[SIMULATION] Waiting for all players ready...
+[WS:TestPlayer1] ts=1782650545939 State update: LOBBY round=0
+[SIMULATION] Starting game...
+[SIMULATION] Waiting for ROUND_ACTIVE...
+[WS:TestPlayer5] ts=1782650545945 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650545945 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650545946 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650545957 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650545962 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650545963 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650545963 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650545981 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650545983 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650545983 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650545983 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650545987 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650545988 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650545992 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650545994 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650546130 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650546132 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650546132 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650546133 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650546133 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650546135 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650546136 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650546136 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650546160 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650546161 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650546161 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650546162 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650546163 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650546163 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650546163 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650546166 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650546197 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650546198 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650546198 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650546198 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650546267 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650546268 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650546269 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650546269 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650546371 State update: LOBBY round=0
+[WS:TestPlayer5] ts=1782650546373 State update: LOBBY round=0
+[WS:TestPlayer4] ts=1782650546374 State update: LOBBY round=0
+[WS:TestPlayer3] ts=1782650546376 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650546377 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650546379 State update: LOBBY round=0
+[WS:TestPlayer2] ts=1782650546379 State update: LOBBY round=0
+[WS:TestPlayer6] ts=1782650546379 State update: LOBBY round=0
+[WS:TestPlayer1] ts=1782650551906 State update: ROUND_ACTIVE round=0
+[WS:TestPlayer5] ts=1782650551907 State update: ROUND_ACTIVE round=0
+[WS:TestPlayer4] ts=1782650551910 State update: ROUND_ACTIVE round=0
+[WS:TestPlayer3] ts=1782650551911 State update: ROUND_ACTIVE round=0
+[WS:TestPlayer2] ts=1782650551913 State update: ROUND_ACTIVE round=0
+[WS:TestPlayer6] ts=1782650551913 State update: ROUND_ACTIVE round=0
+[SIMULATION] Round 1/5
+[ASSERT-STATUS] ts=1782650551914 expected=ROUND_ACTIVE
+[WS:TestPlayer2] ts=1782650551951 State update: ROUND_ACTIVE round=0
+[WS:TestPlayer6] ts=1782650551957 State update: ROUND_ACTIVE round=0
+[OBSERVE-UNKNOWN] ts=1782650557022 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650557029 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650557034 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650557039 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650557043 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650557045 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 8 edge cases for phase round-active
+[EDGE] Injecting: timeout - A player does not submit before the timer expires
+[EDGE] Player TestPlayer6 will timeout (submission skipped)
+[EDGE] Injecting: partial-guess-year-only - A player submits only a year (no location)
+[EDGE] Partial guess (year only) submitted
+[EDGE] Injecting: partial-guess-location-only - A player submits only a location (no year)
+[EDGE] Partial guess (location only) submitted
+[EDGE] Injecting: hint-purchase - A player purchases a hint (simulated via hintsUsed array)
+[EDGE] Guess with hints submitted
+[EDGE] Injecting: duplicate-submit - A player submits the same guess twice
+[EDGE] Duplicate submit sent
+[EDGE] Injecting: rapid-submits - A player submits multiple guesses rapidly
+[EDGE] Rapid submits sent
+[EDGE] Injecting: ws-drop-reconnect - Simulate a WebSocket drop and reconnect
+[EDGE] WebSocket closed
+[WS:TestPlayer2] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI4OTQ2OTcwMi03YmJiLTQxMTktYWJjYy03NTE2OWNjOWY4YzYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc3LCJpYXQiOjE3ODI2NTAzNzcsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3N31dLCJzZXNzaW9uX2lkIjoiNjIxMzBmMjctYWMxMi00ZmNlLWI4YjMtNmQ2MzE1NWU2M2IwIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.UUd24ouI7JF7fz7kSdzBiST3ra0lrQNPimR-wxJcCnIolWyIlhUL071re45Ve95YUqE9IxStE60i8E9mA-f4xQ
+[WS:TestPlayer2] Connected
+[WS:TestPlayer2] ts=1782650559679 State update: ROUND_ACTIVE round=0
+[EDGE] WebSocket reconnected
+[EDGE] Injecting: mid-round-refresh - A player refreshes the page mid-round
+[REFRESH] Reloading page for player gh-test-player-2@test.guess-history.com...
+[REFRESH] player=gh-test-player-2@test.guess-history.com auth modal visible=false url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516
+[WS:TestPlayer2] Closed code=1006 reason=
+[WS:TestPlayer2] Reconnecting in 1000ms (attempt 1)
+[WS:TestPlayer2] Connecting to ws://localhost:1999/parties/lobby/2d8ce0d1-266e-4e17-be5a-434f6ce8b516?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiI4OTQ2OTcwMi03YmJiLTQxMTktYWJjYy03NTE2OWNjOWY4YzYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzgyNjUzOTc3LCJpYXQiOjE3ODI2NTAzNzcsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4MjY1MDM3N31dLCJzZXNzaW9uX2lkIjoiNjIxMzBmMjctYWMxMi00ZmNlLWI4YjMtNmQ2MzE1NWU2M2IwIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.UUd24ouI7JF7fz7kSdzBiST3ra0lrQNPimR-wxJcCnIolWyIlhUL071re45Ve95YUqE9IxStE60i8E9mA-f4xQ
+[WS:TestPlayer2] Connected
+[WS:TestPlayer2] ts=1782650588709 State update: ROUND_ACTIVE round=0
+[AUTH] gh-test-player-2@test.guess-history.com already authenticated
+[REFRESH] Player gh-test-player-2@test.guess-history.com refresh complete.
+[EDGE] Resume-after-refresh successful (no diffs)
+[SIMULATION] All players submitting guesses...
+[WS:TestPlayer1] ts=1782650628298 State update: ROUND_COMPLETE round=0
+[SUBMIT-ACK] player=TestPlayer1 round=0 confirmed
+[WS:TestPlayer5] ts=1782650628299 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer4] ts=1782650628300 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer3] ts=1782650628301 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650628301 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650628302 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650628305 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650628306 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650628307 State update: ROUND_COMPLETE round=0
+[SUBMIT-ACK] player=TestPlayer2 round=0 confirmed
+[SUBMIT-ACK] player=TestPlayer3 round=0 confirmed
+[SUBMIT-ACK] player=TestPlayer4 round=0 confirmed
+[SUBMIT-ACK] player=TestPlayer5 round=0 confirmed
+[WS:TestPlayer1] ts=1782650629143 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer5] ts=1782650629144 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer4] ts=1782650629145 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer3] ts=1782650629176 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650629176 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650629177 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650629178 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650629178 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650629178 State update: ROUND_COMPLETE round=0
+[ORCHESTRATOR] Skipping submission for TestPlayer6 (timeout edge case)
+[SIMULATION] Waiting for ROUND_COMPLETE...
+[ASSERT-STATUS] ts=1782650629310 expected=ROUND_COMPLETE
+[WS:TestPlayer1] ts=1782650630713 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer5] ts=1782650630714 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer4] ts=1782650630714 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer3] ts=1782650630715 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650630715 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650630716 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650630716 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650630716 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650630717 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer1] ts=1782650631227 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer5] ts=1782650631227 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer4] ts=1782650631227 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer3] ts=1782650631227 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650631228 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650631228 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650631228 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650631228 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650631228 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer1] ts=1782650631691 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer5] ts=1782650631718 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer4] ts=1782650631973 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer3] ts=1782650631974 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650631974 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650631975 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650631976 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650631976 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650631977 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer1] ts=1782650632041 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer5] ts=1782650632046 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer4] ts=1782650632047 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer3] ts=1782650632047 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650632048 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650632048 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650632048 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650632049 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650632055 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer1] ts=1782650632250 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer1] ts=1782650632255 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer5] ts=1782650632256 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer5] ts=1782650632256 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer4] ts=1782650632257 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer4] ts=1782650632258 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer3] ts=1782650632259 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer3] ts=1782650632266 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650632267 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650632268 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650632268 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650632283 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650632288 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650632291 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650632307 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650632308 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650632308 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650632315 State update: ROUND_COMPLETE round=0
+[OBSERVE-UNKNOWN] ts=1782650634406 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650634411 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650634417 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650635041 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650635047 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650635054 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 2 edge cases for phase round-complete
+[EDGE] Injecting: only-one-next - Only one player clicks next round, wait for auto-advance
+[EDGE] Only one player (TestPlayer1) will click next; 5 others skipped. Waiting for auto-advance...
+[EDGE:only-one-next] After 11s wait — auto-advance verification: WS readyState=1
+[EDGE] Injecting: mid-results-refresh - A player refreshes the page during round results
+[REFRESH] Reloading page for player gh-test-player-4@test.guess-history.com...
+[REFRESH] player=gh-test-player-4@test.guess-history.com auth modal visible=false url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516
+[AUTH] gh-test-player-4@test.guess-history.com already authenticated
+[REFRESH] Player gh-test-player-4@test.guess-history.com refresh complete.
+[EDGE] Resume-after-refresh successful (no diffs)
+[SIMULATION] All players ready for next round...
+[ORCHESTRATOR] Skipping readyNext for TestPlayer2 (only-one-next edge case)
+[ORCHESTRATOR] Skipping readyNext for TestPlayer3 (only-one-next edge case)
+[ORCHESTRATOR] Skipping readyNext for TestPlayer4 (only-one-next edge case)
+[ORCHESTRATOR] Skipping readyNext for TestPlayer5 (only-one-next edge case)
+[ORCHESTRATOR] Skipping readyNext for TestPlayer6 (only-one-next edge case)
+[SIMULATION] Advancing to next round...
+[SIMULATION] Round 2/5
+[ASSERT-STATUS] ts=1782650710808 expected=ROUND_ACTIVE
+[OBSERVE-UNKNOWN] ts=1782650715860 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650715871 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650715876 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650715888 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650715904 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650716184 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 0 edge cases for phase round-active
+[SIMULATION] All players submitting guesses...
+[SUBMIT-ACK] player=TestPlayer1 round=1 confirmed
+[SUBMIT-ACK] player=TestPlayer2 round=1 confirmed
+[SUBMIT-ACK] player=TestPlayer3 round=1 confirmed
+[SUBMIT-ACK] player=TestPlayer4 round=1 confirmed
+[SUBMIT-ACK] player=TestPlayer5 round=1 confirmed
+[SUBMIT-ACK] player=TestPlayer6 round=1 confirmed
+[SIMULATION] Waiting for ROUND_COMPLETE...
+[ASSERT-STATUS] ts=1782650717433 expected=ROUND_COMPLETE
+[OBSERVE-UNKNOWN] ts=1782650722561 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650722570 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650722575 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650722545 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650722551 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650722556 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 0 edge cases for phase round-complete
+[SIMULATION] All players ready for next round...
+[WS:TestPlayer1] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer1] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer2] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer2] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer3] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer3] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer4] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer4] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer5] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer5] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer6] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer6] Error: READY_NEXT roundIndex does not match current round
+[SIMULATION] Advancing to next round...
+[SIMULATION] Round 3/5
+[ASSERT-STATUS] ts=1782650723672 expected=ROUND_ACTIVE
+[WS:TestPlayer1] ts=1782650723701 State update: ROUND_COMPLETE round=0
+[OBSERVE-UNKNOWN] ts=1782650728695 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650728748 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650728753 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650728904 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650728908 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650728913 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 0 edge cases for phase round-active
+[SIMULATION] All players submitting guesses...
+[SUBMIT-ACK] player=TestPlayer1 round=2 confirmed
+[SUBMIT-ACK] player=TestPlayer2 round=2 confirmed
+[SUBMIT-ACK] player=TestPlayer3 round=2 confirmed
+[SUBMIT-ACK] player=TestPlayer4 round=2 confirmed
+[SUBMIT-ACK] player=TestPlayer5 round=2 confirmed
+[SUBMIT-ACK] player=TestPlayer6 round=2 confirmed
+[SIMULATION] Waiting for ROUND_COMPLETE...
+[ASSERT-STATUS] ts=1782650730204 expected=ROUND_COMPLETE
+[OBSERVE-UNKNOWN] ts=1782650735351 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650735376 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650735391 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650735405 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650735418 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650735543 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 0 edge cases for phase round-complete
+[SIMULATION] All players ready for next round...
+[WS:TestPlayer1] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer1] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer2] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer2] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer3] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer3] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer4] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer4] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer5] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer5] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer6] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer6] Error: READY_NEXT roundIndex does not match current round
+[SIMULATION] Advancing to next round...
+[SIMULATION] Round 4/5
+[ASSERT-STATUS] ts=1782650736733 expected=ROUND_ACTIVE
+[WS:TestPlayer1] ts=1782650736774 State update: ROUND_COMPLETE round=0
+[OBSERVE-UNKNOWN] ts=1782650741756 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650741760 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650741764 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650741905 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650741910 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650741919 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 0 edge cases for phase round-active
+[SIMULATION] All players submitting guesses...
+[SUBMIT-ACK] player=TestPlayer1 round=3 confirmed
+[SUBMIT-ACK] player=TestPlayer2 round=3 confirmed
+[SUBMIT-ACK] player=TestPlayer3 round=3 confirmed
+[SUBMIT-ACK] player=TestPlayer4 round=3 confirmed
+[SUBMIT-ACK] player=TestPlayer5 round=3 confirmed
+[SUBMIT-ACK] player=TestPlayer6 round=3 confirmed
+[SIMULATION] Waiting for ROUND_COMPLETE...
+[ASSERT-STATUS] ts=1782650743230 expected=ROUND_COMPLETE
+[OBSERVE-UNKNOWN] ts=1782650748347 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650748358 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650748365 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650748374 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650748381 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650748402 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 0 edge cases for phase round-complete
+[SIMULATION] All players ready for next round...
+[WS:TestPlayer1] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer1] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer2] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer2] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer3] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer3] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer4] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer4] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer5] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer5] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer6] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer6] Error: READY_NEXT roundIndex does not match current round
+[SIMULATION] Advancing to next round...
+[SIMULATION] Round 5/5
+[ASSERT-STATUS] ts=1782650749478 expected=ROUND_ACTIVE
+[WS:TestPlayer1] ts=1782650749538 State update: ROUND_COMPLETE round=0
+[OBSERVE-UNKNOWN] ts=1782650754581 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650754587 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650754610 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650754590 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650754594 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650754603 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 0 edge cases for phase round-active
+[SIMULATION] All players submitting guesses...
+[SUBMIT-ACK] player=TestPlayer1 round=4 confirmed
+[SUBMIT-ACK] player=TestPlayer2 round=4 confirmed
+[SUBMIT-ACK] player=TestPlayer3 round=4 confirmed
+[SUBMIT-ACK] player=TestPlayer4 round=4 confirmed
+[SUBMIT-ACK] player=TestPlayer5 round=4 confirmed
+[SUBMIT-ACK] player=TestPlayer6 round=4 confirmed
+[SIMULATION] Waiting for ROUND_COMPLETE...
+[ASSERT-STATUS] ts=1782650755909 expected=ROUND_COMPLETE
+[OBSERVE-UNKNOWN] ts=1782650761002 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=["auth-modal","auth-modal-card","auth-email-input","auth-password-input","auth-submit-btn"] bodySample="Welcome to Guess-History
+EN
+FR
+Continue with Google
+or
+Email
+Password
+Remember me
+Forgot password?
+Sign In
+
+Don't have an account? Sign Up"
+[OBSERVE-UNKNOWN] ts=1782650761007 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650761015 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650761019 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650761025 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[OBSERVE-UNKNOWN] ts=1782650761050 url=http://localhost:3000/compete/2d8ce0d1-266e-4e17-be5a-434f6ce8b516 testids=[] bodySample="Joining room…"
+[EDGE] Injecting 0 edge cases for phase round-complete
+[SIMULATION] All players ready for next round...
+[SIMULATION] Waiting for SESSION_COMPLETE...
+[WS:TestPlayer1] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer1] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer2] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer2] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer3] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer3] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer4] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer4] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer5] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer5] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer6] ERROR: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer6] Error: READY_NEXT roundIndex does not match current round
+[WS:TestPlayer1] ts=1782650781013 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer5] ts=1782650781032 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer4] ts=1782650781033 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer3] ts=1782650781040 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650781041 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650781050 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer6] ts=1782650781052 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650781061 State update: ROUND_COMPLETE round=0
+[WS:TestPlayer2] ts=1782650781061 State update: ROUND_COMPLETE round=0
+  ✘  1 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (9.5m)
+◇ injecting env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injecting env (0) from .env.local // tip: ⌘ enable debugging { debug: true }
+[BROWSER_POOL] Launching 6 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-3@test.guess-history.com via AuthModal...
+  ✘  2 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (retry #1) (1.7m)
+◇ injecting env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injecting env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[EDGE] Engine reset for new game — injected and failures cleared
+[RESUME-TEST] Creating game via API...
+  ✘  3 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete (1.3m)
+◇ injecting env (0) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injecting env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[EDGE] Engine reset for new game — injected and failures cleared
+[RESUME-TEST] Creating game via API...
+  ✘  4 [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete (retry #1) (1.5m)
+◇ injecting env (0) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injecting env (0) from .env.local // tip: ⌘ override existing { override: true }
+[BROWSER_POOL] Launching 6 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-3@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-3@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 3 (TestPlayer3, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-4@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-4@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 4 (TestPlayer4, iphone-safari) ready
+[AUTH] Logging in gh-test-player-5@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-5@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 5 (TestPlayer5, iphone-safari) ready
+[AUTH] Logging in gh-test-player-6@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-6@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 6 (TestPlayer6, iphone-safari) ready
+[BROWSER_POOL] All 6 browsers launched and authenticated
+[ORCHESTRATOR] Starting 3 games of 5 rounds each...
+[SIMULATION] Game 1/3
+[EDGE] Engine reset for new game — injected and failures cleared
+[SIMULATION] Creating game via API...
+  ✘  5 [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (1.8m)
+◇ injecting env (0) from .env.local // tip: ⌁ auth for agents [www.vestauth.com]
+◇ injecting env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+[BROWSER_POOL] Launching 6 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-3@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-3@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 3 (TestPlayer3, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-4@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-4@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 4 (TestPlayer4, iphone-safari) ready
+[AUTH] Logging in gh-test-player-5@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-5@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 5 (TestPlayer5, iphone-safari) ready
+[AUTH] Logging in gh-test-player-6@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-6@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 6 (TestPlayer6, iphone-safari) ready
+[BROWSER_POOL] All 6 browsers launched and authenticated
+[ORCHESTRATOR] Starting 3 games of 5 rounds each...
+[SIMULATION] Game 1/3
+[EDGE] Engine reset for new game — injected and failures cleared
+[SIMULATION] Creating game via API...
+  ✘  6 [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite (retry #1) (3.7m)
+◇ injecting env (0) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injecting env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[EDGE] Engine reset for new game — injected and failures cleared
+[RESUME-TEST] Creating game via API...
+  ✘  7 [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete (1.3m)
+◇ injecting env (0) from .env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injecting env (0) from .env.local // tip: ⌘ override existing { override: true }
+[BROWSER_POOL] Launching 2 browsers...
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 1 (TestPlayer1, desktop-chrome) ready
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[BROWSER_POOL] Player 2 (TestPlayer2, desktop-chrome) ready
+[BROWSER_POOL] All 2 browsers launched and authenticated
+[ORCHESTRATOR] Starting 1 games of 2 rounds each...
+[RESUME-TEST] Game 1/1
+[EDGE] Engine reset for new game — injected and failures cleared
+[RESUME-TEST] Creating game via API...
+  ✘  8 [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete (retry #1) (1.5m)
+[PREFLIGHT] Load average: 1min=36.88 5min=51.34 15min=67.06
+[PLAYWRIGHT SETUP] Creating test users...
+[PLAYWRIGHT SETUP] User gh-test-player-1@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-1@test.guess-history.com with ID eda071ce-fc3a-4b8f-9871-af0160119e1f
+[PLAYWRIGHT SETUP] User gh-test-player-2@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-2@test.guess-history.com with ID f701220f-70fc-4226-b935-6c0c2d2c720a
+[PLAYWRIGHT SETUP] User gh-test-player-3@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-3@test.guess-history.com with ID fdbdde38-df6c-4c79-91f8-17b3d0b54989
+[PLAYWRIGHT SETUP] User gh-test-player-4@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-4@test.guess-history.com with ID 437ac938-a1c3-4a98-ac2b-32fec7e0fcac
+[PLAYWRIGHT SETUP] User gh-test-player-5@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-5@test.guess-history.com with ID 62aa46e4-cd31-4359-a5f6-12f30f7cfae3
+[PLAYWRIGHT SETUP] User gh-test-player-6@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-6@test.guess-history.com with ID ec2eb931-f3b1-4f27-bd76-7c5c5f5c47bc
+[PLAYWRIGHT SETUP] Wrote 6 user IDs to /Users/lolo/GH-new/GH-NEW/.test-user-ids.json
+[PLAYWRIGHT SETUP] All test users created successfully
+[PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues
+
+
+  1) [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite 
+
+    Error: Timeout waiting for state match (120000ms)
+
+       at ../orchestrator/websocketClient.ts:267
+
+      265 |       const timer = setTimeout(() => {
+      266 |         this.opts.onStateUpdate = originalHandler;
+    > 267 |         reject(new Error(`Timeout waiting for state match (${timeoutMs}ms)`));
+          |                ^
+      268 |       }, timeoutMs);
+      269 |
+      270 |       const originalHandler = this.opts.onStateUpdate;
+        at Timeout._onTimeout (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/websocketClient.ts:267:16)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #4: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium/test-failed-4.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #5: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium/test-failed-5.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #6: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium/test-failed-6.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [AUTH] gh-test-player-3@test.guess-history.com: auth cookie not set within 60000ms after submit
+
+       at ../helpers/auth-ui.ts:75
+
+      73 |
+      74 |   if (!cookieFound) {
+    > 75 |     throw new Error(`[AUTH] ${user.email}: auth cookie not set within ${AUTH_TIMEOUT}ms after submit`);
+         |           ^
+      76 |   }
+      77 |
+      78 |   console.log(`[AUTH] ${user.email} logged in successfully (auth cookie set)`);
+        at loginViaAuthModal (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/helpers/auth-ui.ts:75:11)
+        at ensureLoggedIn (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/helpers/auth-ui.ts:94:5)
+        at BrowserPool.launch (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/browserPool.ts:136:7)
+        at /Users/lolo/GH-new/GH-NEW/scripts/test/playwright/specs/multiplayer-simulation.spec.ts:41:7
+
+    Error Context: test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium-retry1/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete 
+
+    Error: Failed to create game: {"error":"timeout exceeded when trying to connect"}
+
+       at ../orchestrator/gameOrchestrator.ts:149
+
+      147 |     if (!createResponse.ok()) {
+      148 |       const text = await createResponse.text();
+    > 149 |       throw new Error(`Failed to create game: ${text}`);
+          |             ^
+      150 |     }
+      151 |
+      152 |     const sessionData = await createResponse.json();
+        at GameOrchestrator.runGame (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:149:13)
+        at GameOrchestrator.run (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:109:22)
+        at /Users/lolo/GH-new/GH-NEW/scripts/test/playwright/specs/multiplayer-simulation.spec.ts:134:23
+
+    Error Context: test-results/multiplayer-simulation-Mul-18cb5-round-active-round-complete-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: Failed to create game: {"error":"timeout exceeded when trying to connect"}
+
+       at ../orchestrator/gameOrchestrator.ts:149
+
+      147 |     if (!createResponse.ok()) {
+      148 |       const text = await createResponse.text();
+    > 149 |       throw new Error(`Failed to create game: ${text}`);
+          |             ^
+      150 |     }
+      151 |
+      152 |     const sessionData = await createResponse.json();
+        at GameOrchestrator.runGame (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:149:13)
+        at GameOrchestrator.run (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:109:22)
+        at /Users/lolo/GH-new/GH-NEW/scripts/test/playwright/specs/multiplayer-simulation.spec.ts:134:23
+
+    Error Context: test-results/multiplayer-simulation-Mul-18cb5-round-active-round-complete-chromium-retry1/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-18cb5-round-active-round-complete-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/multiplayer-simulation-Mul-18cb5-round-active-round-complete-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite 
+
+    Error: Failed to create game: {"error":"timeout exceeded when trying to connect"}
+
+       at ../orchestrator/gameOrchestrator.ts:149
+
+      147 |     if (!createResponse.ok()) {
+      148 |       const text = await createResponse.text();
+    > 149 |       throw new Error(`Failed to create game: ${text}`);
+          |             ^
+      150 |     }
+      151 |
+      152 |     const sessionData = await createResponse.json();
+        at GameOrchestrator.runGame (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:149:13)
+        at GameOrchestrator.run (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:109:22)
+        at /Users/lolo/GH-new/GH-NEW/scripts/test/playwright/specs/multiplayer-simulation.spec.ts:63:23
+
+    Error Context: test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-webkit/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: Failed to create game: {"error":"timeout exceeded when trying to connect"}
+
+       at ../orchestrator/gameOrchestrator.ts:149
+
+      147 |     if (!createResponse.ok()) {
+      148 |       const text = await createResponse.text();
+    > 149 |       throw new Error(`Failed to create game: ${text}`);
+          |             ^
+      150 |     }
+      151 |
+      152 |     const sessionData = await createResponse.json();
+        at GameOrchestrator.runGame (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:149:13)
+        at GameOrchestrator.run (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:109:22)
+        at /Users/lolo/GH-new/GH-NEW/scripts/test/playwright/specs/multiplayer-simulation.spec.ts:63:23
+
+    Error Context: test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-webkit-retry1/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-webkit-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/multiplayer-simulation-Mul-f6a63-s-each-full-edge-case-suite-webkit-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete 
+
+    Error: Failed to create game: {"error":"timeout exceeded when trying to connect"}
+
+       at ../orchestrator/gameOrchestrator.ts:149
+
+      147 |     if (!createResponse.ok()) {
+      148 |       const text = await createResponse.text();
+    > 149 |       throw new Error(`Failed to create game: ${text}`);
+          |             ^
+      150 |     }
+      151 |
+      152 |     const sessionData = await createResponse.json();
+        at GameOrchestrator.runGame (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:149:13)
+        at GameOrchestrator.run (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:109:22)
+        at /Users/lolo/GH-new/GH-NEW/scripts/test/playwright/specs/multiplayer-simulation.spec.ts:134:23
+
+    Error Context: test-results/multiplayer-simulation-Mul-18cb5-round-active-round-complete-webkit/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: Failed to create game: {"error":"timeout exceeded when trying to connect"}
+
+       at ../orchestrator/gameOrchestrator.ts:149
+
+      147 |     if (!createResponse.ok()) {
+      148 |       const text = await createResponse.text();
+    > 149 |       throw new Error(`Failed to create game: ${text}`);
+          |             ^
+      150 |     }
+      151 |
+      152 |     const sessionData = await createResponse.json();
+        at GameOrchestrator.runGame (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:149:13)
+        at GameOrchestrator.run (/Users/lolo/GH-new/GH-NEW/scripts/test/playwright/orchestrator/gameOrchestrator.ts:109:22)
+        at /Users/lolo/GH-new/GH-NEW/scripts/test/playwright/specs/multiplayer-simulation.spec.ts:134:23
+
+    Error Context: test-results/multiplayer-simulation-Mul-18cb5-round-active-round-complete-webkit-retry1/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/multiplayer-simulation-Mul-18cb5-round-active-round-complete-webkit-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/multiplayer-simulation-Mul-18cb5-round-active-round-complete-webkit-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4 failed
+    [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite 
+    [chromium] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete 
+    [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:16:7 › Multiplayer Simulation › 6 players, 3 games, 5 rounds each, full edge-case suite 
+    [webkit] › scripts/test/playwright/specs/multiplayer-simulation.spec.ts:95:7 › Multiplayer Simulation › resume-after-refresh: lobby, round-active, round-complete 
