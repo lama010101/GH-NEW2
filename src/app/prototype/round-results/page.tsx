@@ -58,7 +58,7 @@ const ALL_ROUNDS_RESULTS: Result[] = [
   { id: "p1", name: "Alex Rivera", score: 7240, accuracy: 89, locationScore: 91, timeScore: 87, guessYear: 1991, distanceKm: 42, badge: { dimension: "combo", tier: "gold" }, isMe: true, whereBadges: { tier: "gold", count: 3 }, whenBadges: { tier: "gold", count: 2 }, whereXp: 3620, whenXp: 3620 },
   { id: "p2", name: "Mina Kovač", score: 8150, accuracy: 94, locationScore: 96, timeScore: 92, guessYear: 1989, distanceKm: 6, badge: { dimension: "combo", tier: "gold" }, isMe: false },
   { id: "p3", name: "Theo Lambert", score: 5230, accuracy: 68, locationScore: 62, timeScore: 74, guessYear: 1978, distanceKm: 410, badge: null, isMe: false },
-  { id: "p4", name: "Sara Bianchi", score: 6480, accuracy: 79, locationScore: 84, timeScore: 74, guessYear: 1994, distanceKm: 120, badge: { dimension: "location", tier: "silver" }, isMe: false },
+  { id: "p4", name: "Sara Bianchi", score: 7300, accuracy: 79, locationScore: 84, timeScore: 74, guessYear: 1994, distanceKm: 120, badge: { dimension: "location", tier: "silver" }, isMe: false },
 ];
 
 function gradientFor(id: string): string {
@@ -127,9 +127,8 @@ function AccuracyRing({ value }: { value: number }) {
           strokeDasharray={circumference} strokeDashoffset={offset}
           transform={`rotate(-90 ${cx} ${cy})`}
         />
-        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={52} fontWeight="bold">
+        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill={color} fontSize={52} fontWeight="bold">
           {clamped}
-          <tspan fontSize={22} dx="2" dy="-18">%</tspan>
         </text>
       </svg>
     </div>
@@ -153,8 +152,61 @@ function MiniRing({ value, color }: { value: number; color: string }) {
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
-      <span className={styles.miniRingVal} style={{ color }}>{Math.round(value)}%</span>
+      <span className={styles.miniRingVal} style={{ color }}>{Math.round(value)}</span>
     </div>
+  );
+}
+
+// Badge with zoom + sound + haptic reveal animation.
+// Mirrors prod InlineImageBadge: starts hidden, zooms in with glow, plays sound.
+function BadgeWithEffect({
+  dimension,
+  tier,
+  revealed,
+  delay = 0,
+  className,
+}: {
+  dimension: "combo" | "location" | "year";
+  tier: "gold" | "silver" | "bronze";
+  revealed: boolean;
+  delay?: number;
+  className?: string;
+}) {
+  const [animated, setAnimated] = useState(false);
+
+  useEffect(() => {
+    if (!revealed) return;
+    const timer = setTimeout(() => {
+      setAnimated(true);
+      // Play badge sound
+      const isCombo = dimension === "combo";
+      const soundPath = isCombo
+        ? tier === "gold" ? "/sounds/badges/perfect-combo.mp3"
+          : tier === "silver" ? "/sounds/badges/amazing-combo.mp3"
+          : "/sounds/badges/great-combo.mp3"
+        : tier === "gold" ? "/sounds/badges/perfect.mp3"
+          : tier === "silver" ? "/sounds/badges/amazing.mp3"
+          : "/sounds/badges/great.mp3";
+      const audio = new Audio(soundPath);
+      audio.volume = 1.0;
+      audio.play().catch(() => { /* autoplay block — silent fail */ });
+      // Haptic feedback
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([50, 50, 100]);
+      }
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [revealed, delay, dimension, tier]);
+
+  const prefix = dimension;
+  const imagePath = `/badges/${prefix}_${tier}.webp`;
+  const cls = !animated
+    ? `${styles.badgeHidden} ${className ?? ""}`
+    : `${styles.badgeAnimated} ${className ?? ""}`;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={imagePath} alt={`${tier} ${dimension} badge`} className={cls} />
   );
 }
 
@@ -229,9 +281,16 @@ function WhereMap({ rows }: { rows: Result[] }) {
 export default function RoundResultsPrototypePage() {
   const [tab, setTab] = useState<"where" | "when">("where");
   const [lbTab, setLbTab] = useState<"thisRound" | "allRounds">("thisRound");
-  const [lbOpen, setLbOpen] = useState(false);
+  const [lbOpen, setLbOpen] = useState(true);
   const [hintsOpen, setHintsOpen] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
+  const [badgesRevealed, setBadgesRevealed] = useState(false);
+
+  // Reveal badges after the ring animation finishes (~1.2s)
+  useEffect(() => {
+    const timer = setTimeout(() => setBadgesRevealed(true), 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const currentResults = lbTab === "thisRound" ? RESULTS : ALL_ROUNDS_RESULTS;
   const me = currentResults.find((r) => r.isMe)!;
@@ -242,7 +301,7 @@ export default function RoundResultsPrototypePage() {
   const whereRows = [...RESULTS].sort((a, b) => b.locationScore - a.locationScore);
   const whenRows = [...RESULTS].sort((a, b) => b.timeScore - a.timeScore);
   const panelRows = tab === "where" ? whereRows : whenRows;
-  const accent = tab === "where" ? "#22d3ee" : "#8b5cf6";
+  const accent = tab === "where" ? "#22d3ee" : "#e879f9";
 
   const WHERE_HINTS = [
     { label: "Continent", text: "Europe" },
@@ -272,84 +331,89 @@ export default function RoundResultsPrototypePage() {
         <div className={styles.bgScrim} />
 
         <div className={styles.scroll}>
-        {/* ── Event card ── */}
+        {/* ── Event card (prod-style) ── */}
         <section className={`${styles.card} ${styles.eventCard}`}>
-          <div className={styles.eventContent}>
-            <h1 className={styles.eventTitle}>{EVENT_TITLE}</h1>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/home_background.webp" alt={EVENT_TITLE} className={styles.eventImg} />
-            <div className={styles.eventAnswer}>
-              <span className={styles.answerLabel}>Correct answer:</span>
-              <span className={styles.answerValue}>{CORRECT_LOCATION} · {CORRECT_YEAR}</span>
-            </div>
-            <button className={styles.descToggle} onClick={() => setDescOpen(!descOpen)}>
-              <span className={styles.chev} style={{ transform: descOpen ? "rotate(90deg)" : "none" }}>›</span>
-              {descOpen ? "Hide" : "Show"} description
-            </button>
-            {descOpen && <p className={styles.eventDesc}>{EVENT_DESC}</p>}
+          <div className={styles.eventTitle}>{EVENT_TITLE}</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/home_background.webp" alt={EVENT_TITLE} className={styles.eventImg} />
+          <div className={styles.eventMeta}>{CORRECT_YEAR} · {CORRECT_LOCATION}</div>
+          <button className={styles.histContextTrigger} onClick={() => setDescOpen(!descOpen)} aria-expanded={descOpen}>
+            <span className={styles.histContextIcon}>📖</span>
+            <span className={styles.histContextLabel}>Historical Context</span>
+            <span className={`${styles.histContextArrow} ${descOpen ? styles.histContextArrowExpanded : ""}`}>›</span>
+          </button>
+          <div className={`${styles.histInlineBody} ${descOpen ? styles.histInlineBodyExpanded : ""}`}>
+            {EVENT_DESC}
           </div>
         </section>
 
         {/* ── Score hero card ── */}
         <section className={`${styles.card} ${styles.heroCard}`}>
-          <AccuracyRing value={me.accuracy} />
-          <div className={styles.heroSide}>
-            <div className={styles.rankBlock}>
-              <span className={styles.rankBig}>#{myRank}{rankSuffix(myRank)}</span>
-              <span className={styles.rankLabel}>place</span>
+          <div className={styles.heroTop}>
+            <AccuracyRing value={me.accuracy} />
+            <div className={styles.totalXpRow}>
+              <span className={styles.totalXpVal}>{me.score.toLocaleString()} XP</span>
+              {me.badge && (
+                <BadgeWithEffect
+                  dimension="combo"
+                  tier={me.badge.tier}
+                  revealed={badgesRevealed}
+                  delay={0}
+                  className={styles.comboBadgeImg}
+                />
+              )}
+            </div>
+          </div>
+
+          <div className={styles.miniCardsRow}>
+            {/* ── Where mini card ── */}
+            <div className={styles.miniCard}>
+              <div className={styles.miniCardHead}>
+                <span className={styles.miniCardDot} style={{ background: "#22d3ee" }} />
+                <span className={styles.miniCardTitle}>Where</span>
+              </div>
+              <MiniRing value={me.locationScore} color={accColor(me.locationScore)} />
+              <div className={styles.miniXp}>
+                <span className={styles.miniXpVal}>+{me.whereXp ?? 0}</span>
+                <span className={styles.miniXpLabel}>XP</span>
+              </div>
+              <div className={styles.miniBadges}>
+                {me.whereBadges && (
+                  <BadgeWithEffect
+                    dimension="location"
+                    tier={me.whereBadges.tier}
+                    revealed={badgesRevealed}
+                    delay={300}
+                    className={styles.miniBadgeImg}
+                  />
+                )}
+              </div>
             </div>
 
-            <div className={styles.miniCardsRow}>
-              {/* ── Where mini card ── */}
-              <div className={styles.miniCard}>
-                <div className={styles.miniCardHead}>
-                  <span className={styles.miniCardDot} style={{ background: "#22d3ee" }} />
-                  <span className={styles.miniCardTitle}>Where</span>
-                </div>
-                <MiniRing value={me.locationScore} color={accColor(me.locationScore)} />
-                {me.whereBadges && (
-                  <div className={styles.miniBadges}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/badges/location_${me.whereBadges.tier}.webp`}
-                      alt={`${me.whereBadges.tier} location badge`}
-                      className={styles.miniBadgeImg}
-                    />
-                    {me.whereBadges.count > 1 && (
-                      <span className={styles.miniBadgeCount}>×{me.whereBadges.count}</span>
-                    )}
-                  </div>
-                )}
-                <div className={styles.miniXp}>
-                  <span className={styles.miniXpVal}>+{me.whereXp ?? 0}</span>
-                  <span className={styles.miniXpLabel}>XP</span>
-                </div>
+            {/* ── When mini card ── */}
+            <div className={styles.miniCard}>
+              <div className={styles.miniCardHead}>
+                <span className={styles.miniCardDot} style={{ background: "#e879f9" }} />
+                <span className={styles.miniCardTitle}>When</span>
               </div>
-
-              {/* ── When mini card ── */}
-              <div className={styles.miniCard}>
-                <div className={styles.miniCardHead}>
-                  <span className={styles.miniCardDot} style={{ background: "#8b5cf6" }} />
-                  <span className={styles.miniCardTitle}>When</span>
-                </div>
-                <MiniRing value={me.timeScore} color={accColor(me.timeScore)} />
+              <MiniRing value={me.timeScore} color={accColor(me.timeScore)} />
+              <div className={styles.miniXp}>
+                <span className={styles.miniXpVal}>+{me.whenXp ?? 0}</span>
+                <span className={styles.miniXpLabel}>XP</span>
+              </div>
+              <div className={styles.miniBadges}>
                 {me.whenBadges && (
-                  <div className={styles.miniBadges}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/badges/year_${me.whenBadges.tier}.webp`}
-                      alt={`${me.whenBadges.tier} year badge`}
-                      className={styles.miniBadgeImg}
-                    />
-                    {me.whenBadges.count > 1 && (
-                      <span className={styles.miniBadgeCount}>×{me.whenBadges.count}</span>
-                    )}
-                  </div>
+                  <BadgeWithEffect
+                    dimension="year"
+                    tier={me.whenBadges.tier}
+                    revealed={badgesRevealed}
+                    delay={600}
+                    className={styles.miniBadgeImg}
+                  />
                 )}
-                <div className={styles.miniXp}>
-                  <span className={styles.miniXpVal}>+{me.whenXp ?? 0}</span>
-                  <span className={styles.miniXpLabel}>XP</span>
-                </div>
+                {me.whenBadges && me.whenBadges.count > 1 && (
+                  <span className={styles.miniBadgeCount}>×{me.whenBadges.count}</span>
+                )}
               </div>
             </div>
           </div>
@@ -360,18 +424,19 @@ export default function RoundResultsPrototypePage() {
           <div className={styles.cardHead}>
             <span className={styles.accentBar} />
             <h2 className={styles.cardTitle}>Leaderboard</h2>
+            <span className={styles.cardHeadRank}>#{myRank}{rankSuffix(myRank)}</span>
           </div>
           <div className={styles.tabs}>
             <button
               className={`${styles.tab} ${lbTab === "thisRound" ? styles.tabActive : ""}`}
-              style={lbTab === "thisRound" ? { color: "#ffd54a", borderColor: "#ffd54a" } : undefined}
+              style={lbTab === "thisRound" ? { color: "#fb923c", borderColor: "#fb923c" } : undefined}
               onClick={() => setLbTab("thisRound")}
             >
               This Round
             </button>
             <button
               className={`${styles.tab} ${lbTab === "allRounds" ? styles.tabActive : ""}`}
-              style={lbTab === "allRounds" ? { color: "#ffd54a", borderColor: "#ffd54a" } : undefined}
+              style={lbTab === "allRounds" ? { color: "#fb923c", borderColor: "#fb923c" } : undefined}
               onClick={() => setLbTab("allRounds")}
             >
               All Rounds
@@ -380,13 +445,13 @@ export default function RoundResultsPrototypePage() {
           <div className={styles.lbList}>
             {ranked.map((r, i) => (
               <div key={r.id} className={`${styles.lbRow} ${r.isMe ? styles.lbRowMe : ""}`}>
-                <span className={`${styles.lbRank} ${i === 0 ? styles.lbRankGold : ""}`}>{i + 1}</span>
+                <span className={styles.lbRank}>{i + 1}</span>
                 <Avatar id={r.id} name={r.name} size={32} />
                 <span className={styles.lbName}>
                   {r.name}
                   {r.isMe && <span className={styles.youTag}>you</span>}
                 </span>
-                <span className={styles.lbAcc} style={{ color: accColor(r.accuracy) }}>{r.accuracy}%</span>
+                <span className={styles.lbAcc} style={{ color: accColor(r.accuracy) }}>{r.accuracy}</span>
               </div>
             ))}
           </div>
@@ -394,33 +459,40 @@ export default function RoundResultsPrototypePage() {
 
         {/* ── Where / When breakdown (tabbed) ── */}
         <section className={styles.card}>
+          <div className={styles.cardHead}>
+            <span className={styles.accentBar} style={{ background: tab === "where" ? "#22d3ee" : "#e879f9" }} />
+            <h2 className={styles.cardTitle}>Breakdown</h2>
+          </div>
           <div className={styles.tabs}>
             <button
               className={`${styles.tab} ${tab === "where" ? styles.tabActive : ""}`}
               style={tab === "where" ? { color: "#22d3ee", borderColor: "#22d3ee" } : undefined}
-              onClick={() => { setTab("where"); setLbOpen(false); setHintsOpen(false); }}
+              onClick={() => { setTab("where"); setLbOpen(true); setHintsOpen(false); }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/where.webp" alt="" className={styles.tabIcon} />
+              <img src="/badges/where.webp" alt="" width={22} height={22} className={styles.tabIcon} />
               Where
             </button>
             <button
               className={`${styles.tab} ${tab === "when" ? styles.tabActive : ""}`}
-              style={tab === "when" ? { color: "#8b5cf6", borderColor: "#8b5cf6" } : undefined}
-              onClick={() => { setTab("when"); setLbOpen(false); setHintsOpen(false); }}
+              style={tab === "when" ? { color: "#e879f9", borderColor: "#e879f9" } : undefined}
+              onClick={() => { setTab("when"); setLbOpen(true); setHintsOpen(false); }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/when.webp" alt="" className={styles.tabIcon} />
+              <img src="/badges/when.webp" alt="" width={28} height={28} className={styles.tabIconWhen} />
               When
             </button>
           </div>
 
           <div className={styles.breakHead}>
-            <span className={styles.breakCorrect}>
-              Correct: <strong style={{ color: accent }}>{tab === "where" ? CORRECT_LOCATION : CORRECT_YEAR}</strong>
-            </span>
+            <div className={styles.breakCorrectCol}>
+              <span className={styles.breakCorrectLabel}>Correct answer</span>
+              <span className={styles.breakCorrectValue} style={{ color: accent }}>
+                {tab === "where" ? CORRECT_LOCATION : CORRECT_YEAR}
+              </span>
+            </div>
             <span className={styles.breakScore} style={{ color: accColor(tab === "where" ? me.locationScore : me.timeScore) }}>
-              {tab === "where" ? me.locationScore : me.timeScore}%
+              {tab === "where" ? me.locationScore : me.timeScore}
             </span>
           </div>
           <span className={styles.breakSub}>
@@ -431,7 +503,7 @@ export default function RoundResultsPrototypePage() {
 
           {tab === "where" ? <WhereMap rows={whereRows} /> : <WhenTimeline rows={whenRows} />}
 
-          {/* Expandable leaderboard */}
+          {/* Expandable leaderboard — expanded by default */}
           <div className={styles.expand}>
             <button className={styles.expandHead} onClick={() => setLbOpen((v) => !v)}>
               <span className={styles.chev} style={{ transform: lbOpen ? "rotate(90deg)" : "none" }}>›</span>
@@ -440,15 +512,16 @@ export default function RoundResultsPrototypePage() {
             </button>
             {lbOpen && (
               <div className={styles.subLb}>
-                {panelRows.map((r) => {
+                {panelRows.map((r, i) => {
                   const val = tab === "where" ? r.locationScore : r.timeScore;
                   const detail = tab === "where" ? `${r.distanceKm} km` : `${Math.abs(r.guessYear - CORRECT_YEAR)} yrs off`;
                   return (
                     <div key={r.id} className={`${styles.subLbRow} ${r.isMe ? styles.lbRowMe : ""}`}>
+                      <span className={styles.subLbRank}>{i + 1}</span>
                       <Avatar id={r.id} name={r.name} size={26} />
                       <span className={styles.subLbName}>{r.name}</span>
                       <span className={styles.subLbDetail}>{detail}</span>
-                      <span className={styles.subLbAcc} style={{ color: accColor(val) }}>{val}%</span>
+                      <span className={styles.subLbAcc} style={{ color: accColor(val) }}>{val}</span>
                     </div>
                   );
                 })}
@@ -459,8 +532,8 @@ export default function RoundResultsPrototypePage() {
           {/* Expandable hints */}
           <div className={styles.expand}>
             <button className={styles.expandHead} onClick={() => setHintsOpen((v) => !v)}>
-              <span className={styles.chev} style={{ transform: hintsOpen ? "rotate(90deg)" : "none", color: accent }}>›</span>
-              <span style={{ color: accent }}>Hints</span>
+              <span className={styles.chev} style={{ transform: hintsOpen ? "rotate(90deg)" : "none" }}>›</span>
+              Hints
             </button>
             {hintsOpen && (
               <div className={styles.hintsList}>
@@ -475,7 +548,12 @@ export default function RoundResultsPrototypePage() {
           </div>
         </section>
 
-        {/* ── Countdown ── */}
+        <div className={styles.dockSpacer} />
+      </div>
+
+      {/* ── Bottom bar (countdown + nav) ── */}
+      <div className={styles.bottomBarWrap}>
+        {/* Auto-advancing countdown — above nav, always visible */}
         <div className={styles.countdown}>
           <span className={styles.countdownText}>Auto-advancing in <strong>8s</strong></span>
           <span className={styles.readyNames}>
@@ -483,28 +561,27 @@ export default function RoundResultsPrototypePage() {
             <span style={{ color: "#4ade80" }}>Sara ✓</span>
           </span>
         </div>
-
-        <div className={styles.dockSpacer} />
-      </div>
-
-      {/* ── Bottom bar ── */}
-      <div className={styles.bottomBar}>
-        <button className={styles.iconBtn} aria-label="Home">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
-            <polyline points="9 21 9 12 15 12 15 21" />
-          </svg>
-        </button>
-        <div className={styles.progress}>
-          {Array.from({ length: TOTAL_ROUNDS }).map((_, i) => (
-            <span
-              key={i}
-              className={styles.dot}
-              style={{ background: i < CURRENT_ROUND ? "#22d3ee" : i === CURRENT_ROUND ? "#fff" : "rgba(255,255,255,0.2)" }}
-            />
-          ))}
+        <div className={styles.bottomBar}>
+          <button className={styles.iconBtn} aria-label="Home">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+              <polyline points="9 21 9 12 15 12 15 21" />
+            </svg>
+          </button>
+          <div className={styles.progress}>
+            <span className={styles.roundLabel}>Round {CURRENT_ROUND + 1}/{TOTAL_ROUNDS}</span>
+            <div className={styles.dotsRow}>
+              {Array.from({ length: TOTAL_ROUNDS }).map((_, i) => (
+                <span
+                  key={i}
+                  className={styles.dot}
+                  style={{ background: i < CURRENT_ROUND ? "#fb923c" : i === CURRENT_ROUND ? "#fff" : "rgba(255,255,255,0.2)" }}
+                />
+              ))}
+            </div>
+          </div>
+          <button className={styles.nextBtn}>Next →</button>
         </div>
-        <button className={styles.nextBtn}>Next →</button>
       </div>
     </main>
     </>

@@ -541,13 +541,33 @@ export const EDGE_CASES: EdgeCase[] = [
         // rendering it as visible body text.
         await page.goto(`${pool.baseURL}/account`, { waitUntil: 'domcontentloaded' });
         await page.waitForLoadState('networkidle').catch(() => undefined);
-        // useIdentity() + supabaseBrowser.auth.getUser() run in useEffect —
-        // give them time to fetch before checking body text
-        await page.waitForTimeout(3000);
 
-        // Verify resulting identity — wait for Player B's email to appear
-        // in the account page body, then check the full body text.
-        await page.waitForSelector(`text=${userB.email}`, { timeout: 15000 }).catch(() => undefined);
+        // Wait for the /account page to actually render (not redirect to /login).
+        // Under high load, useIdentity() + supabaseBrowser.auth.getUser() can
+        // take several seconds. The /account page redirects to /login if
+        // playerId is falsy, so we need to wait for the identity to load.
+        // Poll for the email text to appear in the body, up to 20 seconds.
+        let identityLoaded = false;
+        const identityDeadline = Date.now() + 20000;
+        while (Date.now() < identityDeadline) {
+          const url = page.url();
+          if (url.includes('/login')) {
+            // Redirected to /login — identity not loaded yet or session invalid
+            // Navigate back to /account and wait
+            await page.goto(`${pool.baseURL}/account`, { waitUntil: 'domcontentloaded' }).catch(() => undefined);
+            await page.waitForTimeout(2000);
+            continue;
+          }
+          const body = await page.textContent('body').catch(() => '');
+          if (body?.includes(userB.email)) {
+            identityLoaded = true;
+            break;
+          }
+          await page.waitForTimeout(1000);
+        }
+        console.log(`[EDGE:auth-cross-user] Identity loaded on /account: ${identityLoaded}, url=${page.url()}`);
+
+        // Verify resulting identity — check displayed username/email in the UI
         const bodyText = await page.textContent('body').catch(() => '');
         const showsPlayerB = bodyText?.includes(userB.displayName) || bodyText?.includes(userB.email) || false;
         const showsPlayerA = bodyText?.includes(playerA.user.displayName) || bodyText?.includes(playerA.user.email) || false;

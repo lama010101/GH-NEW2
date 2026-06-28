@@ -629,6 +629,18 @@
 .sheetWhen {
   height: auto;
   max-height: 72vh;
+  overflow: hidden;
+}
+
+/* ── Sheet scroll body (WHEN sheet middle: year picker + year input) ──
+   Keeps the header (title + close) and confirm button pinned outside the
+   scroll area so they remain visible when the mobile keyboard shrinks the
+   sheet to the visual viewport height. */
+.sheetScrollBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes slideUpSheet {
@@ -639,9 +651,10 @@
 /* ── Sheet header ── */
 .sheetHeader {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .sheetHeaderLeft {
@@ -676,8 +689,8 @@
 
 .sheetCloseBtn {
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.1);
@@ -686,6 +699,11 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+.sheetCloseBtn svg {
+  width: 24px;
+  height: 24px;
 }
 
 /* ── Sheet map ── */
@@ -711,6 +729,7 @@
 .sheetFieldWrap {
   position: relative;
   overflow: visible;
+  flex-shrink: 0;
   z-index: 1001; /* LOAD-BEARING: must stay ≥ 1001 — Leaflet internal z-index ceiling is 1000.
                     Raising child z-index alone does NOT work (stacking context trap).
                     See: MP-FIX-MAP-ZINDEX-001, MP-FIX-SEARCH-DROPDOWN-002, MP-FIX-ZINDEX-REGRESSION-003
@@ -799,6 +818,7 @@
   font-size: var(--font-sm);
   font-weight: 700;
   cursor: not-allowed;
+  flex-shrink: 0;
 }
 
 .sheetConfirmReady {

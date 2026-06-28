@@ -559,6 +559,13 @@
   cursor: pointer;
   white-space: nowrap;
   box-shadow: 0 6px 22px rgba(249, 115, 22, 0.35);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+}
+
+.nextButton:active {
+  transform: scale(0.95);
+  filter: brightness(0.85);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
 }
 
 .nextButtonDisabled {

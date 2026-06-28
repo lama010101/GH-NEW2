@@ -2546,3 +2546,133 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
   - V4 (npx next lint --file page.tsx) -> "No ESLint warnings or errors" PASS
   - V5 (grep old classes xpBlock|splitRow|progressChip|achievementBadge in page.tsx) -> 0 matches PASS
 - **Date:** 2026-06-28
+
+---
+
+- **Task ID:** MP-PROTO-ROUND-RESULTS-OVERHAUL-003
+- **Status:** DONE
+- **Files Modified:**
+  - src/app/prototype/round-results/page.tsx (state L232; accent L244; AccuracyRing L120-134; MiniRing L155; event card L275-289; score card L291-358; leaderboard L360-396; breakdown card L398-488; bottom bar L501-522)
+  - src/app/prototype/round-results/round-results.module.css (card bg L69-75; cardHead+rank L77-102; event card L104-193; hero card L195-335; leaderboard L369-416; breakdown L449-490; expandHead L644; subLbRank L688; countdown L746; bottom bar L802-845)
+- **Description:** Comprehensive overhaul of /prototype/round-results to match prod visual language:
+  1. **Event card (prod-style):** Centered title, full-width image with brightness(0.75) filter, orange meta line (`{year} · {location}`), Context toggle button with 📖 icon + expandable inline body (replaces old "Show/Hide description" toggle + answer box).
+  2. **Score card restructured:** Vertical layout — main % circle on top, total XP in white below circle with combo badge webp image next to it, then Where/When mini cards row below. Removed #2nd place from score card (moved to leaderboard). Removed ×2 counter from Where mini card (kept for When).
+  3. **Leaderboard:** #2nd place shown in top right corner of card header (`cardHeadRank`, orange). 'You' row more visible (orange bg `rgba(251,146,60,0.15)` + orange border). Rank number bigger (18px). Removed % from accuracy values.
+  4. **% removed everywhere:** All displayed values no longer show `%` suffix — main ring, mini rings, leaderboard accuracy, breakdown score, sub-leaderboard accuracy.
+  5. **Ring values colored:** AccuracyRing text fill changed from `white` to `color` (the same hsl hue as the circle stroke). MiniRing value already used the circle color.
+  6. **Where/When breakdown card:** Added "Breakdown" title with accent bar (matches "Leaderboard" title style). When tab icon height matched to Where (both `width={22} height={22}`). Correct answer bigger/more visible (18px bold, in a column with "CORRECT ANSWER" label above). Leaderboard + Hints labels both white (removed accent color from Hints label). Leaderboard expanded by default (`lbOpen` initial state = `true`). Sub-leaderboard rank number bigger (16px, `subLbRank` class added).
+  7. **All cards 85% black opaque:** `.card` background changed from `linear-gradient(rgba(255,255,255,0.07),...)` to `rgba(0,0,0,0.85)`. Countdown card also updated.
+  8. **Bottom nav:** Shows "Round 3/5" label above progress dots. Progress bullets increased from 8px to 12px. Completed rounds colored orange instead of cyan.
+  9. **Primary color = orange:** Next button `#fb923c` (was `#22d3ee`), accent bar `#fb923c` (was `#22d3ee`), leaderboard tabs active `#fb923c` (was `#ffd54a`), youTag `#fb923c` (was `#22d3ee`), lbRowMe `rgba(251,146,60,...)` (was `rgba(34,211,238,...)`), lbRankGold `#fb923c` (was `#ffd54a`), miniBadgeCount `#fb923c` (was `#ffd54a`).
+  10. **When color = prod violet:** All `#8b5cf6` changed to `#e879f9` (prod `--gh-violet` light value). When mini card dot, when tab active, breakdown accent bar on when tab.
+- **Validation:**
+  - V1 (comm -23 tsx css) -> 0 TSX classes missing from CSS PASS
+  - V2 (comm -13 tsx css) -> 0 dead CSS classes PASS
+  - V3 (npx tsc --noEmit) -> exit 0, no errors PASS
+  - V4 (npx next lint --file page.tsx) -> "No ESLint warnings or errors" PASS
+  - V5 (grep % in page.tsx) -> only in comments, CSS calc, string interpolation for positioning — no displayed % values PASS
+  - V6 (grep #8b5cf6|#ffd54a in CSS) -> 0 matches PASS
+  - V7 (grep old classes descToggle|heroSide|rankBlock|eventAnswer) -> 0 matches PASS
+- **Date:** 2026-06-28
+
+---
+
+- **Task ID:** MP-PROTO-ROUND-RESULTS-REFINE-004
+- **Status:** DONE
+- **Files Modified:**
+  - src/app/prototype/round-results/page.tsx (event card label L282; when tab icon L418-419; leaderboard rank L385; ALL_ROUNDS_RESULTS Sara score L61; countdown+bottom bar L486-524)
+  - src/app/prototype/round-results/round-results.module.css (scroll padding L59; tabIconWhen L449-453; lbRankGold removed L374-378; countdown L747-770; bottomBarWrap + bottomBar L772-798)
+- **Description:** Five refinements to /prototype/round-results:
+  1. **Event card label:** Changed "Context" → "Historical Context" to match prod `t('hist_context')` = "Historical Context" (en.json L288). Event card now shows: centered title, full-width image (brightness 0.75), orange meta (`{year} · {location}`), "📖 Historical Context ›" toggle with expandable inline body — identical to prod `RoundCompleteSection.tsx` event card structure.
+  2. **When webp icon 25% bigger:** Added `tabIconWhen` CSS class (28×28px) for the When tab icon in the breakdown card. Where tab icon stays at 22×22px (`tabIcon`). 28/22 = 1.27 ≈ 25% bigger.
+  3. **All rounds — Alex 3rd place:** Changed Sara's all-rounds score from 6480 → 7300 in `ALL_ROUNDS_RESULTS`. New all-rounds ranking: Mina 8150 (1st), Sara 7300 (2nd), Alex 7240 (3rd), Theo 5230 (4th). The `#3rd` rank in the leaderboard card header top-right corner updates automatically when switching to "All Rounds" tab (computed dynamically from `currentResults`).
+  4. **Position 1 same color as rest:** Removed `lbRankGold` class from the leaderboard rank span (was applied to `i === 0`). Removed `lbRankGold` CSS rule. All rank numbers now use the same `color: rgba(255, 255, 255, 0.6)`.
+  5. **Countdown moved into bottom navbar:** Moved the auto-advancing countdown section from the scroll area into a new `bottomBarWrap` container that sits fixed at the bottom. Structure: `bottomBarWrap` (fixed, z-30, dark bg + blur) contains `countdown` (above) + `bottomBar` (nav row below). Countdown is now always visible regardless of scroll position. Updated scroll area bottom padding from 96px → 140px to account for the taller fixed bottom section.
+- **Validation:**
+  - V1 (comm -23 tsx css) -> 0 TSX classes missing from CSS PASS
+  - V2 (comm -13 tsx css) -> 0 dead CSS classes PASS
+  - V3 (npx tsc --noEmit) -> exit 0, no errors PASS
+  - V4 (npx next lint --file page.tsx) -> "No ESLint warnings or errors" PASS
+  - V5 (grep lbRankGold in page.tsx) -> 0 matches PASS
+  - V6 (grep "Context" in page.tsx event card) -> "Historical Context" matches prod PASS
+- **Date:** 2026-06-28
+
+---
+
+- **Task ID:** MP-PROTO-ROUND-RESULTS-OPACITY-005
+- **Status:** DONE
+- **Files Modified:**
+  - src/app/prototype/round-results/page.tsx (mini cards L307-356 — swapped badges/XP order, badges always rendered)
+  - src/app/prototype/round-results/round-results.module.css (card bg L69; miniBadges L296-302; countdown L748; bottomBarWrap L775)
+- **Description:** Three adjustments to /prototype/round-results:
+  1. **Mini card badges under XP:** Swapped the order in both Where and When mini cards — was: ring → badges (conditional) → XP; now: ring → XP → badges. The `miniBadges` div is now always rendered (not conditional), so even when a card has no badge the space is reserved (`min-height: 32px`), keeping XP alignment consistent across both cards. Badge image + counter are conditionally rendered inside the always-present wrapper.
+  2. **All cards 80% opaque:** Changed `.card` background from `rgba(0, 0, 0, 0.85)` → `rgba(0, 0, 0, 0.8)`. Countdown card also updated to 0.8.
+  3. **Bottom navbar 50% opaque:** Changed `.bottomBarWrap` background from `rgba(10, 10, 12, 0.92)` → `rgba(10, 10, 12, 0.5)`. Backdrop blur retained for readability.
+- **Validation:**
+  - V1 (comm -23 tsx css) -> 0 missing classes PASS
+  - V2 (comm -13 tsx css) -> 0 dead CSS PASS
+  - V3 (npx tsc --noEmit) -> exit 0 PASS
+  - V4 (npx next lint --file page.tsx) -> "No ESLint warnings or errors" PASS
+- **Date:** 2026-06-28
+
+---
+
+### MP-FIX-SHEET-KEYBOARD-001 — Mobile keyboard visibility for WHERE/WHEN bottom sheet
+
+- **Task ID:** MP-FIX-SHEET-KEYBOARD-001
+- **Files modified:**
+  - `src/components/compete/RoundActiveSection.tsx`
+  - `src/components/compete/RoundActiveSection.module.css`
+- **Description:** When a round is active and the user taps the WHERE or WHEN button, the bottom sheet opens with the input field auto-focused. On mobile, the soft keyboard covers part of the sheet, hiding the Confirm button (both sheets) and the header with title + close button (WHEN sheet only). Two changes fix this:
+  1. **VisualViewport API (TSX):** Added `sheetViewportStyle` state and a `useEffect` that listens to `window.visualViewport` `resize`/`scroll` events while a panel is active. When the keyboard opens (visual viewport height < window.innerHeight − 10), the sheet is switched to `position: fixed` with `top`/`height`/`maxHeight` set to the visual viewport's offset and height, pinning it exactly above the keyboard. When the keyboard closes, the inline style is cleared and the CSS `position: absolute; bottom: 0` takes over again. `transition: none` is set during keyboard mode to avoid janky height transitions.
+  2. **Scrollable WHEN sheet body (CSS + TSX):** The WHEN sheet's year picker and year input are now wrapped in a new `sheetScrollBody` div (`flex: 1; min-height: 0; overflow-y: auto`). The `sheetHeader` and `sheetConfirmBtn` are flex items with `flex-shrink: 0`, so they stay pinned at the top and bottom of the sheet while only the middle scrolls. The WHERE sheet relies on the existing `flex: 1` map (which compresses) plus `flex-shrink: 0` on header, field, and confirm to keep the confirm button visible. `sheetFieldWrap` also received `flex-shrink: 0` so the search input doesn't compress. `.sheetWhen` gained `overflow: hidden` so the scroll body — not the sheet — handles overflow.
+- **Validation:**
+  - V1 (npx tsc --noEmit) -> exit 0 PASS
+  - V2 (npx next lint --file src/components/compete/RoundActiveSection.tsx) -> exit 0, only pre-existing warning (toastTimeoutsRef line 266) PASS
+- **Date:** 2026-06-28
+
+---
+
+### MP-UI-SHEET-CLOSEBTN-001 — Enlarge + reposition sheet close button
+
+- **Task ID:** MP-UI-SHEET-CLOSEBTN-001
+- **Files modified:**
+  - `src/components/compete/RoundActiveSection.module.css`
+- **Description:** The close button in the WHERE/WHEN bottom sheet was too small (34px) and hugging the top edge of the popup (header used `align-items: flex-start`, so the 34px button top-aligned with the 48px badge icon, leaving visual space below and making it appear pinned to the top). Two CSS changes: (1) `.sheetCloseBtn` width/height 34px → 45px (~33% bigger); added `.sheetCloseBtn svg` width/height 18px → 24px so the X icon scales proportionally with the button (CSS overrides the SVG presentation attributes). (2) `.sheetHeader` `align-items: flex-start` → `center` so the close button vertically centers against the 48px badge icon (the where/when label), moving it down away from the top edge and aligning it with the label row. Applies identically to both WHERE and WHEN sheet headers (only two usages of these classes).
+- **Validation:**
+  - V1 (npx tsc --noEmit) -> exit 0 PASS
+  - V2 (CSS-only change, no TSX modified) -> lint unaffected PASS
+- **Date:** 2026-06-28
+
+---
+
+### MP-UI-NEXT-BUTTON-PRESS-001 — Visual press cue for round results Next button
+
+- **Task ID:** MP-UI-NEXT-BUTTON-PRESS-001
+- **Files modified:**
+  - `src/components/compete/RoundCompleteSection.module.css`
+- **Description:** The Next button on the round results page had no immediate visual feedback when pressed — the only cue was the `.nextButtonDisabled` state (opacity 0.5) which appears only after the server round-trip adds the player to `readyForNext`. Added a `.nextButton:active` pseudo-class (scale 0.95, brightness 0.85, reduced box-shadow) for instant press feedback during the click, before any server response. Added a `transition` on `.nextButton` (transform/box-shadow/filter 0.08s ease) so the press and release animate smoothly. Pure CSS, no JS state, no new source of truth. The `:active` pseudo-class only fires on the non-disabled button (disabled buttons don't trigger `:active`), so it composes correctly with the existing `.nextButtonDisabled` state.
+- **Validation:**
+  - V1 (npx tsc --noEmit) -> exit 0 PASS
+  - V2 (CSS-only change, no TSX modified) -> lint unaffected PASS
+- **Date:** 2026-06-28
+
+- **Task ID:** MP-PROTO-ROUND-RESULTS-BADGE-ANIM-006
+- **Status:** DONE
+- **Files Modified:**
+  - src/app/prototype/round-results/page.tsx (BadgeWithEffect component L155-213; badgesRevealed state L287-293; combo badge L356-363; where badge L381-388; when badge L404-411)
+  - src/app/prototype/round-results/round-results.module.css (flex-shrink:0 on .card L76; badgeHidden + badgeAnimated + badgeZoomReveal keyframes L313-352)
+- **Description:** Two fixes:
+  1. **Event card visibility fix:** Added `flex-shrink: 0` to `.card` class. The `.scroll` container uses `display: flex; flex-direction: column; overflow-y: auto;` — without `flex-shrink: 0`, flexbox was shrinking the event card (first child) to near-zero height when total content exceeded viewport. This is a known flexbox behavior: flex items shrink to fit the container rather than overflow, even with `overflow-y: auto`. All cards now have `flex-shrink: 0` and will maintain their natural height, enabling proper scrolling.
+  2. **Badge animation with sound + zoom:** Created `BadgeWithEffect` component that mirrors prod `InlineImageBadge`:
+     - **Visual:** CSS `@keyframes badgeZoomReveal` animation — badge starts at `scale(3.2) rotate(-12deg)` with `brightness(2.4)` and golden glow `drop-shadow(0 0 20px rgba(255,215,0,0.95))`, then zooms to `scale(1.4) rotate(5deg)` at 30%, bounces to `scale(1.12) rotate(-3deg)` at 55%, and settles at `scale(1) rotate(0deg)` at 100%. Duration 0.7s with `cubic-bezier(0.22, 1, 0.36, 1)` easing.
+     - **Sound:** Plays the appropriate badge sound from `/sounds/badges/` — combo badges use `perfect-combo.mp3`/`amazing-combo.mp3`/`great-combo.mp3`, location/year badges use `perfect.mp3`/`amazing.mp3`/`great.mp3` based on tier. Audio played via `new Audio(soundPath).play()` with autoplay-block catch.
+     - **Haptic:** `navigator.vibrate([50, 50, 100])` on supported devices.
+     - **Timing:** Badges reveal 1.2s after page load (after ring animation finishes). Combo badge reveals first (delay=0), Where badge 300ms later, When badge 600ms later — staggered for dramatic effect.
+     - **Hidden state:** Before reveal, badges are `opacity: 0` but still take up space (via `className` prop sizing) to prevent layout shift.
+- **Validation:**
+  - V1 (comm -23 tsx css) -> 0 missing classes PASS
+  - V2 (comm -13 tsx css) -> 0 dead CSS PASS
+  - V3 (npx tsc --noEmit) -> exit 0 PASS
+  - V4 (npx next lint --file page.tsx) -> "No ESLint warnings or errors" PASS
+- **Date:** 2026-06-28

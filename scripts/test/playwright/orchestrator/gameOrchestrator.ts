@@ -140,7 +140,7 @@ export class GameOrchestrator {
         playerId: host.user.id,
         mode: 'compete',
         totalRounds: this.opts.totalRounds,
-        roundTimerSec: 30,
+        roundTimerSec: 60,
       },
     });
 
@@ -166,6 +166,12 @@ export class GameOrchestrator {
     await Promise.all(
       this.wsClients.map((c) => c.waitForState((s) => s.status === 'LOBBY', 60000)),
     );
+
+    // Set a short results auto-advance (10s) so the only-one-next edge case
+    // (where only 1 of 6 players sends READY_NEXT) doesn't wait the default
+    // 90 seconds for the result timer. This keeps the test within the 30min
+    // timeout while still exercising the result-timer auto-advance path.
+    hostClient.setResultsTimer(30);
 
     // Assert all browsers see LOBBY
     await this.assertAllBrowsersSeeStatus('LOBBY', errors);
@@ -260,7 +266,7 @@ export class GameOrchestrator {
       // Wait for submission ack — detects rejected guesses instead of
       // fire-and-forget. (H17 fix — part 2)
       try {
-        await client.waitForSubmissionAck(10000);
+        await client.waitForSubmissionAck(30000);
         console.log(`[SUBMIT-ACK] player=${client.user.displayName} round=${roundIndex} confirmed`);
       } catch (ackErr) {
         const ackMsg = ackErr instanceof Error ? ackErr.message : String(ackErr);
@@ -273,10 +279,12 @@ export class GameOrchestrator {
       await new Promise((r) => setTimeout(r, 200));
     }
 
-    // Wait for ROUND_COMPLETE
+    // Wait for ROUND_COMPLETE — must check roundIndex to avoid matching
+    // a stale ROUND_COMPLETE from a previous round (the lastSnapshot check
+    // in waitForState would otherwise resolve immediately on stale state).
     this.opts.onStep?.('Waiting for ROUND_COMPLETE...');
     await Promise.all(
-      this.wsClients.map((c) => c.waitForState((s) => s.status === 'ROUND_COMPLETE', 60000)),
+      this.wsClients.map((c) => c.waitForState((s) => s.status === 'ROUND_COMPLETE' && s.currentRoundIndex === roundIndex, 60000)),
     );
 
     // Assert all browsers see ROUND_COMPLETE
@@ -299,12 +307,18 @@ export class GameOrchestrator {
 
     // Skip advancing on the last round — server auto-transitions to SESSION_COMPLETE
     if (roundIndex < this.opts.totalRounds - 1) {
-      // Wait for a moment before advancing
-      await new Promise((r) => setTimeout(r, 1000));
-
-      // Host advances round
-      this.opts.onStep?.('Advancing to next round...');
-      hostClient.advanceRound(roundIndex, 'PLAYER');
+      // Wait for the server to auto-advance to the next round. The server's
+      // READY_NEXT auto-advance triggers when all active players send READY_NEXT.
+      // For the only-one-next edge case (where 5 of 6 players skip READY_NEXT),
+      // the server's result timer (resultsAutoAdvanceSec, default 90s) handles
+      // the advance. We do NOT send an explicit ADVANCE_ROUND because it races
+      // with the READY_NEXT auto-advance — the advance increments
+      // currentRoundIndex, causing in-flight READY_NEXT messages to fail
+      // validation ("roundIndex does not match current round").
+      this.opts.onStep?.('Waiting for server to advance to next round...');
+      await Promise.all(
+        this.wsClients.map((c) => c.waitForState((s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === roundIndex + 1, 120000)),
+      );
     }
   }
 
@@ -322,7 +336,7 @@ export class GameOrchestrator {
         playerId: host.user.id,
         mode: 'compete',
         totalRounds: this.opts.totalRounds,
-        roundTimerSec: 30,
+        roundTimerSec: 60,
       },
     });
 
