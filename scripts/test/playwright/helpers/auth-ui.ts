@@ -6,8 +6,8 @@ import { TestUser } from '../fixtures/auth';
 // under load. In single-browser tests the modal typically detaches in ~7s,
 // but the 6-browser pool + globalSetup creates enough contention to exceed
 // the original 20s budget.
-const AUTH_TIMEOUT = 60000;
-const AUTH_MODAL_APPEAR_TIMEOUT = 30000;
+const AUTH_TIMEOUT = 120000;
+const AUTH_MODAL_APPEAR_TIMEOUT = 60000;
 
 /** Supabase auth session cookie name (project ref gzvixlvkwjsrtmtybtkf). */
 const AUTH_COOKIE_NAME = 'sb-gzvixlvkwjsrtmtybtkf-auth-token';

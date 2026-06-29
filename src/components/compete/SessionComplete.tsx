@@ -8,6 +8,7 @@ import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
+import { calculateBadges } from "@/core/rules";
 import { NavModal } from "@/components/NavModal";
 import styles from "./SessionComplete.module.css";
 
@@ -158,6 +159,60 @@ export default function SessionComplete({
             return b.avgAccuracy - a.avgAccuracy;
           });
 
+        const myRank = leaderboard.findIndex(p => p.playerId === playerId) + 1;
+        const wonRoundsByMe = leaderboard.find(p => p.playerId === playerId)?.wonRounds.length ?? 0;
+        const rankSuffix = (n: number) => n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th";
+
+        // ── Achievements: badges, XP per era/region, stats ──
+        const myRoundResults = (allRoundResults ?? []).filter(r => r.playerId === playerId);
+        const eraForYear = (year: number): string => {
+          if (year < 476) return 'era_ancient';
+          if (year < 1492) return 'era_medieval';
+          if (year < 1789) return 'era_earlymodern';
+          if (year < 1945) return 'era_modern';
+          return 'era_contemporary';
+        };
+
+        // Aggregate badges across all rounds
+        const badgeCounts = { gold: 0, silver: 0, bronze: 0 };
+        for (const r of myRoundResults) {
+          const loc = r.locationScore ?? 0;
+          const time = r.timeScore ?? 0;
+          const combo = (loc + time) / 2;
+          const badges = calculateBadges({ yearAccuracy: time, locationAccuracy: loc, comboAccuracy: combo });
+          for (const b of badges) { badgeCounts[b.tier]++; }
+        }
+
+        // XP per era
+        const xpPerEra = new Map<string, number>();
+        for (const r of myRoundResults) {
+          const round = snapshot.rounds[r.roundIndex];
+          if (!round) continue;
+          const eraKey = eraForYear(round.year);
+          xpPerEra.set(eraKey, (xpPerEra.get(eraKey) ?? 0) + r.score);
+        }
+
+        // XP per region
+        const xpPerRegion = new Map<string, number>();
+        for (const r of myRoundResults) {
+          const region = r.region ?? 'unknown_region';
+          xpPerRegion.set(region, (xpPerRegion.get(region) ?? 0) + r.score);
+        }
+
+        // Stats
+        const myScores = myRoundResults.map(r => r.score);
+        const bestRoundScore = myScores.length > 0 ? Math.max(...myScores) : 0;
+        const bestRoundIdx = myRoundResults.findIndex(r => r.score === bestRoundScore);
+        const totalDistance = myRoundResults.reduce((s, r) => s + (r.distanceKm ?? 0), 0);
+        const consistency = myRoundResults.length > 0
+          ? Math.round(100 - (Math.sqrt(myRoundResults.reduce((s, r) => {
+              const acc = ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2;
+              const mean = myRoundResults.reduce((ms, rr) => ms + ((rr.locationScore ?? 0) + (rr.timeScore ?? 0)) / 2, 0) / myRoundResults.length;
+              return s + Math.pow(acc - mean, 2);
+            }, 0) / myRoundResults.length)))
+          : 0;
+        const totalBadges = badgeCounts.gold + badgeCounts.silver + badgeCounts.bronze;
+
         return (
           <>
             {/* TOP BAR */}
@@ -192,51 +247,53 @@ export default function SessionComplete({
             </div>
 
             <div className={styles.content}>
-              {/* HERO ACCURACY CARD */}
-              <div className={styles.scoreGrid}>
-                <div className={`${styles.scoreHero} ${styles.card}`}>
-                  <RainbowRing value={overallAccuracy} />
-                  <div className={styles.xp}>{overallXP} XP</div>
-                </div>
-
-                {/* WHERE / WHEN SUB-CARDS */}
-                <div className={styles.statGrid}>
-                  <div className={styles.statCard}>
-                    <svg className={styles.statIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M12 21s7-5.2 7-11a7 7 0 1 0-14 0c0 5.8 7 11 7 11z" />
-                      <circle cx={12} cy={10} r={2.5} />
-                    </svg>
-                    <div className={styles.percentLine}>
-                      <span className={styles.statNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whereAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whereAccuracy}</span>
-                      <span className={styles.statSymbol}>%</span>
-                    </div>
-                    <div className={styles.statSub}>{t('avg_km_away', { n: Math.round(avgDistanceKm) })}</div>
-                  </div>
-                  <div className={styles.statCard}>
-                    <svg className={styles.statIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <rect x={4} y={5} width={16} height={15} rx={2} />
-                      <path d="M8 3v4M16 3v4M4 10h16" />
-                    </svg>
-                    <div className={styles.percentLine}>
-                      <span className={styles.statNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whenAccuracy}</span>
-                      <span className={styles.statSymbol}>%</span>
-                    </div>
-                    <div className={styles.statSub}>{t('avg_yrs_off', { n: Math.round(avgYearDiff) })}</div>
-                  </div>
+              {/* VICTORY BANNER */}
+              <div className={styles.banner}>
+                <span className={styles.bannerKicker}>{tGame('game_complete')}</span>
+                <h1 className={styles.bannerTitle}>
+                  {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
+                </h1>
+                <div className={styles.bannerStats}>
+                  <span>{overallXP.toLocaleString()} XP</span>
+                  <span className={styles.bannerDot}>·</span>
+                  <span>{tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}</span>
                 </div>
               </div>
 
-              {/* LEADERBOARD */}
-              <div className={styles.panel}>
-                <div className={styles.panelHeading}>{tGame('final_rankings')}</div>
+              {/* HERO ACCURACY CARD — ring + Where/When stat tiles */}
+              <section className={`${styles.card} ${styles.heroCard}`}>
+                <RainbowRing value={overallAccuracy} />
+                <div className={styles.statPair}>
+                  <div className={styles.statTile}>
+                    <span className={styles.statTileLabelWhere}>{tGame('where')}</span>
+                    <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whereAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whereAccuracy}%</span>
+                    <span className={styles.statTileSub}>{t('avg_km_away', { n: Math.round(avgDistanceKm) })}</span>
+                  </div>
+                  <div className={styles.statTile}>
+                    <span className={styles.statTileLabelWhen}>{tGame('when')}</span>
+                    <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{whenAccuracy}%</span>
+                    <span className={styles.statTileSub}>{t('avg_yrs_off', { n: Math.round(avgYearDiff) })}</span>
+                  </div>
+                </div>
+              </section>
+
+              {/* FINAL RANKINGS */}
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('final_rankings')}</h2>
+                </div>
+                <div className={styles.ranks}>
                 {leaderboard.map((player, index) => {
                   const isCurrentPlayer = player.playerId === playerId;
                   const playerData = snapshot.players.find(p => p.playerId === player.playerId);
                   const displayName = playerLabel(snapshot.players, player.playerId);
                   const firstLetter = displayName ? displayName.charAt(0).toUpperCase() : "?";
                   return (
-                    <div key={player.playerId} className={styles.rankRow}>
-                      <div className={styles.rankNum}>{index + 1}</div>
+                    <div key={player.playerId} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`}>
+                      <span className={`${styles.medal} ${index === 0 ? styles.medalGold : index === 1 ? styles.medalSilver : index === 2 ? styles.medalBronze : ""}`}>
+                        {index + 1}
+                      </span>
                       <div className={styles.avatarWrap}>
                         <div className={styles.rankAvatar}>
                           {playerData?.avatarUrl ? (
@@ -250,7 +307,6 @@ export default function SessionComplete({
                           ) : null}
                           {firstLetter}
                         </div>
-                        {isCurrentPlayer && <span className={styles.youDot} />}
                       </div>
                       <div className={styles.rankMain}>
                         <div className={styles.rankNameLine}>
@@ -261,29 +317,135 @@ export default function SessionComplete({
                             {displayName}
                           </span>
                           {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
+                          {player.wonRounds.length > 0 && <span className={styles.winTag}>🏆 {player.wonRounds.length}</span>}
                         </div>
-                        <div className={styles.progressTrack}>
+                        <div className={styles.bar}>
                           <div
-                            className={styles.progressFill}
+                            className={styles.barFill}
                             style={{ width: `${Math.max(0, Math.min(100, player.avgAccuracy))}%` }}
                           />
                         </div>
                       </div>
                       <div className={styles.rankScore}>
-                        <div className={styles.rankPercent}>
-                          <span style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, player.avgAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{player.avgAccuracy}</span>
-                          <span className={styles.rankPercentSymbol}>%</span>
-                        </div>
-                        <div className={styles.rankXp}>{player.totalScore} XP</div>
+                        <span className={styles.rankAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, player.avgAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{player.avgAccuracy}%</span>
+                        <span className={styles.rankXp}>{player.totalScore.toLocaleString()} XP</span>
                       </div>
                     </div>
                   );
                 })}
-              </div>
+                </div>
+              </section>
+
+              {/* ACHIEVEMENTS — badges, XP per era/region, game stats */}
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('achievements')}</h2>
+                </div>
+
+                <div className={styles.achievementsBody}>
+                  {/* Badge totals */}
+                  <div className={styles.badgeSummary}>
+                    <span className={styles.badgeSummaryLabel}>{tGame('badges_won')}</span>
+                    {totalBadges === 0 ? (
+                      <span className={styles.noBadges}>{tGame('no_badges')}</span>
+                    ) : (
+                      <div className={styles.badgeTally}>
+                        {badgeCounts.gold > 0 && (
+                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyGold}`}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/badges/combo_gold.webp" alt="gold" width={28} height={28} />
+                            <span className={styles.badgeTallyCount}>{badgeCounts.gold}</span>
+                            <span className={styles.badgeTallyTier}>{tGame('gold_badges')}</span>
+                          </span>
+                        )}
+                        {badgeCounts.silver > 0 && (
+                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallySilver}`}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/badges/combo_silver.webp" alt="silver" width={28} height={28} />
+                            <span className={styles.badgeTallyCount}>{badgeCounts.silver}</span>
+                            <span className={styles.badgeTallyTier}>{tGame('silver_badges')}</span>
+                          </span>
+                        )}
+                        {badgeCounts.bronze > 0 && (
+                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyBronze}`}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/badges/combo_bronze.webp" alt="bronze" width={28} height={28} />
+                            <span className={styles.badgeTallyCount}>{badgeCounts.bronze}</span>
+                            <span className={styles.badgeTallyTier}>{tGame('bronze_badges')}</span>
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* XP per era */}
+                  {xpPerEra.size > 0 && (
+                    <div className={styles.statGroup}>
+                      <span className={styles.statGroupLabel}>{tGame('xp_per_era')}</span>
+                      <div className={styles.statGroupList}>
+                        {[...xpPerEra.entries()].sort((a, b) => b[1] - a[1]).map(([eraKey, xp]) => (
+                          <div key={eraKey} className={styles.statGroupRow}>
+                            <span className={styles.statGroupRowLabel}>{tGame(eraKey)}</span>
+                            <span className={styles.statGroupRowBar}>
+                              <span className={styles.statGroupRowFill} style={{ width: `${Math.max(4, Math.min(100, (xp / overallXP) * 100))}%` }} />
+                            </span>
+                            <span className={styles.statGroupRowVal}>+{xp.toLocaleString()} XP</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* XP per region */}
+                  {xpPerRegion.size > 0 && (
+                    <div className={styles.statGroup}>
+                      <span className={styles.statGroupLabel}>{tGame('xp_per_region')}</span>
+                      <div className={styles.statGroupList}>
+                        {[...xpPerRegion.entries()].sort((a, b) => b[1] - a[1]).map(([regionKey, xp]) => (
+                          <div key={regionKey} className={styles.statGroupRow}>
+                            <span className={styles.statGroupRowLabel}>{regionKey === 'unknown_region' ? tGame('unknown_region') : regionKey}</span>
+                            <span className={styles.statGroupRowBar}>
+                              <span className={styles.statGroupRowFill} style={{ width: `${Math.max(4, Math.min(100, (xp / overallXP) * 100))}%` }} />
+                            </span>
+                            <span className={styles.statGroupRowVal}>+{xp.toLocaleString()} XP</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Game stats grid */}
+                  <div className={styles.gameStatsGrid}>
+                    <div className={styles.gameStatTile}>
+                      <span className={styles.gameStatVal}>{myRoundResults.length}</span>
+                      <span className={styles.gameStatLabel}>{tGame('rounds_played')}</span>
+                    </div>
+                    <div className={styles.gameStatTile}>
+                      <span className={styles.gameStatVal}>{Math.round(totalDistance).toLocaleString()} km</span>
+                      <span className={styles.gameStatLabel}>{tGame('total_distance')}</span>
+                    </div>
+                    <div className={styles.gameStatTile}>
+                      <span className={styles.gameStatVal}>{consistency}%</span>
+                      <span className={styles.gameStatLabel}>{tGame('avg_consistency')}</span>
+                    </div>
+                    {bestRoundIdx >= 0 && snapshot.rounds[bestRoundIdx] && (
+                      <div className={styles.gameStatTile}>
+                        <span className={styles.gameStatVal}>{bestRoundScore.toLocaleString()}</span>
+                        <span className={styles.gameStatLabel}>{tGame('best_round')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
 
               {/* ROUND BREAKDOWN */}
-              <div className={styles.roundsHeading}>{tGame('round_breakdown')}</div>
-              <div className={styles.rounds}>
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('round_breakdown')}</h2>
+                </div>
+                <div className={styles.roundList}>
                 {(() => {
                   return snapshot.rounds.map((round, i) => {
                   const roundStats = computeRoundStats(i) ?? {
@@ -292,99 +454,80 @@ export default function SessionComplete({
                   };
                   const bestPlayerName = roundStats.bestPlayerId ? playerLabel(snapshot.players, roundStats.bestPlayerId) : null;
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
+                  const myRoundResult = allRoundResults?.find(r => r.roundIndex === i && r.playerId === playerId);
+                  const myRoundAcc = myRoundResult ? Math.round(((myRoundResult.locationScore ?? 0) + (myRoundResult.timeScore ?? 0)) / 2) : null;
+                  const open = openRounds.has(i);
                   return (
-                    <div key={i} className={styles.roundCard}>
+                    <div key={i} className={`${styles.roundItem} ${open ? styles.roundItemOpen : ""}`}>
                       <button
                         type="button"
-                        className={styles.roundCardHeader}
+                        className={styles.roundTop}
                         onClick={() => setOpenRounds(prev => {
                           const next = new Set(prev);
                           if (next.has(i)) { next.delete(i); } else { next.add(i); }
                           return next;
                         })}
-                        aria-expanded={openRounds.has(i)}
+                        aria-expanded={open}
                       >
-                        <span className={styles.roundCardHeaderLabel}>#{i + 1}</span>
-                        <span className={styles.roundCardHeaderTitle}>{round.title}</span>
-                        <span className={styles.roundCardChevron} aria-hidden="true">
-                          {openRounds.has(i) ? '▲' : '▼'}
-                        </span>
+                        <span className={styles.roundNum}>R{i + 1}</span>
+                        <div className={styles.roundInfo}>
+                          <span className={styles.roundTitle}>{round.title}</span>
+                          <span className={styles.roundMeta}>{round.year} · {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`}</span>
+                        </div>
+                        {myRoundAcc != null && (
+                          <span className={styles.roundMyAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, myRoundAcc)) / 100) * 120)}, 100%, 50%)` }}>{myRoundAcc}%</span>
+                        )}
+                        <span className={styles.chev} style={{ transform: open ? "rotate(90deg)" : "none" }}>›</span>
                       </button>
 
-                      {openRounds.has(i) && (
-                        <>
-                          <div className={styles.photo}>
-                            {round.imageUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
+                      {open && (
+                        <div className={styles.roundDetail}>
+                          {round.imageUrl && (
+                            <div className={styles.photo}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={round.imageUrl}
                                 alt={round.title}
                                 onClick={() => { setViewerSrc(round.imageUrl); setViewerAlt(round.title); }}
                               />
-                            ) : (
-                              <div className={styles.photoFallback}>
-                                {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`} · {round.year}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className={styles.roundBody}>
-                            <div className={styles.miniGrid}>
-                              <div className={styles.miniTile}>
-                                <div className={styles.percentLine}>
-                                  <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgAccuracy}</span>
-                                  <span className={styles.miniSymbol}>%</span>
-                                </div>
-                                <div className={styles.miniLabel}>{tGame('total')}</div>
-                                <div className={styles.miniSub}>{roundStats.totalScore} XP</div>
-                              </div>
-
-                              <div className={`${styles.miniTile} ${styles.miniTileWhere}`}>
-                                <img src="/badges/where.webp" alt="where" width={24} height={24} className={styles.badgeIcon} />
-                                <div className={styles.percentLine}>
-                                  <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgLocationScore}</span>
-                                  <span className={styles.miniSymbol}>%</span>
-                                </div>
-                                <div className={styles.miniLabel}>{tGame('where')}</div>
-                                <div className={styles.miniSub}>avg {Math.round(roundStats.avgDistanceKm)} km</div>
-                              </div>
-
-                              <div className={`${styles.miniTile} ${styles.miniTileWhen}`}>
-                                <img src="/badges/when.webp" alt="when" width={24} height={24} className={styles.badgeIcon} />
-                                <div className={styles.percentLine}>
-                                  <span className={styles.miniNumber} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgTimeScore}</span>
-                                  <span className={styles.miniSymbol}>%</span>
-                                </div>
-                                <div className={styles.miniLabel}>{tGame('when')}</div>
-                                <div className={styles.miniSub}>avg {Math.round(roundStats.avgYearDiff)} yrs</div>
-                              </div>
                             </div>
-
-                            {bestPlayerName && (
-                              <div className={styles.bestRow}>
-                                <div className={styles.bestLabel}>
-                                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                    <path d="M8 21h8" />
-                                    <path d="M12 17v4" />
-                                    <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
-                                    <path d="M5 6H3a3 3 0 0 0 3 3h1" />
-                                    <path d="M19 6h2a3 3 0 0 1-3 3h-1" />
-                                  </svg>
-                                  {tGame('best_player')}
-                                </div>
-                                <div className={`${styles.bestName} ${isCurrentBestPlayer ? styles.bestNameHighlight : ""}`}>
-                                  {bestPlayerName}
-                                </div>
-                              </div>
-                            )}
+                          )}
+                          <div className={styles.miniGrid}>
+                            <div className={styles.miniTile}>
+                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgAccuracy}%</span>
+                              <span className={styles.miniLabel}>{tGame('total')}</span>
+                              <span className={styles.miniSub}>{roundStats.totalScore.toLocaleString()} XP</span>
+                            </div>
+                            <div className={styles.miniTile}>
+                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgLocationScore}%</span>
+                              <span className={styles.miniLabelWhere}>{tGame('where')}</span>
+                              <span className={styles.miniSub}>avg {Math.round(roundStats.avgDistanceKm)} km</span>
+                            </div>
+                            <div className={styles.miniTile}>
+                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgTimeScore}%</span>
+                              <span className={styles.miniLabelWhen}>{tGame('when')}</span>
+                              <span className={styles.miniSub}>avg {Math.round(roundStats.avgYearDiff)} yrs</span>
+                            </div>
                           </div>
-                        </>
+
+                          {bestPlayerName && (
+                            <div className={styles.bestRow}>
+                              <span className={styles.bestLabel}>🏆 {tGame('best_player')}</span>
+                              <span className={`${styles.bestName} ${isCurrentBestPlayer ? styles.bestNameMe : ""}`}>
+                                {bestPlayerName}{isCurrentBestPlayer ? ` (${tGame('you')})` : ""}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   );
                 });
                 })()}
-              </div>
+                </div>
+              </section>
+
+              <div className={styles.dockSpacer} />
 
               {/* BOTTOM CTA */}
               <div className={styles.cta}>

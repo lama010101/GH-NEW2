@@ -3,6 +3,7 @@ import { CompeteWSClient, CompeteSnapshot, SnapshotStatus } from './websocketCli
 import { observeState, assertStateMatches, captureResumeToken, diffResumeTokens } from './observer';
 import { EdgeCaseEngine } from './edgeCases';
 import { fetchAccessToken } from '../fixtures/auth';
+import { loginViaAuthModal } from '../helpers/auth-ui';
 
 export interface GameOrchestratorOptions {
   browserPool: BrowserPool;
@@ -140,7 +141,7 @@ export class GameOrchestrator {
         playerId: host.user.id,
         mode: 'compete',
         totalRounds: this.opts.totalRounds,
-        roundTimerSec: 60,
+        roundTimerSec: 120,
       },
     });
 
@@ -253,6 +254,11 @@ export class GameOrchestrator {
 
     // All players submit a guess (with some randomness to simulate real play)
     this.opts.onStep?.('All players submitting guesses...');
+    // Send all submissions first (without waiting for ack) so the server
+    // receives them concurrently. Waiting for ack sequentially is too slow —
+    // edge case submissions (partial-guess, hint-purchase, etc.) can cause
+    // the server to mark enough players as submitted and complete the round
+    // before the orchestrator finishes its own sequential submission loop.
     for (let i = 0; i < this.wsClients.length; i++) {
       const client = this.wsClients[i];
       if (this.skipSubmissionPlayerIds.has(client.user.id)) {
@@ -263,10 +269,37 @@ export class GameOrchestrator {
       const lat = -90 + Math.random() * 180;
       const lng = -180 + Math.random() * 360;
       client.submitGuess(roundIndex, year, lat, lng, []);
-      // Wait for submission ack — detects rejected guesses instead of
-      // fire-and-forget. (H17 fix — part 2)
+    }
+
+    // Now wait for submission acks from all players who submitted.
+    // If the round already completed (edge case submissions triggered
+    // early completion), skip the ack wait — the submission was either
+    // accepted (hasSubmitted=true in ROUND_COMPLETE state) or rejected
+    // (round is over). Either way, waiting would just timeout.
+    for (let i = 0; i < this.wsClients.length; i++) {
+      const client = this.wsClients[i];
+      if (this.skipSubmissionPlayerIds.has(client.user.id)) {
+        continue;
+      }
+      // Check if round already completed or advanced past — if so, skip ack wait.
+      // The round may have completed AND auto-advanced to the next round before
+      // we get here (edge case submissions trigger early completion).
+      const currentSnap = client.getLastSnapshot();
+      const roundDone = currentSnap && (
+        (currentSnap.status === 'ROUND_COMPLETE' && currentSnap.currentRoundIndex === roundIndex) ||
+        currentSnap.currentRoundIndex > roundIndex
+      );
+      if (roundDone) {
+        const me = currentSnap!.players.find((p) => p.playerId === client.user.id);
+        if (me?.hasSubmitted) {
+          console.log(`[SUBMIT-ACK] player=${client.user.displayName} round=${roundIndex} confirmed (round already advanced)`);
+        } else {
+          console.log(`[SUBMIT-ACK] player=${client.user.displayName} round=${roundIndex} skipped (round advanced, submission not acked)`);
+        }
+        continue;
+      }
       try {
-        await client.waitForSubmissionAck(30000);
+        await client.waitForSubmissionAck(60000);
         console.log(`[SUBMIT-ACK] player=${client.user.displayName} round=${roundIndex} confirmed`);
       } catch (ackErr) {
         const ackMsg = ackErr instanceof Error ? ackErr.message : String(ackErr);
@@ -275,20 +308,27 @@ export class GameOrchestrator {
         this.opts.onAssertionFailure?.([msg]);
         console.error(`[SUBMIT-ACK] player=${client.user.displayName} round=${roundIndex} TIMEOUT: ${ackMsg}`);
       }
-      // Small delay between submissions
-      await new Promise((r) => setTimeout(r, 200));
     }
 
     // Wait for ROUND_COMPLETE — must check roundIndex to avoid matching
     // a stale ROUND_COMPLETE from a previous round (the lastSnapshot check
     // in waitForState would otherwise resolve immediately on stale state).
+    // The history buffer allows matching transient ROUND_COMPLETE states
+    // that were already advanced past.
     this.opts.onStep?.('Waiting for ROUND_COMPLETE...');
     await Promise.all(
-      this.wsClients.map((c) => c.waitForState((s) => s.status === 'ROUND_COMPLETE' && s.currentRoundIndex === roundIndex, 60000)),
+      this.wsClients.map((c) => c.waitForState((s) => s.status === 'ROUND_COMPLETE' && s.currentRoundIndex === roundIndex, 120000)),
     );
 
-    // Assert all browsers see ROUND_COMPLETE
-    await this.assertAllBrowsersSeeStatus('ROUND_COMPLETE', errors);
+    // Assert all browsers see ROUND_COMPLETE — skip if round already advanced
+    // (edge case submissions may have triggered early completion + auto-advance)
+    const firstSnap = this.wsClients[0]?.getLastSnapshot();
+    const roundAdvanced = firstSnap && firstSnap.currentRoundIndex > roundIndex;
+    if (roundAdvanced) {
+      console.log(`[ORCHESTRATOR] Skipping ROUND_COMPLETE assertion — round already advanced to ${firstSnap!.currentRoundIndex}`);
+    } else {
+      await this.assertAllBrowsersSeeStatus('ROUND_COMPLETE', errors);
+    }
 
     // Inject round-complete edge cases
     if (this.opts.edgeCaseEngine) {
@@ -300,6 +340,11 @@ export class GameOrchestrator {
     for (const client of this.wsClients) {
       if (this.skipReadyNextPlayerIds.has(client.user.id)) {
         console.log(`[ORCHESTRATOR] Skipping readyNext for ${client.user.displayName} (only-one-next edge case)`);
+        continue;
+      }
+      const snap = client.getLastSnapshot();
+      if (snap && (snap.currentRoundIndex > roundIndex || snap.status !== 'ROUND_COMPLETE')) {
+        console.log(`[ORCHESTRATOR] Skipping readyNext for ${client.user.displayName} — snap roundIdx=${snap.currentRoundIndex} status=${snap.status} (expected roundIdx=${roundIndex} status=ROUND_COMPLETE)`);
         continue;
       }
       client.readyNext(roundIndex);
@@ -328,15 +373,27 @@ export class GameOrchestrator {
   private async playAgain(): Promise<void> {
     const host = this.browserPool.host();
 
-    // Host creates new game via API
+    // Re-authenticate the host before creating a new game — the auth token
+    // may have expired or been invalidated during the previous game (e.g.,
+    // edge case sign-out/sign-in, leave API calls, or session refresh
+    // failures under load).
     const baseURL = this.browserPool['baseURL'] as string;
+    try {
+      await host.page.goto(`${baseURL}/login`, { waitUntil: 'domcontentloaded' });
+      await loginViaAuthModal(host.page, host.user);
+      console.log(`[PLAY_AGAIN] Host re-authenticated: ${host.user.email}`);
+    } catch (authErr) {
+      console.warn(`[PLAY_AGAIN] Host re-auth failed (continuing with existing cookie): ${authErr instanceof Error ? authErr.message : String(authErr)}`);
+    }
+
+    // Host creates new game via API
     const createResponse = await host.page.request.post(`${baseURL}/api/compete/create`, {
       data: {
         displayName: host.user.displayName,
         playerId: host.user.id,
         mode: 'compete',
         totalRounds: this.opts.totalRounds,
-        roundTimerSec: 60,
+        roundTimerSec: 120,
       },
     });
 

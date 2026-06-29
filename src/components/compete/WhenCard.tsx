@@ -95,6 +95,7 @@ export default function WhenCard({
   return (
     <div className={bare ? styles.cardBare : styles.card}>
       {/* Header */}
+      {!bare && (
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -143,9 +144,10 @@ export default function WhenCard({
           })() : null;
         })()}
       </div>
+      )}
 
       {/* Hint penalty */}
-      {whenAccPenalty > 0 && (
+      {!bare && whenAccPenalty > 0 && (
         <div>
           <span className={styles.hintPenalty}>
             −{Math.round(whenAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
@@ -154,10 +156,12 @@ export default function WhenCard({
       )}
 
       {/* Correct year */}
+      {!bare && (
       <div className={styles.correctRow}>
         <span>{t('correct_year')}:</span>
         <span className={styles.correctValue}>{correctYear}</span>
       </div>
+      )}
 
       {/* Timeline */}
       <div className={styles.timeline}>

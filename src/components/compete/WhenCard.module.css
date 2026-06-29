@@ -269,11 +269,11 @@
 }
 
 .lbAccPill {
-  background: var(--gh-bg-input);
-  border-radius: var(--gh-radius-pill);
-  padding: 2px 8px;
-  font-size: var(--font-xs);
-  font-weight: 600;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-weight: 800;
 }
 
 .lbAccSuffix {

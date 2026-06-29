@@ -27,6 +27,7 @@
   cursor: pointer;
   transition: background 0.15s;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 .lobby-back-btn:hover {
   background: rgba(255,255,255,0.15);

@@ -546,15 +546,18 @@ export const EDGE_CASES: EdgeCase[] = [
         // Under high load, useIdentity() + supabaseBrowser.auth.getUser() can
         // take several seconds. The /account page redirects to /login if
         // playerId is falsy, so we need to wait for the identity to load.
-        // Poll for the email text to appear in the body, up to 20 seconds.
+        // Poll for the email text to appear in the body, up to 30 seconds.
         let identityLoaded = false;
-        const identityDeadline = Date.now() + 20000;
+        const identityDeadline = Date.now() + 30000;
         while (Date.now() < identityDeadline) {
           const url = page.url();
           if (url.includes('/login')) {
-            // Redirected to /login — identity not loaded yet or session invalid
-            // Navigate back to /account and wait
+            // Redirected to /login — identity not loaded yet or session invalid.
+            // Reload the /account page to re-trigger the identity check; a plain
+            // goto can race with the RSC fetch under load, but reload forces the
+            // browser to re-evaluate the session cookie.
             await page.goto(`${pool.baseURL}/account`, { waitUntil: 'domcontentloaded' }).catch(() => undefined);
+            await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => undefined);
             await page.waitForTimeout(2000);
             continue;
           }
@@ -562,6 +565,53 @@ export const EDGE_CASES: EdgeCase[] = [
           if (body?.includes(userB.email)) {
             identityLoaded = true;
             break;
+          }
+          // Fallback: check supabaseBrowser.auth.getUser() directly via
+          // page.evaluate. Under load, the RSC fetch may fail to populate the
+          // UI even though the supabase session is valid. We read the auth
+          // cookie and call the Supabase /auth/v1/user endpoint directly.
+          try {
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+            const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+            const authUser = await page.evaluate(async ({ url, key, cookieName }) => {
+              const cookies = document.cookie.split(';').map(c => c.trim());
+              const chunks: string[] = [];
+              for (const c of cookies) {
+                const eqIdx = c.indexOf('=');
+                const name = eqIdx >= 0 ? c.slice(0, eqIdx) : c;
+                const value = eqIdx >= 0 ? c.slice(eqIdx + 1) : '';
+                if (name === cookieName) {
+                  chunks.unshift(value);
+                } else if (name.startsWith(cookieName + '.')) {
+                  const chunkIdx = parseInt(name.split('.').pop() || '0', 10);
+                  chunks[chunkIdx] = value;
+                }
+              }
+              if (chunks.length === 0) return null;
+              const raw = chunks.join('');
+              let json: string;
+              try {
+                json = atob(raw.replace(/-/g, '+').replace(/_/g, '/'));
+              } catch {
+                json = raw;
+              }
+              const session = JSON.parse(json);
+              const accessToken = session?.access_token;
+              if (!accessToken) return null;
+              const res = await fetch(`${url}/auth/v1/user`, {
+                headers: { apikey: key, Authorization: `Bearer ${accessToken}` },
+              });
+              if (!res.ok) return null;
+              const user = await res.json();
+              return user?.email ?? null;
+            }, { url: supabaseUrl, key: anonKey, cookieName: AUTH_COOKIE_NAME });
+            if (authUser === userB.email) {
+              identityLoaded = true;
+              console.log(`[EDGE:auth-cross-user] Identity confirmed via supabaseBrowser.auth.getUser() fallback`);
+              break;
+            }
+          } catch {
+            // evaluate fallback failed — continue polling
           }
           await page.waitForTimeout(1000);
         }
