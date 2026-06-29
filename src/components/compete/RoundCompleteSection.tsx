@@ -40,6 +40,29 @@ interface RoundCompleteSectionProps {
   onAdvanceRound: () => void;
 }
 
+// Small % ring for Where/When mini cards — colored stroke + value text.
+// Mirrors the prototype MiniRing visual. Color is passed in (derived from score).
+function MiniRing({ value, color }: { value: number; color: string }) {
+  const size = 56;
+  const sw = 5;
+  const r = size / 2 - sw;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - Math.max(0, Math.min(100, value)) / 100);
+  return (
+    <div className={styles.miniRingWrap} style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--gh-bg-input)" strokeWidth={sw} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw}
+          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+      <span className={styles.miniRingVal} style={{ color }}>{Math.round(value)}</span>
+    </div>
+  );
+}
+
 export default function RoundCompleteSection({
   snapshot,
   roundResults,
@@ -206,36 +229,104 @@ export default function RoundCompleteSection({
               )}
             </div>
 
-            {/* ACCURACY RING CARD */}
-            <div ref={accuracyCardRef} className={styles.accuracyCard}>
-              <div className={styles.accuracyRingWrap}>
-                <RainbowRing value={accuracy} onComplete={() => setIsRingDone(true)} />
-              </div>
-              <div className={styles.accuracyXp}>{myResult?.score ?? 0} XP</div>
-              {(() => {
-                const badge = myResult?.badges?.find(b => b.dimension === 'combo');
-                const near  = myResult?.nearMisses?.find(n => n.dimension === 'combo');
-                if (!badge && !near) return null;
-                if (badge) {
-                  return (
-                    <InlineImageBadge
-                      dimension="combo"
-                      tier={badge.tier as 'gold' | 'silver' | 'bronze'}
-                      isTriggered={isAccuracyVisible && isRingDone}
-                    />
-                  );
-                }
-                return (
-                  <span className={styles.nearMissChip}>
-                    {t('near_miss')}
-                  </span>
-                );
-              })()}
-              {submittedHintPenaltyRef.current.xpPenalty > 0 && (
-                <div className={styles.hintPenaltyBadge}>
-                  <span className={styles.hintPenaltyBadgeInner}>{t('hint_penalties')}</span>
+            {/* HERO SCORE CARD — accuracy ring + total XP + combo badge + Where/When mini cards */}
+            <div ref={accuracyCardRef} className={styles.heroCard}>
+              <div className={styles.heroTop}>
+                <div className={styles.accuracyRingWrap}>
+                  <RainbowRing value={accuracy} onComplete={() => setIsRingDone(true)} />
                 </div>
-              )}
+                <div className={styles.totalXpRow}>
+                  <span className={styles.totalXpVal}>{(myResult?.score ?? 0).toLocaleString()} XP</span>
+                  {(() => {
+                    const badge = myResult?.badges?.find(b => b.dimension === 'combo');
+                    const near  = myResult?.nearMisses?.find(n => n.dimension === 'combo');
+                    if (!badge && !near) return null;
+                    if (badge) {
+                      return (
+                        <InlineImageBadge
+                          dimension="combo"
+                          tier={badge.tier as 'gold' | 'silver' | 'bronze'}
+                          isTriggered={isAccuracyVisible && isRingDone}
+                        />
+                      );
+                    }
+                    return (
+                      <span className={styles.nearMissChip}>
+                        {t('near_miss')}
+                      </span>
+                    );
+                  })()}
+                </div>
+                {submittedHintPenaltyRef.current.xpPenalty > 0 && (
+                  <div className={styles.hintPenaltyBadge}>
+                    <span className={styles.hintPenaltyBadgeInner}>{t('hint_penalties')}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.miniCardsRow}>
+                {/* Where mini card */}
+                <div className={styles.miniCard}>
+                  <div className={styles.miniCardHead}>
+                    <span className={styles.miniCardDotWhere} />
+                    <span className={styles.miniCardTitle}>{t('where')}</span>
+                  </div>
+                  {(() => {
+                    const locScore = myResult?.locationScore ?? 0;
+                    const hue = Math.round((Math.max(0, Math.min(100, locScore)) / 100) * 120);
+                    const color = `hsl(${hue}, 100%, 50%)`;
+                    return <MiniRing value={locScore} color={color} />;
+                  })()}
+                  <div className={styles.miniXp}>
+                    <span className={styles.miniXpVal}>+{Math.round(myResult?.locationScore ?? 0)}</span>
+                    <span className={styles.miniXpLabel}>XP</span>
+                  </div>
+                  <div className={styles.miniBadges}>
+                    {(() => {
+                      const badge = myResult?.badges?.find(b => b.dimension === 'location');
+                      if (!badge) return null;
+                      return (
+                        <InlineImageBadge
+                          dimension="location"
+                          tier={badge.tier as 'gold' | 'silver' | 'bronze'}
+                          isTriggered={isAccuracyVisible && isRingDone}
+                        />
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* When mini card */}
+                <div className={styles.miniCard}>
+                  <div className={styles.miniCardHead}>
+                    <span className={styles.miniCardDotWhen} />
+                    <span className={styles.miniCardTitle}>{t('when')}</span>
+                  </div>
+                  {(() => {
+                    const timeScore = myResult?.timeScore ?? 0;
+                    const hue = Math.round((Math.max(0, Math.min(100, timeScore)) / 100) * 120);
+                    const color = `hsl(${hue}, 100%, 50%)`;
+                    return <MiniRing value={timeScore} color={color} />;
+                  })()}
+                  <div className={styles.miniXp}>
+                    <span className={styles.miniXpVal}>+{Math.round(myResult?.timeScore ?? 0)}</span>
+                    <span className={styles.miniXpLabel}>XP</span>
+                  </div>
+                  <div className={styles.miniBadges}>
+                    {(() => {
+                      const badge = myResult?.badges?.find(b => b.dimension === 'year');
+                      if (!badge) return null;
+                      return (
+                        <InlineImageBadge
+                          dimension="year"
+                          tier={badge.tier as 'gold' | 'silver' | 'bronze'}
+                          isTriggered={isAccuracyVisible && isRingDone}
+                        />
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* ROUND LEADERBOARD CARD */}
@@ -243,6 +334,11 @@ export default function RoundCompleteSection({
               <div className={styles.leaderboardTitle}>
                 <span className={styles.leaderboardAccentBar} />
                 {t('round_leaderboard')}
+                {(() => {
+                  const rows = leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows;
+                  const myRank = rows.find(r => r.isMe)?.rank;
+                  return myRank != null ? <span className={styles.cardHeadRank}>#{myRank}</span> : null;
+                })()}
               </div>
               <div className={styles.leaderboardTabs}>
                 <button
@@ -316,7 +412,7 @@ export default function RoundCompleteSection({
             {/* WHERE + WHEN CARD (merged, tabbed) */}
             <div className={styles.whereWhenCard}>
               <div className={styles.leaderboardTitle}>
-                <span className={styles.leaderboardAccentBar} />
+                <span className={`${styles.leaderboardAccentBar} ${whereWhenTab === 'where' ? styles.accentBarWhere : styles.accentBarWhen}`} />
                 {t('breakdown')}
               </div>
               <div className={styles.whereWhenTabs}>
@@ -337,6 +433,41 @@ export default function RoundCompleteSection({
                   {t('when')}
                 </button>
               </div>
+
+              {/* breakHead: correct answer + score (proto-style) */}
+              {(() => {
+                const isWhere = whereWhenTab === 'where';
+                const correctValue = isWhere ? correctName : correctYear;
+                const scoreVal = isWhere ? (myResult?.locationScore ?? 0) : (myResult?.timeScore ?? 0);
+                const hue = Math.round((Math.max(0, Math.min(100, scoreVal)) / 100) * 120);
+                const scoreColor = `hsl(${hue}, 100%, 50%)`;
+                return (
+                  <div className={styles.breakHead}>
+                    <div className={styles.breakCorrectCol}>
+                      <span className={styles.breakCorrectLabel}>{t('correct_answer')}</span>
+                      <span className={`${styles.breakCorrectValue} ${isWhere ? styles.breakCorrectValueWhere : styles.breakCorrectValueWhen}`}>{correctValue}</span>
+                    </div>
+                    <span className={styles.breakScore} style={{ color: scoreColor }}>{Math.round(scoreVal)}</span>
+                  </div>
+                );
+              })()}
+
+              {/* breakSub: distance / year-off (proto-style) */}
+              {(() => {
+                if (myResult == null || !myResult.didSubmit) {
+                  return <span className={styles.breakSub}>{t('no_guess')}</span>;
+                }
+                if (whereWhenTab === 'where') {
+                  return myDistanceKm != null
+                    ? <span className={styles.breakSub}>{t('km_away', { n: Math.round(myDistanceKm) })}</span>
+                    : null;
+                }
+                const gy = myResult.guessYear;
+                return gy != null
+                  ? <span className={styles.breakSub}>{t('you_guessed_off', { year: gy, n: Math.abs(gy - correctYear) })}</span>
+                  : <span className={styles.breakSub}>{t('no_guess')}</span>;
+              })()}
+
               {whereWhenTab === 'where' ? (
                 <div ref={whereCardRef}>
                   <WhereCard
@@ -419,65 +550,63 @@ export default function RoundCompleteSection({
               );
             })()}
 
-            {/* COUNTDOWN / READY CARD */}
-            {(resultSecsLeft !== null && resultSecsLeft > 0) || (snapshot.readyForNext && snapshot.readyForNext.length > 0) ? (
-              <div className={styles.countdownCard}>
-                {resultSecsLeft !== null && resultSecsLeft > 0 && (
-                  <div className={snapshot.readyForNext && snapshot.readyForNext.length > 0 ? styles.countdownTextWithMargin : styles.countdownText}>
-                    {t('auto_advancing_in', { n: resultSecsLeft })}
-                  </div>
-                )}
-                {snapshot.readyForNext && snapshot.readyForNext.length > 0 && (
-                  <div className={styles.readyText}>
-                    {snapshot.readyForNext.map(pid => {
-                      const name = snapshot.players.find(p => p.playerId === pid)?.displayName ?? pid.slice(0, 8);
-                      return (
-                        <span key={pid} className={styles.readyName}>
-                          <span style={getUsernameGradientStyle(pid)}>{name}</span> ✓
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ) : null}
+            {/* BOTTOM BAR WRAPPER — countdown (above) + nav row (proto-style) */}
+            <div className={styles.bottomBarWrap}>
+              {((resultSecsLeft !== null && resultSecsLeft > 0) || (snapshot.readyForNext && snapshot.readyForNext.length > 0)) && (
+                <div className={styles.countdown}>
+                  {resultSecsLeft !== null && resultSecsLeft > 0 && (
+                    <span className={styles.countdownText}>
+                      {t('auto_advancing_in', { n: resultSecsLeft })}
+                    </span>
+                  )}
+                  {snapshot.readyForNext && snapshot.readyForNext.length > 0 && (
+                    <span className={styles.readyNames}>
+                      {snapshot.readyForNext.map(pid => {
+                        const name = snapshot.players.find(p => p.playerId === pid)?.displayName ?? pid.slice(0, 8);
+                        return (
+                          <span key={pid} className={styles.readyName}>
+                            <span style={getUsernameGradientStyle(pid)}>{name}</span> ✓
+                          </span>
+                        );
+                      })}
+                    </span>
+                  )}
+                </div>
+              )}
 
-            {/* FIXED BOTTOM BAR */}
-            <div className={styles.bottomBar}>
-              <button className={styles.homeButton} onClick={() => router.push("/home")}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
-                  <polyline points="9 21 9 12 15 12 15 21" />
-                </svg>
-              </button>
-              <div className={styles.progressDots}>
-                {Array.from({ length: snapshot.rounds.length }).map((_, i) => {
-                  const isDone = i < snapshot.currentRoundIndex;
-                  const isCurrent = i === snapshot.currentRoundIndex;
-                  return (
-                    <div
-                      key={i}
-                      className={styles.progressDot}
-                      style={{
-                        "--dot-bg": isDone ? "#f97316" : isCurrent ? "var(--gh-orange)" : "#374151",
-                        "--dot-opacity": isCurrent ? 0.7 : 1,
-                      } as React.CSSProperties}
-                    />
-                  );
-                })}
-                <span className={styles.roundLabel}>
-                  {t('round_label_compact', { current: snapshot.currentRoundIndex + 1, total: snapshot.rounds.length })}
-                </span>
+              {/* BOTTOM BAR (nav row) */}
+              <div className={styles.bottomBar}>
+                <button className={styles.homeButton} onClick={() => router.push("/home")}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gh-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+                    <polyline points="9 21 9 12 15 12 15 21" />
+                  </svg>
+                </button>
+                <div className={styles.progressDots}>
+                  {Array.from({ length: snapshot.rounds.length }).map((_, i) => {
+                    const isDone = i < snapshot.currentRoundIndex;
+                    const isCurrent = i === snapshot.currentRoundIndex;
+                    return (
+                      <div
+                        key={i}
+                        className={`${styles.progressDot} ${isDone ? styles.progressDotDone : isCurrent ? styles.progressDotCurrent : styles.progressDotPending}`}
+                      />
+                    );
+                  })}
+                  <span className={styles.roundLabel}>
+                    {t('round_label_compact', { current: snapshot.currentRoundIndex + 1, total: snapshot.rounds.length })}
+                  </span>
+                </div>
+                <button
+                  className={`${styles.nextButton} ${snapshot.readyForNext?.includes(playerId ?? "") ? styles.nextButtonDisabled : ""}`}
+                  onClick={onAdvanceRound}
+                  disabled={snapshot.readyForNext?.includes(playerId ?? "")}
+                  data-testid="round-next-btn"
+                  data-ready={snapshot.readyForNext?.includes(playerId ?? "") ? 'true' : 'false'}
+                >
+                  {t('next_arrow')}
+                </button>
               </div>
-              <button
-                className={`${styles.nextButton} ${snapshot.readyForNext?.includes(playerId ?? "") ? styles.nextButtonDisabled : ""}`}
-                onClick={onAdvanceRound}
-                disabled={snapshot.readyForNext?.includes(playerId ?? "")}
-                data-testid="round-next-btn"
-                data-ready={snapshot.readyForNext?.includes(playerId ?? "") ? 'true' : 'false'}
-              >
-                {t('next_arrow')}
-              </button>
             </div>
           </>
         );

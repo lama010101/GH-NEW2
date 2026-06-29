@@ -111,6 +111,13 @@ export class CompeteWSClient {
   // immediately, avoiding a race where the state already matches but
   // waitForState only listens for FUTURE updates (which never come).
   private lastSnapshot: CompeteSnapshot | null = null;
+  // Ring buffer of recent snapshots (last 20). This allows waitForState to
+  // match transient states that were received and advanced past before the
+  // caller started waiting (e.g., ROUND_COMPLETE round=2 → ROUND_ACTIVE round=3
+  // happens in <1s, but the orchestrator checks ROUND_COMPLETE round=2 after
+  // the submission loop finishes).
+  private snapshotHistory: CompeteSnapshot[] = [];
+  private static readonly HISTORY_SIZE = 20;
 
   constructor(private opts: CompeteWSClientOptions) {}
 
@@ -124,6 +131,11 @@ export class CompeteWSClient {
 
   get isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  /** Returns the last received snapshot (or null if none received yet). */
+  getLastSnapshot(): CompeteSnapshot | null {
+    return this.lastSnapshot;
   }
 
   /**
@@ -224,6 +236,10 @@ export class CompeteWSClient {
     switch (msg.type) {
       case 'STATE_UPDATE':
         this.lastSnapshot = msg.snapshot as CompeteSnapshot;
+        this.snapshotHistory.push(this.lastSnapshot);
+        if (this.snapshotHistory.length > CompeteWSClient.HISTORY_SIZE) {
+          this.snapshotHistory.shift();
+        }
         this.opts.onStateUpdate?.(this.lastSnapshot);
         resolveOnce();
         break;
@@ -252,12 +268,21 @@ export class CompeteWSClient {
   }
 
   /** Wait for the next STATE_UPDATE matching a predicate. */
-  waitForState(predicate: (s: CompeteSnapshot) => boolean, timeoutMs = 30000): Promise<CompeteSnapshot> {
-    // Check the current state first — if it already matches, resolve immediately.
-    // This prevents a race where the state was received before waitForState was
-    // called (e.g., ROUND_COMPLETE arrives during the submission loop, but the
-    // orchestrator calls waitForState(ROUND_COMPLETE) afterwards).
-    if (this.lastSnapshot && predicate(this.lastSnapshot)) {
+  waitForState(predicate: (s: CompeteSnapshot) => boolean, timeoutMs = 30000, skipHistory = false): Promise<CompeteSnapshot> {
+    // Check the history buffer first — if any recent snapshot matches,
+    // resolve immediately. This handles transient states (e.g.,
+    // ROUND_COMPLETE round=2 → ROUND_ACTIVE round=3 in <1s) that were
+    // received and advanced past before waitForState was called.
+    // skipHistory=true bypasses this for predicates that must match the
+    // CURRENT state only (e.g., waitForSubmissionAck which checks
+    // hasSubmitted — a stale true from a previous round is a false positive).
+    if (!skipHistory) {
+      for (const snap of this.snapshotHistory) {
+        if (predicate(snap)) {
+          return Promise.resolve(snap);
+        }
+      }
+    } else if (this.lastSnapshot && predicate(this.lastSnapshot)) {
       return Promise.resolve(this.lastSnapshot);
     }
 
@@ -291,6 +316,7 @@ export class CompeteWSClient {
         return me?.hasSubmitted === true;
       },
       timeoutMs,
+      true, // skipHistory — hasSubmitted must be from the CURRENT round, not a stale snapshot
     );
   }
 
@@ -320,6 +346,7 @@ export class CompeteWSClient {
   }
 
   setResultsTimer(resultsAutoAdvanceSec: number): void {
+    console.log(`[WS:${this.opts.user.displayName}] Sending SET_RESULTS_TIMER resultsAutoAdvanceSec=${resultsAutoAdvanceSec}`);
     this.send({ type: 'SET_RESULTS_TIMER', playerId: this.opts.user.id, resultsAutoAdvanceSec });
   }
 

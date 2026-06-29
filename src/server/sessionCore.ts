@@ -1407,6 +1407,18 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     console.time("[PERF] submitGuess:transaction");
     await client.query("BEGIN");
 
+    // Acquire advisory lock on (gameId, roundIndex) to prevent race with
+    // completeRound. Without this lock, completeRound can insert ROUND_COMPLETE
+    // via appendEventIfNotExists (which bypasses FSM validation) while
+    // submitGuess is between its guard check and appendEvent call. This creates
+    // an invalid event sequence: ...GUESS_SUBMITTED, ROUND_COMPLETE, GUESS_SUBMITTED
+    // which causes deriveStateFromEventStream to throw INVALID_PHASE_TRANSITION
+    // on subsequent snapshot loads.
+    await client.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2::text))`,
+      [gameId, roundIndex]
+    );
+
     const session = await loadSessionRow(gameId, client);
     if (!session) {
       throw new Error("Session not found");
@@ -1695,6 +1707,10 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     const resultsClient = await getTransactionClient();
     try {
       await resultsClient.query("BEGIN");
+      await resultsClient.query(
+        `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2::text))`,
+        [gameId, roundIndex]
+      );
       // Atomic insert with idempotency via unique partial index
       const roundCompleteInserted = await appendEventIfNotExists(
         resultsClient, gameId, "ROUND_COMPLETE",

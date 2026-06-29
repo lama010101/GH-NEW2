@@ -24,4 +24,5 @@ export type AllRoundResult = {
   locationScore: number | null;
   timeScore: number | null;
   didSubmit: boolean;
+  region: string | null;
 };

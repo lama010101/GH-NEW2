@@ -285,6 +285,7 @@ export default function RoundResultsPrototypePage() {
   const [hintsOpen, setHintsOpen] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
   const [badgesRevealed, setBadgesRevealed] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   // Reveal badges after the ring animation finishes (~1.2s)
   useEffect(() => {
@@ -320,10 +321,17 @@ export default function RoundResultsPrototypePage() {
       <style jsx global>{`
         html, body { margin: 0; padding: 0; background: #0a0a0a; }
       `}</style>
-      <main className={styles.screen}>
+      <main className={`${styles.screen} ${theme === "light" ? styles.screenLight : ""}`}>
         <div className={styles.protoBar}>
           <span className={styles.protoTitle}>Round Results — Prototype</span>
           <span className={styles.protoHint}>Mock data · you = Alex</span>
+          <button
+            className={styles.themeToggle}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
         </div>
 
         {/* eslint-disable-next-line @next/next/no-img-element */}

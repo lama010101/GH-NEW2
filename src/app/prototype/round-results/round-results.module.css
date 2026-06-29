@@ -51,6 +51,25 @@
   opacity: 0.55;
 }
 
+.themeToggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.themeToggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .scroll {
   position: absolute;
   inset: 0;
@@ -886,4 +905,160 @@
 
 .nextBtn:hover {
   opacity: 0.95;
+}
+
+/* ── Light theme overrides ── */
+.screenLight {
+  color: #1a1a1a;
+}
+
+.screenLight .bgScrim {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.screenLight .protoBar {
+  background: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.screenLight .protoTitle,
+.screenLight .protoHint {
+  color: #333;
+}
+
+.screenLight .themeToggle {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.screenLight .themeToggle:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.screenLight .card {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.screenLight .cardTitle {
+  color: #1a1a1a;
+}
+
+.screenLight .eventTitle {
+  color: #1a1a1a;
+}
+
+.screenLight .histContextTrigger {
+  border-top-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.screenLight .histContextLabel {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.screenLight .histContextArrow {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.screenLight .histInlineBody {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.screenLight .totalXpVal {
+  color: #1a1a1a;
+}
+
+.screenLight .miniCard {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.screenLight .miniCardTitle {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.screenLight .miniXpVal,
+.screenLight .miniXpLabel {
+  color: #1a1a1a;
+}
+
+.screenLight .lbName {
+  color: #1a1a1a;
+}
+
+.screenLight .lbRank {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.screenLight .lbRow + .lbRow {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+.screenLight .lbRowMe {
+  background: rgba(251, 146, 60, 0.12);
+  border-color: rgba(251, 146, 60, 0.3);
+}
+
+.screenLight .tab {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.screenLight .breakCorrectLabel {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.screenLight .breakSub {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.screenLight .expandHead {
+  color: #1a1a1a;
+}
+
+.screenLight .subLbName {
+  color: #1a1a1a;
+}
+
+.screenLight .subLbDetail {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.screenLight .subLbRank {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.screenLight .subLbRow + .subLbRow {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+.screenLight .hintLabel {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.screenLight .hintText {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.screenLight .countdown {
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.screenLight .countdownText {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.screenLight .bottomBarWrap {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.screenLight .roundLabel {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.screenLight .iconBtn {
+  color: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.05);
 }

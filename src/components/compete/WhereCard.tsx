@@ -67,6 +67,7 @@ export default function WhereCard({
 
   return (
     <div className={bare ? styles.cardBare : styles.card}>
+      {!bare && (
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -114,18 +115,21 @@ export default function WhereCard({
           );
         })()}
       </div>
-      {whereAccPenalty > 0 && (
+      )}
+      {!bare && whereAccPenalty > 0 && (
         <div className={styles.hintPenaltyWrap}>
           <span className={styles.hintPenalty}>
             −{Math.round(whereAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
           </span>
         </div>
       )}
+      {!bare && (
       <div className={styles.correctRow}>
         <span>{t('correct_location')}:</span>
         <span className={styles.correctName}>{correctName}</span>
       </div>
-      {(() => {
+      )}
+      {!bare && (() => {
         if (myResult == null || !myResult.didSubmit) {
           return (
             <div className={styles.noGuessWrap}>

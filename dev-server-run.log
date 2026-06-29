@@ -9535,3 +9535,20 @@ Process on port 3000 killed
 [next]  ✓ Compiled in 11.1s (1464 modules)
 [next]  GET /api/invitations/pending 401 in 473ms
 [next] next dev exited with code 0
+[party] [2K[1A[2K[GBuild succeeded, starting server...
+[party] 
+[party] [2K[1A[2K[G
+[party] [31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mAddress already in use (0.0.0.0:1999). Please check that you are not already running a server on this address or specify a different port with --port.[0m
+[party] 
+[party] 
+[party] [2K[1A[2K[GError reloading local server: MiniflareCoreError [ERR_RUNTIME_FAILURE]: The Workers runtime failed to start. There is likely additional logging output above.
+[party]     at #assembleAndUpdateConfig (/Users/lolo/GH-new/GH-NEW/node_modules/miniflare/dist/src/index.js:9178:13)
+[party]     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+[party]     at async #setOptions (/Users/lolo/GH-new/GH-NEW/node_modules/miniflare/dist/src/index.js:9301:5)
+[party]     at async Mutex.runWith (/Users/lolo/GH-new/GH-NEW/node_modules/miniflare/dist/src/index.js:3521:16)
+[party]     at async MiniflareServer.onBundleUpdate (file:///Users/lolo/GH-new/GH-NEW/node_modules/partykit/dist/bin.mjs:93984:9) {
+[party]   code: 'ERR_RUNTIME_FAILURE',
+[party]   cause: undefined
+[party] }
+[party] 
+[party] partykit dev exited with code 0

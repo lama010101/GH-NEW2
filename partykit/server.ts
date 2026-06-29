@@ -235,7 +235,7 @@ export default class GameServer {
   // absorb React StrictMode double-mount, HMR reloads, tab refreshes, and
   // normal network blips — but short enough that real disconnects flush
   // out of the active roster within a round.
-  private static readonly LEAVE_GRACE_MS = 5_000;
+  private static readonly LEAVE_GRACE_MS = 15_000;
   private static readonly ROUND_EXPIRY_SUBMIT_GRACE_MS = 1_000;
   // Solo play allowed: host may start alone (no minimum 2 players).
   private static readonly MIN_PLAYERS_TO_START = 1;
@@ -1033,7 +1033,11 @@ export default class GameServer {
         console.error("[PartyKit] Failed to persist disconnect:", err instanceof Error ? err.message : err);
         this.broadcastStateUpdate();
       }
-    }, GameServer.LEAVE_GRACE_MS);
+      // Add up to 5s jitter to stagger concurrent leave calls (e.g. when
+      // multiple players disconnect simultaneously during ws-drop-reconnect
+      // edge case). This prevents all leave API calls from hitting the DB
+      // pool at the same instant, causing pool exhaustion.
+    }, GameServer.LEAVE_GRACE_MS + Math.floor(Math.random() * 5000));
 
     this.leaveTimers.set(playerId, timer);
   }
@@ -1498,6 +1502,7 @@ export default class GameServer {
         }
 
         case "SET_RESULTS_TIMER": {
+          console.log("[SET_RESULTS_TIMER] Received message", JSON.stringify(data));
           // Validate: only allowed in LOBBY phase (before game starts)
           if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
             this.sendError(sender, "SET_RESULTS_TIMER only allowed in LOBBY phase");
