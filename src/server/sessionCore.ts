@@ -94,6 +94,7 @@ export type SessionRow = {
   year_max: number;
   results_auto_advance_sec: number;
   selected_eras: string[];
+  selected_regions: string[];
   session_deadline: Date | null;
   session_deadline_days: number | null;
   created_at: Date;
@@ -260,6 +261,7 @@ export function mapSessionRowToConfig(row: SessionRow): SessionConfig {
     yearMin: row.year_min,
     yearMax: row.year_max,
     selectedEras: Array.isArray(row.selected_eras) ? row.selected_eras : ['ancient','medieval','earlymodern','modern','contemporary'],
+    selectedRegions: Array.isArray(row.selected_regions) ? row.selected_regions : [],
     resultsAutoAdvanceSec: row.results_auto_advance_sec,
     hostPlayerId: null,
     sessionDeadline: toIsoString(row.session_deadline),
@@ -312,7 +314,9 @@ export async function loadSessionRow(gameId: string, executor: DbExecutor = dbPo
         session_deadline_days,
         created_at,
         seed,
-        room_code
+        room_code,
+        selected_eras,
+        selected_regions
       FROM sessions
       WHERE game_id = $1
       LIMIT 1
@@ -455,6 +459,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
       yearMax: gameState.session.yearMax,
       resultsAutoAdvanceSec: gameState.session.resultsAutoAdvanceSec,
       selectedEras: Array.isArray(gameState.session.selectedEras) ? gameState.session.selectedEras : ['ancient','medieval','earlymodern','modern','contemporary'],
+      selectedRegions: Array.isArray(gameState.session.selectedRegions) ? gameState.session.selectedRegions : [],
       hostPlayerId: hostPlayer ? hostPlayer.playerId : null,
       sessionDeadline: gameState.session.sessionDeadline,
       sessionDeadlineDays: gameState.session.sessionDeadlineDays,
@@ -1157,9 +1162,10 @@ export async function setCompeteEraSelection(input: {
 
   // Re-fetch events for the new year range and update SESSION_CREATED eventIds
   // so startCompeteSession uses the correct events when the game begins.
+  // Also apply the current region filter so era changes don't drop the region selection.
   const { data: sessionRow, error: sessionRowError } = await client
     .from("sessions")
-    .select("total_rounds")
+    .select("total_rounds, selected_regions")
     .eq("game_id", gameId)
     .single();
 
@@ -1167,9 +1173,14 @@ export async function setCompeteEraSelection(input: {
     throw new Error("Failed to read total_rounds for event refetch");
   }
 
+  const currentRegions: string[] = Array.isArray(sessionRow.selected_regions)
+    ? (sessionRow.selected_regions as string[])
+    : [];
+
   const freshEvents = await fetchRandomEventsForSession(sessionRow.total_rounds, {
     minYear: yearMinRounded,
     maxYear: yearMaxRounded,
+    regions: currentRegions.length > 0 ? currentRegions : undefined,
   });
 
   if (freshEvents.length !== sessionRow.total_rounds) {
@@ -1191,6 +1202,94 @@ export async function setCompeteEraSelection(input: {
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
   if (!snapshot) {
     throw new Error(`Failed to load snapshot after era selection update: ${gameId}`);
+  }
+  return snapshot;
+}
+
+export async function setCompeteRegionSelection(input: {
+  gameId: string;
+  playerId: string;
+  selectedRegions: string[];
+}): Promise<CompeteSessionSnapshot> {
+  const client = createSupabaseServerClient();
+  const { gameId, playerId, selectedRegions } = input;
+
+  const { data: session, error: sessionError } = await client
+    .from("sessions")
+    .select("game_id, mode")
+    .eq("game_id", gameId)
+    .single();
+
+  if (sessionError || !session) {
+    throw new Error(`Session not found: ${gameId}`);
+  }
+
+  const { data: player, error: playerError } = await client
+    .from("session_players")
+    .select("player_id, is_host")
+    .eq("game_id", gameId)
+    .eq("player_id", playerId)
+    .single();
+
+  if (playerError || !player) {
+    throw new Error(`Player not found: ${playerId}`);
+  }
+
+  if (!player.is_host) {
+    throw new Error("Only the host can change region selection");
+  }
+
+  // Sanitize: empty array means "all regions" (no filter).
+  // Non-empty arrays are passed as-is; unknown continent names simply
+  // won't match any events and will be caught by the event count check below.
+  const sanitized = selectedRegions.filter(r => typeof r === 'string' && r.length > 0);
+
+  const { error: updateError } = await client
+    .from("sessions")
+    .update({
+      selected_regions: sanitized,
+    })
+    .eq("game_id", gameId);
+
+  if (updateError) {
+    throw new Error(`Failed to update region selection: ${updateError.message}`);
+  }
+
+  // Re-fetch events for the current year range + new region filter and update
+  // SESSION_CREATED eventIds so startCompeteSession uses the correct events.
+  const { data: sessionRow, error: sessionRowError } = await client
+    .from("sessions")
+    .select("total_rounds, year_min, year_max")
+    .eq("game_id", gameId)
+    .single();
+
+  if (sessionRowError || !sessionRow) {
+    throw new Error("Failed to read session for event refetch");
+  }
+
+  const freshEvents = await fetchRandomEventsForSession(sessionRow.total_rounds, {
+    minYear: sessionRow.year_min,
+    maxYear: sessionRow.year_max,
+    regions: sanitized.length > 0 ? sanitized : undefined,
+  });
+
+  if (freshEvents.length !== sessionRow.total_rounds) {
+    throw new Error(
+      `Region filter produced only ${freshEvents.length} events for year range ${sessionRow.year_min}–${sessionRow.year_max}, need ${sessionRow.total_rounds}. Try selecting more regions.`
+    );
+  }
+
+  await dbPool.query(
+    `UPDATE round_events
+     SET payload = payload || jsonb_build_object('eventIds', $2::jsonb)
+     WHERE game_id = $1
+       AND event_type = 'SESSION_CREATED'`,
+    [gameId, JSON.stringify(freshEvents.map(e => e.id))]
+  );
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    throw new Error(`Failed to load snapshot after region selection update: ${gameId}`);
   }
   return snapshot;
 }

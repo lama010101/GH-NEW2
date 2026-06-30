@@ -450,6 +450,11 @@ export default function CompeteGamePage() {
     wsRef.current?.setEraSelection(selectedEras, yearMin, yearMax);
   }, [playerId, wsRef]);
 
+  const handleSetRegionSelection = useCallback((selectedRegions: string[]) => {
+    if (!playerId) return;
+    wsRef.current?.setRegionSelection(selectedRegions);
+  }, [playerId, wsRef]);
+
   const handleSetYearRange = useCallback((yearMin: number, yearMax: number) => {
     if (!playerId) return;
     setBusy(true);
@@ -646,6 +651,7 @@ export default function CompeteGamePage() {
               onSetSubMode={handleSetSubMode}
               onKickPlayer={handleKickPlayer}
               onSetEraSelection={handleSetEraSelection}
+              onSetRegionSelection={handleSetRegionSelection}
             />
           </>
         ) : null}

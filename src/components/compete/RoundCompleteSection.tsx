@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from 'next-intl';
 import RainbowRing from "@/components/compete/RainbowRing";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
@@ -10,10 +9,14 @@ import WhenCard from "@/components/compete/WhenCard";
 import InlineImageBadge from "@/components/compete/InlineImageBadge";
 import RatingControl from "@/components/compete/RatingControl";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
+import { setLocale } from "@/actions/setLocale";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
 import styles from "./RoundCompleteSection.module.css";
+import activeStyles from "./RoundActiveSection.module.css";
 
 interface RoundCompleteSectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -81,8 +84,10 @@ export default function RoundCompleteSection({
   resultSecsLeft,
   onAdvanceRound,
 }: RoundCompleteSectionProps) {
-  const router = useRouter();
   const t = useTranslations('game');
+  const tNav = useTranslations('nav');
+
+  const isPractice = snapshot.config.mode === "practice";
 
   const accuracyCardRef = useRef<HTMLDivElement>(null);
   const whereCardRef = useRef<HTMLDivElement>(null);
@@ -97,6 +102,22 @@ export default function RoundCompleteSection({
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [leaderboardTab, setLeaderboardTab] = useState<'thisRound' | 'allRounds'>('thisRound');
   const [whereWhenTab, setWhereWhenTab] = useState<'where' | 'when'>('where');
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('gh_sound');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
+  const [vibrateEnabled, setVibrateEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('gh_vibrate');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
+  const [localePending, startLocaleTransition] = useTransition();
 
   useEffect(() => {
     setIsAccuracyVisible(false);
@@ -135,6 +156,15 @@ export default function RoundCompleteSection({
     obs.observe(el);
     return () => obs.disconnect();
   }, [whereWhenTab, isWhenVisible]);
+
+  // Persist sound/vibrate settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('gh_sound', String(soundEnabled));
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('gh_vibrate', String(vibrateEnabled));
+  }, [vibrateEnabled]);
 
   return (
     <div className={styles.container} data-testid="round-complete-section" data-status={snapshot.status} data-round-index={snapshot.currentRoundIndex}>
@@ -329,7 +359,8 @@ export default function RoundCompleteSection({
               </div>
             </div>
 
-            {/* ROUND LEADERBOARD CARD */}
+            {/* ROUND LEADERBOARD CARD — hidden in practice (solo) mode */}
+            {!isPractice && (
             <div className={styles.leaderboardCard}>
               <div className={styles.leaderboardTitle}>
                 <span className={styles.leaderboardAccentBar} />
@@ -408,6 +439,7 @@ export default function RoundCompleteSection({
                 })
               )}
             </div>
+            )}
 
             {/* WHERE + WHEN CARD (merged, tabbed) */}
             <div className={styles.whereWhenCard}>
@@ -576,10 +608,14 @@ export default function RoundCompleteSection({
 
               {/* BOTTOM BAR (nav row) */}
               <div className={styles.bottomBar}>
-                <button className={styles.homeButton} onClick={() => router.push("/home")}>
+                <button
+                  className={styles.homeButton}
+                  onClick={() => setSettingsModalOpen(true)}
+                  aria-label={t('settings')}
+                >
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gh-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
-                    <polyline points="9 21 9 12 15 12 15 21" />
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
                   </svg>
                 </button>
                 <div className={styles.progressDots}>
@@ -617,6 +653,84 @@ export default function RoundCompleteSection({
           alt={viewerAlt}
           onClose={() => setViewerSrc(null)}
         />
+      )}
+
+      {/* SETTINGS MODAL — mirrors RoundActiveSection */}
+      {settingsModalOpen && (
+        <div className={activeStyles.settingsOverlay} onClick={() => setSettingsModalOpen(false)}>
+          <button
+            type="button"
+            onClick={() => setSettingsModalOpen(false)}
+            className={activeStyles.settingsCloseBtn}
+          >
+            <svg viewBox="0 0 10 10" fill="none" width="12" height="12">
+              <path d="M2 2l6 6M8 2L2 8" stroke="rgba(255,255,255,0.75)" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          <div className={activeStyles.settingsCard} onClick={(e) => e.stopPropagation()}>
+            <div className={activeStyles.settingsTitle}>{t('settings')}</div>
+
+            <div className={activeStyles.settingsRow}>
+              <span className={activeStyles.settingsLabel}>{t('sound')}</span>
+              <button
+                type="button"
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={activeStyles.toggle}
+                style={{
+                  "--toggle-bg": soundEnabled ? "var(--gh-orange)" : "rgba(255, 255, 255, 0.15)",
+                  "--toggle-left": soundEnabled ? "22px" : "2px",
+                } as React.CSSProperties}
+              >
+                <div className={activeStyles.toggleKnob} />
+              </button>
+            </div>
+
+            <div className={activeStyles.settingsRowLast}>
+              <span className={activeStyles.settingsLabel}>{t('vibrate')}</span>
+              <button
+                type="button"
+                onClick={() => setVibrateEnabled(!vibrateEnabled)}
+                className={activeStyles.toggle}
+                style={{
+                  "--toggle-bg": vibrateEnabled ? "var(--gh-orange)" : "rgba(255, 255, 255, 0.15)",
+                  "--toggle-left": vibrateEnabled ? "22px" : "2px",
+                } as React.CSSProperties}
+              >
+                <div className={activeStyles.toggleKnob} />
+              </button>
+            </div>
+
+            <div className={activeStyles.settingsLanguageRow}>
+              <span className={activeStyles.settingsLanguageLabel}>{tNav('language')}</span>
+              <LanguageDropdown
+                onLocaleChange={(loc) => startLocaleTransition(() => { setLocale(loc); })}
+                pending={localePending}
+              />
+            </div>
+
+            <div className={activeStyles.settingsLanguageRow}>
+              <span className={activeStyles.settingsLanguageLabel}>{tNav('theme')}</span>
+              <ThemeToggle />
+            </div>
+
+            <div className={activeStyles.settingsDivider} />
+
+            <button
+              type="button"
+              onClick={() => window.location.href = '/home'}
+              className={activeStyles.settingsHomeBtn}
+            >
+              <span className={activeStyles.settingsHomeIcon}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+                  <polyline points="9 21 9 12 15 12 15 21" />
+                </svg>
+              </span>
+              {tNav('home')}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

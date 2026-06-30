@@ -302,6 +302,11 @@ a {
   /* --- Text description --- */
   --gh-text-description:     rgba(255, 255, 255, 0.75);
 
+  /* --- Accuracy value lightness (hsl L channel for accColor scale) ---
+     Dark surfaces can carry bright (52%) values; light surfaces need a
+     deeper L so the red→green hue scale keeps contrast on white. */
+  --gh-acc-lightness:        52%;
+
   /* --- Near miss chips --- */
   --gh-near-miss-bg:         rgba(255, 255, 255, 0.06);
   --gh-near-miss-border:     rgba(255, 255, 255, 0.15);
@@ -524,6 +529,9 @@ a {
 
   /* --- Text description (light) --- */
   --gh-text-description:     rgba(15, 23, 42, 0.70);
+
+  /* --- Accuracy value lightness (light) — deepened for contrast on white --- */
+  --gh-acc-lightness:        38%;
 
   /* --- Near miss chips (light) --- */
   --gh-near-miss-bg:         rgba(15, 23, 42, 0.04);

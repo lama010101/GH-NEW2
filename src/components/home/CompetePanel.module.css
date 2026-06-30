@@ -125,7 +125,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--gh-blue-dim);
+  background: var(--gh-bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;

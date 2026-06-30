@@ -68,7 +68,7 @@
 
 .tabActiveWhen:hover {
   background: rgba(139, 92, 246, 0.18);
-  color: #a78bfa;
+  color: var(--gh-violet);
 }
 
 .tabActiveWhere {
@@ -79,7 +79,7 @@
 
 .tabActiveWhere:hover {
   background: rgba(34, 211, 238, 0.18);
-  color: #67e8f9;
+  color: var(--gh-teal);
 }
 
 .regionWrap {
@@ -109,6 +109,33 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.regionLabelHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.regionIcon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  background: var(--gh-glass-bg);
+}
+
+.regionSpan {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gh-text-muted);
 }
 
 .regionBar {

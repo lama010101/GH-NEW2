@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import styles from './ExperienceAccuracy.module.css';
 
 export interface ExperienceAccuracyData {
-  byWhen: Array<{ label: string; avgAccuracy: number; totalXp: number; roundCount: number }>;
+  byWhen: Array<{ label: string; avgAccuracy: number; totalXp: number; roundCount: number; icon?: string; span?: string }>;
   byWhere: Array<{ label: string; avgAccuracy: number; totalXp: number; roundCount: number }>;
   eventsSeenCount: number;
   countriesCount: number;
@@ -14,7 +14,7 @@ export interface ExperienceAccuracyData {
 
 function accColor(acc: number): string {
   const hue = Math.round((Math.max(0, Math.min(100, acc)) / 100) * 120);
-  return `hsl(${hue}, 90%, 52%)`;
+  return `hsl(${hue}, 90%, var(--gh-acc-lightness, 52%))`;
 }
 
 export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyData }) {
@@ -81,7 +81,11 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                 data.byWhen.map((item) => (
                   <div key={item.label} className={styles.regionRowWithCount}>
                     <div className={styles.regionLabelWrap}>
-                      <span className={styles.regionLabel}>{item.label}</span>
+                      <div className={styles.regionLabelHead}>
+                        {item.icon && <span className={styles.regionIcon}>{item.icon}</span>}
+                        <span className={styles.regionLabel}>{item.label}</span>
+                        {item.span && <span className={styles.regionSpan}>{item.span}</span>}
+                      </div>
                       <div className={styles.regionBar}>
                         <div className={styles.regionBarFill} style={{ width: `${(item.totalXp / maxWhenXp) * 100}%` }} />
                       </div>
@@ -143,7 +147,11 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                 data.byWhen.map((item) => (
                   <div key={item.label} className={styles.regionRowWithCount}>
                     <div className={styles.regionLabelWrap}>
-                      <span className={styles.regionLabel}>{item.label}</span>
+                      <div className={styles.regionLabelHead}>
+                        {item.icon && <span className={styles.regionIcon}>{item.icon}</span>}
+                        <span className={styles.regionLabel}>{item.label}</span>
+                        {item.span && <span className={styles.regionSpan}>{item.span}</span>}
+                      </div>
                       <div className={styles.regionBar}>
                         <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>

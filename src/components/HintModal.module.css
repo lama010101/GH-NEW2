@@ -17,7 +17,9 @@
   --modal-r: #dc2626;
 }
 
-/* TODO: light theme — add .light class overrides when theme system is implemented */
+/* HintModal uses the global data-theme token system (see globals.css
+   [data-theme="light"]). --modal-g/y/o/r below are already deepened for
+   light-bg contrast; .axisVal consumes them instead of hardcoded bright hex. */
 
 .backdrop {
   position: fixed;
@@ -174,10 +176,10 @@
 }
 
 .axisVal.zero { color: var(--gh-modal-text-muted); }
-.axisVal.g { color: #7ed957; }
-.axisVal.y { color: #e8c022; }
-.axisVal.o { color: #E87722; }
-.axisVal.r { color: #e84422; }
+.axisVal.g { color: var(--modal-g); }
+.axisVal.y { color: var(--modal-y); }
+.axisVal.o { color: var(--modal-o); }
+.axisVal.r { color: var(--modal-r); }
 
 .axisTrack {
   width: 56px;

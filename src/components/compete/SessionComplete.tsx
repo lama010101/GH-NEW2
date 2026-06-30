@@ -31,6 +31,7 @@ export default function SessionComplete({
   const router = useRouter();
   const t = useTranslations('compete_page');
   const tGame = useTranslations('game');
+  const isPractice = snapshot.config.mode === "practice";
   const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
@@ -175,6 +176,16 @@ export default function SessionComplete({
           if (year < 1945) return 'era_modern';
           return 'era_contemporary';
         };
+        // Era display metadata — mirrors the lobby era rail (LobbySection ERAS)
+        // so the final-results "When" breakdown uses the same icons, year spans,
+        // and chronological ordering as the lobby.
+        const ERA_META: Record<string, { icon: string; span: string; order: number }> = {
+          era_ancient:      { icon: '🏛️', span: '-3000 – 476',  order: 0 },
+          era_medieval:     { icon: '⚔️', span: '476 – 1492',   order: 1 },
+          era_earlymodern:  { icon: '⛵', span: '1492 – 1789',  order: 2 },
+          era_modern:       { icon: '🏭', span: '1789 – 1945',  order: 3 },
+          era_contemporary: { icon: '🚀', span: '1945 – 2025',  order: 4 },
+        };
 
         // Aggregate badges across all rounds
         const badgeCounts = { gold: 0, silver: 0, bronze: 0 };
@@ -199,12 +210,16 @@ export default function SessionComplete({
           existing.roundCount++;
           byWhenMap.set(eraKey, existing);
         }
-        const byWhen = [...byWhenMap.entries()].map(([eraKey, val]) => ({
-          label: tGame(eraKey),
-          avgAccuracy: Math.round(val.totalAcc / val.roundCount),
-          totalXp: val.totalXp,
-          roundCount: val.roundCount,
-        }));
+        const byWhen = [...byWhenMap.entries()]
+          .sort(([a], [b]) => (ERA_META[a]?.order ?? 99) - (ERA_META[b]?.order ?? 99))
+          .map(([eraKey, val]) => ({
+            label: tGame(eraKey),
+            avgAccuracy: Math.round(val.totalAcc / val.roundCount),
+            totalXp: val.totalXp,
+            roundCount: val.roundCount,
+            icon: ERA_META[eraKey]?.icon,
+            span: ERA_META[eraKey]?.span,
+          }));
 
         // XP per region (for ExperienceAccuracy component)
         const byWhereMap = new Map<string, { totalXp: number; totalAcc: number; roundCount: number }>();
@@ -305,7 +320,8 @@ export default function SessionComplete({
                 </div>
               </section>
 
-              {/* FINAL RANKINGS */}
+              {/* FINAL RANKINGS — hidden in practice (solo) mode */}
+              {!isPractice && (
               <section className={styles.card}>
                 <div className={styles.cardHead}>
                   <span className={styles.accentBar} />
@@ -363,6 +379,7 @@ export default function SessionComplete({
                 })}
                 </div>
               </section>
+              )}
 
               {/* ACHIEVEMENTS — badges, XP per era/region, game stats */}
               <section className={styles.card}>

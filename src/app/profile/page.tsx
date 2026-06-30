@@ -22,7 +22,7 @@ type ProfileHistoricalAvatar = {
 
 function accColor(acc: number): string {
   const hue = Math.round((Math.max(0, Math.min(100, acc)) / 100) * 120);
-  return `hsl(${hue}, 90%, 52%)`;
+  return `hsl(${hue}, 90%, var(--gh-acc-lightness, 52%))`;
 }
 
 export default function ProfilePage() {
