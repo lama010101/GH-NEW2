@@ -44,6 +44,16 @@ function HomePageInner() {
       if (state.status === 'unauthenticated') {
         router.replace('/login?next=/home');
       }
+      if (state.status === 'ready' && state.isNewUser) {
+        fetch('/api/user/assign-avatar', { method: 'POST' })
+          .then(r => r.json())
+          .then(data => {
+            if (data.avatar) {
+              setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
+            }
+          })
+          .catch(() => {});
+      }
     })
     return subscribeToIdentityChanges((state) => {
       setIdentity(state);

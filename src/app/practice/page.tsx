@@ -93,7 +93,7 @@ export default function PracticeEntryPage() {
     })()
 
     return () => { cancelled = true }
-  }, [playerId, displayName, identityLoading, identityError, router, creating])
+  }, [playerId, displayName, identityLoading, identityError, router])
 
   return (
     <div className={pageStyles.loadingScreen}>
