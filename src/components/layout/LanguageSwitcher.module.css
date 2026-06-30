@@ -1,8 +1,8 @@
 .container {
   display: flex;
   gap: 2px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--gh-modal-lang-bg);
+  border: 1px solid var(--gh-modal-lang-border);
   border-radius: 10px;
   padding: 3px;
 }
@@ -20,14 +20,14 @@
 }
 
 .pillActive {
-  background: #ffffff;
-  color: #111111;
+  background: var(--gh-text-primary);
+  color: var(--gh-bg-base);
   font-weight: 700;
 }
 
 .pillInactive {
   background: transparent;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--gh-text-muted);
   font-weight: 700;
 }
 

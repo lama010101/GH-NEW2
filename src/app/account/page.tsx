@@ -23,9 +23,10 @@ type AvatarInfo = {
 
 export default function AccountPage() {
   const router = useRouter()
-  const { playerId } = useIdentity()
+  const { playerId, isLoading } = useIdentity()
   const t = useTranslations('account')
   const tNav = useTranslations('nav')
+  const tCommon = useTranslations('common')
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
@@ -40,7 +41,7 @@ export default function AccountPage() {
   const [showNavModal, setShowNavModal] = useState(false)
 
   useEffect(() => {
-    if (playerId === undefined) return
+    if (isLoading) return
     if (!playerId) {
       router.replace('/login')
       return
@@ -90,8 +91,8 @@ export default function AccountPage() {
           setAvatarInfo({
             name,
             description: av.description ?? '',
-            bornLabel: bornParts.length ? `Born: ${bornParts.join(', ')}` : '',
-            diedLabel: diedParts.length ? `Died: ${diedParts.join(', ')}` : '',
+            bornLabel: bornParts.length ? `${tCommon('born_prefix')} ${bornParts.join(', ')}` : '',
+            diedLabel: diedParts.length ? `${tCommon('died_prefix')} ${diedParts.join(', ')}` : '',
             imageUrl: profile.avatar_url,
           })
         }
@@ -104,7 +105,7 @@ export default function AccountPage() {
     }
 
     load().catch((err) => console.error('[account] load error:', err))
-  }, [playerId, router])
+  }, [playerId, isLoading, router])
 
   const handleSave = async () => {
     if (!playerId || displayName.trim() === savedName.trim()) return

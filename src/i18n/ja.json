@@ -195,7 +195,11 @@
     "no_description": "説明はありません",
     "timer_min_short": "{n}分 {s}秒",
     "timer_sec_short": "{n}秒",
-    "countdown_hm": "{h}時間 {m}分"
+    "countdown_hm": "{h}時間 {m}分",
+    "born_prefix": "生年:",
+    "died_prefix": "没年:",
+    "no_data_yet": "データなし",
+    "back_to_home": "ホームへ戻る"
   },
   "lobby": {
     "waiting": "プレイヤーを待っています（{ready}/{total} 準備完了）",
@@ -325,7 +329,7 @@
     "total_score": "合計スコア",
     "winner": "勝者",
     "home": "ホーム",
-    "refresh": "更新",
+    "refresh": "ラウンドに問題？タップで再読み込み",
     "image_failed": "画像の読み込みに失敗",
     "tap_retry": "タップして再試行",
     "sign_in": "ログイン",
@@ -446,7 +450,18 @@
     "room_not_found": "ルームが見つかりません",
     "error_creating_game": "ゲーム作成エラー",
     "unknown_player": "不明",
-    "invalid_server_response": "サーバーからの応答が無効"
+    "invalid_server_response": "サーバーからの応答が無効",
+    "not_authenticated": "未認証",
+    "failed_create_practice": "練習セッションの作成に失敗",
+    "no_game_id_response": "レスポンスにgameIdがありません",
+    "failed_start_practice": "練習の開始に失敗",
+    "failed_load_session": "セッションの読み込みに失敗",
+    "failed_start_game": "ゲームの開始に失敗",
+    "bc_suffix": "紀元前",
+    "decade_suffix": "年代",
+    "tier_century_label": "世紀",
+    "tier_decade_label": "年代",
+    "tier_year_label": "年"
   },
   "auth": {
     "sign_in": "ログイン",
@@ -470,6 +485,7 @@
     "email_placeholder": "you@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "パスワードリセットメールを送信しました。受信箱を確認。",
+    "confirm_email_sent": "アカウント確認のためメールを確認してください。",
     "remember_me": "ログイン状態を保持",
     "confirm_password": "パスワード確認"
   },
@@ -527,7 +543,10 @@
     "when": "いつ",
     "where": "どこ",
     "games": "ゲーム",
-    "best": "ベスト"
+    "best": "ベスト",
+    "rated": "評価済み",
+    "regions": "地域",
+    "countries": "国"
   },
   "account": {
     "username": "ユーザー名",
@@ -557,7 +576,8 @@
     "d_ago": "{n}日前",
     "invited_you": "あなたをゲームに招待しました",
     "sent": "送信 {time}",
-    "join_game": "ゲーム参加"
+    "join_game": "ゲーム参加",
+    "someone": "誰か"
   },
   "landing": {
     "meta_title": "Guess-History — 歴史の知識を試そう",
@@ -574,5 +594,13 @@
     "waitlist_err_invalid_email": "有効なメールアドレスを入力してください。",
     "waitlist_err_generic": "エラーが発生しました。再試行してください。",
     "waitlist_err_network": "ネットワークエラー。再試行してください。"
+  },
+  "welcome": {
+    "title": "Guess-Historyへようこそ！",
+    "your_historical_avatar": "あなたの歴史アバター",
+    "choose_different_avatar": "別のアバターを選ぶ",
+    "your_username": "あなたのユーザー名",
+    "lets_play": "遊ぼう！",
+    "skip_for_now": "今はスキップ"
   }
 }

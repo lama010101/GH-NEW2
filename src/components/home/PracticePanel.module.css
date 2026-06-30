@@ -9,23 +9,23 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--gh-bg-surface);
   border-radius: 8px;
   padding: 7px 12px;
 }
 
 .configLabel {
   font-size: var(--font-sm);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--gh-text-primary);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .select {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--gh-glass-bg-hover);
+  border: 1px solid var(--gh-border-medium);
   border-radius: 6px;
-  color: white;
+  color: var(--gh-text-primary);
   font-size: var(--font-sm);
   padding: 4px 8px;
   cursor: pointer;
@@ -44,10 +44,10 @@
 
 .yearInput {
   width: 70px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--gh-glass-bg-hover);
+  border: 1px solid var(--gh-border-medium);
   border-radius: 6px;
-  color: white;
+  color: var(--gh-text-primary);
   font-size: var(--font-sm);
   padding: 4px 8px;
   text-align: center;
@@ -65,20 +65,21 @@
 }
 
 .yearDash {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--gh-text-secondary);
   font-size: var(--font-sm);
 }
 
 .startButton {
   background: var(--gh-orange);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
+  color: var(--gh-btn-text);
   font-size: var(--font-sm);
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.15s;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  width: 100%;
 }
 
 .startButton:hover {

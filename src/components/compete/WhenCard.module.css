@@ -1,7 +1,7 @@
 /* WhenCard — uses tokens from gh-card--when set in globals.css */
 
 .card {
-  background: rgba(0, 0, 0, 0.90);
+  background: var(--gh-general-card-bg);
   border: 1px solid var(--gh-when-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
@@ -208,7 +208,7 @@
 .expandLabelAccent {
   font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 600;
-  color: white;
+  color: var(--gh-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -216,7 +216,7 @@
 .expandRank {
   font-size: 13px; /* layout-constrained — do not tokenize */
   font-weight: 600;
-  color: white;
+  color: var(--gh-text-primary);
 }
 
 /* ── Leaderboard rows ── */

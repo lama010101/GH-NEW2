@@ -12,6 +12,8 @@ import { PracticePanel } from '@/components/home/PracticePanel'
 import { LevelUpPanel } from '@/components/home/LevelUpPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
 import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
+import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
+import { loadPracticeSettings, savePracticeSettings } from '@/components/practice/practiceSettings'
 import styles from './home.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
@@ -131,13 +133,31 @@ function HomePageInner() {
   }, [])
 
   const [showNavModal, setShowNavModal] = useState(false)
+  const [practiceModalOpen, setPracticeModalOpen] = useState(false)
 
   const handleNav = (path: string) => {
     router.push(path)
   }
 
+  const handlePracticeStart = (settings: PracticeModalSettings) => {
+    savePracticeSettings(settings)
+    setPracticeModalOpen(false)
+    router.push('/practice')
+  }
+
+  if (identity.status === 'error') {
+    router.replace('/login?next=/home')
+    return null
+  }
+
   if (identity.status !== 'ready') {
-    return null;
+    return (
+      <div className={styles.pageRoot}>
+        <div aria-hidden="true" className={styles.bgImage} />
+        <div className={styles.bgOverlay} />
+        <div className={styles.loadingIndicator}>{t('common.loading')}</div>
+      </div>
+    )
   }
 
   const playerId = identity.playerId
@@ -177,6 +197,7 @@ function HomePageInner() {
               onRequireAuth={() => {}}
               onNavigate={handleNav}
               onLobby={(gameId) => router.push(`/compete/${gameId}`)}
+              onPracticeStart={() => setPracticeModalOpen(true)}
             />
           ))}
         </div>
@@ -198,6 +219,12 @@ function HomePageInner() {
           onSaved={() => setProfileVersion(v => v + 1)}
         />
       )}
+      <PracticeSettingsModal
+        isOpen={practiceModalOpen}
+        onClose={() => setPracticeModalOpen(false)}
+        onStart={handlePracticeStart}
+        initialSettings={loadPracticeSettings()}
+      />
     </div>
   )
 }
@@ -208,7 +235,8 @@ function ModeCard({
   displayName,
   onRequireAuth,
   onNavigate,
-  onLobby
+  onLobby,
+  onPracticeStart
 }: {
   mode: Mode
   playerId: string
@@ -216,6 +244,7 @@ function ModeCard({
   onRequireAuth: () => void
   onNavigate: (path: string) => void
   onLobby: (gameId: string) => void
+  onPracticeStart: () => void
 }) {
   const t = useTranslations()
   const gradient = MODE_CARD_GRADIENT[mode]
@@ -268,7 +297,7 @@ function ModeCard({
             <LevelUpPanel onStart={() => onNavigate('/levelup')} />
           )}
           {mode === 'practice' && (
-            <PracticePanel onStart={() => onNavigate('/practice')} />
+            <PracticePanel onStart={onPracticeStart} />
           )}
         </div>
 

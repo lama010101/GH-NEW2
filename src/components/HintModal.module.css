@@ -2,12 +2,12 @@
 
 .root {
   --modal-bg: var(--gh-modal-bg);
-  --modal-surface: rgba(255, 255, 255, 0.60);
-  --modal-surface2: rgba(255, 255, 255, 0.50);
-  --modal-surface3: rgba(255, 255, 255, 0.65);
-  --modal-border: rgba(0, 0, 0, 0.07);
-  --modal-border-md: rgba(0, 0, 0, 0.10);
-  --modal-border-hi: rgba(0, 0, 0, 0.16);
+  --modal-surface: var(--gh-modal-input-bg);
+  --modal-surface2: var(--gh-modal-input-bg);
+  --modal-surface3: var(--gh-modal-input-bg);
+  --modal-border: var(--gh-modal-divider);
+  --modal-border-md: var(--gh-modal-divider);
+  --modal-border-hi: var(--gh-modal-divider);
   --modal-text: var(--gh-modal-text-primary);
   --modal-text-dim: var(--gh-modal-text-secondary);
   --modal-text-muted: var(--gh-modal-text-muted);
@@ -70,7 +70,7 @@
   height: 26px;
   border-radius: 50%;
   background: var(--gh-modal-close-bg);
-  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  border: 0.5px solid var(--gh-modal-close-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,7 +101,7 @@
 .totalLbl {
   font-size: 12px;
   font-weight: 500;
-  color: #999;
+  color: var(--gh-modal-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -126,7 +126,7 @@
 .totalBig.y { color: var(--modal-y); }
 .totalBig.o { color: var(--modal-o); }
 .totalBig.r { color: var(--modal-r); }
-.totalBig.zero { color: #333; }
+.totalBig.zero { color: var(--gh-modal-text-muted); }
 
 .totalRight {
   display: flex;
@@ -148,7 +148,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #555;
+  color: var(--gh-modal-text-muted);
 }
 
 .axisIcon svg {
@@ -160,7 +160,7 @@
 .axisLbl {
   font-size: 12px;
   font-weight: 500;
-  color: #999;
+  color: var(--gh-modal-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
@@ -173,7 +173,7 @@
   color: var(--modal-text);
 }
 
-.axisVal.zero { color: #333; }
+.axisVal.zero { color: var(--gh-modal-text-muted); }
 .axisVal.g { color: #7ed957; }
 .axisVal.y { color: #e8c022; }
 .axisVal.o { color: #E87722; }
@@ -182,7 +182,7 @@
 .axisTrack {
   width: 56px;
   height: 2px;
-  background: rgba(0, 0, 0, 0.10);
+  background: var(--gh-modal-divider);
   border-radius: 2px;
   overflow: hidden;
   margin-top: 3px;
@@ -191,7 +191,7 @@
 .axisFill {
   height: 100%;
   border-radius: 2px;
-  background: #fff;
+  background: var(--gh-modal-text-primary);
   transition: width 0.25s ease;
 }
 
@@ -203,7 +203,7 @@
   border-radius: 0;
   padding: 0;
   border: none;
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.10);
+  border-bottom: 0.5px solid var(--gh-modal-divider);
 }
 
 .tabBtn {
@@ -221,7 +221,7 @@
 }
 
 .tabBtn:hover .tabLbl {
-  color: rgba(0, 0, 0, 0.75);
+  color: var(--gh-modal-text-secondary);
 }
 
 .tabBtn:hover .tabIcon {
@@ -241,7 +241,7 @@
 .tabLbl {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.65);
+  color: var(--gh-modal-text-secondary);
 }
 
 .tabBtnWhen.active .tabLbl {
@@ -302,13 +302,13 @@
 }
 
 .hintsPanel::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--gh-border-medium);
   border-radius: 2px;
 }
 
 .hintBtn {
   background: var(--gh-modal-input-bg);
-  border: 0.5px solid rgba(0, 0, 0, 0.10);
+  border: 0.5px solid var(--gh-modal-divider);
   border-radius: 10px;
   padding: 10px 12px;
   display: flex;
@@ -323,8 +323,8 @@
 }
 
 .hintBtn:hover:not(.revealed) {
-  background: rgba(0, 0, 0, 0.09);
-  border-color: rgba(0, 0, 0, 0.18);
+  background: var(--gh-glass-bg-hover);
+  border-color: var(--gh-border-medium);
   transform: translateY(-1px);
 }
 
@@ -356,10 +356,10 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.08);
-  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  background: var(--gh-glass-bg);
+  border: 0.5px solid var(--gh-border-subtle);
   transition: background 0.12s;
-  color: #888;
+  color: var(--gh-modal-text-muted);
 }
 
 .hintIcon svg {
@@ -368,7 +368,7 @@
 }
 
 .hintBtn:hover:not(.revealed) .hintIcon {
-  background: rgba(0, 0, 0, 0.13);
+  background: var(--gh-glass-bg-hover);
 }
 
 .hintBody {
@@ -385,12 +385,12 @@
 }
 
 .hintBtn.revealed .hintName {
-  color: #fff;
+  color: var(--gh-modal-text-primary);
 }
 
 .hintSub {
   font-size: 12px;
-  color: #999;
+  color: var(--gh-modal-text-muted);
   line-height: 1.4;
 }
 

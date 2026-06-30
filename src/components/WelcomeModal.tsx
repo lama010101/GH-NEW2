@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import styles from "./WelcomeModal.module.css";
 import { AvatarPickerModal } from "./AvatarPickerModal";
 
@@ -24,6 +25,8 @@ export interface WelcomeModalProps {
 }
 
 export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSaved }: WelcomeModalProps) {
+  const t = useTranslations('welcome');
+  const tCommon = useTranslations('common');
   const [usernameValue, setUsernameValue] = useState(initialDisplayName);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(avatar.image_url);
@@ -52,10 +55,10 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
 
     const parts: string[] = [];
     if (birthParts.length > 0) {
-      parts.push(`Born: ${birthParts.join(" ")}`);
+      parts.push(`${tCommon('born_prefix')} ${birthParts.join(" ")}`);
     }
     if (deathParts.length > 0) {
-      parts.push(`Died: ${deathParts.join(" ")}`);
+      parts.push(`${tCommon('died_prefix')} ${deathParts.join(" ")}`);
     }
     bioLine = parts.join("  •  ");
   }
@@ -78,9 +81,9 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
   return (
     <div className={styles.overlay}>
       <div className={styles.card}>
-        <h2 className={styles.greeting}>Welcome to Guess-History!</h2>
+        <h2 className={styles.greeting}>{t('title')}</h2>
 
-        <p className={styles.avatarIntro}>Your historical avatar</p>
+        <p className={styles.avatarIntro}>{t('your_historical_avatar')}</p>
 
         <div className={styles.avatarWrap}>
           {avatarUrl ? (
@@ -98,7 +101,7 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
         <div className={styles.avatarName}>{fullName}</div>
 
         <button onClick={() => setAvatarPickerOpen(true)} className={styles.skipLink} style={{ marginBottom: 16 }}>
-          Choose a different avatar
+          {t('choose_different_avatar')}
         </button>
 
         {bioLine && <div className={styles.bioLine}>{bioLine}</div>}
@@ -107,7 +110,7 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
           <div className={styles.description}>{avatar.description}</div>
         )}
 
-        <div className={styles.usernameLabel}>Your username</div>
+        <div className={styles.usernameLabel}>{t('your_username')}</div>
         <input
           type="text"
           value={usernameValue}
@@ -117,11 +120,11 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
         />
 
         <button onClick={handleSave} className={styles.saveButton}>
-          Let&apos;s play!
+          {t('lets_play')}
         </button>
 
         <span onClick={handleSkip} className={styles.skipLink}>
-          Skip for now
+          {t('skip_for_now')}
         </span>
       </div>
 

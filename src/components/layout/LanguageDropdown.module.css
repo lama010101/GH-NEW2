@@ -7,12 +7,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--gh-modal-lang-bg);
+  border: 1px solid var(--gh-modal-lang-border);
   border-radius: 10px;
   padding: 7px 12px;
   cursor: pointer;
-  color: var(--gh-modal-text-primary, #fff);
+  color: var(--gh-modal-text-primary);
   font-size: var(--font-2xs, 13px);
   font-weight: 600;
   transition: background 0.15s, border-color 0.15s;
@@ -21,8 +21,8 @@
 }
 
 .trigger:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--gh-glass-bg-hover);
+  border-color: var(--gh-glass-border-hover);
 }
 
 .flag {
@@ -49,21 +49,30 @@
   transform: rotate(180deg);
 }
 
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--gh-modal-overlay, rgba(0, 0, 0, 0.72));
+  backdrop-filter: var(--gh-modal-blur, blur(8px));
+  -webkit-backdrop-filter: var(--gh-modal-blur, blur(8px));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+}
+
 .menu {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  background: var(--gh-modal-bg, #1a1a2e);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--gh-modal-bg);
+  border: 1px solid var(--gh-modal-lang-border);
   border-radius: 10px;
   padding: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 100;
-  max-height: 280px;
+  box-shadow: var(--gh-shadow-md);
+  width: min(320px, 90vw);
+  box-sizing: border-box;
+  max-height: 80vh;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: var(--gh-border-medium) transparent;
 }
 
 .menu::-webkit-scrollbar {
@@ -71,7 +80,7 @@
 }
 
 .menu::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--gh-border-medium);
   border-radius: 3px;
 }
 
@@ -85,20 +94,20 @@
   border-radius: 7px;
   background: transparent;
   cursor: pointer;
-  color: var(--gh-modal-text-primary, #fff);
-  font-size: var(--font-2xs, 13px);
+  color: var(--gh-modal-text-primary);
+  font-size: var(--font-2xs);
   font-weight: 500;
   text-align: left;
   transition: background 0.12s;
 }
 
 .option:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--gh-glass-bg-hover);
 }
 
 .optionActive {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--gh-orange, #f97316);
+  background: var(--gh-glass-bg);
+  color: var(--gh-orange);
   font-weight: 700;
 }
 
@@ -111,7 +120,7 @@
 
 .check {
   flex-shrink: 0;
-  color: var(--gh-orange, #f97316);
+  color: var(--gh-orange);
 }
 
 .disabled {

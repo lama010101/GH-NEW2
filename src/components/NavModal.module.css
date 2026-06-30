@@ -15,10 +15,10 @@
   right: 20px;
   z-index: 1002;
   background: var(--gh-modal-close-bg);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--gh-modal-close-border);
   border-radius: 12px;
   cursor: pointer;
-  color: #fff;
+  color: var(--gh-modal-close-color);
   font-size: var(--font-xl);
   line-height: 1;
   padding: 10px;
@@ -68,7 +68,7 @@
 }
 
 .avatarInitials {
-  color: #fff;
+  color: var(--gh-text-primary);
   font-size: var(--font-2xl);
   font-weight: 700;
 }
@@ -113,26 +113,11 @@
 }
 
 .menuItem:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.menuItemHome {
-  background: var(--gh-orange);
-  font-weight: 600;
-  border-radius: 8px;
-}
-
-.menuItemHome:hover {
-  background: var(--gh-orange);
+  background: var(--gh-glass-bg);
 }
 
 .menuItemIcon {
   opacity: 0.75;
-  flex-shrink: 0;
-}
-
-.menuItemIconHome {
-  opacity: 1;
   flex-shrink: 0;
 }
 
@@ -195,7 +180,7 @@
 
 .navLangOptionActive {
   background: var(--gh-orange);
-  color: #ffffff;
+  color: var(--gh-btn-text);
 }
 
 .navCursorDefault {

@@ -29,5 +29,5 @@
 
 .optionActive {
   background: var(--gh-orange);
-  color: #ffffff;
+  color: var(--gh-btn-text);
 }

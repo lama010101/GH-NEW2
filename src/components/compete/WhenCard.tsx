@@ -99,7 +99,7 @@ export default function WhenCard({
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/badges/when.webp" alt="when" width={36} height={36} className={styles.titleIcon} />
+          <img src="/badges/when.webp" alt={t('when')} width={36} height={36} className={styles.titleIcon} />
           <span className={styles.titleText}>{t('when')}</span>
         </div>
         {(() => {

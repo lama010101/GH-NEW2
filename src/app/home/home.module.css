@@ -106,7 +106,7 @@
 .card-title {
   font-size: var(--font-2xl);
   font-weight: 800;
-  color: #fff;
+  color: var(--gh-text-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0;
@@ -118,7 +118,7 @@
 .card-desc {
   font-size: var(--font-base);
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--gh-text-secondary);
   line-height: 1.5;
   margin: 6px 0 0 0;
   padding: 0;
@@ -147,7 +147,7 @@
 
 
 .card-sub-panel {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--gh-bg-elevated);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -182,26 +182,26 @@
 }
 
 .card-cta-btn-blue {
-  background: rgba(255, 255, 255, 0.95);
-  color: #0e7490;
+  background: var(--gh-text-primary);
+  color: var(--gh-teal);
   border: none;
   font-weight: 800;
 }
 
 .card-cta-btn-outline {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: #fff;
+  background: var(--gh-glass-bg-hover);
+  border: 1px solid var(--gh-border-medium);
+  color: var(--gh-text-primary);
 }
 
 
 .join-code-input {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(0, 100, 150, 0.25);
-  border: 1px solid rgba(0, 173, 193, 0.6);
+  background: rgba(0, 100, 150, 0.15);
+  border: 1px solid rgba(0, 173, 193, 0.5);
   border-radius: 10px;
-  color: #fff;
+  color: var(--gh-text-primary);
   font-size: var(--font-lg);
   font-weight: 700;
   letter-spacing: 4px;
@@ -212,12 +212,12 @@
 }
 
 .join-code-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--gh-text-muted);
 }
 
 .error-text {
   font-size: var(--font-2xs);
-  color: #f87171;
+  color: var(--gh-danger);
   text-align: center;
 }
 
@@ -227,7 +227,7 @@
   width: 100vw;
   min-height: 100vh;
   position: relative;
-  background: #0a0a0a;
+  background: var(--gh-bg-base);
 }
 
 .bgImage {
@@ -243,7 +243,19 @@
   position: fixed;
   inset: 0;
   z-index: 1;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--gh-modal-overlay);
+}
+
+.loadingIndicator {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: var(--gh-text-primary, #fff);
+  font-size: 1.25rem;
+  letter-spacing: 0.05em;
 }
 
 .tagline {
@@ -252,7 +264,7 @@
   padding: 4px 24px 16px;
   box-sizing: border-box;
   text-align: center;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--gh-text-primary);
   font-size: var(--font-xl);
   font-weight: 500;
   letter-spacing: 0.2px;

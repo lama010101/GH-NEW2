@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 export type YearPickerScale = 'century' | 'decade' | 'year';
@@ -52,23 +53,25 @@ function decadeToYearRange(d: number): [number, number] {
   return [d, d + 9];
 }
 
-function centuryLabel(c: number): string {
+type Translator = (key: string, values?: Record<string, string | number | Date>) => string;
+
+function centuryLabel(c: number, t: Translator): string {
   if (c <= 0) {
     const bc = Math.abs(c) + 1;
-    return `${bc} BC`;
+    return `${bc} ${t('bc_suffix')}`;
   }
-  const sfx = c === 1 ? 'st' : c === 2 ? 'nd' : c === 3 ? 'rd' : 'th';
+  const sfx = c === 1 ? t('rank_st') : c === 2 ? t('rank_nd') : c === 3 ? t('rank_rd') : t('rank_th');
   return `${c}${sfx}`;
 }
 
-function decadeLabel(d: number): string {
-  if (d >= 0) return `${d}s`;
-  return `${d}s`;
+function decadeLabel(d: number, t: Translator): string {
+  if (d >= 0) return `${d}${t('decade_suffix')}`;
+  return `${d}${t('decade_suffix')}`;
 }
 
-function yearLabel(y: number): string {
+function yearLabel(y: number, t: Translator): string {
   if (y > 0) return String(y);
-  return `${Math.abs(y) === 0 ? 1 : Math.abs(y)} BC`;
+  return `${Math.abs(y) === 0 ? 1 : Math.abs(y)} ${t('bc_suffix')}`;
 }
 
 function centuriesInRange(min: number, max: number): number[] {
@@ -192,7 +195,7 @@ function Rail({ items, selected, itemWidth, labelFn, onSelect, committed, tierLa
         {tierLabel}
       </div>
       <div style={{
-        background: 'rgba(0,0,0,0.28)',
+        background: 'var(--gh-glass-bg)',
         borderRadius: 8,
         padding: '4px 0',
       }}>
@@ -299,6 +302,7 @@ export const YearPicker = forwardRef<YearPickerHandle, YearPickerProps>(
     },
     ref,
   ) => {
+    const t = useTranslations('game');
     const clampedValue = clamp(value === 0 ? 1 : value, min === 0 ? 1 : min, max);
 
     const deriveState = useCallback((year: number) => {
@@ -383,26 +387,26 @@ export const YearPicker = forwardRef<YearPickerHandle, YearPickerProps>(
           items={centuries}
           selected={selCentury}
           itemWidth={CENTURY_W}
-          labelFn={centuryLabel}
+          labelFn={(v) => centuryLabel(v, t)}
           onSelect={handleCenturySelect}
-          tierLabel="CENTURY"
+          tierLabel={t('tier_century_label')}
         />
         <Rail
           items={decades}
           selected={selDecade}
           itemWidth={DECADE_W}
-          labelFn={decadeLabel}
+          labelFn={(v) => decadeLabel(v, t)}
           onSelect={handleDecadeSelect}
-          tierLabel="DECADE"
+          tierLabel={t('tier_decade_label')}
         />
         <Rail
           items={years}
           selected={selYear}
           itemWidth={YEAR_W}
-          labelFn={yearLabel}
+          labelFn={(v) => yearLabel(v, t)}
           onSelect={handleYearSelect}
           committed={valueIsCommitted}
-          tierLabel="YEAR"
+          tierLabel={t('tier_year_label')}
         />
       </div>
     );

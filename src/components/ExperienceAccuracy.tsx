@@ -19,6 +19,7 @@ function accColor(acc: number): string {
 
 export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyData }) {
   const t = useTranslations('profile');
+  const tCommon = useTranslations('common');
   const [accuracyTab, setAccuracyTab] = useState<'when' | 'where'>('when');
   const [experienceTab, setExperienceTab] = useState<'when' | 'where'>('when');
 
@@ -29,35 +30,35 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
     <>
       {/* EXPERIENCE */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
             <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('experience')}</h3>
           </div>
           <div className="grid grid-cols-4 gap-3 mb-6">
-            <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
+            <div className="p-3 rounded-lg text-center bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorOrange}`}>
                 {data.eventsSeenCount?.toLocaleString() ?? '—'}
               </div>
-              <div className="text-[10px] mt-1 text-white/45">{t('events_seen')}</div>
+              <div className="text-[10px] mt-1 text-[var(--gh-text-muted)]">{t('events_seen')}</div>
             </div>
-            <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
+            <div className="p-3 rounded-lg text-center bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorViolet}`}>
                 {data.roundsPlayed !== null ? data.roundsPlayed.toLocaleString() : '—'}
               </div>
-              <div className="text-[10px] mt-1 text-white/45">Rated</div>
+              <div className="text-[10px] mt-1 text-[var(--gh-text-muted)]">{t('rated')}</div>
             </div>
-            <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
+            <div className="p-3 rounded-lg text-center bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorTeal}`}>
                 {data.byWhere.length.toLocaleString()}
               </div>
-              <div className="text-[10px] mt-1 text-white/45">Regions</div>
+              <div className="text-[10px] mt-1 text-[var(--gh-text-muted)]">{t('regions')}</div>
             </div>
-            <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
+            <div className="p-3 rounded-lg text-center bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorGold}`}>
                 {data.countriesCount?.toLocaleString() ?? '—'}
               </div>
-              <div className="text-[10px] mt-1 text-white/45">Countries</div>
+              <div className="text-[10px] mt-1 text-[var(--gh-text-muted)]">{t('countries')}</div>
             </div>
           </div>
           <div className={styles.tabBar}>
@@ -90,7 +91,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                   </div>
                 ))
               ) : (
-                <div className={styles.regionEmpty}>No data yet</div>
+                <div className={styles.regionEmpty}>{tCommon('no_data_yet')}</div>
               )
             )}
             {experienceTab === 'where' && (
@@ -108,7 +109,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                   </div>
                 ))
               ) : (
-                <div className={styles.regionEmpty}>No data yet</div>
+                <div className={styles.regionEmpty}>{tCommon('no_data_yet')}</div>
               )
             )}
           </div>
@@ -117,7 +118,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
 
       {/* ACCURACY */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8">
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
             <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('accuracy')}</h3>
@@ -152,7 +153,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                   </div>
                 ))
               ) : (
-                <div className={styles.regionEmpty}>No data yet</div>
+                <div className={styles.regionEmpty}>{tCommon('no_data_yet')}</div>
               )
             )}
             {accuracyTab === 'where' && (
@@ -170,7 +171,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                   </div>
                 ))
               ) : (
-                <div className={styles.regionEmpty}>No data yet</div>
+                <div className={styles.regionEmpty}>{tCommon('no_data_yet')}</div>
               )
             )}
           </div>

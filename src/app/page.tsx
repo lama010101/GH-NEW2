@@ -25,7 +25,7 @@ export default async function LandingPage() {
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
       {/* Background image + dark overlay (same as /home) */}
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'url(/home_background.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-      <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'rgba(0, 0, 0, 0.8)' }} />
+      <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'var(--gh-modal-overlay)' }} />
 
       {/* Logo (same asset as TopBar) */}
       <Image src="/icons/logo.webp" alt={t('logo_alt')} width={360} height={96} priority style={{ position: 'relative', zIndex: 2, marginBottom: '2rem' }} />

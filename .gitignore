@@ -31,3 +31,9 @@ pnpm-debug.log*
 Thumbs.db
 .test-user-ids.json
 cookies.txt
+
+# Local diagnostics / scratch scripts
+_auth-diag-*.mjs
+_repro_blank.mjs
+plan-auth.js
+test-sync-run.log

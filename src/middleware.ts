@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Routes that do NOT require authentication.
  * Everything else redirects to /login if no Supabase session is present.
  */
-const PUBLIC_PATHS = ["/login", "/auth/callback", "/help"];
+const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help"];
 
 // Public API routes that must remain reachable without authentication.
 // All other /api/* routes are required to pass the middleware auth check.
@@ -83,6 +83,10 @@ export async function middleware(request: NextRequest) {
       }
       // Wrong value: fall through silently to normal landing page serving.
     } else if (request.cookies.get("gh_admin_bypass")?.value === "1") {
+      return NextResponse.redirect(new URL("/home", request.url), 302);
+    } else if (user) {
+      // Authenticated user visiting the landing page without an admin param:
+      // send them straight to /home instead of rendering the waitlist page.
       return NextResponse.redirect(new URL("/home", request.url), 302);
     }
   }

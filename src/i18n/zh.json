@@ -195,7 +195,11 @@
     "no_description": "暂无描述",
     "timer_min_short": "{n}分 {s}秒",
     "timer_sec_short": "{n}秒",
-    "countdown_hm": "{h}小时 {m}分"
+    "countdown_hm": "{h}小时 {m}分",
+    "born_prefix": "出生:",
+    "died_prefix": "逝世:",
+    "no_data_yet": "暂无数据",
+    "back_to_home": "返回首页"
   },
   "lobby": {
     "waiting": "等待玩家中（{ready}/{total} 已准备）",
@@ -325,7 +329,7 @@
     "total_score": "总分",
     "winner": "获胜者",
     "home": "首页",
-    "refresh": "刷新",
+    "refresh": "回合有问题？点击重新加载",
     "image_failed": "图片加载失败",
     "tap_retry": "点击重试",
     "sign_in": "登录",
@@ -446,7 +450,18 @@
     "room_not_found": "未找到房间",
     "error_creating_game": "创建游戏出错",
     "unknown_player": "未知玩家",
-    "invalid_server_response": "服务器响应无效"
+    "invalid_server_response": "服务器响应无效",
+    "not_authenticated": "未认证",
+    "failed_create_practice": "创建练习会话失败",
+    "no_game_id_response": "响应中没有gameId",
+    "failed_start_practice": "启动练习失败",
+    "failed_load_session": "加载会话失败",
+    "failed_start_game": "启动游戏失败",
+    "bc_suffix": "公元前",
+    "decade_suffix": "年代",
+    "tier_century_label": "世纪",
+    "tier_decade_label": "年代",
+    "tier_year_label": "年"
   },
   "auth": {
     "sign_in": "登录",
@@ -470,6 +485,7 @@
     "email_placeholder": "you@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "密码重置邮件已发送。请查收邮箱。",
+    "confirm_email_sent": "请查收邮件以确认您的账户。",
     "remember_me": "记住我",
     "confirm_password": "确认密码"
   },
@@ -527,7 +543,10 @@
     "when": "何时",
     "where": "何地",
     "games": "局",
-    "best": "最佳"
+    "best": "最佳",
+    "rated": "已评分",
+    "regions": "地区",
+    "countries": "国家"
   },
   "account": {
     "username": "用户名",
@@ -557,7 +576,8 @@
     "d_ago": "{n}天前",
     "invited_you": "邀请你加入游戏",
     "sent": "发送于 {time}",
-    "join_game": "加入游戏"
+    "join_game": "加入游戏",
+    "someone": "某人"
   },
   "landing": {
     "meta_title": "Guess-History — 测试你的历史知识",
@@ -574,5 +594,13 @@
     "waitlist_err_invalid_email": "请输入有效的邮箱地址。",
     "waitlist_err_generic": "出了点问题。请重试。",
     "waitlist_err_network": "网络错误。请重试。"
+  },
+  "welcome": {
+    "title": "欢迎来到 Guess-History！",
+    "your_historical_avatar": "你的历史头像",
+    "choose_different_avatar": "选择其他头像",
+    "your_username": "你的用户名",
+    "lets_play": "开始游戏！",
+    "skip_for_now": "暂时跳过"
   }
 }

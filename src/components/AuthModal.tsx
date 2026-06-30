@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
@@ -15,6 +16,7 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
   const t = useTranslations('auth');
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,12 +25,14 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(true);
   const [forgotSent, setForgotSent] = useState(false);
+  const [signUpSent, setSignUpSent] = useState(false);
   const signInSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
       setLoading(false);
       setError(null);
+      setSignUpSent(false);
     }
   }, [isOpen]);
 
@@ -45,10 +49,14 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     setLoading(true);
     setError(null);
 
+    const next = searchParams.get("next") || "/home";
     const { error } = await supabaseBrowser.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/home`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        queryParams: {
+          prompt: "select_account",
+        },
       },
     });
 
@@ -106,6 +114,25 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
         subscription.unsubscribe();
         signInSubscriptionRef.current = null;
         setError(result.error.message);
+        return;
+      }
+
+      // signUp returns a session when email confirmation is disabled — close
+      // the modal immediately. The onAuthStateChange subscription above also
+      // handles SIGNED_IN, but it may not fire reliably for signUp.
+      if (mode === "signup" && result.data.session) {
+        subscription.unsubscribe();
+        signInSubscriptionRef.current = null;
+        onClose();
+        return;
+      }
+
+      // signUp with no session means email confirmation is enabled — tell the
+      // user to check their inbox instead of leaving the modal with no feedback.
+      if (mode === "signup" && !result.data.session) {
+        subscription.unsubscribe();
+        signInSubscriptionRef.current = null;
+        setSignUpSent(true);
         return;
       }
     } finally {
@@ -287,6 +314,12 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
             {loading ? t('loading') : mode === "signin" ? t('sign_in') : t('sign_up')}
           </button>
 
+          {signUpSent && (
+            <p className={styles.successMessage}>
+              {t('confirm_email_sent')}
+            </p>
+          )}
+
           <p
             className={styles.switchModeText}
           >
@@ -294,7 +327,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
               <>
                 {t('no_account')}{" "}
                 <button
-                  onClick={() => { setMode("signup"); setError(null); setForgotSent(false); }}
+                  onClick={() => { setMode("signup"); setError(null); setForgotSent(false); setSignUpSent(false); }}
                   disabled={loading}
                   className={styles.switchModeButton}
                 >
@@ -305,7 +338,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
               <>
                 {t('have_account')}{" "}
                 <button
-                  onClick={() => { setMode("signin"); setError(null); setForgotSent(false); }}
+                  onClick={() => { setMode("signin"); setError(null); setForgotSent(false); setSignUpSent(false); }}
                   disabled={loading}
                   className={styles.switchModeButton}
                 >

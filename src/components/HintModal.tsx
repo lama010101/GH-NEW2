@@ -113,18 +113,18 @@ function getIcon(hint: EventHint): string {
   return ICONS.calendar;
 }
 
-function getRevealedText(hint: EventHint): string {
+function getRevealedText(hint: EventHint, t: (key: string, values?: Record<string, string | number | Date>) => string): string {
   const meta = hint.metadata as { km?: number; years?: number | string } | null;
 
   if (hint.type === "where") {
     if ((hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
-      return `${hint.content} — ${meta.km} km away`;
+      return `${hint.content} — ${t('km_away_short', { n: meta.km })}`;
     }
   }
 
   if (hint.type === "when") {
     if ((hint.tier === 2 || hint.tier === 4) && meta?.years != null) {
-      return `${hint.content} — ${meta.years} years off`;
+      return `${hint.content} — ${t('years_off_short', { n: meta.years })}`;
     }
   }
 
@@ -336,7 +336,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
                   <div className={styles.hintBody}>
                     <div className={styles.hintName}>{getHintLabel(hint, t)}</div>
                     {owned ? (
-                      <div className={styles.hintAnswer}>{getRevealedText(hint)}</div>
+                      <div className={styles.hintAnswer}>{getRevealedText(hint, t)}</div>
                     ) : (
                       <div className={styles.hintSub}>{getHintDescription(hint, t)}</div>
                     )}

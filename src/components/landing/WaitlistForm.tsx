@@ -64,16 +64,17 @@ export function WaitlistForm() {
         placeholder={t('waitlist_email_placeholder')}
         disabled={status === 'submitting'}
         required
-        className="flex-1 px-4 py-3 rounded-lg text-white outline-none placeholder-white/60"
+        className="flex-1 px-4 py-3 rounded-lg outline-none"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          border: '1px solid rgba(255, 255, 255, 0.4)',
+          backgroundColor: 'var(--gh-glass-bg)',
+          border: '1px solid var(--gh-border-default)',
+          color: 'var(--gh-text-primary)',
         }}
       />
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="px-6 py-3 rounded-lg font-semibold text-white transition-opacity disabled:opacity-50"
+        className="px-6 py-3 rounded-lg font-semibold text-[var(--gh-btn-text)] transition-opacity disabled:opacity-50"
         style={{
           background: 'linear-gradient(135deg, #0369a1 0%, #0891b2 40%, #22d3ee 100%)',
         }}

@@ -5,37 +5,13 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
+import { loadPracticeSettings } from '@/components/practice/practiceSettings'
 import pageStyles from './page.module.css'
-
-const STORAGE_KEY = 'practice_settings'
-
-type PracticeSettings = {
-  roundTimerSec: number
-  yearMin: number
-  yearMax: number
-}
-
-function loadSettings(): PracticeSettings {
-  if (typeof window === 'undefined') {
-    return { roundTimerSec: 0, yearMin: -100, yearMax: new Date().getFullYear() }
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<PracticeSettings>
-      return {
-        roundTimerSec: typeof parsed.roundTimerSec === 'number' ? parsed.roundTimerSec : 0,
-        yearMin: typeof parsed.yearMin === 'number' ? parsed.yearMin : -100,
-        yearMax: typeof parsed.yearMax === 'number' ? parsed.yearMax : new Date().getFullYear(),
-      }
-    }
-  } catch { /* ignore */ }
-  return { roundTimerSec: 0, yearMin: -100, yearMax: new Date().getFullYear() }
-}
 
 export default function PracticeEntryPage() {
   const router = useRouter()
   const t = useTranslations('game')
+  const tCommon = useTranslations('common')
   const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity()
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -48,12 +24,12 @@ export default function PracticeEntryPage() {
 
     ;(async () => {
       try {
-        const settings = loadSettings()
+        const settings = loadPracticeSettings()
 
         const { data: { session } } = await supabaseBrowser.auth.getSession()
         const accessToken = session?.access_token
         if (!accessToken) {
-          setError('Not authenticated')
+          setError(t('not_authenticated'))
           return
         }
 
@@ -74,19 +50,19 @@ export default function PracticeEntryPage() {
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}))
-          throw new Error(data.error ?? 'Failed to create practice session')
+          throw new Error(data.error ?? t('failed_create_practice'))
         }
 
         const snapshot = await response.json()
         if (cancelled) return
 
         const gameId = snapshot.gameId
-        if (!gameId) throw new Error('No gameId in response')
+        if (!gameId) throw new Error(t('no_game_id_response'))
 
         router.replace(`/practice/${gameId}`)
       } catch (err) {
         if (cancelled) return
-        setError(err instanceof Error ? err.message : 'Failed to start practice')
+        setError(err instanceof Error ? err.message : t('failed_start_practice'))
       } finally {
         if (!cancelled) setCreating(false)
       }
@@ -117,7 +93,7 @@ export default function PracticeEntryPage() {
               fontSize: '14px',
             }}
           >
-            Back to Home
+            {tCommon('back_to_home')}
           </button>
         )}
       </div>

@@ -195,7 +195,11 @@
     "no_description": "No description available",
     "timer_min_short": "{n}m {s}s",
     "timer_sec_short": "{n}s",
-    "countdown_hm": "{h}h {m}m"
+    "countdown_hm": "{h}h {m}m",
+    "born_prefix": "Born:",
+    "died_prefix": "Died:",
+    "no_data_yet": "No data yet",
+    "back_to_home": "Back to Home"
   },
   "lobby": {
     "waiting": "Waiting for players ({ready}/{total} ready)",
@@ -273,7 +277,9 @@
     "err_join": "Failed to join game",
     "err_code_required": "Room code is required",
     "timer_5s": "5s",
-    "timer_5m": "5m"
+    "timer_5m": "5m",
+    "failed_lobby": "Failed to create lobby",
+    "failed_lobby_retry": "Failed to create lobby, try again"
   },
   "game": {
     "sound": "Sound",
@@ -299,7 +305,6 @@
     "col_player": "Player",
     "col_score": "Score",
     "col_total": "Total",
-    "close_hints": "Close hints",
     "experience": "EXPERIENCE",
     "correct_location": "Correct",
     "correct_year": "Correct",
@@ -324,7 +329,7 @@
     "total_score": "Total Score",
     "winner": "Winner",
     "home": "Home",
-    "refresh": "Refresh",
+    "refresh": "Round issues? Tap to reload",
     "image_failed": "Image failed to load",
     "tap_retry": "Tap to retry",
     "sign_in": "Sign In",
@@ -368,8 +373,6 @@
     "era_modern": "Modern",
     "era_contemporary": "Contemporary",
     "unknown_region": "Unknown",
-    "round_label": "Round {current} / {total}",
-    "round_label_compact": "Round {current}/{total}",
     "round_label_short": "ROUND {n}",
     "total": "Total",
     "best_player": "Best Player",
@@ -447,7 +450,18 @@
     "room_not_found": "Room not found",
     "error_creating_game": "Error creating game",
     "unknown_player": "Unknown",
-    "invalid_server_response": "Invalid response from server"
+    "invalid_server_response": "Invalid response from server",
+    "not_authenticated": "Not authenticated",
+    "failed_create_practice": "Failed to create practice session",
+    "no_game_id_response": "No gameId in response",
+    "failed_start_practice": "Failed to start practice",
+    "failed_load_session": "Failed to load session",
+    "failed_start_game": "Failed to start game",
+    "bc_suffix": "BC",
+    "decade_suffix": "s",
+    "tier_century_label": "CENTURY",
+    "tier_decade_label": "DECADE",
+    "tier_year_label": "YEAR"
   },
   "auth": {
     "sign_in": "Sign In",
@@ -471,21 +485,9 @@
     "email_placeholder": "you@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Password reset email sent. Check your inbox.",
+    "confirm_email_sent": "Check your email to confirm your account.",
     "remember_me": "Remember me",
     "confirm_password": "Confirm Password"
-  },
-  "compete_page": {
-    "create_game": "Create Game",
-    "join_game": "Join Game",
-    "creating": "Creating…",
-    "joining": "Joining…",
-    "room_code_label": "Room Code",
-    "err_identity": "Identity not ready — please wait",
-    "err_code_required": "Room code is required",
-    "err_create": "Failed to create game",
-    "err_join": "Failed to join game",
-    "failed_lobby": "Failed to create lobby",
-    "failed_lobby_retry": "Failed to create lobby, try again"
   },
   "leaderboard": {
     "title": "LEADERBOARD",
@@ -541,7 +543,10 @@
     "when": "When",
     "where": "Where",
     "games": "games",
-    "best": "best"
+    "best": "best",
+    "rated": "Rated",
+    "regions": "Regions",
+    "countries": "Countries"
   },
   "account": {
     "username": "Username",
@@ -571,7 +576,16 @@
     "d_ago": "{n}d ago",
     "invited_you": "invited you to a game",
     "sent": "sent {time}",
-    "join_game": "Join Game"
+    "join_game": "Join Game",
+    "someone": "Someone"
+  },
+  "welcome": {
+    "title": "Welcome to Guess-History!",
+    "your_historical_avatar": "Your historical avatar",
+    "choose_different_avatar": "Choose a different avatar",
+    "your_username": "Your username",
+    "lets_play": "Let's play!",
+    "skip_for_now": "Skip for now"
   },
   "landing": {
     "meta_title": "Guess-History — Test Your Knowledge of When and Where",

@@ -9,7 +9,7 @@
   width: 4px;
   height: 18px;
   border-radius: 999px;
-  background: var(--gh-teal, #22d3ee);
+  background: var(--gh-teal);
   flex-shrink: 0;
 }
 
@@ -46,9 +46,9 @@
   flex: 1;
   padding: 8px 10px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--gh-border-default);
+  background: var(--gh-glass-bg);
+  color: var(--gh-text-secondary);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -56,14 +56,14 @@
 }
 
 .tabBtn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--gh-glass-bg-hover);
+  color: var(--gh-text-primary);
 }
 
 .tabActiveWhen {
   background: rgba(139, 92, 246, 0.12);
   border-color: rgba(139, 92, 246, 0.35);
-  color: var(--gh-violet, #8b5cf6);
+  color: var(--gh-violet);
 }
 
 .tabActiveWhen:hover {
@@ -74,7 +74,7 @@
 .tabActiveWhere {
   background: rgba(34, 211, 238, 0.12);
   border-color: rgba(34, 211, 238, 0.35);
-  color: var(--gh-teal, #22d3ee);
+  color: var(--gh-teal);
 }
 
 .tabActiveWhere:hover {
@@ -105,7 +105,7 @@
 .regionLabel {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--gh-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -114,7 +114,7 @@
 .regionBar {
   height: 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--gh-border-medium);
   overflow: hidden;
   margin-top: 4px;
 }
@@ -122,7 +122,7 @@
 .regionBarFill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--gh-teal, #22d3ee), var(--gh-violet, #8b5cf6));
+  background: linear-gradient(90deg, var(--gh-teal), var(--gh-violet));
   transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -135,7 +135,7 @@
 .regionCount {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--gh-text-muted);
   text-align: right;
 }
 
@@ -145,6 +145,6 @@
   align-items: center;
   gap: 4px;
   padding: 24px 0;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--gh-text-muted);
   font-size: 13px;
 }
