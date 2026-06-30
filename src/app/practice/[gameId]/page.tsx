@@ -130,7 +130,7 @@ export default function PracticeGamePage() {
     })();
 
     return () => { cancelled = true };
-  }, [snapshot?.status, snapshot?.gameId, gameId, playerId, busy, snapshot]);
+  }, [snapshot?.status, snapshot?.gameId, gameId, playerId, snapshot]);
 
   // Lobby TopBar: fetch viewer stats + profile
   useEffect(() => {

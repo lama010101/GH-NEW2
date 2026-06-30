@@ -9,7 +9,7 @@ export const localeMeta: Record<Locale, { label: string; flag: string }> = {
   es: { label: 'Español',    flag: '🇪🇸' },
   de: { label: 'Deutsch',    flag: '🇩🇪' },
   it: { label: 'Italiano',   flag: '🇮🇹' },
-  pt: { label: 'Português (BR)', flag: '��' },
+  pt: { label: 'Português (BR)', flag: '🇧🇷' },
   nl: { label: 'Nederlands', flag: '🇳🇱' },
   ru: { label: 'Русский',    flag: '🇷🇺' },
   ja: { label: '日本語',      flag: '🇯🇵' },
