@@ -9,6 +9,7 @@ import styles from './profile.module.css';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
 import { AvatarPickerModal } from '@/components/AvatarPickerModal';
+import ExperienceAccuracy from '@/components/ExperienceAccuracy';
 
 
 type ProfileHistoricalAvatar = {
@@ -32,12 +33,12 @@ export default function ProfilePage() {
   const [xp, setXp] = useState('--');
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [showNavModal, setShowNavModal] = useState(false);
-  const [accuracyTab, setAccuracyTab] = useState<'era' | 'region'>('era');
-  const [experienceTab, setExperienceTab] = useState<'era' | 'region'>('era');
   const [progressData, setProgressData] = useState<{
-    byCentury: Array<{ century: string; avgAccuracy: number; roundCount: number }>
-    byContinent: Array<{ continent: string; avgAccuracy: number; roundCount: number }>
+    byCentury: Array<{ century: string; avgAccuracy: number; totalXp: number; roundCount: number }>
+    byContinent: Array<{ continent: string; avgAccuracy: number; totalXp: number; roundCount: number }>
     eventsSeenCount: number
+    countriesCount: number
+    practice: { avgAccuracy: number | null; gamesPlayed: number | null; totalXp: number | null }
   } | null>(null);
 
   const [profileData, setProfileData] = useState<{
@@ -457,6 +458,24 @@ export default function ProfilePage() {
               </span>
             </div>
 
+            {/* Practice */}
+            <div
+              className={styles.modeCard}
+              style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.30)' }}
+            >
+              <span className={styles.modeAccent} style={{ background: 'var(--gh-orange, #f97316)' }} />
+              <span className={styles.modeName}>{t('practice') ?? 'Practice'}</span>
+              <span
+                className={styles.modeAcc}
+                style={{ color: progressData?.practice?.avgAccuracy != null ? accColor(progressData.practice.avgAccuracy) : 'rgba(255,255,255,0.35)' }}
+              >
+                {progressData?.practice?.avgAccuracy != null ? `${Math.round(progressData.practice.avgAccuracy)}%` : '—'}
+              </span>
+              <span className={styles.modeGames}>
+                {progressData?.practice?.gamesPlayed != null ? `${progressData.practice.gamesPlayed} ${t('games')}` : '—'}
+              </span>
+            </div>
+
             {/* Compete */}
             <div
               className={styles.modeCard}
@@ -504,158 +523,16 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 9. EXPERIENCE (was History collection) */}
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <div className={styles.sectionHead}>
-            <span className={styles.sectionAccentBar} />
-            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('experience')}</h3>
-          </div>
-          <div className="grid grid-cols-4 gap-3 mb-6">
-            <div className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]">
-              <div className={`font-bebas text-xl font-bold ${styles.historyColorOrange}`}>
-                {progressData?.eventsSeenCount?.toLocaleString() ?? '—'}
-              </div>
-              <div className="text-[10px] mt-1 text-white/45">{t('events_seen')}</div>
-            </div>
-            {[
-              { label: 'Rated', colorClass: styles.historyColorViolet },
-              { label: 'Regions', colorClass: styles.historyColorTeal },
-              { label: 'Countries', colorClass: styles.historyColorGold }
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="p-3 rounded-lg text-center bg-white/[0.03] border border-white/[0.09]"
-              >
-                <div className={`font-bebas text-xl font-bold ${item.colorClass}`}>—</div>
-                <div className="text-[10px] mt-1 text-white/45">{item.label}</div>
-              </div>
-            ))}
-          </div>
-          <div className={styles.tabBar}>
-            <button
-              className={`${styles.tabBtn} ${experienceTab === 'era' ? styles.tabActive : ''}`}
-              onClick={() => setExperienceTab('era')}
-            >
-              {t('era')}
-            </button>
-            <button
-              className={`${styles.tabBtn} ${experienceTab === 'region' ? styles.tabActive : ''}`}
-              onClick={() => setExperienceTab('region')}
-            >
-              {t('region')}
-            </button>
-          </div>
-          <div className={styles.regionWrap}>
-            {experienceTab === 'era' && (
-              progressData && progressData.byCentury.length > 0 ? (
-                progressData.byCentury.map((item) => (
-                  <div key={item.century} className={styles.regionRowWithCount}>
-                    <div className={styles.regionLabelWrap}>
-                      <span className={styles.regionLabel}>{item.century}</span>
-                      <div className={styles.regionBar}>
-                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
-                      </div>
-                    </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
-                    <span className={styles.regionCount}>{item.roundCount}</span>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.regionEmpty}>
-                  {progressData === null ? 'Loading…' : 'No data yet'}
-                </div>
-              )
-            )}
-            {experienceTab === 'region' && (
-              progressData && progressData.byContinent.length > 0 ? (
-                progressData.byContinent.map((item) => (
-                  <div key={item.continent} className={styles.regionRowWithCount}>
-                    <div className={styles.regionLabelWrap}>
-                      <span className={styles.regionLabel}>{item.continent}</span>
-                      <div className={styles.regionBar}>
-                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
-                      </div>
-                    </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
-                    <span className={styles.regionCount}>{item.roundCount}</span>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.regionEmpty}>
-                  {progressData === null ? 'Loading…' : 'No data yet'}
-                </div>
-              )
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 10. ACCURACY (era / region tabs) */}
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8">
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
-          <div className={styles.sectionHead}>
-            <span className={styles.sectionAccentBar} />
-            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('accuracy')}</h3>
-          </div>
-          <div className={styles.tabBar}>
-            <button
-              className={`${styles.tabBtn} ${accuracyTab === 'era' ? styles.tabActive : ''}`}
-              onClick={() => setAccuracyTab('era')}
-            >
-              {t('era')}
-            </button>
-            <button
-              className={`${styles.tabBtn} ${accuracyTab === 'region' ? styles.tabActive : ''}`}
-              onClick={() => setAccuracyTab('region')}
-            >
-              {t('region')}
-            </button>
-          </div>
-          <div className={styles.regionWrap}>
-            {accuracyTab === 'era' && (
-              progressData && progressData.byCentury.length > 0 ? (
-                progressData.byCentury.map((item) => (
-                  <div key={item.century} className={styles.regionRowWithCount}>
-                    <div className={styles.regionLabelWrap}>
-                      <span className={styles.regionLabel}>{item.century}</span>
-                      <div className={styles.regionBar}>
-                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
-                      </div>
-                    </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
-                    <span className={styles.regionCount}>{item.roundCount}</span>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.regionEmpty}>
-                  {progressData === null ? 'Loading…' : 'No data yet'}
-                </div>
-              )
-            )}
-            {accuracyTab === 'region' && (
-              progressData && progressData.byContinent.length > 0 ? (
-                progressData.byContinent.map((item) => (
-                  <div key={item.continent} className={styles.regionRowWithCount}>
-                    <div className={styles.regionLabelWrap}>
-                      <span className={styles.regionLabel}>{item.continent}</span>
-                      <div className={styles.regionBar}>
-                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
-                      </div>
-                    </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
-                    <span className={styles.regionCount}>{item.roundCount}</span>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.regionEmpty}>
-                  {progressData === null ? 'Loading…' : 'No data yet'}
-                </div>
-              )
-            )}
-          </div>
-        </div>
-      </div>
+      {/* 9+10. EXPERIENCE & ACCURACY (shared component) */}
+      <ExperienceAccuracy
+        data={{
+          byWhen: progressData?.byCentury.map(c => ({ label: c.century, avgAccuracy: c.avgAccuracy, totalXp: c.totalXp, roundCount: c.roundCount })) ?? [],
+          byWhere: progressData?.byContinent.map(c => ({ label: c.continent, avgAccuracy: c.avgAccuracy, totalXp: c.totalXp, roundCount: c.roundCount })) ?? [],
+          eventsSeenCount: progressData?.eventsSeenCount ?? 0,
+          countriesCount: progressData?.countriesCount ?? 0,
+          roundsPlayed: progressData === null ? null : (profileData.roundsPlayed ?? 0),
+        }}
+      />
 
       {/* Avatar Picker Modal */}
       <AvatarPickerModal

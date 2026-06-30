@@ -538,6 +538,8 @@
     "accuracy": "Accuracy",
     "era": "Era",
     "region": "Region",
+    "when": "When",
+    "where": "Where",
     "games": "games",
     "best": "best"
   },

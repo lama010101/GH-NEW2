@@ -865,7 +865,7 @@ export default function LobbySection({
                       disabled={!isHost}
                       aria-pressed={on}
                     >
-                      <span className={styles['lobbyEraLabel']}>{tGame(`era_${era.id}` as any)}</span>
+                      <span className={styles['lobbyEraLabel']}>{tGame(`era_${era.id}` as string)}</span>
                       <span className={styles['lobbyEraIcon']}>{era.icon}</span>
                       <span className={styles['lobbyEraSpan']}>{era.span}</span>
                     </button>
@@ -994,7 +994,7 @@ export default function LobbySection({
                       disabled={!isHost}
                       aria-pressed={on}
                     >
-                      <span className={styles['lobbyEraLabel']}>{tGame(`era_${era.id}` as any)}</span>
+                      <span className={styles['lobbyEraLabel']}>{tGame(`era_${era.id}` as string)}</span>
                       <span className={styles['lobbyEraIcon']}>{era.icon}</span>
                       <span className={styles['lobbyEraSpan']}>{era.span}</span>
                     </button>

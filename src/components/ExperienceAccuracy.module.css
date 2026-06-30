@@ -1,0 +1,150 @@
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.sectionAccentBar {
+  width: 4px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--gh-teal, #22d3ee);
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.historyColorOrange {
+  color: var(--gh-orange);
+}
+
+.historyColorViolet {
+  color: var(--gh-violet);
+}
+
+.historyColorTeal {
+  color: var(--gh-teal);
+}
+
+.historyColorGold {
+  color: var(--gh-gold);
+}
+
+.tabBar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tabBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tabActiveWhen {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.35);
+  color: var(--gh-violet, #8b5cf6);
+}
+
+.tabActiveWhen:hover {
+  background: rgba(139, 92, 246, 0.18);
+  color: #a78bfa;
+}
+
+.tabActiveWhere {
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.35);
+  color: var(--gh-teal, #22d3ee);
+}
+
+.tabActiveWhere:hover {
+  background: rgba(34, 211, 238, 0.18);
+  color: #67e8f9;
+}
+
+.regionWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.regionRowWithCount {
+  display: grid;
+  grid-template-columns: 1fr 44px 36px;
+  align-items: center;
+  gap: 10px;
+}
+
+.regionLabelWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.regionLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.regionBar {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.regionBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gh-teal, #22d3ee), var(--gh-violet, #8b5cf6));
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.regionPct {
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.regionCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: right;
+}
+
+.regionEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 24px 0;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+}

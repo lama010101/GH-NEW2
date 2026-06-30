@@ -10,6 +10,7 @@ import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
 import { calculateBadges } from "@/core/rules";
 import { NavModal } from "@/components/NavModal";
+import ExperienceAccuracy from "@/components/ExperienceAccuracy";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
@@ -183,21 +184,46 @@ export default function SessionComplete({
           for (const b of badges) { badgeCounts[b.tier]++; }
         }
 
-        // XP per era
-        const xpPerEra = new Map<string, number>();
+        // XP per era (for ExperienceAccuracy component)
+        const byWhenMap = new Map<string, { totalXp: number; totalAcc: number; roundCount: number }>();
         for (const r of myRoundResults) {
           const round = snapshot.rounds[r.roundIndex];
           if (!round) continue;
           const eraKey = eraForYear(round.year);
-          xpPerEra.set(eraKey, (xpPerEra.get(eraKey) ?? 0) + r.score);
+          const acc = ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2;
+          const existing = byWhenMap.get(eraKey) ?? { totalXp: 0, totalAcc: 0, roundCount: 0 };
+          existing.totalXp += r.score;
+          existing.totalAcc += acc;
+          existing.roundCount++;
+          byWhenMap.set(eraKey, existing);
         }
+        const byWhen = [...byWhenMap.entries()].map(([eraKey, val]) => ({
+          label: tGame(eraKey),
+          avgAccuracy: Math.round(val.totalAcc / val.roundCount),
+          totalXp: val.totalXp,
+          roundCount: val.roundCount,
+        }));
 
-        // XP per region
-        const xpPerRegion = new Map<string, number>();
+        // XP per region (for ExperienceAccuracy component)
+        const byWhereMap = new Map<string, { totalXp: number; totalAcc: number; roundCount: number }>();
         for (const r of myRoundResults) {
           const region = r.region ?? 'unknown_region';
-          xpPerRegion.set(region, (xpPerRegion.get(region) ?? 0) + r.score);
+          const acc = ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2;
+          const existing = byWhereMap.get(region) ?? { totalXp: 0, totalAcc: 0, roundCount: 0 };
+          existing.totalXp += r.score;
+          existing.totalAcc += acc;
+          existing.roundCount++;
+          byWhereMap.set(region, existing);
         }
+        const byWhere = [...byWhereMap.entries()].map(([regionKey, val]) => ({
+          label: regionKey === 'unknown_region' ? tGame('unknown_region') : regionKey,
+          avgAccuracy: Math.round(val.totalAcc / val.roundCount),
+          totalXp: val.totalXp,
+          roundCount: val.roundCount,
+        }));
+
+        const eventsSeenCount = myRoundResults.length;
+        const countriesCount = new Set(myRoundResults.map(r => r.region).filter(Boolean)).size;
 
         // Stats
         const myScores = myRoundResults.map(r => r.score);
@@ -379,42 +405,6 @@ export default function SessionComplete({
                     )}
                   </div>
 
-                  {/* XP per era */}
-                  {xpPerEra.size > 0 && (
-                    <div className={styles.statGroup}>
-                      <span className={styles.statGroupLabel}>{tGame('xp_per_era')}</span>
-                      <div className={styles.statGroupList}>
-                        {[...xpPerEra.entries()].sort((a, b) => b[1] - a[1]).map(([eraKey, xp]) => (
-                          <div key={eraKey} className={styles.statGroupRow}>
-                            <span className={styles.statGroupRowLabel}>{tGame(eraKey)}</span>
-                            <span className={styles.statGroupRowBar}>
-                              <span className={styles.statGroupRowFill} style={{ width: `${Math.max(4, Math.min(100, (xp / overallXP) * 100))}%` }} />
-                            </span>
-                            <span className={styles.statGroupRowVal}>+{xp.toLocaleString()} {tGame('xp_unit')}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* XP per region */}
-                  {xpPerRegion.size > 0 && (
-                    <div className={styles.statGroup}>
-                      <span className={styles.statGroupLabel}>{tGame('xp_per_region')}</span>
-                      <div className={styles.statGroupList}>
-                        {[...xpPerRegion.entries()].sort((a, b) => b[1] - a[1]).map(([regionKey, xp]) => (
-                          <div key={regionKey} className={styles.statGroupRow}>
-                            <span className={styles.statGroupRowLabel}>{regionKey === 'unknown_region' ? tGame('unknown_region') : regionKey}</span>
-                            <span className={styles.statGroupRowBar}>
-                              <span className={styles.statGroupRowFill} style={{ width: `${Math.max(4, Math.min(100, (xp / overallXP) * 100))}%` }} />
-                            </span>
-                            <span className={styles.statGroupRowVal}>+{xp.toLocaleString()} {tGame('xp_unit')}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Game stats grid */}
                   <div className={styles.gameStatsGrid}>
                     <div className={styles.gameStatTile}>
@@ -438,6 +428,17 @@ export default function SessionComplete({
                   </div>
                 </div>
               </section>
+
+              {/* EXPERIENCE & ACCURACY (shared component) */}
+              <ExperienceAccuracy
+                data={{
+                  byWhen,
+                  byWhere,
+                  eventsSeenCount,
+                  countriesCount,
+                  roundsPlayed: myRoundResults.length,
+                }}
+              />
 
               {/* ROUND BREAKDOWN */}
               <section className={styles.card}>

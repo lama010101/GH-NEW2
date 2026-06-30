@@ -538,6 +538,8 @@
     "accuracy": "Précision",
     "era": "Époque",
     "region": "Région",
+    "when": "Quand",
+    "where": "Où",
     "games": "parties",
     "best": "meilleur"
   },

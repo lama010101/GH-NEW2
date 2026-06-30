@@ -200,7 +200,7 @@ export type CompeteSessionSnapshot = {
 export type CreateCompeteSessionInput = {
   displayName?: string;
   playerId: string;
-  mode?: Exclude<SessionMode, "practice">;
+  mode?: SessionMode;
   roundTimerSec?: number;
   totalRounds?: number;
   yearMin?: number;
