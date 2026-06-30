@@ -161,7 +161,7 @@ export default function SessionComplete({
 
         const myRank = leaderboard.findIndex(p => p.playerId === playerId) + 1;
         const wonRoundsByMe = leaderboard.find(p => p.playerId === playerId)?.wonRounds.length ?? 0;
-        const rankSuffix = (n: number) => n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th";
+        const rankSuffix = (n: number) => n === 1 ? tGame('rank_st') : n === 2 ? tGame('rank_nd') : n === 3 ? tGame('rank_rd') : tGame('rank_th');
 
         // ── Achievements: badges, XP per era/region, stats ──
         const myRoundResults = (allRoundResults ?? []).filter(r => r.playerId === playerId);
@@ -254,7 +254,7 @@ export default function SessionComplete({
                   {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
                 </h1>
                 <div className={styles.bannerStats}>
-                  <span>{overallXP.toLocaleString()} XP</span>
+                  <span>{overallXP.toLocaleString()} {tGame('xp_unit')}</span>
                   <span className={styles.bannerDot}>·</span>
                   <span>{tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}</span>
                 </div>
@@ -328,7 +328,7 @@ export default function SessionComplete({
                       </div>
                       <div className={styles.rankScore}>
                         <span className={styles.rankAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, player.avgAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{player.avgAccuracy}%</span>
-                        <span className={styles.rankXp}>{player.totalScore.toLocaleString()} XP</span>
+                        <span className={styles.rankXp}>{player.totalScore.toLocaleString()} {tGame('xp_unit')}</span>
                       </div>
                     </div>
                   );
@@ -390,7 +390,7 @@ export default function SessionComplete({
                             <span className={styles.statGroupRowBar}>
                               <span className={styles.statGroupRowFill} style={{ width: `${Math.max(4, Math.min(100, (xp / overallXP) * 100))}%` }} />
                             </span>
-                            <span className={styles.statGroupRowVal}>+{xp.toLocaleString()} XP</span>
+                            <span className={styles.statGroupRowVal}>+{xp.toLocaleString()} {tGame('xp_unit')}</span>
                           </div>
                         ))}
                       </div>
@@ -408,7 +408,7 @@ export default function SessionComplete({
                             <span className={styles.statGroupRowBar}>
                               <span className={styles.statGroupRowFill} style={{ width: `${Math.max(4, Math.min(100, (xp / overallXP) * 100))}%` }} />
                             </span>
-                            <span className={styles.statGroupRowVal}>+{xp.toLocaleString()} XP</span>
+                            <span className={styles.statGroupRowVal}>+{xp.toLocaleString()} {tGame('xp_unit')}</span>
                           </div>
                         ))}
                       </div>
@@ -422,7 +422,7 @@ export default function SessionComplete({
                       <span className={styles.gameStatLabel}>{tGame('rounds_played')}</span>
                     </div>
                     <div className={styles.gameStatTile}>
-                      <span className={styles.gameStatVal}>{Math.round(totalDistance).toLocaleString()} km</span>
+                      <span className={styles.gameStatVal}>{Math.round(totalDistance).toLocaleString()} {tGame('km_unit')}</span>
                       <span className={styles.gameStatLabel}>{tGame('total_distance')}</span>
                     </div>
                     <div className={styles.gameStatTile}>
@@ -496,17 +496,17 @@ export default function SessionComplete({
                             <div className={styles.miniTile}>
                               <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgAccuracy)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgAccuracy}%</span>
                               <span className={styles.miniLabel}>{tGame('total')}</span>
-                              <span className={styles.miniSub}>{roundStats.totalScore.toLocaleString()} XP</span>
+                              <span className={styles.miniSub}>{roundStats.totalScore.toLocaleString()} {tGame('xp_unit')}</span>
                             </div>
                             <div className={styles.miniTile}>
                               <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgLocationScore}%</span>
                               <span className={styles.miniLabelWhere}>{tGame('where')}</span>
-                              <span className={styles.miniSub}>avg {Math.round(roundStats.avgDistanceKm)} km</span>
+                              <span className={styles.miniSub}>{tGame('avg_label')} {Math.round(roundStats.avgDistanceKm)} {tGame('km_unit')}</span>
                             </div>
                             <div className={styles.miniTile}>
                               <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, 50%)` }}>{roundStats.avgTimeScore}%</span>
                               <span className={styles.miniLabelWhen}>{tGame('when')}</span>
-                              <span className={styles.miniSub}>avg {Math.round(roundStats.avgYearDiff)} yrs</span>
+                              <span className={styles.miniSub}>{tGame('avg_label')} {Math.round(roundStats.avgYearDiff)} {tGame('yrs_unit')}</span>
                             </div>
                           </div>
 

@@ -46,6 +46,48 @@
   background: #222;
 }
 
+.imgErrorOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(20, 20, 28, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.imgErrorIcon {
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+}
+
+.imgErrorText {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  text-align: center;
+}
+
+.imgRetryBtn {
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.imgRetryBtn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* ── Desktop zoom controls ── */
 
 .zoomControls {
@@ -938,6 +980,24 @@
   font-size: var(--font-sm);
   font-weight: 700;
   cursor: pointer;
+}
+
+.settingsRefreshBtn {
+  width: 100%;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background 0.15s;
+}
+
+.settingsRefreshBtn:active {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* ── Language toggle ── */

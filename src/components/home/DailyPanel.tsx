@@ -13,7 +13,7 @@ export function DailyPanel({ onPlay }: { onPlay: () => void }) {
     const diff = midnight.getTime() - now.getTime()
     const h = Math.floor(diff / 3600000)
     const m = Math.floor((diff % 3600000) / 60000)
-    return `${h}h ${m}m` 
+    return t('common.countdown_hm', { h, m })
   }
   const [countdown, setCountdown] = useState<string>('')
   useEffect(() => {

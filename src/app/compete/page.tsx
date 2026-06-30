@@ -152,8 +152,8 @@ export default function CompeteEntryPage() {
                   style={{ width: "100%" }}
                 />
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--font-2xs)", color: "var(--gh-text-muted)" }}>
-                  <span>5s</span>
-                  <span>5m</span>
+                  <span>{t('timer_5s')}</span>
+                  <span>{t('timer_5m')}</span>
                 </div>
               </div>
               <button

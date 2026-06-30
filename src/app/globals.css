@@ -271,11 +271,61 @@ a {
   --gh-where-card-glow:      rgba(6, 182, 212, 0.30);
   --gh-when-card-glow:       rgba(232, 121, 249, 0.30);
   --gh-card-shadow:          rgba(0, 0, 0, 0.35);
-  --gh-general-card-bg:      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  --gh-general-card-bg:      rgba(0, 0, 0, 0.8);
   --gh-general-card-border:  rgba(255, 255, 255, 0.1);
   --gh-general-card-shadow:  0 8px 30px rgba(0, 0, 0, 0.35);
   --gh-general-card-blur:    blur(10px);
   --gh-general-card-radius:  18px;
+
+  /* --- Mini card (inside hero/stat cards) --- */
+  --gh-mini-card-bg:         rgba(255, 255, 255, 0.05);
+  --gh-mini-card-border:     rgba(255, 255, 255, 0.1);
+
+  /* --- Leaderboard row --- */
+  --gh-lb-row-me-bg:         rgba(251, 146, 60, 0.15);
+  --gh-lb-row-me-border:     rgba(251, 146, 60, 0.35);
+  --gh-row-self-bg:          rgba(251, 146, 60, 0.15);
+  --gh-row-divider:          rgba(255, 255, 255, 0.06);
+
+  /* --- Penalty pills --- */
+  --gh-penalty-bg:           rgba(239, 68, 68, 0.12);
+  --gh-penalty-text:         var(--gh-danger);
+  --gh-penalty-pill-bg:      rgba(239, 68, 68, 0.12);
+  --gh-penalty-pill-border:  rgba(239, 68, 68, 0.30);
+  --gh-penalty-pill-text:    var(--gh-danger);
+  --gh-penalty-suffix:       var(--gh-text-secondary);
+
+  /* --- Hint labels --- */
+  --gh-hint-type-label:      rgba(255, 255, 255, 0.5);
+  --gh-hint-divider:         rgba(255, 255, 255, 0.06);
+
+  /* --- Text description --- */
+  --gh-text-description:     rgba(255, 255, 255, 0.75);
+
+  /* --- Near miss chips --- */
+  --gh-near-miss-bg:         rgba(255, 255, 255, 0.06);
+  --gh-near-miss-border:     rgba(255, 255, 255, 0.15);
+  --gh-near-miss-text:       var(--gh-text-secondary);
+
+  /* --- Badge chips (generic) --- */
+  --badge-bg:                rgba(255, 215, 0, 0.12);
+  --badge-border:            rgba(255, 215, 0, 0.30);
+  --badge-color:             var(--gh-badge-gold);
+
+  /* --- Badge chip tier colors --- */
+  --gh-gold-chip-bg:         rgba(255, 215, 0, 0.12);
+  --gh-gold-chip-border:     rgba(255, 215, 0, 0.30);
+  --gh-silver-chip-bg:       rgba(192, 192, 192, 0.12);
+  --gh-silver-chip-border:   rgba(192, 192, 192, 0.30);
+  --gh-bronze-chip-bg:       rgba(205, 127, 50, 0.12);
+  --gh-bronze-chip-border:   rgba(205, 127, 50, 0.30);
+
+  /* --- Expand sections (Where/When sub-leaderboards) --- */
+  --gh-where-expand-bg:      rgba(255, 255, 255, 0.03);
+  --gh-expand-section-bg:    rgba(255, 255, 255, 0.03);
+
+  /* --- Countdown --- */
+  --gh-countdown-bg:         rgba(0, 0, 0, 0.7);
 
   /* --- Page background glow --- */
   --gh-bg-glow:         radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30, 64, 175, 0.18) 0%, transparent 70%);
@@ -437,9 +487,59 @@ a {
   --gh-where-card-glow:      rgba(8, 145, 178, 0.18);
   --gh-when-card-glow:       rgba(192, 38, 211, 0.18);
   --gh-card-shadow:          rgba(15, 23, 42, 0.12);
-  --gh-general-card-bg:      linear-gradient(180deg, rgba(15,23,42,0.04), rgba(15,23,42,0.02));
+  --gh-general-card-bg:      rgba(255, 255, 255, 0.92);
   --gh-general-card-border:  rgba(15, 23, 42, 0.10);
   --gh-general-card-shadow:  0 8px 30px rgba(15, 23, 42, 0.12);
+
+  /* --- Mini card (light) --- */
+  --gh-mini-card-bg:         rgba(15, 23, 42, 0.04);
+  --gh-mini-card-border:     rgba(15, 23, 42, 0.08);
+
+  /* --- Leaderboard row (light) --- */
+  --gh-lb-row-me-bg:         rgba(234, 122, 28, 0.12);
+  --gh-lb-row-me-border:     rgba(234, 122, 28, 0.30);
+  --gh-row-self-bg:          rgba(234, 122, 28, 0.12);
+  --gh-row-divider:          rgba(15, 23, 42, 0.06);
+
+  /* --- Penalty pills (light) --- */
+  --gh-penalty-bg:           rgba(220, 38, 38, 0.10);
+  --gh-penalty-text:         var(--gh-danger);
+  --gh-penalty-pill-bg:      rgba(220, 38, 38, 0.10);
+  --gh-penalty-pill-border:  rgba(220, 38, 38, 0.25);
+  --gh-penalty-pill-text:    var(--gh-danger);
+  --gh-penalty-suffix:       var(--gh-text-secondary);
+
+  /* --- Hint labels (light) --- */
+  --gh-hint-type-label:      rgba(15, 23, 42, 0.50);
+  --gh-hint-divider:         rgba(15, 23, 42, 0.06);
+
+  /* --- Text description (light) --- */
+  --gh-text-description:     rgba(15, 23, 42, 0.70);
+
+  /* --- Near miss chips (light) --- */
+  --gh-near-miss-bg:         rgba(15, 23, 42, 0.04);
+  --gh-near-miss-border:     rgba(15, 23, 42, 0.12);
+  --gh-near-miss-text:       var(--gh-text-secondary);
+
+  /* --- Badge chips (light) --- */
+  --badge-bg:                rgba(184, 134, 11, 0.12);
+  --badge-border:            rgba(184, 134, 11, 0.30);
+  --badge-color:             var(--gh-badge-gold);
+
+  /* --- Badge chip tier colors (light) --- */
+  --gh-gold-chip-bg:         rgba(184, 134, 11, 0.12);
+  --gh-gold-chip-border:     rgba(184, 134, 11, 0.30);
+  --gh-silver-chip-bg:       rgba(107, 114, 128, 0.12);
+  --gh-silver-chip-border:   rgba(107, 114, 128, 0.30);
+  --gh-bronze-chip-bg:       rgba(146, 64, 14, 0.12);
+  --gh-bronze-chip-border:   rgba(146, 64, 14, 0.30);
+
+  /* --- Expand sections (light) --- */
+  --gh-where-expand-bg:      rgba(15, 23, 42, 0.02);
+  --gh-expand-section-bg:    rgba(15, 23, 42, 0.02);
+
+  /* --- Countdown (light) --- */
+  --gh-countdown-bg:         rgba(255, 255, 255, 0.90);
 
   /* --- Page background glow --- */
   --gh-bg-glow:         radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.10) 0%, transparent 70%);

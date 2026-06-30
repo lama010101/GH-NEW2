@@ -44,7 +44,6 @@ export default function CompeteGamePage() {
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
   const t = useTranslations('game');
-  const tNav = useTranslations('nav');
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
@@ -211,6 +210,14 @@ export default function CompeteGamePage() {
       window.removeEventListener("popstate", handlePopState);
     };
   }, [snapshot?.status, gameId]);
+
+  // Redirect to home if JOIN_ROOM fails before any snapshot is received
+  useEffect(() => {
+    if (error && !snapshot) {
+      const timer = setTimeout(() => router.push("/home"), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, snapshot, router]);
 
   const {
     wsRef,
@@ -491,44 +498,20 @@ export default function CompeteGamePage() {
 
   if (!gameId) return null;
 
-  if (identityLoading) {
+  if (identityLoading || identityError || !snapshot) {
     return (
-      <main className="app-shell">
-        <div className="shell-grid">
-          <section className="hero">
-            <span className="badge">{tNav('compete')}</span>
-            <h1>{t('establishing_identity')}</h1>
-            <p className="small">{t('game_id')}: {gameId}</p>
-          </section>
+      <div className={pageStyles.loadingScreen}>
+        <div className={pageStyles.loadingBg} aria-hidden="true" />
+        <div className={pageStyles.loadingScrim} aria-hidden="true" />
+        <div className={pageStyles.loadingContent}>
+          <div className={pageStyles.loadingSpinner} />
+          <span className={pageStyles.loadingLabel}>
+            {identityError ? t('identity_error') : t('loading_game')}
+          </span>
+          {error && (
+            <span className={pageStyles.loadingError}>{error}</span>
+          )}
         </div>
-      </main>
-    );
-  }
-
-  if (identityError) {
-    return (
-      <main className="app-shell">
-        <div className="shell-grid">
-          <section className="hero">
-            <span className="badge">{tNav('compete')}</span>
-            <h1>{t('identity_error')}</h1>
-            <p className={pageStyles.identityErrorText}>{identityError}</p>
-          </section>
-        </div>
-      </main>
-    );
-  }
-
-  if (!snapshot) {
-    return (
-      <div className={pageStyles.loadingContainer}>
-        <div className={pageStyles.spinner} />
-        <span className={pageStyles.loadingText}>
-          {t('joining_room')}
-        </span>
-        {error && (
-          <span className={pageStyles.errorText}>{error}</span>
-        )}
       </div>
     );
   }
@@ -624,7 +607,7 @@ export default function CompeteGamePage() {
                 className={`card ${pageStyles.connectionLostCard}`}
               >
                 <p className={pageStyles.connectionLostText}>
-                  Connection lost. Reconnect to restore live state.
+                  {t('connection_lost')}
                 </p>
                 <button
                   type="button"
@@ -634,7 +617,7 @@ export default function CompeteGamePage() {
                     wsRef.current?.reconnect();
                   }}
                 >
-                  Reconnect
+                  {t('reconnect')}
                 </button>
               </section>
             )}

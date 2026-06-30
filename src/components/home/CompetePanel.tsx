@@ -148,10 +148,10 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to create session')
+      if (!res.ok) throw new Error(data.error || t('game.failed_create_session'))
       onLobby(data.gameId)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error creating game')
+      setError(e instanceof Error ? e.message : t('game.error_creating_game'))
     } finally {
       setLoading(false)
     }
@@ -169,10 +169,10 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
         body: JSON.stringify({ roomCode: code }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Room not found')
+      if (!res.ok) throw new Error(data.error || t('game.room_not_found'))
       onLobby(data.gameId)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Room not found')
+      setError(e instanceof Error ? e.message : t('game.room_not_found'))
     } finally {
       setLoading(false)
     }
@@ -273,10 +273,10 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     <img src={invite.avatar_url} alt="" className={cpStyles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
                   ) : null}
                   <div className={cpStyles.avatarFallback} style={{ display: invite.avatar_url ? "none" : "flex" }}>
-                    {(invite.inviter_name ?? 'Unknown').slice(0, 2).toUpperCase()}
+                    {(invite.inviter_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}
                   </div>
                   <div className={cpStyles.gameInfo}>
-                    <span className={cpStyles.gameName}>{invite.inviter_name ?? 'Unknown'}</span>
+                    <span className={cpStyles.gameName}>{invite.inviter_name ?? t('game.unknown_player')}</span>
                     <span className={cpStyles.gameSub}>
                       {invite.mode
                         ? t('home.compete_invite_meta', {
@@ -319,7 +319,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                   </div>
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>{game.opponent_name}</span>
-                    <span className={cpStyles.gameSub}>Round {game.round_current} / {game.round_total}</span>
+                    <span className={cpStyles.gameSub}>{t('home.compete_round_label', { current: game.round_current, total: game.round_total })}</span>
                   </div>
                   {game.mode && (
                     <span className={cpStyles.modeBadge}>{game.mode === 'sync' ? t('home.compete_mode_rush') : t('home.compete_mode_relax')}</span>
@@ -364,7 +364,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                             ? cpStyles.resultLoss
                             : cpStyles.resultDraw
                         }`}>
-                          {game.score_you > game.score_them ? 'W' : game.score_you < game.score_them ? 'L' : 'D'}
+                          {game.score_you > game.score_them ? t('home.compete_win') : game.score_you < game.score_them ? t('home.compete_loss') : t('home.compete_draw')}
                         </span>
                         <span
                           className={cpStyles.accuracyValue}
@@ -372,7 +372,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                         >
                           {game.accuracy_you ?? 0}%
                         </span>
-                        <span className={cpStyles.xpValue}>{game.score_you} XP</span>
+                        <span className={cpStyles.xpValue}>{game.score_you} {t('home.compete_xp_unit')}</span>
                       </>
                     ) : (
                       <span className={cpStyles.completedLabel}>{t('home.compete_completed')}</span>

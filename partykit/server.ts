@@ -1118,6 +1118,12 @@ export default class GameServer {
           if (!response.ok) {
             const text = await response.text();
             console.error(`[JOIN_ROOM] API error ${response.status}: ${text}`);
+            let errorMsg = "Unable to rejoin game";
+            try {
+              const parsed = JSON.parse(text) as { error?: string };
+              if (parsed.error) errorMsg = parsed.error.replace(/session/gi, "game");
+            } catch {}
+            this.sendError(sender, errorMsg);
             break;
           }
           const snapshot = await response.json();

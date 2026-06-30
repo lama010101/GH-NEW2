@@ -14,14 +14,14 @@
 /* ── Event card ── */
 
 .eventCard {
-  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
+  background: var(--gh-general-card-bg);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   overflow: hidden;
   margin-bottom: 14px;
   backdrop-filter: var(--gh-glass-blur);
   -webkit-backdrop-filter: var(--gh-glass-blur);
-  box-shadow: var(--gh-glass-shadow);
+  box-shadow: var(--gh-general-card-shadow);
 }
 
 .eventTitle {
@@ -96,7 +96,7 @@
 /* ── Hero score card (accuracy ring + total XP + combo badge + Where/When mini cards) ── */
 
 .heroCard {
-  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
+  background: var(--gh-general-card-bg);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 18px;
@@ -107,7 +107,7 @@
   gap: 14px;
   backdrop-filter: var(--gh-glass-blur);
   -webkit-backdrop-filter: var(--gh-glass-blur);
-  box-shadow: var(--gh-glass-shadow);
+  box-shadow: var(--gh-general-card-shadow);
 }
 
 .heroTop {
@@ -168,8 +168,8 @@
   gap: 8px;
   padding: 12px 8px;
   border-radius: 14px;
-  background: var(--gh-bg-input);
-  border: 1px solid var(--gh-border-subtle);
+  background: var(--gh-mini-card-bg);
+  border: 1px solid var(--gh-mini-card-border);
   min-width: 0;
 }
 
@@ -247,14 +247,14 @@
 /* ── Round leaderboard card ── */
 
 .leaderboardCard {
-  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
+  background: var(--gh-general-card-bg);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 14px;
   backdrop-filter: var(--gh-glass-blur);
   -webkit-backdrop-filter: var(--gh-glass-blur);
-  box-shadow: var(--gh-glass-shadow);
+  box-shadow: var(--gh-general-card-shadow);
 }
 
 .leaderboardTitle {
@@ -302,8 +302,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: var(--gh-mini-card-bg);
+  border: 1.5px solid var(--gh-border-default);
   padding: 10px;
   font-size: 15px;
   font-weight: 700;
@@ -316,13 +316,13 @@
 
 .leaderboardTab:hover {
   color: var(--gh-text-primary);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--gh-glass-bg-hover);
 }
 
 .leaderboardTabActive {
   color: var(--gh-orange);
   border-color: var(--gh-orange);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--gh-glass-bg-hover);
   font-weight: 700;
 }
 
@@ -362,10 +362,12 @@
 
 .lbRowSelf {
   background: var(--gh-row-self-bg);
+  border: 1px solid var(--gh-lb-row-me-border);
 }
 
 .lbRowSelfAccent {
-  background: rgba(34, 211, 238, 0.08);
+  background: var(--gh-lb-row-me-bg);
+  border: 1px solid var(--gh-lb-row-me-border);
 }
 
 .lbRank {
@@ -375,7 +377,7 @@
 }
 
 .lbRankGold {
-  color: #ffd54a;
+  color: var(--gh-badge-gold);
 }
 
 .lbNameCell {
@@ -398,8 +400,8 @@
 .lbYouPill {
   font-size: 10px;
   font-weight: 700;
-  color: #22d3ee;
-  background: rgba(34, 211, 238, 0.15);
+  color: var(--gh-orange);
+  background: var(--gh-glow-orange);
   padding: 1px 7px;
   border-radius: 999px;
 }
@@ -436,14 +438,14 @@
 /* ── Where/When merged tabbed card ── */
 
 .whereWhenCard {
-  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
+  background: var(--gh-general-card-bg);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 14px;
   backdrop-filter: var(--gh-glass-blur);
   -webkit-backdrop-filter: var(--gh-glass-blur);
-  box-shadow: var(--gh-glass-shadow);
+  box-shadow: var(--gh-general-card-shadow);
 }
 
 .whereWhenTabs {
@@ -460,9 +462,9 @@
   gap: 6px;
   padding: 10px;
   border-radius: 12px;
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.6);
+  border: 1.5px solid var(--gh-border-default);
+  background: var(--gh-mini-card-bg);
+  color: var(--gh-text-secondary);
   font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
@@ -475,13 +477,13 @@
 }
 
 .whereWhenTabActiveWhere {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--gh-glass-bg-hover);
   border-color: var(--gh-teal);
   color: var(--gh-teal);
 }
 
 .whereWhenTabActiveWhen {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--gh-glass-bg-hover);
   border-color: var(--gh-violet);
   color: var(--gh-violet);
 }
@@ -492,7 +494,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 4px 0;
+  padding: 14px 18px 0;
   gap: 12px;
 }
 
@@ -535,20 +537,20 @@
   display: block;
   font-size: 12px; /* layout-constrained — do not tokenize */
   color: var(--gh-text-muted);
-  padding: 2px 4px 0;
+  padding: 2px 18px 0;
 }
 
 /* ── Hints used card ── */
 
 .hintsCard {
-  background: var(--gh-general-card-bg), rgba(15, 25, 50, 0.90);
+  background: var(--gh-general-card-bg);
   border: 1px solid var(--gh-general-card-border);
   border-radius: var(--gh-radius-md);
   padding: 16px;
   margin-bottom: 14px;
   backdrop-filter: var(--gh-glass-blur);
   -webkit-backdrop-filter: var(--gh-glass-blur);
-  box-shadow: var(--gh-glass-shadow);
+  box-shadow: var(--gh-general-card-shadow);
 }
 
 .hintsTitle {
@@ -627,6 +629,7 @@
   gap: 12px;
   padding: 10px 16px;
   flex-wrap: wrap;
+  background: var(--gh-countdown-bg);
   border-bottom: 1px solid var(--gh-border-subtle);
 }
 
@@ -662,8 +665,9 @@
   flex-shrink: 0;
   border-radius: 12px;
   cursor: pointer;
-  background: var(--gh-bg-input);
+  background: var(--gh-mini-card-bg);
   border: 1px solid var(--gh-border-default);
+  color: var(--gh-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;

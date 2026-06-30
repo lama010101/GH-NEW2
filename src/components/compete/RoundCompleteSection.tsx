@@ -236,7 +236,7 @@ export default function RoundCompleteSection({
                   <RainbowRing value={accuracy} onComplete={() => setIsRingDone(true)} />
                 </div>
                 <div className={styles.totalXpRow}>
-                  <span className={styles.totalXpVal}>{(myResult?.score ?? 0).toLocaleString()} XP</span>
+                  <span className={styles.totalXpVal}>{(myResult?.score ?? 0).toLocaleString()} {t('xp_unit')}</span>
                   {(() => {
                     const badge = myResult?.badges?.find(b => b.dimension === 'combo');
                     const near  = myResult?.nearMisses?.find(n => n.dimension === 'combo');
@@ -525,9 +525,9 @@ export default function RoundCompleteSection({
                     const meta = hint.metadata as { km?: number; years?: number | string } | null;
                     let revealedText = hint.content;
                     if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
-                      revealedText = `${hint.content} — ${meta.km} km away`;
+                      revealedText = `${hint.content} — ${t('km_away_short', { n: meta.km })}`;
                     } else if (hint.type === "when" && (hint.tier === 2 || hint.tier === 4) && meta?.years != null) {
-                      revealedText = `${hint.content} — ${meta.years} years off`;
+                      revealedText = `${hint.content} — ${t('years_off_short', { n: meta.years })}`;
                     }
                     const labelMap: Record<string, Record<number, string>> = {
                       when: { 1: t('hint_century'), 2: t('hint_historical_event'), 3: t('hint_decade'), 4: t('hint_contemporary_event'), 5: t('hint_visual_clues') },

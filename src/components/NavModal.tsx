@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import styles from './NavModal.module.css'
 import { ThemeToggle } from './layout/ThemeToggle'
+import { LanguageDropdown } from './layout/LanguageDropdown'
 
 interface NavModalProps {
   isOpen: boolean
@@ -17,18 +18,6 @@ interface NavModalProps {
 export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: NavModalProps) {
   const router = useRouter()
   const t = useTranslations('nav')
-
-  const [locale, setLocaleState] = React.useState<'en' | 'fr'>(() => {
-    if (typeof document === 'undefined') return 'en'
-    const match = document.cookie.split(';').find(c => c.trim().startsWith('gh_locale='))
-    const val = match?.split('=')[1]?.trim()
-    return val === 'fr' ? 'fr' : 'en'
-  })
-
-  const handleLocale = (l: 'en' | 'fr') => {
-    setLocaleState(l)
-    import('@/actions/setLocale').then(m => m.setLocale(l))
-  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -91,21 +80,12 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
           </button>
         ))}
 
-        <div className={`${styles.menuItem} ${styles.navCursorDefault}`}>
+        <div className={`${styles.menuItem} ${styles.navCursorDefault} ${styles.navLangItem}`}>
           <span className={styles.menuItemIcon}>
             {LANGUAGE_ICON}
           </span>
-          {t('language')}
-          <span className={styles.navLangToggle}>
-            <button
-              onClick={() => handleLocale('en')}
-              className={`${styles.navLangOption} ${locale === 'en' ? styles.navLangOptionActive : ''}`}
-            >EN</button>
-            <button
-              onClick={() => handleLocale('fr')}
-              className={`${styles.navLangOption} ${locale === 'fr' ? styles.navLangOptionActive : ''}`}
-            >FR</button>
-          </span>
+          <span className={styles.navLangText}>{t('language')}</span>
+          <LanguageDropdown />
         </div>
 
         <div className={`${styles.menuItem} ${styles.navCursorDefault}`}>
@@ -123,7 +103,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
           onClick={async () => {
             const { signOut } = await import('@/core/identity')
             await signOut()
-            onClose()
+            window.location.href = '/'
           }}
         >
           <span className={styles.signOutIcon}>{SIGNOUT_ICON}</span>
