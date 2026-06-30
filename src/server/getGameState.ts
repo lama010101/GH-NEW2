@@ -98,6 +98,7 @@ export type SessionState = {
   yearMax: number;
   resultsAutoAdvanceSec: number;
   selectedEras: string[];
+  selectedRegions: string[];
   sessionDeadline: string | null;
   sessionDeadlineDays: number | null;
   createdAt: string;
@@ -230,7 +231,7 @@ export async function getGameState(
       session_data AS (
         SELECT game_id, mode, round_timer_sec, total_rounds, year_min, year_max,
                results_auto_advance_sec, session_deadline, session_deadline_days, created_at, seed, room_code,
-               selected_eras
+               selected_eras, selected_regions
         FROM sessions
         WHERE game_id = $1
       ),
@@ -297,6 +298,7 @@ export async function getGameState(
     yearMax: sessionJson.year_max as number,
     resultsAutoAdvanceSec: (sessionJson.results_auto_advance_sec as number) ?? 90,
     selectedEras: Array.isArray(sessionJson.selected_eras) ? (sessionJson.selected_eras as string[]) : ['ancient','medieval','earlymodern','modern','contemporary'],
+    selectedRegions: Array.isArray(sessionJson.selected_regions) ? (sessionJson.selected_regions as string[]) : [],
     sessionDeadline: sessionJson.session_deadline ? new Date(sessionJson.session_deadline as string).toISOString() : null,
     sessionDeadlineDays: (sessionJson.session_deadline_days as number | null) ?? null,
     createdAt: new Date(sessionJson.created_at as string).toISOString(),

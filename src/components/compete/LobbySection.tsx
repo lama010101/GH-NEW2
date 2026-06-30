@@ -22,6 +22,7 @@ interface LobbySectionProps {
   onSetSubMode?: (mode: "sync" | "async", sessionDeadlineDays: number) => void;
   onKickPlayer?: (targetPlayerId: string) => void;
   onSetEraSelection?: (selectedEras: string[], yearMin: number, yearMax: number) => void;
+  onSetRegionSelection?: (selectedRegions: string[]) => void;
 }
 
 type LastInvitedPlayer = { id: string; displayName: string; avatarUrl: string | null };
@@ -68,6 +69,17 @@ const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: num
   { id: 'contemporary',label: 'Contemporary', span: '1945 – 2025',  icon: '🚀', yearMin: 1945,  yearMax: new Date().getFullYear() },
 ];
 
+type RegionId = 'africa' | 'antarctica' | 'asia' | 'europe' | 'north_america' | 'oceania' | 'south_america';
+const REGIONS: { id: RegionId; label: string; icon: string; continent: string }[] = [
+  { id: 'africa',          label: 'Africa',          icon: '🌍', continent: 'Africa' },
+  { id: 'antarctica',      label: 'Antarctica',      icon: '🧊', continent: 'Antarctica' },
+  { id: 'asia',            label: 'Asia',            icon: '🏯', continent: 'Asia' },
+  { id: 'europe',          label: 'Europe',          icon: '🏰', continent: 'Europe' },
+  { id: 'north_america',   label: 'North America',   icon: '🗽', continent: 'North America' },
+  { id: 'oceania',         label: 'Oceania',         icon: '🏝️', continent: 'Oceania' },
+  { id: 'south_america',   label: 'South America',   icon: '🦜', continent: 'South America' },
+];
+
 export default function LobbySection({
   snapshot,
   viewer,
@@ -82,6 +94,7 @@ export default function LobbySection({
   onSetSubMode,
   onKickPlayer,
   onSetEraSelection,
+  onSetRegionSelection,
 }: LobbySectionProps) {
   void onSetYearRange;
   void onStartGame;
@@ -206,6 +219,98 @@ export default function LobbySection({
       setYearMinValue(allMin);
       setYearMaxValue(allMax);
       onSetEraSelection?.(ERAS.map(e => e.id), allMin, allMax);
+    }
+  };
+
+  /* ── Region selection state ── */
+  // Empty selectedRegions in snapshot means "all regions" (no filter).
+  // We represent "all" internally as a Set of all available region ids.
+  const [availableRegionContinents, setAvailableRegionContinents] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchRegions() {
+      try {
+        const res = await fetch('/api/events/metadata');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (cancelled) return;
+        const regions: string[] = Array.isArray(json.regions) ? json.regions : [];
+        setAvailableRegionContinents(regions);
+      } catch {
+        // silent — fall back to full static list
+      }
+    }
+    fetchRegions();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Filter REGIONS to only those present in the DB (hide dead chips).
+  // If fetch hasn't completed yet (null), show the full list so UI isn't empty.
+  const visibleRegions = availableRegionContinents === null
+    ? REGIONS
+    : REGIONS.filter(r => availableRegionContinents.includes(r.continent));
+
+  const [selectedRegions, setSelectedRegions] = useState<Set<RegionId>>(
+    () => new Set(REGIONS.map(r => r.id))
+  );
+  const suppressRegionSyncRef = useRef(false);
+
+  // Sync selected regions to authoritative snapshot value whenever it changes externally.
+  const snapshotRegionsKey = (snapshot.config.selectedRegions ?? [])
+    .slice()
+    .sort()
+    .join(',');
+  useEffect(() => {
+    if (suppressRegionSyncRef.current) {
+      suppressRegionSyncRef.current = false;
+      return;
+    }
+    const incoming = (snapshot.config.selectedRegions ?? []) as string[];
+    // Empty array in DB means "all regions" — map to full set of visible region ids.
+    if (incoming.length === 0) {
+      setSelectedRegions(new Set(REGIONS.map(r => r.id)));
+      return;
+    }
+    // Map continent names back to region ids
+    const incomingIds = REGIONS
+      .filter(r => incoming.includes(r.continent))
+      .map(r => r.id);
+    const incomingKey = incomingIds.slice().sort().join(',');
+    const localKey = [...selectedRegions].sort().join(',');
+    if (incomingKey === localKey) return;
+    setSelectedRegions(new Set(incomingIds));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshotRegionsKey]);
+
+  const toggleRegion = useCallback((id: RegionId) => {
+    if (selectedRegions.has(id) && selectedRegions.size === 1) return;
+    const next = new Set(selectedRegions);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedRegions(next);
+    suppressRegionSyncRef.current = true;
+    // Send continent names to server; empty array = all regions
+    const selectedContinents = REGIONS
+      .filter(r => next.has(r.id))
+      .map(r => r.continent);
+    const allVisibleSelected = visibleRegions.every(r => next.has(r.id));
+    onSetRegionSelection?.(allVisibleSelected ? [] : selectedContinents);
+  }, [selectedRegions, onSetRegionSelection, visibleRegions]);
+
+  const allRegionsSelected = visibleRegions.every(r => selectedRegions.has(r.id));
+  const toggleAllRegions = () => {
+    if (allRegionsSelected) {
+      const last = visibleRegions[visibleRegions.length - 1];
+      if (last) {
+        setSelectedRegions(new Set([last.id]));
+        suppressRegionSyncRef.current = true;
+        onSetRegionSelection?.([last.continent]);
+      }
+    } else {
+      setSelectedRegions(new Set(visibleRegions.map(r => r.id)));
+      suppressRegionSyncRef.current = true;
+      // All selected → send empty array (= all regions, no filter)
+      onSetRegionSelection?.([]);
     }
   };
 
@@ -873,6 +978,35 @@ export default function LobbySection({
                 })}
               </div>
             </div>
+            <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
+              <div className={styles['lobbySettingRowHead']}>
+                <span className={styles['lobby-setting-label']}>{tGame('region_presets')}</span>
+                {isHost && (
+                  <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllRegions}>
+                    {allRegionsSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
+                  </button>
+                )}
+              </div>
+              <div className={styles['lobbyEraRail']}>
+                {visibleRegions.map(region => {
+                  const on = selectedRegions.has(region.id);
+                  return (
+                    <button
+                      key={region.id}
+                      data-era={region.id}
+                      type="button"
+                      className={`${styles['lobbyEraBtn']} ${on ? styles['lobbyEraBtnOn'] : styles['lobbyEraBtnOff']}`}
+                      onClick={() => isHost && toggleRegion(region.id)}
+                      disabled={!isHost}
+                      aria-pressed={on}
+                    >
+                      <span className={styles['lobbyEraLabel']}>{tGame(`region_${region.id}` as string)}</span>
+                      <span className={styles['lobbyEraIcon']}>{region.icon}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             </>)}
             {settingsTab === 'turnturn' && (<>
               <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
@@ -997,6 +1131,35 @@ export default function LobbySection({
                       <span className={styles['lobbyEraLabel']}>{tGame(`era_${era.id}` as string)}</span>
                       <span className={styles['lobbyEraIcon']}>{era.icon}</span>
                       <span className={styles['lobbyEraSpan']}>{era.span}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
+              <div className={styles['lobbySettingRowHead']}>
+                <span className={styles['lobby-setting-label']}>{tGame('region_presets')}</span>
+                {isHost && (
+                  <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllRegions}>
+                    {allRegionsSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
+                  </button>
+                )}
+              </div>
+              <div className={styles['lobbyEraRail']}>
+                {visibleRegions.map(region => {
+                  const on = selectedRegions.has(region.id);
+                  return (
+                    <button
+                      key={region.id}
+                      data-era={region.id}
+                      type="button"
+                      className={`${styles['lobbyEraBtn']} ${on ? styles['lobbyEraBtnOn'] : styles['lobbyEraBtnOff']}`}
+                      onClick={() => isHost && toggleRegion(region.id)}
+                      disabled={!isHost}
+                      aria-pressed={on}
+                    >
+                      <span className={styles['lobbyEraLabel']}>{tGame(`region_${region.id}` as string)}</span>
+                      <span className={styles['lobbyEraIcon']}>{region.icon}</span>
                     </button>
                   );
                 })}

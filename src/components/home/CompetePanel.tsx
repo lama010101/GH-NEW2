@@ -20,10 +20,10 @@ type ActiveGame = {
 }
 
 function getAccuracyColor(pct: number): string {
-  if (pct >= 85) return '#22c55e'
-  if (pct >= 60) return '#eab308'
+  if (pct >= 85) return 'var(--gh-success)'
+  if (pct >= 60) return 'var(--gh-gold)'
   if (pct >= 40) return 'var(--gh-orange)'
-  return '#ef4444'
+  return 'var(--gh-danger)'
 }
 
 function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) => string): string {

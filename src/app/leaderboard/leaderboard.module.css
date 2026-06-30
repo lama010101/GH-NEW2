@@ -371,7 +371,7 @@
 }
 
 .levelValue {
-  color: #c084fc;
+  color: var(--gh-violet);
   font-weight: 600;
 }
 

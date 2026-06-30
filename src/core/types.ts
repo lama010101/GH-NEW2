@@ -141,6 +141,7 @@ export type SessionConfig = {
   yearMax: number;
   resultsAutoAdvanceSec: number;
   selectedEras: string[];
+  selectedRegions: string[];
   hostPlayerId: string | null;
   sessionDeadline: string | null;
   sessionDeadlineDays: number | null;

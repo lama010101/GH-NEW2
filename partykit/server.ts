@@ -121,6 +121,12 @@ const SetEraSelectionSchema = z.object({
   yearMax: z.number().int()
 });
 
+const SetRegionSelectionSchema = z.object({
+  type: z.literal("SET_REGION_SELECTION"),
+  playerId: z.string().uuid(),
+  selectedRegions: z.array(z.string())
+});
+
 const SetResultsTimerSchema = z.object({
   type: z.literal("SET_RESULTS_TIMER"),
   playerId: z.string().uuid(),
@@ -160,6 +166,7 @@ const ServerMessageSchema = z.discriminatedUnion("type", [
   SetTimerSchema,
   SetYearRangeSchema,
   SetEraSelectionSchema,
+  SetRegionSelectionSchema,
   SetResultsTimerSchema,
   SetSubModeSchema,
   KickPlayerSchema,
@@ -202,6 +209,7 @@ export type ServerMessage =
   | { type: "SET_RESULTS_TIMER"; playerId: string; resultsAutoAdvanceSec: number }
   | { type: "SET_SUB_MODE"; playerId: string; mode: "sync" | "async"; sessionDeadlineDays: number }
   | { type: "SET_ERA_SELECTION"; playerId: string; selectedEras: string[]; yearMin: number; yearMax: number }
+  | { type: "SET_REGION_SELECTION"; playerId: string; selectedRegions: string[] }
   | { type: "KICK_PLAYER"; playerId: string; targetPlayerId: string }
   | { type: "PLAY_AGAIN"; playerId: string; newGameId: string }
   | { type: "PING" };
@@ -1589,6 +1597,33 @@ export default class GameServer {
           if (!response.ok) {
             const text = await response.text();
             console.error(`[SET_ERA_SELECTION] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
+          this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "SET_REGION_SELECTION": {
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "SET_REGION_SELECTION only allowed in LOBBY phase");
+            break;
+          }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/region-selection`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              selectedRegions: data.selectedRegions,
+            })
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[SET_REGION_SELECTION] API error ${response.status}: ${text}`);
             break;
           }
           const snapshot = await response.json();

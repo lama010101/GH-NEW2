@@ -264,7 +264,7 @@
 
 .tabActive:hover {
   background: rgba(34, 211, 238, 0.18);
-  color: #67e8f9;
+  color: var(--gh-teal);
 }
 
 .tabActiveWhen {
@@ -275,7 +275,7 @@
 
 .tabActiveWhen:hover {
   background: rgba(139, 92, 246, 0.18);
-  color: #a78bfa;
+  color: var(--gh-violet);
 }
 
 .tabActiveWhere {
@@ -286,7 +286,7 @@
 
 .tabActiveWhere:hover {
   background: rgba(34, 211, 238, 0.18);
-  color: #67e8f9;
+  color: var(--gh-teal);
 }
 
 /* ── Region / era rows ── */
