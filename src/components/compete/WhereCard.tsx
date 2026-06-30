@@ -71,7 +71,7 @@ export default function WhereCard({
       <div className={styles.header}>
         <div className={styles.titleGroup}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/badges/where.webp" alt="where" width={36} height={36} className={styles.titleIcon} />
+          <img src="/badges/where.webp" alt={t('where')} width={36} height={36} className={styles.titleIcon} />
           <span className={styles.titleText}>{t('where')}</span>
         </div>
         {(() => {

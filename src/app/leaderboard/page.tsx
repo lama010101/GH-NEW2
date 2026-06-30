@@ -559,7 +559,7 @@ function LeaderboardPageInner() {
 
 export default function LeaderboardPage() {
   return (
-    <Suspense fallback={<div style={{ color: '#fff', padding: '2rem', textAlign: 'center' }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ color: 'var(--gh-text-primary)', padding: '2rem', textAlign: 'center' }}>Loading…</div>}>
       <LeaderboardPageInner />
     </Suspense>
   );

@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { playerId } = useIdentity();
   const t = useTranslations('profile');
+  const tCommon = useTranslations('common');
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
@@ -146,13 +147,13 @@ export default function ProfilePage() {
             if (avatarResult.birth_day) bornParts.push(avatarResult.birth_day);
             if (avatarResult.birth_city) bornParts.push(avatarResult.birth_city);
             if (avatarResult.birth_country) bornParts.push(avatarResult.birth_country);
-            const bornLabel = bornParts.length > 0 ? `Born: ${bornParts.join(', ')}` : '';
+            const bornLabel = bornParts.length > 0 ? `${tCommon('born_prefix')} ${bornParts.join(', ')}` : '';
 
             const diedParts: string[] = [];
             if (avatarResult.death_day) diedParts.push(avatarResult.death_day);
             if (avatarResult.death_city) diedParts.push(avatarResult.death_city);
             if (avatarResult.death_country) diedParts.push(avatarResult.death_country);
-            const diedLabel = diedParts.length > 0 ? `Died: ${diedParts.join(', ')}` : '';
+            const diedLabel = diedParts.length > 0 ? `${tCommon('died_prefix')} ${diedParts.join(', ')}` : '';
 
             historicalAvatar = {
               avatarName,
@@ -246,7 +247,7 @@ export default function ProfilePage() {
       <div className="relative z-10 max-w-[820px] mx-auto pt-4 px-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors cursor-pointer"
+          className="flex items-center gap-2 text-sm text-[var(--gh-text-secondary)] hover:text-[var(--gh-text-primary)] transition-colors cursor-pointer"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m15 18-6-6 6-6"/>
@@ -272,7 +273,7 @@ export default function ProfilePage() {
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
             ) : (
-              <span className={`font-bebas text-4xl font-extrabold text-white`}>
+              <span className={`font-bebas text-4xl font-extrabold text-[var(--gh-text-primary)]`}>
                 {getInitials(profileData.displayName)}
               </span>
             )}
@@ -291,28 +292,28 @@ export default function ProfilePage() {
         </h2>
 
         {/* Member since */}
-        <p className="text-sm text-white/45 mb-6">
+        <p className="text-sm text-[var(--gh-text-muted)] mb-6">
           {t('member_since')} {formatMemberSince(profileData.createdAt)}
         </p>
 
         {/* Historical Avatar Card */}
         {profileData.historicalAvatar && (
-          <div className="bg-white/[0.08] rounded-2xl py-5 px-6 w-full max-w-[400px] text-center">
-            <h3 className={`font-bebas text-lg font-bold mb-2 text-white`}>
+          <div className="bg-[var(--gh-glass-bg)] rounded-2xl py-5 px-6 w-full max-w-[400px] text-center">
+            <h3 className={`font-bebas text-lg font-bold mb-2 text-[var(--gh-text-primary)]`}>
               {profileData.historicalAvatar.avatarName}
             </h3>
             {profileData.historicalAvatar.avatarDescription && (
-              <p className="text-sm text-white/45 mb-2 leading-relaxed">
+              <p className="text-sm text-[var(--gh-text-muted)] mb-2 leading-relaxed">
                 {profileData.historicalAvatar.avatarDescription}
               </p>
             )}
             {profileData.historicalAvatar.bornLabel && (
-              <p className="text-xs text-white/45 mb-1">
+              <p className="text-xs text-[var(--gh-text-muted)] mb-1">
                 {profileData.historicalAvatar.bornLabel}
               </p>
             )}
             {profileData.historicalAvatar.diedLabel && (
-              <p className="text-xs text-white/45">
+              <p className="text-xs text-[var(--gh-text-muted)]">
                 {profileData.historicalAvatar.diedLabel}
               </p>
             )}
@@ -360,12 +361,12 @@ export default function ProfilePage() {
         ].map((stat, i) => (
           <div
             key={i}
-            className="bg-white/[0.04] border border-white/[0.09] rounded-xl py-3.5 px-4 text-center"
+            className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl py-3.5 px-4 text-center"
           >
             <div className={`font-bebas text-2xl font-extrabold ${stat.color ?? ''}`}>
               {stat.value}
             </div>
-            <div className="text-xs mt-1 text-white/45">
+            <div className="text-xs mt-1 text-[var(--gh-text-muted)]">
               {stat.label}
             </div>
           </div>
@@ -374,7 +375,7 @@ export default function ProfilePage() {
 
       {/* 6. BADGE COLLECTION */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
             <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('badge_collection')}</h3>
@@ -416,7 +417,7 @@ export default function ProfilePage() {
 
       {/* 7. PERFORMANCE BY MODE */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
             <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('performance_by_mode')}</h3>
@@ -427,11 +428,11 @@ export default function ProfilePage() {
               className={styles.modeCard}
               style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.30)' }}
             >
-              <span className={styles.modeAccent} style={{ background: '#3b82f6' }} />
+              <span className={styles.modeAccent} style={{ background: 'var(--gh-blue)' }} />
               <span className={styles.modeName}>{t('daily')}</span>
               <span
                 className={styles.modeAcc}
-                style={{ color: profileData.dailyAvgAccuracy !== null ? accColor(profileData.dailyAvgAccuracy) : 'rgba(255,255,255,0.35)' }}
+                style={{ color: profileData.dailyAvgAccuracy !== null ? accColor(profileData.dailyAvgAccuracy) : 'var(--gh-text-muted)' }}
               >
                 {profileData.dailyAvgAccuracy !== null ? `${Math.round(profileData.dailyAvgAccuracy)}%` : '—'}
               </span>
@@ -449,7 +450,7 @@ export default function ProfilePage() {
               <span className={styles.modeName}>{t('level_up')}</span>
               <span
                 className={styles.modeAcc}
-                style={{ color: profileData.levelUpBestAccuracy !== null ? accColor(profileData.levelUpBestAccuracy) : 'rgba(255,255,255,0.35)' }}
+                style={{ color: profileData.levelUpBestAccuracy !== null ? accColor(profileData.levelUpBestAccuracy) : 'var(--gh-text-muted)' }}
               >
                 {profileData.levelUpBestAccuracy !== null ? `${Math.round(profileData.levelUpBestAccuracy)}%` : '—'}
               </span>
@@ -467,7 +468,7 @@ export default function ProfilePage() {
               <span className={styles.modeName}>{t('practice') ?? 'Practice'}</span>
               <span
                 className={styles.modeAcc}
-                style={{ color: progressData?.practice?.avgAccuracy != null ? accColor(progressData.practice.avgAccuracy) : 'rgba(255,255,255,0.35)' }}
+                style={{ color: progressData?.practice?.avgAccuracy != null ? accColor(progressData.practice.avgAccuracy) : 'var(--gh-text-muted)' }}
               >
                 {progressData?.practice?.avgAccuracy != null ? `${Math.round(progressData.practice.avgAccuracy)}%` : '—'}
               </span>
@@ -483,7 +484,7 @@ export default function ProfilePage() {
             >
               <span className={styles.modeAccent} style={{ background: 'var(--gh-teal, #22d3ee)' }} />
               <span className={styles.modeName}>{t('compete')}</span>
-              <span className={styles.modeAcc} style={{ color: 'rgba(255,255,255,0.35)' }}>—</span>
+              <span className={styles.modeAcc} style={{ color: 'var(--gh-text-muted)' }}>—</span>
               <span className={styles.modeGames}>{t('coming_soon')}</span>
             </div>
           </div>
@@ -492,12 +493,12 @@ export default function ProfilePage() {
 
       {/* 8. TWO-COLUMN ROW */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('leaderboard_positions')}</h3>
           <div className="flex flex-col gap-3">
             {/* Daily */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-white/60">Daily (all-time)</span>
+              <span className="text-xs text-[var(--gh-text-secondary)]">Daily (all-time)</span>
               <span className={`font-bebas text-sm font-bold text-blue-400`}>
                 {profileData.dailyAvgAccuracy === null
                   ? '—'
@@ -506,7 +507,7 @@ export default function ProfilePage() {
             </div>
             {/* Level Up */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-white/60">{t('level_up')}</span>
+              <span className="text-xs text-[var(--gh-text-secondary)]">{t('level_up')}</span>
               <span className={`font-bebas text-sm font-bold ${styles.leaderboardViolet}`}>
                 {profileData.levelUpCurrentLevel === null
                   ? '—'
@@ -515,10 +516,10 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-        <div className="bg-white/[0.04] border border-white/[0.09] rounded-xl p-4">
+        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
           <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('score_distribution')}</h3>
           <div className="flex flex-col items-center gap-2 py-6">
-            <div className="text-sm text-white/35">{t('coming_soon')}</div>
+            <div className="text-sm text-[var(--gh-text-muted)]">{t('coming_soon')}</div>
           </div>
         </div>
       </div>

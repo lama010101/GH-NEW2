@@ -195,7 +195,11 @@
     "no_description": "Описание отсутствует",
     "timer_min_short": "{n}м {s}с",
     "timer_sec_short": "{n}с",
-    "countdown_hm": "{h}ч {m}м"
+    "countdown_hm": "{h}ч {m}м",
+    "born_prefix": "Родился:",
+    "died_prefix": "Умер:",
+    "no_data_yet": "Пока нет данных",
+    "back_to_home": "На главную"
   },
   "lobby": {
     "waiting": "Ожидание игроков ({ready}/{total} готово)",
@@ -325,7 +329,7 @@
     "total_score": "Общий счёт",
     "winner": "Победитель",
     "home": "Главная",
-    "refresh": "Обновить",
+    "refresh": "Проблемы с раундом? Нажмите для перезагрузки",
     "image_failed": "Не удалось загрузить изображение",
     "tap_retry": "Нажмите для повтора",
     "sign_in": "Войти",
@@ -446,7 +450,18 @@
     "room_not_found": "Комната не найдена",
     "error_creating_game": "Ошибка создания игры",
     "unknown_player": "Неизвестный",
-    "invalid_server_response": "Неверный ответ сервера"
+    "invalid_server_response": "Неверный ответ сервера",
+    "not_authenticated": "Не авторизован",
+    "failed_create_practice": "Не удалось создать сессию тренировки",
+    "no_game_id_response": "Нет gameId в ответе",
+    "failed_start_practice": "Не удалось начать тренировку",
+    "failed_load_session": "Не удалось загрузить сессию",
+    "failed_start_game": "Не удалось начать игру",
+    "bc_suffix": "до н.э.",
+    "decade_suffix": "-е",
+    "tier_century_label": "ВЕК",
+    "tier_decade_label": "ДЕСЯТИЛЕТИЕ",
+    "tier_year_label": "ГОД"
   },
   "auth": {
     "sign_in": "Войти",
@@ -470,6 +485,7 @@
     "email_placeholder": "you@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Письмо для сброса пароля отправлено. Проверьте почту.",
+    "confirm_email_sent": "Проверьте почту для подтверждения аккаунта.",
     "remember_me": "Запомнить меня",
     "confirm_password": "Подтвердите пароль"
   },
@@ -527,7 +543,10 @@
     "when": "Когда",
     "where": "Где",
     "games": "игр",
-    "best": "лучший"
+    "best": "лучший",
+    "rated": "Оценено",
+    "regions": "Регионы",
+    "countries": "Страны"
   },
   "account": {
     "username": "Имя пользователя",
@@ -557,7 +576,8 @@
     "d_ago": "{n}д назад",
     "invited_you": "пригласил вас в игру",
     "sent": "отправлено {time}",
-    "join_game": "Войти в игру"
+    "join_game": "Войти в игру",
+    "someone": "Кто-то"
   },
   "landing": {
     "meta_title": "Guess-History — Проверьте свои знания истории",
@@ -574,5 +594,13 @@
     "waitlist_err_invalid_email": "Введите корректный email.",
     "waitlist_err_generic": "Что-то пошло не так. Повторите.",
     "waitlist_err_network": "Сетевая ошибка. Повторите."
+  },
+  "welcome": {
+    "title": "Добро пожаловать в Guess-History!",
+    "your_historical_avatar": "Ваш исторический аватар",
+    "choose_different_avatar": "Выбрать другой аватар",
+    "your_username": "Ваше имя пользователя",
+    "lets_play": "Поиграем!",
+    "skip_for_now": "Пропустить"
   }
 }

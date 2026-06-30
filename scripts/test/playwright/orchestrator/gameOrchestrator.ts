@@ -139,7 +139,7 @@ export class GameOrchestrator {
       data: {
         displayName: host.user.displayName,
         playerId: host.user.id,
-        mode: 'compete',
+        mode: 'sync',
         totalRounds: this.opts.totalRounds,
         roundTimerSec: 120,
       },
@@ -391,7 +391,7 @@ export class GameOrchestrator {
       data: {
         displayName: host.user.displayName,
         playerId: host.user.id,
-        mode: 'compete',
+        mode: 'sync',
         totalRounds: this.opts.totalRounds,
         roundTimerSec: 120,
       },

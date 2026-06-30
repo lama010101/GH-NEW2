@@ -18,11 +18,11 @@ export default function PlayerAvatar({ avatarUrl, displayName, size = 26 }: Play
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "#2a2a3a",
-    border: "1.5px solid rgba(255,255,255,0.18)",
+    background: "var(--gh-glass-bg-hover)",
+    border: "1.5px solid var(--gh-border-default)",
     fontSize: size * 0.42,
     fontWeight: 600,
-    color: "rgba(255,255,255,0.75)",
+    color: "var(--gh-text-secondary)",
     verticalAlign: "middle",
   };
   if (avatarUrl) {

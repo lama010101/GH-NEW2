@@ -195,7 +195,11 @@
     "no_description": "Aucune description disponible",
     "timer_min_short": "{n}m {s}s",
     "timer_sec_short": "{n}s",
-    "countdown_hm": "{h}h {m}m"
+    "countdown_hm": "{h}h {m}m",
+    "born_prefix": "Né :",
+    "died_prefix": "Décédé :",
+    "no_data_yet": "Pas encore de données",
+    "back_to_home": "Retour à l'accueil"
   },
   "lobby": {
     "waiting": "En attente de joueurs ({ready}/{total} prêts)",
@@ -273,7 +277,9 @@
     "err_join": "Échec de la connexion à la partie",
     "err_code_required": "Le code de salle est requis",
     "timer_5s": "5s",
-    "timer_5m": "5m"
+    "timer_5m": "5m",
+    "failed_lobby": "Échec de création du salon",
+    "failed_lobby_retry": "Échec de création du salon, réessayez"
   },
   "game": {
     "sound": "Son",
@@ -299,7 +305,6 @@
     "col_player": "Joueur",
     "col_score": "Score",
     "col_total": "Total",
-    "close_hints": "Fermer les indices",
     "experience": "EXPÉRIENCE",
     "correct_location": "Correct",
     "correct_year": "Correct",
@@ -324,7 +329,7 @@
     "total_score": "Score total",
     "winner": "Gagnant",
     "home": "Accueil",
-    "refresh": "Rafraîchir",
+    "refresh": "Problèmes de round ? Appuyez pour recharger",
     "image_failed": "Échec du chargement de l'image",
     "tap_retry": "Toucher pour réessayer",
     "sign_in": "Se connecter",
@@ -368,8 +373,6 @@
     "era_modern": "Époque moderne",
     "era_contemporary": "Contemporain",
     "unknown_region": "Inconnue",
-    "round_label": "Manche {current} / {total}",
-    "round_label_compact": "Manche {current}/{total}",
     "round_label_short": "MANCHE {n}",
     "total": "Total",
     "best_player": "Meilleur joueur",
@@ -447,7 +450,18 @@
     "room_not_found": "Salon introuvable",
     "error_creating_game": "Erreur lors de la création de la partie",
     "unknown_player": "Inconnu",
-    "invalid_server_response": "Réponse invalide du serveur"
+    "invalid_server_response": "Réponse invalide du serveur",
+    "not_authenticated": "Non authentifié",
+    "failed_create_practice": "Échec de création de la session d'entraînement",
+    "no_game_id_response": "Pas d'ID de partie dans la réponse",
+    "failed_start_practice": "Échec du démarrage de l'entraînement",
+    "failed_load_session": "Échec du chargement de la session",
+    "failed_start_game": "Échec du démarrage de la partie",
+    "bc_suffix": "av. J.-C.",
+    "decade_suffix": "s",
+    "tier_century_label": "SIÈCLE",
+    "tier_decade_label": "DÉCENNIE",
+    "tier_year_label": "ANNÉE"
   },
   "auth": {
     "sign_in": "Se connecter",
@@ -471,21 +485,9 @@
     "email_placeholder": "vous@exemple.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "E-mail de réinitialisation envoyé. Vérifiez votre boîte de réception.",
+    "confirm_email_sent": "Vérifiez votre e-mail pour confirmer votre compte.",
     "remember_me": "Se souvenir de moi",
     "confirm_password": "Confirmer le mot de passe"
-  },
-  "compete_page": {
-    "create_game": "Créer une partie",
-    "join_game": "Rejoindre",
-    "creating": "Création…",
-    "joining": "Connexion…",
-    "room_code_label": "Code de salle",
-    "err_identity": "Identité non prête — veuillez patienter",
-    "err_code_required": "Le code de salle est requis",
-    "err_create": "Impossible de créer la partie",
-    "err_join": "Impossible de rejoindre la partie",
-    "failed_lobby": "Échec de création du salon",
-    "failed_lobby_retry": "Échec de création du salon, réessayez"
   },
   "leaderboard": {
     "title": "CLASSEMENT",
@@ -541,7 +543,10 @@
     "when": "Quand",
     "where": "Où",
     "games": "parties",
-    "best": "meilleur"
+    "best": "meilleur",
+    "rated": "Notées",
+    "regions": "Régions",
+    "countries": "Pays"
   },
   "account": {
     "username": "Nom d'utilisateur",
@@ -571,7 +576,8 @@
     "d_ago": "il y a {n} j",
     "invited_you": "vous a invité à une partie",
     "sent": "envoyé {time}",
-    "join_game": "Rejoindre"
+    "join_game": "Rejoindre",
+    "someone": "Quelqu'un"
   },
   "landing": {
     "meta_title": "Guess-History — Testez vos connaissances sur le quand et le où",
@@ -588,5 +594,13 @@
     "waitlist_err_invalid_email": "Veuillez saisir une adresse e-mail valide.",
     "waitlist_err_generic": "Une erreur s'est produite. Veuillez réessayer.",
     "waitlist_err_network": "Erreur réseau. Veuillez réessayer."
+  },
+  "welcome": {
+    "title": "Bienvenue sur Guess-History !",
+    "your_historical_avatar": "Votre avatar historique",
+    "choose_different_avatar": "Choisir un autre avatar",
+    "your_username": "Votre nom d'utilisateur",
+    "lets_play": "C'est parti !",
+    "skip_for_now": "Passer pour l'instant"
   }
 }

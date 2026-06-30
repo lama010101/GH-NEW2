@@ -81,7 +81,7 @@ export default function CompeteEntryPage() {
       const data = await res.json() as { gameId?: string };
       const resolvedGameId = data.gameId;
       if (!resolvedGameId) {
-        throw new Error("Invalid response from server");
+        throw new Error(t('invalid_server_response'));
       }
       redirectWithIdentity(resolvedGameId, "");
     } catch (err) {
@@ -105,7 +105,7 @@ export default function CompeteEntryPage() {
           {identityLoading ? (
             <p className="small">{t('establishing_identity')}</p>
           ) : identityError ? (
-            <p style={{ color: "#ff6b6b", margin: 0 }}>{t('identity_error')} {identityError}</p>
+            <p style={{ color: "var(--gh-danger)", margin: 0 }}>{t('identity_error')} {identityError}</p>
           ) : null}
           <div className="row">
             <button
@@ -191,7 +191,7 @@ export default function CompeteEntryPage() {
           )}
 
           {error ? (
-            <p style={{ color: "#ff6b6b", margin: 0 }}>{error}</p>
+            <p style={{ color: "var(--gh-danger)", margin: 0 }}>{error}</p>
           ) : null}
         </section>
       </div>

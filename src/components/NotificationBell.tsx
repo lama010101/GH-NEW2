@@ -38,7 +38,7 @@ function NotificationItem({
   const tHome = useTranslations('home');
 
   if (notification.type === 'lobby_invite') {
-    const inviterName = (notification.payload.inviter_name as string) ?? 'Someone';
+    const inviterName = (notification.payload.inviter_name as string) ?? t('someone');
     const gameId = notification.payload.game_id as string;
     const mode = notification.payload.mode as ('sync' | 'async' | undefined);
     const modeLabel = mode

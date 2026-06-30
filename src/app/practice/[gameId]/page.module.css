@@ -18,7 +18,7 @@
   position: fixed;
   inset: 0;
   z-index: 1;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--gh-modal-overlay);
   pointer-events: none;
 }
 
@@ -57,7 +57,7 @@
 .loadingScrim {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.82);
+  background: var(--gh-modal-overlay);
 }
 
 .loadingContent {
@@ -76,20 +76,20 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 3px solid rgba(255,255,255,0.08);
-  border-top-color: #00adc1;
+  border: 3px solid var(--gh-border-default);
+  border-top-color: var(--gh-teal);
   animation: spin 0.8s linear infinite;
 }
 
 .loadingLabel {
-  color: rgba(255,255,255,0.55);
+  color: var(--gh-text-secondary);
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.01em;
 }
 
 .loadingError {
-  color: #f87171;
+  color: var(--gh-danger);
   font-size: 13px;
   max-width: 320px;
   text-align: center;
@@ -116,13 +116,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.60);
+  background-color: var(--gh-modal-overlay);
   pointer-events: none;
 }
 
 .submitOverlayCard {
-  background: rgba(20, 20, 30, 0.60);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-default);
   border-radius: 16px;
   padding: 24px 28px;
   min-width: 260px;
@@ -137,7 +137,7 @@
 .submitOverlayTitle {
   font-size: var(--font-lg);
   font-weight: 700;
-  color: var(--gh-orange, #f97316);
+  color: var(--gh-orange);
   text-align: center;
   margin: 0;
 }
@@ -157,13 +157,13 @@
 
 .submitOverlayLabel {
   font-size: var(--font-xs);
-  color: rgba(255, 255, 255, 0.50);
+  color: var(--gh-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .submitOverlayValue {
   font-size: var(--font-sm);
-  color: #ffffff;
+  color: var(--gh-text-primary);
   font-weight: 600;
 }

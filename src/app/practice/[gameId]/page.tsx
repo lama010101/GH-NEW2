@@ -16,6 +16,8 @@ import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { computeTimeRemaining } from "@/core/competeUtils";
+import { PracticeSettingsModal, type PracticeModalSettings } from "@/components/practice/PracticeSettingsModal";
+import { savePracticeSettings } from "@/components/practice/practiceSettings";
 import pageStyles from './page.module.css';
 
 export default function PracticeGamePage() {
@@ -47,6 +49,9 @@ export default function PracticeGamePage() {
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [locationName, setLocationName] = useState<string | null>(null);
   const [showNavModal, setShowNavModal] = useState(false);
+  const [practiceModalOpen, setPracticeModalOpen] = useState(false);
+  const [practiceModalInitial, setPracticeModalInitial] = useState<Partial<PracticeModalSettings> | undefined>(undefined);
+  const [practiceCreating, setPracticeCreating] = useState(false);
   const [topbarAccuracy, setTopbarAccuracy] = useState("--");
   const [topbarXp, setTopbarXp] = useState("--");
   const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
@@ -78,14 +83,14 @@ export default function PracticeGamePage() {
         const response = await fetch(`/api/compete/${gameId}?playerId=${playerId}`, { cache: "no-store" });
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
-          throw new Error(data.error ?? 'Failed to load session');
+          throw new Error(data.error ?? t('failed_load_session'));
         }
         const data = await response.json();
         if (cancelled) return;
         setSnapshot(data);
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load session');
+        setError(err instanceof Error ? err.message : t('failed_load_session'));
       }
     })();
 
@@ -102,7 +107,7 @@ export default function PracticeGamePage() {
       try {
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         const accessToken = session?.access_token;
-        if (!accessToken) throw new Error('Not authenticated');
+        if (!accessToken) throw new Error(t('not_authenticated'));
 
         const response = await fetch(`/api/practice/${gameId}/start`, {
           method: 'POST',
@@ -115,7 +120,7 @@ export default function PracticeGamePage() {
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
-          throw new Error(data.error ?? 'Failed to start game');
+          throw new Error(data.error ?? t('failed_start_game'));
         }
 
         const data = await response.json();
@@ -123,7 +128,7 @@ export default function PracticeGamePage() {
         setSnapshot(data);
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to start game');
+        setError(err instanceof Error ? err.message : t('failed_start_game'));
       } finally {
         if (!cancelled) setBusy(false);
       }
@@ -245,7 +250,7 @@ export default function PracticeGamePage() {
       try {
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         const accessToken = session?.access_token;
-        if (!accessToken) throw new Error('Not authenticated');
+        if (!accessToken) throw new Error(t('not_authenticated'));
 
         const response = await fetch(`/api/practice/${gameId}/guess`, {
           method: 'POST',
@@ -281,7 +286,7 @@ export default function PracticeGamePage() {
         setBusy(false);
       }
     })();
-  }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, localSubmitted, playerId, hintResult, gameId, snapshot]);
+  }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, playerId, hintResult, gameId, snapshot]);
 
   // Scroll to top when ROUND_COMPLETE loads
   useEffect(() => {
@@ -362,7 +367,7 @@ export default function PracticeGamePage() {
       try {
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         const accessToken = session?.access_token;
-        if (!accessToken) throw new Error('Not authenticated');
+        if (!accessToken) throw new Error(t('not_authenticated'));
 
         const response = await fetch(`/api/practice/${gameId}/guess`, {
           method: 'POST',
@@ -408,7 +413,7 @@ export default function PracticeGamePage() {
       try {
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         const accessToken = session?.access_token;
-        if (!accessToken) throw new Error('Not authenticated');
+        if (!accessToken) throw new Error(t('not_authenticated'));
 
         const response = await fetch(`/api/practice/${gameId}/advance`, {
           method: 'POST',
@@ -436,6 +441,60 @@ export default function PracticeGamePage() {
       }
     })();
   }, [snapshot, playerId, gameId]);
+
+  const handlePracticePlayAgain = useCallback(() => {
+    if (!snapshot) return;
+    setPracticeModalInitial({
+      roundTimerSec: snapshot.config.roundTimerSec,
+      selectedEras: snapshot.config.selectedEras,
+      yearMin: snapshot.config.yearMin,
+      yearMax: snapshot.config.yearMax,
+    });
+    setPracticeModalOpen(true);
+  }, [snapshot]);
+
+  const handlePracticeModalStart = useCallback((settings: PracticeModalSettings) => {
+    if (!playerId) return;
+    savePracticeSettings(settings);
+    setPracticeModalOpen(false);
+    setPracticeCreating(true);
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const accessToken = session?.access_token;
+        if (!accessToken) throw new Error(t('not_authenticated'));
+
+        const response = await fetch('/api/practice/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            playerId,
+            displayName: displayName ?? undefined,
+            roundTimerSec: settings.roundTimerSec,
+            yearMin: settings.yearMin,
+            yearMax: settings.yearMax,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error ?? 'Failed to create practice session');
+        }
+
+        const data = await response.json();
+        const newGameId = data.gameId;
+        if (!newGameId) throw new Error('No gameId in response');
+        router.push(`/practice/${newGameId}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to start practice');
+      } finally {
+        setPracticeCreating(false);
+      }
+    })();
+  }, [playerId, displayName, router]);
 
   if (!gameId) return null;
 
@@ -558,6 +617,7 @@ export default function PracticeGamePage() {
               snapshot={snapshot}
               playerId={playerId}
               allRoundResults={allRoundResults}
+              onPlayAgain={handlePracticePlayAgain}
               sendMessage={(msg) => {
                 const newGameId = (msg as { newGameId?: string }).newGameId;
                 if (newGameId) {
@@ -580,6 +640,13 @@ export default function PracticeGamePage() {
           }}
         />
       </div>
+      <PracticeSettingsModal
+        isOpen={practiceModalOpen}
+        onClose={() => setPracticeModalOpen(false)}
+        onStart={handlePracticeModalStart}
+        initialSettings={practiceModalInitial}
+        busy={practiceCreating}
+      />
     </main>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { locales, defaultLocale, LOCALE_COOKIE, localeMeta, type Locale } from '@/i18n/config';
 import { setLocale } from '@/actions/setLocale';
 import styles from './LanguageDropdown.module.css';
@@ -29,7 +29,6 @@ export function LanguageDropdown({ initialLocale, onLocaleChange, pending: exter
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [hasDetected, setHasDetected] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (hasDetected) return;
@@ -49,17 +48,6 @@ export function LanguageDropdown({ initialLocale, onLocaleChange, pending: exter
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [isOpen]);
-
   const handleSelect = (locale: Locale) => {
     if (locale === current || isPending || externalPending) return;
     setCurrent(locale);
@@ -74,7 +62,7 @@ export function LanguageDropdown({ initialLocale, onLocaleChange, pending: exter
   const disabled = isPending || externalPending;
 
   return (
-    <div className={`${styles.container} ${disabled ? styles.disabled : ''}`} ref={ref}>
+    <div className={`${styles.container} ${disabled ? styles.disabled : ''}`}>
       <button
         type="button"
         className={styles.trigger}
@@ -94,24 +82,26 @@ export function LanguageDropdown({ initialLocale, onLocaleChange, pending: exter
         </svg>
       </button>
       {isOpen && (
-        <div className={styles.menu}>
-          {locales.map(loc => (
-            <button
-              key={loc}
-              type="button"
-              onClick={() => handleSelect(loc)}
-              className={`${styles.option} ${loc === current ? styles.optionActive : ''}`}
-              disabled={disabled}
-            >
-              <span className={styles.flag}>{localeMeta[loc].flag}</span>
-              <span className={styles.optionLabel}>{localeMeta[loc].label}</span>
-              {loc === current && (
-                <svg className={styles.check} width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </button>
-          ))}
+        <div className={styles.overlay} onClick={() => setIsOpen(false)}>
+          <div className={styles.menu} onClick={(e) => e.stopPropagation()}>
+            {locales.map(loc => (
+              <button
+                key={loc}
+                type="button"
+                onClick={() => handleSelect(loc)}
+                className={`${styles.option} ${loc === current ? styles.optionActive : ''}`}
+                disabled={disabled}
+              >
+                <span className={styles.flag}>{localeMeta[loc].flag}</span>
+                <span className={styles.optionLabel}>{localeMeta[loc].label}</span>
+                {loc === current && (
+                  <svg className={styles.check} width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

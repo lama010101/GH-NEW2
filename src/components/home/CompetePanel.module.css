@@ -9,7 +9,7 @@
 }
 
 .tab {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--gh-bg-input);
   border-radius: 8px;
   padding: 7px 0;
   flex: 1;
@@ -17,20 +17,20 @@
   cursor: pointer;
   font-size: var(--font-sm);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--gh-text-muted);
   text-align: center;
   transition: background 0.15s, color 0.15s;
 }
 
 .tabActive {
-  background: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
+  background: var(--gh-glass-bg-hover);
+  color: var(--gh-text-primary);
   font-weight: 700;
 }
 
 .tabBadge {
   background: var(--gh-danger);
-  color: #fff;
+  color: var(--gh-text-primary);
   border-radius: var(--gh-radius-pill);
   font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
@@ -45,14 +45,14 @@
   align-items: center;
   gap: 10px;
   padding: 12px 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--gh-text-muted);
   font-size: var(--font-xs);
 }
 
 .emptyStateCenter {
   padding: 12px 0;
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--gh-text-muted);
   font-size: var(--font-xs);
 }
 
@@ -60,7 +60,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--gh-bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,13 +84,13 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--gh-border-medium);
   border-top-color: var(--gh-blue);
   animation: spin 1s linear infinite;
 }
 
 .loadingText {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--gh-text-muted);
   font-size: var(--font-xs);
 }
 
@@ -110,8 +110,7 @@
   gap: 10px;
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.25);
-  margin-bottom: 6px;
+  background: var(--gh-bg-surface);
   cursor: pointer;
 }
 
@@ -130,7 +129,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--gh-text-primary);
   font-size: var(--font-xs);
   font-weight: 700;
   flex-shrink: 0;
@@ -144,20 +143,20 @@
 }
 
 .gameName {
-  color: #fff;
+  color: var(--gh-text-primary);
   font-size: var(--font-sm);
   font-weight: 600;
 }
 
 .gameSub {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--gh-text-muted);
   font-size: var(--font-xs);
 }
 
 .declineBtn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--gh-text-muted);
   font-size: var(--font-base);
   cursor: pointer;
   padding: 0 4px;
@@ -167,7 +166,7 @@
 
 .playBadge {
   background: var(--gh-blue);
-  color: #fff;
+  color: var(--gh-text-primary);
   font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   padding: 4px 10px;
@@ -175,8 +174,8 @@
 }
 
 .modeBadge {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--gh-glass-bg-hover);
+  color: var(--gh-text-secondary);
   font-size: 11px;
   font-weight: 600;
   padding: 3px 8px;
@@ -197,13 +196,13 @@
   border-radius: 6px;
   font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
-  color: white;
+  color: var(--gh-text-primary);
   margin-right: 6px;
 }
 
 .resultWin  { background: var(--gh-success); }
 .resultLoss { background: var(--gh-danger); }
-.resultDraw { background: #6b7280; }
+.resultDraw { background: var(--gh-text-muted); }
 
 .accuracyValue {
   font-weight: 600;
@@ -212,13 +211,13 @@
 }
 
 .xpValue {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--gh-text-muted);
   font-size: var(--font-2xs);
   margin-left: 4px;
 }
 
 .completedLabel {
-  color: #fff;
+  color: var(--gh-text-primary);
   font-size: var(--font-xs);
   font-weight: 700;
 }
@@ -226,7 +225,7 @@
 /* ── Copied from home.module.css — used by CompetePanel ── */
 
 .cardSubPanel {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--gh-bg-elevated);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -237,10 +236,10 @@
 .joinCodeInput {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(0, 100, 150, 0.25);
-  border: 1px solid rgba(0, 173, 193, 0.6);
+  background: rgba(0, 100, 150, 0.15);
+  border: 1px solid rgba(0, 173, 193, 0.5);
   border-radius: 10px;
-  color: #fff;
+  color: var(--gh-text-primary);
   font-size: var(--font-lg);
   font-weight: 700;
   letter-spacing: 4px;
@@ -251,7 +250,7 @@
 }
 
 .joinCodeInput::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--gh-text-muted);
 }
 
 .cardCtaRow {
@@ -280,19 +279,19 @@
 }
 
 .cardCtaBtnBlue {
-  background: #ffffff;
-  color: #0891b2;
+  background: var(--gh-text-primary);
+  color: var(--gh-teal);
   border: none;
 }
 
 .cardCtaBtnOutline {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: #fff;
+  background: var(--gh-glass-bg-hover);
+  border: 1px solid var(--gh-border-medium);
+  color: var(--gh-text-primary);
 }
 
 .errorText {
   font-size: var(--font-2xs);
-  color: #f87171;
+  color: var(--gh-danger);
   text-align: center;
 }

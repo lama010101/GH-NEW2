@@ -71,9 +71,9 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
           <button
             key={id}
             onClick={action}
-            className={`${styles.menuItem} ${id === 'home' ? styles.menuItemHome : ""}`}
+            className={styles.menuItem}
           >
-            <span className={id === 'home' ? styles.menuItemIconHome : styles.menuItemIcon}>
+            <span className={styles.menuItemIcon}>
               {icon}
             </span>
             {label}
@@ -101,9 +101,14 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
         <button
           className={styles.signOutBtn}
           onClick={async () => {
-            const { signOut } = await import('@/core/identity')
-            await signOut()
-            window.location.href = '/'
+            try {
+              const { signOut } = await import('@/core/identity')
+              await signOut()
+              window.location.href = '/'
+            } catch (err) {
+              console.error('[NavModal] signOut failed:', err)
+              window.location.href = '/login'
+            }
           }}
         >
           <span className={styles.signOutIcon}>{SIGNOUT_ICON}</span>

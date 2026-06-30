@@ -3,7 +3,7 @@ import type { SessionPlayer } from "./types";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getUsernameGradientStyle(_playerId: string): React.CSSProperties {
   return {
-    color: 'rgba(255, 255, 255, 0.90)',
+    color: 'var(--gh-text-primary)',
     fontWeight: 500,
     display: 'inline',
   };

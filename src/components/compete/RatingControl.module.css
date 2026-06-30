@@ -7,8 +7,8 @@
 
 .rateButton {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--gh-border-default);
+  color: var(--gh-text-secondary);
   border-radius: 8px;
   padding: 6px 12px;
   font-size: 13px;
@@ -18,8 +18,8 @@
 }
 
 .rateButton:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: var(--gh-glass-bg);
+  border-color: var(--gh-border-medium);
 }
 
 .scale {
@@ -32,9 +32,9 @@
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--gh-border-default);
+  background: var(--gh-glass-bg);
+  color: var(--gh-text-secondary);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -45,13 +45,13 @@
 }
 
 .cell:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--gh-glass-bg-hover);
 }
 
 .cellActive {
-  background: var(--gh-orange, #fb923c);
-  border-color: var(--gh-orange, #fb923c);
-  color: #ffffff;
+  background: var(--gh-orange);
+  border-color: var(--gh-orange);
+  color: var(--gh-btn-text);
   transform: scale(1.08);
 }
 
@@ -63,7 +63,7 @@
 
 .savedLabel {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--gh-text-secondary);
 }
 
 .closeInline {
@@ -72,7 +72,7 @@
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--gh-text-secondary);
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -82,5 +82,5 @@
 }
 
 .closeInline:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--gh-text-primary);
 }

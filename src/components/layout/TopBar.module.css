@@ -8,7 +8,8 @@
   align-items: center;
   justify-content: space-between;
   padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--gh-bg-base);
+  opacity: 0.9;
 }
 
 .topbarLeft {
@@ -23,8 +24,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(0, 0, 0, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-default);
   border-radius: 20px;
   padding: 6px 14px;
   cursor: pointer;
@@ -34,17 +35,17 @@
 .xpPillAccuracy {
   font-size: var(--font-sm);
   font-weight: 700;
-  color: #fff;
+  color: var(--gh-text-primary);
 }
 
 .xpPillSuffix {
   font-size: var(--font-2xs);
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--gh-text-muted);
   margin-left: 2px;
 }
 
 .xpPillDivider {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--gh-border-medium);
   font-size: var(--font-2xs);
 }
 
@@ -65,7 +66,7 @@
   height: 36px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  border: 2px solid var(--gh-border-medium);
   background: linear-gradient(135deg, #c45, #89b);
   cursor: pointer;
   padding: 0;
@@ -83,7 +84,7 @@
 }
 
 .avatarBtnInitials {
-  color: #fff;
+  color: var(--gh-text-primary);
   font-size: var(--font-xs);
   font-weight: 700;
 }

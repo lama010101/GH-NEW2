@@ -389,6 +389,15 @@ a {
   --gh-particle-red: #ff6b6b;
   --gh-particle-teal: #4ecdc4;
   --gh-particle-white: #ffffff;
+
+  /* --- Sheet (bottom sheet / settings sheet) --- */
+  --gh-sheet-bg: #121214;
+
+  /* --- Avatar placeholder (map marker fallback) --- */
+  --gh-avatar-placeholder-bg: #888888;
+
+  /* --- Avatar fallback (no-image circle bg) --- */
+  --gh-avatar-fallback-bg: #4b5563;
 }
 
 @media (max-width: 480px) {
@@ -601,6 +610,18 @@ a {
   --gh-particle-red:   #dc2626;
   --gh-particle-teal:  #0891b2;
   --gh-particle-white: #0f172a;
+
+  /* --- Button text (on orange primary) --- */
+  --gh-btn-text: #ffffff;
+
+  /* --- Sheet (bottom sheet / settings sheet) --- */
+  --gh-sheet-bg: #ffffff;
+
+  /* --- Avatar placeholder (map marker fallback) --- */
+  --gh-avatar-placeholder-bg: #6b7280;
+
+  /* --- Avatar fallback (no-image circle bg) --- */
+  --gh-avatar-fallback-bg: #e5e7eb;
 }
 
 /* Map grid + a few legacy surfaces use literal dark colors in globals;

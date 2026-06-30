@@ -29,16 +29,6 @@ let bootstrapped = false;
 let signingOut = false;
 let bootstrapPromise: Promise<IdentityState> | null = null;
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key && e.key.startsWith('sb-') && e.key.endsWith('-auth-token')) {
-      bootstrapped = false;
-      bootstrapPromise = null;
-      bootstrapIdentity().then(notifySubscribers);
-    }
-  });
-}
-
 function resetReadyPromise() {
   readyPromise = new Promise<string>((resolve) => {
     resolveReady = resolve;
@@ -82,54 +72,62 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
   bootstrapped = true;
 
   bootstrapPromise = (async (): Promise<IdentityState> => {
-    try {
-      // Validate and refresh the session via getUser(). Unlike getSession(),
-      // which only reads from localStorage and can return an expired token,
-      // getUser() makes a network call that refreshes stale tokens. This
-      // prevents the 'Player' fallback when the token is expired but still
-      // present in localStorage.
-      const { data: { user }, error: userError } = await Promise.race([
-        supabaseBrowser.auth.getUser(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Identity bootstrap timed out")), 8000)
-        ),
-      ]);
+    const maxAttempts = 3;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        // Validate and refresh the session via getUser(). Unlike getSession(),
+        // which only reads from localStorage and can return an expired token,
+        // getUser() makes a network call that refreshes stale tokens. This
+        // prevents the 'Player' fallback when the token is expired but still
+        // present in localStorage.
+        const { data: { user }, error: userError } = await Promise.race([
+          supabaseBrowser.auth.getUser(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("Identity bootstrap timed out")), 8000)
+          ),
+        ]);
 
-      if (userError) {
+        if (userError) {
+          cachedState = { status: "unauthenticated" };
+          return cachedState;
+        }
+
+        if (user?.id) {
+          const isAnonymous = user.is_anonymous ?? false;
+          const displayName = await fetchDisplayName(user.id);
+          const createdAt = new Date(user.created_at).getTime();
+          const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
+          const isNewUser = Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
+          cachedState = {
+            status: "ready",
+            playerId: user.id,
+            isAnonymous,
+            displayName,
+            isNewUser
+          };
+          resolveReady?.(user.id);
+          return cachedState;
+        }
+
+        // No session — user must sign in via /login
         cachedState = { status: "unauthenticated" };
         return cachedState;
-      }
-
-      if (user?.id) {
-        const isAnonymous = user.is_anonymous ?? false;
-        const displayName = await fetchDisplayName(user.id);
-        const createdAt = new Date(user.created_at).getTime();
-        const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
-        const isNewUser = Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
+      } catch (err) {
+        if (attempt < maxAttempts - 1) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
         cachedState = {
-          status: "ready",
-          playerId: user.id,
-          isAnonymous,
-          displayName,
-          isNewUser
+          status: "error",
+          error: err instanceof Error ? err.message : "Unknown identity bootstrap error",
         };
-        resolveReady?.(user.id);
         return cachedState;
       }
-
-      // No session — user must sign in via /login
-      cachedState = { status: "unauthenticated" };
-      return cachedState;
-    } catch (err) {
-      cachedState = {
-        status: "error",
-        error: err instanceof Error ? err.message : "Unknown identity bootstrap error",
-      };
-      return cachedState;
-    } finally {
-      bootstrapPromise = null;
     }
-  })();
+    return cachedState;
+  })().finally(() => {
+    bootstrapPromise = null;
+  });
 
   return bootstrapPromise;
 }
@@ -158,7 +156,20 @@ export async function onIdentityReady(): Promise<string> {
 export async function signOut(): Promise<void> {
   signingOut = true;
   try {
-    await supabaseBrowser.auth.signOut();
+    const { error } = await supabaseBrowser.auth.signOut({ scope: 'local' });
+    if (error) {
+      // signOut() returns { error } rather than throwing. Force-clear the
+      // Supabase auth cookies client-side so the next OAuth call does not
+      // reuse a stale session.
+      if (typeof document !== 'undefined') {
+        document.cookie.split(';').forEach((cookie) => {
+          const name = cookie.split('=')[0].trim();
+          if (name.startsWith('sb-') && name.endsWith('-auth-token')) {
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+          }
+        });
+      }
+    }
   } finally {
     bootstrapped = false;
     cachedState = { status: "unauthenticated" };

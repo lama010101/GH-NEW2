@@ -18,6 +18,7 @@ interface SessionCompleteProps {
   playerId: string | null;
   allRoundResults: AllRoundResult[] | null;
   sendMessage: (msg: object) => void;
+  onPlayAgain?: () => void;
 }
 
 export default function SessionComplete({
@@ -25,6 +26,7 @@ export default function SessionComplete({
   playerId,
   allRoundResults,
   sendMessage,
+  onPlayAgain,
 }: SessionCompleteProps) {
   const router = useRouter();
   const t = useTranslations('compete_page');
@@ -543,7 +545,7 @@ export default function SessionComplete({
                   <button
                     type="button"
                     className={styles.playBtn}
-                    onClick={handlePlayAgain}
+                    onClick={onPlayAgain ?? handlePlayAgain}
                     disabled={isCreatingLobby}
                     data-testid="session-play-again-btn"
                   >

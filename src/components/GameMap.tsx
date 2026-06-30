@@ -53,7 +53,7 @@ class GameMapErrorBoundary extends Component<{ children: ReactNode }, { hasError
             background: "rgba(239, 68, 68, 0.08)",
             borderRadius: "20px",
             border: "1px solid var(--gh-border-default)",
-            color: "var(--danger)",
+            color: "var(--gh-danger)",
             padding: "20px",
             textAlign: "center"
           }}
@@ -126,7 +126,7 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
             justifyContent: "center",
             background: "rgba(239, 68, 68, 0.08)",
             borderRadius: "20px",
-            color: "var(--danger)"
+            color: "var(--gh-danger)"
           }}
         >
           Map failed to render

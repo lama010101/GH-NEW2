@@ -195,7 +195,11 @@
     "no_description": "Sem descrição disponível",
     "timer_min_short": "{n}m {s}s",
     "timer_sec_short": "{n}s",
-    "countdown_hm": "{h}h {m}m"
+    "countdown_hm": "{h}h {m}m",
+    "born_prefix": "Nascido:",
+    "died_prefix": "Falecido:",
+    "no_data_yet": "Sem dados ainda",
+    "back_to_home": "Voltar para Home"
   },
   "lobby": {
     "waiting": "Aguardando jogadores ({ready}/{total} prontos)",
@@ -325,7 +329,7 @@
     "total_score": "Pontuação total",
     "winner": "Vencedor",
     "home": "Início",
-    "refresh": "Atualizar",
+    "refresh": "Problemas na rodada? Toque para recarregar",
     "image_failed": "Falha ao carregar imagem",
     "tap_retry": "Toque para tentar novamente",
     "sign_in": "Entrar",
@@ -446,7 +450,18 @@
     "room_not_found": "Sala não encontrada",
     "error_creating_game": "Erro ao criar partida",
     "unknown_player": "Desconhecido",
-    "invalid_server_response": "Resposta inválida do servidor"
+    "invalid_server_response": "Resposta inválida do servidor",
+    "not_authenticated": "Não autenticado",
+    "failed_create_practice": "Falha ao criar sessão de prática",
+    "no_game_id_response": "Sem gameId na resposta",
+    "failed_start_practice": "Falha ao iniciar prática",
+    "failed_load_session": "Falha ao carregar sessão",
+    "failed_start_game": "Falha ao iniciar jogo",
+    "bc_suffix": "a.C.",
+    "decade_suffix": "s",
+    "tier_century_label": "SÉCULO",
+    "tier_decade_label": "DÉCADA",
+    "tier_year_label": "ANO"
   },
   "auth": {
     "sign_in": "Entrar",
@@ -470,6 +485,7 @@
     "email_placeholder": "voce@exemplo.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "Email de redefinição enviado. Verifique sua caixa de entrada.",
+    "confirm_email_sent": "Verifique seu e-mail para confirmar sua conta.",
     "remember_me": "Lembrar de mim",
     "confirm_password": "Confirmar senha"
   },
@@ -527,7 +543,10 @@
     "when": "Quando",
     "where": "Onde",
     "games": "partidas",
-    "best": "melhor"
+    "best": "melhor",
+    "rated": "Avaliados",
+    "regions": "Regiões",
+    "countries": "Países"
   },
   "account": {
     "username": "Nome de usuário",
@@ -557,7 +576,8 @@
     "d_ago": "há {n}d",
     "invited_you": "convidou você para uma partida",
     "sent": "enviado {time}",
-    "join_game": "Entrar na partida"
+    "join_game": "Entrar na partida",
+    "someone": "Alguém"
   },
   "landing": {
     "meta_title": "Guess-History — Teste seu conhecimento de quando e onde",
@@ -574,5 +594,13 @@
     "waitlist_err_invalid_email": "Digite um email válido.",
     "waitlist_err_generic": "Algo deu errado. Tente novamente.",
     "waitlist_err_network": "Erro de rede. Tente novamente."
+  },
+  "welcome": {
+    "title": "Bem-vindo ao Guess-History!",
+    "your_historical_avatar": "Seu avatar histórico",
+    "choose_different_avatar": "Escolher outro avatar",
+    "your_username": "Seu nome de usuário",
+    "lets_play": "Vamos jogar!",
+    "skip_for_now": "Pular por agora"
   }
 }
