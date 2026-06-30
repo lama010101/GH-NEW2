@@ -524,6 +524,8 @@
     "accuracy": "准确度",
     "era": "时代",
     "region": "地区",
+    "when": "何时",
+    "where": "何地",
     "games": "局",
     "best": "最佳"
   },

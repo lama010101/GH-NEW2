@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Routes that do NOT require authentication.
  * Everything else redirects to /login if no Supabase session is present.
  */
-const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help"];
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/help"];
 
 // Public API routes that must remain reachable without authentication.
 // All other /api/* routes are required to pass the middleware auth check.

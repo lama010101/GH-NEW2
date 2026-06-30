@@ -41,9 +41,16 @@ function HomePageInner() {
   useEffect(() => {
     bootstrapIdentity().then((state) => {
       setIdentity(state);
+      if (state.status === 'unauthenticated') {
+        router.replace('/login?next=/home');
+      }
     })
     return subscribeToIdentityChanges((state) => {
       setIdentity(state);
+      if (state.status === 'unauthenticated') {
+        router.replace('/login?next=/home');
+        return;
+      }
       if (state.status === 'ready') {
         if (state.isNewUser) {
           fetch('/api/user/assign-avatar', { method: 'POST' })
@@ -57,7 +64,7 @@ function HomePageInner() {
         }
       }
     });
-  }, [])
+  }, [router])
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
@@ -119,8 +126,12 @@ function HomePageInner() {
     router.push(path)
   }
 
-  const playerId = (identity as { status: string; playerId: string; displayName: string }).playerId ?? ''
-  const displayName = (identity as { status: string; playerId: string; displayName: string }).displayName ?? 'Player'
+  if (identity.status !== 'ready') {
+    return null;
+  }
+
+  const playerId = identity.playerId
+  const displayName = identity.displayName
 
   return (
     <div className={styles.pageRoot}>

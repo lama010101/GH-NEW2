@@ -4,6 +4,12 @@ import { getDbPool } from '@/server/db';
 
 export const dynamic = 'force-dynamic';
 
+interface PracticeStats {
+  avgAccuracy: number | null
+  gamesPlayed: number | null
+  totalXp: number | null
+}
+
 interface ProgressData {
   stats: {
     avgAccuracy: number | null
@@ -14,14 +20,18 @@ interface ProgressData {
   byCentury: Array<{
     century: string
     avgAccuracy: number
+    totalXp: number
     roundCount: number
   }>
   byContinent: Array<{
     continent: string
     avgAccuracy: number
+    totalXp: number
     roundCount: number
   }>
   eventsSeenCount: number
+  countriesCount: number
+  practice: PracticeStats
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -39,7 +49,7 @@ export async function GET(_: NextRequest) {
   try {
     const db = getDbPool();
 
-    const [statsResult, centuryResult, continentResult, eventsSeenResult] = await Promise.all([
+    const [statsResult, centuryResult, continentResult, eventsSeenResult, countriesResult, practiceResult] = await Promise.all([
       db.query<{
         avg_accuracy: number | null;
         total_xp: number | null;
@@ -55,6 +65,7 @@ export async function GET(_: NextRequest) {
       db.query<{
         century: string;
         avg_accuracy: string;
+        total_xp: string;
         round_count: string;
       }>(
         `SELECT
@@ -68,6 +79,7 @@ export async function GET(_: NextRequest) {
             ELSE 'pre-1500'
           END AS century,
           ROUND(AVG((rr.location_score + rr.time_score) / 2.0), 1) AS avg_accuracy,
+          SUM(rr.location_score + rr.time_score) AS total_xp,
           COUNT(*) AS round_count
         FROM round_results rr
         JOIN round_events re
@@ -86,11 +98,13 @@ export async function GET(_: NextRequest) {
       db.query<{
         continent: string;
         avg_accuracy: string;
+        total_xp: string;
         round_count: string;
       }>(
         `SELECT
           l.continent,
           ROUND(AVG((rr.location_score + rr.time_score) / 2.0), 1) AS avg_accuracy,
+          SUM(rr.location_score + rr.time_score) AS total_xp,
           COUNT(*) AS round_count
         FROM round_results rr
         JOIN round_events re
@@ -119,6 +133,38 @@ export async function GET(_: NextRequest) {
          WHERE rr.player_id = $1`,
         [playerId]
       ),
+      db.query<{ countries_count: string }>(
+        `SELECT COUNT(DISTINCT l.country) AS countries_count
+         FROM round_results rr
+         JOIN round_events re
+           ON re.game_id = rr.game_id
+           AND re.round_index = rr.round_index
+           AND re.event_type = 'ROUND_STARTED'
+         JOIN events e
+           ON e.id = (re.payload->>'eventId')::uuid
+         JOIN locations l
+           ON l.event_id = e.id
+         WHERE rr.player_id = $1
+           AND l.country IS NOT NULL`,
+        [playerId]
+      ),
+      db.query<{
+        avg_accuracy: string | null;
+        games_played: string | null;
+        total_xp: string | null;
+      }>(
+        `SELECT
+          ROUND(AVG((rr.location_score + rr.time_score) / 2.0), 1) AS avg_accuracy,
+          COUNT(DISTINCT s.game_id) AS games_played,
+          COALESCE(SUM(rr.location_score + rr.time_score), 0) AS total_xp
+         FROM round_results rr
+         JOIN sessions s ON s.game_id = rr.game_id
+         WHERE rr.player_id = $1
+           AND s.mode = 'practice'
+           AND rr.location_score IS NOT NULL
+           AND rr.time_score IS NOT NULL`,
+        [playerId]
+      ),
     ]);
 
     const statsRow = statsResult.rows[0] ?? null;
@@ -133,14 +179,22 @@ export async function GET(_: NextRequest) {
       byCentury: centuryResult.rows.map((row) => ({
         century: row.century,
         avgAccuracy: parseFloat(row.avg_accuracy),
+        totalXp: parseInt(row.total_xp ?? '0', 10),
         roundCount: parseInt(row.round_count, 10),
       })),
       byContinent: continentResult.rows.map((row) => ({
         continent: row.continent,
         avgAccuracy: parseFloat(row.avg_accuracy),
+        totalXp: parseInt(row.total_xp ?? '0', 10),
         roundCount: parseInt(row.round_count, 10),
       })),
       eventsSeenCount: parseInt(eventsSeenResult.rows[0]?.events_seen ?? '0', 10),
+      countriesCount: parseInt(countriesResult.rows[0]?.countries_count ?? '0', 10),
+      practice: {
+        avgAccuracy: practiceResult.rows[0]?.avg_accuracy ? parseFloat(practiceResult.rows[0].avg_accuracy) : null,
+        gamesPlayed: practiceResult.rows[0]?.games_played ? parseInt(practiceResult.rows[0].games_played, 10) : null,
+        totalXp: practiceResult.rows[0]?.total_xp ? parseInt(practiceResult.rows[0].total_xp, 10) : null,
+      },
     };
 
     return NextResponse.json(response);

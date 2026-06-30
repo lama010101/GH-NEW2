@@ -6,7 +6,8 @@ import { AuthModal } from "@/components/AuthModal";
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/";
+  const rawNext = searchParams.get("next") ?? "/home";
+  const next = rawNext === "/" ? "/home" : rawNext;
 
   const handleClose = () => {
     router.replace(next);

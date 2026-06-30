@@ -700,8 +700,8 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     }
     await client.query(
       `INSERT INTO session_players (game_id, player_id, display_name, joined_at, ready, is_host, avatar_url)
-       VALUES ($1, $2, $3, now(), false, true, $4)`,
-      [gameId, hostPlayerId, hostDisplayName, hostAvatarUrl]
+       VALUES ($1, $2, $3, now(), $5, true, $4)`,
+      [gameId, hostPlayerId, hostDisplayName, hostAvatarUrl, mode === "practice"]
     );
 
     await appendEvent(client, gameId, "SESSION_CREATED", {
@@ -1284,10 +1284,6 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
       throw new Error("Session not found");
     }
 
-    if (session.mode === "practice") {
-      throw new Error("Practice sessions use the dedicated practice flow");
-    }
-
     const playerRows = await loadSessionPlayerRows(gameId, client);
     const activePlayers = playerRows.filter((p) => p.left_at === null);
 
@@ -1307,6 +1303,7 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
     }
 
     // All active players must be ready. No fallback defaults.
+    // Practice mode: host is auto-ready at creation, so this always passes.
     const notReady = activePlayers.filter((p) => !p.ready);
     if (notReady.length > 0) {
       throw new Error(`Not all players are ready (${notReady.length} pending)`);
@@ -1443,10 +1440,6 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     const session = await loadSessionRow(gameId, client);
     if (!session) {
       throw new Error("Session not found");
-    }
-
-    if (session.mode === "practice") {
-      throw new Error("Use practice session endpoints for practice mode");
     }
 
     // Consolidated guard queries — single CTE to check round start, round complete, existing commit, fetch session event IDs, fetch the ROUND_STARTED phaseEndsAt (needed for the inline pressure clamp on the first submission), and fetch scoring_reference_year (frozen at session creation for deterministic era scaling).
@@ -1974,11 +1967,6 @@ export async function completeRound(input: {
 }
 
 async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync" | "async"): Promise<void> {
-  // Guard: practice sessions never update global stats
-  if (mode === "practice") {
-    return;
-  }
-
   try {
     // Fetch all round_results for this game
     const roundResults = await dbPool.query<{
@@ -2018,42 +2006,56 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
       data.session_accuracy_per_round.push(accuracy);
     }
 
-    // For each player, upsert player_global_stats using running average
+    const isPractice = mode === "practice";
+
+    // For each player, upsert player_global_stats
     for (const [playerId, data] of playerMap.entries()) {
-      // Fetch existing stats
-      const existing = await dbPool.query<{
-        rounds_played: number;
-        avg_accuracy: number;
-      }>(
-        `SELECT rounds_played, avg_accuracy
-         FROM player_global_stats
-         WHERE player_id = $1`,
-        [playerId]
-      );
+      if (isPractice) {
+        // Practice mode: only add XP, do NOT touch avg_accuracy / rounds_played / games_played
+        await dbPool.query(
+          `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, updated_at)
+           VALUES ($1, 0, 0, 0, $2, now())
+           ON CONFLICT (player_id) DO UPDATE SET
+             total_xp = player_global_stats.total_xp + $2,
+             updated_at = now()`,
+          [playerId, data.session_total_xp]
+        );
+      } else {
+        // Non-practice: update avg_accuracy (running average), rounds_played, games_played, and total_xp
+        const existing = await dbPool.query<{
+          rounds_played: number;
+          avg_accuracy: number;
+        }>(
+          `SELECT rounds_played, avg_accuracy
+           FROM player_global_stats
+           WHERE player_id = $1`,
+          [playerId]
+        );
 
-      const existingRounds = existing.rows[0]?.rounds_played ?? 0;
-      const existingAvg = existing.rows[0]?.avg_accuracy ?? 0;
+        const existingRounds = existing.rows[0]?.rounds_played ?? 0;
+        const existingAvg = existing.rows[0]?.avg_accuracy ?? 0;
 
-      // Compute running average incrementally per round
-      let runningAvg = existingAvg;
-      let runningCount = existingRounds;
-      for (const roundAcc of data.session_accuracy_per_round) {
-        runningAvg = (runningAvg * runningCount + roundAcc) / (runningCount + 1);
-        runningCount += 1;
+        // Compute running average incrementally per round
+        let runningAvg = existingAvg;
+        let runningCount = existingRounds;
+        for (const roundAcc of data.session_accuracy_per_round) {
+          runningAvg = (runningAvg * runningCount + roundAcc) / (runningCount + 1);
+          runningCount += 1;
+        }
+
+        // Upsert
+        await dbPool.query(
+          `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, updated_at)
+           VALUES ($1, $2, 1, $3, $4, now())
+           ON CONFLICT (player_id) DO UPDATE SET
+             avg_accuracy = $3,
+             total_xp = player_global_stats.total_xp + $4,
+             rounds_played = $2,
+             games_played = player_global_stats.games_played + 1,
+             updated_at = now()`,
+          [playerId, runningCount, runningAvg, data.session_total_xp]
+        );
       }
-
-      // Upsert
-      await dbPool.query(
-        `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, updated_at)
-         VALUES ($1, $2, 1, $3, $4, now())
-         ON CONFLICT (player_id) DO UPDATE SET
-           avg_accuracy = $3,
-           total_xp = player_global_stats.total_xp + $4,
-           rounds_played = $2,
-           games_played = player_global_stats.games_played + 1,
-           updated_at = now()`,
-        [playerId, runningCount, runningAvg, data.session_total_xp]
-      );
     }
   } catch (error) {
     console.error('[updatePlayerGlobalStats]', error);
@@ -2262,10 +2264,6 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 
     session = await loadSessionRow(gameId, client);
     if (!session) throw new Error("Session not found");
-
-    if (session.mode === "practice") {
-      throw new Error("Practice sessions use the dedicated practice flow");
-    }
 
     nextRoundIndex = roundIndex + 1;
     let advanceEventIds: string[] | undefined;

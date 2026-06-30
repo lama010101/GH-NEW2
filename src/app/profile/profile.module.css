@@ -267,6 +267,28 @@
   color: #67e8f9;
 }
 
+.tabActiveWhen {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.35);
+  color: var(--gh-violet, #8b5cf6);
+}
+
+.tabActiveWhen:hover {
+  background: rgba(139, 92, 246, 0.18);
+  color: #a78bfa;
+}
+
+.tabActiveWhere {
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.35);
+  color: var(--gh-teal, #22d3ee);
+}
+
+.tabActiveWhere:hover {
+  background: rgba(34, 211, 238, 0.18);
+  color: #67e8f9;
+}
+
 /* ── Region / era rows ── */
 .regionWrap {
   display: flex;

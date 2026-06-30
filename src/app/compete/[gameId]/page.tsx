@@ -135,6 +135,17 @@ export default function CompeteGamePage() {
     };
   }, []);
 
+  // Reset all game state when gameId changes (Play Again redirect, manual navigation)
+  useEffect(() => {
+    setSnapshot(null);
+    setRoundResults(null);
+    setAllRoundResults(null);
+    setError(null);
+    setBusy(false);
+    setLocalSubmitted(false);
+    setWsDisconnected(false);
+  }, [gameId]);
+
   // Reset card expansion when round changes
   useEffect(() => {
     setWhereLbExpanded(true);
@@ -518,12 +529,12 @@ export default function CompeteGamePage() {
 
   return (
     <main className={`app-shell ${pageStyles.pageShell}`}>
-      {snapshot?.status !== "ROUND_ACTIVE" && snapshot?.status !== "LOBBY" && (
+      {snapshot?.status === "ROUND_COMPLETE" && (
         <div className={pageStyles.notificationWrap}>
-          <NotificationBell />
+          <NotificationBell onlyShowWhenUnread />
         </div>
       )}
-      {snapshot?.status === "LOBBY" && (
+      {(snapshot?.status === "LOBBY" || snapshot?.status === "SESSION_COMPLETE") && (
         <>
           <TopBar
             accuracy={topbarAccuracy}
