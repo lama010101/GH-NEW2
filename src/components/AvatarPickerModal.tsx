@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import avatarPickerStyles from '@/app/profile/avatarPicker.module.css';
 
@@ -29,6 +30,7 @@ export function AvatarPickerModal({
   showSkip = false,
   onSkip,
 }: AvatarPickerModalProps) {
+  const t = useTranslations('avatar_picker');
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,7 +71,7 @@ export function AvatarPickerModal({
     const parts: string[] = [];
     if (avatar.first_name) parts.push(avatar.first_name);
     if (avatar.last_name) parts.push(avatar.last_name);
-    return parts.join(' ') || 'Unknown';
+    return parts.join(' ') || t('unknown');
   };
 
   const filteredAvatars = avatars.filter(avatar => {
@@ -93,7 +95,7 @@ export function AvatarPickerModal({
     <div className={avatarPickerStyles.modalOverlay}>
       <div className={avatarPickerStyles.modalCard}>
         <div className={avatarPickerStyles.modalHeader}>
-          <h3 className={avatarPickerStyles.modalTitle}>Choose Avatar</h3>
+          <h3 className={avatarPickerStyles.modalTitle}>{t('title')}</h3>
           <button
             className={avatarPickerStyles.closeButton}
             onClick={onClose}
@@ -108,14 +110,14 @@ export function AvatarPickerModal({
           <input
             type="text"
             className={avatarPickerStyles.searchInput}
-            placeholder="Search by name..."
+            placeholder={t('search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           {isLoadingAvatars ? (
-            <div className={avatarPickerStyles.emptyState}>Loading avatars...</div>
+            <div className={avatarPickerStyles.emptyState}>{t('loading')}</div>
           ) : filteredAvatars.length === 0 ? (
-            <div className={avatarPickerStyles.emptyState}>No avatars found</div>
+            <div className={avatarPickerStyles.emptyState}>{t('no_avatars')}</div>
           ) : (
             <div className={avatarPickerStyles.avatarGrid}>
               {filteredAvatars.map((avatar) => {
@@ -148,7 +150,7 @@ export function AvatarPickerModal({
               onClick={() => { onSkip?.(); }}
               disabled={isSavingAvatar}
             >
-              Skip
+              {t('skip')}
             </button>
           )}
           <button
@@ -156,7 +158,7 @@ export function AvatarPickerModal({
             onClick={handleSave}
             disabled={!selectedAvatar || isSavingAvatar}
           >
-            {isSavingAvatar ? 'Saving...' : 'Save'}
+            {isSavingAvatar ? t('saving') : t('save')}
           </button>
         </div>
       </div>

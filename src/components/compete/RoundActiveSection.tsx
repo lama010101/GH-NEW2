@@ -7,8 +7,8 @@ import { useTranslations } from 'next-intl';
 import { YearPicker } from "@/components/YearPicker";
 import NotificationBell from "@/components/NotificationBell";
 import { setLocale } from "@/actions/setLocale";
-import { LOCALE_COOKIE, locales, type Locale } from "@/i18n/config";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import styles from "./RoundActiveSection.module.css";
 
 const GameMap = dynamic(
@@ -92,19 +92,13 @@ export default function RoundActiveSection({
   const [submittedToasts, setSubmittedToasts] = useState<Record<string, boolean>>({});
   const toastTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [guessHint, setGuessHint] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
+  const [imgRetryKey, setImgRetryKey] = useState(0);
   const guessHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const whereSearchInputRef = useRef<HTMLInputElement>(null);
   const yearEditInputRef = useRef<HTMLInputElement>(null);
   const [sheetViewportStyle, setSheetViewportStyle] = useState<React.CSSProperties>({});
   const [localePending, startLocaleTransition] = useTransition();
-  const [currentLocale, setCurrentLocale] = useState<Locale>(() => {
-    if (typeof document === 'undefined') return 'en';
-    const match = document.cookie
-      .split(';')
-      .find(c => c.trim().startsWith(LOCALE_COOKIE + '='));
-    const val = match?.split('=')[1]?.trim();
-    return val && (locales as readonly string[]).includes(val) ? (val as Locale) : 'en';
-  });
   // Running total accuracy across completed rounds of the current game (viewer).
   // Source of truth: round_results table via /all-results endpoint (DB-backed).
   // Formula mirrors server session-accuracy: avg of (location_score + time_score) / 2.
@@ -206,6 +200,11 @@ export default function RoundActiveSection({
   useEffect(() => {
     // Cinematic done — do not auto-open any panel
   }, [cinematicDone]);
+
+  // Reset image error state when the round image URL changes
+  useEffect(() => {
+    setImgError(false);
+  }, [currentEvent?.imageUrl]);
 
   // Auto-focus the relevant input field when a panel opens
   useEffect(() => {
@@ -592,14 +591,36 @@ export default function RoundActiveSection({
         data-testid="round-image-container"
       >
         {currentEvent?.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            ref={imgRef}
-            src={currentEvent.imageUrl}
-            alt="Historical event"
-            draggable={false}
-            className={styles.eventImg}
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              key={imgRetryKey}
+              ref={imgRef}
+              src={currentEvent.imageUrl}
+              alt="Historical event"
+              draggable={false}
+              className={styles.eventImg}
+              onError={() => setImgError(true)}
+              onLoad={() => setImgError(false)}
+            />
+            {imgError && (
+              <div
+                className={styles.imgErrorOverlay}
+                onClick={() => {
+                  setImgError(false);
+                  setImgRetryKey((k) => k + 1);
+                }}
+              >
+                <svg className={styles.imgErrorIcon} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+                <span className={styles.imgErrorText}>{t('image_failed')}</span>
+                <button type="button" className={styles.imgRetryBtn}>{t('tap_retry')}</button>
+              </div>
+            )}
+          </>
         ) : (
           <div className={styles.imgPlaceholder} />
         )}
@@ -744,7 +765,7 @@ export default function RoundActiveSection({
             />
             {guessLocation !== null && (
               <div className={styles.mapLocationLabel}>
-                {locationName ?? "Location set ✓"}
+                {locationName ?? t('location_set')}
               </div>
             )}
             <button
@@ -777,7 +798,7 @@ export default function RoundActiveSection({
             onClick={onOpenHints}
             disabled={isLocked}
             className={`${styles.circleBtn} ${styles.hintsBtn} ${isLocked ? styles.hintsBtnLocked : ""}`}
-            aria-label="Hints"
+            aria-label={t('hints')}
             data-testid="round-hints-btn"
           >
             <span className={styles.hintsCount}>{hintsUsedCount ?? 0}</span>
@@ -900,12 +921,12 @@ export default function RoundActiveSection({
                     <div className={styles.sheetHeaderMeta}>
                       <span className={styles.sheetHeaderValue}>
                         {guessLocation !== null
-                          ? locationName ?? "Location set ✓"
-                          : "No location set"}
+                          ? locationName ?? t('location_set')
+                          : t('no_location_set')}
                       </span>
                     </div>
                   </div>
-                  <button type="button" className={styles.sheetCloseBtn} onClick={closeSheet} aria-label="Close">
+                  <button type="button" className={styles.sheetCloseBtn} onClick={closeSheet} aria-label={tNav('close')}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
@@ -934,13 +955,13 @@ export default function RoundActiveSection({
                       type="text"
                       value={searchQuery}
                       onChange={(e) => handleSearchChange(e.target.value)}
-                      placeholder="Search a place (city, country)…"
+                      placeholder={t('search_place_placeholder')}
                       disabled={isLocked}
                       className={`${styles.sheetField} ${styles.sheetFieldWithIcon}`}
                     />
                     {(searchResults.length > 0 || searchLoading) && (
                       <div className={styles.sheetSearchDropdown}>
-                        {searchLoading && <div className={styles.sheetSearchLoading}>Searching…</div>}
+                        {searchLoading && <div className={styles.sheetSearchLoading}>{t('searching')}</div>}
                         {searchResults.map((r, i) => (
                           <button
                             key={i}
@@ -962,7 +983,7 @@ export default function RoundActiveSection({
                   onClick={closeSheet}
                   disabled={guessLocation === null}
                 >
-                  {guessLocation !== null ? "Confirm location" : "Tap the map to set a location"}
+                  {guessLocation !== null ? t('confirm_location') : t('tap_map_to_set')}
                 </button>
               </>
             )}
@@ -976,11 +997,11 @@ export default function RoundActiveSection({
                     <img src="/badges/when.webp" alt="" className={styles.sheetHeaderIcon} />
                     <div className={styles.sheetHeaderMeta}>
                       <span className={styles.sheetHeaderValue}>
-                        {guessYear !== null ? String(guessYear) : "No year set"}
+                        {guessYear !== null ? String(guessYear) : t('no_year_set')}
                       </span>
                     </div>
                   </div>
-                  <button type="button" className={styles.sheetCloseBtn} onClick={closeSheet} aria-label="Close">
+                  <button type="button" className={styles.sheetCloseBtn} onClick={closeSheet} aria-label={tNav('close')}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
@@ -1023,7 +1044,7 @@ export default function RoundActiveSection({
                           setYearEditValue(guessYear !== null ? String(guessYear) : "");
                           setTimeout(() => e.target.select(), 10);
                         }}
-                        placeholder={`Enter year (${yearMin}–${yearMax})`}
+                        placeholder={t('enter_year_placeholder', { min: yearMin, max: yearMax })}
                         min={yearMin}
                         max={yearMax}
                         className={styles.sheetField}
@@ -1038,7 +1059,7 @@ export default function RoundActiveSection({
                   onClick={closeSheet}
                   disabled={guessYear === null}
                 >
-                  {guessYear !== null ? "Confirm year" : "Pick a year to continue"}
+                  {guessYear !== null ? t('confirm_year') : t('pick_year_to_continue')}
                 </button>
               </>
             )}
@@ -1094,32 +1115,10 @@ export default function RoundActiveSection({
 
             <div className={styles.settingsLanguageRow}>
               <span className={styles.settingsLanguageLabel}>{tNav('language')}</span>
-              <div className={styles.settingsLanguageToggle}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (currentLocale === 'en' || localePending) return;
-                    setCurrentLocale('en');
-                    startLocaleTransition(() => { setLocale('en'); });
-                  }}
-                  disabled={localePending}
-                  className={`${styles.settingsLanguageOption} ${currentLocale === 'en' ? styles.settingsLanguageOptionActive : ''}`}
-                >
-                  EN
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (currentLocale === 'fr' || localePending) return;
-                    setCurrentLocale('fr');
-                    startLocaleTransition(() => { setLocale('fr'); });
-                  }}
-                  disabled={localePending}
-                  className={`${styles.settingsLanguageOption} ${currentLocale === 'fr' ? styles.settingsLanguageOptionActive : ''}`}
-                >
-                  FR
-                </button>
-              </div>
+              <LanguageDropdown
+                onLocaleChange={(loc) => startLocaleTransition(() => { setLocale(loc); })}
+                pending={localePending}
+              />
             </div>
 
             <div className={styles.settingsLanguageRow}>
@@ -1128,6 +1127,18 @@ export default function RoundActiveSection({
             </div>
 
             <div className={styles.settingsDivider} />
+
+            <button
+              type="button"
+              onClick={() => {
+                setImgError(false);
+                setImgRetryKey((k) => k + 1);
+                setSettingsModalOpen(false);
+              }}
+              className={styles.settingsRefreshBtn}
+            >
+              {t('refresh')}
+            </button>
 
             <button
               type="button"

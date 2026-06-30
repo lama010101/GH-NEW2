@@ -165,6 +165,14 @@
 
 /* ── Language toggle ── */
 
+.navLangItem {
+  flex-wrap: wrap;
+}
+
+.navLangText {
+  flex: 1;
+}
+
 .navLangToggle {
   background: var(--gh-modal-lang-bg);
   border: 1px solid var(--gh-modal-lang-border);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import styles from './FullscreenImageViewer.module.css';
 
 interface FullscreenImageViewerProps {
@@ -10,6 +11,7 @@ interface FullscreenImageViewerProps {
 }
 
 export default function FullscreenImageViewer({ src, alt, onClose }: FullscreenImageViewerProps) {
+  const tNav = useTranslations('nav');
   const imgRef = useRef<HTMLImageElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
@@ -124,7 +126,7 @@ export default function FullscreenImageViewer({ src, alt, onClose }: FullscreenI
       <button
         className={styles.closeBtn}
         onClick={onClose}
-        aria-label="Close fullscreen view"
+        aria-label={tNav('close_fullscreen_view')}
       >
         ✕
       </button>

@@ -46,10 +46,10 @@ function enforceDbConnection(): Pool {
     ssl: {
       rejectUnauthorized: false
     },
-    max: 100,
+    max: 8,
     min: 2,
-    connectionTimeoutMillis: 30000,
-    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 120000,
+    idleTimeoutMillis: 0,
     allowExitOnIdle: false,
     keepAlive: true,
     keepAliveInitialDelayMillis: 10000
@@ -61,7 +61,20 @@ function enforceDbConnection(): Pool {
   // can hold a pool slot indefinitely, causing pool exhaustion.
   const poolEmitter = pool as unknown as import("events").EventEmitter;
   poolEmitter.on("connect", (client: { query: (text: string) => Promise<unknown> }) => {
+    const p = pool as unknown as { totalCount: number; idleCount: number; waitingCount: number };
+    console.log(`[DB][POOL] New connection established. total=${p.totalCount} idle=${p.idleCount} waiting=${p.waitingCount}`);
     client.query("SET statement_timeout = 15000").catch(() => undefined);
+  });
+  poolEmitter.on("error", (err: Error) => {
+    console.error(`[DB][POOL] Pool error: ${err.message}`);
+  });
+  poolEmitter.on("acquire", () => {
+    const p = pool as unknown as { totalCount: number; idleCount: number; waitingCount: number };
+    console.log(`[DB][POOL] Acquire. total=${p.totalCount} idle=${p.idleCount} waiting=${p.waitingCount}`);
+  });
+  poolEmitter.on("remove", () => {
+    const p = pool as unknown as { totalCount: number; idleCount: number; waitingCount: number };
+    console.log(`[DB][POOL] Connection removed. total=${p.totalCount} idle=${p.idleCount} waiting=${p.waitingCount}`);
   });
 
   // IMMEDIATE connection test — no lazy loading

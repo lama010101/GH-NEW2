@@ -29,6 +29,16 @@ let bootstrapped = false;
 let signingOut = false;
 let bootstrapPromise: Promise<IdentityState> | null = null;
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('sb-') && e.key.endsWith('-auth-token')) {
+      bootstrapped = false;
+      bootstrapPromise = null;
+      bootstrapIdentity().then(notifySubscribers);
+    }
+  });
+}
+
 function resetReadyPromise() {
   readyPromise = new Promise<string>((resolve) => {
     resolveReady = resolve;
@@ -73,25 +83,22 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
 
   bootstrapPromise = (async (): Promise<IdentityState> => {
     try {
-      // Read the session from local storage/cookies (no network refresh) and
-      // bound it with a timeout. The server-side middleware already validates
-      // and refreshes the session cookie on every page load, so getSession()
-      // is reliable here. We deliberately avoid getUser(), whose underlying
-      // network call can hang indefinitely while holding the GoTrue lock —
-      // which previously left identity stuck in "loading" after a refresh.
-      const { data: { session }, error: sessionError } = await Promise.race([
-        supabaseBrowser.auth.getSession(),
+      // Validate and refresh the session via getUser(). Unlike getSession(),
+      // which only reads from localStorage and can return an expired token,
+      // getUser() makes a network call that refreshes stale tokens. This
+      // prevents the 'Player' fallback when the token is expired but still
+      // present in localStorage.
+      const { data: { user }, error: userError } = await Promise.race([
+        supabaseBrowser.auth.getUser(),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("Identity bootstrap timed out")), 8000)
         ),
       ]);
 
-      if (sessionError) {
-        cachedState = { status: "error", error: `Session check failed: ${sessionError.message}` };
+      if (userError) {
+        cachedState = { status: "unauthenticated" };
         return cachedState;
       }
-
-      const user = session?.user;
 
       if (user?.id) {
         const isAnonymous = user.is_anonymous ?? false;

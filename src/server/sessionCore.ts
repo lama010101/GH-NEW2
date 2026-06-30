@@ -602,12 +602,22 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     throw new Error("yearMin must be less than or equal to yearMax");
   }
 
-  console.time("[PERF] createCompeteSession:fetchEvents");
-  const events = await fetchRandomEventsForSession(totalRounds, {
-    minYear: yearMin,
-    maxYear: yearMax
-  });
-  console.timeEnd("[PERF] createCompeteSession:fetchEvents");
+  let events: Awaited<ReturnType<typeof fetchRandomEventsForSession>> = [];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      console.time("[PERF] createCompeteSession:fetchEvents");
+      events = await fetchRandomEventsForSession(totalRounds, {
+        minYear: yearMin,
+        maxYear: yearMax
+      });
+      console.timeEnd("[PERF] createCompeteSession:fetchEvents");
+      break;
+    } catch (err) {
+      console.error(`[createCompeteSession] fetchEvents attempt ${attempt + 1} failed: ${err instanceof Error ? err.message : String(err)}`);
+      if (attempt === 2) throw err;
+      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+    }
+  }
 
   if (events.length !== totalRounds) {
     throw new Error(`Expected ${totalRounds} real events from the database, received ${events.length}`);
@@ -616,7 +626,18 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   const gameId = randomUUID();
   const hostPlayerId = input.playerId;
   const seed = BigInt("0x" + randomBytes(8).toString("hex")) & BigInt("0x7FFFFFFFFFFFFFFF");
-  const client = await getTransactionClient();
+  let client: DbTransactionClient | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      client = await getTransactionClient();
+      break;
+    } catch (err) {
+      console.error(`[createCompeteSession] getTransactionClient attempt ${attempt + 1} failed: ${err instanceof Error ? err.message : String(err)}`);
+      if (attempt === 2) throw err;
+      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+    }
+  }
+  if (!client) throw new Error("Failed to acquire DB transaction client after 3 attempts");
 
   try {
     console.time("[PERF] createCompeteSession:transaction");

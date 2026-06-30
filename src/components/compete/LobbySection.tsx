@@ -52,8 +52,8 @@ function writeLastInvited(player: LastInvitedPlayer): void {
   }
 }
 
-function formatTimerDisplay(sec: number): string {
-  if (sec === 0) return "OFF";
+function formatTimerDisplay(sec: number, offLabel: string): string {
+  if (sec === 0) return offLabel;
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}m ${s.toString().padStart(2, "0")}s`;
@@ -442,7 +442,7 @@ export default function LobbySection({
     <div className={styles['lobby-shell']} data-testid="lobby-shell">
       <header className={styles['lobby-header']}>
         <div className={styles['lobby-header-top']}>
-          <button className={styles['lobby-back-btn']} onClick={() => router.push("/home")} aria-label="Back" data-testid="lobby-back-btn">
+          <button className={styles['lobby-back-btn']} onClick={() => router.push("/home")} aria-label={t('lobby.back')} data-testid="lobby-back-btn">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
@@ -501,7 +501,7 @@ export default function LobbySection({
                   type="button"
                   className={styles['lobbySearchClearBtn']}
                   onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
+                  aria-label={t('lobby.clear_search')}
                 >
                   ×
                 </button>
@@ -525,7 +525,7 @@ export default function LobbySection({
                         <button
                           className={styles['lobbyStarBtn']}
                           onClick={() => toggleFollow(player.id)}
-                          aria-label={followedIds.has(player.id) ? 'Remove from favorites' : 'Add to favorites'}
+                          aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
                         >
                           <span style={{ color: followedIds.has(player.id) ? '#f0c060' : 'rgba(255,255,255,0.5)' }}>
                             {followedIds.has(player.id) ? '★' : '☆'}
@@ -543,11 +543,11 @@ export default function LobbySection({
                         disabled={inviteState !== 'idle'}
                       >
                         {inviteState === 'pending'
-                          ? '…'
+                          ? t('lobby.invite_pending')
                           : inviteState === 'sent'
-                          ? 'Sent ✓'
+                          ? t('lobby.invite_sent')
                           : inviteState === 'error'
-                          ? 'Failed'
+                          ? t('lobby.invite_failed')
                           : t('lobby.invite')}
                       </button>
                     </div>
@@ -588,7 +588,7 @@ export default function LobbySection({
                           <button
                             className={styles['lobbyStarBtn']}
                             onClick={() => toggleFollow(player.id)}
-                            aria-label={followedIds.has(player.id) ? 'Remove from favorites' : 'Add to favorites'}
+                            aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
                           >
                             <span style={{ color: followedIds.has(player.id) ? '#f0c060' : 'rgba(255,255,255,0.5)' }}>
                               {followedIds.has(player.id) ? '★' : '☆'}
@@ -606,11 +606,11 @@ export default function LobbySection({
                           disabled={inviteState !== 'idle'}
                         >
                           {inviteState === 'pending'
-                            ? '…'
+                            ? t('lobby.invite_pending')
                             : inviteState === 'sent'
-                            ? 'Sent ✓'
+                            ? t('lobby.invite_sent')
                             : inviteState === 'error'
-                            ? 'Failed'
+                            ? t('lobby.invite_failed')
                             : t('lobby.invite')}
                         </button>
                       </div>
@@ -643,7 +643,7 @@ export default function LobbySection({
                       <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
                     </div>
                     {!isViewerPlayer && (
-                      <button className={styles['lobbyStarBtnInline']} onClick={() => toggleFollow(p.playerId)} aria-label="Toggle follow">
+                      <button className={styles['lobbyStarBtnInline']} onClick={() => toggleFollow(p.playerId)} aria-label={t('lobby.toggle_follow')}>
                         <span style={{ color: followedIds.has(p.playerId) ? '#f0c060' : 'rgba(255,255,255,0.45)' }}>
                           {followedIds.has(p.playerId) ? '★' : '☆'}
                         </span>
@@ -762,18 +762,18 @@ export default function LobbySection({
                         />
                       </span>
                       <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
-                        {formatTimerDisplay(sliderValue)}
+                        {formatTimerDisplay(sliderValue, t('lobby.timer_off'))}
                       </span>
                     </span>
                   ) : (
                     <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
-                      OFF
+                      {t('lobby.timer_off')}
                     </span>
                   )}
                 </span>
               ) : (
                 <span className={styles['lobby-setting-value']}>
-                  {snapshot.config.roundTimerSec === 0 ? "OFF" : formatTimerDisplay(snapshot.config.roundTimerSec)}
+                  {snapshot.config.roundTimerSec === 0 ? t('lobby.timer_off') : formatTimerDisplay(snapshot.config.roundTimerSec, t('lobby.timer_off'))}
                 </span>
               )}
             </div>
@@ -828,18 +828,18 @@ export default function LobbySection({
                         />
                       </span>
                       <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
-                        {formatTimerDisplay(resultsTimerValue)}
+                        {formatTimerDisplay(resultsTimerValue, t('lobby.timer_off'))}
                       </span>
                     </span>
                   ) : (
                     <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
-                      OFF
+                      {t('lobby.timer_off')}
                     </span>
                   )}
                 </span>
               ) : (
                 <span className={styles['lobby-setting-value']}>
-                  {snapshot.config.resultsAutoAdvanceSec === 0 ? "OFF" : formatTimerDisplay(snapshot.config.resultsAutoAdvanceSec)}
+                  {snapshot.config.resultsAutoAdvanceSec === 0 ? t('lobby.timer_off') : formatTimerDisplay(snapshot.config.resultsAutoAdvanceSec, t('lobby.timer_off'))}
                 </span>
               )}
             </div>
@@ -865,7 +865,7 @@ export default function LobbySection({
                       disabled={!isHost}
                       aria-pressed={on}
                     >
-                      <span className={styles['lobbyEraLabel']}>{era.label}</span>
+                      <span className={styles['lobbyEraLabel']}>{tGame(`era_${era.id}` as any)}</span>
                       <span className={styles['lobbyEraIcon']}>{era.icon}</span>
                       <span className={styles['lobbyEraSpan']}>{era.span}</span>
                     </button>
@@ -957,18 +957,18 @@ export default function LobbySection({
                         />
                       </span>
                       <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
-                        {formatTimerDisplay(sliderValue)}
+                        {formatTimerDisplay(sliderValue, t('lobby.timer_off'))}
                       </span>
                     </span>
                   ) : (
                     <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
-                      OFF
+                      {t('lobby.timer_off')}
                     </span>
                   )}
                 </span>
               ) : (
                 <span className={styles['lobby-setting-value']}>
-                  {snapshot.config.roundTimerSec === 0 ? "OFF" : formatTimerDisplay(snapshot.config.roundTimerSec)}
+                  {snapshot.config.roundTimerSec === 0 ? t('lobby.timer_off') : formatTimerDisplay(snapshot.config.roundTimerSec, t('lobby.timer_off'))}
                 </span>
               )}
             </div>
@@ -994,7 +994,7 @@ export default function LobbySection({
                       disabled={!isHost}
                       aria-pressed={on}
                     >
-                      <span className={styles['lobbyEraLabel']}>{era.label}</span>
+                      <span className={styles['lobbyEraLabel']}>{tGame(`era_${era.id}` as any)}</span>
                       <span className={styles['lobbyEraIcon']}>{era.icon}</span>
                       <span className={styles['lobbyEraSpan']}>{era.span}</span>
                     </button>
@@ -1023,7 +1023,7 @@ export default function LobbySection({
           <span className={styles['lobby-ready-count']} data-testid="lobby-ready-count">
             {t('lobby.players_ready', { ready: readyCount ?? 0, total: totalPlayers ?? 0 })}
             {snapshot.allPlayersReady && totalPlayers > 0 && (
-              <span className={styles['lobbyAllReadyTag']}> · starting soon</span>
+              <span className={styles['lobbyAllReadyTag']}>{t('lobby.starting_soon')}</span>
             )}
           </span>
         </div>
