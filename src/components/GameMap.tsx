@@ -2,6 +2,7 @@
 
 import { Component, type ReactNode, useEffect, useRef } from "react";
 import { MapContainer, TileLayer, useMapEvents, Marker, useMap } from "react-leaflet";
+import { useTranslations } from "next-intl";
 import L from "leaflet";
 import type { LatLng } from "@/core/types";
 import "leaflet/dist/leaflet.css";
@@ -19,6 +20,8 @@ interface GameMapProps {
   localPlayerDisplayName?: string;
   hideZoomControls?: boolean;
   flyToTarget?: { lat: number; lng: number; id: number } | null;
+  errorTitle?: string;
+  errorDetails?: string;
 }
 
 interface GameMapState {
@@ -26,8 +29,8 @@ interface GameMapState {
   errorMessage?: string;
 }
 
-class GameMapErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: ReactNode }) {
+class GameMapErrorBoundary extends Component<{ children: ReactNode; errorTitle?: string; errorDetails?: string }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode; errorTitle?: string; errorDetails?: string }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -59,9 +62,9 @@ class GameMapErrorBoundary extends Component<{ children: ReactNode }, { hasError
           }}
         >
           <div>
-            <strong>Map failed to render</strong>
+            <strong>{this.props.errorTitle ?? "Map failed to render"}</strong>
             <p className="small" style={{ marginTop: 8 }}>
-              Check console for details
+              {this.props.errorDetails ?? "Check console for details"}
             </p>
           </div>
         </div>
@@ -95,7 +98,7 @@ function FlyToHandler({ target }: { target: { lat: number; lng: number; id: numb
   return null;
 }
 
-export class GameMap extends Component<GameMapProps, GameMapState> {
+class GameMapInner extends Component<GameMapProps, GameMapState> {
   constructor(props: GameMapProps) {
     super(props);
     this.state = { hasError: false };
@@ -129,13 +132,13 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
             color: "var(--gh-danger)"
           }}
         >
-          Map failed to render
+          {this.props.errorTitle ?? "Map failed to render"}
         </div>
       );
     }
 
     return (
-      <GameMapErrorBoundary>
+      <GameMapErrorBoundary errorTitle={this.props.errorTitle} errorDetails={this.props.errorDetails}>
         <div style={{ width: "100%", height: "100%", borderRadius: 0, overflow: "hidden" }}>
           <MapContainer
             center={[20, 0]}
@@ -183,4 +186,15 @@ export class GameMap extends Component<GameMapProps, GameMapState> {
       </GameMapErrorBoundary>
     );
   }
+}
+
+export function GameMap(props: GameMapProps) {
+  const t = useTranslations("game");
+  return (
+    <GameMapInner
+      {...props}
+      errorTitle={t("map_error_title")}
+      errorDetails={t("map_error_details")}
+    />
+  );
 }

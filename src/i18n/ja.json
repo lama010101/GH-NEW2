@@ -374,8 +374,12 @@
     "era_contemporary": "現代",
     "region_africa": "アフリカ",
     "region_antarctica": "南極大陸",
+    "region_arctic": "北極",
     "region_asia": "アジア",
+    "region_australia": "オーストラリア",
+    "region_central_america": "中央アメリカ",
     "region_europe": "ヨーロッパ",
+    "region_mars": "火星",
     "region_north_america": "北アメリカ",
     "region_oceania": "オセアニア",
     "region_south_america": "南アメリカ",
@@ -469,7 +473,10 @@
     "decade_suffix": "年代",
     "tier_century_label": "世紀",
     "tier_decade_label": "年代",
-    "tier_year_label": "年"
+    "tier_year_label": "年",
+    "map_error_title": "マップの表示に失敗しました",
+    "map_error_details": "詳細はコンソールを確認してください",
+    "badge_alt": "{tier} {dimension} バッジ"
   },
   "auth": {
     "sign_in": "ログイン",
@@ -479,7 +486,7 @@
     "continue": "続行",
     "or": "または",
     "welcome_back": "おかえりなさい",
-    "welcome": "Guess-Historyへようこそ",
+    "welcome": "ようこそ",
     "create_account": "アカウント作成",
     "forgot_password": "パスワードをお忘れですか？",
     "no_account": "アカウントをお持ちでないですか？",
@@ -563,7 +570,8 @@
     "saving": "保存中…",
     "save": "保存",
     "saved": "✓ 保存済み",
-    "err_save_failed": "保存に失敗。再試行してください。"
+    "err_save_failed": "保存に失敗。再試行してください。",
+    "sign_out_failed": "サインアウトに失敗しました"
   },
   "avatar_picker": {
     "title": "アバターを選択",

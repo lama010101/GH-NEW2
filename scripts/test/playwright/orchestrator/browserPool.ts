@@ -27,6 +27,10 @@ const DEFAULT_DEVICES: DeviceProfile[] = [
   'iphone-safari',
   'iphone-safari',
   'iphone-safari',
+  'desktop-chrome',
+  'desktop-chrome',
+  'iphone-safari',
+  'iphone-safari',
 ];
 
 const DEVICE_PRESETS: Record<DeviceProfile, {

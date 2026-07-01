@@ -374,8 +374,12 @@
     "era_contemporary": "Tegenwoordig",
     "region_africa": "Afrika",
     "region_antarctica": "Antarctica",
+    "region_arctic": "Arctis",
     "region_asia": "Azië",
+    "region_australia": "Australië",
+    "region_central_america": "Centraal-Amerika",
     "region_europe": "Europa",
+    "region_mars": "Mars",
     "region_north_america": "Noord-Amerika",
     "region_oceania": "Oceanië",
     "region_south_america": "Zuid-Amerika",
@@ -469,7 +473,10 @@
     "decade_suffix": "'s",
     "tier_century_label": "EEUW",
     "tier_decade_label": "DECENNIUM",
-    "tier_year_label": "JAAR"
+    "tier_year_label": "JAAR",
+    "map_error_title": "Kaart kon niet worden weergegeven",
+    "map_error_details": "Controleer de console voor details",
+    "badge_alt": "Badge {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Inloggen",
@@ -479,7 +486,7 @@
     "continue": "Doorgaan",
     "or": "of",
     "welcome_back": "Welkom terug",
-    "welcome": "Welkom bij Guess-History",
+    "welcome": "Welkom bij",
     "create_account": "Account maken",
     "forgot_password": "Wachtwoord vergeten?",
     "no_account": "Geen account?",
@@ -563,7 +570,8 @@
     "saving": "Opslaan…",
     "save": "Opslaan",
     "saved": "✓ Opgeslagen",
-    "err_save_failed": "Opslaan mislukt. Probeer opnieuw."
+    "err_save_failed": "Opslaan mislukt. Probeer opnieuw.",
+    "sign_out_failed": "Uitloggen mislukt"
   },
   "avatar_picker": {
     "title": "Kies avatar",

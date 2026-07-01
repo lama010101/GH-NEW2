@@ -374,8 +374,12 @@
     "era_contemporary": "Contemporâneo",
     "region_africa": "África",
     "region_antarctica": "Antártida",
+    "region_arctic": "Ártico",
     "region_asia": "Ásia",
+    "region_australia": "Austrália",
+    "region_central_america": "América Central",
     "region_europe": "Europa",
+    "region_mars": "Marte",
     "region_north_america": "América do Norte",
     "region_oceania": "Oceania",
     "region_south_america": "América do Sul",
@@ -469,7 +473,10 @@
     "decade_suffix": "s",
     "tier_century_label": "SÉCULO",
     "tier_decade_label": "DÉCADA",
-    "tier_year_label": "ANO"
+    "tier_year_label": "ANO",
+    "map_error_title": "Falha ao renderizar o mapa",
+    "map_error_details": "Verifique o console para detalhes",
+    "badge_alt": "Distintivo {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Entrar",
@@ -479,7 +486,7 @@
     "continue": "Continuar",
     "or": "ou",
     "welcome_back": "Bem-vindo de volta",
-    "welcome": "Bem-vindo ao Guess-History",
+    "welcome": "Bem-vindo ao",
     "create_account": "Criar conta",
     "forgot_password": "Esqueceu a senha?",
     "no_account": "Não tem conta?",
@@ -563,7 +570,8 @@
     "saving": "Salvando…",
     "save": "Salvar",
     "saved": "✓ Salvo",
-    "err_save_failed": "Falha ao salvar. Tente novamente."
+    "err_save_failed": "Falha ao salvar. Tente novamente.",
+    "sign_out_failed": "Falha ao sair"
   },
   "avatar_picker": {
     "title": "Escolher avatar",

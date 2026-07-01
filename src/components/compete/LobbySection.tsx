@@ -69,12 +69,16 @@ const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: num
   { id: 'contemporary',label: 'Contemporary', span: '1945 – 2025',  icon: '🚀', yearMin: 1945,  yearMax: new Date().getFullYear() },
 ];
 
-type RegionId = 'africa' | 'antarctica' | 'asia' | 'europe' | 'north_america' | 'oceania' | 'south_america';
+type RegionId = 'africa' | 'antarctica' | 'arctic' | 'asia' | 'australia' | 'central_america' | 'europe' | 'mars' | 'north_america' | 'oceania' | 'south_america';
 const REGIONS: { id: RegionId; label: string; icon: string; continent: string }[] = [
   { id: 'africa',          label: 'Africa',          icon: '🌍', continent: 'Africa' },
   { id: 'antarctica',      label: 'Antarctica',      icon: '🧊', continent: 'Antarctica' },
+  { id: 'arctic',          label: 'Arctic',          icon: '❄️', continent: 'Arctic' },
   { id: 'asia',            label: 'Asia',            icon: '🏯', continent: 'Asia' },
+  { id: 'australia',       label: 'Australia',       icon: '🦘', continent: 'Australia' },
+  { id: 'central_america', label: 'Central America', icon: '🌋', continent: 'Central America' },
   { id: 'europe',          label: 'Europe',          icon: '🏰', continent: 'Europe' },
+  { id: 'mars',            label: 'Mars',            icon: '🔴', continent: 'Mars' },
   { id: 'north_america',   label: 'North America',   icon: '🗽', continent: 'North America' },
   { id: 'oceania',         label: 'Oceania',         icon: '🏝️', continent: 'Oceania' },
   { id: 'south_america',   label: 'South America',   icon: '🦜', continent: 'South America' },

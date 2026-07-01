@@ -77,6 +77,10 @@ const BASE_TEST_USERS: Omit<TestUser, 'id'>[] = [
   { email: 'gh-test-player-4@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer4' },
   { email: 'gh-test-player-5@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer5' },
   { email: 'gh-test-player-6@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer6' },
+  { email: 'gh-test-player-7@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer7' },
+  { email: 'gh-test-player-8@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer8' },
+  { email: 'gh-test-player-9@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer9' },
+  { email: 'gh-test-player-10@test.guess-history.com', password: 'TestPass123!', displayName: 'TestPlayer10' },
 ];
 
 function loadTestUsers(): TestUser[] {

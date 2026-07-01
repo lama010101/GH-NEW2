@@ -43,6 +43,7 @@
 }
 
 .avatarWrap {
+  position: relative;
   width: 96px;
   height: 96px;
   border-radius: 50%;
@@ -54,6 +55,35 @@
   justify-content: center;
   margin-bottom: 16px;
   flex-shrink: 0;
+}
+
+.gearButton {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--gh-modal-bg);
+  background: var(--gh-orange);
+  color: var(--gh-btn-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: var(--gh-shadow-sm);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.gearButton:hover {
+  background: #f59e0b;
+  transform: scale(1.08);
+}
+
+.gearIcon {
+  width: 16px;
+  height: 16px;
 }
 
 .avatarImg {
