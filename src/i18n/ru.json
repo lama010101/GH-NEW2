@@ -374,8 +374,12 @@
     "era_contemporary": "Современность",
     "region_africa": "Африка",
     "region_antarctica": "Антарктида",
+    "region_arctic": "Арктика",
     "region_asia": "Азия",
+    "region_australia": "Австралия",
+    "region_central_america": "Центральная Америка",
     "region_europe": "Европа",
+    "region_mars": "Марс",
     "region_north_america": "Северная Америка",
     "region_oceania": "Океания",
     "region_south_america": "Южная Америка",
@@ -469,7 +473,10 @@
     "decade_suffix": "-е",
     "tier_century_label": "ВЕК",
     "tier_decade_label": "ДЕСЯТИЛЕТИЕ",
-    "tier_year_label": "ГОД"
+    "tier_year_label": "ГОД",
+    "map_error_title": "Ошибка отрисовки карты",
+    "map_error_details": "Подробности см. в консоли",
+    "badge_alt": "Значок {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Войти",
@@ -479,7 +486,7 @@
     "continue": "Продолжить",
     "or": "или",
     "welcome_back": "С возвращением",
-    "welcome": "Добро пожаловать в Guess-History",
+    "welcome": "Добро пожаловать в",
     "create_account": "Создать аккаунт",
     "forgot_password": "Забыли пароль?",
     "no_account": "Нет аккаунта?",
@@ -563,7 +570,8 @@
     "saving": "Сохранение…",
     "save": "Сохранить",
     "saved": "✓ Сохранено",
-    "err_save_failed": "Не удалось сохранить. Повторите."
+    "err_save_failed": "Не удалось сохранить. Повторите.",
+    "sign_out_failed": "Не удалось выйти"
   },
   "avatar_picker": {
     "title": "Выбрать аватар",

@@ -374,8 +374,12 @@
     "era_contemporary": "当代",
     "region_africa": "非洲",
     "region_antarctica": "南极洲",
+    "region_arctic": "北极",
     "region_asia": "亚洲",
+    "region_australia": "澳大利亚",
+    "region_central_america": "中美洲",
     "region_europe": "欧洲",
+    "region_mars": "火星",
     "region_north_america": "北美洲",
     "region_oceania": "大洋洲",
     "region_south_america": "南美洲",
@@ -469,7 +473,10 @@
     "decade_suffix": "年代",
     "tier_century_label": "世纪",
     "tier_decade_label": "年代",
-    "tier_year_label": "年"
+    "tier_year_label": "年",
+    "map_error_title": "地图渲染失败",
+    "map_error_details": "查看控制台了解详情",
+    "badge_alt": "{tier} {dimension} 徽章"
   },
   "auth": {
     "sign_in": "登录",
@@ -479,7 +486,7 @@
     "continue": "继续",
     "or": "或",
     "welcome_back": "欢迎回来",
-    "welcome": "欢迎来到 Guess-History",
+    "welcome": "欢迎来到",
     "create_account": "创建账户",
     "forgot_password": "忘记密码？",
     "no_account": "还没有账户？",
@@ -563,7 +570,8 @@
     "saving": "保存中…",
     "save": "保存",
     "saved": "✓ 已保存",
-    "err_save_failed": "保存失败。请重试。"
+    "err_save_failed": "保存失败。请重试。",
+    "sign_out_failed": "退出登录失败"
   },
   "avatar_picker": {
     "title": "选择头像",

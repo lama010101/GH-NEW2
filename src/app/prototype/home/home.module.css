@@ -1,0 +1,585 @@
+/* ============================================================================
+   PROTOTYPE HOME — styles
+   Visual language: dark bg image + scrim, glass cards, gh-* design tokens,
+   gradient mode cards. Reuses prod home page visual identity.
+   ============================================================================ */
+
+.screen {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #fff;
+}
+
+.bgImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.bgScrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(8, 12, 20, 0.82);
+}
+
+/* ── Proto bar ── */
+.protoBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(10, 10, 12, 0.6);
+  backdrop-filter: blur(8px);
+  flex-wrap: wrap;
+}
+
+.protoTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  opacity: 0.85;
+}
+
+.protoHint {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.55;
+}
+
+/* ── Scroll container ── */
+.scroll {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow-y: auto;
+  padding: 56px 16px calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.content {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Top bar (inline, simplified from prod) ── */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
+  background: var(--gh-bg-base);
+  opacity: 0.92;
+}
+
+.topbarLogo {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.topbarLogoImg {
+  object-fit: contain;
+}
+
+.levelPill {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 20px;
+  padding: 5px 12px;
+  cursor: default;
+}
+
+.levelPillBadge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #06181c;
+  background: var(--gh-gold);
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.levelPillBar {
+  width: 56px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.levelPillBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gh-teal), var(--gh-violet));
+}
+
+.levelPillAcc {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
+.levelPillAccSuffix {
+  font-size: var(--font-2xs);
+  color: var(--gh-text-muted);
+  margin-left: 1px;
+}
+
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatarBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--gh-border-medium);
+  background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatarInitials {
+  color: var(--gh-text-primary);
+  font-size: var(--font-xs);
+  font-weight: 700;
+}
+
+/* ── Tagline ── */
+.tagline {
+  width: 100%;
+  text-align: center;
+  color: var(--gh-text-primary);
+  font-size: var(--font-xl);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
+  padding: 4px 8px 0;
+}
+
+/* ── Progress hero ── */
+.heroCard {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.ringWrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 116px;
+  height: 116px;
+}
+
+.ringCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ringValue {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ringPct {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ringLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 3px;
+}
+
+.heroInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.heroNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.heroName {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heroLevelBadge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #06181c;
+  background: var(--gh-gold);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.levelBar {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.levelBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gh-teal), var(--gh-violet));
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.levelHint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── WHERE / WHEN breakdown ── */
+.accBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accTile {
+  display: grid;
+  grid-template-columns: 52px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.accTileLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.accBar {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.accBarFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.accTileVal {
+  font-size: 14px;
+  font-weight: 800;
+  text-align: right;
+}
+
+/* ── Stat strip ── */
+.statStrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 14px 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+}
+
+.statVal {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+/* ── Mode cards stack ── */
+.cardsStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.modeCard {
+  width: 100%;
+  position: relative;
+}
+
+.cardBg {
+  width: 100%;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cardInner {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cardHeader {
+  position: relative;
+}
+
+.cardTitleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardTitle {
+  font-size: var(--font-2xl);
+  font-weight: 800;
+  color: var(--gh-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  line-height: 1;
+  padding-right: 190px;
+}
+
+.cardDesc {
+  font-size: var(--font-base);
+  font-weight: 400;
+  color: var(--gh-text-secondary);
+  line-height: 1.5;
+  margin: 6px 0 0 0;
+  padding: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+.cardDescWrap {
+  width: 100%;
+  padding-right: 0;
+  margin-top: 8px;
+}
+
+.cardIconWrap {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 180px;
+  height: 180px;
+  pointer-events: none;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.cardIconImg {
+  object-fit: contain;
+}
+
+/* ── Card CTA ── */
+.cardCta {
+  background: var(--gh-text-primary);
+  color: var(--gh-teal);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: var(--font-sm);
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: opacity 0.15s;
+  width: 100%;
+}
+
+.cardCta:hover {
+  opacity: 0.85;
+}
+
+.cardCta:active {
+  opacity: 0.7;
+}
+
+/* ── Daily timer box (inside daily card) ── */
+.timerBox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  padding: 7px 12px;
+}
+
+.timerLabel {
+  font-size: var(--font-sm);
+  color: var(--gh-text-primary);
+  font-weight: 600;
+}
+
+.timerCountdown {
+  color: var(--gh-orange);
+}
+
+/* ── Responsive: desktop grid for mode cards ── */
+@media (min-width: 768px) {
+  .scroll {
+    align-items: center;
+  }
+
+  .content {
+    max-width: 960px;
+  }
+
+  .heroCard {
+    max-width: 960px;
+  }
+
+  .statStrip {
+    max-width: 960px;
+  }
+
+  .cardsStack {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    grid-template-rows: auto;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .cardsStack > .modeCard:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / 4;
+  }
+
+  .cardsStack > .modeCard:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .cardsStack > .modeCard:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .cardsStack > .modeCard:nth-child(4) {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .cardIconWrap {
+    width: 140px;
+    height: 140px;
+    top: 4px;
+    right: 4px;
+  }
+
+  .cardTitle {
+    padding-right: 150px;
+  }
+}
+
+@media (max-width: 380px) {
+  .cardIconWrap {
+    width: 120px;
+    height: 120px;
+  }
+
+  .cardTitle {
+    padding-right: 130px;
+  }
+
+  .heroCard {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroNameRow {
+    justify-content: center;
+  }
+
+  .accTile {
+    grid-template-columns: 48px 1fr 40px;
+  }
+}

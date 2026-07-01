@@ -41,6 +41,14 @@ export function LanguageDropdown({ initialLocale, onLocaleChange, pending: exter
     const browserLang = navigator.language?.toLowerCase() ?? '';
     const detected: Locale = browserLang.startsWith('fr') ? 'fr'
       : browserLang.startsWith('es') ? 'es'
+      : browserLang.startsWith('de') ? 'de'
+      : browserLang.startsWith('it') ? 'it'
+      : browserLang.startsWith('pt') ? 'pt'
+      : browserLang.startsWith('nl') ? 'nl'
+      : browserLang.startsWith('ru') ? 'ru'
+      : browserLang.startsWith('ja') ? 'ja'
+      : browserLang.startsWith('zh') ? 'zh'
+      : browserLang.startsWith('ar') ? 'ar'
       : 'en';
     if (detected !== current) {
       setCurrent(detected);

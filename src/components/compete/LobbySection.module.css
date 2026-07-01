@@ -1008,8 +1008,12 @@
 .lobbyEraBtn[data-era="contemporary"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-success); color: #0a0a0a; }
 .lobbyEraBtn[data-era="africa"].lobbyEraBtnOn .lobbyEraIcon { background: #f59e0b; color: #0a0a0a; }
 .lobbyEraBtn[data-era="antarctica"].lobbyEraBtnOn .lobbyEraIcon { background: #38bdf8; color: #06181c; }
+.lobbyEraBtn[data-era="arctic"].lobbyEraBtnOn .lobbyEraIcon { background: #e0f2fe; color: #06181c; }
 .lobbyEraBtn[data-era="asia"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-violet); color: #fff; }
+.lobbyEraBtn[data-era="australia"].lobbyEraBtnOn .lobbyEraIcon { background: #f97316; color: #0a0a0a; }
+.lobbyEraBtn[data-era="central_america"].lobbyEraBtnOn .lobbyEraIcon { background: #84cc16; color: #0a0a0a; }
 .lobbyEraBtn[data-era="europe"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-blue); color: #fff; }
+.lobbyEraBtn[data-era="mars"].lobbyEraBtnOn .lobbyEraIcon { background: #dc2626; color: #fff; }
 .lobbyEraBtn[data-era="north_america"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-teal); color: #06181c; }
 .lobbyEraBtn[data-era="oceania"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-success); color: #0a0a0a; }
 .lobbyEraBtn[data-era="south_america"].lobbyEraBtnOn .lobbyEraIcon { background: #ec4899; color: #fff; }

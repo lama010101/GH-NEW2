@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Settings } from "lucide-react";
 import styles from "./WelcomeModal.module.css";
 import { AvatarPickerModal } from "./AvatarPickerModal";
 
@@ -28,30 +29,32 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
   const t = useTranslations('welcome');
   const tCommon = useTranslations('common');
   const [usernameValue, setUsernameValue] = useState(initialDisplayName);
+  const [baselineDisplayName, setBaselineDisplayName] = useState(initialDisplayName);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [avatarData, setAvatarData] = useState(avatar);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(avatar.image_url);
 
   if (!isOpen) return null;
 
-  const fullName = avatar.first_name + (avatar.last_name ? ` ${avatar.last_name}` : "");
+  const fullName = avatarData.first_name + (avatarData.last_name ? ` ${avatarData.last_name}` : "");
 
   // Build initials fallback
-  const initials = avatar.first_name.slice(0, 1) + (avatar.last_name ? avatar.last_name.slice(0, 1) : "");
+  const initials = avatarData.first_name.slice(0, 1) + (avatarData.last_name ? avatarData.last_name.slice(0, 1) : "");
 
   // Build bio line only if at least one birth/death field exists
-  const hasBirthData = avatar.birth_day || avatar.birth_city || avatar.birth_country;
-  const hasDeathData = avatar.death_day || avatar.death_city || avatar.death_country;
+  const hasBirthData = avatarData.birth_day || avatarData.birth_city || avatarData.birth_country;
+  const hasDeathData = avatarData.death_day || avatarData.death_city || avatarData.death_country;
   let bioLine = "";
   if (hasBirthData || hasDeathData) {
     const birthParts: string[] = [];
-    if (avatar.birth_day) birthParts.push(avatar.birth_day);
-    if (avatar.birth_city) birthParts.push(avatar.birth_city);
-    if (avatar.birth_country) birthParts.push(avatar.birth_country);
+    if (avatarData.birth_day) birthParts.push(avatarData.birth_day);
+    if (avatarData.birth_city) birthParts.push(avatarData.birth_city);
+    if (avatarData.birth_country) birthParts.push(avatarData.birth_country);
 
     const deathParts: string[] = [];
-    if (avatar.death_day) deathParts.push(avatar.death_day);
-    if (avatar.death_city) deathParts.push(avatar.death_city);
-    if (avatar.death_country) deathParts.push(avatar.death_country);
+    if (avatarData.death_day) deathParts.push(avatarData.death_day);
+    if (avatarData.death_city) deathParts.push(avatarData.death_city);
+    if (avatarData.death_country) deathParts.push(avatarData.death_country);
 
     const parts: string[] = [];
     if (birthParts.length > 0) {
@@ -74,10 +77,6 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
     onClose();
   };
 
-  const handleSkip = () => {
-    onClose();
-  };
-
   return (
     <div className={styles.overlay}>
       <div className={styles.card}>
@@ -96,6 +95,14 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
             />
           ) : null}
           <span className={styles.avatarInitials} style={{ display: avatarUrl ? "none" : "inline" }}>{initials.toUpperCase()}</span>
+          <button
+            type="button"
+            className={styles.gearButton}
+            onClick={() => setAvatarPickerOpen(true)}
+            aria-label={t('choose_different_avatar')}
+          >
+            <Settings className={styles.gearIcon} />
+          </button>
         </div>
 
         <div className={styles.avatarName}>{fullName}</div>
@@ -106,8 +113,8 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
 
         {bioLine && <div className={styles.bioLine}>{bioLine}</div>}
 
-        {avatar.description && (
-          <div className={styles.description}>{avatar.description}</div>
+        {avatarData.description && (
+          <div className={styles.description}>{avatarData.description}</div>
         )}
 
         <div className={styles.usernameLabel}>{t('your_username')}</div>
@@ -122,10 +129,6 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
         <button onClick={handleSave} className={styles.saveButton}>
           {t('lets_play')}
         </button>
-
-        <span onClick={handleSkip} className={styles.skipLink}>
-          {t('skip_for_now')}
-        </span>
       </div>
 
       <AvatarPickerModal
@@ -135,12 +138,34 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
         onSkip={() => setAvatarPickerOpen(false)}
         onClose={() => setAvatarPickerOpen(false)}
         onSave={async (url) => {
-          await fetch("/api/user/update-avatar", {
+          const untouched = usernameValue.trim() === baselineDisplayName.trim();
+          const res = await fetch("/api/user/update-avatar", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ avatar_url: url }),
+            body: JSON.stringify({ avatar_url: url, regenerate_display_name: untouched }),
           });
-          setAvatarUrl(url);
+          const data = await res.json();
+          if (data.avatar) {
+            setAvatarData({
+              first_name: data.avatar.first_name,
+              last_name: data.avatar.last_name,
+              description: data.avatar.description,
+              birth_city: data.avatar.birth_city,
+              birth_country: data.avatar.birth_country,
+              death_city: data.avatar.death_city,
+              death_country: data.avatar.death_country,
+              birth_day: data.avatar.birth_day,
+              death_day: data.avatar.death_day,
+              image_url: data.avatar.image_url,
+            });
+            setAvatarUrl(data.avatar.image_url);
+          } else {
+            setAvatarUrl(url);
+          }
+          if (untouched && typeof data.display_name === "string" && data.display_name.length > 0) {
+            setUsernameValue(data.display_name);
+            setBaselineDisplayName(data.display_name);
+          }
           setAvatarPickerOpen(false);
         }}
       />

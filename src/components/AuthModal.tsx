@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
@@ -16,6 +17,7 @@ interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
   const t = useTranslations('auth');
+  const tLanding = useTranslations('landing');
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -178,15 +180,28 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
           </button>
         )}
 
-        <h2
-          className={styles.title}
-        >
-          {t('welcome')}
-        </h2>
-
         <div className={styles.langSwitcherWrap}>
           <LanguageSwitcher initialLocale={defaultLocale} />
         </div>
+
+        <h2 className={styles.title}>
+          {t('welcome')}
+        </h2>
+
+        <div className={styles.logoWrap}>
+          <Image
+            src="/icons/logo.webp"
+            alt={tLanding('logo_alt')}
+            width={180}
+            height={48}
+            priority
+            className={styles.logoImg}
+          />
+        </div>
+
+        <p className={styles.tagline}>
+          {tLanding('tagline')}
+        </p>
 
         {error && (
           <p
@@ -267,6 +282,7 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
                       disabled={loading}
+                      className={styles.rememberMeCheckbox}
                     />
                     <label
                       htmlFor="remember-me"

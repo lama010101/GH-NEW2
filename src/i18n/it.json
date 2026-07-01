@@ -374,8 +374,12 @@
     "era_contemporary": "Contemporaneo",
     "region_africa": "Africa",
     "region_antarctica": "Antartide",
+    "region_arctic": "Artico",
     "region_asia": "Asia",
+    "region_australia": "Australia",
+    "region_central_america": "America Centrale",
     "region_europe": "Europa",
+    "region_mars": "Marte",
     "region_north_america": "Nord America",
     "region_oceania": "Oceania",
     "region_south_america": "Sud America",
@@ -469,7 +473,10 @@
     "decade_suffix": "s",
     "tier_century_label": "SECOLO",
     "tier_decade_label": "DECENNIO",
-    "tier_year_label": "ANNO"
+    "tier_year_label": "ANNO",
+    "map_error_title": "Rendering della mappa non riuscito",
+    "map_error_details": "Controlla la console per i dettagli",
+    "badge_alt": "Medaglia {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Accedi",
@@ -479,7 +486,7 @@
     "continue": "Continua",
     "or": "o",
     "welcome_back": "Bentornato",
-    "welcome": "Benvenuto su Guess-History",
+    "welcome": "Benvenuto su",
     "create_account": "Crea account",
     "forgot_password": "Password dimenticata?",
     "no_account": "Non hai un account?",
@@ -563,7 +570,8 @@
     "saving": "Salvataggio…",
     "save": "Salva",
     "saved": "✓ Salvato",
-    "err_save_failed": "Salvataggio fallito. Riprova."
+    "err_save_failed": "Salvataggio fallito. Riprova.",
+    "sign_out_failed": "Disconnessione non riuscita"
   },
   "avatar_picker": {
     "title": "Scegli avatar",

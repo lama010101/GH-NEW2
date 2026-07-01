@@ -374,8 +374,12 @@
     "era_contemporary": "Contemporain",
     "region_africa": "Afrique",
     "region_antarctica": "Antarctique",
+    "region_arctic": "Arctique",
     "region_asia": "Asie",
+    "region_australia": "Australie",
+    "region_central_america": "Amérique centrale",
     "region_europe": "Europe",
+    "region_mars": "Mars",
     "region_north_america": "Amérique du Nord",
     "region_oceania": "Océanie",
     "region_south_america": "Amérique du Sud",
@@ -469,7 +473,10 @@
     "decade_suffix": "s",
     "tier_century_label": "SIÈCLE",
     "tier_decade_label": "DÉCENNIE",
-    "tier_year_label": "ANNÉE"
+    "tier_year_label": "ANNÉE",
+    "map_error_title": "Échec du rendu de la carte",
+    "map_error_details": "Vérifiez la console pour plus de détails",
+    "badge_alt": "Médaille {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Se connecter",
@@ -479,7 +486,7 @@
     "continue": "Continuer",
     "or": "ou",
     "welcome_back": "Bon retour",
-    "welcome": "Bienvenue sur Guess-History",
+    "welcome": "Bienvenue sur",
     "create_account": "Créer un compte",
     "forgot_password": "Mot de passe oublié ?",
     "no_account": "Pas encore de compte ?",
@@ -563,7 +570,8 @@
     "saving": "Enregistrement…",
     "save": "Enregistrer",
     "saved": "✓ Enregistré",
-    "err_save_failed": "Échec de l'enregistrement. Réessayez."
+    "err_save_failed": "Échec de l'enregistrement. Réessayez.",
+    "sign_out_failed": "Échec de la déconnexion"
   },
   "avatar_picker": {
     "title": "Choisir un avatar",

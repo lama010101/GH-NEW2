@@ -1,7 +1,9 @@
-export const locales = ['en', 'fr', 'es', 'de', 'it', 'pt', 'nl', 'ru', 'ja', 'zh'] as const;
+export const locales = ['en', 'fr', 'es', 'de', 'it', 'pt', 'nl', 'ru', 'ja', 'zh', 'ar'] as const;
 export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = 'en';
 export const LOCALE_COOKIE = 'gh_locale';
+
+export const rtlLocales: ReadonlySet<Locale> = new Set(['ar']);
 
 export const localeMeta: Record<Locale, { label: string; flag: string }> = {
   en: { label: 'English',    flag: '🇬🇧' },
@@ -14,4 +16,5 @@ export const localeMeta: Record<Locale, { label: string; flag: string }> = {
   ru: { label: 'Русский',    flag: '🇷🇺' },
   ja: { label: '日本語',      flag: '🇯🇵' },
   zh: { label: '中文',        flag: '🇨🇳' },
+  ar: { label: 'العربية',    flag: '🇸🇦' },
 };

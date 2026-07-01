@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import styles from './profile.module.css';
@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const { playerId } = useIdentity();
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
+  const locale = useLocale();
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
@@ -204,7 +205,7 @@ export default function ProfilePage() {
   const formatMemberSince = (dateStr: string | null): string => {
     if (!dateStr) return '—';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString(locale === 'en' ? 'en-US' : locale, { month: 'numeric', day: 'numeric', year: 'numeric' });
   };
 
   const handleAvatarClick = () => {

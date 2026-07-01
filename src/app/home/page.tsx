@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -40,6 +40,24 @@ function HomePageInner() {
     };
     displayName: string;
   } | null>(null)
+  const [welcomeLoading, setWelcomeLoading] = useState(false)
+  const welcomeHandledRef = useRef(false)
+
+  const triggerAssignAvatar = () => {
+    if (welcomeHandledRef.current) return
+    welcomeHandledRef.current = true
+    setWelcomeLoading(true)
+    fetch('/api/user/assign-avatar', { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.avatar) {
+          setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setWelcomeLoading(false));
+  }
+
   useEffect(() => {
     bootstrapIdentity().then((state) => {
       setIdentity(state);
@@ -47,14 +65,7 @@ function HomePageInner() {
         router.replace('/login?next=/home');
       }
       if (state.status === 'ready' && state.isNewUser) {
-        fetch('/api/user/assign-avatar', { method: 'POST' })
-          .then(r => r.json())
-          .then(data => {
-            if (data.avatar) {
-              setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
-            }
-          })
-          .catch(() => {});
+        triggerAssignAvatar();
       }
     })
     return subscribeToIdentityChanges((state) => {
@@ -65,14 +76,7 @@ function HomePageInner() {
       }
       if (state.status === 'ready') {
         if (state.isNewUser) {
-          fetch('/api/user/assign-avatar', { method: 'POST' })
-            .then(r => r.json())
-            .then(data => {
-              if (data.avatar) {
-                setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
-              }
-            })
-            .catch(() => {});
+          triggerAssignAvatar();
         }
       }
     });
@@ -151,6 +155,18 @@ function HomePageInner() {
   }
 
   if (identity.status !== 'ready') {
+    return (
+      <div className={styles.pageRoot}>
+        <div aria-hidden="true" className={styles.bgImage} />
+        <div className={styles.bgOverlay} />
+        <div className={styles.loadingIndicator}>{t('common.loading')}</div>
+      </div>
+    )
+  }
+
+  // New users: keep the loading screen until the welcome data is ready so the
+  // home UI never flashes before the welcome modal.
+  if (welcomeLoading && !welcomeData) {
     return (
       <div className={styles.pageRoot}>
         <div aria-hidden="true" className={styles.bgImage} />

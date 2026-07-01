@@ -3,7 +3,7 @@
 import { DM_Sans } from 'next/font/google'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
 import { signOut } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
@@ -27,6 +27,7 @@ export default function AccountPage() {
   const t = useTranslations('account')
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
@@ -131,7 +132,7 @@ export default function AccountPage() {
       await signOut()
       window.location.href = '/'
     } catch (err) {
-      setSignOutError(err instanceof Error ? err.message : 'Sign out failed')
+      setSignOutError(err instanceof Error ? err.message : t('sign_out_failed'))
     }
   }
 
@@ -143,7 +144,7 @@ export default function AccountPage() {
 
   const formatDate = (dateStr: string | null): string => {
     if (!dateStr) return '—'
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    return new Date(dateStr).toLocaleDateString(locale === 'en' ? 'en-US' : locale, { month: 'long', day: 'numeric', year: 'numeric' })
   }
 
   const isSaveDisabled = displayName.trim() === savedName.trim() || saving

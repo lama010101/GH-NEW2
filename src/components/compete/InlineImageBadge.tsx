@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { getBadgeSoundPath } from "@/core/competeUtils";
 import styles from "./InlineImageBadge.module.css";
 
@@ -17,6 +18,7 @@ const dimensionToPrefix: Record<string, string> = {
 };
 
 export default function InlineImageBadge({ dimension, tier, isTriggered }: InlineImageBadgeProps) {
+  const t = useTranslations("game");
   // Snapshot of isTriggered captured at mount. If the badge mounts with isTriggered
   // already true (e.g., parent visibility state persisted across a where/when tab
   // toggle remount), the reveal already happened in a previous mount — show it
@@ -59,7 +61,7 @@ export default function InlineImageBadge({ dimension, tier, isTriggered }: Inlin
   return (
     <img
       src={imagePath}
-      alt={`${tier} ${dimension} badge`}
+      alt={t("badge_alt", { tier, dimension })}
       className={className}
     />
   );

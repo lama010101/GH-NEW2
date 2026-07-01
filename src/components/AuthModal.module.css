@@ -16,10 +16,12 @@
   border: var(--gh-modal-border);
   border-radius: var(--gh-modal-radius);
   box-shadow: var(--gh-modal-shadow);
-  padding: 32px;
+  padding: 24px 28px;
   width: 100%;
-  max-width: 400px;
+  max-width: 380px;
   box-sizing: border-box;
+  max-height: 100vh;
+  overflow-y: auto;
 }
 
 .closeButton {
@@ -36,17 +38,36 @@
 }
 
 .title {
-  font-size: var(--font-2xl);
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--gh-modal-text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   margin-top: 0;
+  text-align: center;
+}
+
+.logoWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.logoImg {
+  height: auto;
+  width: auto;
+}
+
+.tagline {
+  font-size: var(--font-sm);
+  color: var(--gh-modal-text-muted);
+  text-align: center;
+  margin: 0 0 12px 0;
 }
 
 .langSwitcherWrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .error {
@@ -72,7 +93,7 @@
   border-radius: 12px;
   border: none;
   cursor: pointer;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   font-size: var(--font-sm);
 }
 
@@ -84,7 +105,7 @@
 .divider {
   display: flex;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .dividerLine {
@@ -101,7 +122,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .label {
@@ -132,6 +153,17 @@
   align-items: center;
   gap: 8px;
   margin-top: -4px;
+}
+
+.rememberMeCheckbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gh-teal);
+  cursor: pointer;
+}
+
+.rememberMeCheckbox:disabled {
+  cursor: not-allowed;
 }
 
 .rememberMeLabel {
@@ -204,4 +236,55 @@
 .switchModeButton:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 16px 18px;
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .overlay {
+    align-items: stretch;
+  }
+
+  .title {
+    font-size: var(--font-lg);
+  }
+
+  .tagline {
+    font-size: var(--font-xs);
+    margin-bottom: 8px;
+  }
+
+  .logoWrap {
+    margin-bottom: 2px;
+  }
+
+  .langSwitcherWrap {
+    margin-bottom: 8px;
+  }
+
+  .googleButton {
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+
+  .divider {
+    margin-bottom: 12px;
+  }
+
+  .form {
+    gap: 10px;
+  }
+
+  .input {
+    padding: 10px 14px;
+  }
+
+  .submitButton {
+    padding: 10px 14px;
+  }
 }

@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Bebas_Neue, DM_Sans, Sora } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
-import { defaultLocale, LOCALE_COOKIE, locales, type Locale } from '@/i18n/config';
+import { defaultLocale, LOCALE_COOKIE, locales, rtlLocales, type Locale } from '@/i18n/config';
 import { THEME_COOKIE, type Theme, resolveTheme } from '@/lib/theme';
 import "./globals.css";
 
@@ -48,10 +48,13 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export const metadata: Metadata = {
-  title: "Guess-History Practice",
-  description: "Deterministic historical guessing game"
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('landing');
+  return {
+    title: t('meta_title'),
+    description: t('meta_description'),
+  };
+}
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const cookieStore = await cookies();
@@ -67,6 +70,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html
       lang={locale}
+      dir={rtlLocales.has(locale) ? 'rtl' : 'ltr'}
       data-theme={theme}
       suppressHydrationWarning
       className={`${bebasNeue.variable} ${dmSans.variable} ${sora.variable}`}
