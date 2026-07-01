@@ -33,6 +33,7 @@ export async function POST(request: Request) {
       totalRounds: 5,
       yearMin: body.yearMin,
       yearMax: body.yearMax,
+      selectedRegions: Array.isArray(body.selectedRegions) ? body.selectedRegions : undefined,
     });
 
     return NextResponse.json(snapshot);

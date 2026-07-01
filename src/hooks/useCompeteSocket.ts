@@ -105,7 +105,7 @@ export default function useCompeteSocket({
         onPlayAgain: (newGameId) => {
           onPlayAgain?.(newGameId);
         }
-      }, undefined, token);
+      }, undefined, token, getValidAccessToken);
 
       ws = socket;
       wsRef.current = socket;

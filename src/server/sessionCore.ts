@@ -611,9 +611,13 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       console.time("[PERF] createCompeteSession:fetchEvents");
+      const regionFilter = Array.isArray(input.selectedRegions)
+        ? input.selectedRegions.filter(r => typeof r === "string" && r.length > 0)
+        : [];
       events = await fetchRandomEventsForSession(totalRounds, {
         minYear: yearMin,
-        maxYear: yearMax
+        maxYear: yearMax,
+        regions: regionFilter.length > 0 ? regionFilter : undefined,
       });
       console.timeEnd("[PERF] createCompeteSession:fetchEvents");
       break;
@@ -2484,7 +2488,7 @@ export async function recordReadyNext(input: {
 export async function getRoundResults(
   gameId: string,
   roundIndex: number
-): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>; cumulativeScore: number }>> {
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>; cumulativeScore: number; cumulativeAccuracy: number }>> {
   const result = await dbPool.query<{
     player_id: string;
     score: number;
@@ -2518,14 +2522,17 @@ export async function getRoundResults(
     [gameId, roundIndex]
   );
 
-  // Query cumulative scores for all players up to current round
+  // Query cumulative scores + cumulative accuracy for all players up to current round.
+  // Per-round accuracy = (location_score + time_score) / 2; cumulative = AVG across rounds.
   const cumulativeResult = await dbPool.query<{
     player_id: string;
     cumulative_score: number;
+    cumulative_accuracy: number;
   }>(
     `SELECT
       rr.player_id,
-      COALESCE(SUM(rr.score), 0) AS cumulative_score
+      COALESCE(SUM(rr.score), 0) AS cumulative_score,
+      COALESCE(AVG((rr.location_score + rr.time_score) / 2), 0) AS cumulative_accuracy
     FROM round_results rr
     WHERE rr.game_id = $1
       AND rr.round_index <= $2
@@ -2533,10 +2540,12 @@ export async function getRoundResults(
     [gameId, roundIndex]
   );
 
-  // Build map of player_id -> cumulative_score
+  // Build maps of player_id -> cumulative_score / cumulative_accuracy
   const cumulativeMap = new Map<string, number>();
+  const cumulativeAccuracyMap = new Map<string, number>();
   for (const row of cumulativeResult.rows) {
     cumulativeMap.set(row.player_id, row.cumulative_score);
+    cumulativeAccuracyMap.set(row.player_id, Math.round(row.cumulative_accuracy));
   }
 
   return result.rows.map((row) => {
@@ -2559,6 +2568,7 @@ export async function getRoundResults(
       badges,
       nearMisses,
       cumulativeScore: cumulativeMap.get(row.player_id) ?? 0,
+      cumulativeAccuracy: cumulativeAccuracyMap.get(row.player_id) ?? 0,
     };
   });
 }

@@ -9,6 +9,7 @@ import modalStyles from "./PracticeSettingsModal.module.css";
 export type PracticeModalSettings = {
   roundTimerSec: number;
   selectedEras: string[];
+  selectedRegions: string[];
   yearMin: number;
   yearMax: number;
 };
@@ -22,6 +23,18 @@ const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: num
   { id: "contemporary", label: "Contemporary",  span: "1945 – 2025",  icon: "🚀", yearMin: 1945,  yearMax: new Date().getFullYear() },
 ];
 const ALL_ERA_IDS = ERAS.map(e => e.id);
+
+type RegionId = 'africa' | 'antarctica' | 'asia' | 'europe' | 'north_america' | 'oceania' | 'south_america';
+const REGIONS: { id: RegionId; label: string; icon: string; continent: string }[] = [
+  { id: 'africa',          label: 'Africa',          icon: '🌍', continent: 'Africa' },
+  { id: 'antarctica',      label: 'Antarctica',      icon: '🧊', continent: 'Antarctica' },
+  { id: 'asia',            label: 'Asia',            icon: '🏯', continent: 'Asia' },
+  { id: 'europe',          label: 'Europe',          icon: '🏰', continent: 'Europe' },
+  { id: 'north_america',   label: 'North America',   icon: '🗽', continent: 'North America' },
+  { id: 'oceania',         label: 'Oceania',         icon: '🏝️', continent: 'Oceania' },
+  { id: 'south_america',   label: 'South America',   icon: '🦜', continent: 'South America' },
+];
+const ALL_REGION_IDS = REGIONS.map(r => r.id);
 
 function formatTimerDisplay(sec: number, offLabel: string): string {
   if (sec === 0) return offLabel;
@@ -83,6 +96,49 @@ export function PracticeSettingsModal({
     return new Set(ALL_ERA_IDS);
   });
 
+  /* ── Region selection state — mirrors Compete > Lobby ── */
+  // Empty selectedRegions (DB/input) means "all regions" (no filter).
+  // Internally we hold a Set of all selected region ids.
+  const continentsToRegionIds = (continents: string[]): Set<RegionId> => {
+    if (!Array.isArray(continents) || continents.length === 0) {
+      return new Set(ALL_REGION_IDS);
+    }
+    const ids = REGIONS.filter(r => continents.includes(r.continent)).map(r => r.id);
+    return ids.length > 0 ? new Set(ids) : new Set(ALL_REGION_IDS);
+  };
+
+  const [selectedRegions, setSelectedRegions] = useState<Set<RegionId>>(() => {
+    if (Array.isArray(initialSettings?.selectedRegions)) {
+      return continentsToRegionIds(initialSettings.selectedRegions);
+    }
+    return new Set(ALL_REGION_IDS);
+  });
+
+  const [availableRegionContinents, setAvailableRegionContinents] = useState<string[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchRegions() {
+      try {
+        const res = await fetch('/api/events/metadata');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (cancelled) return;
+        const regions: string[] = Array.isArray(json.regions) ? json.regions : [];
+        setAvailableRegionContinents(regions);
+      } catch {
+        // silent — fall back to full static list
+      }
+    }
+    fetchRegions();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Filter REGIONS to only those present in the DB (hide dead chips).
+  // If fetch hasn't completed yet (null), show the full list so UI isn't empty.
+  const visibleRegions = availableRegionContinents === null
+    ? REGIONS
+    : REGIONS.filter(r => availableRegionContinents.includes(r.continent));
+
   // Re-initialise when the modal (re)opens with new initial settings.
   useEffect(() => {
     if (!isOpen) return;
@@ -94,6 +150,11 @@ export function PracticeSettingsModal({
     } else {
       setSelectedEras(new Set(ALL_ERA_IDS));
     }
+    setSelectedRegions(
+      Array.isArray(initialSettings?.selectedRegions)
+        ? continentsToRegionIds(initialSettings.selectedRegions)
+        : new Set(ALL_REGION_IDS)
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
@@ -121,12 +182,36 @@ export function PracticeSettingsModal({
     setSelectedEras(prev => (prev.size === ALL_ERA_IDS.length ? new Set<EraId>([ALL_ERA_IDS[0]]) : new Set(ALL_ERA_IDS)));
   };
 
+  const toggleRegion = (id: RegionId) => {
+    setSelectedRegions(prev => {
+      if (prev.has(id) && prev.size === 1) return prev;
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const allRegionsSelected = visibleRegions.every(r => selectedRegions.has(r.id));
+  const toggleAllRegions = () => {
+    if (allRegionsSelected) {
+      const last = visibleRegions[visibleRegions.length - 1];
+      if (last) setSelectedRegions(new Set([last.id]));
+    } else {
+      setSelectedRegions(new Set(visibleRegions.map(r => r.id)));
+    }
+  };
+
   if (!isOpen) return null;
 
   const handleStart = () => {
+    const selectedContinents = REGIONS
+      .filter(r => selectedRegions.has(r.id))
+      .map(r => r.continent);
+    const allVisibleSelected = visibleRegions.every(r => selectedRegions.has(r.id));
     onStart({
       roundTimerSec: sliderValue,
       selectedEras: [...selectedEras],
+      selectedRegions: allVisibleSelected ? [] : selectedContinents,
       yearMin,
       yearMax,
     });
@@ -209,6 +294,35 @@ export function PracticeSettingsModal({
                     <span className={lobbyStyles["lobbyEraLabel"]}>{tGame(`era_${era.id}` as string)}</span>
                     <span className={lobbyStyles["lobbyEraIcon"]}>{era.icon}</span>
                     <span className={lobbyStyles["lobbyEraSpan"]}>{era.span}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Region Presets — identical UIX to Compete > Lobby */}
+          <div className={`${lobbyStyles["lobby-setting-item"]} ${lobbyStyles["lobbySettingRowBlock"]}`}>
+            <div className={lobbyStyles["lobbySettingRowHead"]}>
+              <span className={lobbyStyles["lobby-setting-label"]}>{tGame("region_presets")}</span>
+              <button type="button" className={lobbyStyles["lobbySelectAllBtn"]} onClick={toggleAllRegions}>
+                {allRegionsSelected ? t("lobby.deselect_all") : t("lobby.select_all")}
+              </button>
+            </div>
+            <div className={lobbyStyles["lobbyEraRail"]}>
+              {visibleRegions.map(region => {
+                const on = selectedRegions.has(region.id);
+                return (
+                  <button
+                    key={region.id}
+                    data-era={region.id}
+                    type="button"
+                    className={`${lobbyStyles["lobbyEraBtn"]} ${on ? lobbyStyles["lobbyEraBtnOn"] : lobbyStyles["lobbyEraBtnOff"]}`}
+                    onClick={() => toggleRegion(region.id)}
+                    disabled={busy}
+                    aria-pressed={on}
+                  >
+                    <span className={lobbyStyles["lobbyEraLabel"]}>{tGame(`region_${region.id}` as string)}</span>
+                    <span className={lobbyStyles["lobbyEraIcon"]}>{region.icon}</span>
                   </button>
                 );
               })}

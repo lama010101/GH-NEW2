@@ -875,7 +875,7 @@
 .lobbyAllModal {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 1000;
   background: var(--gh-modal-overlay);
   backdrop-filter: var(--gh-modal-blur);
   -webkit-backdrop-filter: var(--gh-modal-blur);
@@ -911,12 +911,42 @@
 .lobbyAllModalClose:hover {
   color: var(--gh-modal-text-primary);
 }
+.lobbyAllModalSearchWrap {
+  position: relative;
+  width: 100%;
+}
+.lobbyAllModalSearch {
+  width: 100%;
+  padding: 8px 32px 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--gh-border-default);
+  background: var(--gh-glass-bg);
+  color: var(--gh-text-primary);
+  font-size: var(--font-xs);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.lobbyAllModalSearch::placeholder {
+  color: var(--gh-text-muted);
+}
+.lobbyAllModalSearch:focus {
+  border-color: var(--gh-orange);
+}
+.lobbyAllModalEmpty {
+  color: var(--gh-text-muted);
+  font-size: var(--font-sm);
+  text-align: center;
+  padding: 20px 0;
+  width: 100%;
+}
 .lobbyAllModalList {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   overflow-y: auto;
   padding: 4px;
+  justify-content: center;
 }
 
 /* ── Host badge ── */
@@ -1008,12 +1038,8 @@
 .lobbyEraBtn[data-era="contemporary"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-success); color: #0a0a0a; }
 .lobbyEraBtn[data-era="africa"].lobbyEraBtnOn .lobbyEraIcon { background: #f59e0b; color: #0a0a0a; }
 .lobbyEraBtn[data-era="antarctica"].lobbyEraBtnOn .lobbyEraIcon { background: #38bdf8; color: #06181c; }
-.lobbyEraBtn[data-era="arctic"].lobbyEraBtnOn .lobbyEraIcon { background: #e0f2fe; color: #06181c; }
 .lobbyEraBtn[data-era="asia"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-violet); color: #fff; }
-.lobbyEraBtn[data-era="australia"].lobbyEraBtnOn .lobbyEraIcon { background: #f97316; color: #0a0a0a; }
-.lobbyEraBtn[data-era="central_america"].lobbyEraBtnOn .lobbyEraIcon { background: #84cc16; color: #0a0a0a; }
 .lobbyEraBtn[data-era="europe"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-blue); color: #fff; }
-.lobbyEraBtn[data-era="mars"].lobbyEraBtnOn .lobbyEraIcon { background: #dc2626; color: #fff; }
 .lobbyEraBtn[data-era="north_america"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-teal); color: #06181c; }
 .lobbyEraBtn[data-era="oceania"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-success); color: #0a0a0a; }
 .lobbyEraBtn[data-era="south_america"].lobbyEraBtnOn .lobbyEraIcon { background: #ec4899; color: #fff; }

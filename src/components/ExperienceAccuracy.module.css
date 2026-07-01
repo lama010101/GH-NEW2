@@ -153,6 +153,14 @@
   transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.regionBarFillWhen {
+  background: var(--gh-violet);
+}
+
+.regionBarFillWhere {
+  background: var(--gh-teal);
+}
+
 .regionPct {
   font-size: 13px;
   font-weight: 800;

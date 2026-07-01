@@ -17,7 +17,7 @@ function accColor(acc: number): string {
   return `hsl(${hue}, 90%, var(--gh-acc-lightness, 52%))`;
 }
 
-export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyData }) {
+export default function ExperienceAccuracy({ data, hideAccuracy = false }: { data: ExperienceAccuracyData; hideAccuracy?: boolean }) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
   const [accuracyTab, setAccuracyTab] = useState<'when' | 'where'>('when');
@@ -30,7 +30,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
     <>
       {/* EXPERIENCE */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
+        <div className={`${hideAccuracy ? 'bg-[var(--gh-general-card-bg)]' : 'bg-[var(--gh-glass-bg)]'} border border-[var(--gh-border-subtle)] rounded-xl p-4`}>
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
             <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('experience')}</h3>
@@ -87,7 +87,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                         {item.span && <span className={styles.regionSpan}>{item.span}</span>}
                       </div>
                       <div className={styles.regionBar}>
-                        <div className={styles.regionBarFill} style={{ width: `${(item.totalXp / maxWhenXp) * 100}%` }} />
+                        <div className={`${styles.regionBarFill} ${styles.regionBarFillWhen}`} style={{ width: `${(item.totalXp / maxWhenXp) * 100}%` }} />
                       </div>
                     </div>
                     <span className={styles.regionPct}>{item.totalXp.toLocaleString()} XP</span>
@@ -105,7 +105,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                     <div className={styles.regionLabelWrap}>
                       <span className={styles.regionLabel}>{item.label}</span>
                       <div className={styles.regionBar}>
-                        <div className={styles.regionBarFill} style={{ width: `${(item.totalXp / maxWhereXp) * 100}%` }} />
+                        <div className={`${styles.regionBarFill} ${styles.regionBarFillWhere}`} style={{ width: `${(item.totalXp / maxWhereXp) * 100}%` }} />
                       </div>
                     </div>
                     <span className={styles.regionPct}>{item.totalXp.toLocaleString()} XP</span>
@@ -121,6 +121,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
       </div>
 
       {/* ACCURACY */}
+      {!hideAccuracy && (
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8">
         <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
           <div className={styles.sectionHead}>
@@ -153,7 +154,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                         {item.span && <span className={styles.regionSpan}>{item.span}</span>}
                       </div>
                       <div className={styles.regionBar}>
-                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
+                        <div className={`${styles.regionBarFill} ${styles.regionBarFillWhen}`} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>
                     </div>
                     <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
@@ -171,7 +172,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
                     <div className={styles.regionLabelWrap}>
                       <span className={styles.regionLabel}>{item.label}</span>
                       <div className={styles.regionBar}>
-                        <div className={styles.regionBarFill} style={{ width: `${item.avgAccuracy}%` }} />
+                        <div className={`${styles.regionBarFill} ${styles.regionBarFillWhere}`} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>
                     </div>
                     <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
@@ -185,6 +186,7 @@ export default function ExperienceAccuracy({ data }: { data: ExperienceAccuracyD
           </div>
         </div>
       </div>
+      )}
     </>
   );
 }

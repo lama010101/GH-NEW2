@@ -30,10 +30,11 @@ test.describe('Multiplayer Simulation', () => {
         return chromiumBrowser;
       };
 
-      // Initialize browser pool
+      // Initialize browser pool — slice to 6 to match the test title
+      // ("6 players") and stay under the game's 8-player max.
       browserPool = new BrowserPool({
         baseURL: BASE_URL,
-        users: TEST_USERS,
+        users: TEST_USERS.slice(0, 6),
         headed: false,
       });
 

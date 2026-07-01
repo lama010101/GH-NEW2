@@ -43,6 +43,7 @@ export default function PracticeEntryPage() {
             playerId,
             displayName: displayName ?? undefined,
             roundTimerSec: settings.roundTimerSec,
+            selectedRegions: settings.selectedRegions,
             yearMin: settings.yearMin,
             yearMax: settings.yearMax,
           }),

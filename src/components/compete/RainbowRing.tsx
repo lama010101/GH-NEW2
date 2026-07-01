@@ -79,7 +79,6 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
       />
       <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={52} fontWeight="bold">
         {clamped}
-        <tspan fontSize={22} dx="2" dy="-18">%</tspan>
       </text>
     </svg>
   );
