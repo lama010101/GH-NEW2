@@ -28,6 +28,7 @@ interface WhenCardProps {
   snapshotPlayers: SessionPlayer[];
   isVisible?: boolean;
   bare?: boolean;
+  isPractice?: boolean;
 }
 
 export default function WhenCard({
@@ -43,6 +44,7 @@ export default function WhenCard({
   snapshotPlayers,
   isVisible,
   bare,
+  isPractice = false,
 }: WhenCardProps) {
   const t = useTranslations('game');
   // Compute whenRows
@@ -228,6 +230,7 @@ export default function WhenCard({
       </div>
 
       {/* Leaderboard expandable */}
+      {!isPractice && (
       <div className={styles.expandSection}>
         <div className={styles.expandHeader} onClick={() => setWhenLbExpanded(!whenLbExpanded)}>
           <div className={styles.expandTitleGroup}>
@@ -280,6 +283,7 @@ export default function WhenCard({
           </div>
         )}
       </div>
+      )}
 
       {/* Hints expandable */}
       <div className={styles.expandSection}>

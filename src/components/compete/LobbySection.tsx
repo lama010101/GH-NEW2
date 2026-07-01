@@ -69,16 +69,12 @@ const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: num
   { id: 'contemporary',label: 'Contemporary', span: '1945 – 2025',  icon: '🚀', yearMin: 1945,  yearMax: new Date().getFullYear() },
 ];
 
-type RegionId = 'africa' | 'antarctica' | 'arctic' | 'asia' | 'australia' | 'central_america' | 'europe' | 'mars' | 'north_america' | 'oceania' | 'south_america';
+type RegionId = 'africa' | 'antarctica' | 'asia' | 'europe' | 'north_america' | 'oceania' | 'south_america';
 const REGIONS: { id: RegionId; label: string; icon: string; continent: string }[] = [
   { id: 'africa',          label: 'Africa',          icon: '🌍', continent: 'Africa' },
   { id: 'antarctica',      label: 'Antarctica',      icon: '🧊', continent: 'Antarctica' },
-  { id: 'arctic',          label: 'Arctic',          icon: '❄️', continent: 'Arctic' },
   { id: 'asia',            label: 'Asia',            icon: '🏯', continent: 'Asia' },
-  { id: 'australia',       label: 'Australia',       icon: '🦘', continent: 'Australia' },
-  { id: 'central_america', label: 'Central America', icon: '🌋', continent: 'Central America' },
   { id: 'europe',          label: 'Europe',          icon: '🏰', continent: 'Europe' },
-  { id: 'mars',            label: 'Mars',            icon: '🔴', continent: 'Mars' },
   { id: 'north_america',   label: 'North America',   icon: '🗽', continent: 'North America' },
   { id: 'oceania',         label: 'Oceania',         icon: '🏝️', continent: 'Oceania' },
   { id: 'south_america',   label: 'South America',   icon: '🦜', continent: 'South America' },
@@ -165,6 +161,7 @@ export default function LobbySection({
   const [playerPool, setPlayerPool] = useState<PlayerPoolEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllModal, setShowAllModal] = useState(false);
+  const [modalSearchQuery, setModalSearchQuery] = useState('');
 
   /* ── Settings tab UI state ── */
   // Tab is derived from the authoritative snapshot.config.mode (single source of truth).
@@ -476,6 +473,12 @@ export default function LobbySection({
   });
   const hasMore = trimmedQuery.length === 0 && priorityList.length > 10;
 
+  // Client-side filter for the all-players modal
+  const modalTrimmedQuery = modalSearchQuery.trim().toLowerCase();
+  const modalFilteredList: PlayerPoolEntry[] = modalTrimmedQuery.length >= 1
+    ? priorityList.filter((p) => p.displayName.toLowerCase().includes(modalTrimmedQuery))
+    : priorityList;
+
   const handleSendInvite = async (player: PlayerPoolEntry) => {
     setInviteStates(prev => ({ ...prev, [player.id]: 'pending' }));
     try {
@@ -684,8 +687,31 @@ export default function LobbySection({
               <div className={styles['lobbyAllModalInner']} onClick={(e) => e.stopPropagation()}>
                 <button type="button" className={styles['lobbyAllModalClose']} onClick={() => setShowAllModal(false)}>×</button>
                 <span className={styles['lobby-subsection-title']}>{t('lobby.all_players', { count: priorityList.length })}</span>
+                <div className={styles['lobbyAllModalSearchWrap']}>
+                  <input
+                    type="text"
+                    className={styles['lobbyAllModalSearch']}
+                    placeholder={t('lobby.search_players')}
+                    value={modalSearchQuery}
+                    onChange={(e) => setModalSearchQuery(e.target.value)}
+                    autoFocus
+                  />
+                  {modalSearchQuery && (
+                    <button
+                      type="button"
+                      className={styles['lobbySearchClearBtn']}
+                      onClick={() => setModalSearchQuery('')}
+                      aria-label={t('lobby.clear_search')}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
                 <div className={styles['lobbyAllModalList']}>
-                  {priorityList.map((player) => {
+                  {modalFilteredList.length === 0 && (
+                    <span className={styles['lobbyAllModalEmpty']}>{t('lobby.no_players_found')}</span>
+                  )}
+                  {modalFilteredList.map((player) => {
                     const inviteState = inviteStates[player.id] ?? 'idle';
                     const nameParts = player.displayName.split(' ');
                     const firstName = nameParts[0];

@@ -41,6 +41,7 @@ interface RoundCompleteSectionProps {
   setWhenCluesExpanded: (v: boolean) => void;
   resultSecsLeft: number | null;
   onAdvanceRound: () => void;
+  busy?: boolean;
 }
 
 // Small % ring for Where/When mini cards — colored stroke + value text.
@@ -83,6 +84,7 @@ export default function RoundCompleteSection({
   setWhenCluesExpanded,
   resultSecsLeft,
   onAdvanceRound,
+  busy,
 }: RoundCompleteSectionProps) {
   const t = useTranslations('game');
   const tNav = useTranslations('nav');
@@ -441,6 +443,17 @@ export default function RoundCompleteSection({
             </div>
             )}
 
+            {/* OVERALL GAME ACCURACY — cumulative % across all rounds played */}
+            {myResult && (
+              <div className={styles.gameAccuracyStrip}>
+                <span className={styles.gameAccuracyLabel}>
+                  <span className={styles.leaderboardAccentBar} />
+                  {t('game_accuracy')}
+                </span>
+                <span className={styles.gameAccuracyVal}>{Math.round(myResult.cumulativeAccuracy)}</span>
+              </div>
+            )}
+
             {/* WHERE + WHEN CARD (merged, tabbed) */}
             <div className={styles.whereWhenCard}>
               <div className={styles.leaderboardTitle}>
@@ -521,6 +534,7 @@ export default function RoundCompleteSection({
                     snapshotPlayers={snapshot.players}
                     currentRoundIndex={snapshot.currentRoundIndex}
                     isVisible={isWhereVisible}
+                    isPractice={isPractice}
                   />
                 </div>
               ) : (
@@ -538,6 +552,7 @@ export default function RoundCompleteSection({
                     roundHints={snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? []}
                     snapshotPlayers={snapshot.players}
                     isVisible={isWhenVisible}
+                    isPractice={isPractice}
                   />
                 </div>
               )}
@@ -636,11 +651,11 @@ export default function RoundCompleteSection({
                 <button
                   className={`${styles.nextButton} ${snapshot.readyForNext?.includes(playerId ?? "") ? styles.nextButtonDisabled : ""}`}
                   onClick={onAdvanceRound}
-                  disabled={snapshot.readyForNext?.includes(playerId ?? "")}
+                  disabled={snapshot.readyForNext?.includes(playerId ?? "") || busy}
                   data-testid="round-next-btn"
                   data-ready={snapshot.readyForNext?.includes(playerId ?? "") ? 'true' : 'false'}
                 >
-                  {t('next_arrow')}
+                  {busy ? <span className={styles.nextButtonSpinner} /> : t('next_arrow')}
                 </button>
               </div>
             </div>

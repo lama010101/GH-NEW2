@@ -3,6 +3,7 @@ export const PRACTICE_SETTINGS_KEY = "practice_settings";
 export type PracticeSettings = {
   roundTimerSec: number;
   selectedEras: string[];
+  selectedRegions: string[];
   yearMin: number;
   yearMax: number;
 };
@@ -14,6 +15,7 @@ export function loadPracticeSettings(): PracticeSettings {
   const fallback: PracticeSettings = {
     roundTimerSec: 0,
     selectedEras: [...ALL_ERAS],
+    selectedRegions: [],
     yearMin: -3000,
     yearMax: CURRENT_YEAR,
   };
@@ -25,6 +27,7 @@ export function loadPracticeSettings(): PracticeSettings {
     return {
       roundTimerSec: typeof parsed.roundTimerSec === "number" ? parsed.roundTimerSec : fallback.roundTimerSec,
       selectedEras: Array.isArray(parsed.selectedEras) ? parsed.selectedEras : fallback.selectedEras,
+      selectedRegions: Array.isArray(parsed.selectedRegions) ? parsed.selectedRegions : fallback.selectedRegions,
       yearMin: typeof parsed.yearMin === "number" ? parsed.yearMin : fallback.yearMin,
       yearMax: typeof parsed.yearMax === "number" ? parsed.yearMax : fallback.yearMax,
     };

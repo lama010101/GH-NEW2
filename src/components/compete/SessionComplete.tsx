@@ -293,14 +293,18 @@ export default function SessionComplete({
               {/* VICTORY BANNER */}
               <div className={styles.banner}>
                 <span className={styles.bannerKicker}>{tGame('game_complete')}</span>
+                {!isPractice && (
                 <h1 className={styles.bannerTitle}>
                   {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
                 </h1>
+                )}
+                {!isPractice && (
                 <div className={styles.bannerStats}>
                   <span>{overallXP.toLocaleString()} {tGame('xp_unit')}</span>
                   <span className={styles.bannerDot}>·</span>
                   <span>{tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}</span>
                 </div>
+                )}
               </div>
 
               {/* HERO ACCURACY CARD — ring + Where/When stat tiles */}
@@ -450,6 +454,7 @@ export default function SessionComplete({
 
               {/* EXPERIENCE & ACCURACY (shared component) */}
               <ExperienceAccuracy
+                hideAccuracy
                 data={{
                   byWhen,
                   byWhere,

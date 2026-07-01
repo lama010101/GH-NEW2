@@ -12,6 +12,7 @@ export type RoundResult = {
   badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>;
   nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>;
   cumulativeScore: number;
+  cumulativeAccuracy: number;
 };
 
 export type AllRoundResult = {

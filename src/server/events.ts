@@ -6,8 +6,27 @@ import type { EventRecord } from "@/core/types";
 type DbExecutor = Pick<Pool, "query">;
 
 /**
+ * The 7 standard continents that constitute valid game regions.
+ * Events tagged with any other continent value (e.g. Mars, Arctic) are
+ * never eligible for game sessions — all events must be on Earth.
+ */
+export const VALID_CONTINENTS = [
+  'Africa',
+  'Antarctica',
+  'Asia',
+  'Europe',
+  'North America',
+  'Oceania',
+  'South America',
+] as const;
+
+/**
  * Fetch events with their locations and images.
  * Returns EventRecord format for game consumption.
+ *
+ * Always filters to VALID_CONTINENTS as a baseline so non-Earth or
+ * non-standard continent values are never eligible, even when no
+ * explicit region filter is provided.
  */
 export async function fetchEventsWithDetails(options: {
   limit?: number;
@@ -44,11 +63,15 @@ export async function fetchEventsWithDetails(options: {
     paramIndex++;
   }
 
-  if (regions && regions.length > 0) {
-    whereClauses.push(`l.continent = ANY($${paramIndex}::text[])`);
-    params.push(regions);
-    paramIndex++;
-  }
+  // Always filter by continent. When caller provides regions, intersect
+  // with VALID_CONTINENTS to exclude non-standard values. When no regions
+  // are provided, default to all 7 valid continents.
+  const effectiveRegions = regions && regions.length > 0
+    ? regions.filter(r => (VALID_CONTINENTS as readonly string[]).includes(r))
+    : (VALID_CONTINENTS as readonly string[]);
+  whereClauses.push(`l.continent = ANY($${paramIndex}::text[])`);
+  params.push([...effectiveRegions]);
+  paramIndex++;
 
   const whereClause = whereClauses.join(" AND ");
 
@@ -235,7 +258,9 @@ export async function fetchRandomEventsForSession(
 }
 
 /**
- * Get available regions (continents) for filtering
+ * Get available regions (continents) for filtering.
+ * Only returns the 7 standard VALID_CONTINENTS that have at least one
+ * event location — non-standard values (e.g. Mars, Arctic) are excluded.
  */
 export async function fetchAvailableRegions(): Promise<string[]> {
   const result = await dbPool.query<{ continent: string }>(`
@@ -245,7 +270,10 @@ export async function fetchAvailableRegions(): Promise<string[]> {
     ORDER BY continent
   `);
 
-  return result.rows.map((row) => row.continent);
+  const validSet = VALID_CONTINENTS as readonly string[];
+  return result.rows
+    .map((row) => row.continent)
+    .filter((c) => validSet.includes(c));
 }
 
 /**

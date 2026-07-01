@@ -42,7 +42,8 @@ export class CompeteWebSocket {
     playerId: string,
     callbacks: CompeteWebSocketCallbacks,
     private partyKitHost: string = process.env.NEXT_PUBLIC_PARTY_KIT_HOST || "localhost:1999",
-    private accessToken: string | null = null
+    private accessToken: string | null = null,
+    private tokenProvider?: () => Promise<string | null>
   ) {
     this.gameId = gameId;
     this.playerId = playerId;
@@ -180,7 +181,30 @@ export class CompeteWebSocket {
     }
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-    setTimeout(() => this.connect(), delay);
+    setTimeout(() => this.connectWithFreshToken(), delay);
+  }
+
+  /**
+   * Fetches a fresh access token via tokenProvider (if available) before
+   * reconnecting. This prevents permanent disconnection when the original
+   * token has expired (Supabase access tokens default to 1-hour TTL).
+   * Falls back to connect() with the existing token if no provider is set.
+   */
+  private async connectWithFreshToken(): Promise<void> {
+    if (this.manuallyDisconnected) return;
+    if (this.tokenProvider) {
+      try {
+        const freshToken = await this.tokenProvider();
+        if (freshToken) {
+          this.accessToken = freshToken;
+        } else {
+          console.warn("[CompeteWebSocket] Token provider returned null — reconnecting with existing token");
+        }
+      } catch (err) {
+        console.warn("[CompeteWebSocket] Token provider failed — reconnecting with existing token:", err);
+      }
+    }
+    this.connect();
   }
 
   private send(message: unknown): void {
@@ -269,6 +293,6 @@ export class CompeteWebSocket {
   reconnect(): void {
     this.manuallyDisconnected = false;
     this.reconnectAttempts = 0;
-    this.connect();
+    this.connectWithFreshToken();
   }
 }

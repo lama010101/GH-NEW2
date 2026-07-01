@@ -40,6 +40,7 @@ interface WhereCardProps {
   currentRoundIndex: number;
   isVisible?: boolean;
   bare?: boolean;
+  isPractice?: boolean;
 }
 
 export default function WhereCard({
@@ -61,6 +62,7 @@ export default function WhereCard({
   currentRoundIndex,
   isVisible,
   bare,
+  isPractice = false,
 }: WhereCardProps) {
   const t = useTranslations('game');
   const myResult = roundResults?.find(r => r.playerId === playerId);
@@ -172,6 +174,7 @@ export default function WhereCard({
           />
         )}
       </div>
+      {!isPractice && (
       <div className={styles.expandSection}>
         <div
           onClick={() => setWhereLbExpanded(!whereLbExpanded)}
@@ -240,6 +243,7 @@ export default function WhereCard({
           </div>
         )}
       </div>
+      )}
       <div className={styles.expandSection}>
         <div
           onClick={() => setWhereCluesExpanded(!whereCluesExpanded)}

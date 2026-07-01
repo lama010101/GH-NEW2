@@ -783,6 +783,13 @@
 
 /* ── Responsive ── */
 
+@media (max-width: 767px) {
+  .content {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
 @media (min-width: 768px) {
   .content {
     max-width: 560px;

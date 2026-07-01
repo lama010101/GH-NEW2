@@ -697,6 +697,7 @@ export default function CompeteGamePage() {
             setWhenCluesExpanded={setWhenCluesExpanded}
             resultSecsLeft={resultSecsLeft}
             onAdvanceRound={handleAdvanceRound}
+            busy={busy}
           />
         ) : null}
 

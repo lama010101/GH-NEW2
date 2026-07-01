@@ -207,6 +207,7 @@ export type CreateCompeteSessionInput = {
   yearMin?: number;
   yearMax?: number;
   resultsAutoAdvanceSec?: number;
+  selectedRegions?: string[];
 };
 
 export type JoinCompeteSessionInput = {

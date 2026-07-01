@@ -447,6 +447,7 @@ export default function PracticeGamePage() {
     setPracticeModalInitial({
       roundTimerSec: snapshot.config.roundTimerSec,
       selectedEras: snapshot.config.selectedEras,
+      selectedRegions: snapshot.config.selectedRegions,
       yearMin: snapshot.config.yearMin,
       yearMax: snapshot.config.yearMax,
     });
@@ -474,6 +475,7 @@ export default function PracticeGamePage() {
             playerId,
             displayName: displayName ?? undefined,
             roundTimerSec: settings.roundTimerSec,
+            selectedRegions: settings.selectedRegions,
             yearMin: settings.yearMin,
             yearMax: settings.yearMax,
           }),
@@ -609,6 +611,7 @@ export default function PracticeGamePage() {
               setWhenCluesExpanded={setWhenCluesExpanded}
               resultSecsLeft={null}
               onAdvanceRound={handleAdvanceRound}
+              busy={busy}
             />
           ) : null}
 
