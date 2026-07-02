@@ -1,6 +1,6 @@
 import { supabaseBrowser } from "./supabaseBrowser";
 
-const NEW_USER_WINDOW_MS = 60_000;
+const NEW_USER_WINDOW_MS = 300_000;
 
 export type IdentityState =
   | { status: "loading" }
