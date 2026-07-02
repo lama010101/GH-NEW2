@@ -688,9 +688,8 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     verifyLog("INSERT", "session_players", "OK", `host player_id=${hostPlayerId} — executing`);
     // Host row: is_host=true, ready=false (host must still opt in).
     const hostAvatarResult = await client.query<{ display_name: string; avatar_url: string }>(
-      `SELECT p.display_name, COALESCE(a.firebase_url, p.avatar_url) AS avatar_url
+      `SELECT p.display_name, p.avatar_url
        FROM public.profiles p
-       LEFT JOIN avatars a ON a.image_url = p.avatar_url
        WHERE p.id = $1`,
       [hostPlayerId]
     );
@@ -834,9 +833,8 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
   // Without clearing left_at here, a single WS close (StrictMode remount, HMR,
   // tab refresh, transient network blip) permanently kicks the player out.
   const joiningAvatarResult = await dbPool.query<{ display_name: string; avatar_url: string }>(
-    `SELECT p.display_name, COALESCE(a.firebase_url, p.avatar_url) AS avatar_url
+    `SELECT p.display_name, p.avatar_url
      FROM public.profiles p
-     LEFT JOIN avatars a ON a.image_url = p.avatar_url
      WHERE p.id = $1`,
     [playerId]
   );
