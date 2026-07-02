@@ -7,6 +7,7 @@
 // submitGuess and advanceRound are PartyKit-only (single mutation authority).
 
 import { randomUUID, randomBytes } from "crypto";
+import { verifyPartyKitSecret } from "@/server/partykitAuth";
 import type { Pool } from "pg";
 import {
   CompeteSessionSnapshot,
@@ -538,8 +539,7 @@ export async function assertParticipantOrPartyKit(
   gameId: string
 ): Promise<{ ok: true; playerId: string | null } | { ok: false; status: number; error: string }> {
   // PartyKit DO bypass
-  const partykitSecret = request.headers.get("x-partykit-secret");
-  if (partykitSecret && process.env.PARTYKIT_SECRET && partykitSecret === process.env.PARTYKIT_SECRET) {
+  if (verifyPartyKitSecret(request.headers.get("x-partykit-secret"))) {
     return { ok: true, playerId: null };
   }
 

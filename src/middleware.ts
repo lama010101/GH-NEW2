@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { verifyPartyKitSecret } from "@/server/partykitAuth";
 
 /**
  * Routes that do NOT require authentication.
@@ -101,12 +102,7 @@ export async function middleware(request: NextRequest) {
   // they must NOT be redirected to /login. Routes whose handlers also
   // validate this secret (e.g. /api/compete/[gameId]/join) keep their own
   // enforcement; this only skips the middleware redirect for the secret path.
-  const partykitSecret = request.headers.get("x-partykit-secret");
-  if (
-    partykitSecret &&
-    process.env.PARTYKIT_SECRET &&
-    partykitSecret === process.env.PARTYKIT_SECRET
-  ) {
+  if (verifyPartyKitSecret(request.headers.get("x-partykit-secret"))) {
     return response;
   }
 
