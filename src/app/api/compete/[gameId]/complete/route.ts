@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
+import { verifyPartyKitSecret } from "@/server/partykitAuth";
 import { completeRound } from "@/server/sessionCore";
 
 export async function POST(
   request: Request,
   { params }: { params: { gameId: string } }
 ) {
-  const secret = request.headers.get("x-partykit-secret");
-  if (!secret || secret !== process.env.PARTYKIT_SECRET) {
+  if (!verifyPartyKitSecret(request.headers.get("x-partykit-secret"))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   let gameId = "";
