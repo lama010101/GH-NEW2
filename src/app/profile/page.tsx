@@ -125,7 +125,7 @@ export default function ProfilePage() {
           let { data: avatarResult } = await supabaseBrowser
             .from('avatars')
             .select('first_name, last_name, description, birth_day, death_day, birth_city, birth_country, death_city, death_country')
-            .eq('image_url', profileResult.avatar_url)
+            .eq('firebase_url', profileResult.avatar_url)
             .limit(1)
             .single();
 
@@ -133,7 +133,7 @@ export default function ProfilePage() {
             ({ data: avatarResult } = await supabaseBrowser
               .from('avatars')
               .select('first_name, last_name, description, birth_day, death_day, birth_city, birth_country, death_city, death_country')
-              .eq('firebase_url', profileResult.avatar_url)
+              .eq('image_url', profileResult.avatar_url)
               .limit(1)
               .single());
           }
