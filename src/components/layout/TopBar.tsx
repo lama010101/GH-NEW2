@@ -25,9 +25,14 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
         onClick={() => router.push('/leaderboard?tab=overall')}
         className={styles.xpPill}
       >
-        <span className={styles.xpPillAccuracy}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
+        <span className={styles.xpPillAccuracy} style={(() => {
+          const n = Number(accuracy)
+          if (!Number.isFinite(n)) return undefined
+          const hue = Math.round((Math.max(0, Math.min(100, n)) / 100) * 120)
+          return { color: `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))` }
+        })()}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
         <span className={styles.xpPillDivider}>|</span>
-        <span className={styles.xpPillXp}>{xp}<span className={styles.xpPillSuffix}>XP</span></span>
+        <span className={styles.xpPillXp} style={{ color: 'var(--gh-text-primary)' }}>{xp}<span className={styles.xpPillSuffix}>XP</span></span>
       </button>
       <div className={styles.topbarRight}>
         <NotificationBell />

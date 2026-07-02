@@ -452,8 +452,7 @@
 .whereBtn {
   width: 64px;
   height: 64px;
-  overflow: hidden;
-  background: #06b6d4;
+  background: var(--gh-where-solid);
   border-color: var(--gh-border-strong);
 }
 
@@ -461,8 +460,7 @@
 .whenBtn {
   width: 64px;
   height: 64px;
-  overflow: hidden;
-  background: #8b5cf6;
+  background: var(--gh-when-solid);
   border-color: var(--gh-border-strong);
 }
 
@@ -486,7 +484,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px solid rgba(245, 158, 11, 0.7);
+  border: 2px solid rgba(var(--gh-orange-rgb), 0.7);
   pointer-events: none;
   animation: sonar 2s ease-out infinite;
 }
@@ -497,15 +495,15 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px solid rgba(245, 158, 11, 0.7);
+  border: 2px solid rgba(var(--gh-orange-rgb), 0.7);
   pointer-events: none;
   animation: sonar 2s ease-out infinite;
   animation-delay: 1s;
 }
 
-/* Arrow bob — send icon wiggles inside the button */
+/* Circle then burst — send icon orbits inside the disk, then bursts at center */
 .submitBtnReady svg {
-  animation: arrowBob 1.4s ease-in-out infinite;
+  animation: planeOrbitBurst 2.6s linear infinite;
 }
 
 .submitBtnSubmitted {
@@ -524,11 +522,19 @@
   100% { transform: scale(2.2); opacity: 0; }
 }
 
-@keyframes arrowBob {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25%      { transform: translate(2px, -2px) rotate(-8deg); }
-  50%      { transform: translate(4px, 0)  rotate(0deg); }
-  75%      { transform: translate(2px, 2px)  rotate(8deg); }
+@keyframes planeOrbitBurst {
+  0%      { transform: translate(10px, 0) scale(1);     opacity: 1; }
+  7.5%    { transform: translate(7px, 7px) scale(1);    opacity: 1; }
+  15%     { transform: translate(0, 10px) scale(1);     opacity: 1; }
+  22.5%   { transform: translate(-7px, 7px) scale(1);   opacity: 1; }
+  30%     { transform: translate(-10px, 0) scale(1);    opacity: 1; }
+  37.5%   { transform: translate(-7px, -7px) scale(1);  opacity: 1; }
+  45%     { transform: translate(0, -10px) scale(1);    opacity: 1; }
+  52.5%   { transform: translate(7px, -7px) scale(1);   opacity: 1; }
+  60%     { transform: translate(0, 0) scale(1);        opacity: 1; }
+  80%     { transform: translate(0, 0) scale(2);        opacity: 0; }
+  81%     { transform: translate(0, 0) scale(0.3);      opacity: 0; }
+  100%    { transform: translate(0, 0) scale(1);        opacity: 1; }
 }
 
 /* ── Active state (panel open) ── */
@@ -537,24 +543,36 @@
   box-shadow: 0 0 0 3px var(--gh-border-medium), var(--gh-shadow-sm);
 }
 
-/* ── Glow animations (unanswered) ── */
+/* ── Breathe + Sonar (unanswered) — button breathes + rings expand outward ── */
 .whereBtnGlow {
-  animation: glowBlue 1.8s ease-in-out infinite;
+  animation: breathe 1.6s ease-in-out infinite;
 }
+.whereBtnGlow::before,
+.whereBtnGlow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--gh-where-solid-rgb), 0.7);
+  pointer-events: none;
+  animation: sonar 2s ease-out infinite;
+}
+.whereBtnGlow::after { animation-delay: 1s; }
 
 .whenBtnGlow {
-  animation: glowViolet 1.8s ease-in-out infinite;
+  animation: breathe 1.6s ease-in-out infinite;
 }
-
-@keyframes glowBlue {
-  0%, 100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 0 rgba(6, 182, 212, 0.55); }
-  50%       { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 10px rgba(6, 182, 212, 0); }
+.whenBtnGlow::before,
+.whenBtnGlow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--gh-when-solid-rgb), 0.7);
+  pointer-events: none;
+  animation: sonar 2s ease-out infinite;
 }
-
-@keyframes glowViolet {
-  0%, 100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 0 rgba(139, 92, 246, 0.55); }
-  50%       { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 10px rgba(139, 92, 246, 0); }
-}
+.whenBtnGlow::after { animation-delay: 1s; }
 
 /* ── Button icon image ── */
 .btnIcon {
@@ -594,12 +612,12 @@
 }
 
 .overlayTagWhere {
-  background: rgba(6, 182, 212, 0.95);
+  background: rgba(var(--gh-where-solid-rgb), 0.95);
   color: #fff;
 }
 
 .overlayTagWhen {
-  background: rgba(139, 92, 246, 0.95);
+  background: rgba(var(--gh-when-solid-rgb), 0.95);
   color: #fff;
 }
 
@@ -858,13 +876,13 @@
 }
 
 .sheetConfirmWhere.sheetConfirmReady {
-  background: #06b6d4;
-  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.4);
+  background: var(--gh-where-solid);
+  box-shadow: 0 4px 16px rgba(var(--gh-where-solid-rgb), 0.4);
 }
 
 .sheetConfirmWhen.sheetConfirmReady {
-  background: #8b5cf6;
-  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+  background: var(--gh-when-solid);
+  box-shadow: 0 4px 16px rgba(var(--gh-when-solid-rgb), 0.4);
 }
 
 /* ── Settings modal ── */
@@ -942,7 +960,7 @@
   height: 28px;
   border-radius: 14px;
   border: none;
-  background: var(--toggle-bg, rgba(255, 255, 255, 0.15));
+  background: var(--toggle-bg, var(--gh-modal-toggle-off));
   cursor: pointer;
   position: relative;
   transition: background 0.2s;
@@ -1076,8 +1094,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #c084fc, var(--gh-orange));
-  box-shadow: 0 4px 16px rgba(192, 132, 252, 0.35), 0 2px 8px rgba(251, 146, 60, 0.25);
+  background: linear-gradient(135deg, var(--gh-violet), var(--gh-orange));
+  box-shadow: 0 4px 16px rgba(var(--gh-violet-rgb), 0.35), 0 2px 8px rgba(var(--gh-orange-rgb), 0.25);
   position: relative;
   overflow: hidden;
   flex-shrink: 0;

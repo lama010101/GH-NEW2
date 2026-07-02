@@ -572,6 +572,7 @@
 }
 
 .roundTitle {
+  display: block;
   font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 700;
   white-space: nowrap;
@@ -581,6 +582,7 @@
 }
 
 .roundMeta {
+  display: block;
   font-size: 12px; /* layout-constrained — do not tokenize */
   color: var(--gh-text-muted);
   margin-top: 2px;
@@ -762,7 +764,7 @@
   border: none;
   color: var(--gh-btn-text);
   background: var(--gh-orange);
-  box-shadow: 0 6px 22px rgba(249, 115, 22, 0.35);
+  box-shadow: 0 6px 22px rgba(var(--gh-orange-rgb), 0.35);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -785,8 +787,8 @@
 
 @media (max-width: 767px) {
   .content {
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-left: 4px;
+    padding-right: 4px;
   }
 }
 

@@ -61,24 +61,24 @@
 }
 
 .tabActiveWhen {
-  background: rgba(139, 92, 246, 0.12);
-  border-color: rgba(139, 92, 246, 0.35);
+  background: rgba(var(--gh-when-solid-rgb), 0.12);
+  border-color: rgba(var(--gh-when-solid-rgb), 0.35);
   color: var(--gh-violet);
 }
 
 .tabActiveWhen:hover {
-  background: rgba(139, 92, 246, 0.18);
+  background: rgba(var(--gh-when-solid-rgb), 0.18);
   color: var(--gh-violet);
 }
 
 .tabActiveWhere {
-  background: rgba(34, 211, 238, 0.12);
-  border-color: rgba(34, 211, 238, 0.35);
+  background: rgba(var(--gh-teal-rgb), 0.12);
+  border-color: rgba(var(--gh-teal-rgb), 0.35);
   color: var(--gh-teal);
 }
 
 .tabActiveWhere:hover {
-  background: rgba(34, 211, 238, 0.18);
+  background: rgba(var(--gh-teal-rgb), 0.18);
   color: var(--gh-teal);
 }
 

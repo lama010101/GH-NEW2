@@ -106,7 +106,7 @@
 
 .avatarCell.selected {
   border-color: var(--gh-orange);
-  background: rgba(251, 146, 60, 0.1);
+  background: rgba(var(--gh-orange-rgb), 0.1);
 }
 
 .avatarImage {
@@ -148,7 +148,7 @@
 
 .saveButton:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 20px rgba(251, 146, 60, 0.55), var(--gh-shadow-sm);
+  box-shadow: 0 0 20px rgba(var(--gh-orange-rgb), 0.55), var(--gh-shadow-sm);
 }
 
 .saveButton:disabled {

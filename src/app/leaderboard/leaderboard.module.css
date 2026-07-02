@@ -1,7 +1,7 @@
 .container {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 50% -10%, rgba(251, 146, 60, 0.12), transparent 55%),
+    radial-gradient(circle at 50% -10%, rgba(var(--gh-orange-rgb), 0.12), transparent 55%),
     var(--gh-bg-base);
   color: var(--gh-text-primary);
   max-width: 480px;
@@ -93,8 +93,8 @@
 
 .tabActive {
   color: var(--gh-btn-text);
-  background: linear-gradient(135deg, var(--gh-orange), #f97316);
-  box-shadow: 0 4px 14px rgba(251, 146, 60, 0.35);
+  background: linear-gradient(135deg, var(--gh-orange), rgba(var(--gh-orange-rgb), 0.85));
+  box-shadow: 0 4px 14px rgba(var(--gh-orange-rgb), 0.35);
 }
 
 .tabActive:hover {
@@ -126,8 +126,8 @@
 }
 
 .subTabActive {
-  background: rgba(251, 146, 60, 0.15);
-  border-color: rgba(251, 146, 60, 0.3);
+  background: rgba(var(--gh-orange-rgb), 0.15);
+  border-color: rgba(var(--gh-orange-rgb), 0.3);
   color: var(--gh-orange);
 }
 
@@ -188,8 +188,8 @@
 
 .retryBtn {
   padding: 10px 20px;
-  background: rgba(251, 146, 60, 0.15);
-  border: 1px solid rgba(251, 146, 60, 0.3);
+  background: rgba(var(--gh-orange-rgb), 0.15);
+  border: 1px solid rgba(var(--gh-orange-rgb), 0.3);
   border-radius: 8px;
   color: var(--gh-orange);
   font-size: var(--font-sm);
@@ -199,7 +199,7 @@
 }
 
 .retryBtn:hover {
-  background: rgba(251, 146, 60, 0.25);
+  background: rgba(var(--gh-orange-rgb), 0.25);
 }
 
 /* Table */
@@ -267,17 +267,17 @@
 }
 
 .rowHighlight {
-  background: rgba(251, 146, 60, 0.1);
-  box-shadow: inset 2px 0 0 #fb923c;
+  background: rgba(var(--gh-orange-rgb), 0.1);
+  box-shadow: inset 2px 0 0 var(--gh-orange);
   border-radius: 8px;
 }
 
 .rowHighlight td {
-  border-bottom: 1px solid rgba(251, 146, 60, 0.18);
+  border-bottom: 1px solid rgba(var(--gh-orange-rgb), 0.18);
 }
 
 .rowHighlight:hover {
-  background: rgba(251, 146, 60, 0.16);
+  background: rgba(var(--gh-orange-rgb), 0.16);
 }
 
 /* Rank Cell */
@@ -326,7 +326,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.35), var(--gh-glass-bg));
+  background: linear-gradient(135deg, rgba(var(--gh-orange-rgb), 0.35), var(--gh-glass-bg));
   display: flex;
   align-items: center;
   justify-content: center;

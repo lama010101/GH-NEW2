@@ -198,8 +198,8 @@
 .join-code-input {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(0, 100, 150, 0.15);
-  border: 1px solid rgba(0, 173, 193, 0.5);
+  background: rgba(var(--gh-teal-rgb), 0.12);
+  border: 1px solid rgba(var(--gh-teal-rgb), 0.5);
   border-radius: 10px;
   color: var(--gh-text-primary);
   font-size: var(--font-lg);
@@ -285,4 +285,20 @@
   .card-title {
     padding-right: 130px;
   }
+}
+
+/* ── Light theme: home page sits on bg image + light scrim, and mode cards
+   have dark gradient backgrounds in both themes. Text must be white for
+   readability. In dark theme --gh-text-primary is already #fff so these
+   overrides only change light theme. ── */
+[data-theme="light"] .tagline {
+  color: #ffffff;
+}
+
+[data-theme="light"] .card-title {
+  color: #ffffff;
+}
+
+[data-theme="light"] .card-desc {
+  color: rgba(255, 255, 255, 0.75);
 }

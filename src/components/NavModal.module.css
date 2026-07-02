@@ -53,8 +53,8 @@
   height: 80px;
   border-radius: 50%;
   overflow: hidden;
-  border: 2.5px solid rgba(139, 92, 246, 0.6);
-  background: linear-gradient(135deg, #c45, #89b);
+  border: 2.5px solid rgba(var(--gh-when-solid-rgb), 0.6);
+  background: linear-gradient(135deg, var(--gh-orange), var(--gh-blue));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -140,7 +140,7 @@
 }
 
 .signOutBtn:hover {
-  background: rgba(239, 68, 68, 0.08);
+  background: rgba(var(--gh-danger-rgb), 0.08);
 }
 
 .signOutIcon {

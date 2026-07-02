@@ -17,7 +17,7 @@ function accColor(acc: number): string {
   return `hsl(${hue}, 90%, var(--gh-acc-lightness, 52%))`;
 }
 
-export default function ExperienceAccuracy({ data, hideAccuracy = false }: { data: ExperienceAccuracyData; hideAccuracy?: boolean }) {
+export default function ExperienceAccuracy({ data, hideAccuracy = false, embedded = false }: { data: ExperienceAccuracyData; hideAccuracy?: boolean; embedded?: boolean }) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
   const [accuracyTab, setAccuracyTab] = useState<'when' | 'where'>('when');
@@ -26,11 +26,27 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false }: { dat
   const maxWhenXp = Math.max(...data.byWhen.map(i => i.totalXp), 1);
   const maxWhereXp = Math.max(...data.byWhere.map(i => i.totalXp), 1);
 
+  // embedded: drop the outer wrapper spacing and use the canonical .card tokens
+  // (matches SessionComplete .card: general-card-bg/border, gh-radius-md, shadow,
+  //  glass blur) so the card aligns with sibling cards on the final-results page.
+  const experienceWrapperCls = embedded
+    ? ''
+    : 'relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6';
+  const experienceCardCls = embedded
+    ? 'bg-[var(--gh-general-card-bg)] border border-[var(--gh-general-card-border)] rounded-[var(--gh-radius-md)] [backdrop-filter:var(--gh-glass-blur)] [-webkit-backdrop-filter:var(--gh-glass-blur)] [box-shadow:var(--gh-general-card-shadow)] p-4'
+    : `${hideAccuracy ? 'bg-[var(--gh-general-card-bg)]' : 'bg-[var(--gh-glass-bg)]'} border border-[var(--gh-border-subtle)] rounded-xl p-4`;
+  const accuracyWrapperCls = embedded
+    ? ''
+    : 'relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8';
+  const accuracyCardCls = embedded
+    ? 'bg-[var(--gh-general-card-bg)] border border-[var(--gh-general-card-border)] rounded-[var(--gh-radius-md)] [backdrop-filter:var(--gh-glass-blur)] [-webkit-backdrop-filter:var(--gh-glass-blur)] [box-shadow:var(--gh-general-card-shadow)] p-4'
+    : 'bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4';
+
   return (
     <>
       {/* EXPERIENCE */}
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className={`${hideAccuracy ? 'bg-[var(--gh-general-card-bg)]' : 'bg-[var(--gh-glass-bg)]'} border border-[var(--gh-border-subtle)] rounded-xl p-4`}>
+      <div className={experienceWrapperCls}>
+        <div className={experienceCardCls}>
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
             <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('experience')}</h3>
@@ -122,8 +138,8 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false }: { dat
 
       {/* ACCURACY */}
       {!hideAccuracy && (
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 pb-8">
-        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
+      <div className={accuracyWrapperCls}>
+        <div className={accuracyCardCls}>
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
             <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('accuracy')}</h3>

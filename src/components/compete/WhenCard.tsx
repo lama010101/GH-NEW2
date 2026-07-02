@@ -114,7 +114,7 @@ export default function WhenCard({
           return myWhenAcc != null ? (() => {
             const whenScore = Math.round(myWhenAcc);
             const whenHue = Math.round((Math.max(0, Math.min(100, whenScore)) / 100) * 120);
-            const whenColor = `hsl(${whenHue}, 100%, 50%)`;
+            const whenColor = `hsl(${whenHue}, 100%, var(--gh-acc-lightness, 50%))`;
             return (
               <div className={styles.scoreColFlex}>
                 <div className={styles.scoreGroup}>
@@ -248,7 +248,7 @@ export default function WhenCard({
           <div className={styles.lbList}>
             {whenRows.map((row, idx) => {
               const hue = row.acc != null ? Math.round((row.acc / 100) * 120) : null;
-              const accColor = hue != null ? `hsl(${hue}, 100%, 50%)` : "var(--gh-text-muted)";
+              const accColor = hue != null ? `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))` : "var(--gh-text-muted)";
               const resultRow = roundResults?.find(r => r.playerId === row.playerId);
               const rank = resultRow?.rank ?? null;
               const avatarUrl = snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
@@ -272,7 +272,7 @@ export default function WhenCard({
                   <span className={styles.lbAccPill}>
                     {row.acc != null ? (
                       <>
-                        <span style={{ color: accColor, fontSize: "var(--gh-font-base)" }}>{row.acc}</span>
+                        <span style={{ color: accColor, fontSize: "var(--font-base)" }}>{row.acc}</span>
                         <span className={styles.lbAccSuffix}>%</span>
                       </>
                     ) : "—"}

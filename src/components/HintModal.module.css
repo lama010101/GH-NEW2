@@ -15,6 +15,12 @@
   --modal-y: #b45309;
   --modal-o: #c2410c;
   --modal-r: #dc2626;
+  --modal-g-rgb: 22, 163, 74;
+  --modal-y-rgb: 180, 83, 9;
+  --modal-o-rgb: 194, 65, 12;
+  --modal-r-rgb: 220, 38, 38;
+  --modal-when-rgb: var(--gh-where-solid-rgb);
+  --modal-where-rgb: var(--gh-success-rgb);
 }
 
 /* HintModal uses the global data-theme token system (see globals.css
@@ -231,13 +237,13 @@
 }
 
 .tabBtnWhen.active {
-  border-bottom: 3px solid #0ea5e9;
-  background: rgba(14, 165, 233, 0.08);
+  border-bottom: 3px solid var(--gh-where-solid);
+  background: rgba(var(--modal-when-rgb), 0.08);
 }
 
 .tabBtnWhere.active {
-  border-bottom: 3px solid #22c55e;
-  background: rgba(34, 197, 94, 0.08);
+  border-bottom: 3px solid var(--gh-success);
+  background: rgba(var(--modal-where-rgb), 0.08);
 }
 
 .tabLbl {
@@ -247,12 +253,12 @@
 }
 
 .tabBtnWhen.active .tabLbl {
-  color: #0284c7;
+  color: var(--gh-where-solid);
   font-weight: 700;
 }
 
 .tabBtnWhere.active .tabLbl {
-  color: #16a34a;
+  color: var(--gh-success);
   font-weight: 700;
 }
 
@@ -266,12 +272,12 @@
 
 .tabBtnWhen.active .tabIcon {
   opacity: 1;
-  filter: drop-shadow(0 0 3px rgba(14, 165, 233, 0.5));
+  filter: drop-shadow(0 0 3px rgba(var(--modal-when-rgb), 0.5));
 }
 
 .tabBtnWhere.active .tabIcon {
   opacity: 1;
-  filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.5));
+  filter: drop-shadow(0 0 3px rgba(var(--modal-where-rgb), 0.5));
 }
 
 .tabBadge {
@@ -335,8 +341,8 @@
 }
 
 .hintBtn.revealed {
-  border-color: rgba(126, 217, 87, 0.25);
-  background: rgba(126, 217, 87, 0.06);
+  border-color: rgba(var(--modal-g-rgb), 0.25);
+  background: rgba(var(--modal-g-rgb), 0.06);
   cursor: default;
 }
 
@@ -347,7 +353,7 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: #7ed957;
+  background: var(--modal-g);
 }
 
 .hintIcon {
@@ -426,26 +432,26 @@
 }
 
 .costG {
-  background: rgba(126, 217, 87, 0.10);
-  border-color: rgba(126, 217, 87, 0.3);
+  background: rgba(var(--modal-g-rgb), 0.10);
+  border-color: rgba(var(--modal-g-rgb), 0.3);
   color: var(--modal-g);
 }
 
 .costY {
-  background: rgba(232, 192, 34, 0.10);
-  border-color: rgba(232, 192, 34, 0.3);
+  background: rgba(var(--modal-y-rgb), 0.10);
+  border-color: rgba(var(--modal-y-rgb), 0.3);
   color: var(--modal-y);
 }
 
 .costO {
-  background: rgba(232, 119, 34, 0.10);
-  border-color: rgba(232, 119, 34, 0.3);
+  background: rgba(var(--modal-o-rgb), 0.10);
+  border-color: rgba(var(--modal-o-rgb), 0.3);
   color: var(--modal-o);
 }
 
 .costR {
-  background: rgba(232, 68, 34, 0.10);
-  border-color: rgba(232, 68, 34, 0.3);
+  background: rgba(var(--modal-r-rgb), 0.10);
+  border-color: rgba(var(--modal-r-rgb), 0.3);
   color: var(--modal-r);
 }
 
@@ -453,12 +459,12 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: rgba(126, 217, 87, 0.15);
-  border: 0.5px solid rgba(126, 217, 87, 0.4);
+  background: rgba(var(--modal-g-rgb), 0.15);
+  border: 0.5px solid rgba(var(--modal-g-rgb), 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #7ed957;
+  color: var(--modal-g);
 }
 
 .checkDot svg {

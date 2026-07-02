@@ -276,7 +276,7 @@
 
 .lbAccSuffix {
   color: var(--gh-text-secondary);
-  font-size: var(--gh-font-xs);
+  font-size: var(--font-xs);
 }
 
 /* Hints section */

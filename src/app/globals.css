@@ -189,7 +189,7 @@ a {
   --font-2xs:   12px;   /* micro labels: badges, counters — minimum size, never below */
   --font-xs:    13px;   /* captions, metadata, small labels */
   --font-sm:    14px;   /* secondary labels, pill text, button text */
-  --font-base:  15px;   /* body / description / readable multi-line text */
+  --font-base:  16px;   /* body / description / readable multi-line text — ≥16px avoids iOS auto-zoom on focus */
   --font-lg:    17px;   /* card subtitles / section labels */
   --font-xl:    20px;   /* subheadings, screen/page headings (small) */
   --font-2xl:   24px;   /* screen/page headings */
@@ -213,6 +213,24 @@ a {
   --gh-teal:     #22d3ee;
   --gh-success:  #22c55e;
   --gh-danger:   #ef4444;
+
+  /* --- RGB channels (for rgba() tints/glows that must adapt to theme) --- */
+  --gh-orange-rgb:   251, 146, 60;
+  --gh-blue-rgb:     59, 130, 246;
+  --gh-violet-rgb:   232, 121, 249;
+  --gh-gold-rgb:     240, 192, 96;
+  --gh-teal-rgb:     34, 211, 238;
+  --gh-success-rgb:  34, 197, 94;
+  --gh-danger-rgb:   239, 68, 68;
+
+  /* --- WHERE/WHEN solid button + tag colors (white text on top) --- */
+  --gh-where-solid:    #06b6d4;  /* cyan-500 — WHERE button bg */
+  --gh-where-solid-rgb: 6, 182, 212;
+  --gh-when-solid:     #8b5cf6;  /* violet-500 — WHEN button bg */
+  --gh-when-solid-rgb: 139, 92, 246;
+
+  /* --- Secondary accent for gold/amber pills --- */
+  --gh-amber-rgb:      251, 191, 36;
 
   /* --- Backgrounds --- */
   --gh-bg-base:     #080c14;
@@ -460,6 +478,24 @@ a {
   --gh-teal:     #0891b2;
   --gh-success:  #16a34a;
   --gh-danger:   #dc2626;
+
+  /* --- RGB channels (deepened for light-bg contrast) --- */
+  --gh-orange-rgb:   234, 122, 28;
+  --gh-blue-rgb:     37, 99, 235;
+  --gh-violet-rgb:   192, 38, 211;
+  --gh-gold-rgb:     184, 134, 11;
+  --gh-teal-rgb:     8, 145, 178;
+  --gh-success-rgb:  22, 163, 74;
+  --gh-danger-rgb:   220, 38, 38;
+
+  /* --- WHERE/WHEN solid button + tag colors (deepened for light bg, white text on top) --- */
+  --gh-where-solid:    #0891b2;
+  --gh-where-solid-rgb: 8, 145, 178;
+  --gh-when-solid:     #7c3aed;
+  --gh-when-solid-rgb: 124, 58, 237;
+
+  /* --- Amber for gold/amber pills (deepened) --- */
+  --gh-amber-rgb:      217, 159, 28;
 
   /* --- Backgrounds --- */
   --gh-bg-base:     #f4f6fb;

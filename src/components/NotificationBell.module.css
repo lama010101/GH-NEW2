@@ -69,4 +69,4 @@
   font-size: var(--font-2xs); font-weight: 600;
   cursor: pointer;
 }
-.joinBtn:hover { background: rgba(59,130,246,0.20); }
+.joinBtn:hover { background: rgba(var(--gh-blue-rgb), 0.20); }

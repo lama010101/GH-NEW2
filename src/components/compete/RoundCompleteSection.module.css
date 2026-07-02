@@ -25,7 +25,7 @@
 }
 
 .eventTitle {
-  font-size: var(--gh-font-base);
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--gh-text-primary);
   text-align: center;
@@ -258,7 +258,7 @@
 }
 
 .leaderboardTitle {
-  font-size: var(--gh-font-base);
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--gh-text-primary);
   margin-bottom: 10px;
@@ -423,7 +423,7 @@
 
 .lbAccSuffix {
   color: var(--gh-text-secondary);
-  font-size: var(--gh-font-xs);
+  font-size: var(--font-xs);
 }
 
 .lbAccEmpty {
@@ -454,7 +454,7 @@
 }
 
 .gameAccuracyLabel {
-  font-size: var(--gh-font-base);
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--gh-text-primary);
   display: flex;
@@ -751,7 +751,7 @@
   padding: 12px 26px;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 6px 22px rgba(249, 115, 22, 0.35);
+  box-shadow: 0 6px 22px rgba(var(--gh-orange-rgb), 0.35);
   transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -759,7 +759,7 @@
 .nextButton:active {
   transform: scale(0.95);
   filter: brightness(0.85);
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
+  box-shadow: 0 2px 8px rgba(var(--gh-orange-rgb), 0.25);
 }
 
 .nextButtonDisabled {
@@ -864,7 +864,7 @@
 }
 
 .histContextArrow {
-  font-size: var(--gh-font-base);
+  font-size: var(--font-base);
   color: var(--gh-text-muted);
   transition: transform 0.2s ease;
 }

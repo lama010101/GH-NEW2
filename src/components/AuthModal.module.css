@@ -74,8 +74,8 @@
   color: var(--gh-danger);
   font-size: var(--font-sm);
   margin-bottom: 16px;
-  background: rgba(239, 68, 68, 0.10);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(var(--gh-danger-rgb), 0.10);
+  border: 1px solid rgba(var(--gh-danger-rgb), 0.25);
   border-radius: 8px;
   padding: 8px 16px;
 }
