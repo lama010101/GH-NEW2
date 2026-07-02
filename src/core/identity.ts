@@ -72,14 +72,41 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
   bootstrapped = true;
 
   bootstrapPromise = (async (): Promise<IdentityState> => {
-    const maxAttempts = 3;
+    // ── Phase 1: Fast path — getSession() reads from the auth cookie (kept
+    // fresh by middleware on every navigation). This is instant and avoids the
+    // GoTrue internal lock hang that getUser() can trigger on slow networks.
+    // With @supabase/ssr cookie-based auth, getSession() reads the cookie
+    // (not localStorage), and middleware already refreshed it server-side.
+    try {
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      if (session?.user?.id) {
+        const user = session.user;
+        const isAnonymous = user.is_anonymous ?? false;
+        const displayName = await fetchDisplayName(user.id);
+        const createdAt = new Date(user.created_at).getTime();
+        const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
+        const isNewUser = Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
+        cachedState = {
+          status: "ready",
+          playerId: user.id,
+          isAnonymous,
+          displayName,
+          isNewUser
+        };
+        resolveReady?.(user.id);
+        return cachedState;
+      }
+    } catch {
+      // getSession() threw — fall through to getUser() fallback.
+    }
+
+    // ── Phase 2: Fallback — getUser() makes a network call that refreshes
+    // stale tokens. Only reached when getSession() found no session (cookie
+    // missing, expired, or corrupted). Wrapped in an 8s timeout to avoid the
+    // GoTrue lock hang; one retry with backoff for transient network issues.
+    const maxAttempts = 2;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        // Validate and refresh the session via getUser(). Unlike getSession(),
-        // which only reads from localStorage and can return an expired token,
-        // getUser() makes a network call that refreshes stale tokens. This
-        // prevents the 'Player' fallback when the token is expired but still
-        // present in localStorage.
         const { data: { user }, error: userError } = await Promise.race([
           supabaseBrowser.auth.getUser(),
           new Promise<never>((_, reject) =>
