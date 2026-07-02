@@ -15,6 +15,8 @@ import { setLocale } from "@/actions/setLocale";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
+import { supabaseBrowser } from "@/core/supabaseBrowser";
+import RankProgressBar from "@/components/RankProgressBar";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
 
@@ -120,6 +122,26 @@ export default function RoundCompleteSection({
     return true;
   });
   const [localePending, startLocaleTransition] = useTransition();
+  const [totalXp, setTotalXp] = useState<number | null>(null);
+
+  // Fetch global total_xp (single source of truth for rank) for the current
+  // player. Re-fetches when playerId changes. Rank is derived, never stored.
+  useEffect(() => {
+    if (!playerId) { setTotalXp(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabaseBrowser
+          .from('player_global_stats')
+          .select('total_xp')
+          .eq('player_id', playerId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (data?.total_xp != null) setTotalXp(Number(data.total_xp));
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [playerId]);
 
   useEffect(() => {
     setIsAccuracyVisible(false);
@@ -453,6 +475,11 @@ export default function RoundCompleteSection({
                 <span className={styles.gameAccuracyVal}>{Math.round(myResult.cumulativeAccuracy)}</span>
               </div>
             )}
+
+            {/* RANK PROGRESS — derived from global total_xp */}
+            <div className={styles.rankWrap}>
+              <RankProgressBar totalXp={totalXp} compact />
+            </div>
 
             {/* WHERE + WHEN CARD (merged, tabbed) */}
             <div className={styles.whereWhenCard}>

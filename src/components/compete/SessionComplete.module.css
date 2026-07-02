@@ -158,6 +158,11 @@
   padding: 18px;
 }
 
+.rankWrap {
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
 .statPair {
   flex: 1;
   display: flex;

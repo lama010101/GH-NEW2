@@ -469,6 +469,10 @@
   font-variant-numeric: tabular-nums;
 }
 
+.rankWrap {
+  margin-bottom: 14px;
+}
+
 .whereWhenCard {
   background: var(--gh-general-card-bg);
   border: 1px solid var(--gh-general-card-border);

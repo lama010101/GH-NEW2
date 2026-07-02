@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from 'next-intl';
 import RainbowRing from "@/components/compete/RainbowRing";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
@@ -11,6 +11,8 @@ import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
 import { calculateBadges } from "@/core/rules";
 import { NavModal } from "@/components/NavModal";
 import ExperienceAccuracy from "@/components/ExperienceAccuracy";
+import { supabaseBrowser } from "@/core/supabaseBrowser";
+import RankProgressBar from "@/components/RankProgressBar";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
@@ -38,6 +40,26 @@ export default function SessionComplete({
   const [navModalOpen, setNavModalOpen] = useState(false);
   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [viewerAlt, setViewerAlt] = useState<string>("");
+  const [totalXp, setTotalXp] = useState<number | null>(null);
+
+  // Fetch global total_xp (single source of truth for rank) for the current
+  // player. Re-fetches when playerId changes. Rank is derived, never stored.
+  useEffect(() => {
+    if (!playerId) { setTotalXp(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabaseBrowser
+          .from('player_global_stats')
+          .select('total_xp')
+          .eq('player_id', playerId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (data?.total_xp != null) setTotalXp(Number(data.total_xp));
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [playerId]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isHost = snapshot.players?.find((p: any) => p.playerId === playerId)?.isHost ?? false;
@@ -327,6 +349,11 @@ export default function SessionComplete({
                   </div>
                 </div>
               </section>
+
+              {/* RANK PROGRESS — derived from global total_xp */}
+              <div className={styles.rankWrap}>
+                <RankProgressBar totalXp={totalXp} compact />
+              </div>
 
               {/* FINAL RANKINGS — hidden in practice (solo) mode */}
               {!isPractice && (

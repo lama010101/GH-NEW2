@@ -272,6 +272,14 @@
   margin: 0 auto;
 }
 
+.rankWrap {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto 16px;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
 .cardIconImg {
   object-fit: contain;
 }

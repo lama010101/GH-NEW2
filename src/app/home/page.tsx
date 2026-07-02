@@ -17,6 +17,7 @@ import { loadPracticeSettings, savePracticeSettings } from '@/components/practic
 import styles from './home.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
+import RankProgressBar from '@/components/RankProgressBar'
 
 function HomePageInner() {
   const router = useRouter()
@@ -84,6 +85,7 @@ function HomePageInner() {
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
+  const [totalXpNum, setTotalXpNum] = useState<number | null>(null)
 
   const [avatarUrl, setAvatarUrl] = useState<string|null>(null)
   const [initials, setInitials] = useState('')
@@ -95,6 +97,7 @@ function HomePageInner() {
       setInitials('PL')
       setAccuracy('--')
       setXp('--')
+      setTotalXpNum(null)
       return
     }
     const pid = (identity as { status: string; playerId?: string }).playerId
@@ -110,6 +113,7 @@ function HomePageInner() {
         if (stats) {
           setAccuracy(String(Math.round(Number(stats.avg_accuracy))))
           setXp(Number(stats.total_xp).toLocaleString('fr-FR'))
+          setTotalXpNum(Number(stats.total_xp))
         }
       } catch {}
       try {
@@ -200,6 +204,11 @@ function HomePageInner() {
         {/* Tagline */}
         <div className={styles.tagline}>
           {t('home.tagline')}
+        </div>
+
+        {/* Rank progress — derived from total_xp (single source of truth) */}
+        <div className={styles.rankWrap}>
+          <RankProgressBar totalXp={totalXpNum} />
         </div>
 
         {/* Vertical card stack */}
