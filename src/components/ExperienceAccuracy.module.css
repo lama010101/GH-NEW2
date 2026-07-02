@@ -44,6 +44,9 @@
 
 .tabBtn {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--gh-border-default);
@@ -80,6 +83,26 @@
 .tabActiveWhere:hover {
   background: rgba(var(--gh-teal-rgb), 0.18);
   color: var(--gh-teal);
+}
+
+.tabDotWhen {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--gh-violet);
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.tabDotWhere {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--gh-teal);
+  flex-shrink: 0;
+  margin-right: 6px;
 }
 
 .regionWrap {
@@ -165,6 +188,7 @@
   font-size: 13px;
   font-weight: 800;
   text-align: right;
+  white-space: nowrap;
 }
 
 .regionCount {

@@ -187,14 +187,18 @@ export default function SessionComplete({
           era_contemporary: { icon: '🚀', span: '1945 – 2025',  order: 4 },
         };
 
-        // Aggregate badges across all rounds
-        const badgeCounts = { gold: 0, silver: 0, bronze: 0 };
+        // Aggregate badges across all rounds (by dimension: combo/when/where)
+        const badgeCounts = { combo: 0, when: 0, where: 0 };
         for (const r of myRoundResults) {
           const loc = r.locationScore ?? 0;
           const time = r.timeScore ?? 0;
           const combo = (loc + time) / 2;
           const badges = calculateBadges({ yearAccuracy: time, locationAccuracy: loc, comboAccuracy: combo });
-          for (const b of badges) { badgeCounts[b.tier]++; }
+          for (const b of badges) {
+            if (b.dimension === 'combo') badgeCounts.combo++;
+            else if (b.dimension === 'year') badgeCounts.when++;
+            else if (b.dimension === 'location') badgeCounts.where++;
+          }
         }
 
         // XP per era (for ExperienceAccuracy component)
@@ -254,7 +258,7 @@ export default function SessionComplete({
               return s + Math.pow(acc - mean, 2);
             }, 0) / myRoundResults.length)))
           : 0;
-        const totalBadges = badgeCounts.gold + badgeCounts.silver + badgeCounts.bronze;
+        const totalBadges = badgeCounts.combo + badgeCounts.when + badgeCounts.where;
 
         return (
           <>
@@ -313,12 +317,12 @@ export default function SessionComplete({
                 <div className={styles.statPair}>
                   <div className={styles.statTile}>
                     <span className={styles.statTileLabelWhere}>{tGame('where')}</span>
-                    <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whereAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{whereAccuracy}%</span>
+                    <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whereAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{whereAccuracy}</span>
                     <span className={styles.statTileSub}>{t('avg_km_away', { n: Math.round(avgDistanceKm) })}</span>
                   </div>
                   <div className={styles.statTile}>
                     <span className={styles.statTileLabelWhen}>{tGame('when')}</span>
-                    <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{whenAccuracy}%</span>
+                    <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{whenAccuracy}</span>
                     <span className={styles.statTileSub}>{t('avg_yrs_off', { n: Math.round(avgYearDiff) })}</span>
                   </div>
                 </div>
@@ -375,7 +379,7 @@ export default function SessionComplete({
                         </div>
                       </div>
                       <div className={styles.rankScore}>
-                        <span className={styles.rankAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, player.avgAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{player.avgAccuracy}%</span>
+                        <span className={styles.rankAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, player.avgAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{player.avgAccuracy}</span>
                         <span className={styles.rankXp}>{player.totalScore.toLocaleString()} {tGame('xp_unit')}</span>
                       </div>
                     </div>
@@ -400,28 +404,28 @@ export default function SessionComplete({
                       <span className={styles.noBadges}>{tGame('no_badges')}</span>
                     ) : (
                       <div className={styles.badgeTally}>
-                        {badgeCounts.gold > 0 && (
-                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyGold}`}>
+                        {badgeCounts.combo > 0 && (
+                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyCombo}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/combo_gold.webp" alt="gold" width={28} height={28} />
-                            <span className={styles.badgeTallyCount}>{badgeCounts.gold}</span>
-                            <span className={styles.badgeTallyTier}>{tGame('gold_badges')}</span>
+                            <img src="/badges/combo_gold.webp" alt="combo" width={28} height={28} />
+                            <span className={styles.badgeTallyCount}>{badgeCounts.combo}</span>
+                            <span className={styles.badgeTallyTier}>{tGame('combo_badges')}</span>
                           </span>
                         )}
-                        {badgeCounts.silver > 0 && (
-                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallySilver}`}>
+                        {badgeCounts.when > 0 && (
+                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyWhen}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/combo_silver.webp" alt="silver" width={28} height={28} />
-                            <span className={styles.badgeTallyCount}>{badgeCounts.silver}</span>
-                            <span className={styles.badgeTallyTier}>{tGame('silver_badges')}</span>
+                            <img src="/badges/year_gold.webp" alt="when" width={28} height={28} />
+                            <span className={styles.badgeTallyCount}>{badgeCounts.when}</span>
+                            <span className={styles.badgeTallyTier}>{tGame('when_badges')}</span>
                           </span>
                         )}
-                        {badgeCounts.bronze > 0 && (
-                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyBronze}`}>
+                        {badgeCounts.where > 0 && (
+                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyWhere}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/combo_bronze.webp" alt="bronze" width={28} height={28} />
-                            <span className={styles.badgeTallyCount}>{badgeCounts.bronze}</span>
-                            <span className={styles.badgeTallyTier}>{tGame('bronze_badges')}</span>
+                            <img src="/badges/location_gold.webp" alt="where" width={28} height={28} />
+                            <span className={styles.badgeTallyCount}>{badgeCounts.where}</span>
+                            <span className={styles.badgeTallyTier}>{tGame('where_badges')}</span>
                           </span>
                         )}
                       </div>
@@ -439,7 +443,7 @@ export default function SessionComplete({
                       <span className={styles.gameStatLabel}>{tGame('total_distance')}</span>
                     </div>
                     <div className={styles.gameStatTile}>
-                      <span className={styles.gameStatVal}>{consistency}%</span>
+                      <span className={styles.gameStatVal}>{consistency}</span>
                       <span className={styles.gameStatLabel}>{tGame('avg_consistency')}</span>
                     </div>
                     {bestRoundIdx >= 0 && snapshot.rounds[bestRoundIdx] && (
@@ -501,7 +505,7 @@ export default function SessionComplete({
                           <span className={styles.roundMeta}>{round.year} · {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`}</span>
                         </div>
                         {myRoundAcc != null && (
-                          <span className={styles.roundMyAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, myRoundAcc)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{myRoundAcc}%</span>
+                          <span className={styles.roundMyAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, myRoundAcc)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{myRoundAcc}</span>
                         )}
                         <span className={styles.chev} style={{ transform: open ? "rotate(90deg)" : "none" }}>›</span>
                       </button>
@@ -520,17 +524,17 @@ export default function SessionComplete({
                           )}
                           <div className={styles.miniGrid}>
                             <div className={styles.miniTile}>
-                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgAccuracy}%</span>
+                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgAccuracy}</span>
                               <span className={styles.miniLabel}>{tGame('total')}</span>
                               <span className={styles.miniSub}>{roundStats.totalScore.toLocaleString()} {tGame('xp_unit')}</span>
                             </div>
                             <div className={styles.miniTile}>
-                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgLocationScore}%</span>
+                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgLocationScore}</span>
                               <span className={styles.miniLabelWhere}>{tGame('where')}</span>
                               <span className={styles.miniSub}>{tGame('avg_label')} {Math.round(roundStats.avgDistanceKm)} {tGame('km_unit')}</span>
                             </div>
                             <div className={styles.miniTile}>
-                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgTimeScore}%</span>
+                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgTimeScore}</span>
                               <span className={styles.miniLabelWhen}>{tGame('when')}</span>
                               <span className={styles.miniSub}>{tGame('avg_label')} {Math.round(roundStats.avgYearDiff)} {tGame('yrs_unit')}</span>
                             </div>

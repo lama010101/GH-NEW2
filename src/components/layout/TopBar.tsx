@@ -30,7 +30,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
           if (!Number.isFinite(n)) return undefined
           const hue = Math.round((Math.max(0, Math.min(100, n)) / 100) * 120)
           return { color: `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))` }
-        })()}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
+        })()}>{accuracy}</span>
         <span className={styles.xpPillDivider}>|</span>
         <span className={styles.xpPillXp} style={{ color: 'var(--gh-text-primary)' }}>{xp}<span className={styles.xpPillSuffix}>XP</span></span>
       </button>

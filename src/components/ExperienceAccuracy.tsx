@@ -82,12 +82,14 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, embedde
               className={`${styles.tabBtn} ${experienceTab === 'when' ? styles.tabActiveWhen : ''}`}
               onClick={() => setExperienceTab('when')}
             >
+              <span className={styles.tabDotWhen} />
               {t('when')}
             </button>
             <button
               className={`${styles.tabBtn} ${experienceTab === 'where' ? styles.tabActiveWhere : ''}`}
               onClick={() => setExperienceTab('where')}
             >
+              <span className={styles.tabDotWhere} />
               {t('where')}
             </button>
           </div>
@@ -149,12 +151,14 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, embedde
               className={`${styles.tabBtn} ${accuracyTab === 'when' ? styles.tabActiveWhen : ''}`}
               onClick={() => setAccuracyTab('when')}
             >
+              <span className={styles.tabDotWhen} />
               {t('when')}
             </button>
             <button
               className={`${styles.tabBtn} ${accuracyTab === 'where' ? styles.tabActiveWhere : ''}`}
               onClick={() => setAccuracyTab('where')}
             >
+              <span className={styles.tabDotWhere} />
               {t('where')}
             </button>
           </div>
@@ -173,7 +177,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, embedde
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhen}`} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>
                     </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
+                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}</span>
                     <span className={styles.regionCount}>{item.roundCount}</span>
                   </div>
                 ))
@@ -191,7 +195,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, embedde
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhere}`} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>
                     </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}%</span>
+                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}</span>
                     <span className={styles.regionCount}>{item.roundCount}</span>
                   </div>
                 ))

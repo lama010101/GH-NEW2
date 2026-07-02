@@ -329,7 +329,7 @@ export default function ProfilePage() {
             value: profileData.avgAccuracy === null
               ? '...'
               : profileData.avgAccuracy !== null
-                ? Math.round(Number(profileData.avgAccuracy)) + '%'
+                ? String(Math.round(Number(profileData.avgAccuracy)))
                 : '—',
             label: t('avg_accuracy'),
             color: styles.statColorOrange
@@ -435,7 +435,7 @@ export default function ProfilePage() {
                 className={styles.modeAcc}
                 style={{ color: profileData.dailyAvgAccuracy !== null ? accColor(profileData.dailyAvgAccuracy) : 'var(--gh-text-muted)' }}
               >
-                {profileData.dailyAvgAccuracy !== null ? `${Math.round(profileData.dailyAvgAccuracy)}%` : '—'}
+                {profileData.dailyAvgAccuracy !== null ? `${Math.round(profileData.dailyAvgAccuracy)}` : '—'}
               </span>
               <span className={styles.modeGames}>
                 {profileData.dailyGamesPlayed !== null ? `${profileData.dailyGamesPlayed} ${t('games')}` : t('coming_soon')}
@@ -453,7 +453,7 @@ export default function ProfilePage() {
                 className={styles.modeAcc}
                 style={{ color: profileData.levelUpBestAccuracy !== null ? accColor(profileData.levelUpBestAccuracy) : 'var(--gh-text-muted)' }}
               >
-                {profileData.levelUpBestAccuracy !== null ? `${Math.round(profileData.levelUpBestAccuracy)}%` : '—'}
+                {profileData.levelUpBestAccuracy !== null ? `${Math.round(profileData.levelUpBestAccuracy)}` : '—'}
               </span>
               <span className={styles.modeGames}>
                 {profileData.levelUpCurrentLevel !== null ? `${t('level_up')} ${profileData.levelUpCurrentLevel}` : t('coming_soon')}
@@ -471,7 +471,7 @@ export default function ProfilePage() {
                 className={styles.modeAcc}
                 style={{ color: progressData?.practice?.avgAccuracy != null ? accColor(progressData.practice.avgAccuracy) : 'var(--gh-text-muted)' }}
               >
-                {progressData?.practice?.avgAccuracy != null ? `${Math.round(progressData.practice.avgAccuracy)}%` : '—'}
+                {progressData?.practice?.avgAccuracy != null ? `${Math.round(progressData.practice.avgAccuracy)}` : '—'}
               </span>
               <span className={styles.modeGames}>
                 {progressData?.practice?.gamesPlayed != null ? `${progressData.practice.gamesPlayed} ${t('games')}` : '—'}
@@ -503,7 +503,7 @@ export default function ProfilePage() {
               <span className={`font-bebas text-sm font-bold text-blue-400`}>
                 {profileData.dailyAvgAccuracy === null
                   ? '—'
-                  : `${Math.round(Number(profileData.dailyAvgAccuracy))}% · ${profileData.dailyGamesPlayed ?? 0} games`}
+                  : `${Math.round(Number(profileData.dailyAvgAccuracy))} · ${profileData.dailyGamesPlayed ?? 0} games`}
               </span>
             </div>
             {/* Level Up */}
@@ -512,7 +512,7 @@ export default function ProfilePage() {
               <span className={`font-bebas text-sm font-bold ${styles.leaderboardViolet}`}>
                 {profileData.levelUpCurrentLevel === null
                   ? '—'
-                  : `Level ${profileData.levelUpCurrentLevel} · ${profileData.levelUpBestAccuracy ?? 0}% best`}
+                  : `Level ${profileData.levelUpCurrentLevel} · ${profileData.levelUpBestAccuracy ?? 0} best`}
               </span>
             </div>
           </div>
