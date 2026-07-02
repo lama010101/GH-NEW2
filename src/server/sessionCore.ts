@@ -1553,6 +1553,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       session_event_ids: string[] | null;
       round_started_phase_ends_at: string | null;
       scoring_reference_year: number;
+      mode: "practice" | "sync" | "async";
     }>(
       `WITH
         round_started AS (
@@ -1576,7 +1577,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
           ORDER BY id ASC LIMIT 1
         ),
         session_meta AS (
-          SELECT scoring_reference_year FROM sessions WHERE game_id = $1
+          SELECT scoring_reference_year, mode FROM sessions WHERE game_id = $1
         )
       SELECT
         EXISTS(SELECT 1 FROM round_started)     AS round_started,
@@ -1584,7 +1585,8 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         EXISTS(SELECT 1 FROM existing_commit)   AS has_existing_commit,
         (SELECT payload->'eventIds' FROM session_created)::jsonb AS session_event_ids,
         (SELECT phase_ends_at FROM round_started) AS round_started_phase_ends_at,
-        (SELECT scoring_reference_year FROM session_meta) AS scoring_reference_year`,
+        (SELECT scoring_reference_year FROM session_meta) AS scoring_reference_year,
+        (SELECT mode FROM session_meta) AS mode`,
       [gameId, roundIndex, playerId]
     );
 
@@ -1775,7 +1777,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     // separate clamp HTTP write that was rejected by the FSM trigger (root
     // cause of the pressure-clamp race — see A0/A1).
     // ═════════════════════════════════════════════════════════════════════════════
-    if (commitCount === 1 && guard.round_started_phase_ends_at) {
+    if (commitCount === 1 && guard.round_started_phase_ends_at && guard.mode === "sync") {
       const remainingMs = Date.parse(guard.round_started_phase_ends_at) - Date.now();
       if (remainingMs > PRESSURE_CLAMP_SECONDS * 1000) {
         const newRoundEndsAt = new Date(Date.now() + PRESSURE_CLAMP_SECONDS * 1000).toISOString();

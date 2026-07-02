@@ -618,5 +618,20 @@
     "waitlist_err_invalid_email": "Please enter a valid email address.",
     "waitlist_err_generic": "Something went wrong. Please try again.",
     "waitlist_err_network": "Network error. Please try again."
+  },
+  "rank": {
+    "rank_label": "Rank",
+    "rank_1": "Wanderer",
+    "rank_2": "Pathfinder",
+    "rank_3": "Trailblazer",
+    "rank_4": "Cartographer",
+    "rank_5": "Explorer",
+    "rank_6": "Navigator",
+    "rank_7": "Chronicler",
+    "rank_8": "Historian",
+    "rank_9": "Scholar",
+    "rank_10": "Cartographer Royal",
+    "next_rank": "{xp} XP to {title}",
+    "max_rank": "Max rank achieved"
   }
 }

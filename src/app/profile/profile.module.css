@@ -97,6 +97,11 @@
   box-shadow: var(--gh-shadow-sm);
 }
 
+/* ── Rank progress wrapper ── */
+.rankWrap {
+  margin: 0 auto;
+}
+
 /* ── Section header (accent bar + title) ── */
 .sectionHead {
   display: flex;
