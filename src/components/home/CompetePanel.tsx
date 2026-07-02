@@ -370,7 +370,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                           className={cpStyles.accuracyValue}
                           style={{ color: getAccuracyColor(game.accuracy_you ?? 0) }}
                         >
-                          {game.accuracy_you ?? 0}%
+                          {game.accuracy_you ?? 0}
                         </span>
                         <span className={cpStyles.xpValue}>{game.score_you} {t('home.compete_xp_unit')}</span>
                       </>

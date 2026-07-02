@@ -706,7 +706,7 @@ export default function RoundActiveSection({
           <span>{snapshot.currentRoundIndex + 1} / {snapshot.config.totalRounds}</span>
           {runningAccuracy !== null && (() => {
             const hue = Math.round((Math.max(0, Math.min(100, runningAccuracy)) / 100) * 120);
-            return <span style={{ color: `hsl(${hue}, 100%, 50%)` }}>· {runningAccuracy}%</span>;
+            return <span style={{ color: `hsl(${hue}, 100%, 50%)` }}>· {runningAccuracy}</span>;
           })()}
         </div>
       )}

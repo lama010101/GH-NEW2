@@ -84,7 +84,7 @@
   font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 800;
   letter-spacing: 2.5px;
-  color: var(--gh-teal);
+  color: var(--gh-orange);
 }
 
 .bannerTitle {
@@ -394,16 +394,16 @@
   border: 1px solid var(--gh-border-subtle);
 }
 
-.badgeTallyGold {
+.badgeTallyCombo {
   border-color: var(--gh-badge-gold);
 }
 
-.badgeTallySilver {
-  border-color: var(--gh-badge-silver);
+.badgeTallyWhen {
+  border-color: var(--gh-violet);
 }
 
-.badgeTallyBronze {
-  border-color: var(--gh-badge-bronze);
+.badgeTallyWhere {
+  border-color: var(--gh-teal);
 }
 
 .badgeTallyCount {
@@ -419,9 +419,9 @@
   letter-spacing: 0.5px;
 }
 
-.badgeTallyGold .badgeTallyTier { color: var(--gh-badge-gold); }
-.badgeTallySilver .badgeTallyTier { color: var(--gh-badge-silver); }
-.badgeTallyBronze .badgeTallyTier { color: var(--gh-badge-bronze); }
+.badgeTallyCombo .badgeTallyTier { color: var(--gh-badge-gold); }
+.badgeTallyWhen .badgeTallyTier { color: var(--gh-violet); }
+.badgeTallyWhere .badgeTallyTier { color: var(--gh-teal); }
 
 /* Stat groups (XP per era / region) */
 .statGroup {
