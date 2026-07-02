@@ -66,8 +66,8 @@ export async function PATCH(_request: NextRequest) {
     let regeneratedDisplayName: string | null = null;
     if (regenerateDisplayName && avatarRow) {
       const baseName = avatarRow.first_name + (avatarRow.last_name ? ` ${avatarRow.last_name}` : "");
-      const randomSuffix = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-      regeneratedDisplayName = `${baseName} ${randomSuffix}`;
+      const randomSuffix = Math.floor(Math.random() * 9000 + 1000).toString();
+      regeneratedDisplayName = `${baseName}#${randomSuffix}`;
       profileUpdate.display_name = regeneratedDisplayName;
     }
 
