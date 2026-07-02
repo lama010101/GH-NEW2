@@ -41,7 +41,7 @@ import { appendEvent, loadLastEventWithLock } from "@/server/eventStore";
 import { TransitionCause } from "@/core/transitionCause";
 import { transition } from "@/server/engine/transition";
 import type { TransitionEvent } from "@/server/engine/transition";
-import { createSupabaseServerClient } from "@/core/supabaseServer";
+import { createSupabaseServerClient, createAuthenticatedServerClient } from "@/core/supabaseServer";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TRANSITION ENGINE VALIDATION (MP-ARCH-PHASE-1)
@@ -543,15 +543,17 @@ export async function assertParticipantOrPartyKit(
     return { ok: true, playerId: null };
   }
 
-  // Resolve playerId from header or query param
-  const viewerPlayerIdHeader = request.headers.get("x-viewer-player-id");
-  const url = new URL(request.url);
-  const viewerPlayerIdQuery = url.searchParams.get("playerId");
-  const playerId = viewerPlayerIdQuery || viewerPlayerIdHeader;
+  // Bind playerId to the authenticated user's uid — do NOT trust
+  // client-supplied playerId from headers/query params (BOLA fix).
+  // The client's ?playerId= is now ignored for authorization.
+  const supabase = createAuthenticatedServerClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (!playerId) {
-    return { ok: false, status: 401, error: "playerId required" };
+  if (authError || !user) {
+    return { ok: false, status: 401, error: "authentication required" };
   }
+
+  const playerId = user.id;
 
   // Verify active participation
   const result = await dbPool.query<{ exists: boolean }>(
