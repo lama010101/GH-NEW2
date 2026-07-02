@@ -34,23 +34,43 @@ const SCENARIOS = [
   {
     id: "neither",
     label: "F · Neither guessed",
-    desc: "Both WHERE + WHEN buttons sonar-pulse. No answer tags. Submit disabled.",
+    desc: "Both WHERE + WHEN buttons breathe + sonar. No answer tags. Submit disabled.",
     whenGuessed: false,
     whereGuessed: false,
   },
   {
     id: "when-only",
     label: "G · Only WHEN guessed",
-    desc: "WHEN shows answer tag + stops. WHERE keeps sonar. Submit still disabled.",
+    desc: "WHEN shows answer tag + stops. WHERE keeps breathing + sonar. Submit still disabled.",
     whenGuessed: true,
     whereGuessed: false,
   },
   {
     id: "where-only",
     label: "H · Only WHERE guessed",
-    desc: "WHERE shows answer tag + stops. WHEN keeps sonar. Submit still disabled.",
+    desc: "WHERE shows answer tag + stops. WHEN keeps breathing + sonar. Submit still disabled.",
     whenGuessed: false,
     whereGuessed: true,
+  },
+] as const;
+
+// Icon variants I-K focus on the SUBMIT button icon itself when active.
+// All three use the SAME paper plane icon — each with a different animation.
+const ICON_VARIANTS = [
+  {
+    id: "orbit",
+    label: "I · Circle Around",
+    desc: "Paper plane circles around inside the disk.",
+  },
+  {
+    id: "burst",
+    label: "J · Burst",
+    desc: "Paper plane bursts outward (scale + fade), then resets.",
+  },
+  {
+    id: "orbit-burst",
+    label: "K · Circle Then Burst",
+    desc: "Paper plane circles around, then bursts at the center. Button also breathes (A) + sonar rings (C).",
   },
 ] as const;
 
@@ -207,6 +227,68 @@ export default function SubmitAnimationsPrototypePage() {
         ))}
       </div>
 
+      {/* ════ Icon variants I-K: Submit button icon animations (active) ════ */}
+      <div className="hintLine">
+        Submit active — icon-driven CTA animations.
+      </div>
+
+      <div className="grid">
+        {ICON_VARIANTS.map((v) => (
+          <div key={v.id} className="card">
+            <div className="cardLabel">{v.label}</div>
+
+            <div className="navbar">
+              <button type="button" className="circleBtn hintsBtn" aria-label="Hints">
+                <span className="hintsCount">0</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9.663 17h4.673M12 3v1m0 16v1M4.22 4.22l.707.707M19.778 19.778l-.707-.707M3 12h1m16 0h1M4.22 19.778l.707-.707M19.778 4.22l-.707.707M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
+                </svg>
+              </button>
+
+              <div className="circleWrap">
+                <span className="overlayTag overlayTagWhen overlayTagAnswer">1987</span>
+                <button type="button" className="circleBtn whenBtn" aria-label="When">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/badges/when.webp" alt="When" className="btnIcon" />
+                </button>
+              </div>
+
+              <div className="circleWrap">
+                <span className="overlayTag overlayTagWhere overlayTagAnswer">Paris, France</span>
+                <button type="button" className="circleBtn whereBtn" aria-label="Where">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/badges/where.webp" alt="Where" className="btnIcon" />
+                </button>
+              </div>
+
+              {/* Submit — active, icon variant (always paper plane) */}
+              <button
+                type="button"
+                className={`circleBtn submitBtn submitReady variant-${v.id}`}
+                aria-label="Submit"
+              >
+                <svg
+                  className={`sendIcon icon-${v.id}`}
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="cardDesc">{v.desc}</div>
+          </div>
+        ))}
+      </div>
+
       <style jsx global>{`
         html, body { margin: 0; padding: 0; background: #000; }
       `}</style>
@@ -282,7 +364,7 @@ export default function SubmitAnimationsPrototypePage() {
           cursor: pointer; position: relative;
         }
         .hintsBtn, .submitBtn { width: 52px; height: 52px; }
-        .whereBtn, .whenBtn { width: 64px; height: 64px; overflow: hidden; }
+        .whereBtn, .whenBtn { width: 64px; height: 64px; }
         .btnIcon { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
         .whereBtn { background: #06b6d4; border-color: rgba(255,255,255,0.85); }
         .whenBtn  { background: #8b5cf6; border-color: rgba(255,255,255,0.85); }
@@ -387,12 +469,15 @@ export default function SubmitAnimationsPrototypePage() {
         .variant-combo::after { animation-delay: 1s; }
 
         /* ============================================================ */
-        /* Scenarios F-H — WHERE/WHEN sonar (pre-submit)                */
-        /* Un-guessed buttons sonar-pulse to call user to action.       */
-        /* Guessed buttons show answer tag + stop animating.            */
+        /* Scenarios F-H — WHERE/WHEN breathe + sonar (pre-submit)      */
+        /* Un-guessed buttons breathe (A) + sonar-pulse (C) to call     */
+        /* user to action. Guessed buttons show answer tag + stop.     */
         /* ============================================================ */
 
-        /* WHEN sonar — violet rings */
+        /* WHEN — breathe (A) + sonar (C) */
+        .whenBtnSonar {
+          animation: breathe 1.6s ease-in-out infinite;
+        }
         .whenBtnSonar::before,
         .whenBtnSonar::after {
           content: "";
@@ -404,7 +489,10 @@ export default function SubmitAnimationsPrototypePage() {
         }
         .whenBtnSonar::after { animation-delay: 1s; }
 
-        /* WHERE sonar — cyan rings */
+        /* WHERE — breathe (A) + sonar (C) */
+        .whereBtnSonar {
+          animation: breathe 1.6s ease-in-out infinite;
+        }
         .whereBtnSonar::before,
         .whereBtnSonar::after {
           content: "";
@@ -423,6 +511,71 @@ export default function SubmitAnimationsPrototypePage() {
           border-color: rgba(255, 255, 255, 0.2);
           cursor: not-allowed;
         }
+
+        /* ============================================================ */
+        /* Icon variants I-K — Submit button icon animations (active)   */
+        /* All use the same paper plane icon, different animations.     */
+        /* ============================================================ */
+
+        /* I — Circle Around: plane orbits inside the disk */
+        .icon-orbit {
+          animation: planeOrbit 2s linear infinite;
+        }
+        @keyframes planeOrbit {
+          0%      { transform: translate(10px, 0); }
+          12.5%   { transform: translate(7px, 7px); }
+          25%     { transform: translate(0, 10px); }
+          37.5%   { transform: translate(-7px, 7px); }
+          50%     { transform: translate(-10px, 0); }
+          62.5%   { transform: translate(-7px, -7px); }
+          75%     { transform: translate(0, -10px); }
+          87.5%   { transform: translate(7px, -7px); }
+          100%    { transform: translate(10px, 0); }
+        }
+
+        /* J — Burst: plane scales up + fades out, then resets */
+        .icon-burst {
+          animation: planeBurst 1.8s ease-out infinite;
+        }
+        @keyframes planeBurst {
+          0%      { transform: scale(1);   opacity: 1; }
+          35%     { transform: scale(1);   opacity: 1; }
+          60%     { transform: scale(2);   opacity: 0; }
+          61%     { transform: scale(0.3); opacity: 0; }
+          100%    { transform: scale(1);   opacity: 1; }
+        }
+
+        /* K — Circle Then Burst: orbit, return to center, burst */
+        .icon-orbit-burst {
+          animation: planeOrbitBurst 2.6s linear infinite;
+        }
+        @keyframes planeOrbitBurst {
+          0%      { transform: translate(10px, 0) scale(1);     opacity: 1; }
+          7.5%    { transform: translate(7px, 7px) scale(1);    opacity: 1; }
+          15%     { transform: translate(0, 10px) scale(1);     opacity: 1; }
+          22.5%   { transform: translate(-7px, 7px) scale(1);   opacity: 1; }
+          30%     { transform: translate(-10px, 0) scale(1);    opacity: 1; }
+          37.5%   { transform: translate(-7px, -7px) scale(1);  opacity: 1; }
+          45%     { transform: translate(0, -10px) scale(1);    opacity: 1; }
+          52.5%   { transform: translate(7px, -7px) scale(1);   opacity: 1; }
+          60%     { transform: translate(0, 0) scale(1);        opacity: 1; }
+          80%     { transform: translate(0, 0) scale(2);        opacity: 0; }
+          81%     { transform: translate(0, 0) scale(0.3);      opacity: 0; }
+          100%    { transform: translate(0, 0) scale(1);        opacity: 1; }
+        }
+
+        /* K — Circle Then Burst + Breathe (A) + Sonar (C) on the button */
+        .variant-orbit-burst { animation: breathe 1.6s ease-in-out infinite; }
+        .variant-orbit-burst::before,
+        .variant-orbit-burst::after {
+          content: "";
+          position: absolute; inset: 0;
+          border-radius: 50%;
+          border: 2px solid rgba(245,158,11,0.7);
+          pointer-events: none;
+          animation: sonar 2s ease-out infinite;
+        }
+        .variant-orbit-burst::after { animation-delay: 1s; }
       `}</style>
     </main>
   );

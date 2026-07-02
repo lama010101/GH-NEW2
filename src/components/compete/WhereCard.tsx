@@ -86,7 +86,7 @@ export default function WhereCard({
           }
           const locScore = Math.round(myResult.locationScore);
           const locHue = Math.round((Math.max(0, Math.min(100, locScore)) / 100) * 120);
-          const locColor = `hsl(${locHue}, 100%, 50%)`;
+          const locColor = `hsl(${locHue}, 100%, var(--gh-acc-lightness, 50%))`;
           return (
             <div className={styles.scoreCol}>
               <div className={styles.scoreRow}>
@@ -208,7 +208,7 @@ export default function WhereCard({
                   : null;
                 const locationAcc = r.locationScore;
                 const locHue = locationAcc != null ? Math.round((locationAcc / 100) * 120) : null;
-                const locAccColor = locHue != null ? `hsl(${locHue}, 100%, 50%)` : "var(--gh-text-muted)";
+                const locAccColor = locHue != null ? `hsl(${locHue}, 100%, var(--gh-acc-lightness, 50%))` : "var(--gh-text-muted)";
                 return (
                   <div key={r.playerId} className={styles.lbRow} style={{
                     background: r.playerId === playerId ? "rgba(255,255,255,0.06)" : "transparent",

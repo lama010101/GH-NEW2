@@ -236,8 +236,8 @@
 .joinCodeInput {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(0, 100, 150, 0.15);
-  border: 1px solid rgba(0, 173, 193, 0.5);
+  background: rgba(var(--gh-teal-rgb), 0.12);
+  border: 1px solid rgba(var(--gh-teal-rgb), 0.5);
   border-radius: 10px;
   color: var(--gh-text-primary);
   font-size: var(--font-lg);
@@ -294,4 +294,10 @@
   font-size: var(--font-2xs);
   color: var(--gh-danger);
   text-align: center;
+}
+
+/* ── Light theme: create game button sits on a dark gradient card.
+   Force white background (in dark theme --gh-text-primary is already #fff). ── */
+[data-theme="light"] .cardCtaBtnBlue {
+  background: #ffffff;
 }

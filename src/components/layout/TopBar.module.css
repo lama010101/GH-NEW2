@@ -67,7 +67,7 @@
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid var(--gh-border-medium);
-  background: linear-gradient(135deg, #c45, #89b);
+  background: linear-gradient(135deg, var(--gh-orange), var(--gh-blue));
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;

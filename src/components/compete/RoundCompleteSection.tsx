@@ -306,7 +306,7 @@ export default function RoundCompleteSection({
                   {(() => {
                     const locScore = myResult?.locationScore ?? 0;
                     const hue = Math.round((Math.max(0, Math.min(100, locScore)) / 100) * 120);
-                    const color = `hsl(${hue}, 100%, 50%)`;
+                    const color = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
                     return <MiniRing value={locScore} color={color} />;
                   })()}
                   <div className={styles.miniXp}>
@@ -337,7 +337,7 @@ export default function RoundCompleteSection({
                   {(() => {
                     const timeScore = myResult?.timeScore ?? 0;
                     const hue = Math.round((Math.max(0, Math.min(100, timeScore)) / 100) * 120);
-                    const color = `hsl(${hue}, 100%, 50%)`;
+                    const color = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
                     return <MiniRing value={timeScore} color={color} />;
                   })()}
                   <div className={styles.miniXp}>
@@ -396,7 +396,7 @@ export default function RoundCompleteSection({
               </div>
               {(leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows).map(row => {
                 const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
-                const accColor = `hsl(${hue}, 100%, 50%)`;
+                const accColor = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
                 const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
                 const displayValue = leaderboardTab === 'thisRound' ? Math.round(row.accuracy) : row.cumulativeScore;
                 const displaySuffix = leaderboardTab === 'thisRound' ? '%' : '';
@@ -413,7 +413,7 @@ export default function RoundCompleteSection({
                       {row.isMe && <span className={styles.lbYouPill}>{t('you')}</span>}
                     </span>
                     <span className={styles.lbAccPill}>
-                      <span style={{ color: accColor, fontSize: "var(--gh-font-base)" }}>{displayValue}</span>
+                      <span style={{ color: accColor, fontSize: "var(--font-base)" }}>{displayValue}</span>
                       <span className={styles.lbAccSuffix}>{displaySuffix}</span>
                     </span>
                   </div>
@@ -485,7 +485,7 @@ export default function RoundCompleteSection({
                 const correctValue = isWhere ? correctName : correctYear;
                 const scoreVal = isWhere ? (myResult?.locationScore ?? 0) : (myResult?.timeScore ?? 0);
                 const hue = Math.round((Math.max(0, Math.min(100, scoreVal)) / 100) * 120);
-                const scoreColor = `hsl(${hue}, 100%, 50%)`;
+                const scoreColor = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
                 return (
                   <div className={styles.breakHead}>
                     <div className={styles.breakCorrectCol}>

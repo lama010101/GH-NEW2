@@ -40,7 +40,7 @@
 }
 
 .titleText {
-  font-size: var(--gh-font-lg);
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--gh-violet);
 }
@@ -278,7 +278,7 @@
 
 .lbAccSuffix {
   color: var(--gh-text-secondary);
-  font-size: var(--gh-font-xs);
+  font-size: var(--font-xs);
 }
 
 /* ── Hints ── */

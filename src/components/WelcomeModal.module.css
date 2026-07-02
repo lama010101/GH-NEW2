@@ -77,7 +77,7 @@
 }
 
 .gearButton:hover {
-  background: #f59e0b;
+  background: var(--gh-gold);
   transform: scale(1.08);
 }
 
@@ -169,7 +169,7 @@
 }
 
 .saveButton:hover {
-  background: #f59e0b;
+  background: var(--gh-gold);
 }
 
 .skipLink {
