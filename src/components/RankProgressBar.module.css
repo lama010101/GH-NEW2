@@ -22,10 +22,6 @@
   color: var(--gh-teal);
 }
 
-.rankIconWrap[data-loading] {
-  opacity: 0.4;
-}
-
 .rankBody {
   flex: 1 1 auto;
   min-width: 0;
@@ -38,6 +34,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .rankTitle {
@@ -53,6 +50,18 @@
   font-weight: 600;
   color: var(--gh-teal);
   letter-spacing: 0.04em;
+}
+
+/* Next-rank target: same line as current rank title, same font/size,
+   right-aligned, muted color. Aligned with current rank per spec. */
+.rankNextTarget {
+  margin-left: auto;
+  font-family: var(--gh-font-bebas, 'Bebas Neue', sans-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gh-text-muted);
+  line-height: 1.1;
+  text-align: right;
 }
 
 .rankXpLine {
@@ -85,19 +94,4 @@
   border-radius: 999px;
   background: linear-gradient(90deg, var(--gh-teal), rgba(var(--gh-teal-rgb), 0.7));
   transition: width 0.4s ease;
-}
-
-.rankHintLine {
-  margin-top: 2px;
-}
-
-.rankNext {
-  font-size: 11px;
-  color: var(--gh-text-muted);
-}
-
-.rankMax {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--gh-teal);
 }

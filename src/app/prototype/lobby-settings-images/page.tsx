@@ -85,66 +85,58 @@ const ERAS: {
 
 type RegionId =
   | "africa"
-  | "antarctica"
   | "asia"
   | "europe"
   | "north_america"
-  | "oceania"
+  | "oceania_antarctica"
   | "south_america";
 
 const REGIONS: {
   id: RegionId;
   label: string;
-  continent: string;
+  continents: string[];
   stockImg: string;
   emoji: string;
 }[] = [
   {
     id: "africa",
     label: "Africa",
-    continent: "Africa",
+    continents: ["Africa"],
     stockImg: "/prototype/lobby-settings-images/africa.jpg",
     emoji: "🌍",
   },
   {
-    id: "antarctica",
-    label: "Antarctica",
-    continent: "Antarctica",
-    stockImg: "/prototype/lobby-settings-images/antarctica.jpg",
-    emoji: "🧊",
-  },
-  {
     id: "asia",
     label: "Asia",
-    continent: "Asia",
+    continents: ["Asia"],
     stockImg: "/prototype/lobby-settings-images/asia.jpg",
     emoji: "🏯",
   },
   {
     id: "europe",
     label: "Europe",
-    continent: "Europe",
+    continents: ["Europe"],
     stockImg: "/prototype/lobby-settings-images/europe.jpg",
     emoji: "🏰",
   },
   {
     id: "north_america",
     label: "North America",
-    continent: "North America",
+    continents: ["North America"],
     stockImg: "/prototype/lobby-settings-images/north_america.jpg",
     emoji: "🗽",
   },
   {
-    id: "oceania",
-    label: "Oceania",
-    continent: "Oceania",
+    id: "oceania_antarctica",
+    label: "Oceania & Antarctica",
+    continents: ["Oceania", "Antarctica"],
     stockImg: "/prototype/lobby-settings-images/oceania.jpg",
     emoji: "🏝️",
   },
   {
     id: "south_america",
     label: "South America",
-    continent: "South America",
+    continents: ["South America"],
     stockImg: "/prototype/lobby-settings-images/south_america.jpg",
     emoji: "🦜",
   },
@@ -289,7 +281,7 @@ export default function LobbySettingsImagesPrototypePage() {
       for (const region of REGIONS) {
         for (const img of images) {
           const continent = eventContinentMap.get(img.event_id);
-          if (continent === region.continent && img.url) {
+          if (continent && region.continents.includes(continent) && img.url) {
             regionImages[region.id] = img.url;
             break;
           }

@@ -69,15 +69,14 @@ const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: num
   { id: 'contemporary',label: 'Contemporary', span: '1945 – 2025',  icon: '🚀', yearMin: 1945,  yearMax: new Date().getFullYear() },
 ];
 
-type RegionId = 'africa' | 'antarctica' | 'asia' | 'europe' | 'north_america' | 'oceania' | 'south_america';
-const REGIONS: { id: RegionId; label: string; icon: string; continent: string }[] = [
-  { id: 'africa',          label: 'Africa',          icon: '🌍', continent: 'Africa' },
-  { id: 'antarctica',      label: 'Antarctica',      icon: '🧊', continent: 'Antarctica' },
-  { id: 'asia',            label: 'Asia',            icon: '🏯', continent: 'Asia' },
-  { id: 'europe',          label: 'Europe',          icon: '🏰', continent: 'Europe' },
-  { id: 'north_america',   label: 'North America',   icon: '🗽', continent: 'North America' },
-  { id: 'oceania',         label: 'Oceania',         icon: '🏝️', continent: 'Oceania' },
-  { id: 'south_america',   label: 'South America',   icon: '🦜', continent: 'South America' },
+type RegionId = 'africa' | 'asia' | 'europe' | 'north_america' | 'oceania_antarctica' | 'south_america';
+const REGIONS: { id: RegionId; label: string; icon: string; continents: string[] }[] = [
+  { id: 'africa',             label: 'Africa',                icon: '🌍', continents: ['Africa'] },
+  { id: 'asia',               label: 'Asia',                  icon: '🏯', continents: ['Asia'] },
+  { id: 'europe',             label: 'Europe',                icon: '🏰', continents: ['Europe'] },
+  { id: 'north_america',      label: 'North America',         icon: '🗽', continents: ['North America'] },
+  { id: 'oceania_antarctica', label: 'Oceania & Antarctica',  icon: '🏝️', continents: ['Oceania', 'Antarctica'] },
+  { id: 'south_america',      label: 'South America',         icon: '🦜', continents: ['South America'] },
 ];
 
 export default function LobbySection({
@@ -250,7 +249,7 @@ export default function LobbySection({
   // If fetch hasn't completed yet (null), show the full list so UI isn't empty.
   const visibleRegions = availableRegionContinents === null
     ? REGIONS
-    : REGIONS.filter(r => availableRegionContinents.includes(r.continent));
+    : REGIONS.filter(r => r.continents.some(c => availableRegionContinents.includes(c)));
 
   const [selectedRegions, setSelectedRegions] = useState<Set<RegionId>>(
     () => new Set(REGIONS.map(r => r.id))
@@ -275,7 +274,7 @@ export default function LobbySection({
     }
     // Map continent names back to region ids
     const incomingIds = REGIONS
-      .filter(r => incoming.includes(r.continent))
+      .filter(r => r.continents.some(c => incoming.includes(c)))
       .map(r => r.id);
     const incomingKey = incomingIds.slice().sort().join(',');
     const localKey = [...selectedRegions].sort().join(',');
@@ -293,7 +292,7 @@ export default function LobbySection({
     // Send continent names to server; empty array = all regions
     const selectedContinents = REGIONS
       .filter(r => next.has(r.id))
-      .map(r => r.continent);
+      .flatMap(r => r.continents);
     const allVisibleSelected = visibleRegions.every(r => next.has(r.id));
     onSetRegionSelection?.(allVisibleSelected ? [] : selectedContinents);
   }, [selectedRegions, onSetRegionSelection, visibleRegions]);
@@ -305,7 +304,7 @@ export default function LobbySection({
       if (last) {
         setSelectedRegions(new Set([last.id]));
         suppressRegionSyncRef.current = true;
-        onSetRegionSelection?.([last.continent]);
+        onSetRegionSelection?.(last.continents);
       }
     } else {
       setSelectedRegions(new Set(visibleRegions.map(r => r.id)));
