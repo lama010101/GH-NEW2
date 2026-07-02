@@ -85,8 +85,8 @@ export async function POST(_request: NextRequest) {
 
     // Build display_name: first_name + last_name (if exists) + random 4-digit suffix
     const baseName = randomAvatar.first_name + (randomAvatar.last_name ? ` ${randomAvatar.last_name}` : "");
-    const randomSuffix = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-    const displayName = `${baseName} ${randomSuffix}`;
+    const randomSuffix = Math.floor(Math.random() * 9000 + 1000).toString();
+    const displayName = `${baseName}#${randomSuffix}`;
 
     // Update profile with avatar_url and display_name
     const { error: updateError } = await serviceRoleClient
