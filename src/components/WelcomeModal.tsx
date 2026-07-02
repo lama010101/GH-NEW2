@@ -80,9 +80,7 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
   return (
     <div className={styles.overlay}>
       <div className={styles.card}>
-        <h2 className={styles.greeting}>{t('title')}</h2>
-
-        <p className={styles.avatarIntro}>{t('your_historical_avatar')}</p>
+        <h2 className={styles.avatarIntro}>{t('your_historical_avatar')}</h2>
 
         <div className={styles.avatarWrap}>
           {avatarUrl ? (

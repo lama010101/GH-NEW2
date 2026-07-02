@@ -22,23 +22,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  --gh-modal-text-muted: rgba(255, 255, 255, 0.62);
 }
 
-.greeting {
+:global([data-theme="light"]) .card {
+  --gh-modal-text-muted: rgba(15, 23, 42, 0.55);
+}
+
+.avatarIntro {
   font-family: var(--font-bebas), sans-serif;
   font-size: var(--font-3xl);
   font-weight: 400;
   color: var(--gh-modal-text-primary);
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.avatarIntro {
-  font-size: var(--font-2xs);
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--gh-modal-text-muted);
-  margin: 0 0 12px 0;
+  margin: 0 0 24px 0;
   text-align: center;
 }
 
@@ -47,7 +43,6 @@
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  overflow: hidden;
   border: 2px solid var(--gh-modal-lang-border);
   background: var(--gh-modal-input-bg);
   display: flex;
@@ -61,6 +56,7 @@
   position: absolute;
   right: -4px;
   bottom: -4px;
+  z-index: 2;
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -90,6 +86,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
 .avatarInitials {

@@ -24,15 +24,14 @@ const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: num
 ];
 const ALL_ERA_IDS = ERAS.map(e => e.id);
 
-type RegionId = 'africa' | 'antarctica' | 'asia' | 'europe' | 'north_america' | 'oceania' | 'south_america';
-const REGIONS: { id: RegionId; label: string; icon: string; continent: string }[] = [
-  { id: 'africa',          label: 'Africa',          icon: '🌍', continent: 'Africa' },
-  { id: 'antarctica',      label: 'Antarctica',      icon: '🧊', continent: 'Antarctica' },
-  { id: 'asia',            label: 'Asia',            icon: '🏯', continent: 'Asia' },
-  { id: 'europe',          label: 'Europe',          icon: '🏰', continent: 'Europe' },
-  { id: 'north_america',   label: 'North America',   icon: '🗽', continent: 'North America' },
-  { id: 'oceania',         label: 'Oceania',         icon: '🏝️', continent: 'Oceania' },
-  { id: 'south_america',   label: 'South America',   icon: '🦜', continent: 'South America' },
+type RegionId = 'africa' | 'asia' | 'europe' | 'north_america' | 'oceania_antarctica' | 'south_america';
+const REGIONS: { id: RegionId; label: string; icon: string; continents: string[] }[] = [
+  { id: 'africa',             label: 'Africa',                icon: '🌍', continents: ['Africa'] },
+  { id: 'asia',               label: 'Asia',                  icon: '🏯', continents: ['Asia'] },
+  { id: 'europe',             label: 'Europe',                icon: '🏰', continents: ['Europe'] },
+  { id: 'north_america',      label: 'North America',         icon: '🗽', continents: ['North America'] },
+  { id: 'oceania_antarctica', label: 'Oceania & Antarctica',  icon: '🏝️', continents: ['Oceania', 'Antarctica'] },
+  { id: 'south_america',      label: 'South America',         icon: '🦜', continents: ['South America'] },
 ];
 const ALL_REGION_IDS = REGIONS.map(r => r.id);
 
@@ -103,7 +102,7 @@ export function PracticeSettingsModal({
     if (!Array.isArray(continents) || continents.length === 0) {
       return new Set(ALL_REGION_IDS);
     }
-    const ids = REGIONS.filter(r => continents.includes(r.continent)).map(r => r.id);
+    const ids = REGIONS.filter(r => r.continents.some(c => continents.includes(c))).map(r => r.id);
     return ids.length > 0 ? new Set(ids) : new Set(ALL_REGION_IDS);
   };
 
@@ -137,7 +136,7 @@ export function PracticeSettingsModal({
   // If fetch hasn't completed yet (null), show the full list so UI isn't empty.
   const visibleRegions = availableRegionContinents === null
     ? REGIONS
-    : REGIONS.filter(r => availableRegionContinents.includes(r.continent));
+    : REGIONS.filter(r => r.continents.some(c => availableRegionContinents.includes(c)));
 
   // Re-initialise when the modal (re)opens with new initial settings.
   useEffect(() => {
@@ -206,7 +205,7 @@ export function PracticeSettingsModal({
   const handleStart = () => {
     const selectedContinents = REGIONS
       .filter(r => selectedRegions.has(r.id))
-      .map(r => r.continent);
+      .flatMap(r => r.continents);
     const allVisibleSelected = visibleRegions.every(r => selectedRegions.has(r.id));
     onStart({
       roundTimerSec: sliderValue,

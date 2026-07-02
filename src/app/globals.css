@@ -242,7 +242,7 @@ a {
   /* --- Text --- */
   --gh-text-primary:   #ffffff;
   --gh-text-secondary: rgba(255, 255, 255, 0.60);
-  --gh-text-muted:     rgba(255, 255, 255, 0.35);
+  --gh-text-muted:     rgba(255, 255, 255, 0.50);
 
   /* --- Borders --- */
   --gh-border-default: rgba(255, 255, 255, 0.12);

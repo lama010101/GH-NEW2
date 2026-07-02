@@ -1037,9 +1037,8 @@
 .lobbyEraBtn[data-era="modern"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-teal); color: #fff; }
 .lobbyEraBtn[data-era="contemporary"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-success); color: #fff; }
 .lobbyEraBtn[data-era="africa"].lobbyEraBtnOn .lobbyEraIcon { background: #f59e0b; color: #fff; }
-.lobbyEraBtn[data-era="antarctica"].lobbyEraBtnOn .lobbyEraIcon { background: #38bdf8; color: #fff; }
 .lobbyEraBtn[data-era="asia"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-violet); color: #fff; }
 .lobbyEraBtn[data-era="europe"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-blue); color: #fff; }
 .lobbyEraBtn[data-era="north_america"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-teal); color: #fff; }
-.lobbyEraBtn[data-era="oceania"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-success); color: #fff; }
+.lobbyEraBtn[data-era="oceania_antarctica"].lobbyEraBtnOn .lobbyEraIcon { background: var(--gh-success); color: #fff; }
 .lobbyEraBtn[data-era="south_america"].lobbyEraBtnOn .lobbyEraIcon { background: #ec4899; color: #fff; }
