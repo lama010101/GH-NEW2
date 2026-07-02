@@ -98,9 +98,15 @@ function HomePageInner() {
       return
     }
     const pid = (identity as { status: string; playerId?: string }).playerId
+    if (!pid) return
+    // Capture pid at effect start so we can bail if identity changes before
+    // the async queries resolve (cross-user sign-in in same browser context).
+    // Without this guard, Player A's profile data overwrites Player B's UI.
+    let cancelled = false
     ;(async () => {
       try {
         const { data: stats } = await supabaseBrowser.from('player_global_stats').select('avg_accuracy,total_xp').eq('player_id', pid).single()
+        if (cancelled) return
         if (stats) {
           setAccuracy(String(Math.round(Number(stats.avg_accuracy))))
           setXp(Number(stats.total_xp).toLocaleString('fr-FR'))
@@ -108,22 +114,16 @@ function HomePageInner() {
       } catch {}
       try {
         const { data: profile } = await supabaseBrowser.from('profiles').select('display_name,avatar_url').eq('id', pid).single()
+        if (cancelled) return
         if (profile) {
-          if (profile.avatar_url) setAvatarUrl(profile.avatar_url)
+          setAvatarUrl(profile.avatar_url ?? null)
           if (profile.display_name) setInitials(profile.display_name.slice(0,2).toUpperCase())
         }
       } catch {}
-      if (initials === '') {
-        const dn = (identity as { status: string; playerId: string; displayName: string }).displayName
-        if (dn && dn !== 'Player') {
-          setInitials(dn.slice(0,2).toUpperCase())
-        } else {
-          setInitials('PL')
-        }
-      }
       // profileVersion is used to force re-fetch when WelcomeModal saves
       void profileVersion
     })()
+    return () => { cancelled = true }
   }, [identity, profileVersion])
 
   const [, setMosaicUrls] = useState<string[]>([])
