@@ -84,3 +84,42 @@ This creates a rollback point. A task without a prior WIP commit cannot be
 safely rolled back if a regression is introduced.
 
 ---
+
+### [KC-007] Auth state machine — single source of truth
+**Affected files:** `src/core/identity.ts`, `src/middleware.ts`, `src/app/auth/callback/route.ts`,
+`src/core/supabaseBrowser.ts`, `src/components/AuthModal.tsx`, `src/components/NavModal.tsx`,
+`src/app/account/page.tsx`, `src/app/home/page.tsx`, `src/hooks/useIdentity.ts`
+
+**Constraint:**
+1. `cachedState` in `src/core/identity.ts` is the ONLY client-side auth state cache.
+   No other file may maintain a parallel auth-state variable.
+2. Middleware (`src/middleware.ts`) uses `supabase.auth.getUser()` independently
+   (server-side) — it does NOT read `cachedState`. This is intentional: middleware
+   runs on a different runtime and cannot share module-level state with the browser.
+3. `signOut()` in `identity.ts` MUST set `cachedState` to `{ status: "unauthenticated" }`
+   in the `finally` block, AFTER `await supabase.auth.signOut()` resolves.
+4. Callers of `signOut()` (NavModal, account/page) MUST NOT close UI, navigate,
+   or call `onClose()` before `await signOut()` resolves. Doing so creates a race
+   where `onAuthStateChange` can re-fire a stale `SIGNED_IN` event and reset
+   `cachedState` back to ready.
+5. `flowType: "pkce"` is hardcoded inside `@supabase/ssr`'s `createBrowserClient`.
+   Do NOT add or remove `flowType` explicitly in `src/core/supabaseBrowser.ts`.
+   It has been toggled 3 times (MP-FIX-AUTH-PKCE-001 → MP-FIX-AUTH-SIGNIN-005 →
+   MP-FIX-AUTH-OAUTH-PKCE-001) with no effect — the library default is always PKCE.
+6. OAuth redirect URLs in `AuthModal.tsx` should derive from `window.location.origin`
+   or an environment variable, NOT be hardcoded to a production domain.
+
+**History:** Auth has regressed 6+ times across May–July 2026 due to:
+- flowType ping-pong (3 cycles, all no-ops)
+- sign-out race condition (MP-INV-AUTH-SIGNOUT-002, still partially open)
+- WIP commits silently removing auth fixes (commit a7b614f)
+- Authenticated users hitting /login and re-triggering OAuth (FIX-MIDDLEWARE-LOGIN-AUTH-REDIRECT-001)
+
+**Regression guard (include in ALL prompts touching auth files):**
+  grep -n "flowType" src/core/supabaseBrowser.ts
+  # Must return ZERO matches. Any match = someone added it again = FAIL.
+
+  grep -rn "cachedState" src/ | grep -v "identity.ts"
+  # Must return ZERO matches. Any match = parallel auth state = FAIL.
+
+---
