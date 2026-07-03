@@ -5,7 +5,6 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const state = requestUrl.searchParams.get("state");
   const next = requestUrl.searchParams.get("next") ?? "/";
 
   if (!code) {
@@ -13,15 +12,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(`/login?error=missing_code`, request.url));
   }
 
-  // CSRF defense-in-depth: the @supabase/ssr PKCE flow stores a random state
-  // value in a cookie before redirecting to the OAuth provider. The provider
-  // echoes it back as the `state` query param. exchangeCodeForSession()
-  // validates the match internally, but we check presence explicitly — a
-  // callback URL with `code` but no `state` is a strong CSRF indicator.
-  if (!state) {
-    console.error("[auth/callback] Missing state parameter — possible CSRF attempt");
-    return NextResponse.redirect(new URL(`/?error=auth_failed`, request.url));
-  }
+  // Note: the @supabase/ssr PKCE flow does NOT include a `state` query param
+  // in the callback redirect URL. CSRF protection is provided by the PKCE
+  // code_verifier: only the browser that initiated the OAuth flow holds the
+  // verifier, so exchangeCodeForSession() will fail for any attacker-injected
+  // code. Do NOT add a `state` presence check here — it blocks all valid
+  // PKCE callbacks.
 
   const cookieStore = await cookies();
 
