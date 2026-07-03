@@ -1016,6 +1016,7 @@
 .lobbyTabRow { display: flex; gap: 6px; margin-bottom: 16px; background: var(--gh-glass-bg); border-radius: 12px; padding: 4px; }
 .lobbyTabBtn { flex: 1; padding: 9px 0; border-radius: 9px; border: none; cursor: pointer; font-size: var(--font-xs); font-weight: 700; letter-spacing: 0.2px; color: var(--gh-text-secondary); background: transparent; transition: background 0.18s, color 0.18s; }
 .lobbyTabBtnActive { background: rgba(var(--gh-orange-rgb), 0.18); color: var(--gh-orange); border: 1px solid rgba(var(--gh-orange-rgb), 0.35); }
+.lobbyTabBtn:disabled { opacity: 0.45; cursor: not-allowed; }
 .lobbySettingRowBlock { flex-direction: column; align-items: stretch; gap: 0; min-width: 0; max-width: 100%; }
 .lobbySettingRowHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .lobbySelectAllBtn { font-size: 12px; /* layout-constrained — do not tokenize */ font-weight: 600; color: var(--gh-orange); background: transparent; border: 1px solid var(--gh-orange); border-radius: 6px; padding: 3px 8px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }

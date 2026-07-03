@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 /**
@@ -73,17 +74,33 @@ export function ImageButton({
       aria-pressed={selected}
     >
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt={label}
-          className={imgClassName}
-          loading="lazy"
-          onError={() => {
-            if (src !== stockImg) setSrc(stockImg);
-            else setSrc(null);
-          }}
-        />
+        src.startsWith("data:") ? (
+          // Data URIs bypass next/image optimizer (unsupported as remote src).
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt={label}
+            className={imgClassName}
+            loading="lazy"
+            onError={() => {
+              if (src !== stockImg) setSrc(stockImg);
+              else setSrc(null);
+            }}
+          />
+        ) : (
+          <Image
+            src={src}
+            alt={label}
+            fill
+            sizes="80px"
+            quality={60}
+            className={imgClassName}
+            onError={() => {
+              if (src !== stockImg) setSrc(stockImg);
+              else setSrc(null);
+            }}
+          />
+        )
       ) : (
         <div className={fallbackClassName}>{emoji}</div>
       )}

@@ -73,12 +73,12 @@ const ERAS: { id: EraId; label: string; span: string; icon: string; stockImg: st
 
 type RegionId = 'africa' | 'asia' | 'europe' | 'north_america' | 'oceania_antarctica' | 'south_america';
 const REGIONS: { id: RegionId; label: string; icon: string; stockImg: string; continents: string[] }[] = [
-  { id: 'africa',             label: 'Africa',                icon: '🌍', stockImg: REGION_STOCK_IMAGES.africa,             continents: ['Africa'] },
+  { id: 'europe',             label: 'Europe',                icon: '�', stockImg: REGION_STOCK_IMAGES.europe,             continents: ['Europe'] },
   { id: 'asia',               label: 'Asia',                  icon: '🏯', stockImg: REGION_STOCK_IMAGES.asia,               continents: ['Asia'] },
-  { id: 'europe',             label: 'Europe',                icon: '🏰', stockImg: REGION_STOCK_IMAGES.europe,             continents: ['Europe'] },
   { id: 'north_america',      label: 'North America',         icon: '🗽', stockImg: REGION_STOCK_IMAGES.north_america,      continents: ['North America'] },
-  { id: 'oceania_antarctica', label: 'Oceania & Antarctica',  icon: '🏝️', stockImg: REGION_STOCK_IMAGES.oceania_antarctica, continents: ['Oceania', 'Antarctica'] },
   { id: 'south_america',      label: 'South America',         icon: '🦜', stockImg: REGION_STOCK_IMAGES.south_america,      continents: ['South America'] },
+  { id: 'africa',             label: 'Africa',                icon: '�', stockImg: REGION_STOCK_IMAGES.africa,             continents: ['Africa'] },
+  { id: 'oceania_antarctica', label: 'Oceania & Antarctica',  icon: '🏝️', stockImg: REGION_STOCK_IMAGES.oceania_antarctica, continents: ['Oceania', 'Antarctica'] },
 ];
 
 export default function LobbySection({
