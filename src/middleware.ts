@@ -92,6 +92,16 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Authenticated users visiting /login are redirected to their destination
+  // instead of seeing the AuthModal. This prevents redundant OAuth flows when
+  // a user already has a valid session (e.g. after a callback redirect loop
+  // or direct navigation to /login while signed in).
+  if (pathname === "/login" && user) {
+    const rawNext = request.nextUrl.searchParams.get("next") ?? "/home";
+    const nextPath = rawNext.startsWith("/") && rawNext !== "/" ? rawNext : "/home";
+    return NextResponse.redirect(new URL(nextPath, request.url), 302);
+  }
+
   if (isPublicPath(pathname)) {
     return response;
   }
