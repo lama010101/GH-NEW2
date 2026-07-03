@@ -2,4 +2,16 @@
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
+# 1. Typecheck — catches type errors before they reach CI
 npx tsc --noEmit
+
+# 2. Auth regression guard — grep-based invariant checks (KC-007).
+#    Catches: flowType overrides, parallel auth state, state-param checks
+#    in callback route, missing exchangeCodeForSession.
+bash scripts/auth-regression-guard.sh
+
+# 3. Auth unit tests — run auth unit tests on every commit.
+#    This prevents auth-breaking changes from being committed locally.
+#    The state-param check incident (8498d2c) would have been caught here
+#    if the tests had been in place. Do NOT remove this check.
+npx vitest run src/middleware.test.ts src/core/identity.test.ts src/app/auth/callback/route.test.ts src/components/AuthModal.test.tsx
