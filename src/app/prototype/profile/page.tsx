@@ -72,8 +72,8 @@ const ACCURACY_ERAS = [
 
 const REGIONS = [
   { label: "Europe", percent: 94, count: 186 },
-  { label: "North America", percent: 88, count: 142 },
   { label: "Asia", percent: 79, count: 98 },
+  { label: "North America", percent: 88, count: 142 },
   { label: "South America", percent: 71, count: 64 },
   { label: "Africa", percent: 65, count: 52 },
   { label: "Oceania", percent: 82, count: 38 },

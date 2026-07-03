@@ -477,6 +477,7 @@ export default function CompeteGamePage() {
     setError(null);
     // Client → DO → DB: send SET_SUB_MODE action signal via WS
     setSubMode(mode, sessionDeadlineDays);
+    setTimeout(() => setBusy(false), 5000);
   }, [playerId, setSubMode]);
 
   const handleKickPlayer = useCallback((targetPlayerId: string) => {

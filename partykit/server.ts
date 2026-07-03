@@ -960,9 +960,11 @@ export default class GameServer {
         yearMin: (configRecord?.["yearMin"] as number) ?? (snapshotRecord["yearMin"] as number) ?? -400,
         yearMax: (configRecord?.["yearMax"] as number) ?? (snapshotRecord["yearMax"] as number) ?? new Date().getFullYear(),
         selectedEras: (configRecord?.["selectedEras"] as string[] | undefined) ?? (snapshotRecord["selectedEras"] as string[] | undefined) ?? null,
+        selectedRegions: (configRecord?.["selectedRegions"] as string[] | undefined) ?? (snapshotRecord["selectedRegions"] as string[] | undefined) ?? [],
         resultsAutoAdvanceSec: (configRecord?.["resultsAutoAdvanceSec"] as number) ?? (snapshotRecord["resultsAutoAdvanceSec"] as number) ?? 90,
         hostPlayerId: hostPlayer?.playerId ?? null,
         sessionDeadline: (configRecord?.["sessionDeadline"] as string | null) ?? null,
+        sessionDeadlineDays: (configRecord?.["sessionDeadlineDays"] as number | null) ?? null,
         startedAt: (configRecord?.["startedAt"] as string | null) ?? null,
         completedAt: (configRecord?.["completedAt"] as string | null) ?? null,
       };

@@ -2349,6 +2349,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
   // Declare variables outside try block for fire-and-forget stats update access
   let session: SessionRow | null = null;
   let nextRoundIndex: number;
+  let sessionCompletedEarly = false;
 
   try {
     await client.query("BEGIN");
@@ -2378,7 +2379,16 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     let advanceStartedAt = "";
     let advancePhaseEndsAt = "";
 
-    if (nextRoundIndex < session.total_rounds) {
+    // Early closure: after a round resolves, if fewer than 2 players remain
+    // with left_at IS NULL, the session closes early regardless of remaining
+    // rounds/deadline. Mere absence (never submitted) does NOT trigger this —
+    // only formal leaving (left_at set) does.
+    // See Compete Relax (Option B) §6.
+    const activePlayerRows = await loadSessionPlayerRows(gameId, client);
+    const nonLeftCount = activePlayerRows.filter((p) => p.left_at === null).length;
+    const shouldCloseEarly = nonLeftCount < 2;
+
+    if (nextRoundIndex < session.total_rounds && !shouldCloseEarly) {
       const sessionCreatedEventForAdvance = await client.query<{ payload: { eventIds: string[] } }>(
         `SELECT payload FROM round_events
          WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
@@ -2408,6 +2418,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
       await appendEvent(client, gameId, "ROUND_STARTED", roundStartedPayload, nextRoundIndex);
       existingEvents.push({ type: "ROUND_STARTED", payload: roundStartedPayload, roundIndex: nextRoundIndex });
     } else {
+      sessionCompletedEarly = nextRoundIndex < session.total_rounds;
       const sessionCompletePayload = {
         totalRounds: session.total_rounds,
         cause,
@@ -2446,7 +2457,8 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
   }
 
   // Fire-and-forget: update stats and leaderboards after SESSION_COMPLETE
-  if (nextRoundIndex >= session!.total_rounds) {
+  // (either last round completed or early closure per §6)
+  if (nextRoundIndex >= session!.total_rounds || sessionCompletedEarly) {
     updatePlayerGlobalStats(gameId, session!.mode).catch((err) =>
       console.error('[advanceRound] updatePlayerGlobalStats fire-and-forget error:', err)
     );
