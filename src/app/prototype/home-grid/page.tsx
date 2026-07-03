@@ -1,21 +1,24 @@
 "use client";
 
 // ============================================================================
-// STANDALONE PROTOTYPE — Home page (icon-in-background variant, i18n + RTL)
-// Route: /prototype/home-icon-bg   (direct access, fully self-contained)
+// STANDALONE PROTOTYPE — Home page (grid variant C, i18n + RTL)
+// Route: /prototype/home-grid   (direct access, fully self-contained)
 //
-// Variant of the home page mode cards where:
-//   1. The mode icon is embedded INSIDE the card background at the top-right
-//      corner, covering the right part of the card (large watermark style,
-//      blended into the gradient with a left-fade mask). In RTL (ar) the
-//      icon mirrors to the top-LEFT corner.
-//   2. The Play button (for non-compete cards: daily / levelup / practice)
-//      sits at the CENTER of the right half of the card (left half in RTL),
-//      vertically centered.
+// Variant C of the home page mode cards where:
+//   1. The compete card spans full width on top (row 1) and contains the
+//      same CompetePanel (3-tab mini-card + JOIN GAME / CREATE GAME buttons)
+//      as the first prototype. A decorative mode icon watermark sits in the
+//      top-right corner (top-left in RTL).
+//   2. The 3 non-compete cards (daily / levelup / practice) are compact
+//      vertical cards arranged in a grid: daily + levelup side by side in
+//      row 2 (2 columns), practice full width in row 3. Each card has the
+//      mode icon at the TOP center (56x56px in a semi-transparent circle),
+//      title below the icon (centered), description below the title
+//      (centered, 2-line clamp), and a small "PLAY" pill button at the
+//      bottom center. The daily card also has a timer box below the desc.
 //   3. A language selector at the top lets you switch between all 11 prod
 //      locales (en, fr, es, de, it, pt, nl, ru, ja, zh, ar). Arabic (ar)
-//      flips the whole UI to right-to-left (dir="rtl") and mirrors the
-//      icon / play-button placement.
+//      flips the whole UI to right-to-left (dir="rtl").
 //   4. The compete card mirrors prod CompetePanel: JOIN GAME (outline,
 //      toggles a join-code input) + CREATE GAME (solid).
 //
@@ -762,23 +765,24 @@ function CompetePanel({ s }: { s: Strings }) {
   );
 }
 
-// ── Mode card ──
+// ── Mode card (grid variant C) ──
+// Compete card: full-width, horizontal layout with CompetePanel inside.
+// Non-compete cards: compact vertical cards (icon top center, title, desc,
+// optional timer, PLAY pill at bottom).
 function ModeCard({ mode, s, rtl }: { mode: Mode; s: Strings; rtl: boolean }) {
   const countdown = useDailyCountdown();
   const gradient = MODE_GRADIENT[mode];
   const title = modeTitle(mode, s);
   const desc = modeDesc(mode, s);
   const iconSrc = MODE_ICON[mode];
-  const hasPlay = mode !== "compete";
+  const isCompete = mode === "compete";
 
-  return (
-    <div className={styles.modeCard}>
-      <div className={styles.cardBg} style={{ background: gradient }}>
-        {/* Compete card: mode icon as a background watermark (top-right
-            corner) — purely decorative, does NOT affect content layout.
-            Non-compete cards: combined icon + play button (one block)
-            sitting in the trailing half, vertically centered. */}
-        {mode === "compete" && (
+  if (isCompete) {
+    return (
+      <div className={styles.modeCard}>
+        <div className={styles.cardBg} style={{ background: gradient }}>
+          {/* Compete card: mode icon as a background watermark (top-right
+              corner) — purely decorative, does NOT affect content layout. */}
           <div className={styles.competeIconBg} aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -788,57 +792,69 @@ function ModeCard({ mode, s, rtl }: { mode: Mode; s: Strings; rtl: boolean }) {
               draggable={false}
             />
           </div>
-        )}
 
-        {hasPlay && (
+          <div className={`${styles.cardInner} ${styles.cardInnerFull}`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitleSection}>
+                <h2 className={styles.cardTitle}>{title}</h2>
+                <div className={styles.cardDescWrap}>
+                  <p className={styles.cardDesc}>
+                    {desc.split("\n").map((line, i) => (
+                      <span key={i}>
+                        {line}
+                        {i < desc.split("\n").length - 1 && <br />}
+                      </span>
+                    ))}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Compete card: full panel mirroring prod CompetePanel
+                (tabs + content + join code + CTA row) */}
+            <CompetePanel s={s} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Non-compete card: compact vertical card
+  return (
+    <div className={styles.modeCard}>
+      <div className={styles.cardBg} style={{ background: gradient }}>
+        <div className={styles.cardInnerVertical}>
+          {/* Icon at top center (56x56px in a semi-transparent circle) */}
           <button
             type="button"
             aria-label={`Play ${title}`}
-            className={styles.cardIconPlay}
+            className={styles.cardIconCircle}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={iconSrc}
               alt=""
-              className={styles.cardIconPlayImg}
+              className={styles.cardIconCircleImg}
               draggable={false}
             />
-            <span className={styles.cardPlayInner}>
-              {/* In RTL the play triangle should point left */}
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                {rtl ? (
-                  <path d="M16 5v14L5 12z" fill="currentColor" />
-                ) : (
-                  <path d="M8 5v14l11-7z" fill="currentColor" />
-                )}
-              </svg>
-            </span>
           </button>
-        )}
 
-        <div
-          className={`${styles.cardInner} ${
-            mode === "compete" ? styles.cardInnerFull : ""
-          }`}
-        >
-          <div className={styles.cardHeader}>
-            <div className={styles.cardTitleSection}>
-              <h2 className={styles.cardTitle}>{title}</h2>
-              <div className={styles.cardDescWrap}>
-                <p className={styles.cardDesc}>
-                  {desc.split("\n").map((line, i) => (
-                    <span key={i}>
-                      {line}
-                      {i < desc.split("\n").length - 1 && <br />}
-                    </span>
-                  ))}
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Title below the icon (centered) */}
+          <h2 className={styles.cardTitleCenter}>{title}</h2>
 
+          {/* Description below the title (centered, 2-line clamp) */}
+          <p className={styles.cardDescCenter}>
+            {desc.split("\n").map((line, i) => (
+              <span key={i}>
+                {line}
+                {i < desc.split("\n").length - 1 && <br />}
+              </span>
+            ))}
+          </p>
+
+          {/* Daily card: timer box below the description */}
           {mode === "daily" && (
-            <div className={styles.timerBox}>
+            <div className={styles.timerBoxCenter}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" />
                 <path
@@ -854,9 +870,17 @@ function ModeCard({ mode, s, rtl }: { mode: Mode; s: Strings; rtl: boolean }) {
             </div>
           )}
 
-          {/* Compete card: full panel mirroring prod CompetePanel
-              (tabs + content + join code + CTA row) */}
-          {mode === "compete" && <CompetePanel s={s} />}
+          {/* Small "PLAY" pill button at the bottom center */}
+          <button type="button" className={styles.playPill} aria-label={`Play ${title}`}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              {rtl ? (
+                <path d="M16 5v14L5 12z" fill="currentColor" />
+              ) : (
+                <path d="M8 5v14l11-7z" fill="currentColor" />
+              )}
+            </svg>
+            {s.compete_play}
+          </button>
         </div>
       </div>
     </div>
@@ -933,10 +957,10 @@ export default function HomeIconBgPrototypePage() {
       <main className={styles.screen} dir={rtl ? "rtl" : "ltr"}>
         {/* Proto bar */}
         <div className={styles.protoBar}>
-          <span className={styles.protoTitle}>Home — Icon-in-BG Variant (A)</span>
+          <span className={styles.protoTitle}>Home — Grid Variant (C)</span>
           <div className={styles.protoLinks}>
+            <a href="/prototype/home-icon-bg" className={styles.protoLink}>A: Icon BG</a>
             <a href="/prototype/home-list" className={styles.protoLink}>B: List</a>
-            <a href="/prototype/home-grid" className={styles.protoLink}>C: Grid</a>
           </div>
           <span className={styles.protoHint}>Mock data · {rtl ? "RTL" : "LTR"}</span>
         </div>
