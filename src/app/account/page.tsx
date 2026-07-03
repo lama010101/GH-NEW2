@@ -3,14 +3,13 @@
 import { DM_Sans } from 'next/font/google'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
 import { signOut } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
-import { LanguageDropdown } from '@/components/layout/LanguageDropdown'
 import { NavModal } from '@/components/NavModal'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
@@ -29,10 +28,16 @@ export default function AccountPage() {
   const t = useTranslations('account')
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
   const [displayName, setDisplayName] = useState<string>('')
+  const [savedName, setSavedName] = useState<string>('')
+  const [email, setEmail] = useState<string | null>(null)
+  const [createdAt, setCreatedAt] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveResult, setSaveResult] = useState<'idle' | 'success' | 'error'>('idle')
   const [avatarInfo, setAvatarInfo] = useState<AvatarInfo | null>(null)
   const [signOutError, setSignOutError] = useState<string | null>(null)
   const [showNavModal, setShowNavModal] = useState(false)
