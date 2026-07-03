@@ -2008,13 +2008,16 @@ async function insertMissingCommits(
 
   const submitted = new Set(commitsResult.rows.map((r) => r.player_id));
 
-  // Insert zero-score commit for each player who has not submitted
+  // Insert zero-score absent commit for each player who has not submitted.
+  // absent=TRUE distinguishes "never submitted / absent" from "submitted a real
+  // guess scoring 0" (absent=FALSE). See Compete Relax (Option B) §6 + migration
+  // 20260703000000_add_absent_to_round_commits.sql.
   for (const row of playersResult.rows) {
     if (!submitted.has(row.player_id)) {
       await client.query(
         `INSERT INTO round_commits
-           (game_id, player_id, round_index, submitted_at, year_guess, location_lat, location_lng, hints_used, score)
-         VALUES ($1, $2, $3, now(), NULL, NULL, NULL, 0, 0)
+           (game_id, player_id, round_index, submitted_at, year_guess, location_lat, location_lng, hints_used, score, absent)
+         VALUES ($1, $2, $3, now(), NULL, NULL, NULL, 0, 0, TRUE)
          ON CONFLICT (game_id, player_id, round_index) DO NOTHING`,
         [gameId, row.player_id, roundIndex]
       );

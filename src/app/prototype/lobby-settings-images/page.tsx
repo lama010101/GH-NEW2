@@ -4,19 +4,16 @@
 // STANDALONE PROTOTYPE — Lobby > Game Settings: Era & Region image buttons
 // Route: /prototype/lobby-settings-images   (direct access, self-contained)
 //
-// Two versions side-by-side:
-//  V1 — STOCK IMAGES: curated Unsplash photos that perfectly represent each
-//       era / region concept (Pyramids for Ancient, Carcassonne for Medieval,
-//       Great Wall for Asia, Colosseum for Europe, etc.)
-//  V2 — DB IMAGES: queries the Supabase `images` + `events` + `locations`
-//       tables to pull a representative event image for each era (by year
-//       range) and region (by continent). Falls back to stock if no DB image.
+// DB IMAGES: queries the Supabase `images` + `events` + `locations`
+//   tables to pull a representative event image for each era (by year
+//   range) and region (by continent). Falls back to local stock images
+//   when no DB image is available.
 //
 // Visual language: dark bg image + scrim, glass cards, gh-* design tokens,
 // matching the prod lobby era/region rail but with photo-backed buttons.
 //
 // Does NOT touch or import any existing app files except supabaseBrowser
-// (needed for V2 DB queries).
+// (needed for DB queries).
 // ============================================================================
 
 import { useEffect, useState, useCallback } from "react";
@@ -88,8 +85,8 @@ type RegionId =
   | "asia"
   | "europe"
   | "north_america"
-  | "oceania_antarctica"
-  | "south_america";
+  | "south_america"
+  | "oceania_antarctica";
 
 const REGIONS: {
   id: RegionId;
@@ -127,18 +124,18 @@ const REGIONS: {
     emoji: "🗽",
   },
   {
-    id: "oceania_antarctica",
-    label: "Oceania & Antarctica",
-    continents: ["Oceania", "Antarctica"],
-    stockImg: "/prototype/lobby-settings-images/oceania.jpg",
-    emoji: "🏝️",
-  },
-  {
     id: "south_america",
     label: "South America",
     continents: ["South America"],
     stockImg: "/prototype/lobby-settings-images/south_america.jpg",
     emoji: "🦜",
+  },
+  {
+    id: "oceania_antarctica",
+    label: "Oceania & Antarctica",
+    continents: ["Oceania", "Antarctica"],
+    stockImg: "/prototype/lobby-settings-images/oceania_antarctica.jpg",
+    emoji: "🏝️",
   },
 ];
 
@@ -173,7 +170,7 @@ export default function LobbySettingsImagesPrototypePage() {
     () => new Set(REGIONS.map((r) => r.id))
   );
 
-  // V2 DB image state
+  // DB image state
   const [dbImages, setDbImages] = useState<DbImageMap | null>(null);
   const [dbLoading, setDbLoading] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
@@ -208,12 +205,11 @@ export default function LobbySettingsImagesPrototypePage() {
     );
   }, []);
 
-  // ── V2: Fetch representative DB images for each era & region ──
+  // ── Fetch representative DB images for each era & region ──
   const fetchDbImages = useCallback(async () => {
     setDbLoading(true);
     setDbError(null);
     try {
-      // Fetch images (with event_id for joining)
       const { data: imgData, error: imgErr } = await supabaseBrowser
         .from("images")
         .select("url,event_id,display_order")
@@ -222,7 +218,6 @@ export default function LobbySettingsImagesPrototypePage() {
 
       if (imgErr) throw imgErr;
 
-      // Fetch events (for year filtering)
       const { data: evData, error: evErr } = await supabaseBrowser
         .from("events")
         .select("id,event_year")
@@ -230,7 +225,6 @@ export default function LobbySettingsImagesPrototypePage() {
 
       if (evErr) throw evErr;
 
-      // Fetch locations (for continent filtering)
       const { data: locData, error: locErr } = await supabaseBrowser
         .from("locations")
         .select("event_id,continent")
@@ -242,21 +236,12 @@ export default function LobbySettingsImagesPrototypePage() {
       const events = (evData ?? []) as DbEventRow[];
       const locations = (locData ?? []) as DbLocationRow[];
 
-      // Build lookup maps
       const eventYearMap = new Map<string, number>();
       for (const ev of events) eventYearMap.set(ev.id, ev.event_year);
 
       const eventContinentMap = new Map<string, string>();
       for (const loc of locations) {
         if (loc.continent) eventContinentMap.set(loc.event_id, loc.continent);
-      }
-
-      // Group images by event_id (first image per event = primary)
-      const eventImageMap = new Map<string, string>();
-      for (const img of images) {
-        if (img.url && !eventImageMap.has(img.event_id)) {
-          eventImageMap.set(img.event_id, img.url);
-        }
       }
 
       // Pick representative image for each era (first image whose event year falls in range)
@@ -310,7 +295,7 @@ export default function LobbySettingsImagesPrototypePage() {
         <span className={styles.protoTitle}>
           Lobby Settings — Image Era & Region Buttons
         </span>
-        <span className={styles.protoHint}>Prototype · V1 stock / V2 DB</span>
+        <span className={styles.protoHint}>Prototype · DB images</span>
       </div>
 
       {/* Background */}
@@ -334,87 +319,13 @@ export default function LobbySettingsImagesPrototypePage() {
           </header>
 
           {/* ════════════════════════════════════════════════════════════════ */}
-          {/* VERSION 1 — STOCK IMAGES                                            */}
+          {/* DB IMAGES                                                            */}
           {/* ════════════════════════════════════════════════════════════════ */}
           <section className={styles.versionCard}>
             <div className={styles.versionHead}>
-              <span className={styles.versionBadge}>V1</span>
+              <span className={styles.versionBadgeV2}>DB</span>
               <div className={styles.versionInfo}>
-                <h2 className={styles.versionTitle}>Stock Images</h2>
-                <p className={styles.versionDesc}>
-                  Curated Unsplash photos representing each concept
-                </p>
-              </div>
-            </div>
-
-            {/* Era presets */}
-            <div className={styles.settingBlock}>
-              <div className={styles.settingHead}>
-                <span className={styles.settingLabel}>Era presets</span>
-                <button
-                  type="button"
-                  className={styles.selectAllBtn}
-                  onClick={toggleAllEras}
-                >
-                  {allErasSelected ? "Deselect all" : "Select all"}
-                </button>
-              </div>
-              <div className={styles.imageRail}>
-                {ERAS.map((era) => {
-                  const on = selectedEras.has(era.id);
-                  return (
-                    <ImageEraButton
-                      key={era.id}
-                      label={era.label}
-                      span={era.span}
-                      src={era.stockImg}
-                      emoji={era.emoji}
-                      selected={on}
-                      onClick={() => toggleEra(era.id)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Region presets */}
-            <div className={styles.settingBlock}>
-              <div className={styles.settingHead}>
-                <span className={styles.settingLabel}>Region presets</span>
-                <button
-                  type="button"
-                  className={styles.selectAllBtn}
-                  onClick={toggleAllRegions}
-                >
-                  {allRegionsSelected ? "Deselect all" : "Select all"}
-                </button>
-              </div>
-              <div className={styles.imageRail}>
-                {REGIONS.map((region) => {
-                  const on = selectedRegions.has(region.id);
-                  return (
-                    <ImageRegionButton
-                      key={region.id}
-                      label={region.label}
-                      src={region.stockImg}
-                      emoji={region.emoji}
-                      selected={on}
-                      onClick={() => toggleRegion(region.id)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {/* VERSION 2 — DB IMAGES                                               */}
-          {/* ════════════════════════════════════════════════════════════════ */}
-          <section className={styles.versionCard}>
-            <div className={styles.versionHead}>
-              <span className={styles.versionBadgeV2}>V2</span>
-              <div className={styles.versionInfo}>
-                <h2 className={styles.versionTitle}>DB Images</h2>
+                <h2 className={styles.versionTitle}>Event Images</h2>
                 <p className={styles.versionDesc}>
                   Pulled from Supabase events/images/locations tables
                 </p>
@@ -431,7 +342,7 @@ export default function LobbySettingsImagesPrototypePage() {
 
             {dbError && (
               <div className={styles.dbStatusError}>
-                Error: {dbError}. Showing stock fallbacks.
+                Error: {dbError}. Showing fallback images.
               </div>
             )}
             {!dbError && dbLoading && (
@@ -449,7 +360,7 @@ export default function LobbySettingsImagesPrototypePage() {
                   REGIONS.length -
                   (Object.keys(dbImages.eras).length +
                     Object.keys(dbImages.regions).length)}{" "}
-                stock fallbacks
+                fallbacks
               </div>
             )}
 
@@ -474,11 +385,11 @@ export default function LobbySettingsImagesPrototypePage() {
                       key={era.id}
                       label={era.label}
                       span={era.span}
-                      src={dbUrl ?? era.stockImg}
+                      dbUrl={dbUrl}
+                      stockImg={era.stockImg}
                       emoji={era.emoji}
                       selected={on}
                       onClick={() => toggleEra(era.id)}
-                      isDb={!!dbUrl}
                     />
                   );
                 })}
@@ -505,37 +416,17 @@ export default function LobbySettingsImagesPrototypePage() {
                     <ImageRegionButton
                       key={region.id}
                       label={region.label}
-                      src={dbUrl ?? region.stockImg}
+                      dbUrl={dbUrl}
+                      stockImg={region.stockImg}
                       emoji={region.emoji}
                       selected={on}
                       onClick={() => toggleRegion(region.id)}
-                      isDb={!!dbUrl}
                     />
                   );
                 })}
               </div>
             </div>
           </section>
-
-          {/* ── Legend ── */}
-          <div className={styles.legend}>
-            <div className={styles.legendItem}>
-              <span className={styles.legendDotSelected} />
-              Selected (on)
-            </div>
-            <div className={styles.legendItem}>
-              <span className={styles.legendDotOff} />
-              Deselected (off)
-            </div>
-            <div className={styles.legendItem}>
-              <span className={styles.legendBadgeDb}>DB</span>
-              Image from Supabase
-            </div>
-            <div className={styles.legendItem}>
-              <span className={styles.legendBadgeStock}>S</span>
-              Stock fallback
-            </div>
-          </div>
         </div>
       </div>
     </main>
@@ -547,21 +438,27 @@ export default function LobbySettingsImagesPrototypePage() {
 function ImageEraButton({
   label,
   span,
-  src,
+  dbUrl,
+  stockImg,
   emoji,
   selected,
   onClick,
-  isDb,
 }: {
   label: string;
   span: string;
-  src: string;
+  dbUrl?: string;
+  stockImg: string;
   emoji: string;
   selected: boolean;
   onClick: () => void;
-  isDb?: boolean;
 }) {
-  const [imgError, setImgError] = useState(false);
+  // Try DB url → stock image → emoji fallback
+  const [src, setSrc] = useState<string | null>(dbUrl ?? stockImg ?? null);
+
+  // Reset when dbUrl changes (e.g. after refresh)
+  useEffect(() => {
+    setSrc(dbUrl ?? stockImg ?? null);
+  }, [dbUrl, stockImg]);
 
   return (
     <button
@@ -570,52 +467,50 @@ function ImageEraButton({
       onClick={onClick}
       aria-pressed={selected}
     >
-      <div className={styles.imgThumb}>
-        {imgError ? (
-          <div className={styles.imgFallback}>{emoji}</div>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={src}
-            alt={label}
-            className={styles.imgPhoto}
-            loading="lazy"
-            onError={() => setImgError(true)}
-          />
-        )}
-        <div className={styles.imgOverlay} />
-        {isDb !== undefined && (
-          <span
-            className={`${styles.sourceBadge} ${
-              isDb ? styles.sourceBadgeDb : styles.sourceBadgeStock
-            }`}
-          >
-            {isDb ? "DB" : "S"}
-          </span>
-        )}
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={label}
+          className={styles.imgPhoto}
+          loading="lazy"
+          onError={() => {
+            if (src !== stockImg) setSrc(stockImg);
+            else setSrc(null);
+          }}
+        />
+      ) : (
+        <div className={styles.imgFallback}>{emoji}</div>
+      )}
+      <div className={styles.imgOverlay} />
+      <div className={styles.imgCaption}>
+        <span className={styles.imgLabel}>{label}</span>
+        <span className={styles.imgSpan}>{span}</span>
       </div>
-      <span className={styles.imgLabel}>{label}</span>
-      <span className={styles.imgSpan}>{span}</span>
     </button>
   );
 }
 
 function ImageRegionButton({
   label,
-  src,
+  dbUrl,
+  stockImg,
   emoji,
   selected,
   onClick,
-  isDb,
 }: {
   label: string;
-  src: string;
+  dbUrl?: string;
+  stockImg: string;
   emoji: string;
   selected: boolean;
   onClick: () => void;
-  isDb?: boolean;
 }) {
-  const [imgError, setImgError] = useState(false);
+  const [src, setSrc] = useState<string | null>(dbUrl ?? stockImg ?? null);
+
+  useEffect(() => {
+    setSrc(dbUrl ?? stockImg ?? null);
+  }, [dbUrl, stockImg]);
 
   return (
     <button
@@ -624,31 +519,25 @@ function ImageRegionButton({
       onClick={onClick}
       aria-pressed={selected}
     >
-      <div className={styles.imgThumb}>
-        {imgError ? (
-          <div className={styles.imgFallback}>{emoji}</div>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={src}
-            alt={label}
-            className={styles.imgPhoto}
-            loading="lazy"
-            onError={() => setImgError(true)}
-          />
-        )}
-        <div className={styles.imgOverlay} />
-        {isDb !== undefined && (
-          <span
-            className={`${styles.sourceBadge} ${
-              isDb ? styles.sourceBadgeDb : styles.sourceBadgeStock
-            }`}
-          >
-            {isDb ? "DB" : "S"}
-          </span>
-        )}
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={label}
+          className={styles.imgPhoto}
+          loading="lazy"
+          onError={() => {
+            if (src !== stockImg) setSrc(stockImg);
+            else setSrc(null);
+          }}
+        />
+      ) : (
+        <div className={styles.imgFallback}>{emoji}</div>
+      )}
+      <div className={styles.imgOverlay} />
+      <div className={styles.imgCaption}>
+        <span className={styles.imgLabel}>{label}</span>
       </div>
-      <span className={styles.imgLabel}>{label}</span>
     </button>
   );
 }
