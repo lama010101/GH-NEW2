@@ -108,12 +108,33 @@ safely rolled back if a regression is introduced.
    MP-FIX-AUTH-OAUTH-PKCE-001) with no effect — the library default is always PKCE.
 6. OAuth redirect URLs in `AuthModal.tsx` should derive from `window.location.origin`
    or an environment variable, NOT be hardcoded to a production domain.
+7. **NEVER add a `state` parameter check to `src/app/auth/callback/route.ts`.**
+   The `@supabase/ssr` PKCE flow does NOT include a `state` query param in the
+   callback redirect URL. CSRF protection is provided by the PKCE `code_verifier`
+   (only the browser that initiated the OAuth flow holds the verifier, so
+   `exchangeCodeForSession()` fails for any attacker-injected code). Adding a
+   `state` presence check blocks ALL valid OAuth callbacks. This happened in
+   commit 8498d2c (July 2) and broke Google Sign-In for all users for 24+ hours.
+8. **NEVER add `flowType`, `autoRefreshToken`, `detectSessionInUrl`, or
+   `persistSession` to `createBrowserClient` or `createServerClient` calls.**
+   The `@supabase/ssr` library hardcodes these internally. Overriding them causes
+   session desync between browser and server clients.
+9. **The callback route (`src/app/auth/callback/route.ts`) MUST call
+   `exchangeCodeForSession(code)` for any request with a `code` param.** The only
+   acceptable early-return is when `code` is absent (redirect to `/login?error=missing_code`).
+   Do NOT add additional guards (state, CSRF tokens, referer checks) that could
+   block valid callbacks. The PKCE code_verifier is the CSRF defense.
+10. **Email sign-in/sign-out flows MUST go through `supabaseBrowser.auth` methods**
+    (`signInWithPassword`, `signUp`, `signOut`). Do NOT create custom auth endpoints
+    or bypass the Supabase auth state machine.
 
-**History:** Auth has regressed 6+ times across May–July 2026 due to:
+**History:** Auth has regressed 7+ times across May–July 2026 due to:
 - flowType ping-pong (3 cycles, all no-ops)
 - sign-out race condition (MP-INV-AUTH-SIGNOUT-002, still partially open)
 - WIP commits silently removing auth fixes (commit a7b614f)
 - Authenticated users hitting /login and re-triggering OAuth (FIX-MIDDLEWARE-LOGIN-AUTH-REDIRECT-001)
+- **state parameter check blocking all PKCE OAuth callbacks (FIX-PKCE-STATE-CHECK-BLOCKING-OAUTH-001,
+   July 3 — broke Google Sign-In for 24+ hours, 0 sessions created for Google users)**
 
 **Regression guard (include in ALL prompts touching auth files):**
   grep -n "flowType" src/core/supabaseBrowser.ts
@@ -121,5 +142,11 @@ safely rolled back if a regression is introduced.
 
   grep -rn "cachedState" src/ | grep -v "identity.ts"
   # Must return ZERO matches. Any match = parallel auth state = FAIL.
+
+  grep -n "state" src/app/auth/callback/route.ts | grep -v "//\|console\|next\|import"
+  # Must return ZERO matches. Any match = someone re-added the state check = FAIL.
+
+  grep -n "Missing state" src/app/auth/callback/route.ts
+  # Must return ZERO matches. Any match = the blocking state check is back = FAIL.
 
 ---

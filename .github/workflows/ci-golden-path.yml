@@ -1,4 +1,4 @@
-name: CI - Typecheck Gate
+name: CI - Auth & Build Gate
 
 on:
   push:
@@ -21,3 +21,32 @@ jobs:
       - run: npm ci
       - name: Typecheck
         run: npm run typecheck
+
+  auth-tests:
+    name: Auth unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run auth tests (middleware + identity + callback + AuthModal)
+        run: npx vitest run src/middleware.test.ts src/core/identity.test.ts src/app/auth/callback/route.test.ts src/components/AuthModal.test.tsx
+
+  build:
+    name: Next.js build (ESLint + types)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
