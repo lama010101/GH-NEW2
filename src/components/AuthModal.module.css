@@ -59,9 +59,10 @@
 
 .tagline {
   font-size: var(--font-sm);
-  color: var(--gh-modal-text-muted);
+  color: var(--gh-modal-text-secondary);
   text-align: center;
   margin: 0 0 12px 0;
+  width: 100%;
 }
 
 .langSwitcherWrap {

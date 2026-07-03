@@ -728,6 +728,14 @@ export default function RoundActiveSection({
                   {submittedToasts[p.playerId] && (
                     <div className={styles.submittedToast}>{t('guessed')}</div>
                   )}
+                  {!p.hasSubmitted && !submittedToasts[p.playerId] && (
+                    <div
+                      className={styles.submittedToast}
+                      style={{ animation: "none", opacity: 1, color: "var(--gh-text-tertiary, rgba(255,255,255,0.45))" }}
+                    >
+                      {t('waiting_for')}
+                    </div>
+                  )}
                   <div className={`${styles.opponentAvatar} ${p.hasSubmitted ? styles.opponentAvatarSubmitted : ""}`}>
                     {p.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
