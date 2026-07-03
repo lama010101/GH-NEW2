@@ -36,6 +36,8 @@ import {
   verifyUniquenessInvariant
 } from "@/server/db";
 import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
+import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
+import { dailySeed } from "@/core/dailySeed";
 import { getGameState, deriveStateFromEventStream } from "@/server/getGameState";
 import { appendEvent, loadLastEventWithLock } from "@/server/eventStore";
 import { TransitionCause } from "@/core/transitionCause";
@@ -769,6 +771,126 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
     throw new Error("Unable to load the newly created compete session");
   }
 
+  return snapshot;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// DAILY MODE — Session creation (DAILY_MODE_SPEC.md §6)
+// Creates a sessions row with mode='daily', pinned event_ids from
+// daily_challenges (§4), and a session_players host row. Does NOT call
+// startCompeteSession — the caller (start endpoint) does that separately.
+// room_code: per-session random seed (A1 ruling — NOT daily seed, NOT date),
+// with the same collision-retry loop as createCompeteSession.
+// ═════════════════════════════════════════════════════════════════════════════
+export async function createDailySession(input: {
+  playerId: string;
+  displayName?: string;
+  dateIso: string;
+}): Promise<CompeteSessionSnapshot> {
+  const { playerId, dateIso } = input;
+
+  // Load or generate the pinned daily challenge (§4.3)
+  const challenge = await getOrCreateDailyChallenge(dateIso);
+
+  const gameId = randomUUID();
+  // Per-session random seed for room_code — NOT the daily seed (A1 ruling)
+  const roomSeed = BigInt("0x" + randomBytes(8).toString("hex")) & BigInt("0x7FFFFFFFFFFFFFFF");
+  const dailySeedValue = dailySeed(dateIso);
+
+  let client: DbTransactionClient | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      client = await getTransactionClient();
+      break;
+    } catch (err) {
+      console.error(`[createDailySession] getTransactionClient attempt ${attempt + 1} failed: ${err instanceof Error ? err.message : String(err)}`);
+      if (attempt === 2) throw err;
+      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+    }
+  }
+  if (!client) throw new Error("Failed to acquire DB transaction client after 3 attempts");
+
+  try {
+    await client.query("BEGIN");
+
+    // Room code collision-retry loop (same mechanism as createCompeteSession)
+    let roomCode = generateRoomCode(roomSeed);
+    let roomCodeAttempts = 0;
+    const maxRoomCodeAttempts = 5;
+    let roomCodeInsertSuccess = false;
+
+    while (!roomCodeInsertSuccess && roomCodeAttempts < maxRoomCodeAttempts) {
+      try {
+        await client.query(`SAVEPOINT room_code_attempt`);
+        await client.query(
+          `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, results_auto_advance_sec, seed, room_code, scoring_reference_year)
+           VALUES ($1, 'daily', 90, 5, -100, EXTRACT(YEAR FROM now())::INT, 0, $2, $3, EXTRACT(YEAR FROM now())::INT)`,
+          [gameId, dailySeedValue, roomCode]
+        );
+        await client.query(`RELEASE SAVEPOINT room_code_attempt`);
+        roomCodeInsertSuccess = true;
+      } catch (err: unknown) {
+        await client.query(`ROLLBACK TO SAVEPOINT room_code_attempt`);
+        roomCodeAttempts++;
+        if (roomCodeAttempts >= maxRoomCodeAttempts) {
+          throw new Error("Failed to generate unique room code after 5 attempts");
+        }
+        const pgErr = err as { code?: string; constraint?: string };
+        if (pgErr.code === "23505" && pgErr.constraint === "sessions_room_code_key") {
+          roomCode = generateRoomCode(roomSeed + BigInt(roomCodeAttempts));
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    // Host player row — ready=true (like practice) so startCompeteSession works
+    const hostAvatarResult = await client.query<{ display_name: string; avatar_url: string }>(
+      `SELECT p.display_name, p.avatar_url
+       FROM public.profiles p
+       WHERE p.id = $1`,
+      [playerId]
+    );
+    const hostProfileName: string | null = hostAvatarResult.rows[0]?.display_name ?? null;
+    const hostDisplayName = (hostProfileName && hostProfileName.trim().length > 0)
+      ? hostProfileName.trim()
+      : ((input.displayName && input.displayName.trim().length > 0) ? input.displayName.trim() : `Player-${playerId.slice(0, 6)}`);
+    assertValidDisplayName(hostDisplayName);
+    let hostAvatarUrl = hostAvatarResult.rows[0]?.avatar_url ?? null;
+    if (!hostAvatarUrl) {
+      const fallbackResult = await client.query<{ avatar_url: string }>(
+        `SELECT COALESCE(firebase_url, image_url) AS avatar_url
+         FROM public.avatars WHERE ready = true ORDER BY random() LIMIT 1`
+      );
+      hostAvatarUrl = fallbackResult.rows[0]?.avatar_url ?? null;
+    }
+    await client.query(
+      `INSERT INTO session_players (game_id, player_id, display_name, joined_at, ready, is_host, avatar_url)
+       VALUES ($1, $2, $3, now(), true, true, $4)`,
+      [gameId, playerId, hostDisplayName, hostAvatarUrl]
+    );
+
+    // SESSION_CREATED with pinned event_ids — the round loop reads these
+    await appendEvent(client, gameId, "SESSION_CREATED", {
+      mode: "daily",
+      totalRounds: 5,
+      hostPlayerId: playerId,
+      seed: dailySeedValue.toString(),
+      eventIds: challenge.event_ids,
+    }, null);
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    throw new Error("Unable to load the newly created daily session");
+  }
   return snapshot;
 }
 
