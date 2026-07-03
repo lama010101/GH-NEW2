@@ -50,6 +50,11 @@ import { z } from "zod";
 interface Room {
   id: string;
   env: Record<string, unknown>;
+  storage: {
+    setAlarm(scheduledTime: number | Date): Promise<void>;
+    deleteAlarm(): Promise<void>;
+    getAlarm(): Promise<number | null>;
+  };
   broadcast: (msg: string | ArrayBuffer | ArrayBufferView, without?: string[]) => void;
   getConnection(id: string): Connection | undefined;
   getConnections(tag?: string): Iterable<Connection>;
@@ -568,17 +573,33 @@ export default class GameServer {
       clearTimeout(this.resultTimerHandle);
       this.resultTimerHandle = null;
     }
+    // Clear any existing DO alarm (async mode uses alarms instead of setTimeout
+    // so timers fire even with zero connected clients — Compete Relax Option B §10.1)
+    this.room.storage.deleteAlarm().catch(() => {});
 
     if (!this.snapshot || !isRuntimeState(this.snapshot)) return;
+
+    // Determine sub-mode from snapshot config (async = Relax, sync = Rush)
+    const snapshotConfig = (this.snapshot as Record<string, unknown>)?.config as Record<string, unknown> | undefined;
+    const mode = (snapshotConfig?.["mode"] as string) ?? "sync";
+    const isAsync = mode === "async";
+    // Session deadline (async only, computed at START_GAME as startedAt + days)
+    const sessionDeadline = (snapshotConfig?.["sessionDeadline"] as string | null) ?? null;
 
     if (this.snapshot.status === "ROUND_COMPLETE" && this.snapshot.resultPhaseStartedAt) {
       const autoAdvanceSec = this.snapshot.resultsAutoAdvanceSec ?? 90;
       if (autoAdvanceSec > 0) {
         const autoAdvanceMs = autoAdvanceSec * 1000;
-        const delay = new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs - Date.now();
+        const resultPhaseEndsAt = new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs;
+        const delay = resultPhaseEndsAt - Date.now();
         const expectedRoundIndex = this.snapshot.currentRoundIndex;
         if (delay <= 0) {
           this.triggerResultAutoAdvance(expectedRoundIndex);
+        } else if (isAsync) {
+          // Async: use DO alarm (persists through DO eviction / zero clients)
+          this.room.storage.setAlarm(resultPhaseEndsAt).catch((err) =>
+            console.error("[PartyKit] setAlarm (result phase) failed:", err)
+          );
         } else {
           this.resultTimerHandle = setTimeout(() => {
             this.resultTimerHandle = null;
@@ -589,18 +610,36 @@ export default class GameServer {
       return;
     }
 
-    // Only schedule for active rounds with a known end time
-    if (this.snapshot.status !== "ROUND_ACTIVE" || !this.snapshot.roundEndsAt) return;
+    // Only schedule for active rounds
+    if (this.snapshot.status !== "ROUND_ACTIVE") return;
 
-    const endsAt = new Date(this.snapshot.roundEndsAt).getTime();
+    // Compute effective expiry: earliest of roundEndsAt and sessionDeadline (async only).
+    // In async mode with no round timer (roundTimerSec=0, the default), roundEndsAt is
+    // null — but the session deadline still applies and must trigger round completion.
+    // See Compete Relax (Option B) §5.1(c) / §6.
     const now = Date.now();
-    const delay = endsAt - now;
     const expectedRoundIndex = this.snapshot.currentRoundIndex;
+    const roundEndsAtMs = this.snapshot.roundEndsAt ? new Date(this.snapshot.roundEndsAt).getTime() : null;
+    const sessionDeadlineMs = isAsync && sessionDeadline ? new Date(sessionDeadline).getTime() : null;
+
+    let endsAt: number | null = roundEndsAtMs;
+    if (sessionDeadlineMs !== null) {
+      endsAt = endsAt !== null ? Math.min(endsAt, sessionDeadlineMs) : sessionDeadlineMs;
+    }
+    if (endsAt === null) return; // no expiry mechanism available (sync with no timer)
+
+    const delay = endsAt - now;
 
     if (delay <= 0) {
       // Round already expired — trigger advance immediately
       console.log("[PartyKit] Round expired, triggering advance");
       this.triggerRoundExpiry(expectedRoundIndex);
+    } else if (isAsync) {
+      // Async: use DO alarm (persists through DO eviction / zero clients)
+      console.log(`[PartyKit] Round alarm scheduled (async): ${Math.round(delay / 1000)}s`);
+      this.room.storage.setAlarm(endsAt).catch((err) =>
+        console.error("[PartyKit] setAlarm (round active) failed:", err)
+      );
     } else {
       // Schedule advance for when the round expires
       console.log(`[PartyKit] Round timer scheduled: ${Math.round(delay / 1000)}s`);
@@ -608,6 +647,38 @@ export default class GameServer {
         this.roundTimerHandle = null;
         this.triggerRoundExpiry(expectedRoundIndex);
       }, delay);
+    }
+  }
+
+  /**
+   * Called when a DO storage alarm fires. This is the async (Relax) timer
+   * mechanism — alarms persist through DO eviction (zero connected clients),
+   * unlike setTimeout which dies when the DO is evicted.
+   * If the DO was evicted, reload from DB first (loadFromDB → scheduleRoundTimer
+   * handles expired rounds immediately). If the DO was alive, trigger the
+   * appropriate expiry/advance directly.
+   * See Compete Relax (Option B) §10.1 — PartyKit DO alarms.
+   */
+  async onAlarm(): Promise<void> {
+    if (!this.snapshotLoaded) {
+      try {
+        this.snapshotLoading = true;
+        await this.loadFromDB();
+      } catch (err) {
+        console.error("[PartyKit] onAlarm loadFromDB failed:", err instanceof Error ? err.message : err);
+      } finally {
+        this.snapshotLoading = false;
+      }
+      // loadFromDB → scheduleRoundTimer already handled the state transition.
+      return;
+    }
+
+    if (!isRuntimeState(this.snapshot)) return;
+
+    if (this.snapshot.status === "ROUND_ACTIVE") {
+      await this.triggerRoundExpiry(this.snapshot.currentRoundIndex);
+    } else if (this.snapshot.status === "ROUND_COMPLETE") {
+      await this.triggerResultAutoAdvance(this.snapshot.currentRoundIndex);
     }
   }
 
@@ -1015,6 +1086,17 @@ export default class GameServer {
       if ((this.playerConnectionCounts.get(playerId) ?? 0) > 0) {
         console.log(`[PartyKit] Leave cancelled — player ${playerId.slice(0, 8)} reconnected during grace`);
         return;
+      }
+      // Async (Relax) mode: closing the app/tab is a normal state, not a leave.
+      // Only explicit Leave sets left_at. Disconnect never triggers absence —
+      // only round/session expiry does. See Compete Relax (Option B) §9.
+      if (isRuntimeState(this.snapshot)) {
+        const config = (this.snapshot as Record<string, unknown>)?.config as Record<string, unknown> | undefined;
+        const mode = (config?.["mode"] as string) ?? "sync";
+        if (mode === "async") {
+          console.log(`[PartyKit] Leave skipped — async mode, player ${playerId.slice(0, 8)} offline (not left)`);
+          return;
+        }
       }
       try {
         // /leave mutates MEMBERSHIP ONLY (left_at).

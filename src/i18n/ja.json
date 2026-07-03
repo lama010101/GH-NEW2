@@ -172,10 +172,10 @@
     "compete_create_game": "ゲーム作成",
     "tagline": "どこで、いつ起きた？",
     "daily_new_challenge": "新チャレンジまで",
-    "compete_desc": "フレンドと対戦。\nリアルタイム：最大5分\nターン制：最大14日",
-    "daily_desc": "毎日新しいチャレンジ。\n全員に同じイベント。\nランキングを登る。",
-    "levelup_desc": "レベルをクリアしてXP獲得。\n1から100へ段階的難易度。\n新しいチャレンジを解除。",
-    "practice_desc": "ソロでスキル向上。\nカスタムタイマーと年範囲。\n無制限の練習ゲーム。"
+    "compete_desc": "フレンドと対戦。\nリアルタイムまたはターン制。",
+    "daily_desc": "毎日新しい競技、\n全員に同じイベント。",
+    "levelup_desc": "段階的難易度\nランキングを登る。",
+    "practice_desc": "ソロでスキル向上\n無制限のカスタムゲーム。"
   },
   "common": {
     "next_round": "次のラウンド",
@@ -562,6 +562,7 @@
     "countries": "国"
   },
   "account": {
+    "title": "アカウント",
     "username": "ユーザー名",
     "email": "メール",
     "member_since": "登録日",
@@ -569,7 +570,10 @@
     "save": "保存",
     "saved": "✓ 保存済み",
     "err_save_failed": "保存に失敗。再試行してください。",
-    "sign_out_failed": "サインアウトに失敗しました"
+    "sign_out_failed": "サインアウトに失敗しました",
+    "settings": "設定",
+    "sound": "サウンド",
+    "vibrate": "バイブレーション"
   },
   "avatar_picker": {
     "title": "アバターを選択",

@@ -172,10 +172,10 @@
     "compete_create_game": "创建游戏",
     "tagline": "它发生在哪里，何时？",
     "daily_new_challenge": "新挑战还有",
-    "compete_desc": "与好友对战。\n实时：最多5分钟\n回合制：最多14天",
-    "daily_desc": "每天一个新挑战。\n所有人相同的事件。\n攀登排行榜。",
-    "levelup_desc": "通关升级赚取经验值。\n从1到100渐进难度。\n解锁新挑战。",
-    "practice_desc": "独自练习提升技能。\n自定义计时器和年份范围。\n无限练习游戏。"
+    "compete_desc": "与好友对战。\n实时或回合制。",
+    "daily_desc": "每天新竞赛，\n所有人相同的事件。",
+    "levelup_desc": "渐进式难度\n攀登排行榜。",
+    "practice_desc": "独自练习提升技能\n无限自定义游戏。"
   },
   "common": {
     "next_round": "下一回合",
@@ -562,6 +562,7 @@
     "countries": "国家"
   },
   "account": {
+    "title": "账户",
     "username": "用户名",
     "email": "邮箱",
     "member_since": "注册于",
@@ -569,7 +570,10 @@
     "save": "保存",
     "saved": "✓ 已保存",
     "err_save_failed": "保存失败。请重试。",
-    "sign_out_failed": "退出登录失败"
+    "sign_out_failed": "退出登录失败",
+    "settings": "设置",
+    "sound": "声音",
+    "vibrate": "振动"
   },
   "avatar_picker": {
     "title": "选择头像",

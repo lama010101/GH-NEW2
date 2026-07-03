@@ -584,7 +584,9 @@ export default function CompeteGamePage() {
               </div>
             </div>
             <div className={pageStyles.submitOverlayWaiting}>
-              <p className={pageStyles.submitOverlayWaitingLabel}>{t('waiting_for')}</p>
+              <p className={pageStyles.submitOverlayWaitingLabel}>
+                {snapshot.config.mode === 'async' ? t('guessed') : t('waiting_for')}
+              </p>
               <ul className={pageStyles.submitOverlayPlayerList}>
                 {snapshot.players
                   .filter(p => p.leftAt === null)

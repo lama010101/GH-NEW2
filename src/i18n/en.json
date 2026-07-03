@@ -172,10 +172,10 @@
     "compete_create_game": "CREATE GAME",
     "tagline": "Where and when did it happen?",
     "daily_new_challenge": "New challenge in",
-    "compete_desc": "Play against your friends.\nReal-Time: Up to 5 mins\nTurn-Based: Up to 14 days",
-    "daily_desc": "A new challenge every day.\nSame events for everyone.\nClimb the leaderboard.",
-    "levelup_desc": "Beat levels and earn XP.\nProgressive difficulty from 1 to 100.\nUnlock new challenges.",
-    "practice_desc": "Hone your skills solo.\nCustom timer and year range.\nUnlimited practice games."
+    "compete_desc": "Play against your friends.\nReal-time or Turn-based",
+    "daily_desc": "New competition every day,\nSame events for everyone.",
+    "levelup_desc": "Progressive difficulty\nClimb the leaderboard",
+    "practice_desc": "Hone your skills solo\nUnlimited custom games."
   },
   "common": {
     "next_round": "Next Round",
@@ -563,6 +563,7 @@
     "countries": "Countries"
   },
   "account": {
+    "title": "Account",
     "username": "Username",
     "email": "Email",
     "member_since": "Member since",
@@ -570,7 +571,10 @@
     "save": "Save",
     "saved": "✓ Saved",
     "err_save_failed": "Failed to save. Try again.",
-    "sign_out_failed": "Sign out failed"
+    "sign_out_failed": "Sign out failed",
+    "settings": "Settings",
+    "sound": "Sound",
+    "vibrate": "Vibrate"
   },
   "avatar_picker": {
     "title": "Choose Avatar",

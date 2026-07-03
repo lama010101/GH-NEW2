@@ -4,21 +4,17 @@
 // STANDALONE PROTOTYPE — Lobby > Game Settings: Era & Region image buttons
 // Route: /prototype/lobby-settings-images   (direct access, self-contained)
 //
-// DB IMAGES: queries the Supabase `images` + `events` + `locations`
-//   tables to pull a representative event image for each era (by year
-//   range) and region (by continent). Falls back to local stock images
-//   when no DB image is available.
+// DB IMAGES: fetches from /api/prototype/lobby-images (server-side route
+//   that queries the `images` + `events` + `locations` tables via dbPool,
+//   bypassing RLS). Falls back to local stock images when no DB image
+//   is available.
 //
 // Visual language: dark bg image + scrim, glass cards, gh-* design tokens,
 // matching the prod lobby era/region rail but with photo-backed buttons.
-//
-// Does NOT touch or import any existing app files except supabaseBrowser
-// (needed for DB queries).
 // ============================================================================
 
 import { useEffect, useState, useCallback } from "react";
 import styles from "./lobby-settings-images.module.css";
-import { supabaseBrowser } from "@/core/supabaseBrowser";
 
 // ── Era / Region definitions (mirrors prod LobbySection.tsx) ──
 
@@ -141,22 +137,6 @@ const REGIONS: {
 
 // ── DB image result types ──
 
-type DbImageRow = {
-  url: string;
-  event_id: string;
-  display_order: number | null;
-};
-
-type DbEventRow = {
-  id: string;
-  event_year: number;
-};
-
-type DbLocationRow = {
-  event_id: string;
-  continent: string | null;
-};
-
 type DbImageMap = {
   eras: Partial<Record<EraId, string>>;
   regions: Partial<Record<RegionId, string>>;
@@ -210,70 +190,19 @@ export default function LobbySettingsImagesPrototypePage() {
     setDbLoading(true);
     setDbError(null);
     try {
-      const { data: imgData, error: imgErr } = await supabaseBrowser
-        .from("images")
-        .select("url,event_id,display_order")
-        .order("display_order", { ascending: true })
-        .limit(500);
-
-      if (imgErr) throw imgErr;
-
-      const { data: evData, error: evErr } = await supabaseBrowser
-        .from("events")
-        .select("id,event_year")
-        .limit(500);
-
-      if (evErr) throw evErr;
-
-      const { data: locData, error: locErr } = await supabaseBrowser
-        .from("locations")
-        .select("event_id,continent")
-        .limit(500);
-
-      if (locErr) throw locErr;
-
-      const images = (imgData ?? []) as DbImageRow[];
-      const events = (evData ?? []) as DbEventRow[];
-      const locations = (locData ?? []) as DbLocationRow[];
-
-      const eventYearMap = new Map<string, number>();
-      for (const ev of events) eventYearMap.set(ev.id, ev.event_year);
-
-      const eventContinentMap = new Map<string, string>();
-      for (const loc of locations) {
-        if (loc.continent) eventContinentMap.set(loc.event_id, loc.continent);
+      const res = await fetch("/api/prototype/lobby-images");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `HTTP ${res.status}`);
       }
-
-      // Pick representative image for each era (first image whose event year falls in range)
-      const eraImages: Partial<Record<EraId, string>> = {};
-      for (const era of ERAS) {
-        for (const img of images) {
-          const year = eventYearMap.get(img.event_id);
-          if (
-            year !== undefined &&
-            year >= era.yearMin &&
-            year <= era.yearMax &&
-            img.url
-          ) {
-            eraImages[era.id] = img.url;
-            break;
-          }
-        }
-      }
-
-      // Pick representative image for each region (first image whose event continent matches)
-      const regionImages: Partial<Record<RegionId, string>> = {};
-      for (const region of REGIONS) {
-        for (const img of images) {
-          const continent = eventContinentMap.get(img.event_id);
-          if (continent && region.continents.includes(continent) && img.url) {
-            regionImages[region.id] = img.url;
-            break;
-          }
-        }
-      }
-
-      setDbImages({ eras: eraImages, regions: regionImages });
+      const data = (await res.json()) as {
+        eras: Record<string, string>;
+        regions: Record<string, string>;
+      };
+      setDbImages({
+        eras: data.eras as Partial<Record<EraId, string>>,
+        regions: data.regions as Partial<Record<RegionId, string>>,
+      });
     } catch (err) {
       setDbError(err instanceof Error ? err.message : "Failed to load DB images");
     } finally {

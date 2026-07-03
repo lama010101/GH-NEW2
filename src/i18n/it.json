@@ -172,10 +172,10 @@
     "compete_create_game": "CREA PARTITA",
     "tagline": "Dove e quando è successo?",
     "daily_new_challenge": "Nuova sfida tra",
-    "compete_desc": "Gioca contro i tuoi amici.\nTempo reale: fino a 5 min\nA turni: fino a 14 giorni",
-    "daily_desc": "Una nuova sfida ogni giorno.\nGli stessi eventi per tutti.\nScala la classifica.",
-    "levelup_desc": "Supera i livelli e guadagna XP.\nDifficoltà progressiva da 1 a 100.\nSblocca nuove sfide.",
-    "practice_desc": "Affina le abilità da solo.\nTimer e intervallo anni personalizzabili.\nPartite di allenamento illimitate."
+    "compete_desc": "Gioca contro i tuoi amici.\nTempo reale o a turni.",
+    "daily_desc": "Una nuova competizione ogni giorno,\nGli stessi eventi per tutti.",
+    "levelup_desc": "Difficoltà progressiva\nScala la classifica.",
+    "practice_desc": "Affina le abilità da solo\nPartite personalizzate illimitate."
   },
   "common": {
     "next_round": "Round successivo",
@@ -562,6 +562,7 @@
     "countries": "Paesi"
   },
   "account": {
+    "title": "Account",
     "username": "Nome utente",
     "email": "Email",
     "member_since": "Iscritto dal",
@@ -569,7 +570,10 @@
     "save": "Salva",
     "saved": "✓ Salvato",
     "err_save_failed": "Salvataggio fallito. Riprova.",
-    "sign_out_failed": "Disconnessione non riuscita"
+    "sign_out_failed": "Disconnessione non riuscita",
+    "settings": "Impostazioni",
+    "sound": "Audio",
+    "vibrate": "Vibrazione"
   },
   "avatar_picker": {
     "title": "Scegli avatar",
