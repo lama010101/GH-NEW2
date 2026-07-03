@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "engines": {
-    "node": "24.x"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "dev": "npx kill-port 3000 1999 && concurrently -n next,party -c cyan,magenta \"next dev\" \"partykit dev\"",
@@ -20,7 +20,8 @@
     "test:e2e": "playwright test --config=scripts/test/playwright/playwright.config.ts",
     "test:e2e:report": "playwright show-report",
     "test:simulation": "playwright test --config=scripts/test/playwright/playwright.config.ts specs/multiplayer-simulation.spec.ts",
-    "test:simulation:report": "playwright show-report"
+    "test:simulation:report": "playwright show-report",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -56,6 +57,7 @@
     "dotenv": "^17.4.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",
+    "husky": "^9.1.7",
     "jsdom": "^25.0.1",
     "partykit": "^0.0.115",
     "postcss": "^8.5.14",
