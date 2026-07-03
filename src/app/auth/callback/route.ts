@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(`/?error=auth_failed`, request.url));
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const response = NextResponse.next({ request });
 
   const supabase = createServerClient(
