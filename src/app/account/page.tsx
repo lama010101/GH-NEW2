@@ -3,12 +3,14 @@
 import { DM_Sans } from 'next/font/google'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
 import { signOut } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
+import { ThemeToggle } from '@/components/layout/ThemeToggle'
+import { LanguageDropdown } from '@/components/layout/LanguageDropdown'
 import { NavModal } from '@/components/NavModal'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
@@ -27,19 +29,36 @@ export default function AccountPage() {
   const t = useTranslations('account')
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
   const [displayName, setDisplayName] = useState<string>('')
-  const [savedName, setSavedName] = useState<string>('')
-  const [email, setEmail] = useState<string | null>(null)
-  const [createdAt, setCreatedAt] = useState<string | null>(null)
   const [avatarInfo, setAvatarInfo] = useState<AvatarInfo | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [saveResult, setSaveResult] = useState<'idle' | 'success' | 'error'>('idle')
   const [signOutError, setSignOutError] = useState<string | null>(null)
   const [showNavModal, setShowNavModal] = useState(false)
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('gh_sound')
+      return saved !== null ? saved === 'true' : true
+    }
+    return true
+  })
+  const [vibrateEnabled, setVibrateEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('gh_vibrate')
+      return saved !== null ? saved === 'true' : true
+    }
+    return true
+  })
+
+  // Persist sound/vibrate settings to localStorage (same keys as in-game settings)
+  useEffect(() => {
+    localStorage.setItem('gh_sound', String(soundEnabled))
+  }, [soundEnabled])
+
+  useEffect(() => {
+    localStorage.setItem('gh_vibrate', String(vibrateEnabled))
+  }, [vibrateEnabled])
 
   useEffect(() => {
     if (isLoading) return
@@ -161,6 +180,16 @@ export default function AccountPage() {
         onAvatarClick={() => setShowNavModal(true)}
       />
 
+      {/* Header — back button + title */}
+      <div className={styles.header}>
+        <button onClick={() => router.push('/home')} className={styles.backBtn}>
+          <span className={styles.backArrow}>←</span>
+          <span>{tCommon('home')}</span>
+        </button>
+        <h1 className={styles.title}>{t('title')}</h1>
+        <div className={styles.headerSpacer} />
+      </div>
+
       {/* Avatar card */}
       {avatarInfo && (
         <div className={styles.avatarSection}>
@@ -235,6 +264,48 @@ export default function AccountPage() {
           <div>
             <div className={styles.fieldLabelSmall}>{t('member_since')}</div>
             <div className={styles.fieldValue}>{formatDate(createdAt)}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Preferences card — sound / vibrate / theme */}
+      <div className={styles.settingsSection}>
+        <div className={styles.settingsCard}>
+          <div className={styles.settingsCardTitle}>{t('settings')}</div>
+
+          <div className={styles.toggleRow}>
+            <span className={styles.toggleLabel}>{t('sound')}</span>
+            <button
+              type="button"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={styles.toggle}
+              style={{
+                '--toggle-bg': soundEnabled ? 'var(--gh-orange)' : 'rgba(255, 255, 255, 0.15)',
+                '--toggle-left': soundEnabled ? '22px' : '2px',
+              } as React.CSSProperties}
+            >
+              <div className={styles.toggleKnob} />
+            </button>
+          </div>
+
+          <div className={styles.toggleRow}>
+            <span className={styles.toggleLabel}>{t('vibrate')}</span>
+            <button
+              type="button"
+              onClick={() => setVibrateEnabled(!vibrateEnabled)}
+              className={styles.toggle}
+              style={{
+                '--toggle-bg': vibrateEnabled ? 'var(--gh-orange)' : 'rgba(255, 255, 255, 0.15)',
+                '--toggle-left': vibrateEnabled ? '22px' : '2px',
+              } as React.CSSProperties}
+            >
+              <div className={styles.toggleKnob} />
+            </button>
+          </div>
+
+          <div className={styles.toggleRow}>
+            <span className={styles.toggleLabel}>{tNav('theme')}</span>
+            <ThemeToggle />
           </div>
         </div>
       </div>

@@ -1139,9 +1139,7 @@ export default function RoundActiveSection({
             <button
               type="button"
               onClick={() => {
-                setImgError(false);
-                setImgRetryKey((k) => k + 1);
-                setSettingsModalOpen(false);
+                window.location.reload();
               }}
               className={styles.settingsRefreshBtn}
             >

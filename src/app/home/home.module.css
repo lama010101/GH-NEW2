@@ -72,6 +72,10 @@
   .card-title {
     padding-right: 150px;
   }
+
+  .card-desc-wrap {
+    padding-right: 150px;
+  }
 }
 
 .mode-card {
@@ -124,14 +128,15 @@
   padding: 0;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
 .card-desc-wrap {
   width: 100%;
-  padding-right: 0;
+  padding-right: 190px;
   margin-top: 8px;
+  box-sizing: border-box;
 }
 
 .card-icon-wrap {
@@ -284,6 +289,35 @@
   object-fit: contain;
 }
 
+/* Subtle Play arrow at right edge of non-compete cards */
+.card-play-arrow {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--gh-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  backdrop-filter: blur(4px);
+}
+
+.card-play-arrow:hover {
+  background: rgba(255, 255, 255, 0.26);
+  transform: scale(1.06);
+}
+
+.card-play-arrow svg {
+  margin-left: 2px;
+}
+
 @media (max-width: 380px) {
   .card-icon-wrap {
     width: 120px;
@@ -291,6 +325,10 @@
   }
 
   .card-title {
+    padding-right: 130px;
+  }
+
+  .card-desc-wrap {
     padding-right: 130px;
   }
 }

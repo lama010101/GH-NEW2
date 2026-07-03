@@ -8,7 +8,6 @@ import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } fro
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
-import { PracticePanel } from '@/components/home/PracticePanel'
 import { LevelUpPanel } from '@/components/home/LevelUpPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
 import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
@@ -274,7 +273,7 @@ function ModeCard({
   const t = useTranslations()
   const gradient = MODE_CARD_GRADIENT[mode]
   const title = t(`home.${mode}_name`)
-  const subtitle = t(`home.${mode}_subtitle`)
+  const subtitle = t(`home.${mode}_name`)
   const desc = t(`home.${mode}_desc`)
 
   const getIconSrc = () => {
@@ -321,9 +320,6 @@ function ModeCard({
           {mode === 'levelup' && (
             <LevelUpPanel onStart={() => onNavigate('/levelup')} />
           )}
-          {mode === 'practice' && (
-            <PracticePanel onStart={onPracticeStart} />
-          )}
         </div>
 
         {/* Icon inside card — positioned absolute top-right */}
@@ -336,6 +332,24 @@ function ModeCard({
             sizes="110px"
           />
         </div>
+
+        {/* Subtle Play arrow at right edge for non-compete cards */}
+        {mode !== 'compete' && (
+          <button
+            type="button"
+            aria-label={title}
+            className={styles['card-play-arrow']}
+            onClick={() => {
+              if (mode === 'daily') onNavigate('/daily')
+              else if (mode === 'levelup') onNavigate('/levelup')
+              else if (mode === 'practice') onPracticeStart()
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M8 5v14l11-7z" fill="currentColor" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   )

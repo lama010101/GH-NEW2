@@ -172,10 +172,10 @@
     "compete_create_game": "SPIEL ERSTELLEN",
     "tagline": "Wo und wann ist es passiert?",
     "daily_new_challenge": "Neue Herausforderung in",
-    "compete_desc": "Spiele gegen deine Freunde.\nEchtzeit: bis 5 Min\nRundenbasiert: bis 14 Tage",
-    "daily_desc": "Jeden Tag eine neue Herausforderung.\nGleiche Ereignisse für alle.\nSteige in der Bestenliste auf.",
-    "levelup_desc": "Meistere Level und verdiene XP.\nProgressive Schwierigkeit von 1 bis 100.\nSchalte neue Herausforderungen frei.",
-    "practice_desc": "Verbessere deine Fähigkeiten solo.\nCustom Timer und Jahresbereich.\nUnbegrenzte Übungsspiele."
+    "compete_desc": "Spiele gegen deine Freunde.\nEchtzeit oder rundenbasiert.",
+    "daily_desc": "Jeden Tag ein neuer Wettbewerb,\nGleiche Ereignisse für alle.",
+    "levelup_desc": "Progressive Schwierigkeit\nSteige in der Bestenliste auf.",
+    "practice_desc": "Verbessere deine Fähigkeiten solo\nUnbegrenzte individuelle Spiele."
   },
   "common": {
     "next_round": "Nächste Runde",
@@ -562,6 +562,7 @@
     "countries": "Länder"
   },
   "account": {
+    "title": "Konto",
     "username": "Benutzername",
     "email": "E-Mail",
     "member_since": "Mitglied seit",
@@ -569,7 +570,10 @@
     "save": "Speichern",
     "saved": "✓ Gespeichert",
     "err_save_failed": "Speichern fehlgeschlagen. Versuche es erneut.",
-    "sign_out_failed": "Abmeldung fehlgeschlagen"
+    "sign_out_failed": "Abmeldung fehlgeschlagen",
+    "settings": "Einstellungen",
+    "sound": "Ton",
+    "vibrate": "Vibration"
   },
   "avatar_picker": {
     "title": "Avatar wählen",

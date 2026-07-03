@@ -172,10 +172,10 @@
     "compete_create_game": "MAAK SPEL",
     "tagline": "Waar en wanneer gebeurde het?",
     "daily_new_challenge": "Nieuwe uitdaging over",
-    "compete_desc": "Speel tegen je vrienden.\nReal-time: tot 5 min\nBeurt-gebaseerd: tot 14 dagen",
-    "daily_desc": "Elke dag een nieuwe uitdaging.\nDezelfde events voor iedereen.\nBeklim de ranglijst.",
-    "levelup_desc": "Versla levels en verdien XP.\nProgressieve moeilijkheid van 1 tot 100.\nOntgrendel nieuwe uitdagingen.",
-    "practice_desc": "Slijp je vaardigheden solo.\nAangepaste timer en jaarbereik.\nOnbeperkte oefenspellen."
+    "compete_desc": "Speel tegen je vrienden.\nReal-time of beurt-gebaseerd.",
+    "daily_desc": "Elke dag een nieuwe wedstrijd,\nDezelfde events voor iedereen.",
+    "levelup_desc": "Progressieve moeilijkheid\nBeklim de ranglijst.",
+    "practice_desc": "Slijp je vaardigheden solo\nOnbeperkte aangepaste spellen."
   },
   "common": {
     "next_round": "Volgende ronde",
@@ -562,6 +562,7 @@
     "countries": "Landen"
   },
   "account": {
+    "title": "Account",
     "username": "Gebruikersnaam",
     "email": "E-mail",
     "member_since": "Lid sinds",
@@ -569,7 +570,10 @@
     "save": "Opslaan",
     "saved": "✓ Opgeslagen",
     "err_save_failed": "Opslaan mislukt. Probeer opnieuw.",
-    "sign_out_failed": "Uitloggen mislukt"
+    "sign_out_failed": "Uitloggen mislukt",
+    "settings": "Instellingen",
+    "sound": "Geluid",
+    "vibrate": "Trillen"
   },
   "avatar_picker": {
     "title": "Kies avatar",

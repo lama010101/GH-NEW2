@@ -13,7 +13,7 @@
   padding: 7px 12px;
   cursor: pointer;
   color: var(--gh-modal-text-primary);
-  font-size: var(--font-2xs, 13px);
+  font-size: var(--font-sm);
   font-weight: 600;
   transition: background 0.15s, border-color 0.15s;
   width: 100%;
@@ -95,7 +95,7 @@
   background: transparent;
   cursor: pointer;
   color: var(--gh-modal-text-primary);
-  font-size: var(--font-2xs);
+  font-size: var(--font-sm);
   font-weight: 500;
   text-align: left;
   transition: background 0.12s;

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
+import { ImageButton } from "@/components/shared/ImageButton";
+import { useEraRegionImages, ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import lobbyStyles from "@/components/compete/LobbySection.module.css";
 import modalStyles from "./PracticeSettingsModal.module.css";
 
@@ -15,23 +17,23 @@ export type PracticeModalSettings = {
 };
 
 type EraId = "ancient" | "medieval" | "earlymodern" | "modern" | "contemporary";
-const ERAS: { id: EraId; label: string; span: string; icon: string; yearMin: number; yearMax: number }[] = [
-  { id: "ancient",      label: "Ancient",       span: "-3000 – 476",  icon: "🏛️", yearMin: -3000, yearMax: 476  },
-  { id: "medieval",     label: "Medieval",      span: "476 – 1492",   icon: "⚔️", yearMin: 476,   yearMax: 1492 },
-  { id: "earlymodern",  label: "Early Modern",  span: "1492 – 1789",  icon: "⛵", yearMin: 1492,  yearMax: 1789 },
-  { id: "modern",       label: "Modern",        span: "1789 – 1945",  icon: "🏭", yearMin: 1789,  yearMax: 1945 },
-  { id: "contemporary", label: "Contemporary",  span: "1945 – 2025",  icon: "🚀", yearMin: 1945,  yearMax: new Date().getFullYear() },
+const ERAS: { id: EraId; label: string; span: string; icon: string; stockImg: string; yearMin: number; yearMax: number }[] = [
+  { id: "ancient",      label: "Ancient",       span: "-3000 – 476",  icon: "🏛️", stockImg: ERA_STOCK_IMAGES.ancient,      yearMin: -3000, yearMax: 476  },
+  { id: "medieval",     label: "Medieval",      span: "476 – 1492",   icon: "⚔️", stockImg: ERA_STOCK_IMAGES.medieval,     yearMin: 476,   yearMax: 1492 },
+  { id: "earlymodern",  label: "Early Modern",  span: "1492 – 1789",  icon: "⛵", stockImg: ERA_STOCK_IMAGES.earlymodern,  yearMin: 1492,  yearMax: 1789 },
+  { id: "modern",       label: "Modern",        span: "1789 – 1945",  icon: "🏭", stockImg: ERA_STOCK_IMAGES.modern,       yearMin: 1789,  yearMax: 1945 },
+  { id: "contemporary", label: "Contemporary",  span: "1945 – 2025",  icon: "🚀", stockImg: ERA_STOCK_IMAGES.contemporary,  yearMin: 1945,  yearMax: new Date().getFullYear() },
 ];
 const ALL_ERA_IDS = ERAS.map(e => e.id);
 
 type RegionId = 'africa' | 'asia' | 'europe' | 'north_america' | 'oceania_antarctica' | 'south_america';
-const REGIONS: { id: RegionId; label: string; icon: string; continents: string[] }[] = [
-  { id: 'africa',             label: 'Africa',                icon: '🌍', continents: ['Africa'] },
-  { id: 'asia',               label: 'Asia',                  icon: '🏯', continents: ['Asia'] },
-  { id: 'europe',             label: 'Europe',                icon: '🏰', continents: ['Europe'] },
-  { id: 'north_america',      label: 'North America',         icon: '🗽', continents: ['North America'] },
-  { id: 'oceania_antarctica', label: 'Oceania & Antarctica',  icon: '🏝️', continents: ['Oceania', 'Antarctica'] },
-  { id: 'south_america',      label: 'South America',         icon: '🦜', continents: ['South America'] },
+const REGIONS: { id: RegionId; label: string; icon: string; stockImg: string; continents: string[] }[] = [
+  { id: 'africa',             label: 'Africa',                icon: '🌍', stockImg: REGION_STOCK_IMAGES.africa,             continents: ['Africa'] },
+  { id: 'asia',               label: 'Asia',                  icon: '🏯', stockImg: REGION_STOCK_IMAGES.asia,               continents: ['Asia'] },
+  { id: 'europe',             label: 'Europe',                icon: '🏰', stockImg: REGION_STOCK_IMAGES.europe,             continents: ['Europe'] },
+  { id: 'north_america',      label: 'North America',         icon: '🗽', stockImg: REGION_STOCK_IMAGES.north_america,      continents: ['North America'] },
+  { id: 'oceania_antarctica', label: 'Oceania & Antarctica',  icon: '🏝️', stockImg: REGION_STOCK_IMAGES.oceania_antarctica, continents: ['Oceania', 'Antarctica'] },
+  { id: 'south_america',      label: 'South America',         icon: '🦜', stockImg: REGION_STOCK_IMAGES.south_america,      continents: ['South America'] },
 ];
 const ALL_REGION_IDS = REGIONS.map(r => r.id);
 
@@ -81,6 +83,8 @@ export function PracticeSettingsModal({
 }: PracticeSettingsModalProps) {
   const t = useTranslations();
   const tGame = useTranslations("game");
+
+  const { dbImages } = useEraRegionImages();
 
   const [sliderValue, setSliderValue] = useState<number>(
     typeof initialSettings?.roundTimerSec === "number" ? initialSettings.roundTimerSec : 0
@@ -282,18 +286,25 @@ export function PracticeSettingsModal({
               {ERAS.map(era => {
                 const on = selectedEras.has(era.id);
                 return (
-                  <button
+                  <ImageButton
                     key={era.id}
-                    data-era={era.id}
-                    type="button"
-                    className={`${lobbyStyles["lobbyEraBtn"]} ${on ? lobbyStyles["lobbyEraBtnOn"] : lobbyStyles["lobbyEraBtnOff"]}`}
+                    label={tGame(`era_${era.id}` as string)}
+                    sublabel={era.span}
+                    dbUrl={dbImages?.eras[era.id]}
+                    stockImg={era.stockImg}
+                    emoji={era.icon}
+                    selected={on}
                     onClick={() => toggleEra(era.id)}
-                    aria-pressed={on}
-                  >
-                    <span className={lobbyStyles["lobbyEraLabel"]}>{tGame(`era_${era.id}` as string)}</span>
-                    <span className={lobbyStyles["lobbyEraIcon"]}>{era.icon}</span>
-                    <span className={lobbyStyles["lobbyEraSpan"]}>{era.span}</span>
-                  </button>
+                    className={lobbyStyles["lobbyImgBtn"]}
+                    onClassName={lobbyStyles["lobbyImgBtnOn"]}
+                    offClassName={lobbyStyles["lobbyImgBtnOff"]}
+                    imgClassName={lobbyStyles["lobbyImgPhoto"]}
+                    overlayClassName={lobbyStyles["lobbyImgOverlay"]}
+                    fallbackClassName={lobbyStyles["lobbyImgFallback"]}
+                    captionClassName={lobbyStyles["lobbyImgCaption"]}
+                    labelClassName={lobbyStyles["lobbyImgLabel"]}
+                    sublabelClassName={lobbyStyles["lobbyImgSpan"]}
+                  />
                 );
               })}
             </div>
@@ -311,18 +322,25 @@ export function PracticeSettingsModal({
               {visibleRegions.map(region => {
                 const on = selectedRegions.has(region.id);
                 return (
-                  <button
+                  <ImageButton
                     key={region.id}
-                    data-era={region.id}
-                    type="button"
-                    className={`${lobbyStyles["lobbyEraBtn"]} ${on ? lobbyStyles["lobbyEraBtnOn"] : lobbyStyles["lobbyEraBtnOff"]}`}
-                    onClick={() => toggleRegion(region.id)}
+                    label={tGame(`region_${region.id}` as string)}
+                    dbUrl={dbImages?.regions[region.id]}
+                    stockImg={region.stockImg}
+                    emoji={region.icon}
+                    selected={on}
                     disabled={busy}
-                    aria-pressed={on}
-                  >
-                    <span className={lobbyStyles["lobbyEraLabel"]}>{tGame(`region_${region.id}` as string)}</span>
-                    <span className={lobbyStyles["lobbyEraIcon"]}>{region.icon}</span>
-                  </button>
+                    onClick={() => toggleRegion(region.id)}
+                    className={lobbyStyles["lobbyImgBtn"]}
+                    onClassName={lobbyStyles["lobbyImgBtnOn"]}
+                    offClassName={lobbyStyles["lobbyImgBtnOff"]}
+                    imgClassName={lobbyStyles["lobbyImgPhoto"]}
+                    overlayClassName={lobbyStyles["lobbyImgOverlay"]}
+                    fallbackClassName={lobbyStyles["lobbyImgFallback"]}
+                    captionClassName={lobbyStyles["lobbyImgCaption"]}
+                    labelClassName={lobbyStyles["lobbyImgLabel"]}
+                    sublabelClassName={lobbyStyles["lobbyImgSpan"]}
+                  />
                 );
               })}
             </div>

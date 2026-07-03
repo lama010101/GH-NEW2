@@ -172,10 +172,10 @@
     "compete_create_game": "CRÉER",
     "tagline": "Où et quand cela s'est-il passé ?",
     "daily_new_challenge": "Nouveau défi dans",
-    "compete_desc": "Jouez contre vos amis.\nTemps réel : Jusqu'à 5 min\nTour par tour : Jusqu'à 14 jours",
-    "daily_desc": "Un nouveau défi chaque jour.\nMêmes événements pour tous.\nGrimpez au classement.",
-    "levelup_desc": "Battez des niveaux et gagnez des XP.\nDifficulté progressive de 1 à 100.\nDébloquez de nouveaux défis.",
-    "practice_desc": "Perfectionnez-vous en solo.\nMinuteur et plage d'années personnalisés.\nParties illimitées."
+    "compete_desc": "Jouez contre vos amis.\nTemps réel ou par tour.",
+    "daily_desc": "Une nouvelle compétition chaque jour,\nLes mêmes événements pour tous.",
+    "levelup_desc": "Difficulté progressive\nGrimpez au classement.",
+    "practice_desc": "Perfectionnez-vous en solo\nParties personnalisées illimitées."
   },
   "common": {
     "next_round": "Manche suivante",
@@ -562,6 +562,7 @@
     "countries": "Pays"
   },
   "account": {
+    "title": "Compte",
     "username": "Nom d'utilisateur",
     "email": "E-mail",
     "member_since": "Membre depuis",
@@ -569,7 +570,10 @@
     "save": "Enregistrer",
     "saved": "✓ Enregistré",
     "err_save_failed": "Échec de l'enregistrement. Réessayez.",
-    "sign_out_failed": "Échec de la déconnexion"
+    "sign_out_failed": "Échec de la déconnexion",
+    "settings": "Paramètres",
+    "sound": "Son",
+    "vibrate": "Vibration"
   },
   "avatar_picker": {
     "title": "Choisir un avatar",
