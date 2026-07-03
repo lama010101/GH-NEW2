@@ -90,7 +90,7 @@ type TransactionCapablePool = DbExecutor & { connect(): Promise<DbTransactionCli
 // Exactly matches public.sessions columns (spec DDL, Section 3.3)
 export type SessionRow = {
   game_id: string;
-  mode: "practice" | "sync" | "async";
+  mode: "practice" | "sync" | "async" | "daily";
   round_timer_sec: number;
   total_rounds: number;
   year_min: number;
@@ -2196,6 +2196,114 @@ export async function completeRound(input: {
   return snapshot;
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// DAILY MODE — Game-end transaction (DAILY_MODE_SPEC.md §8)
+// Runs inside the caller's transaction (passed DbTransactionClient).
+// All-or-nothing. Uses challengeDate from daily_attempts (fixes C1 — not now()).
+// Steps 4–6 + streak (§9) are NO-OP stubs: "BLOCKED: stats tables missing" (R3).
+// ═════════════════════════════════════════════════════════════════════════════
+async function dailyGameEndTransaction(
+  client: DbTransactionClient,
+  gameId: string,
+  challengeDate: string
+): Promise<void> {
+  // Fetch round_results for this game (solo — one player)
+  const roundResults = await client.query<{
+    player_id: string;
+    location_score: number;
+    time_score: number;
+  }>(
+    `SELECT player_id, location_score, time_score
+     FROM round_results
+     WHERE game_id = $1`,
+    [gameId]
+  );
+
+  if (roundResults.rows.length === 0) {
+    console.error(`[dailyGameEndTransaction] No round_results for gameId=${gameId}`);
+    throw new Error(`No round_results found for daily game ${gameId}`);
+  }
+
+  // Group by player_id (solo — exactly one, but follow the existing pattern)
+  const playerMap = new Map<string, { total_xp: number; accuracy_sum: number; round_count: number }>();
+  for (const row of roundResults.rows) {
+    const xp = row.location_score + row.time_score;
+    const accuracy = (row.location_score + row.time_score) / 2;
+    const entry = playerMap.get(row.player_id) ?? { total_xp: 0, accuracy_sum: 0, round_count: 0 };
+    entry.total_xp += xp;
+    entry.accuracy_sum += accuracy;
+    entry.round_count += 1;
+    playerMap.set(row.player_id, entry);
+  }
+
+  for (const [playerId, data] of playerMap.entries()) {
+    if (data.round_count === 0) continue;
+    const avgAccuracy = data.accuracy_sum / data.round_count;
+    const totalXp = Math.min(data.total_xp, 1000);
+
+    // Step 1: leaderboard_daily INSERT (date=challengeDate) ON CONFLICT DO NOTHING
+    const insertResult = await client.query(
+      `INSERT INTO leaderboard_daily (date, player_id, avg_accuracy, total_xp, completed_at)
+       VALUES ($1, $2, $3, $4, now())
+       ON CONFLICT (date, player_id) DO NOTHING`,
+      [challengeDate, playerId, avgAccuracy, totalXp]
+    );
+
+    // Step 2: IF rows_inserted = 1 → leaderboard_daily_alltime UPSERT
+    if (((insertResult as unknown as { rowCount: number | null }).rowCount ?? 0) === 1) {
+      await client.query(
+        `INSERT INTO leaderboard_daily_alltime (player_id, games_played, avg_accuracy, total_xp, updated_at)
+         VALUES ($1, 1, $2, $3, now())
+         ON CONFLICT (player_id) DO UPDATE SET
+           avg_accuracy = (leaderboard_daily_alltime.avg_accuracy * leaderboard_daily_alltime.games_played + EXCLUDED.avg_accuracy) / (leaderboard_daily_alltime.games_played + 1),
+           total_xp     = leaderboard_daily_alltime.total_xp + EXCLUDED.total_xp,
+           games_played = leaderboard_daily_alltime.games_played + 1,
+           updated_at   = now()`,
+        [playerId, avgAccuracy, totalXp]
+      );
+    }
+
+    // Step 3: player_global_stats UPSERT (existing columns only — table LOCKED)
+    const existing = await client.query<{ rounds_played: number; avg_accuracy: number }>(
+      `SELECT rounds_played, avg_accuracy FROM player_global_stats WHERE player_id = $1`,
+      [playerId]
+    );
+    const existingRounds = existing.rows[0]?.rounds_played ?? 0;
+    const existingAvg = existing.rows[0]?.avg_accuracy ?? 0;
+    let runningAvg = existingAvg;
+    let runningCount = existingRounds;
+    for (let i = 0; i < data.round_count; i++) {
+      const roundAcc = data.accuracy_sum / data.round_count;
+      runningAvg = (runningAvg * runningCount + roundAcc) / (runningCount + 1);
+      runningCount += 1;
+    }
+    await client.query(
+      `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, updated_at)
+       VALUES ($1, $2, 1, $3, $4, now())
+       ON CONFLICT (player_id) DO UPDATE SET
+         avg_accuracy = $3,
+         total_xp = player_global_stats.total_xp + $4,
+         rounds_played = $2,
+         games_played = player_global_stats.games_played + 1,
+         updated_at = now()`,
+      [playerId, runningCount, runningAvg, data.total_xp]
+    );
+
+    // Steps 4–6 + §9 streak: BLOCKED — stats tables do not exist yet (R3 ruling)
+    console.log("[dailyGameEndTransaction] BLOCKED: stats tables missing — player_progression_stats, player_accuracy_history, player_era_stats (steps 4–6, §9 streak) skipped for gameId=" + gameId);
+
+    // Step 7: Badge aggregates — evaluated per round, aggregated here, never
+    // persisted standalone. No standalone write needed (badges are derived).
+
+    // Step 8: daily_attempts.status = 'completed', completed_at = now()
+    await client.query(
+      `UPDATE daily_attempts SET status = 'completed', completed_at = now()
+       WHERE game_id = $1`,
+      [gameId]
+    );
+  }
+}
+
 async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync" | "async"): Promise<void> {
   try {
     // Fetch all round_results for this game
@@ -2570,6 +2678,18 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     );
     compareTransitionEvents("advanceRound", existingEvents, transitionResult.events);
 
+    // DAILY MODE: run game-end transaction INSIDE this transaction (§8)
+    // before COMMIT. Uses challengeDate from daily_attempts (fixes C1).
+    if (session.mode === "daily" && (nextRoundIndex >= session.total_rounds || sessionCompletedEarly)) {
+      const dailyAttempt = await client.query<{ date: string }>(
+        `SELECT date::text FROM daily_attempts WHERE game_id = $1`,
+        [gameId]
+      );
+      if (dailyAttempt.rows.length > 0) {
+        await dailyGameEndTransaction(client, gameId, dailyAttempt.rows[0].date);
+      }
+    }
+
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -2580,13 +2700,16 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 
   // Fire-and-forget: update stats and leaderboards after SESSION_COMPLETE
   // (either last round completed or early closure per §6)
+  // DAILY mode: handled transactionally above — skip fire-and-forget for daily
   if (nextRoundIndex >= session!.total_rounds || sessionCompletedEarly) {
-    updatePlayerGlobalStats(gameId, session!.mode).catch((err) =>
-      console.error('[advanceRound] updatePlayerGlobalStats fire-and-forget error:', err)
-    );
-    updateLeaderboardDaily(gameId, session!.mode).catch((err) =>
-      console.error('[advanceRound] updateLeaderboardDaily fire-and-forget error:', err)
-    );
+    if (session!.mode !== "daily") {
+      updatePlayerGlobalStats(gameId, session!.mode as "practice" | "sync" | "async").catch((err) =>
+        console.error('[advanceRound] updatePlayerGlobalStats fire-and-forget error:', err)
+      );
+      updateLeaderboardDaily(gameId, session!.mode).catch((err) =>
+        console.error('[advanceRound] updateLeaderboardDaily fire-and-forget error:', err)
+      );
+    }
     updateLeaderboardLevelUp(gameId, session!.mode).catch((err) =>
       console.error('[advanceRound] updateLeaderboardLevelUp fire-and-forget error:', err)
     );
