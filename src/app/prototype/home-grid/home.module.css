@@ -224,12 +224,22 @@
   padding: 4px 8px 0;
 }
 
-/* ── Mode cards stack ── */
+/* ── Mode cards stack (grid layout: compete full width, then 2-col grid) ── */
 .cardsStack {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   width: 100%;
+}
+
+/* Compete card spans full width (row 1) */
+.cardsStack > .modeCard:first-child {
+  grid-column: 1 / -1;
+}
+
+/* Practice card spans full width (row 3) */
+.cardsStack > .modeCard:last-child {
+  grid-column: 1 / -1;
 }
 
 .modeCard {
@@ -245,59 +255,119 @@
   min-height: 150px;
 }
 
-/* ── Combined icon + play button (non-compete cards) ──
-   One single <button> that contains BOTH the icon image (as a watermark
-   background) and the play circle centered on top. The whole block sits
-   in the trailing part of the card (right in LTR, left in RTL) and is
-   vertically centered. Because icon + play are one element, they move
-   together as one block. Kept narrow (~42%) so the text side gets ~66%
-   of the card width — enough for 2-line descriptions in all languages. */
-.cardIconPlay {
-  position: absolute;
-  top: 50%;
-  inset-inline-end: 0;
-  transform: translateY(-50%);
-  width: 42%;
-  height: 100%;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  z-index: 4;
+/* ── Non-compete card: compact vertical card (icon-top, centered) ── */
+.cardInnerVertical {
+  position: relative;
+  z-index: 3;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 180px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* Icon at top center (56x56px in a semi-transparent circle) */
+.cardIconCircle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.15s;
 }
 
-.cardIconPlayImg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+.cardIconCircle:hover {
+  background: rgba(255, 255, 255, 0.30);
+  transform: scale(1.06);
+}
+
+.cardIconCircleImg {
+  width: 32px;
+  height: 32px;
   object-fit: contain;
-  object-position: center;
-  opacity: 0.6;
-  mix-blend-mode: screen;
-  /* Fade the icon on the text side so it blends into the gradient */
-  -webkit-mask-image: linear-gradient(
-    to left,
-    rgba(0, 0, 0, 1) 65%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  mask-image: linear-gradient(
-    to left,
-    rgba(0, 0, 0, 1) 65%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  pointer-events: none;
 }
 
+/* Title below the icon (centered) */
+.cardTitleCenter {
+  font-size: var(--font-xl);
+  font-weight: 800;
+  color: var(--gh-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  line-height: 1;
+}
+
+/* Description below the title (centered, 2-line clamp) */
+.cardDescCenter {
+  font-size: var(--font-xs);
+  font-weight: 400;
+  color: var(--gh-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Daily timer box (centered, below description) */
+.timerBoxCenter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  padding: 5px 10px;
+  width: fit-content;
+}
+
+/* Small "PLAY" pill button at the bottom center */
+.playPill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--gh-text-primary);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: var(--gh-radius-pill);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-top: auto;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.playPill:hover {
+  background: rgba(255, 255, 255, 0.36);
+  transform: scale(1.04);
+}
+
+.playPill:active {
+  transform: scale(0.96);
+}
+
+.playPill svg {
+  margin-inline-start: 1px;
+}
+
+/* ── Compete card inner (full-width content) ── */
 .cardInner {
   position: relative;
   z-index: 3;
   padding: 20px;
-  padding-inline-end: 34%; /* keep text clear of the icon+play area */
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -313,14 +383,13 @@
 
 /* ── Compete card decorative icon (background watermark, top-right) ──
    Purely decorative — sits behind the content (z-index 1), no padding
-   is reserved for it so the content uses the full card width.
-   Sized to match the other mode icons (.cardIconPlay: 42% × 100%). */
+   is reserved for it so the content uses the full card width. */
 .competeIconBg {
   position: absolute;
   top: 0;
   inset-inline-end: 0;
-  width: 42%;
-  height: 100%;
+  width: 90px;
+  height: 90px;
   pointer-events: none;
   z-index: 1;
   overflow: hidden;
@@ -330,19 +399,9 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: center;
-  opacity: 0.6;
+  object-position: top right;
+  opacity: 0.4;
   mix-blend-mode: screen;
-  -webkit-mask-image: linear-gradient(
-    to left,
-    rgba(0, 0, 0, 1) 65%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  mask-image: linear-gradient(
-    to left,
-    rgba(0, 0, 0, 1) 65%,
-    rgba(0, 0, 0, 0) 100%
-  );
 }
 
 .cardHeader {
@@ -403,36 +462,6 @@
 
 .timerCountdown {
   color: var(--gh-orange);
-}
-
-/* ── Play circle (inside the combined icon+play button) ──
-   Centered on top of the icon image via flexbox on .cardIconPlay. */
-.cardPlayInner {
-  position: relative;
-  z-index: 2;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  transition: background 0.15s, transform 0.15s;
-}
-
-.cardIconPlay:hover .cardPlayInner {
-  background: rgba(255, 255, 255, 0.36);
-  transform: scale(1.06);
-}
-
-.cardIconPlay:active .cardPlayInner {
-  transform: scale(0.96);
-}
-
-.cardPlayInner svg {
-  margin-inline-start: 3px;
 }
 
 /* ── Compete card: sub-panel + tab bar + game rows (mirrors prod CompetePanel) ── */
@@ -704,75 +733,31 @@
     max-width: 960px;
   }
 
+  /* On desktop, keep the 2-column grid but wider */
   .cardsStack {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    grid-template-rows: auto;
     gap: 16px;
-    align-items: start;
   }
-
-  .cardsStack > .modeCard:nth-child(1) {
-    grid-column: 1;
-    grid-row: 1 / 4;
-  }
-
-  .cardsStack > .modeCard:nth-child(2) {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .cardsStack > .modeCard:nth-child(3) {
-    grid-column: 2;
-    grid-row: 2;
-  }
-
-  .cardsStack > .modeCard:nth-child(4) {
-    grid-column: 2;
-    grid-row: 3;
-  }
-
-  /* The first (compete) card is taller and has no icon — its content
-     already uses .cardInnerFull (full width). No icon overrides needed. */
 }
 
 @media (max-width: 380px) {
-  .cardIconPlay {
-    width: 48%;
+  .cardsStack {
+    grid-template-columns: 1fr;
   }
 
-  .cardInner {
-    padding-inline-end: 40%;
-  }
-
-  .cardPlayInner {
-    width: 54px;
-    height: 54px;
+  .cardsStack > .modeCard {
+    grid-column: 1 / -1;
   }
 }
 
 /* ============================================================================
    RTL — Arabic (dir="rtl" set on <main>)
    The logical properties (inset-inline-end, padding-inline-end) already
-   flip automatically. These overrides handle the cases that CANNOT use
-   logical properties: the icon image mask-image gradient direction
-   (physical in CSS).
+   flip automatically. No physical-property overrides needed.
    ============================================================================ */
-[dir="rtl"] .cardIconPlayImg {
-  -webkit-mask-image: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 1) 65%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 1) 65%,
-    rgba(0, 0, 0, 0) 100%
-  );
-}
 
 /* Arabic title font: drop Bebas Neue + uppercase (no Arabic glyphs there) */
-[dir="rtl"] .cardTitle {
+[dir="rtl"] .cardTitle,
+[dir="rtl"] .cardTitleCenter {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-transform: none;
   letter-spacing: 0;
@@ -780,16 +765,7 @@
 
 /* Compete icon mirrors to top-left in RTL */
 [dir="rtl"] .competeIconBgImg {
-  -webkit-mask-image: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 1) 65%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 1) 65%,
-    rgba(0, 0, 0, 0) 100%
-  );
+  object-position: top left;
 }
 
 /* ============================================================================

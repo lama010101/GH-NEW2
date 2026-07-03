@@ -1,21 +1,22 @@
 "use client";
 
 // ============================================================================
-// STANDALONE PROTOTYPE — Home page (icon-in-background variant, i18n + RTL)
-// Route: /prototype/home-icon-bg   (direct access, fully self-contained)
+// STANDALONE PROTOTYPE — Home page (list variant B, i18n + RTL)
+// Route: /prototype/home-list   (direct access, fully self-contained)
 //
-// Variant of the home page mode cards where:
-//   1. The mode icon is embedded INSIDE the card background at the top-right
-//      corner, covering the right part of the card (large watermark style,
-//      blended into the gradient with a left-fade mask). In RTL (ar) the
-//      icon mirrors to the top-LEFT corner.
-//   2. The Play button (for non-compete cards: daily / levelup / practice)
-//      sits at the CENTER of the right half of the card (left half in RTL),
-//      vertically centered.
+// Variant B of the home page mode cards where:
+//   1. The compete card spans full width on top and contains the same
+//      CompetePanel (3-tab mini-card + JOIN GAME / CREATE GAME buttons) as
+//      the first prototype. A decorative mode icon watermark sits in the
+//      top-right corner (top-left in RTL).
+//   2. The 3 non-compete cards (daily / levelup / practice) are wide
+//      horizontal cards: icon thumbnail on the LEFT (48x48px rounded
+//      square), title + description in the MIDDLE (left-aligned, 2-line
+//      clamp), and a small "PLAY" pill button on the RIGHT. The daily card
+//      also has a timer box below the description.
 //   3. A language selector at the top lets you switch between all 11 prod
 //      locales (en, fr, es, de, it, pt, nl, ru, ja, zh, ar). Arabic (ar)
-//      flips the whole UI to right-to-left (dir="rtl") and mirrors the
-//      icon / play-button placement.
+//      flips the whole UI to right-to-left (dir="rtl").
 //   4. The compete card mirrors prod CompetePanel: JOIN GAME (outline,
 //      toggles a join-code input) + CREATE GAME (solid).
 //
@@ -23,7 +24,8 @@
 // (home.*_desc, home.*_name, home.tagline, home.compete_*). No app imports.
 // ============================================================================
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import styles from "./home.module.css";
 
 // ── Inline icons (mirror prod CompetePanel PeopleIcon / PlusIcon) ──
@@ -762,104 +764,184 @@ function CompetePanel({ s }: { s: Strings }) {
   );
 }
 
-// ── Mode card ──
+// ── Mode card (grid variant C) ──
+// Compete card: full-width, horizontal layout with CompetePanel inside.
+// Non-compete cards: compact vertical cards (icon top center, title, desc,
+// optional timer, PLAY pill at bottom).
 function ModeCard({ mode, s, rtl }: { mode: Mode; s: Strings; rtl: boolean }) {
   const countdown = useDailyCountdown();
   const gradient = MODE_GRADIENT[mode];
   const title = modeTitle(mode, s);
   const desc = modeDesc(mode, s);
   const iconSrc = MODE_ICON[mode];
-  const hasPlay = mode !== "compete";
+  const isCompete = mode === "compete";
 
-  return (
-    <div className={styles.modeCard}>
-      <div className={styles.cardBg} style={{ background: gradient }}>
-        {/* Compete card: mode icon as a background watermark (top-right
-            corner) — purely decorative, does NOT affect content layout.
-            Non-compete cards: combined icon + play button (one block)
-            sitting in the trailing half, vertically centered. */}
-        {mode === "compete" && (
-          <div className={styles.competeIconBg} aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={iconSrc}
-              alt=""
-              className={styles.competeIconBgImg}
-              draggable={false}
-            />
-          </div>
-        )}
+  if (isCompete) {
+    return (
+      <div className={styles.modeCard}>
+        <div className={styles.cardBg} style={{ background: gradient }}>
+          <div className={styles.cardInnerHorizontal}>
+            {/* Icon thumbnail on the LEFT (same 96x96 as other cards) */}
+            <div className={styles.cardIconThumb} aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={iconSrc}
+                alt=""
+                className={styles.cardIconThumbImg}
+                draggable={false}
+              />
+            </div>
 
-        {hasPlay && (
-          <button
-            type="button"
-            aria-label={`Play ${title}`}
-            className={styles.cardIconPlay}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={iconSrc}
-              alt=""
-              className={styles.cardIconPlayImg}
-              draggable={false}
-            />
-            <span className={styles.cardPlayInner}>
-              {/* In RTL the play triangle should point left */}
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                {rtl ? (
-                  <path d="M16 5v14L5 12z" fill="currentColor" />
-                ) : (
-                  <path d="M8 5v14l11-7z" fill="currentColor" />
-                )}
-              </svg>
-            </span>
-          </button>
-        )}
-
-        <div
-          className={`${styles.cardInner} ${
-            mode === "compete" ? styles.cardInnerFull : ""
-          }`}
-        >
-          <div className={styles.cardHeader}>
-            <div className={styles.cardTitleSection}>
-              <h2 className={styles.cardTitle}>{title}</h2>
-              <div className={styles.cardDescWrap}>
-                <p className={styles.cardDesc}>
-                  {desc.split("\n").map((line, i) => (
-                    <span key={i}>
-                      {line}
-                      {i < desc.split("\n").length - 1 && <br />}
-                    </span>
-                  ))}
-                </p>
-              </div>
+            {/* Title + description in the MIDDLE (same as other cards) */}
+            <div className={styles.cardTextCol}>
+              <h2 className={styles.cardTitleLeft}>{title}</h2>
+              <p className={styles.cardDescLeft}>
+                {desc.split("\n").map((line, i) => (
+                  <span key={i}>
+                    {line}
+                    {i < desc.split("\n").length - 1 && <br />}
+                  </span>
+                ))}
+              </p>
             </div>
           </div>
-
-          {mode === "daily" && (
-            <div className={styles.timerBox}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" />
-                <path
-                  d="M12 7v5l3 3"
-                  stroke="rgba(255,255,255,0.6)"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className={styles.timerLabel}>
-                {s.new_challenge} <span className={styles.timerCountdown}>{countdown}</span>
-              </span>
-            </div>
-          )}
 
           {/* Compete card: full panel mirroring prod CompetePanel
               (tabs + content + join code + CTA row) */}
-          {mode === "compete" && <CompetePanel s={s} />}
+          <div className={styles.competePanelWrap}>
+            <CompetePanel s={s} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Non-compete card: wide horizontal card (icon-left, text-middle, play-right)
+  return (
+    <div className={styles.modeCard}>
+      <div className={styles.cardBg} style={{ background: gradient }}>
+        <div className={styles.cardInnerHorizontal}>
+          {/* Icon thumbnail on the LEFT (48x48px rounded square) */}
+          <div className={styles.cardIconThumb} aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={iconSrc}
+              alt=""
+              className={styles.cardIconThumbImg}
+              draggable={false}
+            />
+          </div>
+
+          {/* Title + description in the MIDDLE (left-aligned) */}
+          <div className={styles.cardTextCol}>
+            <h2 className={styles.cardTitleLeft}>{title}</h2>
+            <p className={styles.cardDescLeft}>
+              {desc.split("\n").map((line, i) => (
+                <span key={i}>
+                  {line}
+                  {i < desc.split("\n").length - 1 && <br />}
+                </span>
+              ))}
+            </p>
+
+            {/* Daily card: timer box below the description */}
+            {mode === "daily" && (
+              <div className={styles.timerBoxLeft}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" />
+                  <path
+                    d="M12 7v5l3 3"
+                    stroke="rgba(255,255,255,0.6)"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className={styles.timerLabel}>
+                  {s.new_challenge} <span className={styles.timerCountdown}>{countdown}</span>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Small "PLAY" pill button on the RIGHT */}
+          <button type="button" className={styles.playPill} aria-label={`Play ${title}`}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              {rtl ? (
+                <path d="M16 5v14L5 12z" fill="currentColor" />
+              ) : (
+                <path d="M8 5v14l11-7z" fill="currentColor" />
+              )}
+            </svg>
+            {s.compete_play}
+          </button>
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Dan Pips rank card (from /prototype/rank-card-concepts Alt 3) ──
+const RANK_A3 = {
+  title: "Voyager",
+  totalXp: 32_500,
+  xpToNext: 17_500,
+  mainPct: 42,
+  nextTitle: "Explorer",
+  whereDan: 6,
+  whenDan: 3,
+  danMax: 10,
+};
+
+function DanPipsCard() {
+  const [open, setOpen] = useState(true);
+  const fmtR = (n: number) => n.toLocaleString();
+  return (
+    <section className={styles.rankCard} onClick={() => setOpen((v) => !v)} role="button" tabIndex={0}>
+      <div className={styles.rankMain}>
+        <div className={styles.rankMedallion}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/era-region/africa.jpg" alt="Voyager" className={styles.rankMedImg} draggable={false} />
+        </div>
+        <div className={styles.rankBody}>
+          <div className={styles.rankHead}>
+            <h3 className={styles.rankTitle}>{RANK_A3.title}</h3>
+            <span className={styles.rankXp}>{fmtR(RANK_A3.totalXp)}<i>XP</i></span>
+          </div>
+          <div className={styles.rankNextLine}>
+            <span className={styles.rankNextLabel}>Next</span>
+            <span className={styles.rankNextTitle}>{fmtR(RANK_A3.xpToNext)} XP to {RANK_A3.nextTitle}</span>
+          </div>
+          <div className={styles.rankBarMain}>
+            <span className={styles.rankBarFillMain} style={{ width: `${RANK_A3.mainPct}%` }} />
+          </div>
+          <div className={styles.rankExpandRow}>
+            <ChevronDown size={18} className={`${styles.rankChev} ${open ? styles.rankChevOpen : ""}`} />
+          </div>
+        </div>
+      </div>
+
+      <div className={`${styles.rankCollapse} ${open ? styles.rankCollapseOpen : styles.rankCollapseClosed}`}>
+        <div className={styles.rankDivider} />
+        <div className={styles.rankDanRow}>
+          <span className={`${styles.rankDot} ${styles.rankDotWhere}`} />
+          <span className={`${styles.rankSubLabel} ${styles.rankWhereClr}`}>WHERE</span>
+          <span className={styles.rankDanPips}>
+            {Array.from({ length: RANK_A3.danMax }).map((_, i) => (
+              <span key={i} className={`${styles.rankDanPip} ${i < RANK_A3.whereDan ? `${styles.rankDanPipOn} ${styles.rankWherePipOn}` : ""}`} />
+            ))}
+          </span>
+        </div>
+        <div className={styles.rankDanRow}>
+          <span className={`${styles.rankDot} ${styles.rankDotWhen}`} />
+          <span className={`${styles.rankSubLabel} ${styles.rankWhenClr}`}>WHEN</span>
+          <span className={styles.rankDanPips}>
+            {Array.from({ length: RANK_A3.danMax }).map((_, i) => (
+              <span key={i} className={`${styles.rankDanPip} ${i < RANK_A3.whenDan ? `${styles.rankDanPipOn} ${styles.rankWhenPipOn}` : ""}`} />
+            ))}
+          </span>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -933,9 +1015,9 @@ export default function HomeIconBgPrototypePage() {
       <main className={styles.screen} dir={rtl ? "rtl" : "ltr"}>
         {/* Proto bar */}
         <div className={styles.protoBar}>
-          <span className={styles.protoTitle}>Home — Icon-in-BG Variant (A)</span>
+          <span className={styles.protoTitle}>Home — List Variant (B)</span>
           <div className={styles.protoLinks}>
-            <a href="/prototype/home-list" className={styles.protoLink}>B: List</a>
+            <a href="/prototype/home-icon-bg" className={styles.protoLink}>A: Icon BG</a>
             <a href="/prototype/home-grid" className={styles.protoLink}>C: Grid</a>
           </div>
           <span className={styles.protoHint}>Mock data · {rtl ? "RTL" : "LTR"}</span>
@@ -971,6 +1053,11 @@ export default function HomeIconBgPrototypePage() {
               <span className={styles.avatarInitials}>{PROFILE.initials}</span>
             </button>
           </div>
+        </div>
+
+        {/* Rank card (Dan Pips from /prototype/rank-card-concepts) */}
+        <div className={styles.rankCardWrap}>
+          <DanPipsCard />
         </div>
 
         {/* Scrollable content */}
