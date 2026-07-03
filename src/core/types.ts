@@ -9,7 +9,7 @@ export const TIMER_DISABLED = 0;
 export const HINT_TOTAL = 12;
 export const MAX_HINT_PENALTY = 1;
 
-export type SessionMode = "practice" | "sync" | "async";
+export type SessionMode = "practice" | "sync" | "async" | "daily";
 export type SessionStatus = "LOBBY" | "ROUND_ACTIVE" | "ROUND_COMPLETE" | "SESSION_COMPLETE";
 
 export type GamePhase =
