@@ -3,13 +3,14 @@
 import { DM_Sans } from 'next/font/google'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
 import { signOut } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
+import { LanguageDropdown } from '@/components/layout/LanguageDropdown'
 import { NavModal } from '@/components/NavModal'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
@@ -28,16 +29,10 @@ export default function AccountPage() {
   const t = useTranslations('account')
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
   const [displayName, setDisplayName] = useState<string>('')
-  const [savedName, setSavedName] = useState<string>('')
-  const [email, setEmail] = useState<string | null>(null)
-  const [createdAt, setCreatedAt] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [saveResult, setSaveResult] = useState<'idle' | 'success' | 'error'>('idle')
   const [avatarInfo, setAvatarInfo] = useState<AvatarInfo | null>(null)
   const [signOutError, setSignOutError] = useState<string | null>(null)
   const [showNavModal, setShowNavModal] = useState(false)
@@ -78,10 +73,6 @@ export default function AccountPage() {
         .select('display_name, avatar_url')
         .eq('id', playerId)
         .single()
-
-      const { data: { user: authUser } } = await supabaseBrowser.auth.getUser()
-      const userEmail = authUser?.email ?? null
-      const userCreatedAt = authUser?.created_at ?? null
 
       const { data: stats } = await supabaseBrowser
         .from('player_global_stats')
@@ -124,31 +115,10 @@ export default function AccountPage() {
       }
 
       setDisplayName(profile?.display_name ?? '')
-      setSavedName(profile?.display_name ?? '')
-      setEmail(userEmail)
-      setCreatedAt(userCreatedAt)
     }
 
     load().catch((err) => console.error('[account] load error:', err))
   }, [playerId, isLoading, router])
-
-  const handleSave = async () => {
-    if (!playerId || displayName.trim() === savedName.trim()) return
-    setSaving(true)
-    setSaveResult('idle')
-    const { error } = await supabaseBrowser
-      .from('profiles')
-      .update({ display_name: displayName.trim() })
-      .eq('id', playerId)
-    setSaving(false)
-    if (error) {
-      setSaveResult('error')
-    } else {
-      setSavedName(displayName.trim())
-      setSaveResult('success')
-      setTimeout(() => setSaveResult('idle'), 2500)
-    }
-  }
 
   const handleSignOut = async () => {
     setSignOutError(null)
@@ -165,13 +135,6 @@ export default function AccountPage() {
     const words = name.trim().split(/\s+/)
     return words.map(w => w[0]).join('').toUpperCase().slice(0, 2)
   }
-
-  const formatDate = (dateStr: string | null): string => {
-    if (!dateStr) return '—'
-    return new Date(dateStr).toLocaleDateString(locale === 'en' ? 'en-US' : locale, { month: 'long', day: 'numeric', year: 'numeric' })
-  }
-
-  const isSaveDisabled = displayName.trim() === savedName.trim() || saving
 
   return (
     <div className={`${dmSans.className} ${styles.page}`}>
@@ -195,85 +158,7 @@ export default function AccountPage() {
         <div className={styles.headerSpacer} />
       </div>
 
-      {/* Avatar card */}
-      {avatarInfo && (
-        <div className={styles.avatarSection}>
-          <div className={styles.card}>
-            {avatarInfo.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={avatarInfo.imageUrl}
-                alt={avatarInfo.name}
-                className={styles.avatarImg}
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-              />
-            ) : (
-              <div className={styles.avatarInitials}>
-                {getInitials(avatarInfo.name)}
-              </div>
-            )}
-            <div className={styles.avatarName}>{avatarInfo.name}</div>
-            {avatarInfo.description && (
-              <div className={styles.avatarDescription}>
-                {avatarInfo.description}
-              </div>
-            )}
-            {avatarInfo.bornLabel && (
-              <div className={styles.avatarMeta}>{avatarInfo.bornLabel}</div>
-            )}
-            {avatarInfo.diedLabel && (
-              <div className={styles.avatarMetaLast}>{avatarInfo.diedLabel}</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Settings card */}
-      <div className={styles.settingsSection}>
-        <div className={styles.settingsCard}>
-          {/* Row 1 — Display name */}
-          <div>
-            <div className={styles.fieldLabel}>{t('username')}</div>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className={styles.input}
-            />
-            <button
-              onClick={handleSave}
-              disabled={isSaveDisabled}
-              className={styles.saveBtn}
-              style={{
-                background: isSaveDisabled ? 'rgba(251,146,60,0.4)' : 'var(--gh-orange)',
-                cursor: isSaveDisabled ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {saving ? t('saving') : t('save')}
-            </button>
-            {saveResult === 'success' && (
-              <div className={styles.saveFeedbackSuccess}>{t('saved')}</div>
-            )}
-            {saveResult === 'error' && (
-              <div className={styles.saveFeedbackError}>{t('err_save_failed')}</div>
-            )}
-          </div>
-
-          {/* Row 2 — Email */}
-          <div>
-            <div className={styles.fieldLabelSmall}>{t('email')}</div>
-            <div className={styles.fieldValueItalic}>{email ?? '—'}</div>
-          </div>
-
-          {/* Row 3 — Member since */}
-          <div>
-            <div className={styles.fieldLabelSmall}>{t('member_since')}</div>
-            <div className={styles.fieldValue}>{formatDate(createdAt)}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Preferences card — sound / vibrate / theme */}
+      {/* Preferences card — sound / vibrate / theme / language */}
       <div className={styles.settingsSection}>
         <div className={styles.settingsCard}>
           <div className={styles.settingsCardTitle}>{t('settings')}</div>
@@ -311,6 +196,13 @@ export default function AccountPage() {
           <div className={styles.toggleRow}>
             <span className={styles.toggleLabel}>{tNav('theme')}</span>
             <ThemeToggle />
+          </div>
+
+          <div className={styles.toggleRow}>
+            <span className={styles.toggleLabel}>{tNav('language')}</span>
+            <div className={styles.langDropdown}>
+              <LanguageDropdown />
+            </div>
           </div>
         </div>
       </div>

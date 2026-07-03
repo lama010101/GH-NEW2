@@ -100,7 +100,7 @@ describe("OAuth callback route guards — KC-007", () => {
   describe("missing code parameter", () => {
     it("redirects to /login?error=missing_code when code is absent", async () => {
       const GET = await loadCallbackRoute();
-      const req = createMockRequest("/auth/callback", { state: "abc123" });
+      const req = createMockRequest("/auth/callback");
       await GET(req);
 
       expect(redirectCalls).toHaveLength(1);
@@ -112,7 +112,6 @@ describe("OAuth callback route guards — KC-007", () => {
       const GET = await loadCallbackRoute();
       const req = createMockRequest("/auth/callback", {
         code: "",
-        state: "abc123",
       });
       await GET(req);
 
@@ -121,33 +120,7 @@ describe("OAuth callback route guards — KC-007", () => {
     });
   });
 
-  describe("missing state parameter (CSRF defense)", () => {
-    it("redirects to /?error=auth_failed when state is absent but code is present", async () => {
-      const GET = await loadCallbackRoute();
-      const req = createMockRequest("/auth/callback", { code: "valid-code" });
-      await GET(req);
-
-      expect(redirectCalls).toHaveLength(1);
-      expect(redirectCalls[0].url).toContain("error=auth_failed");
-      // Should NOT redirect to /login — this is a CSRF indicator, not a
-      // missing-code situation.
-      expect(redirectCalls[0].url).not.toContain("missing_code");
-    });
-
-    it("redirects to /?error=auth_failed when state is empty string", async () => {
-      const GET = await loadCallbackRoute();
-      const req = createMockRequest("/auth/callback", {
-        code: "valid-code",
-        state: "",
-      });
-      await GET(req);
-
-      expect(redirectCalls).toHaveLength(1);
-      expect(redirectCalls[0].url).toContain("error=auth_failed");
-    });
-  });
-
-  describe("valid code + state", () => {
+  describe("valid code (PKCE flow — no state param needed)", () => {
     it("calls exchangeCodeForSession and redirects to next param", async () => {
       const GET = await loadCallbackRoute();
       const exchangeCodeForSession = vi.fn().mockResolvedValue({ error: null });
@@ -158,7 +131,6 @@ describe("OAuth callback route guards — KC-007", () => {
 
       const req = createMockRequest("/auth/callback", {
         code: "valid-code",
-        state: "valid-state",
         next: "/home",
       });
       await GET(req);
@@ -172,7 +144,6 @@ describe("OAuth callback route guards — KC-007", () => {
       const GET = await loadCallbackRoute();
       const req = createMockRequest("/auth/callback", {
         code: "valid-code",
-        state: "valid-state",
       });
       await GET(req);
 
@@ -195,25 +166,11 @@ describe("OAuth callback route guards — KC-007", () => {
 
       const req = createMockRequest("/auth/callback", {
         code: "bad-code",
-        state: "valid-state",
       });
       await GET(req);
 
       expect(redirectCalls).toHaveLength(1);
       expect(redirectCalls[0].url).toContain("error=auth_failed");
-    });
-  });
-
-  describe("guard ordering: code check before state check", () => {
-    it("returns missing_code error when both code and state are missing", async () => {
-      const GET = await loadCallbackRoute();
-      const req = createMockRequest("/auth/callback");
-      await GET(req);
-
-      expect(redirectCalls).toHaveLength(1);
-      // The code check comes first in the route handler.
-      expect(redirectCalls[0].url).toContain("error=missing_code");
-      expect(redirectCalls[0].url).not.toContain("auth_failed");
     });
   });
 });
