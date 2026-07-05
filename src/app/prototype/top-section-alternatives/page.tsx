@@ -70,6 +70,7 @@ export default function TopSectionAlternatives() {
           <div className="alt1-content">
             <div className="alt1-header">
               <div className="alt1-badge">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={BADGE} alt="Badge" />
                 <span>ROUND 1</span>
               </div>
@@ -106,6 +107,7 @@ export default function TopSectionAlternatives() {
         <h2 className="sectionTitle">Alternative 2: Stacked Focus</h2>
         <div className="card alt2">
           <div className="alt2-header">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={BADGE} alt="Badge" className="alt2-badgeImg" />
             <h1 className="alt2-title">{TITLE}</h1>
             <div className="alt2-xp">+{XP.toLocaleString()} XP</div>
@@ -145,6 +147,7 @@ export default function TopSectionAlternatives() {
         <div className="alt3">
           <div className="alt3-header">
             <div className="alt3-badge">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={BADGE} alt="Badge" />
             </div>
             <div className="alt3-headerText">

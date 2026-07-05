@@ -7,6 +7,11 @@ import styles from './RankCard.module.css';
 interface RankCardProps {
   totalXp: number | null;
   open: boolean;
+  /** When true, renders in content flow (position: static) instead of fixed below TopBar. */
+  inline?: boolean;
+  /** When true, renders only the inner content (rankMain) with no wrapper/card/collapse.
+   *  Used to merge the rank card into a parent card (e.g. Game accuracy card). */
+  bare?: boolean;
 }
 
 // Map rank tier → compressed image in /public/images/rank-titles/
@@ -26,7 +31,7 @@ const RANK_IMAGE: Record<number, string> = {
 // Collapsible rank card with medallion image, title, XP, next-rank line, progress bar.
 // Derives everything from totalXp via rankForXp (single source of truth).
 // open controls expand/collapse of the full module body.
-export default function RankCard({ totalXp, open }: RankCardProps) {
+export default function RankCard({ totalXp, open, inline = false, bare = false }: RankCardProps) {
   const t = useTranslations('rank');
 
   const xp = (totalXp === null || totalXp === undefined || Number.isNaN(totalXp))
@@ -37,33 +42,42 @@ export default function RankCard({ totalXp, open }: RankCardProps) {
   const nextTitle = info.nextTitleKey ? t(info.nextTitleKey) : '';
   const imgSrc = RANK_IMAGE[info.tier] ?? RANK_IMAGE[1];
 
+  const rankMain = (
+    <div className={styles.rankMain}>
+      <div className={styles.rankMedallion}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imgSrc} alt={title} className={styles.rankMedImg} draggable={false} />
+        <span className={styles.rankMedTier}>T{info.tier}</span>
+      </div>
+      <div className={styles.rankBody}>
+        <div className={styles.rankHead}>
+          <h3 className={styles.rankTitle}>{title}</h3>
+          <span className={styles.rankXp}>{Math.floor(xp).toLocaleString()}<i>XP</i></span>
+        </div>
+        <div className={styles.rankNextLine}>
+          <span className={styles.rankNextLabel}>Next</span>
+          <span className={styles.rankNextTitle}>
+            {info.isMaxRank
+              ? t('max_rank')
+              : `${info.xpToNext?.toLocaleString() ?? '0'} XP to ${nextTitle}`}
+          </span>
+        </div>
+        <div className={styles.rankBarMain}>
+          <span className={styles.rankBarFillMain} style={{ width: `${info.progressPct}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+
+  if (bare) {
+    return rankMain;
+  }
+
   return (
-    <div className={styles.rankCardWrap}>
+    <div className={`${styles.rankCardWrap} ${inline ? styles.rankCardWrapInline : ''}`}>
       <section className={`${styles.rankCard} ${open ? '' : styles.rankCardClosed}`}>
         <div className={`${styles.rankCollapseFull} ${open ? styles.rankCollapseFullOpen : styles.rankCollapseFullClosed}`}>
-          <div className={styles.rankMain}>
-            <div className={styles.rankMedallion}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imgSrc} alt={title} className={styles.rankMedImg} draggable={false} />
-            </div>
-            <div className={styles.rankBody}>
-              <div className={styles.rankHead}>
-                <h3 className={styles.rankTitle}>{title}</h3>
-                <span className={styles.rankXp}>{Math.floor(xp).toLocaleString()}<i>XP</i></span>
-              </div>
-              <div className={styles.rankNextLine}>
-                <span className={styles.rankNextLabel}>Next</span>
-                <span className={styles.rankNextTitle}>
-                  {info.isMaxRank
-                    ? t('max_rank')
-                    : `${info.xpToNext?.toLocaleString() ?? '0'} XP to ${nextTitle}`}
-                </span>
-              </div>
-              <div className={styles.rankBarMain}>
-                <span className={styles.rankBarFillMain} style={{ width: `${info.progressPct}%` }} />
-              </div>
-            </div>
-          </div>
+          {rankMain}
         </div>
       </section>
     </div>

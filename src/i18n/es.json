@@ -474,8 +474,7 @@
     "tier_year_label": "AÑO",
     "map_error_title": "Error al renderizar el mapa",
     "map_error_details": "Consulta la consola para más detalles",
-    "badge_alt": "Insignia {tier} {dimension}",
-    "player_submitted_round": "{name} envió la ronda {n}"
+    "badge_alt": "Insignia {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Iniciar sesión",
@@ -542,6 +541,7 @@
     "daily": "Diario",
     "level_up": "Subir nivel",
     "compete": "Competir",
+    "practice": "Práctica",
     "back": "Volver",
     "avatar_alt": "Avatar",
     "avg_accuracy": "Precisión media",

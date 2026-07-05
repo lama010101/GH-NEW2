@@ -56,7 +56,7 @@ export default function DailyResultsPage() {
     })();
 
     return () => { cancelled = true };
-  }, [gameId, playerId]);
+  }, [gameId, playerId, t]);
 
   // Fetch all round results
   useEffect(() => {
@@ -76,7 +76,7 @@ export default function DailyResultsPage() {
     })();
 
     return () => { cancelled = true };
-  }, [gameId, playerId, snapshot?.status]);
+  }, [gameId, playerId, snapshot]);
 
   // TopBar: fetch viewer stats + profile
   useEffect(() => {

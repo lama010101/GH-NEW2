@@ -14,15 +14,16 @@ import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
 import RankCard from "@/components/RankCard";
-import { useRankOpen } from "@/hooks/useRankOpen";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { computeTimeRemaining } from "@/core/competeUtils";
+import { useRankOpen } from "@/hooks/useRankOpen";
 import pageStyles from '@/app/practice/[gameId]/page.module.css';
 
 export default function DailyRoundPage() {
   const params = useParams<{ gameId: string; n: string }>();
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
+  const roundParam = typeof params?.n === "string" ? params.n : "";
 
   const t = useTranslations('game');
 
@@ -49,7 +50,6 @@ export default function DailyRoundPage() {
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [locationName, setLocationName] = useState<string | null>(null);
   const [showNavModal, setShowNavModal] = useState(false);
-  const [rankOpen, toggleRankOpen] = useRankOpen();
   const [topbarAccuracy, setTopbarAccuracy] = useState("--");
   const [topbarXp, setTopbarXp] = useState("--");
   const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
@@ -64,6 +64,8 @@ export default function DailyRoundPage() {
   });
 
   const router = useRouter();
+
+  const [rankOpen, toggleRankOpen] = useRankOpen();
 
   const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity();
   const guessYearRef = useRef<number | null>(null);
@@ -93,7 +95,22 @@ export default function DailyRoundPage() {
     })();
 
     return () => { cancelled = true };
-  }, [gameId, playerId]);
+  }, [gameId, playerId, t]);
+
+  // Sync URL round param to the authoritative currentRoundIndex from the
+  // snapshot. This keeps the URL honest when the round advances server-side
+  // and on refresh so the URL matches the displayed round.
+  useEffect(() => {
+    if (!snapshot || !gameId) return;
+    if (snapshot.status === "SESSION_COMPLETE") {
+      router.replace(`/daily/game/${gameId}/results`);
+      return;
+    }
+    const actualRound = snapshot.currentRoundIndex ?? 0;
+    if (roundParam !== String(actualRound)) {
+      router.replace(`/daily/game/${gameId}/round/${actualRound}`);
+    }
+  }, [snapshot, snapshot?.status, snapshot?.currentRoundIndex, gameId, roundParam, router]);
 
   // Lobby TopBar: fetch viewer stats + profile
   useEffect(() => {
@@ -130,7 +147,7 @@ export default function DailyRoundPage() {
     setWhenLbExpanded(true);
     setWhereCluesExpanded(false);
     setWhenCluesExpanded(false);
-  }, [snapshot?.currentRoundIndex]);
+  }, [snapshot, snapshot?.currentRoundIndex]);
 
   // Reset guess inputs whenever the active round changes
   useEffect(() => {
@@ -147,7 +164,7 @@ export default function DailyRoundPage() {
     setHintResult({ purchasedIds: [], accPenalty: 0, xpPenalty: 0, whereAccPenalty: 0, whenAccPenalty: 0 });
     submittedHintPenaltyRef.current = { accPenalty: 0, xpPenalty: 0, purchasedIds: [], whereAccPenalty: 0, whenAccPenalty: 0 };
     setLocationName(null);
-  }, [snapshot?.currentRoundIndex]);
+  }, [snapshot, snapshot?.currentRoundIndex]);
 
   // Fetch all round results when session completes
   useEffect(() => {
@@ -243,7 +260,7 @@ export default function DailyRoundPage() {
         setBusy(false);
       }
     })();
-  }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, playerId, hintResult, gameId, snapshot]);
+  }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, playerId, hintResult, gameId, snapshot, localSubmitted, t]);
 
   // Scroll to top when ROUND_COMPLETE loads
   useEffect(() => {
@@ -358,7 +375,7 @@ export default function DailyRoundPage() {
         setBusy(false);
       }
     })();
-  }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult, gameId]);
+  }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult, gameId, t]);
 
   const handleAdvanceRound = useCallback(() => {
     if (!snapshot || !playerId) return;
@@ -395,7 +412,7 @@ export default function DailyRoundPage() {
         setBusy(false);
       }
     })();
-  }, [snapshot, playerId, gameId]);
+  }, [snapshot, playerId, gameId, t]);
 
   if (!gameId) return null;
 
@@ -436,7 +453,6 @@ export default function DailyRoundPage() {
             onToggleRank={toggleRankOpen}
           />
           <RankCard totalXp={Number(topbarXp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
-          <div style={{ height: rankOpen ? 160 : 80 }} />
           <NavModal
             isOpen={showNavModal}
             onClose={() => setShowNavModal(false)}

@@ -146,6 +146,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       supabaseBrowser.removeChannel(channel)
       clearInterval(interval)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, fetchInvites])
 
   const handleCreate = async () => {

@@ -6,7 +6,7 @@ import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
 import { getUsernameGradientStyle } from "@/core/competeUtils";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import { ImageButton } from "@/components/shared/ImageButton";
-import { useEraRegionImages, ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
+import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import styles from './LobbySection.module.css';
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
 
@@ -102,9 +102,6 @@ export default function LobbySection({
   const router = useRouter();
   const t = useTranslations();
   const tGame = useTranslations('game');
-
-  /* ── DB event images for era/region buttons ── */
-  const { dbImages } = useEraRegionImages();
 
   /* Timer slider transient state — synced from snapshot on every update.
      Local value is ONLY for drag feedback; authority stays in snapshot. */
@@ -999,7 +996,6 @@ export default function LobbySection({
                       key={era.id}
                       label={tGame(`era_${era.id}` as string)}
                       sublabel={era.span}
-                      dbUrl={dbImages?.eras[era.id]}
                       stockImg={era.stockImg}
                       emoji={era.icon}
                       selected={on}
@@ -1035,7 +1031,6 @@ export default function LobbySection({
                     <ImageButton
                       key={region.id}
                       label={tGame(`region_${region.id}` as string)}
-                      dbUrl={dbImages?.regions[region.id]}
                       stockImg={region.stockImg}
                       emoji={region.icon}
                       selected={on}
@@ -1171,7 +1166,6 @@ export default function LobbySection({
                       key={era.id}
                       label={tGame(`era_${era.id}` as string)}
                       sublabel={era.span}
-                      dbUrl={dbImages?.eras[era.id]}
                       stockImg={era.stockImg}
                       emoji={era.icon}
                       selected={on}
@@ -1207,7 +1201,6 @@ export default function LobbySection({
                     <ImageButton
                       key={region.id}
                       label={tGame(`region_${region.id}` as string)}
-                      dbUrl={dbImages?.regions[region.id]}
                       stockImg={region.stockImg}
                       emoji={region.icon}
                       selected={on}

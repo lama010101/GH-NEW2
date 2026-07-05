@@ -474,8 +474,7 @@
     "tier_year_label": "年",
     "map_error_title": "地图渲染失败",
     "map_error_details": "查看控制台了解详情",
-    "badge_alt": "{tier} {dimension} 徽章",
-    "player_submitted_round": "{name} 提交了第 {n} 回合"
+    "badge_alt": "{tier} {dimension} 徽章"
   },
   "auth": {
     "sign_in": "登录",
@@ -542,6 +541,7 @@
     "daily": "每日",
     "level_up": "升级",
     "compete": "对战",
+    "practice": "练习",
     "back": "返回",
     "avatar_alt": "头像",
     "avg_accuracy": "平均准确度",

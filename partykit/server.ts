@@ -960,11 +960,9 @@ export default class GameServer {
         yearMin: (configRecord?.["yearMin"] as number) ?? (snapshotRecord["yearMin"] as number) ?? -400,
         yearMax: (configRecord?.["yearMax"] as number) ?? (snapshotRecord["yearMax"] as number) ?? new Date().getFullYear(),
         selectedEras: (configRecord?.["selectedEras"] as string[] | undefined) ?? (snapshotRecord["selectedEras"] as string[] | undefined) ?? null,
-        selectedRegions: (configRecord?.["selectedRegions"] as string[] | undefined) ?? (snapshotRecord["selectedRegions"] as string[] | undefined) ?? [],
         resultsAutoAdvanceSec: (configRecord?.["resultsAutoAdvanceSec"] as number) ?? (snapshotRecord["resultsAutoAdvanceSec"] as number) ?? 90,
         hostPlayerId: hostPlayer?.playerId ?? null,
         sessionDeadline: (configRecord?.["sessionDeadline"] as string | null) ?? null,
-        sessionDeadlineDays: (configRecord?.["sessionDeadlineDays"] as number | null) ?? null,
         startedAt: (configRecord?.["startedAt"] as string | null) ?? null,
         completedAt: (configRecord?.["completedAt"] as string | null) ?? null,
       };
@@ -1485,10 +1483,22 @@ export default class GameServer {
           }
           // Broadcast STATE_UPDATE with updated readyForNext array
           this.broadcastStateUpdate();
-          // If all active players are ready, cancel result timer and advance
+          // Determine sub-mode from snapshot config (async = Relax, sync = Rush)
+          const readyNextConfig = (this.snapshot as Record<string, unknown>)?.config as Record<string, unknown> | undefined;
+          const readyNextMode = (readyNextConfig?.["mode"] as string) ?? "sync";
+          const isAsyncReadyNext = readyNextMode === "async";
+          // Advance condition:
+          // - async (Relax): ANY single player tapping "Next" advances the round
+          //   immediately (spec §5.8: "Player taps Next Round immediately — does
+          //   not wait for others"). Players who haven't submitted get absent rows
+          //   via insertMissingCommits when the round completes.
+          // - sync (Rush): ALL active players must tap "Next" (existing behavior).
           const activePlayers = this.snapshot.players.filter(p => p.leftAt === null);
-          if (this.readyForNext.size === activePlayers.length) {
-            console.log("[PartyKit] All players ready, cancelling result timer and advancing");
+          const shouldAdvance = isAsyncReadyNext
+            ? this.readyForNext.size >= 1
+            : this.readyForNext.size === activePlayers.length;
+          if (shouldAdvance) {
+            console.log(`[PartyKit] ${isAsyncReadyNext ? "Async" : "Sync"} advance triggered — ready: ${this.readyForNext.size}/${activePlayers.length}`);
             // Clear any existing result timer
             if (this.roundTimerHandle !== null) {
               clearTimeout(this.roundTimerHandle);

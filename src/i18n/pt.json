@@ -474,8 +474,7 @@
     "tier_year_label": "ANO",
     "map_error_title": "Falha ao renderizar o mapa",
     "map_error_details": "Verifique o console para detalhes",
-    "badge_alt": "Distintivo {tier} {dimension}",
-    "player_submitted_round": "{name} enviou a rodada {n}"
+    "badge_alt": "Distintivo {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Entrar",
@@ -542,6 +541,7 @@
     "daily": "Diário",
     "level_up": "Subir nível",
     "compete": "Competir",
+    "practice": "Prática",
     "back": "Voltar",
     "avatar_alt": "Avatar",
     "avg_accuracy": "Precisão média",

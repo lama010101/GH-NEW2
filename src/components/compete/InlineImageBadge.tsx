@@ -59,6 +59,7 @@ export default function InlineImageBadge({ dimension, tier, isTriggered }: Inlin
       : `${styles.badge} ${styles.badgeStatic}`;
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={imagePath}
       alt={t("badge_alt", { tier, dimension })}

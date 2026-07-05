@@ -300,10 +300,11 @@ export default function RoundActiveSection({
 
   // Cleanup on unmount
   useEffect(() => {
+    const timeouts = toastTimeoutsRef.current;
     return () => {
       if (panRafId.current) cancelAnimationFrame(panRafId.current);
       // Clear all toast timeouts
-      Object.values(toastTimeoutsRef.current).forEach(clearTimeout);
+      Object.values(timeouts).forEach(clearTimeout);
       if (guessHintTimer.current) clearTimeout(guessHintTimer.current);
     };
   }, []);
