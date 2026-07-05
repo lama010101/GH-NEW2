@@ -474,8 +474,7 @@
     "tier_year_label": "年",
     "map_error_title": "マップの表示に失敗しました",
     "map_error_details": "詳細はコンソールを確認してください",
-    "badge_alt": "{tier} {dimension} バッジ",
-    "player_submitted_round": "{name} がラウンド {n} を送信しました"
+    "badge_alt": "{tier} {dimension} バッジ"
   },
   "auth": {
     "sign_in": "ログイン",
@@ -542,6 +541,7 @@
     "daily": "デイリー",
     "level_up": "レベルアップ",
     "compete": "対戦",
+    "practice": "練習",
     "back": "戻る",
     "avatar_alt": "アバター",
     "avg_accuracy": "平均精度",

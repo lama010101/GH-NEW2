@@ -13,11 +13,10 @@ import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
-import RankCard from "@/components/RankCard";
-import { useRankOpen } from "@/hooks/useRankOpen";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { computeTimeRemaining } from "@/core/competeUtils";
+import { useRankOpen } from "@/hooks/useRankOpen";
 import { PracticeSettingsModal, type PracticeModalSettings } from "@/components/practice/PracticeSettingsModal";
 import { savePracticeSettings } from "@/components/practice/practiceSettings";
 import pageStyles from './page.module.css';
@@ -51,7 +50,6 @@ export default function PracticeGamePage() {
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [locationName, setLocationName] = useState<string | null>(null);
   const [showNavModal, setShowNavModal] = useState(false);
-  const [rankOpen, toggleRankOpen] = useRankOpen();
   const [practiceModalOpen, setPracticeModalOpen] = useState(false);
   const [practiceModalInitial, setPracticeModalInitial] = useState<Partial<PracticeModalSettings> | undefined>(undefined);
   const [practiceCreating, setPracticeCreating] = useState(false);
@@ -59,6 +57,7 @@ export default function PracticeGamePage() {
   const [topbarXp, setTopbarXp] = useState("--");
   const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
   const [topbarInitials, setTopbarInitials] = useState("PL");
+  const [rankOpen, toggleRankOpen] = useRankOpen();
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
@@ -98,7 +97,7 @@ export default function PracticeGamePage() {
     })();
 
     return () => { cancelled = true };
-  }, [gameId, playerId]);
+  }, [gameId, playerId, t]);
 
   // Auto-start the game when snapshot is in LOBBY status
   useEffect(() => {
@@ -138,7 +137,7 @@ export default function PracticeGamePage() {
     })();
 
     return () => { cancelled = true };
-  }, [snapshot?.status, snapshot?.gameId, gameId, playerId, snapshot]);
+  }, [snapshot?.status, snapshot?.gameId, gameId, playerId, snapshot, busy, t]);
 
   // Lobby TopBar: fetch viewer stats + profile
   useEffect(() => {
@@ -175,7 +174,7 @@ export default function PracticeGamePage() {
     setWhenLbExpanded(true);
     setWhereCluesExpanded(false);
     setWhenCluesExpanded(false);
-  }, [snapshot?.currentRoundIndex]);
+  }, [snapshot, snapshot?.currentRoundIndex]);
 
   // Reset guess inputs whenever the active round changes
   useEffect(() => {
@@ -192,7 +191,7 @@ export default function PracticeGamePage() {
     setHintResult({ purchasedIds: [], accPenalty: 0, xpPenalty: 0, whereAccPenalty: 0, whenAccPenalty: 0 });
     submittedHintPenaltyRef.current = { accPenalty: 0, xpPenalty: 0, purchasedIds: [], whereAccPenalty: 0, whenAccPenalty: 0 };
     setLocationName(null);
-  }, [snapshot?.currentRoundIndex]);
+  }, [snapshot, snapshot?.currentRoundIndex]);
 
   // Fetch all round results when session completes
   useEffect(() => {
@@ -317,7 +316,7 @@ export default function PracticeGamePage() {
         setBusy(false);
       }
     })();
-  }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, playerId, hintResult, gameId, snapshot]);
+  }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, playerId, hintResult, gameId, snapshot, localSubmitted, t]);
 
   // Scroll to top when ROUND_COMPLETE loads
   useEffect(() => {
@@ -433,7 +432,7 @@ export default function PracticeGamePage() {
         setBusy(false);
       }
     })();
-  }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult, gameId]);
+  }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult, gameId, t]);
 
   const handleAdvanceRound = useCallback(() => {
     if (!snapshot || !playerId) return;
@@ -471,7 +470,7 @@ export default function PracticeGamePage() {
         setBusy(false);
       }
     })();
-  }, [snapshot, playerId, gameId]);
+  }, [snapshot, playerId, gameId, t]);
 
   const handlePracticePlayAgain = useCallback(() => {
     if (!snapshot) return;
@@ -527,7 +526,7 @@ export default function PracticeGamePage() {
         setPracticeCreating(false);
       }
     })();
-  }, [playerId, displayName, router]);
+  }, [playerId, displayName, router, t]);
 
   if (!gameId) return null;
 
@@ -567,8 +566,6 @@ export default function PracticeGamePage() {
             rankOpen={rankOpen}
             onToggleRank={toggleRankOpen}
           />
-          <RankCard totalXp={Number(topbarXp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
-          <div style={{ height: rankOpen ? 160 : 80 }} />
           <NavModal
             isOpen={showNavModal}
             onClose={() => setShowNavModal(false)}
@@ -656,6 +653,7 @@ export default function PracticeGamePage() {
               playerId={playerId}
               allRoundResults={allRoundResults}
               onPlayAgain={handlePracticePlayAgain}
+              rankOpen={rankOpen}
               sendMessage={(msg) => {
                 const newGameId = (msg as { newGameId?: string }).newGameId;
                 if (newGameId) {

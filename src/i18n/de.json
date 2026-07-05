@@ -474,8 +474,7 @@
     "tier_year_label": "JAHR",
     "map_error_title": "Karte konnte nicht gerendert werden",
     "map_error_details": "Siehe Konsole für Details",
-    "badge_alt": "Abzeichen {tier} {dimension}",
-    "player_submitted_round": "{name} hat Runde {n} abgegeben"
+    "badge_alt": "Abzeichen {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Anmelden",
@@ -542,6 +541,7 @@
     "daily": "Täglich",
     "level_up": "Level aufsteigen",
     "compete": "Wettstreit",
+    "practice": "Übung",
     "back": "Zurück",
     "avatar_alt": "Avatar",
     "avg_accuracy": "Ø Genauigkeit",

@@ -20,6 +20,7 @@ export function DailyPanel({ onPlay }: { onPlay: () => void }) {
     setCountdown(getCountdown())
     const t = setInterval(() => setCountdown(getCountdown()), 60000)
     return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

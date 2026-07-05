@@ -474,8 +474,7 @@
     "tier_year_label": "ANNÉE",
     "map_error_title": "Échec du rendu de la carte",
     "map_error_details": "Vérifiez la console pour plus de détails",
-    "badge_alt": "Médaille {tier} {dimension}",
-    "player_submitted_round": "{name} a soumis le round {n}"
+    "badge_alt": "Médaille {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Se connecter",
@@ -542,6 +541,7 @@
     "daily": "Quotidien",
     "level_up": "Monter de niveau",
     "compete": "Compétition",
+    "practice": "Entraînement",
     "back": "Retour",
     "avatar_alt": "Avatar",
     "avg_accuracy": "Précision moy.",

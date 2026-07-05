@@ -474,8 +474,7 @@
     "tier_year_label": "ANNO",
     "map_error_title": "Rendering della mappa non riuscito",
     "map_error_details": "Controlla la console per i dettagli",
-    "badge_alt": "Medaglia {tier} {dimension}",
-    "player_submitted_round": "{name} ha inviato il round {n}"
+    "badge_alt": "Medaglia {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Accedi",
@@ -542,6 +541,7 @@
     "daily": "Quotidiana",
     "level_up": "Salì di Livello",
     "compete": "Competizione",
+    "practice": "Allenamento",
     "back": "Indietro",
     "avatar_alt": "Avatar",
     "avg_accuracy": "Precisione media",

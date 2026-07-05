@@ -474,8 +474,7 @@
     "tier_year_label": "سنة",
     "map_error_title": "فشل عرض الخريطة",
     "map_error_details": "تحقق من وحدة التحكم للتفاصيل",
-    "badge_alt": "وسام {tier} {dimension}",
-    "player_submitted_round": "{name} سلم في الجولة {n}"
+    "badge_alt": "وسام {tier} {dimension}"
   },
   "auth": {
     "sign_in": "تسجيل الدخول",
@@ -542,6 +541,7 @@
     "daily": "يومي",
     "level_up": "تطوّر المستوى",
     "compete": "تنافس",
+    "practice": "تدريب",
     "back": "رجوع",
     "avatar_alt": "صورة رمزية",
     "avg_accuracy": "متوسط الدقة",

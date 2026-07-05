@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
 import { ImageButton } from "@/components/shared/ImageButton";
-import { useEraRegionImages, ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
+import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import lobbyStyles from "@/components/compete/LobbySection.module.css";
 import modalStyles from "./PracticeSettingsModal.module.css";
 
@@ -83,8 +83,6 @@ export function PracticeSettingsModal({
 }: PracticeSettingsModalProps) {
   const t = useTranslations();
   const tGame = useTranslations("game");
-
-  const { dbImages } = useEraRegionImages();
 
   const [sliderValue, setSliderValue] = useState<number>(
     typeof initialSettings?.roundTimerSec === "number" ? initialSettings.roundTimerSec : 0
@@ -290,7 +288,6 @@ export function PracticeSettingsModal({
                     key={era.id}
                     label={tGame(`era_${era.id}` as string)}
                     sublabel={era.span}
-                    dbUrl={dbImages?.eras[era.id]}
                     stockImg={era.stockImg}
                     emoji={era.icon}
                     selected={on}
@@ -325,7 +322,6 @@ export function PracticeSettingsModal({
                   <ImageButton
                     key={region.id}
                     label={tGame(`region_${region.id}` as string)}
-                    dbUrl={dbImages?.regions[region.id]}
                     stockImg={region.stockImg}
                     emoji={region.icon}
                     selected={on}

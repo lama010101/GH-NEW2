@@ -474,8 +474,7 @@
     "tier_year_label": "ГОД",
     "map_error_title": "Ошибка отрисовки карты",
     "map_error_details": "Подробности см. в консоли",
-    "badge_alt": "Значок {tier} {dimension}",
-    "player_submitted_round": "{name} отправил раунд {n}"
+    "badge_alt": "Значок {tier} {dimension}"
   },
   "auth": {
     "sign_in": "Войти",
@@ -542,6 +541,7 @@
     "daily": "Ежедневный",
     "level_up": "Повышение уровня",
     "compete": "Соревнование",
+    "practice": "Практика",
     "back": "Назад",
     "avatar_alt": "Аватар",
     "avg_accuracy": "Средняя точность",

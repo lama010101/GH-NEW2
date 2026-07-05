@@ -197,7 +197,7 @@ export default function ProfilePage() {
     };
 
     fetchProfileData();
-  }, [playerId, router]);
+  }, [playerId, router, tCommon]);
 
   const getInitials = (name: string | null): string => {
     if (!name) return '??';

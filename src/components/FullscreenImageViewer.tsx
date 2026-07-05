@@ -130,6 +130,7 @@ export default function FullscreenImageViewer({ src, alt, onClose }: FullscreenI
       >
         ✕
       </button>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
         src={src}

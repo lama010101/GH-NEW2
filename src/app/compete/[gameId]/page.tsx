@@ -32,7 +32,6 @@ import LobbySection from "@/components/compete/LobbySection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
-import RankCard from "@/components/RankCard";
 import { useRankOpen } from "@/hooks/useRankOpen";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
@@ -189,7 +188,7 @@ export default function CompeteGamePage() {
           console.error("[CompeteGamePage] Failed to fetch all round results:", err);
         });
     }
-  }, [snapshot?.status, gameId, allRoundResults]);
+  }, [snapshot?.status, gameId, allRoundResults, playerId]);
 
   // Navigation guard: prevent refresh and back button during active game phases
   // Only applies to LOBBY, ROUND_ACTIVE, and ROUND_COMPLETE (not SESSION_COMPLETE)
@@ -565,7 +564,6 @@ export default function CompeteGamePage() {
             rankOpen={rankOpen}
             onToggleRank={toggleRankOpen}
           />
-          <RankCard totalXp={Number(topbarXp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
           <NavModal
             isOpen={showNavModal}
             onClose={() => setShowNavModal(false)}
@@ -732,6 +730,7 @@ export default function CompeteGamePage() {
             snapshot={snapshot}
             playerId={playerId}
             allRoundResults={allRoundResults}
+            rankOpen={rankOpen}
             sendMessage={(msg) => playAgain((msg as { newGameId: string }).newGameId)}
           />
         ) : null}

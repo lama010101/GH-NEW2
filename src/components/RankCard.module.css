@@ -11,6 +11,14 @@
   margin: 0 auto;
 }
 
+/* Inline variant — renders in content flow (e.g. after score card on results pages) */
+.rankCardWrapInline {
+  position: static;
+  z-index: auto;
+  padding: 0;
+  margin: 12px 0;
+}
+
 .rankCard {
   background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
   border: 1px solid rgba(255,255,255,0.1);
@@ -50,6 +58,23 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Tier number badge overlaid on the medallion image */
+.rankMedTier {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #ffd54a;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
 }
 
 .rankBody {

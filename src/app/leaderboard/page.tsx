@@ -7,8 +7,8 @@ import { useTranslations } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import TopBar from '@/components/layout/TopBar';
-import { NavModal } from '@/components/NavModal';
 import RankCard from '@/components/RankCard';
+import { NavModal } from '@/components/NavModal';
 import { useRankOpen } from '@/hooks/useRankOpen';
 import styles from './leaderboard.module.css';
 
@@ -67,9 +67,7 @@ function LeaderboardPageInner() {
   const searchParams = useSearchParams();
   const { playerId, displayName } = useIdentity();
   const t = useTranslations('leaderboard');
-
-  const [rankOpen, toggleRankOpen] = useRankOpen();
-
+  
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('overall');
   const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
   
@@ -86,6 +84,8 @@ function LeaderboardPageInner() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [initials, setInitials] = useState('PL');
   const [showNavModal, setShowNavModal] = useState(false);
+
+  const [rankOpen, toggleRankOpen] = useRankOpen();
 
   useEffect(() => {
     if (!playerId) {
@@ -297,7 +297,21 @@ function LeaderboardPageInner() {
     if (tab === 'overall' || tab === 'daily' || tab === 'levelup') {
       setActiveTab(tab as LeaderboardTab);
     }
+    const subtab = searchParams.get('subtab');
+    if (subtab === 'today' || subtab === 'alltime') {
+      setActiveSubTab(subtab as DailySubTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Sync activeTab + activeSubTab to URL so refresh restores the same view
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activeTab !== 'overall') params.set('tab', activeTab);
+    if (activeTab === 'daily' && activeSubTab === 'alltime') params.set('subtab', activeSubTab);
+    const qs = params.toString();
+    router.replace(qs ? `/leaderboard?${qs}` : '/leaderboard', { scroll: false });
+  }, [activeTab, activeSubTab, router]);
 
   useEffect(() => {
     fetchData();

@@ -27,7 +27,7 @@ type AvatarInfo = {
 
 export default function AccountPage() {
   const router = useRouter()
-  const { playerId, isLoading } = useIdentity()
+  const { playerId, isLoading, displayName: identityDisplayName } = useIdentity()
   const t = useTranslations('account')
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
@@ -69,6 +69,19 @@ export default function AccountPage() {
   useEffect(() => {
     localStorage.setItem('gh_vibrate', String(vibrateEnabled))
   }, [vibrateEnabled])
+
+  // Fetch email/createdAt directly from supabaseBrowser.auth.getUser()
+  // independently of useIdentity's isLoading — under cross-user sign-in,
+  // useIdentity can stay in loading state for a long time, but the auth
+  // session is already available via supabaseBrowser.
+  useEffect(() => {
+    const fetchAuth = async () => {
+      const { data: { user: authUser } } = await supabaseBrowser.auth.getUser()
+      if (authUser?.email) setEmail(authUser.email)
+      if (authUser?.created_at) setCreatedAt(authUser.created_at)
+    }
+    fetchAuth().catch(() => undefined)
+  }, [])
 
   useEffect(() => {
     if (isLoading) return
@@ -135,7 +148,7 @@ export default function AccountPage() {
     }
 
     load().catch((err) => console.error('[account] load error:', err))
-  }, [playerId, isLoading, router])
+  }, [playerId, isLoading, router, tCommon])
 
   const handleSave = async () => {
     if (!playerId || displayName.trim() === savedName.trim()) return
@@ -244,7 +257,7 @@ export default function AccountPage() {
             <div className={styles.fieldLabel}>{t('username')}</div>
             <input
               type="text"
-              value={displayName}
+              value={displayName || identityDisplayName || ''}
               onChange={(e) => setDisplayName(e.target.value)}
               className={styles.input}
             />

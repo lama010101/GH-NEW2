@@ -16,7 +16,7 @@ import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
-import RankProgressBar from "@/components/RankProgressBar";
+import RankCard from "@/components/RankCard";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
 
@@ -465,7 +465,7 @@ export default function RoundCompleteSection({
             </div>
             )}
 
-            {/* OVERALL GAME ACCURACY — cumulative % across all rounds played */}
+            {/* GAME ACCURACY + RANK TITLE CARD — merged into one card */}
             {myResult && (
               <div className={styles.gameAccuracyStrip}>
                 <span className={styles.gameAccuracyLabel}>
@@ -475,10 +475,8 @@ export default function RoundCompleteSection({
                 <span className={styles.gameAccuracyVal}>{Math.round(myResult.cumulativeAccuracy)}</span>
               </div>
             )}
-
-            {/* RANK PROGRESS — derived from global total_xp */}
-            <div className={styles.rankWrap}>
-              <RankProgressBar totalXp={totalXp} compact />
+            <div className={styles.rankMergedCard}>
+              <RankCard totalXp={totalXp} open={true} bare />
             </div>
 
             {/* WHERE + WHEN CARD (merged, tabbed) */}
