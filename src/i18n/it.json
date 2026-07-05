@@ -7,7 +7,6 @@
     "leaderboard": "Classifica",
     "profile_stats": "Profilo e Statistiche",
     "account": "Account",
-    "account_settings": "Account e impostazioni",
     "help": "Aiuto",
     "sign_out": "Esci",
     "language": "Lingua",
@@ -475,7 +474,8 @@
     "tier_year_label": "ANNO",
     "map_error_title": "Rendering della mappa non riuscito",
     "map_error_details": "Controlla la console per i dettagli",
-    "badge_alt": "Medaglia {tier} {dimension}"
+    "badge_alt": "Medaglia {tier} {dimension}",
+    "player_submitted_round": "{name} ha inviato il round {n}"
   },
   "auth": {
     "sign_in": "Accedi",

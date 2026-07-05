@@ -7,7 +7,6 @@
     "leaderboard": "Ranglijst",
     "profile_stats": "Profiel & Statistieken",
     "account": "Account",
-    "account_settings": "Account en instellingen",
     "help": "Help",
     "sign_out": "Uitloggen",
     "language": "Taal",
@@ -475,7 +474,8 @@
     "tier_year_label": "JAAR",
     "map_error_title": "Kaart kon niet worden weergegeven",
     "map_error_details": "Controleer de console voor details",
-    "badge_alt": "Badge {tier} {dimension}"
+    "badge_alt": "Badge {tier} {dimension}",
+    "player_submitted_round": "{name} heeft ronde {n} ingediend"
   },
   "auth": {
     "sign_in": "Inloggen",

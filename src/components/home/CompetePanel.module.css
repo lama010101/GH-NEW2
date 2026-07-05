@@ -162,7 +162,90 @@
   padding: 0 4px;
 }
 
-/* ── Play badge ── */
+/* ── Green GO button (play icon only, no text) ── */
+.goBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gh-success);
+  color: #fff;
+  width: 96px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.8;
+  transition: background 0.15s, transform 0.15s, opacity 0.15s;
+}
+
+.goBtn:hover {
+  background: #16a34a;
+  transform: scale(1.06);
+  opacity: 1;
+}
+
+.goBtn:active {
+  transform: scale(0.94);
+}
+
+/* ── Red delete button (X icon) ── */
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gh-danger);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.8;
+  transition: background 0.15s, transform 0.15s, opacity 0.15s;
+}
+
+.deleteBtn:hover {
+  background: #dc2626;
+  transform: scale(1.06);
+  opacity: 1;
+}
+
+.deleteBtn:active {
+  transform: scale(0.94);
+}
+
+/* ── Leaderboard rank badge ── */
+.rankBadge {
+  background: rgba(var(--gh-teal-rgb), 0.18);
+  color: var(--gh-teal);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: var(--gh-radius-pill);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Inline mode badge (inside gameSub line, before round label) ── */
+.modeBadgeInline {
+  display: inline-block;
+  background: var(--gh-glass-bg-hover);
+  color: var(--gh-text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--gh-radius-pill);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  margin-inline-end: 2px;
+}
+
+/* ── Play badge (legacy, kept for backward compat) ── */
 
 .playBadge {
   background: var(--gh-blue);
@@ -231,6 +314,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 16px;
 }
 
 .joinCodeInput {
@@ -256,6 +340,7 @@
 .cardCtaRow {
   display: flex;
   gap: 12px;
+  margin-top: 14px;
 }
 
 .cardCtaBtn {

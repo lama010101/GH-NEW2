@@ -23,17 +23,17 @@ export const MODE_CARD_GRADIENT: Record<string, string> = {
 }
 
 export const MODE_CARD_TITLE: Record<string, string> = {
-  compete:  'COMPETE',
-  daily:    'DAILY CHALLENGE',
+  compete:  'CHALLENGE',
+  daily:    'DAILY',
   levelup:  'LEVEL UP',
   practice: 'PRACTICE',
 }
 
 export const MODE_CARD_SUBTITLE: Record<string, string> = {
-  compete:  'Play against your friends.\nReal-Time: Up to 5 mins\nTurn-Based: Up to 14 days',
-  daily:    'A new challenge every day.\nSame events for everyone\nClimb the leaderboard',
-  levelup:  'Progressive runs.\nBeat levels and earn XP.\nUnlock new challenges.',
-  practice: 'Solo warm-up.\nHone your skills with\nunlimited practice games.',
+  compete:  'Play against your friends.\nReal-time or Turn-based',
+  daily:    'New competition every day,\nSame events for everyone.',
+  levelup:  'Progressive difficulty\nClimb the leaderboard',
+  practice: 'Hone your skills solo\nUnlimited custom games.',
 }
 
 // Card order for vertical layout (top to bottom)

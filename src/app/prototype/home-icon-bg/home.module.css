@@ -898,3 +898,14 @@
     display: none;
   }
 }
+.langOption .langLabel {
+  flex: 1;
+  max-width: none;
+}
+
+/* Hide the language label text on very narrow screens to save space */
+@media (max-width: 420px) {
+  .langBtn .langLabel {
+    display: none;
+  }
+}

@@ -9,6 +9,8 @@ import { AllRoundResult } from "@/core/competeTypes";
 import SessionComplete from "@/components/compete/SessionComplete";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
+import RankCard from "@/components/RankCard";
+import { useRankOpen } from "@/hooks/useRankOpen";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import pageStyles from '@/app/practice/[gameId]/page.module.css';
 
@@ -17,6 +19,8 @@ export default function DailyResultsPage() {
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
   const t = useTranslations('game');
+
+  const [rankOpen, toggleRankOpen] = useRankOpen();
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [allRoundResults, setAllRoundResults] = useState<AllRoundResult[] | null>(null);
@@ -131,7 +135,10 @@ export default function DailyResultsPage() {
         avatarUrl={topbarAvatarUrl}
         initials={topbarInitials}
         onAvatarClick={() => setShowNavModal(true)}
+        rankOpen={rankOpen}
+        onToggleRank={toggleRankOpen}
       />
+      <RankCard totalXp={Number(topbarXp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
       <NavModal
         isOpen={showNavModal}
         onClose={() => setShowNavModal(false)}

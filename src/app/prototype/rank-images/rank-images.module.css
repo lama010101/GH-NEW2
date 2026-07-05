@@ -1,0 +1,231 @@
+/* ============================================================================
+   PROTOTYPE RANK IMAGES — styles
+   Lists all 10 rank titles with their related Unsplash images.
+   Dark theme matching other prototypes. Responsive grid.
+   ============================================================================ */
+
+.screen {
+  min-height: 100vh;
+  background: #080c14;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 60px 16px 40px;
+  box-sizing: border-box;
+}
+
+/* ── Proto bar ── */
+.protoBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(10, 10, 12, 0.6);
+  backdrop-filter: blur(8px);
+  flex-wrap: wrap;
+}
+
+.protoTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  opacity: 0.85;
+}
+
+.protoLinks {
+  display: flex;
+  gap: 8px;
+}
+
+.protoLink {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gh-teal);
+  text-decoration: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.15s;
+}
+
+.protoLink:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ── Header ── */
+.header {
+  max-width: 900px;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+
+.headerTitle {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.headerSub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Monaco', monospace;
+}
+
+/* ── Grid of rank cards ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.rankCard {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.rankCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Card image ── */
+.cardImageWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tierBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--gh-teal);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+/* ── Card body ── */
+.cardBody {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardTitle {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.cardMeta {
+  display: flex;
+  gap: 16px;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metaLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.metaVal {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cardImageLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.imgLabel {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.imgVal {
+  color: var(--gh-teal);
+  font-weight: 600;
+}
+
+.cardUnsplash {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+
+.unsplashLabel {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.unsplashQuery {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Monaco', monospace;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .headerTitle {
+    font-size: 22px;
+  }
+}

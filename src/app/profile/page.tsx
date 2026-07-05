@@ -7,6 +7,8 @@ import { useIdentity } from '@/hooks/useIdentity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import styles from './profile.module.css';
 import TopBar from '@/components/layout/TopBar';
+import RankCard from '@/components/RankCard';
+import { useRankOpen } from '@/hooks/useRankOpen';
 import { NavModal } from '@/components/NavModal';
 import { AvatarPickerModal } from '@/components/AvatarPickerModal';
 import ExperienceAccuracy from '@/components/ExperienceAccuracy';
@@ -36,6 +38,7 @@ export default function ProfilePage() {
   const [xp, setXp] = useState('--');
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [showNavModal, setShowNavModal] = useState(false);
+  const [rankOpen, toggleRankOpen] = useRankOpen();
   const [progressData, setProgressData] = useState<{
     byCentury: Array<{ century: string; avgAccuracy: number; totalXp: number; roundCount: number }>
     byContinent: Array<{ continent: string; avgAccuracy: number; totalXp: number; roundCount: number }>
@@ -112,14 +115,14 @@ export default function ProfilePage() {
           .select('avg_accuracy, games_played, total_xp')
           .eq('player_id', playerId)
           .limit(1)
-          .single();
+          .maybeSingle();
 
         const { data: levelupResult } = await supabaseBrowser
           .from('leaderboard_levelup')
           .select('current_level, best_accuracy')
           .eq('player_id', playerId)
           .limit(1)
-          .single();
+          .maybeSingle();
 
         let historicalAvatar: ProfileHistoricalAvatar | null = null;
         if (profileResult?.avatar_url) {
@@ -243,10 +246,13 @@ export default function ProfilePage() {
         avatarUrl={profileData.avatarUrl}
         initials={getInitials(profileData.displayName)}
         onAvatarClick={() => setShowNavModal(true)}
+        rankOpen={rankOpen}
+        onToggleRank={toggleRankOpen}
       />
+      <RankCard totalXp={profileData.totalXp ?? 0} open={rankOpen} />
 
       {/* 3. BACK BUTTON */}
-      <div className="relative z-10 max-w-[820px] mx-auto pt-4 px-6">
+      <div className="relative z-10 max-w-[820px] mx-auto px-6" style={{ paddingTop: rankOpen ? 100 : 20 }}>
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-sm text-[var(--gh-text-secondary)] hover:text-[var(--gh-text-primary)] transition-colors cursor-pointer"

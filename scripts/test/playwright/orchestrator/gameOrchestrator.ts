@@ -132,22 +132,32 @@ export class GameOrchestrator {
     // all 3 games, not just game 1. (H15 fix)
     this.opts.edgeCaseEngine?.resetForNewGame();
 
-    // Create game via API (host)
+    // Create game via API (host) — with retry for transient connection errors
     this.opts.onStep?.('Creating game via API...');
     const baseURL = this.browserPool['baseURL'] as string;
-    const createResponse = await host.page.request.post(`${baseURL}/api/compete/create`, {
-      data: {
-        displayName: host.user.displayName,
-        playerId: host.user.id,
-        mode: 'sync',
-        totalRounds: this.opts.totalRounds,
-        roundTimerSec: 120,
-      },
-    });
+    let createResponse;
+    for (let createAttempt = 0; createAttempt < 3; createAttempt++) {
+      try {
+        createResponse = await host.page.request.post(`${baseURL}/api/compete/create`, {
+          data: {
+            displayName: host.user.displayName,
+            playerId: host.user.id,
+            mode: 'sync',
+            totalRounds: this.opts.totalRounds,
+            roundTimerSec: 120,
+          },
+          timeout: 30000,
+        });
+        if (createResponse.ok()) break;
+      } catch (createErr) {
+        console.warn(`[ORCHESTRATOR] Create game attempt ${createAttempt + 1} failed: ${createErr instanceof Error ? createErr.message : String(createErr)}`);
+      }
+      if (createAttempt < 2) await new Promise(r => setTimeout(r, 5000 * (createAttempt + 1)));
+    }
 
-    if (!createResponse.ok()) {
-      const text = await createResponse.text();
-      throw new Error(`Failed to create game: ${text}`);
+    if (!createResponse || !createResponse.ok()) {
+      const text = createResponse ? await createResponse.text() : 'no response';
+      throw new Error(`Failed to create game after 3 attempts: ${text}`);
     }
 
     const sessionData = await createResponse.json();
@@ -380,25 +390,43 @@ export class GameOrchestrator {
     const baseURL = this.browserPool['baseURL'] as string;
     try {
       await host.page.goto(`${baseURL}/login`, { waitUntil: 'domcontentloaded' });
-      await loginViaAuthModal(host.page, host.user);
-      console.log(`[PLAY_AGAIN] Host re-authenticated: ${host.user.email}`);
+      // Quick-check if auth modal appears (5s). If not, the host is likely
+      // already authenticated — skip re-auth to avoid wasting 120s.
+      const modal = host.page.getByTestId('auth-modal').first();
+      const modalVisible = await modal.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false);
+      if (modalVisible) {
+        await loginViaAuthModal(host.page, host.user);
+        console.log(`[PLAY_AGAIN] Host re-authenticated: ${host.user.email}`);
+      } else {
+        console.log(`[PLAY_AGAIN] Host already authenticated, skipping re-auth: ${host.user.email}`);
+      }
     } catch (authErr) {
       console.warn(`[PLAY_AGAIN] Host re-auth failed (continuing with existing cookie): ${authErr instanceof Error ? authErr.message : String(authErr)}`);
     }
 
-    // Host creates new game via API
-    const createResponse = await host.page.request.post(`${baseURL}/api/compete/create`, {
-      data: {
-        displayName: host.user.displayName,
-        playerId: host.user.id,
-        mode: 'sync',
-        totalRounds: this.opts.totalRounds,
-        roundTimerSec: 120,
-      },
-    });
+    // Host creates new game via API (with retry for transient connection errors)
+    let createResponse;
+    for (let createAttempt = 0; createAttempt < 3; createAttempt++) {
+      try {
+        createResponse = await host.page.request.post(`${baseURL}/api/compete/create`, {
+          data: {
+            displayName: host.user.displayName,
+            playerId: host.user.id,
+            mode: 'sync',
+            totalRounds: this.opts.totalRounds,
+            roundTimerSec: 120,
+          },
+          timeout: 30000,
+        });
+        if (createResponse.ok()) break;
+      } catch (createErr) {
+        console.warn(`[PLAY_AGAIN] Create game attempt ${createAttempt + 1} failed: ${createErr instanceof Error ? createErr.message : String(createErr)}`);
+      }
+      if (createAttempt < 2) await new Promise(r => setTimeout(r, 5000 * (createAttempt + 1)));
+    }
 
-    if (!createResponse.ok()) {
-      throw new Error(`Failed to create new game for play again: ${await createResponse.text()}`);
+    if (!createResponse || !createResponse.ok()) {
+      throw new Error(`Failed to create new game for play again after 3 attempts: ${createResponse ? await createResponse.text() : 'no response'}`);
     }
 
     const sessionData = await createResponse.json();

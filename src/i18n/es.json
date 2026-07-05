@@ -7,7 +7,6 @@
     "leaderboard": "Clasificación",
     "profile_stats": "Perfil y Estadísticas",
     "account": "Cuenta",
-    "account_settings": "Cuenta y ajustes",
     "help": "Ayuda",
     "sign_out": "Cerrar sesión",
     "language": "Idioma",
@@ -475,7 +474,8 @@
     "tier_year_label": "AÑO",
     "map_error_title": "Error al renderizar el mapa",
     "map_error_details": "Consulta la consola para más detalles",
-    "badge_alt": "Insignia {tier} {dimension}"
+    "badge_alt": "Insignia {tier} {dimension}",
+    "player_submitted_round": "{name} envió la ronda {n}"
   },
   "auth": {
     "sign_in": "Iniciar sesión",

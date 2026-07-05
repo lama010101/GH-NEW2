@@ -7,7 +7,6 @@
     "leaderboard": "Bestenliste",
     "profile_stats": "Profil & Statistiken",
     "account": "Konto",
-    "account_settings": "Konto und Einstellungen",
     "help": "Hilfe",
     "sign_out": "Abmelden",
     "language": "Sprache",
@@ -475,7 +474,8 @@
     "tier_year_label": "JAHR",
     "map_error_title": "Karte konnte nicht gerendert werden",
     "map_error_details": "Siehe Konsole für Details",
-    "badge_alt": "Abzeichen {tier} {dimension}"
+    "badge_alt": "Abzeichen {tier} {dimension}",
+    "player_submitted_round": "{name} hat Runde {n} abgegeben"
   },
   "auth": {
     "sign_in": "Anmelden",

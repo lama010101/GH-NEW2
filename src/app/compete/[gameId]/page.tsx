@@ -32,6 +32,8 @@ import LobbySection from "@/components/compete/LobbySection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
+import RankCard from "@/components/RankCard";
+import { useRankOpen } from "@/hooks/useRankOpen";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import useCompeteTimer from "@/hooks/useCompeteTimer";
@@ -55,6 +57,8 @@ export default function CompeteGamePage() {
   const [busy, setBusy] = useState(false);
   const [localSubmitted, setLocalSubmitted] = useState(false);
   const [timerClamped, setTimerClamped] = useState(false);
+  const [playerSubmittedToast, setPlayerSubmittedToast] = useState<string | null>(null);
+  const playerSubmittedToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hintModalOpen, setHintModalOpen] = useState(false);
   const [hintResult, setHintResult] = useState<HintPurchaseResult>({
     purchasedIds: [],
@@ -71,6 +75,7 @@ export default function CompeteGamePage() {
   const [locationName, setLocationName] = useState<string | null>(null);
   // Lobby TopBar data (mirrors home page sourcing)
   const [showNavModal, setShowNavModal] = useState(false);
+  const [rankOpen, toggleRankOpen] = useRankOpen();
   const [topbarAccuracy, setTopbarAccuracy] = useState("--");
   const [topbarXp, setTopbarXp] = useState("--");
   const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
@@ -269,7 +274,7 @@ export default function CompeteGamePage() {
       setSnapshot(newSnapshot);
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    onPlayerSubmitted: (submittedPlayerId, _playerName) => {
+    onPlayerSubmitted: (submittedPlayerId, playerName) => {
       if (submittedPlayerId !== playerId) {
         // Red flash for other players
         setTimerClamped(true);
@@ -281,7 +286,7 @@ export default function CompeteGamePage() {
         // Alarm sound: short sharp beep via Web Audio API
         try {
           const ctx = new (window.AudioContext ||
-            (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.frequency.value = 660;
@@ -293,6 +298,15 @@ export default function CompeteGamePage() {
           osc.start();
           osc.stop(ctx.currentTime + 0.25);
         } catch { /* audio not available */ }
+        // In-app text broadcast — spec §5.8: "Player X submitted round N."
+        // Only shown in async (Relax) mode; in sync (Rush) the round completes
+        // immediately when all submit, so a persistent text toast is noise.
+        if (snapshot?.config?.mode === 'async' && snapshot?.status === 'ROUND_ACTIVE') {
+          const roundNum = (snapshot.currentRoundIndex ?? 0) + 1;
+          setPlayerSubmittedToast(t('player_submitted_round', { name: playerName, n: roundNum }));
+          if (playerSubmittedToastTimer.current) clearTimeout(playerSubmittedToastTimer.current);
+          playerSubmittedToastTimer.current = setTimeout(() => setPlayerSubmittedToast(null), 3500);
+        }
       }
       // Self-submission overlay is driven by localSubmitted state — no action needed here
     },
@@ -548,7 +562,10 @@ export default function CompeteGamePage() {
             avatarUrl={topbarAvatarUrl}
             initials={topbarInitials}
             onAvatarClick={() => setShowNavModal(true)}
+            rankOpen={rankOpen}
+            onToggleRank={toggleRankOpen}
           />
+          <RankCard totalXp={Number(topbarXp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
           <NavModal
             isOpen={showNavModal}
             onClose={() => setShowNavModal(false)}
@@ -562,6 +579,12 @@ export default function CompeteGamePage() {
       <div className={pageStyles.bgScrim} />
       {timerClamped && (
         <div className={pageStyles.timerFlashOverlay} />
+      )}
+      {/* In-app text broadcast — async (Relax) only, spec §5.8 */}
+      {playerSubmittedToast && (
+        <div className={pageStyles.playerSubmittedToast}>
+          {playerSubmittedToast}
+        </div>
       )}
       {/* Post-submission overlay: shown to self only, persists until round ends */}
       {localSubmitted && snapshot?.status === 'ROUND_ACTIVE' && (
@@ -620,7 +643,7 @@ export default function CompeteGamePage() {
 
         {snapshot.status === "LOBBY" ? (
           <>
-            <div className={pageStyles.lobbyTopBarSpacer} />
+            <div className={pageStyles.lobbyTopBarSpacer} style={{ height: rankOpen ? 160 : 80 }} />
             {wsDisconnected && (
               <section
                 className={`card ${pageStyles.connectionLostCard}`}

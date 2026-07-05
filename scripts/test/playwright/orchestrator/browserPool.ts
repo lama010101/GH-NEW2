@@ -133,7 +133,20 @@ export class BrowserPool {
       // login — the modal's onClose navigates to next="/" (already compiled)
       // instead of next="/home" (cold compile, 30+s), keeping the modal
       // detach within the 20s AUTH_TIMEOUT.
-      await page.goto(`${this.opts.baseURL}/login`, { waitUntil: 'domcontentloaded' });
+      // Navigate to /login with retry on connection refused (dev server
+      // may crash/restart under high load — retry up to 3 times with backoff).
+      let navOk = false;
+      for (let navAttempt = 0; navAttempt < 3; navAttempt++) {
+        try {
+          await page.goto(`${this.opts.baseURL}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+          navOk = true;
+          break;
+        } catch (navErr) {
+          console.warn(`[BROWSER_POOL] navigateToLogin attempt ${navAttempt + 1} failed: ${navErr instanceof Error ? navErr.message : String(navErr)}`);
+          if (navAttempt < 2) await new Promise(r => setTimeout(r, 5000 * (navAttempt + 1)));
+        }
+      }
+      if (!navOk) throw new Error(`[BROWSER_POOL] Failed to navigate to /login after 3 attempts`);
       await page.waitForLoadState('domcontentloaded').catch(() => undefined);
 
       // Log in via the AuthModal UI

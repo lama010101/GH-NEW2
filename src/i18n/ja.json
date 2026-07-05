@@ -7,7 +7,6 @@
     "leaderboard": "ランキング",
     "profile_stats": "プロフィールと統計",
     "account": "アカウント",
-    "account_settings": "アカウントと設定",
     "help": "ヘルプ",
     "sign_out": "ログアウト",
     "language": "言語",
@@ -475,7 +474,8 @@
     "tier_year_label": "年",
     "map_error_title": "マップの表示に失敗しました",
     "map_error_details": "詳細はコンソールを確認してください",
-    "badge_alt": "{tier} {dimension} バッジ"
+    "badge_alt": "{tier} {dimension} バッジ",
+    "player_submitted_round": "{name} がラウンド {n} を送信しました"
   },
   "auth": {
     "sign_in": "ログイン",

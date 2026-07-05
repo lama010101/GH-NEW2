@@ -13,6 +13,8 @@ import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
+import RankCard from "@/components/RankCard";
+import { useRankOpen } from "@/hooks/useRankOpen";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { computeTimeRemaining } from "@/core/competeUtils";
@@ -49,6 +51,7 @@ export default function PracticeGamePage() {
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [locationName, setLocationName] = useState<string | null>(null);
   const [showNavModal, setShowNavModal] = useState(false);
+  const [rankOpen, toggleRankOpen] = useRankOpen();
   const [practiceModalOpen, setPracticeModalOpen] = useState(false);
   const [practiceModalInitial, setPracticeModalInitial] = useState<Partial<PracticeModalSettings> | undefined>(undefined);
   const [practiceCreating, setPracticeCreating] = useState(false);
@@ -202,6 +205,34 @@ export default function PracticeGamePage() {
         });
     }
   }, [snapshot?.status, gameId, playerId, allRoundResults]);
+
+  // Fetch round results when entering ROUND_COMPLETE without results (e.g. after refresh).
+  // Mirrors useCompeteSocket.ts:127-149 — the GET snapshot does not include results,
+  // so a refresh leaves roundResults null and the leaderboard empty.
+  useEffect(() => {
+    if (snapshot?.status !== "ROUND_COMPLETE") return;
+    if (roundResults !== null) return;
+    if (!gameId) return;
+    if (typeof snapshot.currentRoundIndex !== "number") return;
+
+    let cancelled = false;
+    fetch(`/api/compete/${gameId}/round/${snapshot.currentRoundIndex}/results?playerId=${playerId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        if (Array.isArray(data.results)) {
+          setRoundResults([...data.results].sort((a, b) => a.rank - b.rank));
+        } else {
+          setRoundResults([]);
+        }
+      })
+      .catch(err => {
+        if (cancelled) return;
+        console.error("[PracticeGamePage] Failed to fetch round results on refresh:", err);
+        setRoundResults([]);
+      });
+    return () => { cancelled = true };
+  }, [snapshot?.status, snapshot?.currentRoundIndex, roundResults, gameId, playerId]);
 
   // Local UI-only timer derived from snapshot.roundEndsAt
   useEffect(() => {
@@ -533,7 +564,11 @@ export default function PracticeGamePage() {
             avatarUrl={topbarAvatarUrl}
             initials={topbarInitials}
             onAvatarClick={() => setShowNavModal(true)}
+            rankOpen={rankOpen}
+            onToggleRank={toggleRankOpen}
           />
+          <RankCard totalXp={Number(topbarXp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
+          <div style={{ height: rankOpen ? 160 : 80 }} />
           <NavModal
             isOpen={showNavModal}
             onClose={() => setShowNavModal(false)}
