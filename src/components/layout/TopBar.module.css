@@ -17,19 +17,59 @@
   align-items: center;
 }
 
-.xpPill {
+/* Column wrapping the xp pill + chevron (centered in topbar) */
+.xpPillCol {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.xpPill {
   display: flex;
   align-items: center;
   gap: 8px;
   background: var(--gh-bg-elevated);
   border: 1px solid var(--gh-border-default);
   border-radius: 20px;
-  padding: 6px 14px;
+  padding: 5px 12px;
   cursor: pointer;
   font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.xpPill:hover {
+  background: var(--gh-glass-bg-hover);
+  border-color: var(--gh-border-medium);
+}
+
+/* Chevron inside the xp pill — rotates up when rank card is open */
+.xpPillChev {
+  flex-shrink: 0;
+  color: var(--gh-text-muted);
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+  transform: rotate(0deg);
+}
+
+.xpPillChevOpen {
+  transform: rotate(180deg);
+}
+
+/* Gold "LVL N" badge inside the score pill */
+.xpPillBadge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #06181c;
+  background: var(--gh-gold);
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 .xpPillAccuracy {
@@ -41,18 +81,8 @@
 .xpPillSuffix {
   font-size: var(--font-2xs);
   color: var(--gh-text-muted);
-  margin-left: 2px;
-}
-
-.xpPillDivider {
-  color: var(--gh-border-medium);
-  font-size: var(--font-2xs);
-}
-
-.xpPillXp {
-  font-size: var(--font-sm);
-  font-weight: 700;
-  color: var(--gh-gold);
+  margin-left: 1px;
+  opacity: 0.8;
 }
 
 .topbarRight {
@@ -101,13 +131,5 @@
 
   .xpPillAccuracy {
     font-size: var(--font-xs);
-  }
-
-  .xpPillXp {
-    font-size: var(--font-xs);
-  }
-
-  .xpPillDivider {
-    font-size: 10px;
   }
 }

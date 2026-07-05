@@ -28,11 +28,11 @@ const ALL_ERA_IDS = ERAS.map(e => e.id);
 
 type RegionId = 'africa' | 'asia' | 'europe' | 'north_america' | 'oceania_antarctica' | 'south_america';
 const REGIONS: { id: RegionId; label: string; icon: string; stockImg: string; continents: string[] }[] = [
-  { id: 'europe',             label: 'Europe',                icon: '�', stockImg: REGION_STOCK_IMAGES.europe,             continents: ['Europe'] },
+  { id: 'europe',             label: 'Europe',                icon: '🏰', stockImg: REGION_STOCK_IMAGES.europe,             continents: ['Europe'] },
   { id: 'asia',               label: 'Asia',                  icon: '🏯', stockImg: REGION_STOCK_IMAGES.asia,               continents: ['Asia'] },
   { id: 'north_america',      label: 'North America',         icon: '🗽', stockImg: REGION_STOCK_IMAGES.north_america,      continents: ['North America'] },
   { id: 'south_america',      label: 'South America',         icon: '🦜', stockImg: REGION_STOCK_IMAGES.south_america,      continents: ['South America'] },
-  { id: 'africa',             label: 'Africa',                icon: '�', stockImg: REGION_STOCK_IMAGES.africa,             continents: ['Africa'] },
+  { id: 'africa',             label: 'Africa',                icon: '🌍', stockImg: REGION_STOCK_IMAGES.africa,             continents: ['Africa'] },
   { id: 'oceania_antarctica', label: 'Oceania & Antarctica',  icon: '🏝️', stockImg: REGION_STOCK_IMAGES.oceania_antarctica, continents: ['Oceania', 'Antarctica'] },
 ];
 const ALL_REGION_IDS = REGIONS.map(r => r.id);

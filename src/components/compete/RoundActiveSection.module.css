@@ -301,6 +301,79 @@
 
 /* ── Fullscreen map overlay ── */
 
+/* ── Partial leaderboard (async Relax only, spec §5.8) ── */
+
+.partialLeaderboard {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--gh-modal-overlay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 12px;
+  padding: 8px 10px;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.partialLeaderboardTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gh-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.partialLeaderboardAccentBar {
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: var(--gh-accent, #6366f1);
+  border-radius: 2px;
+}
+
+.partialLeaderboardRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--gh-text-primary);
+  padding: 2px 0;
+}
+
+.partialLeaderboardRowMe {
+  color: var(--gh-accent, #6366f1);
+  font-weight: 700;
+}
+
+.partialLeaderboardRank {
+  width: 16px;
+  text-align: right;
+  color: var(--gh-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.partialLeaderboardName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.partialLeaderboardScore {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
 .mapFullscreenOverlay {
   position: fixed;
   inset: 0;

@@ -7,7 +7,6 @@
     "leaderboard": "لوحة المتصدرين",
     "profile_stats": "الملف والإحصائيات",
     "account": "الحساب",
-    "account_settings": "الحساب والإعدادات",
     "help": "المساعدة",
     "sign_out": "تسجيل الخروج",
     "language": "اللغة",
@@ -475,7 +474,8 @@
     "tier_year_label": "سنة",
     "map_error_title": "فشل عرض الخريطة",
     "map_error_details": "تحقق من وحدة التحكم للتفاصيل",
-    "badge_alt": "وسام {tier} {dimension}"
+    "badge_alt": "وسام {tier} {dimension}",
+    "player_submitted_round": "{name} سلم في الجولة {n}"
   },
   "auth": {
     "sign_in": "تسجيل الدخول",

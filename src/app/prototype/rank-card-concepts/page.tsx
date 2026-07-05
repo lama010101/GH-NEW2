@@ -1,61 +1,58 @@
 "use client";
 
 // ============================================================================
-// STANDALONE PROTOTYPE — Progress Card · Sub-Progress Variants
+// STANDALONE PROTOTYPE — Progress Card · Dan Pips with Title Ladder
 // Route: /prototype/rank-card-concepts   (direct access, self-contained)
 //
-// 2 alternatives for the WHERE/WHEN sub-progress. Both cards are expandable
-// (click the header to show/hide the where/when sections):
+// Single expandable card (Voyager) with:
+//   • MAIN progress bar (orange) — overall XP progression
+//   • WHERE/WHEN sub-progress: dan pips + bar with Current → Next titles
+//   • Medallion image from Unsplash
 //
-//   Alt 1 — Vertical "Reputation" card (centered, full-width bars, divided sections)
-//   Alt 3 — Dan pips (karate-style ladder of filled/empty pips, no dan text)
+// Below the card: full list of all 10 titles, each with an Unsplash icon image.
 //
 // All data is MOCK.
 // ============================================================================
 
 import React, { useState } from "react";
-import { GraduationCap, Globe, Calendar, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 // ── Mock player state ────────────────────────────────────────────────────────
 const fmt = (n: number) => n.toLocaleString();
 
-// Alt 1 mock
-const A1 = {
-  title: "Historian",
-  totalXp: 42_870,
-  xpToNext: 2_130,
-  mainPct: 80,
-  nextTitle: "Scholar",
-  whereTitle: "Cartographer",
-  whereXpToNext: 980,
-  wherePct: 70,
-  whereNext: "Atlas Keeper",
-  whenTitle: "Chronicler",
-  whenXpToNext: 1_760,
-  whenPct: 45,
-  whenNext: "Master Historian",
-};
-
-// Alt 3 mock (Voyager card)
-const A3 = {
+const PLAYER = {
   title: "Voyager",
   totalXp: 32_500,
   xpToNext: 17_500,
   mainPct: 42,
   nextTitle: "Explorer",
-  whereDan: 6,
-  whenDan: 3,
-  danMax: 10,
+  medallionImg: "https://images.unsplash.com/photo-1524661135-423995f22d80?w=200&h=200&fit=crop&auto=format",
+  where: { current: "Scout", next: "Pathfinder", dan: 6, pct: 65, danMax: 10 },
+  when: { current: "Novice", next: "Adept", dan: 3, pct: 28, danMax: 10 },
 };
+
+// ── All 10 titles with Unsplash icon images ──────────────────────────────────
+const ALL_TITLES: { title: string; img: string; threshold: string }[] = [
+  { title: "Wanderer",          threshold: "0 XP",         img: "https://images.unsplash.com/photo-1551632811-561ee280da53?w=80&h=80&fit=crop&auto=format" },
+  { title: "Pathfinder",        threshold: "1,000 XP",     img: "https://images.unsplash.com/photo-1566939836438-8388ee6b29ae?w=80&h=80&fit=crop&auto=format" },
+  { title: "Trailblazer",       threshold: "5,000 XP",     img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=80&h=80&fit=crop&auto=format" },
+  { title: "Cartographer",      threshold: "20,000 XP",    img: "https://images.unsplash.com/photo-1582058016430-7863e8656231?w=80&h=80&fit=crop&auto=format" },
+  { title: "Explorer",          threshold: "50,000 XP",    img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=80&h=80&fit=crop&auto=format" },
+  { title: "Navigator",         threshold: "125,000 XP",   img: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=80&h=80&fit=crop&auto=format" },
+  { title: "Chronicler",        threshold: "300,000 XP",   img: "https://images.unsplash.com/photo-1568667256549-0947932f0f33?w=80&h=80&fit=crop&auto=format" },
+  { title: "Historian",         threshold: "600,000 XP",   img: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=80&h=80&fit=crop&auto=format" },
+  { title: "Scholar",           threshold: "1,200,000 XP", img: "https://images.unsplash.com/photo-1532012197267-da84d127e450?w=80&h=80&fit=crop&auto=format" },
+  { title: "Cartographer Royal", threshold: "2,500,000 XP", img: "https://images.unsplash.com/photo-1606107557195-0e88e5d3ebbe?w=80&h=80&fit=crop&auto=format" },
+];
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function RankCardConceptsPage() {
   return (
     <div className="screen">
       <div className="protoBar">
-        <span className="protoTitle">Progress Card · Sub-Progress Variants</span>
+        <span className="protoTitle">Progress Card · Dan Pips</span>
         <span className="protoHint">
-          Main <b className="mainClr">orange</b> · Where <b className="whereClr">cyan</b> · When <b className="whenClr">pink</b> · tap card to expand
+          Main <b className="mainClr">orange</b> · Where <b className="whereClr">cyan</b> · When <b className="whenClr">pink</b>
         </span>
       </div>
 
@@ -65,16 +62,13 @@ export default function RankCardConceptsPage() {
 
       <div className="scroll">
         <div className="legend">
-          2 alternatives for WHERE/WHEN sub-progress. Click a card to expand/collapse.
+          Expandable card with dan pips + title progression. Images from Unsplash.
         </div>
 
-        {/* ── Alt 1 — Vertical Reputation card ────────────────────────────────── */}
-        <h2 className="conceptTitle">Alt 1 · Reputation Card</h2>
-        <Alt1Card />
+        <ProgressCard />
 
-        {/* ── Alt 3 — Dan pips (no dan text) ──────────────────────────────────── */}
-        <h2 className="conceptTitle">Alt 3 · Dan Pips</h2>
-        <Alt3Card />
+        <h2 className="conceptTitle">All Titles</h2>
+        <TitleLadder />
 
         <div className="dockSpacer" />
       </div>
@@ -82,7 +76,6 @@ export default function RankCardConceptsPage() {
       <style jsx global>{`
         html, body { margin: 0; padding: 0; background: #0a0a0a; }
 
-        /* ── Global color tokens ── */
         :root {
           --main-color: #fb923c;
           --main-dk: #f97316;
@@ -120,17 +113,14 @@ export default function RankCardConceptsPage() {
           font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
           color: rgba(255,255,255,0.5); margin: 18px 2px -4px;
         }
-        .conceptTitle:first-of-type { margin-top: 0; }
         .dockSpacer { height: 8px; }
 
-        /* ── Shared card ── */
         .card {
           background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
           border: 1px solid rgba(255,255,255,0.1); border-radius: 18px;
           backdrop-filter: blur(10px); box-shadow: 0 8px 30px rgba(0,0,0,0.35);
         }
 
-        /* ── Bars ── */
         .bar { border-radius: 999px; background: rgba(255,255,255,0.1); overflow: hidden; }
         .barFill {
           display: block; height: 100%; border-radius: 999px;
@@ -140,196 +130,127 @@ export default function RankCardConceptsPage() {
         .whereFill { background: var(--where-color); }
         .whenFill { background: var(--when-color); }
 
-        /* ── Dots ── */
         .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .whereDot { background: var(--where-color); box-shadow: 0 0 6px rgba(34,211,238,0.6); }
         .whenDot { background: var(--when-color); box-shadow: 0 0 6px rgba(232,121,249,0.6); }
 
-        /* ── Expand/collapse chevron ── */
         .expandChev {
           transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
-          opacity: 0.5; flex-shrink: 0;
+          opacity: 0.4; flex-shrink: 0; cursor: pointer;
         }
         .expandChevOpen { transform: rotate(180deg); }
 
-        /* ── Collapsible body (shared) ── */
         .collapseBody {
           overflow: hidden;
           transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s, margin 0.3s;
         }
         .collapseClosed { max-height: 0; opacity: 0; margin-top: 0; }
-        .collapseOpen { max-height: 500px; opacity: 1; }
+        .collapseOpen { max-height: 600px; opacity: 1; }
       `}</style>
     </div>
   );
 }
 
-// ── Alt 1 — Vertical Reputation Card ─────────────────────────────────────────
-function Alt1Card() {
+// ── Progress Card (Alt 3 — Dan Pips) ─────────────────────────────────────────
+function ProgressCard() {
   const [open, setOpen] = useState(true);
   return (
-    <section className="card a1" onClick={() => setOpen((v) => !v)} role="button" tabIndex={0}>
-      <div className="a1-main">
-        <span className="a1-repLabel">YOUR REPUTATION</span>
-        <div className="a1-titleRow">
-          <GraduationCap size={22} className="mainClr" strokeWidth={1.8} />
-          <h3 className="a1-title">{A1.title}</h3>
-        </div>
-        <span className="a1-totalXp">{fmt(A1.totalXp)} Total XP</span>
-
-        <div className="bar a1-barMain">
-          <span className="barFill mainFill" style={{ width: `${A1.mainPct}%` }} />
-        </div>
-        <span className="a1-nextLine mainClr">{fmt(A1.xpToNext)} XP to {A1.nextTitle}</span>
-
-        <div className="a1-expandHint">
-          <span>{open ? "Hide" : "Show"} mastery</span>
-          <ChevronDown size={15} className={`expandChev ${open ? "expandChevOpen" : ""}`} />
-        </div>
-      </div>
-
-      <div className={`collapseBody ${open ? "collapseOpen" : "collapseClosed"}`}>
-        <div className="a1-divider" />
-
-        <div className="a1-section">
-          <div className="a1-secHead">
-            <Globe size={14} className="whereClr" strokeWidth={2} />
-            <span className="a1-secLabel whereClr">WHERE MASTERY</span>
-          </div>
-          <span className="a1-secTitle">{A1.whereTitle}</span>
-          <div className="bar a1-barSub">
-            <span className="barFill whereFill" style={{ width: `${A1.wherePct}%` }} />
-          </div>
-          <span className="a1-secNext whereClr">{fmt(A1.whereXpToNext)} XP to {A1.whereNext}</span>
-        </div>
-
-        <div className="a1-section">
-          <div className="a1-secHead">
-            <Calendar size={14} className="whenClr" strokeWidth={2} />
-            <span className="a1-secLabel whenClr">WHEN MASTERY</span>
-          </div>
-          <span className="a1-secTitle">{A1.whenTitle}</span>
-          <div className="bar a1-barSub">
-            <span className="barFill whenFill" style={{ width: `${A1.whenPct}%` }} />
-          </div>
-          <span className="a1-secNext whenClr">{fmt(A1.whenXpToNext)} XP to {A1.whenNext}</span>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .a1 { padding: 20px 18px; cursor: pointer; }
-        .a1-main { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; }
-        .a1-repLabel {
-          font-size: 10px; font-weight: 800; letter-spacing: 2px; color: rgba(255,255,255,0.4);
-        }
-        .a1-titleRow { display: flex; align-items: center; gap: 8px; }
-        .a1-title { font-size: 22px; font-weight: 800; margin: 0; line-height: 1.1; }
-        .a1-totalXp { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); }
-        .a1-barMain { height: 8px; width: 100%; margin-top: 6px; }
-        .a1-nextLine { font-size: 12px; font-weight: 700; margin-top: 4px; }
-        .a1-expandHint {
-          display: flex; align-items: center; gap: 4px; margin-top: 8px;
-          font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4);
-        }
-
-        .a1-divider {
-          height: 1px; background: rgba(255,255,255,0.1); margin: 14px 0;
-        }
-        .a1-section { display: flex; flex-direction: column; gap: 4px; text-align: center; margin-bottom: 14px; }
-        .a1-section:last-child { margin-bottom: 0; }
-        .a1-secHead { display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .a1-secLabel { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; }
-        .a1-secTitle { font-size: 15px; font-weight: 800; }
-        .a1-barSub { height: 6px; width: 100%; }
-        .a1-secNext { font-size: 11px; font-weight: 700; margin-top: 2px; }
-      `}</style>
-    </section>
-  );
-}
-
-// ── Alt 3 — Dan Pips (no dan text) ───────────────────────────────────────────
-function Alt3Card() {
-  const [open, setOpen] = useState(true);
-  return (
-    <section className="card a3" onClick={() => setOpen((v) => !v)} role="button" tabIndex={0}>
-      <div className="a3-main">
-        <div className="medallion med-square">
+    <section className="card pc">
+      <div className="pc-main">
+        <div className="medallion">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/era-region/africa.jpg" alt="Voyager" className="medImg" draggable={false} />
+          <img src={PLAYER.medallionImg} alt={PLAYER.title} className="medImg" draggable={false} />
         </div>
-        <div className="a3-body">
-          <div className="a3-head">
-            <div className="a3-titles"><h3 className="a3-title">{A3.title}</h3></div>
-            <span className="a3-xp">{fmt(A3.totalXp)}<i>XP</i></span>
+        <div className="pc-body">
+          <div className="pc-head">
+            <div className="pc-titles"><h3 className="pc-title">{PLAYER.title}</h3></div>
+            <span className="pc-xp">{fmt(PLAYER.totalXp)}<i>XP</i></span>
           </div>
-          <div className="a3-nextLine">
-            <span className="a3-nextLabel">Next</span>
-            <span className="a3-nextTitle mainClr">{fmt(A3.xpToNext)} XP to {A3.nextTitle}</span>
+          <div className="pc-nextLine">
+            <span className="pc-nextLabel">Next</span>
+            <span className="pc-nextTitle mainClr">{fmt(PLAYER.xpToNext)} XP to {PLAYER.nextTitle}</span>
           </div>
-          <div className="bar a3-barMain">
-            <span className="barFill mainFill" style={{ width: `${A3.mainPct}%` }} />
+          <div className="bar pc-barMain">
+            <span className="barFill mainFill" style={{ width: `${PLAYER.mainPct}%` }} />
           </div>
-
-          <div className="a3-expandHint">
-            <span>{open ? "Hide" : "Show"} mastery</span>
-            <ChevronDown size={15} className={`expandChev ${open ? "expandChevOpen" : ""}`} />
+          <div className="pc-expandRow" onClick={() => setOpen((v) => !v)}>
+            <ChevronDown size={18} className={`expandChev ${open ? "expandChevOpen" : ""}`} />
           </div>
         </div>
       </div>
 
       <div className={`collapseBody ${open ? "collapseOpen" : "collapseClosed"}`}>
-        <div className="a3-divider" />
+        <div className="pc-divider" />
 
-        <div className="a3-danRow">
-          <span className="dot whereDot" />
-          <span className="a3-subLabel whereClr">WHERE</span>
-          <span className="a3-danPips">
-            {Array.from({ length: A3.danMax }).map((_, i) => (
-              <span key={i} className={`danPip ${i < A3.whereDan ? "danPipOn wherePipOn" : ""}`} />
+        {/* WHERE — dan pips + bar with Current → Next */}
+        <div className="pc-sub">
+          <div className="pc-subHead">
+            <span className="dot whereDot" />
+            <span className="pc-subLabel whereClr">WHERE</span>
+            <span className="pc-subTitles whereClr">
+              {PLAYER.where.current} <span className="pc-arrow">→</span> {PLAYER.where.next}
+            </span>
+          </div>
+          <div className="bar pc-barSub">
+            <span className="barFill whereFill" style={{ width: `${PLAYER.where.pct}%` }} />
+          </div>
+          <div className="pc-danPips">
+            {Array.from({ length: PLAYER.where.danMax }).map((_, i) => (
+              <span key={i} className={`danPip ${i < PLAYER.where.dan ? "danPipOn wherePipOn" : ""}`} />
             ))}
-          </span>
+          </div>
         </div>
 
-        <div className="a3-danRow">
-          <span className="dot whenDot" />
-          <span className="a3-subLabel whenClr">WHEN</span>
-          <span className="a3-danPips">
-            {Array.from({ length: A3.danMax }).map((_, i) => (
-              <span key={i} className={`danPip ${i < A3.whenDan ? "danPipOn whenPipOn" : ""}`} />
+        {/* WHEN — dan pips + bar with Current → Next */}
+        <div className="pc-sub">
+          <div className="pc-subHead">
+            <span className="dot whenDot" />
+            <span className="pc-subLabel whenClr">WHEN</span>
+            <span className="pc-subTitles whenClr">
+              {PLAYER.when.current} <span className="pc-arrow">→</span> {PLAYER.when.next}
+            </span>
+          </div>
+          <div className="bar pc-barSub">
+            <span className="barFill whenFill" style={{ width: `${PLAYER.when.pct}%` }} />
+          </div>
+          <div className="pc-danPips">
+            {Array.from({ length: PLAYER.when.danMax }).map((_, i) => (
+              <span key={i} className={`danPip ${i < PLAYER.when.dan ? "danPipOn whenPipOn" : ""}`} />
             ))}
-          </span>
+          </div>
         </div>
       </div>
 
       <style jsx>{`
-        .a3 { padding: 18px; cursor: pointer; }
-        .a3-main { display: flex; align-items: flex-start; gap: 16px; }
+        .pc { padding: 18px; }
+        .pc-main { display: flex; align-items: flex-start; gap: 16px; }
         .medallion {
           position: relative; width: 72px; height: 72px; flex-shrink: 0;
           overflow: hidden; border: 2px solid var(--main-color);
           box-shadow: 0 0 22px rgba(251,146,60,0.27); border-radius: 16px;
         }
         .medImg { width: 100%; height: 100%; object-fit: cover; }
-        .a3-body { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-        .a3-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-        .a3-titles { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-        .a3-title { font-size: 19px; font-weight: 800; margin: 0; line-height: 1.1; }
-        .a3-xp { font-size: 15px; font-weight: 800; color: #ffd54a; white-space: nowrap; flex-shrink: 0; }
-        .a3-xp i { font-style: normal; font-size: 10px; font-weight: 700; margin-left: 3px; opacity: 0.7; }
-        .a3-nextLine { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
-        .a3-nextLabel { color: rgba(255,255,255,0.45); font-weight: 600; }
-        .a3-nextTitle { font-weight: 800; }
-        .a3-barMain { height: 8px; }
-        .a3-expandHint {
-          display: flex; align-items: center; gap: 4px;
-          font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4);
-        }
+        .pc-body { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+        .pc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .pc-titles { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .pc-title { font-size: 19px; font-weight: 800; margin: 0; line-height: 1.1; }
+        .pc-xp { font-size: 15px; font-weight: 800; color: #ffd54a; white-space: nowrap; flex-shrink: 0; }
+        .pc-xp i { font-style: normal; font-size: 10px; font-weight: 700; margin-left: 3px; opacity: 0.7; }
+        .pc-nextLine { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+        .pc-nextLabel { color: rgba(255,255,255,0.45); font-weight: 600; }
+        .pc-nextTitle { font-weight: 800; }
+        .pc-barMain { height: 8px; }
+        .pc-expandRow { display: flex; justify-content: center; margin-top: 2px; }
 
-        .a3-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 14px 0; }
-        .a3-danRow { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
-        .a3-danRow:last-child { margin-bottom: 0; }
-        .a3-subLabel { font-size: 9px; font-weight: 800; letter-spacing: 1px; flex-shrink: 0; }
-        .a3-danPips { display: flex; gap: 3px; flex: 1; min-width: 0; }
+        .pc-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 14px 0; }
+        .pc-sub { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+        .pc-sub:last-child { margin-bottom: 0; }
+        .pc-subHead { display: flex; align-items: center; gap: 7px; }
+        .pc-subLabel { font-size: 9px; font-weight: 800; letter-spacing: 1px; flex-shrink: 0; }
+        .pc-subTitles { font-size: 10px; font-weight: 700; white-space: nowrap; }
+        .pc-subTitles .pc-arrow { opacity: 0.5; font-weight: 600; }
+        .pc-barSub { height: 5px; }
+        .pc-danPips { display: flex; gap: 3px; }
         .danPip {
           width: 100%; height: 6px; border-radius: 2px;
           background: rgba(255,255,255,0.08); transition: background 0.3s;
@@ -339,5 +260,60 @@ function Alt3Card() {
         .whenPipOn { background: var(--when-color); box-shadow: 0 0 4px rgba(232,121,249,0.5); }
       `}</style>
     </section>
+  );
+}
+
+// ── Title Ladder (all 10 titles with Unsplash images) ────────────────────────
+function TitleLadder() {
+  const currentIdx = 3; // Cartographer = tier 4 (index 3) — mock
+  return (
+    <div className="ladder">
+      {ALL_TITLES.map((t, i) => {
+        const isCurrent = i === currentIdx;
+        const isPast = i < currentIdx;
+        return (
+          <div key={t.title} className={`ladderRow ${isCurrent ? "ladderCur" : ""} ${isPast ? "ladderPast" : ""}`}>
+            <div className={`ladderImgWrap ${isCurrent ? "ladderImgCur" : ""} ${isPast ? "ladderImgPast" : ""}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={t.img} alt={t.title} className="ladderImg" draggable={false} />
+            </div>
+            <div className="ladderInfo">
+              <span className="ladderTitle">{t.title}</span>
+              <span className="ladderThreshold">{t.threshold}</span>
+            </div>
+            {isCurrent && <span className="ladderBadge mainClr">YOU</span>}
+          </div>
+        );
+      })}
+
+      <style jsx>{`
+        .ladder { display: flex; flex-direction: column; gap: 2px; }
+        .ladderRow {
+          display: flex; align-items: center; gap: 12px; padding: 8px 10px;
+          border-radius: 12px; transition: background 0.2s;
+        }
+        .ladderCur { background: rgba(251,146,60,0.1); border: 1px solid rgba(251,146,60,0.25); }
+        .ladderImgWrap {
+          width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px;
+          overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
+          opacity: 0.35; filter: grayscale(0.7);
+        }
+        .ladderImgPast { opacity: 0.6; filter: grayscale(0.3); }
+        .ladderImgCur {
+          opacity: 1; filter: none; border-color: var(--main-color);
+          box-shadow: 0 0 12px rgba(251,146,60,0.3); width: 48px; height: 48px;
+        }
+        .ladderImg { width: 100%; height: 100%; object-fit: cover; }
+        .ladderInfo { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+        .ladderTitle { font-size: 14px; font-weight: 800; line-height: 1.1; }
+        .ladderPast .ladderTitle { color: rgba(255,255,255,0.5); }
+        .ladderThreshold { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.35); }
+        .ladderBadge {
+          font-size: 9px; font-weight: 800; letter-spacing: 1px;
+          padding: 2px 8px; border-radius: 999px;
+          background: rgba(251,146,60,0.15); border: 1px solid rgba(251,146,60,0.3);
+        }
+      `}</style>
+    </div>
   );
 }

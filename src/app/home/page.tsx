@@ -1,22 +1,21 @@
 'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
+import { useRankOpen } from '@/hooks/useRankOpen'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
-import { LevelUpPanel } from '@/components/home/LevelUpPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
-import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
+import { MODE_CARD_GRADIENT, MODE_CARD_TITLE, MODE_CARD_SUBTITLE, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
 import { loadPracticeSettings, savePracticeSettings } from '@/components/practice/practiceSettings'
 import styles from './home.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
-import RankProgressBar from '@/components/RankProgressBar'
+import RankCard from '@/components/RankCard'
 
 function HomePageInner() {
   const router = useRouter()
@@ -141,6 +140,7 @@ function HomePageInner() {
 
   const [showNavModal, setShowNavModal] = useState(false)
   const [practiceModalOpen, setPracticeModalOpen] = useState(false)
+  const [rankOpen, toggleRankOpen] = useRankOpen()
 
   const handleNav = (path: string) => {
     router.push(path)
@@ -196,18 +196,18 @@ function HomePageInner() {
         avatarUrl={avatarUrl}
         initials={initials}
         onAvatarClick={() => setShowNavModal(true)}
+        rankOpen={rankOpen}
+        onToggleRank={toggleRankOpen}
       />
 
+      {/* Rank card — below topbar, above scrollable content (self-contained fixed wrapper) */}
+      <RankCard totalXp={totalXpNum} open={rankOpen} />
+
       {/* Scrollable content area */}
-      <div className={styles['page-scroll']}>
+      <div className={`${styles['page-scroll']} ${rankOpen ? styles.pageScrollRankOpen : styles.pageScrollRankClosed}`}>
         {/* Tagline */}
         <div className={styles.tagline}>
           {t('home.tagline')}
-        </div>
-
-        {/* Rank progress — derived from total_xp (single source of truth) */}
-        <div className={styles.rankWrap}>
-          <RankProgressBar totalXp={totalXpNum} />
         </div>
 
         {/* Vertical card stack */}
@@ -272,9 +272,9 @@ function ModeCard({
 }) {
   const t = useTranslations()
   const gradient = MODE_CARD_GRADIENT[mode]
-  const title = t(`home.${mode}_name`)
-  const subtitle = t(`home.${mode}_name`)
-  const desc = t(`home.${mode}_desc`)
+  const title = MODE_CARD_TITLE[mode] ?? t(`home.${mode}_name`)
+  const desc = MODE_CARD_SUBTITLE[mode] ?? t(`home.${mode}_desc`)
+  const isCompete = mode === 'compete'
 
   const getIconSrc = () => {
     switch (mode) {
@@ -286,70 +286,86 @@ function ModeCard({
     }
   }
 
-  return (
-    <div className={styles['mode-card']}>
-      {/* Card background with clip */}
-      <div className={styles['card-bg']} style={{ background: gradient }}>
-        <div className={styles['card-inner']}>
-          {/* Header: title only */}
-          <div className={styles['card-header']}>
-            <div className={styles['card-title-section']}>
-              <h2 className={styles['card-title']}>{subtitle}</h2>
-              <div className={styles['card-desc-wrap']}>
-                <p className={styles['card-desc']}>
-                  {desc.split('\n').map((line, i) => (
-                    <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
-                  ))}
-                </p>
-              </div>
+  const handlePlay = () => {
+    if (mode === 'daily') onNavigate('/daily')
+    else if (mode === 'levelup') onNavigate('/levelup')
+    else if (mode === 'practice') onPracticeStart()
+  }
+
+  // Compete card: icon+text row, then full CompetePanel below
+  if (isCompete) {
+    return (
+      <div className={styles['mode-card']}>
+        <div className={styles['card-bg']} style={{ background: gradient }}>
+          <div className={styles.cardInnerHorizontal}>
+            {/* Icon thumbnail on the LEFT */}
+            <div className={styles.cardIconThumb} aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={getIconSrc()} alt="" className={styles.cardIconThumbImg} draggable={false} />
+            </div>
+
+            {/* Title + description in the MIDDLE */}
+            <div className={styles.cardTextCol}>
+              <h2 className={styles.cardTitleLeft}>{title}</h2>
+              <p className={styles.cardDescLeft}>
+                {desc.split('\n').map((line, i) => (
+                  <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
+                ))}
+              </p>
             </div>
           </div>
 
-          {/* Mode-specific panel content */}
-          {mode === 'compete' && (
+          {/* Compete panel below the icon+text row */}
+          <div className={styles.competePanelWrap}>
             <CompetePanel
               playerId={playerId}
               displayName={displayName}
               onLobby={onLobby}
               onRequireAuth={onRequireAuth}
             />
-          )}
-          {mode === 'daily' && (
-            <DailyPanel onPlay={() => onNavigate('/daily')} />
-          )}
-          {mode === 'levelup' && (
-            <LevelUpPanel onStart={() => onNavigate('/levelup')} />
-          )}
+          </div>
         </div>
+      </div>
+    )
+  }
 
-        {/* Icon inside card — positioned absolute top-right */}
-        <div className={styles['card-icon-wrap']}>
-          <Image
-            src={getIconSrc()}
-            alt={title}
-            fill
-            className={styles.cardIconImg}
-            sizes="110px"
-          />
-        </div>
+  // Non-compete card: icon-left, text-middle, play-right
+  return (
+    <div className={styles['mode-card']}>
+      <div className={styles['card-bg']} style={{ background: gradient }}>
+        <div className={styles.cardInnerHorizontal}>
+          {/* Icon thumbnail on the LEFT */}
+          <div className={styles.cardIconThumb} aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={getIconSrc()} alt="" className={styles.cardIconThumbImg} draggable={false} />
+          </div>
 
-        {/* Subtle Play arrow at right edge for non-compete cards */}
-        {mode !== 'compete' && (
+          {/* Title + description in the MIDDLE */}
+          <div className={styles.cardTextCol}>
+            <h2 className={styles.cardTitleLeft}>{title}</h2>
+            <p className={styles.cardDescLeft}>
+              {desc.split('\n').map((line, i) => (
+                <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
+              ))}
+            </p>
+            {/* Daily card: timer inline below description */}
+            {mode === 'daily' && (
+              <DailyPanel onPlay={() => onNavigate('/daily')} />
+            )}
+          </div>
+
+          {/* Play pill button on the RIGHT */}
           <button
             type="button"
-            aria-label={title}
-            className={styles['card-play-arrow']}
-            onClick={() => {
-              if (mode === 'daily') onNavigate('/daily')
-              else if (mode === 'levelup') onNavigate('/levelup')
-              else if (mode === 'practice') onPracticeStart()
-            }}
+            className={styles.playPill}
+            onClick={handlePlay}
+            aria-label={`Play ${title}`}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M8 5v14l11-7z" fill="currentColor" />
             </svg>
           </button>
-        )}
+        </div>
       </div>
     </div>
   )

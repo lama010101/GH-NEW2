@@ -118,6 +118,34 @@
   100% { opacity: 0; }
 }
 
+/* ── In-app text broadcast toast (async Relax, spec §5.8) ── */
+
+.playerSubmittedToast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9000;
+  background: var(--gh-modal-overlay);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 24px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gh-text-primary);
+  white-space: nowrap;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  animation: toastSlideIn 300ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes toastSlideIn {
+  0%   { opacity: 0; transform: translate(-50%, -10px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
+
 .connectionLostCard {
   margin-bottom: 1rem;
   background: rgba(var(--gh-teal-rgb), 0.06);

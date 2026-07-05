@@ -7,7 +7,6 @@
     "leaderboard": "Leaderboard",
     "profile_stats": "Profile & Stats",
     "account": "Account",
-    "account_settings": "Account & Settings",
     "help": "Help",
     "sign_out": "Sign Out",
     "language": "Language",
@@ -173,10 +172,10 @@
     "compete_create_game": "CREATE GAME",
     "tagline": "Where and when did it happen?",
     "daily_new_challenge": "New challenge in",
-    "compete_desc": "Play against your friends.\nReal-time or Turn-based",
-    "daily_desc": "New competition every day,\nSame events for everyone.",
-    "levelup_desc": "Progressive difficulty\nClimb the leaderboard",
-    "practice_desc": "Hone your skills solo\nUnlimited custom games."
+    "compete_desc": "Play against your friends.\nReal-Time: Up to 5 mins\nTurn-Based: Up to 14 days",
+    "daily_desc": "A new challenge every day.\nSame events for everyone.\nClimb the leaderboard.",
+    "levelup_desc": "Beat levels and earn XP.\nProgressive difficulty from 1 to 100.\nUnlock new challenges.",
+    "practice_desc": "Hone your skills solo.\nCustom timer and year range.\nUnlimited practice games."
   },
   "common": {
     "next_round": "Next Round",
@@ -377,10 +376,11 @@
     "era_modern": "Modern",
     "era_contemporary": "Contemporary",
     "region_africa": "Africa",
-    "region_oceania_antarctica": "Oceania & Antarctica",
+    "region_antarctica": "Antarctica",
     "region_asia": "Asia",
     "region_europe": "Europe",
     "region_north_america": "North America",
+    "region_oceania": "Oceania",
     "region_south_america": "South America",
     "unknown_region": "Unknown",
     "round_label_short": "ROUND {n}",
@@ -411,6 +411,7 @@
     "no_image": "No image available",
     "hint_penalties": "Hint penalties deducted",
     "round_leaderboard": "Round leaderboard",
+    "player_submitted_round": "{name} submitted round {n}",
     "breakdown": "Breakdown",
     "game_accuracy": "Game accuracy (all rounds)",
     "hints_used": "Hints used",
@@ -565,6 +566,9 @@
   },
   "account": {
     "title": "Account",
+    "settings": "Settings",
+    "sound": "Sound",
+    "vibrate": "Vibrate",
     "username": "Username",
     "email": "Email",
     "member_since": "Member since",
@@ -572,10 +576,7 @@
     "save": "Save",
     "saved": "✓ Saved",
     "err_save_failed": "Failed to save. Try again.",
-    "sign_out_failed": "Sign out failed",
-    "settings": "Settings",
-    "sound": "Sound",
-    "vibrate": "Vibrate"
+    "sign_out_failed": "Sign out failed"
   },
   "avatar_picker": {
     "title": "Choose Avatar",

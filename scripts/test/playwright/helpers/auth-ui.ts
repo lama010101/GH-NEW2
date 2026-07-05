@@ -107,14 +107,35 @@ export async function ensureLoggedIn(page: Page, user: TestUser): Promise<void> 
 export async function signOutViaUI(page: Page, baseURL: string): Promise<void> {
   console.log('[AUTH] Signing out via account page UI...');
 
-  await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
-  await page.waitForLoadState('networkidle').catch(() => undefined);
+  // Navigate to /account with retry — the page redirects to /login if
+  // identity hasn't loaded yet (useIdentity bootstraps asynchronously).
+  // Retry up to 3 times with 5s backoff.
+  let signOutBtn = page.getByRole('button', { name: 'Sign out' }).first();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('networkidle').catch(() => undefined);
 
-  const signOutBtn = page.getByRole('button', { name: 'Sign out' }).first();
-  await signOutBtn.waitFor({ state: 'visible', timeout: AUTH_TIMEOUT });
+    // Check if redirected to /login (identity not loaded yet)
+    const url = page.url();
+    if (url.includes('/login')) {
+      console.warn(`[AUTH] /account redirected to /login (attempt ${attempt + 1}), retrying in 5s...`);
+      if (attempt < 2) await new Promise(r => setTimeout(r, 5000));
+      continue;
+    }
+
+    // Wait for sign-out button to appear (identity loaded, page rendered)
+    try {
+      await signOutBtn.waitFor({ state: 'visible', timeout: 30000 });
+      break;
+    } catch {
+      console.warn(`[AUTH] Sign out button not visible (attempt ${attempt + 1}), retrying...`);
+      if (attempt < 2) await new Promise(r => setTimeout(r, 5000));
+    }
+  }
+
   await signOutBtn.click();
 
-  // Wait for redirect to home page (router.push('/'))
+  // Wait for redirect to home page (window.location.href = '/')
   await page.waitForURL(`${baseURL}/`, { timeout: AUTH_TIMEOUT }).catch(() => undefined);
   await page.waitForLoadState('networkidle').catch(() => undefined);
 

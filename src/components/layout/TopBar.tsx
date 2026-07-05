@@ -1,6 +1,8 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { ChevronDown } from 'lucide-react'
+import { rankForXp } from '@/core/rank'
 import NotificationBell from '@/components/NotificationBell'
 import styles from './TopBar.module.css'
 
@@ -10,30 +12,46 @@ interface TopBarProps {
   avatarUrl: string | null
   initials: string
   onAvatarClick: () => void
+  /** Rank card expand/collapse state. */
+  rankOpen: boolean
+  /** Toggle handler for rank card. */
+  onToggleRank: () => void
 }
 
-export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick }: TopBarProps) {
+export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick, rankOpen, onToggleRank }: TopBarProps) {
   const router = useRouter()
   const t = useTranslations('landing')
+
+  // Derive rank tier from xp string for the "LVL" badge.
+  // xp may be "--" (loading) or a locale-formatted number like "32 500".
+  const xpNum = Number(xp.replace(/[^\d]/g, ''))
+  const tier = Number.isFinite(xpNum) && xpNum >= 0 ? rankForXp(xpNum).tier : 1
 
   return (
     <div className={styles.topbar}>
       <button className={styles.topbarLeft} onClick={() => router.push('/home')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
         <Image src="/icons/logo.webp" alt={t('logo_alt')} width={120} height={32} className={styles.logoImg} priority />
       </button>
-      <button
-        onClick={() => router.push('/leaderboard?tab=overall')}
-        className={styles.xpPill}
-      >
-        <span className={styles.xpPillAccuracy} style={(() => {
-          const n = Number(accuracy)
-          if (!Number.isFinite(n)) return undefined
-          const hue = Math.round((Math.max(0, Math.min(100, n)) / 100) * 120)
-          return { color: `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))` }
-        })()}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
-        <span className={styles.xpPillDivider}>|</span>
-        <span className={styles.xpPillXp} style={{ color: 'var(--gh-text-primary)' }}>{xp}<span className={styles.xpPillSuffix}>XP</span></span>
-      </button>
+      <div className={styles.xpPillCol}>
+        <button
+          onClick={onToggleRank}
+          className={styles.xpPill}
+          aria-label={rankOpen ? 'Collapse rank card' : 'Expand rank card'}
+          aria-expanded={rankOpen}
+        >
+          <span className={styles.xpPillBadge}>LVL {tier}</span>
+          <span className={styles.xpPillAccuracy} style={(() => {
+            const n = Number(accuracy)
+            if (!Number.isFinite(n)) return undefined
+            const hue = Math.round((Math.max(0, Math.min(100, n)) / 100) * 120)
+            return { color: `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))` }
+          })()}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
+          <ChevronDown
+            size={14}
+            className={`${styles.xpPillChev} ${rankOpen ? styles.xpPillChevOpen : ''}`}
+          />
+        </button>
+      </div>
       <div className={styles.topbarRight}>
         <NotificationBell />
         <button

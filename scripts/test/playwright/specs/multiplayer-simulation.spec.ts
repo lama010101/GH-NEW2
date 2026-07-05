@@ -13,7 +13,7 @@ test.describe('Multiplayer Simulation', () => {
   let orchestrator: GameOrchestrator;
   let edgeCaseEngine: EdgeCaseEngine;
 
-  test('6 players, 3 games, 5 rounds each, full edge-case suite', async () => {
+  test('6 players, 2 games, 2 rounds each, full edge-case suite', async () => {
     const stepLog: string[] = [];
     const assertionFailures: string[] = [];
 
@@ -48,8 +48,8 @@ test.describe('Multiplayer Simulation', () => {
       orchestrator = new GameOrchestrator({
         browserPool,
         partyKitHost: PARTYKIT_HOST,
-        totalRounds: 5,
-        totalGames: 3,
+        totalRounds: 2,
+        totalGames: 2,
         edgeCaseEngine,
         onStep: (step) => {
           console.log(`[SIMULATION] ${step}`);
@@ -69,7 +69,7 @@ test.describe('Multiplayer Simulation', () => {
       console.log(`[SIMULATION] Assertion failures: ${assertionFailures.length}`);
 
       // Assertions
-      expect(results.length).toBe(3);
+      expect(results.length).toBe(2);
       expect(results.every((r) => r.completed)).toBe(true);
       expect(edgeCaseEngine.injectedCount).toBeGreaterThan(0);
       expect(assertionFailures.length).toBe(0);

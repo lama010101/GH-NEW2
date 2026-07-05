@@ -8,6 +8,8 @@ import { useIdentity } from '@/hooks/useIdentity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
+import RankCard from '@/components/RankCard';
+import { useRankOpen } from '@/hooks/useRankOpen';
 import styles from './leaderboard.module.css';
 
 type LeaderboardTab = 'daily' | 'levelup' | 'overall';
@@ -65,7 +67,9 @@ function LeaderboardPageInner() {
   const searchParams = useSearchParams();
   const { playerId, displayName } = useIdentity();
   const t = useTranslations('leaderboard');
-  
+
+  const [rankOpen, toggleRankOpen] = useRankOpen();
+
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('overall');
   const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
   
@@ -368,7 +372,10 @@ function LeaderboardPageInner() {
         avatarUrl={avatarUrl}
         initials={initials}
         onAvatarClick={() => setShowNavModal(true)}
+        rankOpen={rankOpen}
+        onToggleRank={toggleRankOpen}
       />
+      <RankCard totalXp={Number(xp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
 
       {/* Header */}
       <div className={styles.header}>

@@ -13,6 +13,8 @@ import RoundCompleteSection from "@/components/compete/RoundCompleteSection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
+import RankCard from "@/components/RankCard";
+import { useRankOpen } from "@/hooks/useRankOpen";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { computeTimeRemaining } from "@/core/competeUtils";
@@ -47,6 +49,7 @@ export default function DailyRoundPage() {
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [locationName, setLocationName] = useState<string | null>(null);
   const [showNavModal, setShowNavModal] = useState(false);
+  const [rankOpen, toggleRankOpen] = useRankOpen();
   const [topbarAccuracy, setTopbarAccuracy] = useState("--");
   const [topbarXp, setTopbarXp] = useState("--");
   const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
@@ -429,7 +432,11 @@ export default function DailyRoundPage() {
             avatarUrl={topbarAvatarUrl}
             initials={topbarInitials}
             onAvatarClick={() => setShowNavModal(true)}
+            rankOpen={rankOpen}
+            onToggleRank={toggleRankOpen}
           />
+          <RankCard totalXp={Number(topbarXp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
+          <div style={{ height: rankOpen ? 160 : 80 }} />
           <NavModal
             isOpen={showNavModal}
             onClose={() => setShowNavModal(false)}

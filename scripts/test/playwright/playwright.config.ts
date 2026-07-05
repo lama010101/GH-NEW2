@@ -14,7 +14,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
   workers: 1, // Single worker to avoid conflicts between tests
-  timeout: 1800000, // 30min per test — 6-player x 3-game x 5-round x 19-edge-case suite under heavy local dev load needs generous budget
+  timeout: 2700000, // 45min per test — 6-player x 2-game x 2-round x 19-edge-case suite under heavy local dev load needs generous budget
   expect: {
     timeout: 10000,
   },

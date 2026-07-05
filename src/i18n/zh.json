@@ -7,7 +7,6 @@
     "leaderboard": "排行榜",
     "profile_stats": "资料与统计",
     "account": "账户",
-    "account_settings": "账户与设置",
     "help": "帮助",
     "sign_out": "退出登录",
     "language": "语言",
@@ -475,7 +474,8 @@
     "tier_year_label": "年",
     "map_error_title": "地图渲染失败",
     "map_error_details": "查看控制台了解详情",
-    "badge_alt": "{tier} {dimension} 徽章"
+    "badge_alt": "{tier} {dimension} 徽章",
+    "player_submitted_round": "{name} 提交了第 {n} 回合"
   },
   "auth": {
     "sign_in": "登录",

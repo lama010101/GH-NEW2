@@ -2,7 +2,7 @@
 
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import dynamic from "next/dynamic";
-import { useState, useRef, useEffect, useCallback, useTransition } from "react";
+import { useState, useRef, useEffect, useCallback, useTransition, useMemo } from "react";
 import { useTranslations } from 'next-intl';
 import { YearPicker } from "@/components/YearPicker";
 import NotificationBell from "@/components/NotificationBell";
@@ -162,6 +162,47 @@ export default function RoundActiveSection({
 
   const isLocked = busy || hasSubmitted || localSubmitted;
   const canSubmit = !isLocked && guessYear !== null && guessLocation !== null;
+
+  // Partial leaderboard for async (Relax) mode — spec §5.8:
+  // "Partial leaderboard builds per round as players submit."
+  // Built from GUESS_SUBMITTED events for the current round (already in snapshot.events).
+  // Each event payload carries { playerId, yearGuess, score }.
+  // Only shown in async mode AND when at least one opponent has submitted.
+  const isAsync = snapshot.config?.mode === "async";
+  const partialLeaderboard = useMemo(() => {
+    if (!isAsync || snapshot.status !== "ROUND_ACTIVE") return [];
+    const events = Array.isArray(snapshot.events) ? snapshot.events : [];
+    const currentRound = snapshot.currentRoundIndex;
+    const submitted = events
+      .filter(
+        (e) =>
+          e.eventType === "GUESS_SUBMITTED" &&
+          e.roundIndex === currentRound &&
+          e.payload &&
+          typeof (e.payload as Record<string, unknown>).playerId === "string"
+      )
+      .map((e) => {
+        const p = e.payload as Record<string, unknown>;
+        return {
+          playerId: p.playerId as string,
+          score: typeof p.score === "number" ? p.score : 0,
+        };
+      });
+    // Deduplicate by playerId (keep last), then sort descending by score.
+    const byPlayer = new Map<string, number>();
+    for (const s of submitted) byPlayer.set(s.playerId, s.score);
+    return Array.from(byPlayer.entries())
+      .map(([pid, score]) => {
+        const player = snapshot.players?.find((pl) => pl.playerId === pid);
+        return {
+          playerId: pid,
+          displayName: player?.displayName ?? pid.slice(0, 8),
+          avatarUrl: player?.avatarUrl ?? null,
+          score,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [isAsync, snapshot.status, snapshot.events, snapshot.currentRoundIndex, snapshot.players]);
 
   // Cinematic auto-pan on mount
   useEffect(() => {
@@ -761,6 +802,26 @@ export default function RoundActiveSection({
         </div>
       )}
 
+      {/* PARTIAL LEADERBOARD — async (Relax) only, spec §5.8 */}
+      {isAsync && partialLeaderboard.length > 0 && (
+        <div className={styles.partialLeaderboard}>
+          <div className={styles.partialLeaderboardTitle}>
+            <span className={styles.partialLeaderboardAccentBar} />
+            {t('round_leaderboard')}
+          </div>
+          {partialLeaderboard.map((row, idx) => (
+            <div
+              key={row.playerId}
+              className={`${styles.partialLeaderboardRow} ${row.playerId === playerId ? styles.partialLeaderboardRowMe : ""}`}
+            >
+              <span className={styles.partialLeaderboardRank}>{idx + 1}</span>
+              <span className={styles.partialLeaderboardName}>{row.displayName}</span>
+              <span className={styles.partialLeaderboardScore}>{Math.round(row.score)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* FULLSCREEN MAP OVERLAY */}
       {mapFullscreen && (
         <div className={styles.mapFullscreenOverlay}>
@@ -1139,7 +1200,9 @@ export default function RoundActiveSection({
             <button
               type="button"
               onClick={() => {
-                window.location.reload();
+                setImgError(false);
+                setImgRetryKey((k) => k + 1);
+                setSettingsModalOpen(false);
               }}
               className={styles.settingsRefreshBtn}
             >

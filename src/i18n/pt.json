@@ -7,7 +7,6 @@
     "leaderboard": "Ranking",
     "profile_stats": "Perfil e Estatísticas",
     "account": "Conta",
-    "account_settings": "Conta e configurações",
     "help": "Ajuda",
     "sign_out": "Sair",
     "language": "Idioma",
@@ -475,7 +474,8 @@
     "tier_year_label": "ANO",
     "map_error_title": "Falha ao renderizar o mapa",
     "map_error_details": "Verifique o console para detalhes",
-    "badge_alt": "Distintivo {tier} {dimension}"
+    "badge_alt": "Distintivo {tier} {dimension}",
+    "player_submitted_round": "{name} enviou a rodada {n}"
   },
   "auth": {
     "sign_in": "Entrar",

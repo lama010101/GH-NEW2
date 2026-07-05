@@ -17,6 +17,8 @@ type ActiveGame = {
   score_you?: number
   score_them?: number
   accuracy_you?: number
+  completed_at?: string
+  leaderboard_rank?: number
 }
 
 function getAccuracyColor(pct: number): string {
@@ -32,6 +34,23 @@ function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) 
   if (diff < 3600000) return t('notifications.m_ago', { n: Math.floor(diff / 60000) })
   if (diff < 86400000) return t('notifications.h_ago', { n: Math.floor(diff / 3600000) })
   return t('notifications.d_ago', { n: Math.floor(diff / 86400000) })
+}
+
+function timeAgoFull(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  if (diff < 60000) return 'just now'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} min ago`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} hour${Math.floor(diff / 3600000) !== 1 ? 's' : ''} ago`
+  const days = Math.floor(diff / 86400000)
+  return `${days} day${days !== 1 ? 's' : ''} ago`
+}
+
+function PlayIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M8 5v14l11-7z" fill="currentColor" />
+    </svg>
+  )
 }
 
 export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: {
@@ -265,7 +284,6 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
               {invites.map(invite => (
                 <div
                   key={invite.id}
-                  onClick={() => handleAccept(invite.id, invite.game_id)}
                   className={cpStyles.gameRow}
                 >
                   {invite.avatar_url ? (
@@ -287,8 +305,18 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     </span>
                   </div>
                   <button
+                    type="button"
+                    onClick={() => handleAccept(invite.id, invite.game_id)}
+                    className={cpStyles.goBtn}
+                    aria-label="Play"
+                  >
+                    <PlayIcon />
+                  </button>
+                  <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); handleDecline(invite.id) }}
-                    className={cpStyles.declineBtn}
+                    className={cpStyles.deleteBtn}
+                    aria-label="Delete"
                   >
                     ✕
                   </button>
@@ -307,7 +335,6 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
               {yourTurnGames.map(game => (
                 <div
                   key={game.id}
-                  onClick={() => onLobby(game.game_id)}
                   className={cpStyles.gameRow}
                 >
                   {game.opponent_avatar ? (
@@ -319,12 +346,24 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                   </div>
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>{game.opponent_name}</span>
-                    <span className={cpStyles.gameSub}>{t('home.compete_round_label', { current: game.round_current, total: game.round_total })}</span>
+                    <span className={cpStyles.gameSub}>
+                      {game.mode && (
+                        <span className={cpStyles.modeBadgeInline}>
+                          {game.mode === 'sync' ? t('home.compete_mode_rush') : t('home.compete_mode_relax')}
+                        </span>
+                      )}
+                      {' '}
+                      {t('home.compete_round_label', { current: game.round_current, total: game.round_total })}
+                    </span>
                   </div>
-                  {game.mode && (
-                    <span className={cpStyles.modeBadge}>{game.mode === 'sync' ? t('home.compete_mode_rush') : t('home.compete_mode_relax')}</span>
-                  )}
-                  <span className={cpStyles.playBadge}>{t('home.compete_play')}</span>
+                  <button
+                    type="button"
+                    onClick={() => onLobby(game.game_id)}
+                    className={cpStyles.goBtn}
+                    aria-label="Play"
+                  >
+                    <PlayIcon />
+                  </button>
                 </div>
               ))}
             </div>
@@ -340,7 +379,6 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
               {completedGames.map(game => (
                 <div
                   key={game.id}
-                  onClick={() => onLobby(game.game_id)}
                   className={cpStyles.gameRow}
                 >
                   {game.opponent_avatar ? (
@@ -352,7 +390,15 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                   </div>
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>{game.opponent_name}</span>
-                    <span className={cpStyles.gameSub}>{t('home.compete_round_label', { current: game.round_current, total: game.round_total })}</span>
+                    <span className={cpStyles.gameSub}>
+                      {game.mode && (
+                        <span className={cpStyles.modeBadgeInline}>
+                          {game.mode === 'sync' ? t('home.compete_mode_rush') : t('home.compete_mode_relax')}
+                        </span>
+                      )}
+                      {' '}
+                      {game.completed_at ? timeAgoFull(game.completed_at) : ''}
+                    </span>
                   </div>
                   <div className={cpStyles.scoreWrap}>
                     {game.score_you != null && game.score_them != null ? (
@@ -378,6 +424,16 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                       <span className={cpStyles.completedLabel}>{t('home.compete_completed')}</span>
                     )}
                   </div>
+                  {game.leaderboard_rank != null && (
+                    <span className={cpStyles.rankBadge}>#{game.leaderboard_rank}</span>
+                  )}
+                  <button
+                    type="button"
+                    className={cpStyles.deleteBtn}
+                    aria-label="Delete"
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
             </div>

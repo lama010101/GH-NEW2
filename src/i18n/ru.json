@@ -7,7 +7,6 @@
     "leaderboard": "Рейтинг",
     "profile_stats": "Профиль и статистика",
     "account": "Аккаунт",
-    "account_settings": "Аккаунт и настройки",
     "help": "Помощь",
     "sign_out": "Выйти",
     "language": "Язык",
@@ -475,7 +474,8 @@
     "tier_year_label": "ГОД",
     "map_error_title": "Ошибка отрисовки карты",
     "map_error_details": "Подробности см. в консоли",
-    "badge_alt": "Значок {tier} {dimension}"
+    "badge_alt": "Значок {tier} {dimension}",
+    "player_submitted_round": "{name} отправил раунд {n}"
   },
   "auth": {
     "sign_in": "Войти",

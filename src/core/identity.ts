@@ -206,6 +206,18 @@ export async function signOut(): Promise<void> {
   }
 }
 
+/**
+ * Updates the cached display name and notifies all subscribers.
+ * Use this after a profile display_name change (e.g. avatar swap that
+ * regenerated the name) so that every consumer of identity (NavModal,
+ * TopBar initials, etc.) reflects the new value without a page refresh.
+ */
+export function updateCachedDisplayName(name: string): void {
+  if (cachedState.status !== 'ready') return;
+  cachedState = { ...cachedState, displayName: name };
+  notifySubscribers(cachedState);
+}
+
 export function subscribeToIdentityChanges(
   callback: (state: IdentityState) => void
 ): () => void {

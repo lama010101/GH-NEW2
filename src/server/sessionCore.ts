@@ -36,8 +36,6 @@ import {
   verifyUniquenessInvariant
 } from "@/server/db";
 import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
-import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
-import { dailySeed } from "@/core/dailySeed";
 import { getGameState, deriveStateFromEventStream } from "@/server/getGameState";
 import { appendEvent, loadLastEventWithLock } from "@/server/eventStore";
 import { TransitionCause } from "@/core/transitionCause";
@@ -90,7 +88,7 @@ type TransactionCapablePool = DbExecutor & { connect(): Promise<DbTransactionCli
 // Exactly matches public.sessions columns (spec DDL, Section 3.3)
 export type SessionRow = {
   game_id: string;
-  mode: "practice" | "sync" | "async" | "daily";
+  mode: "practice" | "sync" | "async";
   round_timer_sec: number;
   total_rounds: number;
   year_min: number;
@@ -774,126 +772,6 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   return snapshot;
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// DAILY MODE — Session creation (DAILY_MODE_SPEC.md §6)
-// Creates a sessions row with mode='daily', pinned event_ids from
-// daily_challenges (§4), and a session_players host row. Does NOT call
-// startCompeteSession — the caller (start endpoint) does that separately.
-// room_code: per-session random seed (A1 ruling — NOT daily seed, NOT date),
-// with the same collision-retry loop as createCompeteSession.
-// ═════════════════════════════════════════════════════════════════════════════
-export async function createDailySession(input: {
-  playerId: string;
-  displayName?: string;
-  dateIso: string;
-}): Promise<CompeteSessionSnapshot> {
-  const { playerId, dateIso } = input;
-
-  // Load or generate the pinned daily challenge (§4.3)
-  const challenge = await getOrCreateDailyChallenge(dateIso);
-
-  const gameId = randomUUID();
-  // Per-session random seed for room_code — NOT the daily seed (A1 ruling)
-  const roomSeed = BigInt("0x" + randomBytes(8).toString("hex")) & BigInt("0x7FFFFFFFFFFFFFFF");
-  const dailySeedValue = dailySeed(dateIso);
-
-  let client: DbTransactionClient | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      client = await getTransactionClient();
-      break;
-    } catch (err) {
-      console.error(`[createDailySession] getTransactionClient attempt ${attempt + 1} failed: ${err instanceof Error ? err.message : String(err)}`);
-      if (attempt === 2) throw err;
-      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
-    }
-  }
-  if (!client) throw new Error("Failed to acquire DB transaction client after 3 attempts");
-
-  try {
-    await client.query("BEGIN");
-
-    // Room code collision-retry loop (same mechanism as createCompeteSession)
-    let roomCode = generateRoomCode(roomSeed);
-    let roomCodeAttempts = 0;
-    const maxRoomCodeAttempts = 5;
-    let roomCodeInsertSuccess = false;
-
-    while (!roomCodeInsertSuccess && roomCodeAttempts < maxRoomCodeAttempts) {
-      try {
-        await client.query(`SAVEPOINT room_code_attempt`);
-        await client.query(
-          `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, results_auto_advance_sec, seed, room_code, scoring_reference_year)
-           VALUES ($1, 'daily', 90, 5, -100, EXTRACT(YEAR FROM now())::INT, 0, $2, $3, EXTRACT(YEAR FROM now())::INT)`,
-          [gameId, dailySeedValue, roomCode]
-        );
-        await client.query(`RELEASE SAVEPOINT room_code_attempt`);
-        roomCodeInsertSuccess = true;
-      } catch (err: unknown) {
-        await client.query(`ROLLBACK TO SAVEPOINT room_code_attempt`);
-        roomCodeAttempts++;
-        if (roomCodeAttempts >= maxRoomCodeAttempts) {
-          throw new Error("Failed to generate unique room code after 5 attempts");
-        }
-        const pgErr = err as { code?: string; constraint?: string };
-        if (pgErr.code === "23505" && pgErr.constraint === "sessions_room_code_key") {
-          roomCode = generateRoomCode(roomSeed + BigInt(roomCodeAttempts));
-        } else {
-          throw err;
-        }
-      }
-    }
-
-    // Host player row — ready=true (like practice) so startCompeteSession works
-    const hostAvatarResult = await client.query<{ display_name: string; avatar_url: string }>(
-      `SELECT p.display_name, p.avatar_url
-       FROM public.profiles p
-       WHERE p.id = $1`,
-      [playerId]
-    );
-    const hostProfileName: string | null = hostAvatarResult.rows[0]?.display_name ?? null;
-    const hostDisplayName = (hostProfileName && hostProfileName.trim().length > 0)
-      ? hostProfileName.trim()
-      : ((input.displayName && input.displayName.trim().length > 0) ? input.displayName.trim() : `Player-${playerId.slice(0, 6)}`);
-    assertValidDisplayName(hostDisplayName);
-    let hostAvatarUrl = hostAvatarResult.rows[0]?.avatar_url ?? null;
-    if (!hostAvatarUrl) {
-      const fallbackResult = await client.query<{ avatar_url: string }>(
-        `SELECT COALESCE(firebase_url, image_url) AS avatar_url
-         FROM public.avatars WHERE ready = true ORDER BY random() LIMIT 1`
-      );
-      hostAvatarUrl = fallbackResult.rows[0]?.avatar_url ?? null;
-    }
-    await client.query(
-      `INSERT INTO session_players (game_id, player_id, display_name, joined_at, ready, is_host, avatar_url)
-       VALUES ($1, $2, $3, now(), true, true, $4)`,
-      [gameId, playerId, hostDisplayName, hostAvatarUrl]
-    );
-
-    // SESSION_CREATED with pinned event_ids — the round loop reads these
-    await appendEvent(client, gameId, "SESSION_CREATED", {
-      mode: "daily",
-      totalRounds: 5,
-      hostPlayerId: playerId,
-      seed: dailySeedValue.toString(),
-      eventIds: challenge.event_ids,
-    }, null);
-
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
-
-  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-  if (!snapshot) {
-    throw new Error("Unable to load the newly created daily session");
-  }
-  return snapshot;
-}
-
 export async function joinCompeteSession(input: { gameId: string; displayName: string; playerId: string }): Promise<CompeteSessionSnapshot> {
   const gameId = input.gameId.trim();
   const playerId = input.playerId;
@@ -1130,10 +1008,14 @@ export async function setCompeteSubMode(input: SetCompeteSubModeInput): Promise<
 
   // sync → no deadline duration (NULL); async → clamped 1-14 days
   const deadlineDays = input.mode === "async" ? clampSessionDeadlineDays(input.sessionDeadlineDays) : null;
+  // async → round timer OFF (0); sync → round timer 120s (the sync default).
+  // Spec §5.3: Relax round timer default is OFF; Rush default is 2min.
+  // The lobby UI syncs from snapshot.config.roundTimerSec via useEffect.
+  const roundTimerSec = input.mode === "async" ? 0 : 120;
 
   await dbPool.query(
-    `UPDATE sessions SET mode = $2, session_deadline_days = $3 WHERE game_id = $1`,
-    [gameId, input.mode, deadlineDays]
+    `UPDATE sessions SET mode = $2, session_deadline_days = $3, round_timer_sec = $4 WHERE game_id = $1`,
+    [gameId, input.mode, deadlineDays, roundTimerSec]
   );
 
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
@@ -2196,114 +2078,6 @@ export async function completeRound(input: {
   return snapshot;
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// DAILY MODE — Game-end transaction (DAILY_MODE_SPEC.md §8)
-// Runs inside the caller's transaction (passed DbTransactionClient).
-// All-or-nothing. Uses challengeDate from daily_attempts (fixes C1 — not now()).
-// Steps 4–6 + streak (§9) are NO-OP stubs: "BLOCKED: stats tables missing" (R3).
-// ═════════════════════════════════════════════════════════════════════════════
-async function dailyGameEndTransaction(
-  client: DbTransactionClient,
-  gameId: string,
-  challengeDate: string
-): Promise<void> {
-  // Fetch round_results for this game (solo — one player)
-  const roundResults = await client.query<{
-    player_id: string;
-    location_score: number;
-    time_score: number;
-  }>(
-    `SELECT player_id, location_score, time_score
-     FROM round_results
-     WHERE game_id = $1`,
-    [gameId]
-  );
-
-  if (roundResults.rows.length === 0) {
-    console.error(`[dailyGameEndTransaction] No round_results for gameId=${gameId}`);
-    throw new Error(`No round_results found for daily game ${gameId}`);
-  }
-
-  // Group by player_id (solo — exactly one, but follow the existing pattern)
-  const playerMap = new Map<string, { total_xp: number; accuracy_sum: number; round_count: number }>();
-  for (const row of roundResults.rows) {
-    const xp = row.location_score + row.time_score;
-    const accuracy = (row.location_score + row.time_score) / 2;
-    const entry = playerMap.get(row.player_id) ?? { total_xp: 0, accuracy_sum: 0, round_count: 0 };
-    entry.total_xp += xp;
-    entry.accuracy_sum += accuracy;
-    entry.round_count += 1;
-    playerMap.set(row.player_id, entry);
-  }
-
-  for (const [playerId, data] of playerMap.entries()) {
-    if (data.round_count === 0) continue;
-    const avgAccuracy = data.accuracy_sum / data.round_count;
-    const totalXp = Math.min(data.total_xp, 1000);
-
-    // Step 1: leaderboard_daily INSERT (date=challengeDate) ON CONFLICT DO NOTHING
-    const insertResult = await client.query(
-      `INSERT INTO leaderboard_daily (date, player_id, avg_accuracy, total_xp, completed_at)
-       VALUES ($1, $2, $3, $4, now())
-       ON CONFLICT (date, player_id) DO NOTHING`,
-      [challengeDate, playerId, avgAccuracy, totalXp]
-    );
-
-    // Step 2: IF rows_inserted = 1 → leaderboard_daily_alltime UPSERT
-    if (((insertResult as unknown as { rowCount: number | null }).rowCount ?? 0) === 1) {
-      await client.query(
-        `INSERT INTO leaderboard_daily_alltime (player_id, games_played, avg_accuracy, total_xp, updated_at)
-         VALUES ($1, 1, $2, $3, now())
-         ON CONFLICT (player_id) DO UPDATE SET
-           avg_accuracy = (leaderboard_daily_alltime.avg_accuracy * leaderboard_daily_alltime.games_played + EXCLUDED.avg_accuracy) / (leaderboard_daily_alltime.games_played + 1),
-           total_xp     = leaderboard_daily_alltime.total_xp + EXCLUDED.total_xp,
-           games_played = leaderboard_daily_alltime.games_played + 1,
-           updated_at   = now()`,
-        [playerId, avgAccuracy, totalXp]
-      );
-    }
-
-    // Step 3: player_global_stats UPSERT (existing columns only — table LOCKED)
-    const existing = await client.query<{ rounds_played: number; avg_accuracy: number }>(
-      `SELECT rounds_played, avg_accuracy FROM player_global_stats WHERE player_id = $1`,
-      [playerId]
-    );
-    const existingRounds = existing.rows[0]?.rounds_played ?? 0;
-    const existingAvg = existing.rows[0]?.avg_accuracy ?? 0;
-    let runningAvg = existingAvg;
-    let runningCount = existingRounds;
-    for (let i = 0; i < data.round_count; i++) {
-      const roundAcc = data.accuracy_sum / data.round_count;
-      runningAvg = (runningAvg * runningCount + roundAcc) / (runningCount + 1);
-      runningCount += 1;
-    }
-    await client.query(
-      `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, updated_at)
-       VALUES ($1, $2, 1, $3, $4, now())
-       ON CONFLICT (player_id) DO UPDATE SET
-         avg_accuracy = $3,
-         total_xp = player_global_stats.total_xp + $4,
-         rounds_played = $2,
-         games_played = player_global_stats.games_played + 1,
-         updated_at = now()`,
-      [playerId, runningCount, runningAvg, data.total_xp]
-    );
-
-    // Steps 4–6 + §9 streak: BLOCKED — stats tables do not exist yet (R3 ruling)
-    console.log("[dailyGameEndTransaction] BLOCKED: stats tables missing — player_progression_stats, player_accuracy_history, player_era_stats (steps 4–6, §9 streak) skipped for gameId=" + gameId);
-
-    // Step 7: Badge aggregates — evaluated per round, aggregated here, never
-    // persisted standalone. No standalone write needed (badges are derived).
-
-    // Step 8: daily_attempts.status = 'completed', completed_at = now()
-    await client.query(
-      `UPDATE daily_attempts SET status = 'completed', completed_at = now()
-       WHERE game_id = $1`,
-      [gameId]
-    );
-  }
-}
-
 async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync" | "async"): Promise<void> {
   try {
     // Fetch all round_results for this game
@@ -2618,7 +2392,18 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     const nonLeftCount = activePlayerRows.filter((p) => p.left_at === null).length;
     const shouldCloseEarly = nonLeftCount < 2;
 
-    if (nextRoundIndex < session.total_rounds && !shouldCloseEarly) {
+    // Deadline expiry closure (async only): if the session deadline has passed,
+    // close the session immediately instead of starting the next round. This
+    // handles the case where the deadline fires mid-session with rounds remaining.
+    // The DO alarm triggers round expiry → /complete → result auto-advance → /advance,
+    // and this check ensures /advance writes SESSION_COMPLETE rather than ROUND_STARTED.
+    // See Compete Relax (Option B) §5.8: "Deadline passed with unsubmitted rounds:
+    // those players score zero, and the session closes."
+    const deadlinePassed = session.mode === "async" &&
+      session.session_deadline !== null &&
+      new Date(session.session_deadline).getTime() <= Date.now();
+
+    if (nextRoundIndex < session.total_rounds && !shouldCloseEarly && !deadlinePassed) {
       const sessionCreatedEventForAdvance = await client.query<{ payload: { eventIds: string[] } }>(
         `SELECT payload FROM round_events
          WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
@@ -2678,18 +2463,6 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     );
     compareTransitionEvents("advanceRound", existingEvents, transitionResult.events);
 
-    // DAILY MODE: run game-end transaction INSIDE this transaction (§8)
-    // before COMMIT. Uses challengeDate from daily_attempts (fixes C1).
-    if (session.mode === "daily" && (nextRoundIndex >= session.total_rounds || sessionCompletedEarly)) {
-      const dailyAttempt = await client.query<{ date: string }>(
-        `SELECT date::text FROM daily_attempts WHERE game_id = $1`,
-        [gameId]
-      );
-      if (dailyAttempt.rows.length > 0) {
-        await dailyGameEndTransaction(client, gameId, dailyAttempt.rows[0].date);
-      }
-    }
-
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -2700,16 +2473,13 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
 
   // Fire-and-forget: update stats and leaderboards after SESSION_COMPLETE
   // (either last round completed or early closure per §6)
-  // DAILY mode: handled transactionally above — skip fire-and-forget for daily
   if (nextRoundIndex >= session!.total_rounds || sessionCompletedEarly) {
-    if (session!.mode !== "daily") {
-      updatePlayerGlobalStats(gameId, session!.mode as "practice" | "sync" | "async").catch((err) =>
-        console.error('[advanceRound] updatePlayerGlobalStats fire-and-forget error:', err)
-      );
-      updateLeaderboardDaily(gameId, session!.mode).catch((err) =>
-        console.error('[advanceRound] updateLeaderboardDaily fire-and-forget error:', err)
-      );
-    }
+    updatePlayerGlobalStats(gameId, session!.mode).catch((err) =>
+      console.error('[advanceRound] updatePlayerGlobalStats fire-and-forget error:', err)
+    );
+    updateLeaderboardDaily(gameId, session!.mode).catch((err) =>
+      console.error('[advanceRound] updateLeaderboardDaily fire-and-forget error:', err)
+    );
     updateLeaderboardLevelUp(gameId, session!.mode).catch((err) =>
       console.error('[advanceRound] updateLeaderboardLevelUp fire-and-forget error:', err)
     );

@@ -22,7 +22,34 @@ export default function PracticeEntryPage() {
     let cancelled = false
     setCreating(true)
 
+    const storageKey = `gh_practice_game_${playerId}`
+
     ;(async () => {
+      // Try to resume an existing practice game before creating a new one.
+      // This prevents refresh of /practice from silently discarding an
+      // in-progress game.
+      try {
+        const storedGameId = typeof window !== 'undefined'
+          ? localStorage.getItem(storageKey)
+          : null
+        if (storedGameId) {
+          const resumeRes = await fetch(`/api/compete/${storedGameId}?playerId=${playerId}`, { cache: 'no-store' })
+          if (resumeRes.ok) {
+            const resumeSnap = await resumeRes.json()
+            if (cancelled) return
+            // Only resume if the game is still in a playable phase.
+            if (resumeSnap && resumeSnap.status && resumeSnap.status !== 'SESSION_COMPLETE') {
+              router.replace(`/practice/${storedGameId}`)
+              return
+            }
+          }
+          // Snapshot missing or complete — clear stale entry and fall through.
+          if (typeof window !== 'undefined') localStorage.removeItem(storageKey)
+        }
+      } catch {
+        // Resume check failed (network, etc.) — fall through to create new.
+      }
+
       try {
         const settings = loadPracticeSettings()
 
@@ -60,6 +87,7 @@ export default function PracticeEntryPage() {
         const gameId = snapshot.gameId
         if (!gameId) throw new Error(t('no_game_id_response'))
 
+        if (typeof window !== 'undefined') localStorage.setItem(storageKey, gameId)
         router.replace(`/practice/${gameId}`)
       } catch (err) {
         if (cancelled) return
