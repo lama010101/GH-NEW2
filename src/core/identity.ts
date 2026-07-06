@@ -77,22 +77,8 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
     // GoTrue internal lock hang that getUser() can trigger on slow networks.
     // With @supabase/ssr cookie-based auth, getSession() reads the cookie
     // (not localStorage), and middleware already refreshed it server-side.
-    //
-    // BUT: getSession() acquires the GoTrue navigator lock, and inside that
-    // lock __loadSession() may call _callRefreshToken() — a network call — if
-    // the session token is expired. The lock's acquire timeout (5s) is
-    // cancelled once the lock is held, so a slow/hung refresh network call on
-    // mobile can hold the lock indefinitely, causing getSession() to never
-    // resolve and the UI to stay stuck on "Loading..." forever. The Promise.race
-    // timeout below ensures we fall through to Phase 2 (getUser with its own
-    // timeout) instead of hanging forever.
     try {
-      const { data: { session } } = await Promise.race([
-        supabaseBrowser.auth.getSession(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("getSession() timed out")), 5000)
-        ),
-      ]);
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
       if (session?.user?.id) {
         const user = session.user;
         const isAnonymous = user.is_anonymous ?? false;

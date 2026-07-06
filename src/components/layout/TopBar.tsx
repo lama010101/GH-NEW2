@@ -12,13 +12,13 @@ interface TopBarProps {
   avatarUrl: string | null
   initials: string
   onAvatarClick: () => void
-  /** Rank card expand/collapse state. */
-  rankOpen: boolean
-  /** Toggle handler for rank card. */
-  onToggleRank: () => void
+  /** Rank card expand/collapse state. Optional — defaults to false. */
+  rankOpen?: boolean
+  /** Toggle handler for rank card. Optional — defaults to no-op. */
+  onToggleRank?: () => void
 }
 
-export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick, rankOpen, onToggleRank }: TopBarProps) {
+export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick, rankOpen = false, onToggleRank = () => {} }: TopBarProps) {
   const router = useRouter()
   const t = useTranslations('landing')
 

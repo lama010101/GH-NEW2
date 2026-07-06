@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { joinCompeteSession } from "@/server/sessionCore";
+import { verifyPartyKitSecret } from "@/server/partykitAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,11 +9,7 @@ export async function POST(
   request: Request,
   { params }: { params: { gameId: string } }
 ) {
-  const partykitSecret = request.headers.get("x-partykit-secret");
-  const expectedSecret = process.env.PARTYKIT_SECRET;
-  if (partykitSecret && expectedSecret && partykitSecret === expectedSecret) {
-    // Server-to-server call from PartyKit — skip user auth
-  } else {
+  if (!verifyPartyKitSecret(request.headers.get("x-partykit-secret"))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {

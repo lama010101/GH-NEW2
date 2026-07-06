@@ -12,26 +12,25 @@ import { calculateBadges } from "@/core/rules";
 import { NavModal } from "@/components/NavModal";
 import ExperienceAccuracy from "@/components/ExperienceAccuracy";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
-import RankCard from "@/components/RankCard";
+import RankProgressBar from "@/components/RankProgressBar";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
   playerId: string | null;
   allRoundResults: AllRoundResult[] | null;
+  rankOpen?: boolean;
   sendMessage: (msg: object) => void;
   onPlayAgain?: () => void;
-  /** Rank card expand/collapse state (controlled by page-level TopBar chevron). */
-  rankOpen?: boolean;
 }
 
 export default function SessionComplete({
   snapshot,
   playerId,
   allRoundResults,
+  rankOpen: _rankOpen,
   sendMessage,
   onPlayAgain,
-  rankOpen = false,
 }: SessionCompleteProps) {
   const router = useRouter();
   const t = useTranslations('compete_page');
@@ -348,13 +347,15 @@ export default function SessionComplete({
                   <div className={styles.statTile}>
                     <span className={styles.statTileLabelWhen}>{tGame('when')}</span>
                     <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{whenAccuracy}</span>
-                    <span className={styles.statTileSub}>{tGame('avg_yrs_off', { n: Math.round(avgYearDiff) })}</span>
+                    <span className={styles.statTileSub}>{t('avg_yrs_off', { n: Math.round(avgYearDiff) })}</span>
                   </div>
                 </div>
               </section>
 
-              {/* RANK TITLE CARD — same as home page, placed after score card, toggled by TopBar chevron */}
-              <RankCard totalXp={totalXp} open={rankOpen} inline />
+              {/* RANK PROGRESS — derived from global total_xp */}
+              <div className={styles.rankWrap}>
+                <RankProgressBar totalXp={totalXp} compact />
+              </div>
 
               {/* FINAL RANKINGS — hidden in practice (solo) mode */}
               {!isPractice && (
@@ -530,7 +531,7 @@ export default function SessionComplete({
                         <span className={styles.roundNum}>R{i + 1}</span>
                         <div className={styles.roundInfo}>
                           <span className={styles.roundTitle}>{round.title}</span>
-                          <span className={styles.roundMeta}>{round.year} · {round.locationName || (round.latitude != null && round.longitude != null ? `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}` : '')}</span>
+                          <span className={styles.roundMeta}>{round.year} · {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`}</span>
                         </div>
                         {myRoundAcc != null && (
                           <span className={styles.roundMyAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, myRoundAcc)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{myRoundAcc}</span>

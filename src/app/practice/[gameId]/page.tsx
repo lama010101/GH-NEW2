@@ -16,7 +16,6 @@ import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { computeTimeRemaining } from "@/core/competeUtils";
-import { useRankOpen } from "@/hooks/useRankOpen";
 import { PracticeSettingsModal, type PracticeModalSettings } from "@/components/practice/PracticeSettingsModal";
 import { savePracticeSettings } from "@/components/practice/practiceSettings";
 import pageStyles from './page.module.css';
@@ -57,7 +56,6 @@ export default function PracticeGamePage() {
   const [topbarXp, setTopbarXp] = useState("--");
   const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
   const [topbarInitials, setTopbarInitials] = useState("PL");
-  const [rankOpen, toggleRankOpen] = useRankOpen();
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
@@ -97,7 +95,7 @@ export default function PracticeGamePage() {
     })();
 
     return () => { cancelled = true };
-  }, [gameId, playerId, t]);
+  }, [gameId, playerId]);
 
   // Auto-start the game when snapshot is in LOBBY status
   useEffect(() => {
@@ -137,7 +135,7 @@ export default function PracticeGamePage() {
     })();
 
     return () => { cancelled = true };
-  }, [snapshot?.status, snapshot?.gameId, gameId, playerId, snapshot, busy, t]);
+  }, [snapshot?.status, snapshot?.gameId, gameId, playerId, snapshot]);
 
   // Lobby TopBar: fetch viewer stats + profile
   useEffect(() => {
@@ -174,7 +172,7 @@ export default function PracticeGamePage() {
     setWhenLbExpanded(true);
     setWhereCluesExpanded(false);
     setWhenCluesExpanded(false);
-  }, [snapshot, snapshot?.currentRoundIndex]);
+  }, [snapshot?.currentRoundIndex]);
 
   // Reset guess inputs whenever the active round changes
   useEffect(() => {
@@ -191,7 +189,7 @@ export default function PracticeGamePage() {
     setHintResult({ purchasedIds: [], accPenalty: 0, xpPenalty: 0, whereAccPenalty: 0, whenAccPenalty: 0 });
     submittedHintPenaltyRef.current = { accPenalty: 0, xpPenalty: 0, purchasedIds: [], whereAccPenalty: 0, whenAccPenalty: 0 };
     setLocationName(null);
-  }, [snapshot, snapshot?.currentRoundIndex]);
+  }, [snapshot?.currentRoundIndex]);
 
   // Fetch all round results when session completes
   useEffect(() => {
@@ -316,7 +314,7 @@ export default function PracticeGamePage() {
         setBusy(false);
       }
     })();
-  }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, playerId, hintResult, gameId, snapshot, localSubmitted, t]);
+  }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, playerId, hintResult, gameId, snapshot]);
 
   // Scroll to top when ROUND_COMPLETE loads
   useEffect(() => {
@@ -432,7 +430,7 @@ export default function PracticeGamePage() {
         setBusy(false);
       }
     })();
-  }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult, gameId, t]);
+  }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult, gameId]);
 
   const handleAdvanceRound = useCallback(() => {
     if (!snapshot || !playerId) return;
@@ -470,7 +468,7 @@ export default function PracticeGamePage() {
         setBusy(false);
       }
     })();
-  }, [snapshot, playerId, gameId, t]);
+  }, [snapshot, playerId, gameId]);
 
   const handlePracticePlayAgain = useCallback(() => {
     if (!snapshot) return;
@@ -526,7 +524,7 @@ export default function PracticeGamePage() {
         setPracticeCreating(false);
       }
     })();
-  }, [playerId, displayName, router, t]);
+  }, [playerId, displayName, router]);
 
   if (!gameId) return null;
 
@@ -563,8 +561,6 @@ export default function PracticeGamePage() {
             avatarUrl={topbarAvatarUrl}
             initials={topbarInitials}
             onAvatarClick={() => setShowNavModal(true)}
-            rankOpen={rankOpen}
-            onToggleRank={toggleRankOpen}
           />
           <NavModal
             isOpen={showNavModal}
@@ -653,7 +649,6 @@ export default function PracticeGamePage() {
               playerId={playerId}
               allRoundResults={allRoundResults}
               onPlayAgain={handlePracticePlayAgain}
-              rankOpen={rankOpen}
               sendMessage={(msg) => {
                 const newGameId = (msg as { newGameId?: string }).newGameId;
                 if (newGameId) {

@@ -60,6 +60,64 @@ export async function getOrCreateDailyChallenge(dateIso: string): Promise<DailyC
  * eligibility criteria in fetchEventsWithDetails (events.ts:40-74)
  * but returns only IDs (no join to images/hints).
  */
+/**
+ * startDailyAttempt — entry point for POST /api/daily/start.
+ * Enforces one attempt per player per UTC date via daily_attempts PK.
+ * Returns { status, gameId }:
+ *   - "resume"     → existing in_progress attempt
+ *   - "completed"  → existing completed/expired attempt
+ *   - "new"        → newly created attempt
+ * Uses dynamic import of sessionCore.createDailySession to avoid circular
+ * dependency (sessionCore imports getOrCreateDailyChallenge from this module).
+ */
+export async function startDailyAttempt(
+  playerId: string
+): Promise<{ status: "new" | "resume" | "completed"; gameId: string }> {
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  // Check for existing attempt today
+  const existing = await dbPool.query<{ game_id: string; status: string }>(
+    `SELECT game_id, status FROM daily_attempts WHERE date = $1 AND player_id = $2`,
+    [todayIso, playerId]
+  );
+
+  if (existing.rows.length > 0) {
+    const row = existing.rows[0];
+    const status: "resume" | "completed" =
+      row.status === "in_progress" ? "resume" : "completed";
+    return { status, gameId: row.game_id };
+  }
+
+  // No existing attempt — create new daily session
+  const { createDailySession } = await import("./sessionCore");
+  const snapshot = await createDailySession({ playerId, dateIso: todayIso });
+
+  // Record the attempt (ON CONFLICT DO NOTHING handles race condition)
+  const inserted = await dbPool.query(
+    `INSERT INTO daily_attempts (date, player_id, game_id, status)
+     VALUES ($1, $2, $3, 'in_progress')
+     ON CONFLICT (date, player_id) DO NOTHING`,
+    [todayIso, playerId, snapshot.gameId]
+  );
+
+  if ((inserted as unknown as { rowCount: number | null }).rowCount === 0) {
+    // Race: another request won the insert while we were creating our session.
+    // Re-query and return the winning attempt.
+    const raceCheck = await dbPool.query<{ game_id: string; status: string }>(
+      `SELECT game_id, status FROM daily_attempts WHERE date = $1 AND player_id = $2`,
+      [todayIso, playerId]
+    );
+    if (raceCheck.rows.length > 0) {
+      const row = raceCheck.rows[0];
+      const status: "resume" | "completed" =
+        row.status === "in_progress" ? "resume" : "completed";
+      return { status, gameId: row.game_id };
+    }
+  }
+
+  return { status: "new", gameId: snapshot.gameId };
+}
+
 async function fetchAllEligibleEventIds(): Promise<string[]> {
   const result = await dbPool.query<{ id: string }>(
     `SELECT e.id

@@ -78,6 +78,9 @@ export async function middleware(request: NextRequest) {
         );
         bypassResponse.cookies.set("gh_admin_bypass", "1", {
           httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
           maxAge: 90 * 24 * 60 * 60,
         });
         return bypassResponse;
