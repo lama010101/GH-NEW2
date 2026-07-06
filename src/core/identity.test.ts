@@ -269,4 +269,67 @@ describe("identity state machine — KC-007", () => {
       expect(getCachedIdentityState()).toBe(getIdentityState());
     });
   });
+
+  describe("updateCachedDisplayName", () => {
+    it("updates cached display name and notifies subscribers", async () => {
+      const { bootstrapIdentity, updateCachedDisplayName, subscribeToIdentityChanges } = await loadIdentity();
+      const auth = await getMockAuth();
+      const mockUser = {
+        id: "user-123",
+        is_anonymous: false,
+        created_at: new Date().toISOString(),
+        last_sign_in_at: new Date().toISOString(),
+      };
+      auth.getSession.mockResolvedValue({
+        data: { session: { user: mockUser, access_token: "tok" } },
+      });
+
+      // Bootstrap to get a ready state
+      await bootstrapIdentity();
+
+      const states: any[] = [];
+      subscribeToIdentityChanges((state) => states.push(state));
+      // Clear initial callback
+      states.length = 0;
+
+      // Update the display name
+      updateCachedDisplayName("NewName#1234");
+
+      // Should have notified subscribers with updated display name
+      expect(states).toHaveLength(1);
+      expect(states[0].status).toBe("ready");
+      if (states[0].status === "ready") {
+        expect(states[0].displayName).toBe("NewName#1234");
+      }
+
+      // Verify cached state is updated
+      const { getCachedIdentityState } = await loadIdentity();
+      const cached = getCachedIdentityState();
+      expect(cached.status).toBe("ready");
+      if (cached.status === "ready") {
+        expect(cached.displayName).toBe("NewName#1234");
+      }
+    });
+
+    it("does nothing when state is not ready", async () => {
+      const { updateCachedDisplayName, getCachedIdentityState, subscribeToIdentityChanges } = await loadIdentity();
+      
+      // Don't bootstrap - state should be "loading"
+      expect(getCachedIdentityState().status).toBe("loading");
+
+      const states: any[] = [];
+      subscribeToIdentityChanges((state) => states.push(state));
+      // Clear initial callback
+      states.length = 0;
+
+      // Try to update display name
+      updateCachedDisplayName("ShouldNotUpdate");
+
+      // Should not have notified subscribers
+      expect(states).toHaveLength(0);
+      
+      // State should still be loading
+      expect(getCachedIdentityState().status).toBe("loading");
+    });
+  });
 });

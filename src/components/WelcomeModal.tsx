@@ -22,7 +22,7 @@ export interface WelcomeModalProps {
     image_url: string | null;
   };
   initialDisplayName: string;
-  onSaved?: (data: { avatarUrl: string; displayName: string }) => void;
+  onSaved?: () => void;
 }
 
 export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSaved }: WelcomeModalProps) {
@@ -72,10 +72,7 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ display_name: usernameValue.trim() }),
     })
-      .then(() => onSaved?.({
-        avatarUrl: avatarUrl ?? avatar.image_url ?? "",
-        displayName: usernameValue.trim(),
-      }))
+      .then(() => onSaved?.())
       .catch(() => {});
     onClose();
   };

@@ -148,7 +148,7 @@ export default function AccountPage() {
     }
 
     load().catch((err) => console.error('[account] load error:', err))
-  }, [playerId, isLoading, router, tCommon])
+  }, [playerId, isLoading, router])
 
   const handleSave = async () => {
     if (!playerId || displayName.trim() === savedName.trim()) return

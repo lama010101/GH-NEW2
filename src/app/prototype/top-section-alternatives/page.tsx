@@ -70,7 +70,6 @@ export default function TopSectionAlternatives() {
           <div className="alt1-content">
             <div className="alt1-header">
               <div className="alt1-badge">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={BADGE} alt="Badge" />
                 <span>ROUND 1</span>
               </div>

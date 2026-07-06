@@ -36,7 +36,9 @@ export async function POST(request: Request) {
       roundTimerSec: body.roundTimerSec,
       totalRounds: body.totalRounds,
       yearMin: body.yearMin,
-      yearMax: body.yearMax
+      yearMax: body.yearMax,
+      resultsAutoAdvanceSec: body.resultsAutoAdvanceSec,
+      selectedRegions: Array.isArray(body.selectedRegions) ? body.selectedRegions : undefined,
     });
 
     return NextResponse.json(snapshot);
