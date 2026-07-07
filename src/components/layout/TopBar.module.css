@@ -36,28 +36,9 @@
   border: 1px solid var(--gh-border-default);
   border-radius: 20px;
   padding: 5px 12px;
-  cursor: pointer;
   font-family: inherit;
   font-size: inherit;
   color: inherit;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.xpPill:hover {
-  background: var(--gh-glass-bg-hover);
-  border-color: var(--gh-border-medium);
-}
-
-/* Chevron inside the xp pill — rotates up when rank card is open */
-.xpPillChev {
-  flex-shrink: 0;
-  color: var(--gh-text-muted);
-  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
-  transform: rotate(0deg);
-}
-
-.xpPillChevOpen {
-  transform: rotate(180deg);
 }
 
 /* Gold "Rank N" badge inside the score pill */

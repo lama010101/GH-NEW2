@@ -7,9 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import TopBar from '@/components/layout/TopBar';
-import RankCard from '@/components/RankCard';
 import { NavModal } from '@/components/NavModal';
-import { useRankOpen } from '@/hooks/useRankOpen';
 import styles from './leaderboard.module.css';
 
 type LeaderboardTab = 'daily' | 'levelup' | 'overall';
@@ -84,8 +82,6 @@ function LeaderboardPageInner() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [initials, setInitials] = useState('PL');
   const [showNavModal, setShowNavModal] = useState(false);
-
-  const [rankOpen, toggleRankOpen] = useRankOpen();
 
   useEffect(() => {
     if (!playerId) {
@@ -386,10 +382,7 @@ function LeaderboardPageInner() {
         avatarUrl={avatarUrl}
         initials={initials}
         onAvatarClick={() => setShowNavModal(true)}
-        rankOpen={rankOpen}
-        onToggleRank={toggleRankOpen}
       />
-      <RankCard totalXp={Number(xp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
 
       {/* Header */}
       <div className={styles.header}>

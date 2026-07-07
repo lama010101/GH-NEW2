@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ChevronDown } from 'lucide-react'
 import { rankForXp } from '@/core/rank'
 import NotificationBell from '@/components/NotificationBell'
 import styles from './TopBar.module.css'
@@ -12,13 +11,9 @@ interface TopBarProps {
   avatarUrl: string | null
   initials: string
   onAvatarClick: () => void
-  /** Rank card expand/collapse state. Optional — defaults to false. */
-  rankOpen?: boolean
-  /** Toggle handler for rank card. Optional — defaults to no-op. */
-  onToggleRank?: () => void
 }
 
-export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick, rankOpen = false, onToggleRank = () => {} }: TopBarProps) {
+export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick }: TopBarProps) {
   const router = useRouter()
   const t = useTranslations('landing')
 
@@ -33,12 +28,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
         <Image src="/icons/logo.webp" alt={t('logo_alt')} width={120} height={32} className={styles.logoImg} priority />
       </button>
       <div className={styles.xpPillCol}>
-        <button
-          onClick={onToggleRank}
-          className={styles.xpPill}
-          aria-label={rankOpen ? 'Collapse rank card' : 'Expand rank card'}
-          aria-expanded={rankOpen}
-        >
+        <div className={styles.xpPill}>
           <span className={styles.xpPillBadge}>Rank {tier}</span>
           <span className={styles.xpPillAccuracy} style={(() => {
             const n = Number(accuracy)
@@ -46,11 +36,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
             const hue = Math.round((Math.max(0, Math.min(100, n)) / 100) * 120)
             return { color: `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))` }
           })()}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
-          <ChevronDown
-            size={14}
-            className={`${styles.xpPillChev} ${rankOpen ? styles.xpPillChevOpen : ''}`}
-          />
-        </button>
+        </div>
       </div>
       <div className={styles.topbarRight}>
         <NotificationBell />
