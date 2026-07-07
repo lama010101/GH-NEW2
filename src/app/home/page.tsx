@@ -153,8 +153,33 @@ function HomePageInner() {
   }
 
   if (identity.status === 'error') {
-    router.replace('/login?next=/home')
-    return null
+    // A transient client-side failure (GoTrue lock contention / network) — the
+    // middleware already validated the cookie server-side, so the user is very
+    // likely authenticated. Redirecting to /login here produces the
+    // "blank-black + empty console" screen (return null renders nothing on the
+    // #080c14 body). Instead, offer a retry that re-runs bootstrapIdentity()
+    // (which is retryable after an error: the previous bootstrap has settled
+    // and no in-flight bootstrap is running, so it runs again).
+    const handleRetry = () => {
+      setIdentity({ status: 'loading' })
+      bootstrapIdentity().then(setIdentity)
+    }
+    return (
+      <div className={styles.pageRoot}>
+        <div aria-hidden="true" className={styles.bgImage} />
+        <div className={styles.bgOverlay} />
+        <div className={styles.loadingIndicator}>
+          <div>{t('game.identity_error')}</div>
+          <button
+            type="button"
+            onClick={handleRetry}
+            style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.22)', color: 'var(--gh-text-primary, #fff)', fontSize: '1rem', cursor: 'pointer' }}
+          >
+            {t('game.retry')}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (identity.status !== 'ready') {

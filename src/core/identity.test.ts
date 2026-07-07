@@ -148,7 +148,7 @@ describe("identity state machine — KC-007", () => {
       expect(auth.getUser).not.toHaveBeenCalled();
     });
 
-    it("falls back to getUser() when getSession() returns no session", async () => {
+    it("retries getSession() and resolves when a later attempt returns a session", async () => {
       const { bootstrapIdentity } = await loadIdentity();
       const auth = await getMockAuth();
       const mockUser = {
@@ -157,8 +157,10 @@ describe("identity state machine — KC-007", () => {
         created_at: new Date().toISOString(),
         last_sign_in_at: new Date().toISOString(),
       };
-      auth.getSession.mockResolvedValue({ data: { session: null } });
-      auth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null });
+      // First attempt rejects (lock hang), second attempt resolves with session.
+      auth.getSession
+        .mockRejectedValueOnce(new Error("getSession() timed out"))
+        .mockResolvedValueOnce({ data: { session: { user: mockUser, access_token: "tok" } } });
 
       const state = await bootstrapIdentity();
 
@@ -166,44 +168,32 @@ describe("identity state machine — KC-007", () => {
       if (state.status === "ready") {
         expect(state.playerId).toBe("user-456");
       }
-      expect(auth.getUser).toHaveBeenCalled();
+      // getUser() must never be called — bootstrap is getSession-only now.
+      expect(auth.getUser).not.toHaveBeenCalled();
     });
 
-    it("sets 'unauthenticated' when both getSession and getUser return no user", async () => {
+    it("sets 'unauthenticated' when getSession() returns no session", async () => {
       const { bootstrapIdentity, getCachedIdentityState } = await loadIdentity();
       const auth = await getMockAuth();
       auth.getSession.mockResolvedValue({ data: { session: null } });
-      auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
       const state = await bootstrapIdentity();
       expect(state).toEqual({ status: "unauthenticated" });
       expect(getCachedIdentityState()).toEqual({ status: "unauthenticated" });
     });
 
-    it("sets 'unauthenticated' when getUser returns an error", async () => {
+    it("sets 'error' when getSession() throws on every attempt (after retries)", async () => {
       const { bootstrapIdentity } = await loadIdentity();
       const auth = await getMockAuth();
-      auth.getSession.mockResolvedValue({ data: { session: null } });
-      auth.getUser.mockResolvedValue({
-        data: { user: null },
-        error: { message: "Invalid token" },
-      });
-
-      const state = await bootstrapIdentity();
-      expect(state).toEqual({ status: "unauthenticated" });
-    });
-
-    it("sets 'error' when getUser throws (after retries exhausted)", async () => {
-      const { bootstrapIdentity } = await loadIdentity();
-      const auth = await getMockAuth();
-      auth.getSession.mockResolvedValue({ data: { session: null } });
-      auth.getUser.mockRejectedValue(new Error("Network timeout"));
+      auth.getSession.mockRejectedValue(new Error("getSession() timed out"));
 
       const state = await bootstrapIdentity();
       expect(state.status).toBe("error");
       if (state.status === "error") {
-        expect(state.error).toContain("Network timeout");
+        expect(state.error).toContain("getSession() timed out");
       }
+      // getUser() must never be called.
+      expect(auth.getUser).not.toHaveBeenCalled();
     });
 
     it("does not re-bootstrap if already ready (returns cached state)", async () => {

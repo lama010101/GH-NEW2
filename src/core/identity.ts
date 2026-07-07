@@ -72,68 +72,36 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
   bootstrapped = true;
 
   bootstrapPromise = (async (): Promise<IdentityState> => {
-    // ── Phase 1: Fast path — getSession() reads from the auth cookie (kept
-    // fresh by middleware on every navigation). This is instant and avoids the
-    // GoTrue internal lock hang that getUser() can trigger on slow networks.
-    // With @supabase/ssr cookie-based auth, getSession() reads the cookie
-    // (not localStorage), and middleware already refreshed it server-side.
+    // ── Phase 1 + Phase 2: getSession() only — NEVER getUser().
     //
-    // BUT: getSession() acquires the GoTrue navigator lock, and inside that
-    // lock __loadSession() may call _callRefreshToken() — a network call — if
-    // the session token is expired. The lock's acquire timeout (5s) is
-    // cancelled once the lock is held, so a slow/hung refresh network call on
-    // mobile can hold the lock indefinitely, causing getSession() to never
-    // resolve and the UI to stay stuck on "Loading..." forever. The Promise.race
-    // timeout below ensures we fall through to Phase 2 (getUser with its own
-    // timeout) instead of hanging forever.
-    try {
-      const { data: { session } } = await Promise.race([
-        supabaseBrowser.auth.getSession(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("getSession() timed out")), 5000)
-        ),
-      ]);
-      if (session?.user?.id) {
-        const user = session.user;
-        const isAnonymous = user.is_anonymous ?? false;
-        const displayName = await fetchDisplayName(user.id);
-        const createdAt = new Date(user.created_at).getTime();
-        const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
-        const isNewUser = Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
-        cachedState = {
-          status: "ready",
-          playerId: user.id,
-          isAnonymous,
-          displayName,
-          isNewUser
-        };
-        resolveReady?.(user.id);
-        return cachedState;
-      }
-    } catch {
-      // getSession() threw — fall through to getUser() fallback.
-    }
-
-    // ── Phase 2: Fallback — getUser() makes a network call that refreshes
-    // stale tokens. Only reached when getSession() found no session (cookie
-    // missing, expired, or corrupted). Wrapped in an 8s timeout to avoid the
-    // GoTrue lock hang; one retry with backoff for transient network issues.
-    const maxAttempts = 2;
+    // With @supabase/ssr cookie-based auth, the middleware refreshes the token
+    // server-side on every navigation and writes a fresh cookie. The client
+    // therefore only needs to READ the session from the cookie via
+    // getSession(). Calling getUser() is redundant AND dangerous: it makes a
+    // network call that acquires the SAME GoTrue navigator lock as
+    // getSession(). If getSession() timed out because the lock was held by an
+    // in-flight token-refresh network call, getUser() will block on that same
+    // lock and time out too — guaranteeing an error state and a blank-screen
+    // redirect. (This is the exact deadlock MP-FIX-AUTH-GOTRUE-DEADLOCK-003
+    // removed from getValidAccessToken; the same fix applies here.)
+    //
+    // Strategy: try getSession() up to 3 times with backoff. Each attempt is
+    // wrapped in a 5s Promise.race timeout so a hung lock-holding refresh
+    // network call cannot block us forever; the backoff gives the in-flight
+    // refresh time to complete and release the lock so the next attempt
+    // succeeds. A null session (cookie genuinely absent) → unauthenticated.
+    // A throw/timeout on every attempt → error (transient lock/network issue).
+    const maxAttempts = 3;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        const { data: { user }, error: userError } = await Promise.race([
-          supabaseBrowser.auth.getUser(),
+        const { data: { session } } = await Promise.race([
+          supabaseBrowser.auth.getSession(),
           new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Identity bootstrap timed out")), 8000)
+            setTimeout(() => reject(new Error("getSession() timed out")), 5000)
           ),
         ]);
-
-        if (userError) {
-          cachedState = { status: "unauthenticated" };
-          return cachedState;
-        }
-
-        if (user?.id) {
+        if (session?.user?.id) {
+          const user = session.user;
           const isAnonymous = user.is_anonymous ?? false;
           const displayName = await fetchDisplayName(user.id);
           const createdAt = new Date(user.created_at).getTime();
@@ -149,8 +117,7 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
           resolveReady?.(user.id);
           return cachedState;
         }
-
-        // No session — user must sign in via /login
+        // No session in the cookie — user is not authenticated.
         cachedState = { status: "unauthenticated" };
         return cachedState;
       } catch (err) {
@@ -258,6 +225,16 @@ export function subscribeToIdentityChanges(
         };
         resolveReady?.(session.user.id);
       } else {
+        // If bootstrapIdentity() is still in-flight, a null-session event here
+        // is likely a transient lock/refresh failure (the INITIAL_SESSION or a
+        // failed TOKEN_REFRESHED firing before the cookie was read), NOT a real
+        // sign-out. The middleware already validated the cookie server-side, so
+        // let bootstrap finish and be the authority. Flipping to "unauthenticated"
+        // now would trigger a spurious redirect to /login (the blank-black-on-
+        // refresh bug). Only act on null-session when no bootstrap is pending.
+        if (bootstrapPromise) {
+          return;
+        }
         bootstrapped = false;
         cachedState = { status: "unauthenticated" };
       }
