@@ -1,0 +1,85 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve, join } from "node:path";
+
+/**
+ * GUARD TEST — 100 XP signup bonus is awarded in the DB trigger, not the API route.
+ *
+ * Bug history (FIX-SIGNUP-XP-TRIGGER-001):
+ * The 100 XP signup bonus was previously awarded in /api/user/assign-avatar
+ * route. But the handle_new_user DB trigger already assigns an avatar_url to
+ * every new user, so the assign-avatar route returns early (assigned: false)
+ * and NEVER reaches the XP upsert — making it dead code. The XP was also
+ * dependent on client-side isNewUser detection which can fail on slow networks.
+ *
+ * Fix: moved the 100 XP award into the handle_new_user DB trigger itself
+ * (migration 20260707000000). Server-side, guaranteed, single source of truth.
+ *
+ * This guard asserts:
+ * 1. The migration file exists and contains the player_global_stats insert
+ * 2. The assign-avatar route no longer contains any player_global_stats write
+ *
+ * Task ref: FIX-SIGNUP-XP-TRIGGER-001
+ */
+
+const PROJECT_ROOT = resolve(__dirname, "..", "..");
+const MIGRATIONS_DIR = resolve(PROJECT_ROOT, "supabase", "migrations");
+const ASSIGN_AVATAR_ROUTE = resolve(
+  PROJECT_ROOT,
+  "src",
+  "app",
+  "api",
+  "user",
+  "assign-avatar",
+  "route.ts"
+);
+
+describe("100 XP signup bonus — DB trigger, not API route (FIX-SIGNUP-XP-TRIGGER-001)", () => {
+  it("migration 20260707000000 exists and awards 100 XP in handle_new_user", () => {
+    const migrationPath = resolve(
+      MIGRATIONS_DIR,
+      "20260707000000_handle_new_user_award_signup_xp.sql"
+    );
+    const sql = readFileSync(migrationPath, "utf-8");
+
+    // The trigger function must insert into player_global_stats with total_xp = 100
+    expect(sql).toContain("player_global_stats");
+    expect(sql).toContain("total_xp");
+    expect(sql).toMatch(/total_xp.*100|100.*total_xp/);
+    expect(sql).toContain("ON CONFLICT (player_id) DO NOTHING");
+    expect(sql).toContain("handle_new_user");
+  });
+
+  it("handle_new_user trigger is the ONLY migration that writes player_global_stats on signup", () => {
+    // List all migration files and check none other inserts into
+    // player_global_stats with total_xp 100 (the signup bonus).
+    const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql"));
+    const signupXpMigrations: string[] = [];
+    for (const f of files) {
+      const sql = readFileSync(join(MIGRATIONS_DIR, f), "utf-8");
+      if (
+        sql.includes("player_global_stats") &&
+        /total_xp.*100|100.*total_xp/.test(sql) &&
+        sql.includes("handle_new_user")
+      ) {
+        signupXpMigrations.push(f);
+      }
+    }
+    // Exactly one migration should award the signup XP via the trigger.
+    expect(signupXpMigrations).toHaveLength(1);
+    expect(signupXpMigrations[0]).toBe(
+      "20260707000000_handle_new_user_award_signup_xp.sql"
+    );
+  });
+
+  it("assign-avatar route does NOT write to player_global_stats (XP moved to trigger)", () => {
+    const routeSrc = readFileSync(ASSIGN_AVATAR_ROUTE, "utf-8");
+    expect(
+      routeSrc,
+      "assign-avatar route must NOT contain player_global_stats — " +
+        "the 100 XP signup bonus is now awarded in the handle_new_user DB trigger. " +
+        "If you re-add it here, it is dead code (the route returns early when " +
+        "avatar_url is already set by the trigger)."
+    ).not.toContain("player_global_stats");
+  });
+});

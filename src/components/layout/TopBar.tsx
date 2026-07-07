@@ -22,7 +22,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
   const router = useRouter()
   const t = useTranslations('landing')
 
-  // Derive rank tier from xp string for the "LVL" badge.
+  // Derive rank tier from xp string for the "Rank" badge.
   // xp may be "--" (loading) or a locale-formatted number like "32 500".
   const xpNum = Number(xp.replace(/[^\d]/g, ''))
   const tier = Number.isFinite(xpNum) && xpNum >= 0 ? rankForXp(xpNum).tier : 1
@@ -39,7 +39,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
           aria-label={rankOpen ? 'Collapse rank card' : 'Expand rank card'}
           aria-expanded={rankOpen}
         >
-          <span className={styles.xpPillBadge}>LVL {tier}</span>
+          <span className={styles.xpPillBadge}>Rank {tier}</span>
           <span className={styles.xpPillAccuracy} style={(() => {
             const n = Number(accuracy)
             if (!Number.isFinite(n)) return undefined

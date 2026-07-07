@@ -10,7 +10,7 @@ import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
 import { AvatarPickerModal } from '@/components/AvatarPickerModal';
 import ExperienceAccuracy from '@/components/ExperienceAccuracy';
-import RankProgressBar from '@/components/RankProgressBar';
+import RankCard from '@/components/RankCard';
 
 
 type ProfileHistoricalAvatar = {
@@ -300,7 +300,7 @@ export default function ProfilePage() {
 
         {/* Rank progress — derived from total_xp (single source of truth) */}
         <div className={`${styles.rankWrap} w-full max-w-[400px] mb-6`}>
-          <RankProgressBar totalXp={profileData.totalXp} />
+          <RankCard totalXp={profileData.totalXp} open inline />
         </div>
 
         {/* Historical Avatar Card */}

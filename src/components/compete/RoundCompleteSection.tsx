@@ -16,7 +16,7 @@ import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
-import RankProgressBar from "@/components/RankProgressBar";
+import RankCard from "@/components/RankCard";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
 
@@ -478,7 +478,7 @@ export default function RoundCompleteSection({
 
             {/* RANK PROGRESS — derived from global total_xp */}
             <div className={styles.rankWrap}>
-              <RankProgressBar totalXp={totalXp} compact />
+              <RankCard totalXp={totalXp} open inline />
             </div>
 
             {/* WHERE + WHEN CARD (merged, tabbed) */}
