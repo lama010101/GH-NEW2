@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
-import { useRankOpen } from '@/hooks/useRankOpen'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
@@ -140,7 +139,6 @@ function HomePageInner() {
 
   const [showNavModal, setShowNavModal] = useState(false)
   const [practiceModalOpen, setPracticeModalOpen] = useState(false)
-  const [rankOpen, toggleRankOpen] = useRankOpen()
 
   const handleNav = (path: string) => {
     router.push(path)
@@ -221,15 +219,13 @@ function HomePageInner() {
         avatarUrl={avatarUrl}
         initials={initials}
         onAvatarClick={() => setShowNavModal(true)}
-        rankOpen={rankOpen}
-        onToggleRank={toggleRankOpen}
       />
 
       {/* Rank card — below topbar, above scrollable content (self-contained fixed wrapper) */}
-      <RankCard totalXp={totalXpNum} open={rankOpen} />
+      <RankCard totalXp={totalXpNum} open />
 
       {/* Scrollable content area */}
-      <div className={`${styles['page-scroll']} ${rankOpen ? styles.pageScrollRankOpen : styles.pageScrollRankClosed}`}>
+      <div className={`${styles['page-scroll']} ${styles.pageScrollRankOpen}`}>
         {/* Tagline */}
         <div className={styles.tagline}>
           {t('home.tagline')}

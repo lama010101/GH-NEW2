@@ -9,7 +9,7 @@ import { resolve } from "node:path";
  * FEAT-HOME-UI-PROTO-MERGE) to use a HORIZONTAL card layout:
  *   icon-left + text-middle + playPill (non-compete cards)
  *   icon-left + text-middle + CompetePanel (compete card)
- * plus a persistent RankCard below the TopBar (toggled via useRankOpen).
+ * plus a persistent, always-open RankCard below the TopBar.
  *
  * This layout has been reverted multiple times in the working tree by
  * AI agent sessions that restored the OLD vertical card layout. This test
@@ -32,8 +32,8 @@ describe("home page — horizontal card layout guard (FEAT-HOME-UI-PROTO-MERGE)"
       expect(pageSrc).not.toContain("import RankProgressBar");
     });
 
-    it("imports useRankOpen hook", () => {
-      expect(pageSrc).toContain("import { useRankOpen } from '@/hooks/useRankOpen'");
+    it("does NOT import useRankOpen (rank card is always-open, not toggled)", () => {
+      expect(pageSrc).not.toContain("useRankOpen");
     });
 
     it("imports MODE_CARD_TITLE and MODE_CARD_SUBTITLE from home/types", () => {
@@ -41,19 +41,19 @@ describe("home page — horizontal card layout guard (FEAT-HOME-UI-PROTO-MERGE)"
       expect(pageSrc).toContain("MODE_CARD_SUBTITLE");
     });
 
-    it("renders RankCard with open prop from useRankOpen", () => {
+    it("renders RankCard always-open (no rankOpen toggle binding)", () => {
       expect(pageSrc).toContain("<RankCard");
-      expect(pageSrc).toContain("open={rankOpen}");
+      expect(pageSrc).toContain("open");
+      expect(pageSrc).not.toContain("open={rankOpen}");
     });
 
-    it("passes rankOpen + onToggleRank to TopBar", () => {
-      expect(pageSrc).toContain("rankOpen={rankOpen}");
-      expect(pageSrc).toContain("onToggleRank={toggleRankOpen}");
+    it("does NOT pass rankOpen / onToggleRank to TopBar", () => {
+      expect(pageSrc).not.toContain("rankOpen={rankOpen}");
+      expect(pageSrc).not.toContain("onToggleRank");
     });
 
-    it("uses pageScrollRankOpen / pageScrollRankClosed classes", () => {
+    it("uses pageScrollRankOpen class (always-open padding)", () => {
       expect(pageSrc).toContain("pageScrollRankOpen");
-      expect(pageSrc).toContain("pageScrollRankClosed");
     });
 
     it("uses horizontal card layout classes (cardInnerHorizontal, cardIconThumb, cardTextCol, playPill)", () => {
@@ -81,9 +81,8 @@ describe("home page — horizontal card layout guard (FEAT-HOME-UI-PROTO-MERGE)"
       expect(cssSrc).toContain(".playPill");
     });
 
-    it("defines pageScrollRankOpen / pageScrollRankClosed", () => {
+    it("defines pageScrollRankOpen", () => {
       expect(cssSrc).toContain(".pageScrollRankOpen");
-      expect(cssSrc).toContain(".pageScrollRankClosed");
     });
 
     it("header comment references HORIZONTAL CARD LAYOUT (not NEW VERTICAL)", () => {

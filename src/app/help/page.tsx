@@ -7,8 +7,6 @@ import { DM_Sans } from 'next/font/google'
 import { useIdentity } from '@/hooks/useIdentity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import TopBar from '@/components/layout/TopBar'
-import RankCard from '@/components/RankCard'
-import { useRankOpen } from '@/hooks/useRankOpen'
 import { NavModal } from '@/components/NavModal'
 import styles from './help.module.css'
 
@@ -151,7 +149,6 @@ export default function HelpPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [initials, setInitials] = useState('PL')
   const [showNavModal, setShowNavModal] = useState(false)
-  const [rankOpen, toggleRankOpen] = useRankOpen()
 
   useEffect(() => {
     if (!playerId) {
@@ -284,13 +281,10 @@ export default function HelpPage() {
         avatarUrl={avatarUrl}
         initials={initials}
         onAvatarClick={() => setShowNavModal(true)}
-        rankOpen={rankOpen}
-        onToggleRank={toggleRankOpen}
       />
-      <RankCard totalXp={Number(xp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
 
       {/* Hero */}
-      <header className={styles.hero} style={{ paddingTop: rankOpen ? 168 : 88 }}>
+      <header className={styles.hero} style={{ paddingTop: 88 }}>
         <div className={styles.heroInner}>
           <div className={styles.heroHeaderRow}>
             <button

@@ -8,11 +8,12 @@ import { resolve, join, relative } from "node:path";
  * Task ref: UNIFY-RANK-DISPLAY-001
  *
  * The home page RankCard (image medallion + title + XP + next-rank line +
- * progress bar) is the ONE rank display used on every surface:
+ * progress bar) is the ONE rank display used on:
  *   - home (src/app/home/page.tsx)
- *   - session-complete (src/components/compete/SessionComplete.tsx)
- *   - round-complete (src/components/compete/RoundCompleteSection.tsx)
  *   - profile (src/app/profile/page.tsx)
+ *
+ * The rank card is intentionally NOT shown on compete (session/round
+ * complete), account, leaderboard, or help pages.
  *
  * The OLD rank display (RankProgressBar + RankIcon — inline SVG icon) was
  * removed entirely. These files were deleted:
@@ -107,8 +108,6 @@ describe("rank display — single source (RankCard only, no RankProgressBar/Rank
   it("all rank surfaces render RankCard", () => {
     const surfaces: Record<string, string> = {
       "src/app/home/page.tsx": "<RankCard",
-      "src/components/compete/SessionComplete.tsx": "<RankCard",
-      "src/components/compete/RoundCompleteSection.tsx": "<RankCard",
       "src/app/profile/page.tsx": "<RankCard",
     };
     const missing: string[] = [];

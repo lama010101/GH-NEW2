@@ -12,8 +12,6 @@ import TopBar from '@/components/layout/TopBar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { LanguageDropdown } from '@/components/layout/LanguageDropdown'
 import { NavModal } from '@/components/NavModal'
-import RankCard from '@/components/RankCard'
-import { useRankOpen } from '@/hooks/useRankOpen'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500'] })
 
@@ -32,8 +30,6 @@ export default function AccountPage() {
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
   const locale = useLocale()
-
-  const [rankOpen, toggleRankOpen] = useRankOpen()
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
@@ -201,10 +197,7 @@ export default function AccountPage() {
         avatarUrl={avatarInfo?.imageUrl ?? null}
         initials={getInitials(displayName)}
         onAvatarClick={() => setShowNavModal(true)}
-        rankOpen={rankOpen}
-        onToggleRank={toggleRankOpen}
       />
-      <RankCard totalXp={Number(xp.replace(/[^\d]/g, '')) || 0} open={rankOpen} />
 
       {/* Header — back button + title */}
       <div className={styles.header}>

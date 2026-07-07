@@ -32,7 +32,6 @@ import LobbySection from "@/components/compete/LobbySection";
 import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
-import { useRankOpen } from "@/hooks/useRankOpen";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import useCompeteTimer from "@/hooks/useCompeteTimer";
@@ -74,7 +73,6 @@ export default function CompeteGamePage() {
   const [locationName, setLocationName] = useState<string | null>(null);
   // Lobby TopBar data (mirrors home page sourcing)
   const [showNavModal, setShowNavModal] = useState(false);
-  const [rankOpen, toggleRankOpen] = useRankOpen();
   const [topbarAccuracy, setTopbarAccuracy] = useState("--");
   const [topbarXp, setTopbarXp] = useState("--");
   const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
@@ -561,8 +559,6 @@ export default function CompeteGamePage() {
             avatarUrl={topbarAvatarUrl}
             initials={topbarInitials}
             onAvatarClick={() => setShowNavModal(true)}
-            rankOpen={rankOpen}
-            onToggleRank={toggleRankOpen}
           />
           <NavModal
             isOpen={showNavModal}
@@ -641,7 +637,7 @@ export default function CompeteGamePage() {
 
         {snapshot.status === "LOBBY" ? (
           <>
-            <div className={pageStyles.lobbyTopBarSpacer} style={{ height: rankOpen ? 160 : 80 }} />
+            <div className={pageStyles.lobbyTopBarSpacer} style={{ height: 80 }} />
             {wsDisconnected && (
               <section
                 className={`card ${pageStyles.connectionLostCard}`}
@@ -730,7 +726,6 @@ export default function CompeteGamePage() {
             snapshot={snapshot}
             playerId={playerId}
             allRoundResults={allRoundResults}
-            rankOpen={rankOpen}
             sendMessage={(msg) => playAgain((msg as { newGameId: string }).newGameId)}
           />
         ) : null}
