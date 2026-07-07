@@ -24,44 +24,35 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
 );
 
 /**
- * Returns the current access token after refreshing a stale session.
- * Prefer this over `auth.getSession().access_token` because `getSession()`
- * does not refresh the token, while `getUser()` does.
+ * Returns the current access token from the local auth session.
  *
- * Retries up to 3 times with exponential backoff to handle slow networks
- * (e.g. mobile, poor connectivity) where the initial getUser() call may
- * time out. This prevents the user from being blocked out of WS connections
- * due to transient network latency.
+ * Reads `auth.getSession()` only — never the network-bound getUser() call. The auth cookie
+ * is kept fresh by middleware on every navigation, so `getSession()` returns
+ * a valid token without holding the GoTrueClient shared lock behind a network
+ * call. (getSession() MAY issue an awaited token-refresh network call when the
+ * stored token is expired; that acquisition drains normally and is safe.)
+ *
+ * Single-flight: concurrent callers share one in-flight `getSession()` call
+ * instead of each triggering their own, so the 15s invitations poll, the
+ * realtime INSERT channel, and the mount effect do not pile up waiters.
+ *
+ * On no session / failure: returns `null` immediately and makes NO further
+ * GoTrueClient call in this path. The signed-out UI state is driven by
+ * `onAuthStateChange` in `identity.ts`, not by this function.
  */
+let getValidAccessTokenInFlight: Promise<string | null> | null = null;
+
 export async function getValidAccessToken(): Promise<string | null> {
-  const maxAttempts = 3;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  if (getValidAccessTokenInFlight) {
+    return getValidAccessTokenInFlight;
+  }
+  getValidAccessTokenInFlight = (async (): Promise<string | null> => {
     try {
-      await Promise.race([
-        supabaseBrowser.auth.getUser(),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error(`getValidAccessToken: auth.getUser() timed out after 8s (attempt ${attempt + 1}/${maxAttempts})`)),
-            8000
-          )
-        ),
-      ]);
-      // getUser() succeeded — session is now refreshed. Read the token.
       const { data: { session } } = await supabaseBrowser.auth.getSession();
       return session?.access_token ?? null;
-    } catch (err) {
-      console.warn(err instanceof Error ? err.message : String(err));
-      // auth.getUser() timed out (or rejected). Do NOT call getSession() here —
-      // Supabase GoTrueClient serializes getUser()/getSession() through a shared
-      // internal lock; if getUser()'s underlying network call is still pending,
-      // getSession() will block on that same lock forever.
-      if (attempt < maxAttempts - 1) {
-        const backoff = 1000 * (attempt + 1);
-        await new Promise((r) => setTimeout(r, backoff));
-        continue;
-      }
-      return null;
+    } finally {
+      getValidAccessTokenInFlight = null;
     }
-  }
-  return null;
+  })();
+  return getValidAccessTokenInFlight;
 }
