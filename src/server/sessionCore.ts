@@ -2616,7 +2616,11 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     // See Compete Relax (Option B) §6.
     const activePlayerRows = await loadSessionPlayerRows(gameId, client);
     const nonLeftCount = activePlayerRows.filter((p) => p.left_at === null).length;
-    const shouldCloseEarly = nonLeftCount < 2;
+    // Solo modes (practice, daily) have exactly 1 player by design — the
+    // multiplayer early-closure rule (close if < 2 players remain) must NOT
+    // apply to them, or solo sessions close after round 0 instead of advancing.
+    const isSoloMode = session.mode === "practice" || session.mode === "daily";
+    const shouldCloseEarly = !isSoloMode && nonLeftCount < 2;
 
     if (nextRoundIndex < session.total_rounds && !shouldCloseEarly) {
       const sessionCreatedEventForAdvance = await client.query<{ payload: { eventIds: string[] } }>(
