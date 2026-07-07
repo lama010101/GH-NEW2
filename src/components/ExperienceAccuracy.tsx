@@ -17,7 +17,7 @@ function accColor(acc: number): string {
   return `hsl(${hue}, 90%, var(--gh-acc-lightness, 52%))`;
 }
 
-export default function ExperienceAccuracy({ data, hideAccuracy = false, embedded = false }: { data: ExperienceAccuracyData; hideAccuracy?: boolean; embedded?: boolean }) {
+export default function ExperienceAccuracy({ data, hideAccuracy = false, hideStatsRow = false, embedded = false }: { data: ExperienceAccuracyData; hideAccuracy?: boolean; hideStatsRow?: boolean; embedded?: boolean }) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
   const [accuracyTab, setAccuracyTab] = useState<'when' | 'where'>('when');
@@ -51,6 +51,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, embedde
             <span className={styles.sectionAccentBar} />
             <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('experience')}</h3>
           </div>
+          {!hideStatsRow && (
           <div className="grid grid-cols-4 gap-3 mb-6">
             <div className="p-3 rounded-lg text-center bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorOrange}`}>
@@ -77,6 +78,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, embedde
               <div className="text-[10px] mt-1 text-[var(--gh-text-muted)]">{t('countries')}</div>
             </div>
           </div>
+          )}
           <div className={styles.tabBar}>
             <button
               className={`${styles.tabBtn} ${experienceTab === 'when' ? styles.tabActiveWhen : ''}`}

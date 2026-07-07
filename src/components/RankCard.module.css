@@ -69,7 +69,7 @@
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.65);
   color: #ffd54a;
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: 0.02em;
@@ -93,7 +93,7 @@
 }
 
 .rankTitle {
-  font-size: 17px;
+  font-size: var(--font-xl);
   font-weight: 800;
   margin: 0;
   line-height: 1.1;
@@ -101,7 +101,7 @@
 }
 
 .rankXp {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: #ffd54a;
   white-space: nowrap;
@@ -110,7 +110,7 @@
 
 .rankXp i {
   font-style: normal;
-  font-size: 9px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   margin-left: 3px;
   opacity: 0.7;
@@ -120,7 +120,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
 }
 

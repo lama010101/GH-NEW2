@@ -103,21 +103,6 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
     }
 
-    // Award 100 XP signup bonus — only creates the row if it doesn't exist yet
-    // (ON CONFLICT DO NOTHING). Never overwrites existing stats for returning
-    // users whose avatar_url was null. Single source of truth: total_xp.
-    const { error: signupXpError } = await serviceRoleClient
-      .from("player_global_stats")
-      .upsert(
-        { player_id: user.id, total_xp: 100, rounds_played: 0, games_played: 0, avg_accuracy: 0 },
-        { onConflict: "player_id", ignoreDuplicates: true }
-      );
-
-    if (signupXpError) {
-      console.error("[assign-avatar] Failed to award signup XP bonus:", signupXpError);
-      // Non-fatal — avatar was already assigned; don't fail the whole request
-    }
-
     return NextResponse.json({
       assigned: true,
       profile: { display_name: displayName },

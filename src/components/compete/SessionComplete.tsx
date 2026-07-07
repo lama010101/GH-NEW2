@@ -12,7 +12,7 @@ import { calculateBadges } from "@/core/rules";
 import { NavModal } from "@/components/NavModal";
 import ExperienceAccuracy from "@/components/ExperienceAccuracy";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
-import RankProgressBar from "@/components/RankProgressBar";
+import RankCard from "@/components/RankCard";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
@@ -273,14 +273,6 @@ export default function SessionComplete({
         const myScores = myRoundResults.map(r => r.score);
         const bestRoundScore = myScores.length > 0 ? Math.max(...myScores) : 0;
         const bestRoundIdx = myRoundResults.findIndex(r => r.score === bestRoundScore);
-        const totalDistance = myRoundResults.reduce((s, r) => s + (r.distanceKm ?? 0), 0);
-        const consistency = myRoundResults.length > 0
-          ? Math.round(100 - (Math.sqrt(myRoundResults.reduce((s, r) => {
-              const acc = ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2;
-              const mean = myRoundResults.reduce((ms, rr) => ms + ((rr.locationScore ?? 0) + (rr.timeScore ?? 0)) / 2, 0) / myRoundResults.length;
-              return s + Math.pow(acc - mean, 2);
-            }, 0) / myRoundResults.length)))
-          : 0;
         const totalBadges = badgeCounts.combo + badgeCounts.when + badgeCounts.where;
 
         return (
@@ -341,19 +333,17 @@ export default function SessionComplete({
                   <div className={styles.statTile}>
                     <span className={styles.statTileLabelWhere}>{tGame('where')}</span>
                     <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whereAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{whereAccuracy}</span>
-                    <span className={styles.statTileSub}>{t('avg_km_away', { n: Math.round(avgDistanceKm) })}</span>
                   </div>
                   <div className={styles.statTile}>
                     <span className={styles.statTileLabelWhen}>{tGame('when')}</span>
                     <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{whenAccuracy}</span>
-                    <span className={styles.statTileSub}>{t('avg_yrs_off', { n: Math.round(avgYearDiff) })}</span>
                   </div>
                 </div>
               </section>
 
               {/* RANK PROGRESS — derived from global total_xp */}
               <div className={styles.rankWrap}>
-                <RankProgressBar totalXp={totalXp} compact />
+                <RankCard totalXp={totalXp} open inline />
               </div>
 
               {/* FINAL RANKINGS — hidden in practice (solo) mode */}
@@ -463,21 +453,23 @@ export default function SessionComplete({
                   {/* Game stats grid */}
                   <div className={styles.gameStatsGrid}>
                     <div className={styles.gameStatTile}>
-                      <span className={styles.gameStatVal}>{myRoundResults.length}</span>
-                      <span className={styles.gameStatLabel}>{tGame('rounds_played')}</span>
+                      <span className={styles.gameStatVal}>{Math.round(avgDistanceKm)}</span>
+                      <span className={styles.gameStatLabel}>{tGame('avg_km_away_label')}</span>
                     </div>
                     <div className={styles.gameStatTile}>
-                      <span className={styles.gameStatVal}>{Math.round(totalDistance).toLocaleString()} {tGame('km_unit')}</span>
-                      <span className={styles.gameStatLabel}>{tGame('total_distance')}</span>
+                      <span className={styles.gameStatVal}>{Math.round(avgYearDiff)}</span>
+                      <span className={styles.gameStatLabel}>{tGame('avg_yrs_off_label')}</span>
                     </div>
-                    <div className={styles.gameStatTile}>
-                      <span className={styles.gameStatVal}>{consistency}</span>
-                      <span className={styles.gameStatLabel}>{tGame('avg_consistency')}</span>
-                    </div>
-                    {bestRoundIdx >= 0 && snapshot.rounds[bestRoundIdx] && (
+                    {bestRoundIdx >= 0 && (
+                      <div className={styles.gameStatTile}>
+                        <span className={styles.gameStatVal}>{Math.round(((myRoundResults[bestRoundIdx].locationScore ?? 0) + (myRoundResults[bestRoundIdx].timeScore ?? 0)) / 2)}</span>
+                        <span className={styles.gameStatLabel}>{tGame('best_round_pct')}</span>
+                      </div>
+                    )}
+                    {bestRoundIdx >= 0 && (
                       <div className={styles.gameStatTile}>
                         <span className={styles.gameStatVal}>{bestRoundScore.toLocaleString()}</span>
-                        <span className={styles.gameStatLabel}>{tGame('best_round')}</span>
+                        <span className={styles.gameStatLabel}>{tGame('best_round_xp')}</span>
                       </div>
                     )}
                   </div>
@@ -487,6 +479,7 @@ export default function SessionComplete({
               {/* EXPERIENCE & ACCURACY (shared component) */}
               <ExperienceAccuracy
                 hideAccuracy
+                hideStatsRow
                 embedded
                 data={{
                   byWhen,

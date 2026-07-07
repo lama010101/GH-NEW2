@@ -60,7 +60,7 @@
   transform: rotate(180deg);
 }
 
-/* Gold "LVL N" badge inside the score pill */
+/* Gold "Rank N" badge inside the score pill */
 .xpPillBadge {
   font-size: 10px;
   font-weight: 800;

@@ -321,30 +321,35 @@ export default function LobbySection({
     setLastInvited(readLastInvited());
   }, []);
 
-  // Fetch recent players on mount as default pool
+  // Fetch recent players as the default invite pool. Re-invoked whenever the
+  // search box is empty (mount + clear) so users who signed up after the lobby
+  // was created — or who renamed — appear in the default list. Live DB search
+  // (/api/friends/search) already covers the typed-query case; this refreshes
+  // the unfiltered pool.
+  const fetchRecentPlayers = useCallback(async () => {
+    const token = await getValidAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch('/api/players/recent', { headers });
+    const json = res.ok ? await res.json() : { players: [] };
+    const players: PlayerPoolEntry[] = (json.players ?? []).map(
+      (p: { id: string; display_name: string; avatar_url: string | null }) => ({
+        id: p.id,
+        displayName: p.display_name?.trim() || 'Player',
+        avatarUrl: p.avatar_url,
+      })
+    );
+    setPlayerPool(players);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    async function fetchRecent() {
-      const token = await getValidAccessToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const res = await fetch('/api/players/recent', { headers });
-      if (cancelled) return;
-      const json = res.ok ? await res.json() : { players: [] };
-      const players: PlayerPoolEntry[] = (json.players ?? []).map(
-        (p: { id: string; display_name: string; avatar_url: string | null }) => ({
-          id: p.id,
-          displayName: p.display_name?.trim() || 'Player',
-          avatarUrl: p.avatar_url,
-        })
-      );
-      setPlayerPool(players);
-    }
-    fetchRecent();
+    if (searchQuery.trim().length > 0) return;
+    fetchRecentPlayers().catch(() => { if (!cancelled) setPlayerPool([]); });
     return () => { cancelled = true; };
-  }, []);
+  }, [searchQuery, fetchRecentPlayers]);
 
   // Live debounced search — fires when searchQuery >= 2 chars
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
