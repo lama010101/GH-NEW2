@@ -150,3 +150,16 @@ safely rolled back if a regression is introduced.
   # Must return ZERO matches. Any match = the blocking state check is back = FAIL.
 
 ---
+
+### [KC-008] IDE Editor-Buffer Desync
+**Applies to:** Every task that edits a file via shell commands (sed/python/str_replace-via-terminal)
+
+**Constraint:**
+- Symptom: shell-based edits (sed/python/str_replace-via-terminal) to a file appear to succeed, but a later read shows the edits reverted and/or the file corrupted at the end (duplicated trailing fragments).
+- Root cause: the coding IDE (Devin cloud IDE / Windsurf-Cascade) maintains an internal editor buffer for any file it has opened via its structured edit tool or a viewer/preview pane. If that buffer goes stale relative to disk (because a shell command changed the file outside the tool's knowledge) and the IDE later flushes/syncs that buffer, it silently overwrites the shell-made changes.
+- Rule: for any file touched via shell commands in a task, do NOT also open or edit that same file through the IDE's built-in structured editor tool, and do NOT leave it open in a viewer/preview pane, within the same task. Pick exactly one edit modality per file per task.
+- Verification requirement: re-read the file fresh from disk immediately before each individual edit (never edit from a cached read), and run `git diff <file>` immediately after each individual edit — not deferred to end of task — to confirm the specific change landed before making the next edit.
+- On failure: if `git diff` shows an edit did not persist, STOP immediately and report. Do not attempt the same edit via a different tool/method as a workaround — that tool-switching is itself what produces the desync.
+- Reference incident: 2026-07-07, SessionComplete.tsx — sed edits were correctly applied, then silently reverted and end-of-file corrupted by a stale IDE buffer flush.
+
+---
