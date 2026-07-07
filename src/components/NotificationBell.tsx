@@ -139,8 +139,8 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
   function toggleOpen() {
     if (!open) {
       setOpen(true);
-      markAsRead();
     } else {
+      markAsRead();
       setOpen(false);
     }
   }
@@ -174,7 +174,7 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
         <div className={styles.drawer}>
           <div className={styles.drawerHeader}>
             <span>{t('title')}</span>
-            <button type="button" onClick={() => setOpen(false)}>
+            <button type="button" onClick={() => toggleOpen()}>
               ✕
             </button>
           </div>
@@ -183,7 +183,7 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
               <div className={styles.empty}>{t('empty')}</div>
             )}
             {notifications.filter(n => !n.read).map((n) => (
-              <NotificationItem key={n.id} notification={n} onClose={() => setOpen(false)} />
+              <NotificationItem key={n.id} notification={n} onClose={() => toggleOpen()} />
             ))}
           </div>
         </div>
