@@ -28,7 +28,6 @@ export default function SessionComplete({
   snapshot,
   playerId,
   allRoundResults,
-  rankOpen: _rankOpen,
   sendMessage,
   onPlayAgain,
 }: SessionCompleteProps) {
