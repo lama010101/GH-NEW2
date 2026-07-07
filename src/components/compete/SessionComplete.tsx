@@ -523,7 +523,7 @@ export default function SessionComplete({
                         <span className={styles.roundNum}>R{i + 1}</span>
                         <div className={styles.roundInfo}>
                           <span className={styles.roundTitle}>{round.title}</span>
-                          <span className={styles.roundMeta}>{round.year} · {round.locationName || `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}`}</span>
+                          <span className={styles.roundMeta}>{round.year} · {round.locationName || (round.latitude != null && round.longitude != null ? `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}` : '—')}</span>
                         </div>
                         {myRoundAcc != null && (
                           <span className={styles.roundMyAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, myRoundAcc)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{myRoundAcc}</span>
