@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
-import { supabaseBrowser } from '@/core/supabaseBrowser';
+import { supabaseBrowser, readSession } from '@/core/supabaseBrowser';
 import styles from './profile.module.css';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
@@ -90,7 +90,8 @@ export default function ProfilePage() {
           .limit(1)
           .single();
 
-        const { data: { user: authUser } } = await supabaseBrowser.auth.getUser();
+        const session = await readSession();
+        const authUser = session?.user;
         const email = authUser?.email ?? null;
         const createdAt = authUser?.created_at ?? null;
 
