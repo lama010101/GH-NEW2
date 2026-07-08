@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
-import { supabaseBrowser } from '@/core/supabaseBrowser'
+import { readSession } from '@/core/supabaseBrowser'
 import { loadPracticeSettings } from '@/components/practice/practiceSettings'
 import pageStyles from './page.module.css'
 
@@ -53,7 +53,7 @@ export default function PracticeEntryPage() {
       try {
         const settings = loadPracticeSettings()
 
-        const { data: { session } } = await supabaseBrowser.auth.getSession()
+        const session = await readSession()
         const accessToken = session?.access_token
         if (!accessToken) {
           setError(t('not_authenticated'))
