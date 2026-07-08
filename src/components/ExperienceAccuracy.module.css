@@ -17,7 +17,7 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  letter-spacing: 0.3px;
+  color: var(--gh-text-primary);
 }
 
 .historyColorOrange {
@@ -119,15 +119,20 @@
 
 .regionRowWithCount {
   display: grid;
-  grid-template-columns: 1fr 44px 36px;
-  align-items: center;
+  grid-template-columns: 48px 1fr 44px 36px;
+  align-items: stretch;
   gap: 10px;
+}
+
+.regionRowNoImage {
+  grid-template-columns: 1fr 44px 36px;
 }
 
 .regionLabelWrap {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  justify-content: center;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -149,20 +154,30 @@
 
 .regionIcon {
   flex-shrink: 0;
-  width: 26px;
-  height: 26px;
+  width: 48px;
+  min-height: 48px;
+  height: 100%;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 20px;
   line-height: 1;
   background: var(--gh-glass-bg);
   overflow: hidden;
   position: relative;
 }
 
-.regionIconImg {
+.regionImage {
+  width: 48px;
+  min-height: 48px;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.regionImageImg {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -184,7 +199,6 @@
   border-radius: 999px;
   background: var(--gh-border-medium);
   overflow: hidden;
-  margin-top: 4px;
 }
 
 .regionBarFill {

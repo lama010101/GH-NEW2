@@ -18,7 +18,7 @@ export interface ObservedState {
  * verifies that the browser-visible state matches the WebSocket snapshot.
  */
 export async function observeState(page: Page, opts?: { pollTimeoutMs?: number }): Promise<ObservedState> {
-  const pollTimeoutMs = opts?.pollTimeoutMs ?? 5000;
+  const pollTimeoutMs = opts?.pollTimeoutMs ?? 15000;
   const section = await page
     .locator('[data-testid="lobby-shell"], [data-testid="round-active-section"], [data-testid="round-complete-section"], [data-testid="session-complete-section"]')
     .first();
@@ -193,6 +193,18 @@ export async function captureResumeToken(page: Page): Promise<{
   const section = page
     .locator('[data-testid="lobby-shell"], [data-testid="round-active-section"], [data-testid="round-complete-section"], [data-testid="session-complete-section"]')
     .first();
+
+  // Poll for visibility before reading attributes — under load, the page may
+  // still be loading (identity bootstrap, WS connect) when captureResumeToken
+  // is called. Without this poll, the "before" token captures UNKNOWN/null
+  // while the "after" token captures the real state, producing false diffs.
+  const pollDeadline = Date.now() + 15000;
+  let visible = false;
+  while (Date.now() < pollDeadline) {
+    visible = await section.isVisible().catch(() => false);
+    if (visible) break;
+    await new Promise((r) => setTimeout(r, 200));
+  }
 
   const testid = await section.getAttribute('data-testid', { timeout: 5000 }).catch(() => null);
   const status = await section.getAttribute('data-status', { timeout: 5000 }).catch(() => '') ?? '';

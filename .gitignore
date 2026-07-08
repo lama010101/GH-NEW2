@@ -37,3 +37,4 @@ _auth-diag-*.mjs
 _repro_blank.mjs
 plan-auth.js
 test-sync-run.log
+.vercel
