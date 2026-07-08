@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
 import { readSession } from '@/core/supabaseBrowser'
+import { forceClearAuthStorage, bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
 import { loadPracticeSettings } from '@/components/practice/practiceSettings'
 import pageStyles from './page.module.css'
 
@@ -15,6 +16,43 @@ export default function PracticeEntryPage() {
   const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity()
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false)
+  const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
+
+  const handleForceClear = () => {
+    forceClearAuthStorage()
+    window.location.replace('/login')
+  }
+
+  const handleIdentityRetry = () => {
+    setIdentity({ status: 'loading' })
+    bootstrapIdentity().then(setIdentity)
+  }
+
+  // Identity state management for escape hatch
+  useEffect(() => {
+    let mounted = true;
+    bootstrapIdentity().then(state => {
+      if (mounted) setIdentity(state);
+    });
+    const unsubscribe = subscribeToIdentityChanges(state => {
+      if (mounted) setIdentity(state);
+    });
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  // Show escape hatch after 10s of continuous loading
+  useEffect(() => {
+    if (identity.status === 'ready') {
+      setShowLoadingTimeout(false)
+      return
+    }
+    const timer = setTimeout(() => setShowLoadingTimeout(true), 10000)
+    return () => clearTimeout(timer)
+  }, [identity.status])
 
   useEffect(() => {
     if (identityLoading || identityError || !playerId || creating) return
@@ -124,6 +162,36 @@ export default function PracticeEntryPage() {
           >
             {tCommon('back_to_home')}
           </button>
+        )}
+        {identity.status === 'error' && (
+          <>
+            <button
+              type="button"
+              onClick={handleIdentityRetry}
+              style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.22)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
+            >
+              {t('game.retry')}
+            </button>
+            <button
+              type="button"
+              onClick={handleForceClear}
+              style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,100,100,0.3)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
+            >
+              {t('game.clear_session_restart')}
+            </button>
+          </>
+        )}
+        {identity.status !== 'ready' && identity.status !== 'error' && showLoadingTimeout && (
+          <>
+            <div style={{ marginTop: 8, fontSize: 'var(--font-sm)', opacity: 0.8 }}>{t('game.taking_too_long')}</div>
+            <button
+              type="button"
+              onClick={handleForceClear}
+              style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,100,100,0.3)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
+            >
+              {t('game.clear_session_restart')}
+            </button>
+          </>
         )}
       </div>
     </div>
