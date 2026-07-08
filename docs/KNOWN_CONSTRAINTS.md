@@ -149,6 +149,13 @@ safely rolled back if a regression is introduced.
   grep -n "Missing state" src/app/auth/callback/route.ts
   # Must return ZERO matches. Any match = the blocking state check is back = FAIL.
 
+  grep -n "Promise.race" src/core/identity.ts
+  # Must return ZERO matches. Any match = retry/backoff logic re-added = FAIL.
+
+  grep -rn "auth\.getSession\|auth\.getUser" src/app src/components src/hooks --include=*.ts --include=*.tsx | grep -v "src/app/api/"
+  # Must return ZERO matches. Client code must route through readSession() only.
+  # Server routes (src/app/api/**, src/middleware.ts, src/server/**) are exempt.
+
 ---
 
 ### [KC-008] IDE Editor-Buffer Desync
