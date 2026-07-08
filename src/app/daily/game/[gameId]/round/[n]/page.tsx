@@ -14,7 +14,7 @@ import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
-import { supabaseBrowser } from "@/core/supabaseBrowser";
+import { supabaseBrowser, readSession } from "@/core/supabaseBrowser";
 import { computeTimeRemaining } from "@/core/competeUtils";
 import pageStyles from '@/app/practice/[gameId]/page.module.css';
 
@@ -203,7 +203,7 @@ export default function DailyRoundPage() {
 
     ;(async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const session = await readSession();
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -319,7 +319,7 @@ export default function DailyRoundPage() {
 
     ;(async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const session = await readSession();
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -364,7 +364,7 @@ export default function DailyRoundPage() {
 
     ;(async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const session = await readSession();
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
