@@ -142,9 +142,15 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
       fetchInvites()
     }, 15000)
 
+    const handleFocus = () => {
+      fetchInvites()
+    }
+    window.addEventListener('focus', handleFocus)
+
     return () => {
       supabaseBrowser.removeChannel(channel)
       clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, fetchInvites])
