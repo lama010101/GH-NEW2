@@ -34,6 +34,7 @@ import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
+import { forceClearAuthStorage, bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity';
 import useCompeteTimer from "@/hooks/useCompeteTimer";
 import useCompeteSocket from "@/hooks/useCompeteSocket";
 import btnStyles from "@/components/ui/Button.module.css";
@@ -73,6 +74,8 @@ export default function CompeteGamePage() {
   const [locationName, setLocationName] = useState<string | null>(null);
   // Lobby TopBar data (mirrors home page sourcing)
   const [showNavModal, setShowNavModal] = useState(false);
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
+  const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' });
   const [topbarAccuracy, setTopbarAccuracy] = useState("--");
   const [topbarXp, setTopbarXp] = useState("--");
   const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
@@ -86,6 +89,41 @@ export default function CompeteGamePage() {
   });
 
   const router = useRouter();
+
+  const handleForceClear = () => {
+    forceClearAuthStorage()
+    window.location.replace('/login')
+  }
+
+  const handleIdentityRetry = () => {
+    setIdentity({ status: 'loading' })
+    bootstrapIdentity().then(setIdentity)
+  }
+
+  // Identity state management for escape hatch
+  useEffect(() => {
+    let mounted = true;
+    bootstrapIdentity().then(state => {
+      if (mounted) setIdentity(state);
+    });
+    const unsubscribe = subscribeToIdentityChanges(state => {
+      if (mounted) setIdentity(state);
+    });
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  // Show escape hatch after 10s of continuous loading
+  useEffect(() => {
+    if (identity.status === 'ready') {
+      setShowLoadingTimeout(false)
+      return
+    }
+    const timer = setTimeout(() => setShowLoadingTimeout(true), 10000)
+    return () => clearTimeout(timer)
+  }, [identity.status])
 
   const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity();
   // Auto-submit on timer expiry using current input values.
@@ -538,6 +576,39 @@ export default function CompeteGamePage() {
           </span>
           {error && (
             <span className={pageStyles.loadingError}>{error}</span>
+          )}
+          {identity.status === 'error' && (
+            <>
+              <button
+                type="button"
+                onClick={handleIdentityRetry}
+                className={btnStyles.button}
+                style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999 }}
+              >
+                {t('game.retry')}
+              </button>
+              <button
+                type="button"
+                onClick={handleForceClear}
+                className={btnStyles.button}
+                style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, background: 'rgba(255,100,100,0.3)' }}
+              >
+                {t('game.clear_session_restart')}
+              </button>
+            </>
+          )}
+          {identity.status !== 'ready' && identity.status !== 'error' && showLoadingTimeout && (
+            <>
+              <div style={{ marginTop: 8, fontSize: 'var(--font-sm)', opacity: 0.8 }}>{t('game.taking_too_long')}</div>
+              <button
+                type="button"
+                onClick={handleForceClear}
+                className={btnStyles.button}
+                style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, background: 'rgba(255,100,100,0.3)' }}
+              >
+                {t('game.clear_session_restart')}
+              </button>
+            </>
           )}
         </div>
       </div>
