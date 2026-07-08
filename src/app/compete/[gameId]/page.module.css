@@ -194,7 +194,7 @@
   border: 1px solid var(--gh-modal-close-border);
   border-radius: 10px;
   color: var(--gh-text-primary);
-  font-size: 18px;
+  font-size: var(--font-lg);
   line-height: 1;
   padding: 8px 13px;
   cursor: pointer;

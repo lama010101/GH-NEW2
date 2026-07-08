@@ -1,16 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from 'next-intl';
 import RainbowRing from "@/components/compete/RainbowRing";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
+import RankCard from "@/components/RankCard";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
 import { calculateBadges } from "@/core/rules";
 import { NavModal } from "@/components/NavModal";
 import ExperienceAccuracy from "@/components/ExperienceAccuracy";
+import { supabaseBrowser } from "@/core/supabaseBrowser";
+import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
@@ -38,6 +41,26 @@ export default function SessionComplete({
   const [navModalOpen, setNavModalOpen] = useState(false);
   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [viewerAlt, setViewerAlt] = useState<string>("");
+  const [totalXp, setTotalXp] = useState<number | null>(null);
+
+  // Fetch viewer's global total XP for the rank title progress card
+  // (single source of truth: player_global_stats.total_xp → rankForXp → RankCard)
+  useEffect(() => {
+    if (!playerId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: stats } = await supabaseBrowser
+          .from('player_global_stats')
+          .select('total_xp')
+          .eq('player_id', playerId)
+          .single();
+        if (cancelled) return;
+        if (stats) setTotalXp(Number(stats.total_xp));
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [playerId]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isHost = snapshot.players?.find((p: any) => p.playerId === playerId)?.isHost ?? false;
@@ -178,13 +201,27 @@ export default function SessionComplete({
         };
         // Era display metadata — mirrors the lobby era rail (LobbySection ERAS)
         // so the final-results "When" breakdown uses the same icons, year spans,
-        // and chronological ordering as the lobby.
-        const ERA_META: Record<string, { icon: string; span: string; order: number }> = {
-          era_ancient:      { icon: '🏛️', span: '-3000 – 476',  order: 0 },
-          era_medieval:     { icon: '⚔️', span: '476 – 1492',   order: 1 },
-          era_earlymodern:  { icon: '⛵', span: '1492 – 1789',  order: 2 },
-          era_modern:       { icon: '🏭', span: '1789 – 1945',  order: 3 },
-          era_contemporary: { icon: '🚀', span: '1945 – 2025',  order: 4 },
+        // stock images, and chronological ordering as the lobby.
+        const ERA_META: Record<string, { icon: string; span: string; order: number; stockImg: string }> = {
+          era_ancient:      { icon: '🏛️', span: '-3000 – 476',  order: 0, stockImg: ERA_STOCK_IMAGES.ancient },
+          era_medieval:     { icon: '⚔️', span: '476 – 1492',   order: 1, stockImg: ERA_STOCK_IMAGES.medieval },
+          era_earlymodern:  { icon: '⛵', span: '1492 – 1789',  order: 2, stockImg: ERA_STOCK_IMAGES.earlymodern },
+          era_modern:       { icon: '🏭', span: '1789 – 1945',  order: 3, stockImg: ERA_STOCK_IMAGES.modern },
+          era_contemporary: { icon: '🚀', span: '1945 – 2025',  order: 4, stockImg: ERA_STOCK_IMAGES.contemporary },
+        };
+
+        // Region display metadata — mirrors the lobby region rail (LobbySection REGIONS)
+        // so the final-results "Where" breakdown uses the same icons, stock images,
+        // and ordering as the lobby. Keyed by continent name (the value stored in
+        // AllRoundResult.region), matching the lobby's REGIONS[].continents mapping.
+        const REGION_META: Record<string, { icon: string; stockImg: string; order: number }> = {
+          'Europe':         { icon: '🏰', stockImg: REGION_STOCK_IMAGES.europe,             order: 0 },
+          'Asia':           { icon: '🏯', stockImg: REGION_STOCK_IMAGES.asia,               order: 1 },
+          'North America':  { icon: '🗽', stockImg: REGION_STOCK_IMAGES.north_america,      order: 2 },
+          'South America':  { icon: '🦜', stockImg: REGION_STOCK_IMAGES.south_america,      order: 3 },
+          'Africa':         { icon: '🌍', stockImg: REGION_STOCK_IMAGES.africa,             order: 4 },
+          'Oceania':        { icon: '🏝️', stockImg: REGION_STOCK_IMAGES.oceania_antarctica, order: 5 },
+          'Antarctica':     { icon: '🏝️', stockImg: REGION_STOCK_IMAGES.oceania_antarctica, order: 5 },
         };
 
         // Aggregate badges across all rounds (by dimension: combo/when/where)
@@ -223,6 +260,7 @@ export default function SessionComplete({
             roundCount: val.roundCount,
             icon: ERA_META[eraKey]?.icon,
             span: ERA_META[eraKey]?.span,
+            stockImg: ERA_META[eraKey]?.stockImg,
           }));
 
         // XP per region (for ExperienceAccuracy component)
@@ -236,12 +274,21 @@ export default function SessionComplete({
           existing.roundCount++;
           byWhereMap.set(region, existing);
         }
-        const byWhere = [...byWhereMap.entries()].map(([regionKey, val]) => ({
-          label: regionKey === 'unknown_region' ? tGame('unknown_region') : regionKey,
-          avgAccuracy: Math.round(val.totalAcc / val.roundCount),
-          totalXp: val.totalXp,
-          roundCount: val.roundCount,
-        }));
+        const byWhere = [...byWhereMap.entries()]
+          .sort(([a], [b]) => (REGION_META[a]?.order ?? 99) - (REGION_META[b]?.order ?? 99))
+          .map(([regionKey, val]) => {
+            const meta = REGION_META[regionKey];
+            // Use the same i18n key pattern as the lobby: region_<continent_lowered_with_underscores>
+            const i18nKey = `region_${regionKey.toLowerCase().replace(/\s+/g, '_')}`;
+            return {
+              label: meta ? tGame(i18nKey) : (regionKey === 'unknown_region' ? tGame('unknown_region') : regionKey),
+              avgAccuracy: Math.round(val.totalAcc / val.roundCount),
+              totalXp: val.totalXp,
+              roundCount: val.roundCount,
+              icon: meta?.icon,
+              stockImg: meta?.stockImg,
+            };
+          });
 
         const eventsSeenCount = myRoundResults.length;
         const countriesCount = new Set(myRoundResults.map(r => r.region).filter(Boolean)).size;
@@ -448,11 +495,13 @@ export default function SessionComplete({
                 </div>
               </section>
 
-              {/* EXPERIENCE & ACCURACY (shared component) */}
+              {/* EXPERIENCE & ACCURACY (shared component) — rank card rendered inside,
+                  before the when/where tabs */}
               <ExperienceAccuracy
                 hideAccuracy
                 hideStatsRow
                 embedded
+                rankCard={<RankCard totalXp={totalXp} open bare />}
                 data={{
                   byWhen,
                   byWhere,

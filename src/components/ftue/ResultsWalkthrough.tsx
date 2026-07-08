@@ -95,7 +95,7 @@ export function ResultsWalkthrough({ onComplete }: ResultsWalkthroughProps) {
               <div className="absolute top-1/3 left-1/4">
                 <div className="relative">
                   <MapPin className="w-6 h-6 text-red-500 fill-red-500 drop-shadow-lg" />
-                  <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[10px] font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                  <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
                     Your guess
                   </span>
                 </div>
@@ -103,7 +103,7 @@ export function ResultsWalkthrough({ onComplete }: ResultsWalkthroughProps) {
               <div className="absolute bottom-1/3 right-1/4">
                 <div className="relative">
                   <MapPin className="w-6 h-6 text-green-500 fill-green-500 drop-shadow-lg" />
-                  <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[10px] font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                  <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
                     Actual
                   </span>
                 </div>

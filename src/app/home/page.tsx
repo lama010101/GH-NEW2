@@ -171,7 +171,7 @@ function HomePageInner() {
           <button
             type="button"
             onClick={handleRetry}
-            style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.22)', color: 'var(--gh-text-primary, #fff)', fontSize: '1rem', cursor: 'pointer' }}
+            style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.22)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
           >
             {t('game.retry')}
           </button>
@@ -221,11 +221,13 @@ function HomePageInner() {
         onAvatarClick={() => setShowNavModal(true)}
       />
 
-      {/* Rank card — below topbar, above scrollable content (self-contained fixed wrapper) */}
-      <RankCard totalXp={totalXpNum} open />
-
-      {/* Scrollable content area */}
+      {/* Scrollable content area — rank card scrolls with the page (inline, not fixed) */}
       <div className={`${styles['page-scroll']} ${styles.pageScrollRankOpen}`}>
+        {/* Rank title progress card — inline, scrolls with content */}
+        <div className={styles.rankCardInline}>
+          <RankCard totalXp={totalXpNum} open inline />
+        </div>
+
         {/* Tagline */}
         <div className={styles.tagline}>
           {t('home.tagline')}

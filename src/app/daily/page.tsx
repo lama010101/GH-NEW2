@@ -88,7 +88,7 @@ export default function DailyEntryPage() {
               color: "white",
               padding: "8px 16px",
               cursor: "pointer",
-              fontSize: "14px",
+              fontSize: "var(--font-sm)",
             }}
           >
             {tCommon("back_to_home")}
