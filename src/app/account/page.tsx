@@ -66,10 +66,10 @@ export default function AccountPage() {
     localStorage.setItem('gh_vibrate', String(vibrateEnabled))
   }, [vibrateEnabled])
 
-  // Fetch email/createdAt directly from supabaseBrowser.auth.getUser()
+  // Fetch email/createdAt directly from readSession()
   // independently of useIdentity's isLoading — under cross-user sign-in,
   // useIdentity can stay in loading state for a long time, but the auth
-  // session is already available via supabaseBrowser.
+  // session is already available via readSession.
   useEffect(() => {
     const fetchAuth = async () => {
       const session = await readSession()
