@@ -1,4 +1,4 @@
-import { supabaseBrowser } from "./supabaseBrowser";
+import { supabaseBrowser, readSession } from "./supabaseBrowser";
 
 const NEW_USER_WINDOW_MS = 300_000;
 
@@ -72,78 +72,26 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
   bootstrapped = true;
 
   bootstrapPromise = (async (): Promise<IdentityState> => {
-    // ── Phase 1 + Phase 2: getSession() only — NEVER getUser().
-    //
-    // With @supabase/ssr cookie-based auth, the middleware refreshes the token
-    // server-side on every navigation and writes a fresh cookie. The client
-    // therefore only needs to READ the session from the cookie via
-    // getSession(). Calling getUser() is redundant AND dangerous: it makes a
-    // network call that acquires the SAME GoTrue navigator lock as
-    // getSession(). If getSession() timed out because the lock was held by an
-    // in-flight token-refresh network call, getUser() will block on that same
-    // lock and time out too — guaranteeing an error state and a blank-screen
-    // redirect. (This is the exact deadlock MP-FIX-AUTH-GOTRUE-DEADLOCK-003
-    // removed from getValidAccessToken; the same fix applies here.)
-    //
-    // Strategy: try getSession() up to 5 times with backoff. Each attempt is
-    // wrapped in a 10s Promise.race timeout so a hung lock-holding refresh
-    // network call cannot block us forever; the backoff gives the in-flight
-    // refresh time to complete and release the lock so the next attempt
-    // succeeds. A null session (cookie genuinely absent) → unauthenticated.
-    // A throw/timeout on every attempt → error (transient lock/network issue).
-    // An "invalid refresh token" error is not transient — the refresh token
-    // is genuinely invalid (e.g. user was deleted/recreated server-side), so
-    // we go to "unauthenticated" immediately instead of wasting retries.
-    const maxAttempts = 5;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      try {
-        const { data: { session } } = await Promise.race([
-          supabaseBrowser.auth.getSession(),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("getSession() timed out")), 10000)
-          ),
-        ]);
-        if (session?.user?.id) {
-          const user = session.user;
-          const isAnonymous = user.is_anonymous ?? false;
-          const displayName = await fetchDisplayName(user.id);
-          const createdAt = new Date(user.created_at).getTime();
-          const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
-          const isNewUser = Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
-          cachedState = {
-            status: "ready",
-            playerId: user.id,
-            isAnonymous,
-            displayName,
-            isNewUser
-          };
-          resolveReady?.(user.id);
-          return cachedState;
-        }
-        // No session in the cookie — user is not authenticated.
-        cachedState = { status: "unauthenticated" };
-        return cachedState;
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        // "Refresh token is not valid" is a permanent auth failure, not a
-        // transient lock/timeout. Retrying won't help — the refresh token is
-        // genuinely invalid. Go to "unauthenticated" so the UI shows the auth
-        // modal instead of a permanent "Something went wrong" error screen.
-        if (errMsg.includes("Refresh token") || errMsg.includes("not valid")) {
-          cachedState = { status: "unauthenticated" };
-          return cachedState;
-        }
-        if (attempt < maxAttempts - 1) {
-          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
-          continue;
-        }
-        cachedState = {
-          status: "error",
-          error: errMsg,
-        };
-        return cachedState;
-      }
+    const session = await readSession();
+    if (session?.user?.id) {
+      const user = session.user;
+      const isAnonymous = user.is_anonymous ?? false;
+      const displayName = await fetchDisplayName(user.id);
+      const createdAt = new Date(user.created_at).getTime();
+      const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt;
+      const isNewUser = Math.abs(createdAt - lastSignIn) < NEW_USER_WINDOW_MS;
+      cachedState = {
+        status: "ready",
+        playerId: user.id,
+        isAnonymous,
+        displayName,
+        isNewUser
+      };
+      resolveReady?.(user.id);
+      return cachedState;
     }
+    // No session in the cookie — user is not authenticated.
+    cachedState = { status: "unauthenticated" };
     return cachedState;
   })().finally(() => {
     bootstrapPromise = null;

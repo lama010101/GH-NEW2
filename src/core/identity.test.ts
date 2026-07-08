@@ -11,6 +11,7 @@ vi.mock("./supabaseBrowser", () => {
       data: { subscription: { unsubscribe: vi.fn() } },
     })),
   };
+  const mockReadSession = vi.fn();
   return {
     supabaseBrowser: {
       auth: mockAuth,
@@ -22,6 +23,7 @@ vi.mock("./supabaseBrowser", () => {
         })),
       })),
     },
+    readSession: mockReadSession,
   };
 });
 
@@ -30,6 +32,12 @@ vi.mock("./supabaseBrowser", () => {
 async function getMockAuth() {
   const mod = await import("./supabaseBrowser");
   return mod.supabaseBrowser.auth as any;
+}
+
+// Holds a reference to the mocked readSession so each test can control what it returns.
+async function getMockReadSession() {
+  const mod = await import("./supabaseBrowser");
+  return mod.readSession as any;
 }
 
 // identity.ts has module-level state (cachedState, bootstrapped, etc.).
@@ -42,7 +50,9 @@ async function loadIdentity() {
 beforeEach(async () => {
   vi.resetModules();
   const auth = await getMockAuth();
+  const readSession = await getMockReadSession();
   auth.getSession.mockResolvedValue({ data: { session: null } });
+  readSession.mockResolvedValue(null);
   auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
   auth.signOut.mockResolvedValue({ error: null });
   auth.onAuthStateChange.mockReturnValue({
@@ -125,109 +135,50 @@ describe("identity state machine — KC-007", () => {
   });
 
   describe("bootstrapIdentity", () => {
-    it("tries getSession() first (Phase 1 fast path)", async () => {
+    it("bootstrapIdentity calls readSession exactly once", async () => {
       const { bootstrapIdentity } = await loadIdentity();
-      const auth = await getMockAuth();
+      const readSession = await getMockReadSession();
       const mockUser = {
         id: "user-123",
         is_anonymous: false,
         created_at: new Date().toISOString(),
         last_sign_in_at: new Date().toISOString(),
       };
-      auth.getSession.mockResolvedValue({
-        data: { session: { user: mockUser, access_token: "tok" } },
-      });
+      readSession.mockResolvedValue({ user: mockUser, access_token: "tok" });
 
-      const state = await bootstrapIdentity();
+      await bootstrapIdentity();
 
-      expect(state.status).toBe("ready");
-      if (state.status === "ready") {
-        expect(state.playerId).toBe("user-123");
-      }
-      // getUser() should NOT have been called since getSession() succeeded.
-      expect(auth.getUser).not.toHaveBeenCalled();
+      expect(readSession).toHaveBeenCalledTimes(1);
     });
 
-    it("retries getSession() and resolves when a later attempt returns a session", async () => {
-      const { bootstrapIdentity } = await loadIdentity();
-      const auth = await getMockAuth();
-      const mockUser = {
-        id: "user-456",
-        is_anonymous: false,
-        created_at: new Date().toISOString(),
-        last_sign_in_at: new Date().toISOString(),
-      };
-      // First attempt rejects (lock hang), second attempt resolves with session.
-      auth.getSession
-        .mockRejectedValueOnce(new Error("getSession() timed out"))
-        .mockResolvedValueOnce({ data: { session: { user: mockUser, access_token: "tok" } } });
-
-      const state = await bootstrapIdentity();
-
-      expect(state.status).toBe("ready");
-      if (state.status === "ready") {
-        expect(state.playerId).toBe("user-456");
-      }
-      // getUser() must never be called — bootstrap is getSession-only now.
-      expect(auth.getUser).not.toHaveBeenCalled();
-    });
-
-    it("sets 'unauthenticated' when getSession() returns no session", async () => {
+    it("null session → status unauthenticated", async () => {
       const { bootstrapIdentity, getCachedIdentityState } = await loadIdentity();
-      const auth = await getMockAuth();
-      auth.getSession.mockResolvedValue({ data: { session: null } });
+      const readSession = await getMockReadSession();
+      readSession.mockResolvedValue(null);
 
       const state = await bootstrapIdentity();
       expect(state).toEqual({ status: "unauthenticated" });
       expect(getCachedIdentityState()).toEqual({ status: "unauthenticated" });
     });
 
-    it("sets 'error' when getSession() throws on every attempt (after retries)", async () => {
-      const { bootstrapIdentity } = await loadIdentity();
-      const auth = await getMockAuth();
-      auth.getSession.mockRejectedValue(new Error("getSession() timed out"));
-
-      const state = await bootstrapIdentity();
-      expect(state.status).toBe("error");
-      if (state.status === "error") {
-        expect(state.error).toContain("getSession() timed out");
-      }
-      // getUser() must never be called.
-      expect(auth.getUser).not.toHaveBeenCalled();
-    }, 30000);
-
-    it("sets 'unauthenticated' immediately when refresh token is invalid (no retries)", async () => {
-      const { bootstrapIdentity } = await loadIdentity();
-      const auth = await getMockAuth();
-      auth.getSession.mockClear();
-      auth.getSession.mockRejectedValue(new Error("Refresh token is not valid"));
-
-      const state = await bootstrapIdentity();
-      expect(state.status).toBe("unauthenticated");
-      // getSession should have been called only once — no retries for invalid refresh token.
-      expect(auth.getSession).toHaveBeenCalledTimes(1);
-    });
-
     it("does not re-bootstrap if already ready (returns cached state)", async () => {
       const { bootstrapIdentity } = await loadIdentity();
-      const auth = await getMockAuth();
+      const readSession = await getMockReadSession();
       const mockUser = {
         id: "user-789",
         is_anonymous: false,
         created_at: new Date().toISOString(),
         last_sign_in_at: new Date().toISOString(),
       };
-      auth.getSession.mockResolvedValue({
-        data: { session: { user: mockUser, access_token: "tok" } },
-      });
+      readSession.mockResolvedValue({ user: mockUser, access_token: "tok" });
 
       await bootstrapIdentity();
       // Clear the mock call count.
-      auth.getSession.mockClear();
-      // Second call should return cached state without calling getSession again.
+      readSession.mockClear();
+      // Second call should return cached state without calling readSession again.
       const state = await bootstrapIdentity();
       expect(state.status).toBe("ready");
-      expect(auth.getSession).not.toHaveBeenCalled();
+      expect(readSession).not.toHaveBeenCalled();
     });
   });
 
@@ -245,19 +196,15 @@ describe("identity state machine — KC-007", () => {
 
     it("returns playerId when state is 'ready'", async () => {
       const { getCurrentPlayerId, bootstrapIdentity } = await loadIdentity();
-      const auth = await getMockAuth();
-      auth.getSession.mockResolvedValue({
-        data: {
-          session: {
-            user: {
-              id: "player-abc",
-              is_anonymous: false,
-              created_at: new Date().toISOString(),
-              last_sign_in_at: new Date().toISOString(),
-            },
-            access_token: "tok",
-          },
+      const readSession = await getMockReadSession();
+      readSession.mockResolvedValue({
+        user: {
+          id: "player-abc",
+          is_anonymous: false,
+          created_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
         },
+        access_token: "tok",
       });
       await bootstrapIdentity();
       expect(getCurrentPlayerId()).toBe("player-abc");
@@ -275,16 +222,14 @@ describe("identity state machine — KC-007", () => {
   describe("updateCachedDisplayName", () => {
     it("updates cached display name and notifies subscribers", async () => {
       const { bootstrapIdentity, updateCachedDisplayName, subscribeToIdentityChanges } = await loadIdentity();
-      const auth = await getMockAuth();
+      const readSession = await getMockReadSession();
       const mockUser = {
         id: "user-123",
         is_anonymous: false,
         created_at: new Date().toISOString(),
         last_sign_in_at: new Date().toISOString(),
       };
-      auth.getSession.mockResolvedValue({
-        data: { session: { user: mockUser, access_token: "tok" } },
-      });
+      readSession.mockResolvedValue({ user: mockUser, access_token: "tok" });
 
       // Bootstrap to get a ready state
       await bootstrapIdentity();
