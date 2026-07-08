@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { getDbPool } from "@/server/db";
 
 export const dynamic = "force-dynamic";
 
@@ -29,19 +30,46 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { data: players, error: dbError } = await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url")
-      .neq("id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20);
+    const pool = getDbPool();
+    const { rows: players } = await pool.query(
+      `WITH tier_followed AS (
+         SELECT pf.followed_id AS pid, 1 AS priority, pf.created_at AS sort_key
+         FROM public.player_follows pf
+         WHERE pf.follower_id = $1
+       ),
+       tier_shared AS (
+         SELECT sp_other.player_id AS pid, 2 AS priority, MAX(sp_other.joined_at) AS sort_key
+         FROM public.session_players sp_other
+         WHERE sp_other.game_id IN (SELECT game_id FROM public.session_players WHERE player_id = $1)
+           AND sp_other.player_id != $1
+         GROUP BY sp_other.player_id
+       ),
+       tier_newest AS (
+         SELECT p.id AS pid, 3 AS priority, p.created_at AS sort_key
+         FROM public.profiles p
+         WHERE p.id != $1
+       ),
+       combined AS (
+         SELECT * FROM tier_followed
+         UNION ALL
+         SELECT * FROM tier_shared
+         UNION ALL
+         SELECT * FROM tier_newest
+       ),
+       deduped AS (
+         SELECT DISTINCT ON (pid) pid, priority, sort_key
+         FROM combined
+         ORDER BY pid, priority ASC
+       )
+       SELECT p.id, p.display_name, p.avatar_url
+       FROM deduped d
+       JOIN public.profiles p ON p.id = d.pid
+       ORDER BY d.priority ASC, d.sort_key DESC NULLS LAST
+       LIMIT 100`,
+      [user.id]
+    );
 
-    if (dbError) {
-      console.error("[players/recent] Database error:", dbError);
-      return NextResponse.json({ error: "Failed to fetch recent players" }, { status: 500 });
-    }
-
-    return NextResponse.json({ players: players ?? [] });
+    return NextResponse.json({ players });
   } catch (error) {
     console.error("[players/recent] Unexpected error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
