@@ -24,35 +24,39 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
 );
 
 /**
- * Returns the current access token from the local auth session.
- *
- * Reads `auth.getSession()` only — never the network-bound getUser() call. The auth cookie
- * is kept fresh by middleware on every navigation, so `getSession()` returns
- * a valid token without holding the GoTrueClient shared lock behind a network
- * call. (getSession() MAY issue an awaited token-refresh network call when the
- * stored token is expired; that acquisition drains normally and is safe.)
+ * Reads the current session from the auth cookie.
  *
  * Single-flight: concurrent callers share one in-flight `getSession()` call
- * instead of each triggering their own, so the 15s invitations poll, the
- * realtime INSERT channel, and the mount effect do not pile up waiters.
+ * instead of each triggering their own.
  *
- * On no session / failure: returns `null` immediately and makes NO further
- * GoTrueClient call in this path. The signed-out UI state is driven by
- * `onAuthStateChange` in `identity.ts`, not by this function.
+ * Returns session or null on any error (never throws).
+ * NO Promise.race, NO timeout, NO retry.
  */
-let getValidAccessTokenInFlight: Promise<string | null> | null = null;
+let readSessionInFlight: Promise<any> | null = null;
 
-export async function getValidAccessToken(): Promise<string | null> {
-  if (getValidAccessTokenInFlight) {
-    return getValidAccessTokenInFlight;
+export async function readSession(): Promise<any> {
+  if (readSessionInFlight) {
+    return readSessionInFlight;
   }
-  getValidAccessTokenInFlight = (async (): Promise<string | null> => {
+  readSessionInFlight = (async (): Promise<any> => {
     try {
       const { data: { session } } = await supabaseBrowser.auth.getSession();
-      return session?.access_token ?? null;
+      return session;
+    } catch {
+      return null;
     } finally {
-      getValidAccessTokenInFlight = null;
+      readSessionInFlight = null;
     }
   })();
-  return getValidAccessTokenInFlight;
+  return readSessionInFlight;
+}
+
+/**
+ * Returns the current access token from the local auth session.
+ *
+ * Thin wrapper around readSession().
+ */
+export async function getValidAccessToken(): Promise<string | null> {
+  const s = await readSession();
+  return s?.access_token ?? null;
 }
