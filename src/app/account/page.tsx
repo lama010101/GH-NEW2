@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
 import { signOut } from '@/core/identity'
-import { supabaseBrowser } from '@/core/supabaseBrowser'
+import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
@@ -72,7 +72,8 @@ export default function AccountPage() {
   // session is already available via supabaseBrowser.
   useEffect(() => {
     const fetchAuth = async () => {
-      const { data: { user: authUser } } = await supabaseBrowser.auth.getUser()
+      const session = await readSession()
+      const authUser = session?.user
       if (authUser?.email) setEmail(authUser.email)
       if (authUser?.created_at) setCreatedAt(authUser.created_at)
     }
@@ -93,7 +94,8 @@ export default function AccountPage() {
         .eq('id', playerId)
         .single()
 
-      const { data: { user: authUser } } = await supabaseBrowser.auth.getUser()
+      const session = await readSession()
+      const authUser = session?.user
       const userEmail = authUser?.email ?? null
       const userCreatedAt = authUser?.created_at ?? null
 
