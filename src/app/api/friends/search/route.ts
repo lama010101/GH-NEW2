@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
   try {
     const pool = getDbPool();
     const searchPattern = `%${query}%`;
+    const prefixPattern = `${query}%`;
     
     const { rows: players } = await pool.query(
       `SELECT p.id, p.display_name, p.avatar_url
@@ -52,8 +53,14 @@ export async function GET(request: NextRequest) {
          OR u.raw_user_meta_data->>'name' ILIKE $2
          OR u.raw_user_meta_data->>'username' ILIKE $2
        )
-       LIMIT 10`,
-      [user.id, searchPattern]
+       ORDER BY
+         CASE WHEN LOWER(p.display_name) = LOWER($3) THEN 0
+              WHEN p.display_name ILIKE $4 THEN 1
+              ELSE 2
+         END,
+         p.display_name ASC
+       LIMIT 50`,
+      [user.id, searchPattern, query, prefixPattern]
     );
 
     return NextResponse.json({ players });

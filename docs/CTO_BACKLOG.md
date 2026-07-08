@@ -325,3 +325,9 @@ Read-only verification of the committed `createDailySession` path (HEAD 15a1ccb)
 | D7 | Cleanup | **PASS** | Deleted round_events(17)/round_results(5)/round_commits(5)/round_hints(0)/session_players(1)/sessions(1)/daily_attempts(1)/leaderboard_daily(1)/leaderboard_daily_alltime(1)/player_global_stats(1). Post-delete SELECT counts = 0 on all 10 tables. |
 
 **Overall: ALL 7 SCENARIOS PASS.** The committed Daily mode (`createDailySession`: pinned daily events, auto-ready host, transactional game-end with challenge-date leaderboard writes) is verified correct end-to-end against the live DB. Note (UI, out of scope for this task): `src/app/daily/game/[gameId]/round/[n]/page.tsx` has no LOBBY→ROUND_ACTIVE auto-start call (unlike `src/app/practice/[gameId]/page.tsx` which calls `/api/practice/[gameId]/start`); the server path works (D2 PASS via direct `startCompeteSession`), but the daily round page may never transition out of LOBBY in the browser. Flagged for a separate UI task — NOT fixed here.
+
+## Section J — Deferred Items
+
+| ID | Item | Status | Notes |
+|----|------|--------|-------|
+| DEFERRED-001 | pg_trgm index on profiles.display_name for leading-wildcard search (migration task) | DEFERRED | `/api/friends/search` uses leading-wildcard ILIKE (`%query%`) which cannot use a btree index. A `pg_trgm` GIN index would enable fast trigram matching. Requires a Supabase migration (`CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE INDEX ... ON profiles USING GIN (display_name gin_trgm_ops)`). Deferred to a separate migration task per MP-FIX-INVITE-POOL-SEARCH-001. |
