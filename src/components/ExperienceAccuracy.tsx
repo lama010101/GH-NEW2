@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import styles from './ExperienceAccuracy.module.css';
 
 export interface ExperienceAccuracyData {
-  byWhen: Array<{ label: string; avgAccuracy: number; totalXp: number; roundCount: number; icon?: string; span?: string }>;
-  byWhere: Array<{ label: string; avgAccuracy: number; totalXp: number; roundCount: number }>;
+  byWhen: Array<{ label: string; avgAccuracy: number; totalXp: number; roundCount: number; icon?: string; span?: string; stockImg?: string }>;
+  byWhere: Array<{ label: string; avgAccuracy: number; totalXp: number; roundCount: number; icon?: string; span?: string; stockImg?: string }>;
   eventsSeenCount: number;
   countriesCount: number;
   roundsPlayed: number | null;
@@ -17,7 +17,7 @@ function accColor(acc: number): string {
   return `hsl(${hue}, 90%, var(--gh-acc-lightness, 52%))`;
 }
 
-export default function ExperienceAccuracy({ data, hideAccuracy = false, hideStatsRow = false, embedded = false }: { data: ExperienceAccuracyData; hideAccuracy?: boolean; hideStatsRow?: boolean; embedded?: boolean }) {
+export default function ExperienceAccuracy({ data, hideAccuracy = false, hideStatsRow = false, embedded = false, rankCard }: { data: ExperienceAccuracyData; hideAccuracy?: boolean; hideStatsRow?: boolean; embedded?: boolean; rankCard?: ReactNode }) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
   const [accuracyTab, setAccuracyTab] = useState<'when' | 'where'>('when');
@@ -57,28 +57,29 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
               <div className={`font-bebas text-xl font-bold ${styles.historyColorOrange}`}>
                 {data.eventsSeenCount?.toLocaleString() ?? '—'}
               </div>
-              <div className="text-[10px] mt-1 text-[var(--gh-text-muted)]">{t('events_seen')}</div>
+              <div className="text-xs mt-1 text-[var(--gh-text-muted)]">{t('events_seen')}</div>
             </div>
             <div className="p-3 rounded-lg text-center bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorViolet}`}>
                 {data.roundsPlayed !== null ? data.roundsPlayed.toLocaleString() : '—'}
               </div>
-              <div className="text-[10px] mt-1 text-[var(--gh-text-muted)]">{t('rated')}</div>
+              <div className="text-xs mt-1 text-[var(--gh-text-muted)]">{t('rated')}</div>
             </div>
             <div className="p-3 rounded-lg text-center bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorTeal}`}>
                 {data.byWhere.length.toLocaleString()}
               </div>
-              <div className="text-[10px] mt-1 text-[var(--gh-text-muted)]">{t('regions')}</div>
+              <div className="text-xs mt-1 text-[var(--gh-text-muted)]">{t('regions')}</div>
             </div>
             <div className="p-3 rounded-lg text-center bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)]">
               <div className={`font-bebas text-xl font-bold ${styles.historyColorGold}`}>
                 {data.countriesCount?.toLocaleString() ?? '—'}
               </div>
-              <div className="text-[10px] mt-1 text-[var(--gh-text-muted)]">{t('countries')}</div>
+              <div className="text-xs mt-1 text-[var(--gh-text-muted)]">{t('countries')}</div>
             </div>
           </div>
           )}
+          {rankCard && <div className={styles.rankCardSlot}>{rankCard}</div>}
           <div className={styles.tabBar}>
             <button
               className={`${styles.tabBtn} ${experienceTab === 'when' ? styles.tabActiveWhen : ''}`}
@@ -102,7 +103,11 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
                   <div key={item.label} className={styles.regionRowWithCount}>
                     <div className={styles.regionLabelWrap}>
                       <div className={styles.regionLabelHead}>
-                        {item.icon && <span className={styles.regionIcon}>{item.icon}</span>}
+                        {item.stockImg ? (
+                          <span className={styles.regionIcon}><img src={item.stockImg} alt="" className={styles.regionIconImg} /></span>
+                        ) : item.icon ? (
+                          <span className={styles.regionIcon}>{item.icon}</span>
+                        ) : null}
                         <span className={styles.regionLabel}>{item.label}</span>
                         {item.span && <span className={styles.regionSpan}>{item.span}</span>}
                       </div>
@@ -123,7 +128,15 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
                 data.byWhere.map((item) => (
                   <div key={item.label} className={styles.regionRowWithCount}>
                     <div className={styles.regionLabelWrap}>
-                      <span className={styles.regionLabel}>{item.label}</span>
+                      <div className={styles.regionLabelHead}>
+                        {item.stockImg ? (
+                          <span className={styles.regionIcon}><img src={item.stockImg} alt="" className={styles.regionIconImg} /></span>
+                        ) : item.icon ? (
+                          <span className={styles.regionIcon}>{item.icon}</span>
+                        ) : null}
+                        <span className={styles.regionLabel}>{item.label}</span>
+                        {item.span && <span className={styles.regionSpan}>{item.span}</span>}
+                      </div>
                       <div className={styles.regionBar}>
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhere}`} style={{ width: `${(item.totalXp / maxWhereXp) * 100}%` }} />
                       </div>
@@ -192,7 +205,15 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
                 data.byWhere.map((item) => (
                   <div key={item.label} className={styles.regionRowWithCount}>
                     <div className={styles.regionLabelWrap}>
-                      <span className={styles.regionLabel}>{item.label}</span>
+                      <div className={styles.regionLabelHead}>
+                        {item.stockImg ? (
+                          <span className={styles.regionIcon}><img src={item.stockImg} alt="" className={styles.regionIconImg} /></span>
+                        ) : item.icon ? (
+                          <span className={styles.regionIcon}>{item.icon}</span>
+                        ) : null}
+                        <span className={styles.regionLabel}>{item.label}</span>
+                        {item.span && <span className={styles.regionSpan}>{item.span}</span>}
+                      </div>
                       <div className={styles.regionBar}>
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhere}`} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>

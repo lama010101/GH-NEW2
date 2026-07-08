@@ -345,7 +345,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--gh-text-primary);
   padding: 2px 0;
 }

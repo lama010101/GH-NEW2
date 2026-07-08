@@ -9,7 +9,8 @@ import { resolve } from "node:path";
  * FEAT-HOME-UI-PROTO-MERGE) to use a HORIZONTAL card layout:
  *   icon-left + text-middle + playPill (non-compete cards)
  *   icon-left + text-middle + CompetePanel (compete card)
- * plus a persistent, always-open RankCard below the TopBar.
+ * plus an inline, scrolling RankCard at the top of the page-scroll content
+ * (not fixed — scrolls with the rest of the page).
  *
  * This layout has been reverted multiple times in the working tree by
  * AI agent sessions that restored the OLD vertical card layout. This test
@@ -41,9 +42,10 @@ describe("home page — horizontal card layout guard (FEAT-HOME-UI-PROTO-MERGE)"
       expect(pageSrc).toContain("MODE_CARD_SUBTITLE");
     });
 
-    it("renders RankCard always-open (no rankOpen toggle binding)", () => {
+    it("renders RankCard inline (scrolls with page, not fixed)", () => {
       expect(pageSrc).toContain("<RankCard");
       expect(pageSrc).toContain("open");
+      expect(pageSrc).toContain("inline");
       expect(pageSrc).not.toContain("open={rankOpen}");
     });
 

@@ -11,9 +11,10 @@ import { resolve, join, relative } from "node:path";
  * progress bar) is the ONE rank display used on:
  *   - home (src/app/home/page.tsx)
  *   - profile (src/app/profile/page.tsx)
+ *   - compete session complete (src/components/compete/SessionComplete.tsx)
  *
- * The rank card is intentionally NOT shown on compete (session/round
- * complete), account, leaderboard, or help pages.
+ * The rank card is intentionally NOT shown on compete round complete,
+ * account, leaderboard, or help pages.
  *
  * The OLD rank display (RankProgressBar + RankIcon — inline SVG icon) was
  * removed entirely. These files were deleted:
@@ -109,6 +110,7 @@ describe("rank display — single source (RankCard only, no RankProgressBar/Rank
     const surfaces: Record<string, string> = {
       "src/app/home/page.tsx": "<RankCard",
       "src/app/profile/page.tsx": "<RankCard",
+      "src/components/compete/SessionComplete.tsx": "<RankCard",
     };
     const missing: string[] = [];
     for (const [file, marker] of Object.entries(surfaces)) {

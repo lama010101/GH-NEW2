@@ -36,6 +36,12 @@
   color: var(--gh-gold);
 }
 
+/* Slot for an optional rank card rendered inside the Experience card,
+   between the section head/stats row and the when/where tabs. */
+.rankCardSlot {
+  margin-bottom: 16px;
+}
+
 .tabBar {
   display: flex;
   gap: 6px;
@@ -152,6 +158,18 @@
   font-size: 16px;
   line-height: 1;
   background: var(--gh-glass-bg);
+  overflow: hidden;
+  position: relative;
+}
+
+.regionIconImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rankCardSlot {
+  margin: 12px 0 16px;
 }
 
 .regionSpan {
