@@ -359,6 +359,17 @@ export default function RoundCompleteSection({
                   </div>
                 </div>
               </div>
+
+              {/* OVERALL GAME ACCURACY — cumulative % across all rounds played */}
+              {myResult && (
+                <div className={styles.gameAccuracyStrip}>
+                  <span className={styles.gameAccuracyLabel}>
+                    <span className={styles.leaderboardAccentBar} />
+                    {t('game_accuracy')}
+                  </span>
+                  <span className={styles.gameAccuracyVal}>{Math.round(myResult.cumulativeAccuracy)}</span>
+                </div>
+              )}
             </div>
 
             {/* ROUND LEADERBOARD CARD — hidden in practice (solo) mode */}
@@ -441,17 +452,6 @@ export default function RoundCompleteSection({
                 })
               )}
             </div>
-            )}
-
-            {/* OVERALL GAME ACCURACY — cumulative % across all rounds played */}
-            {myResult && (
-              <div className={styles.gameAccuracyStrip}>
-                <span className={styles.gameAccuracyLabel}>
-                  <span className={styles.leaderboardAccentBar} />
-                  {t('game_accuracy')}
-                </span>
-                <span className={styles.gameAccuracyVal}>{Math.round(myResult.cumulativeAccuracy)}</span>
-              </div>
             )}
 
             {/* WHERE + WHEN CARD (merged, tabbed) */}
