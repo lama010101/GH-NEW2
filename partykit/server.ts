@@ -224,7 +224,8 @@ export type ClientMessage =
   | { type: "STATE_UPDATE"; snapshot: unknown; results?: unknown[] }
   | { type: "ERROR"; message: string }
   | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
-  | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number };
+  | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number }
+  | { type: "PONG" };
 
 
 
@@ -727,18 +728,6 @@ export default class GameServer {
       });
       if (!waited) {
         console.warn("[PartyKit] Timed out waiting for in-flight submissions — proceeding with round expiry");
-      }
-    }
-
-    // Wait up to 8s for any in-flight applySnapshotAndBroadcast to update this.snapshot
-    {
-      const pollStart = Date.now();
-      while (Date.now() - pollStart < 8000) {
-        await new Promise<void>((resolve) => setTimeout(resolve, 200));
-        if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_ACTIVE" || this.snapshot.currentRoundIndex !== expectedRoundIndex) {
-          this.completeInFlight = false;
-          return;
-        }
       }
     }
 
@@ -1778,7 +1767,8 @@ export default class GameServer {
         }
 
         case "PING":
-          // Keepalive — no response needed
+          // Keepalive — respond with PONG so client can detect dead connections
+          sender.send(JSON.stringify({ type: "PONG" }));
           break;
 
         default: {

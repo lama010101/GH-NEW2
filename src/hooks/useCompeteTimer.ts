@@ -101,6 +101,27 @@ export default function useCompeteTimer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex, localSubmitted, playerId, hintResult]);
 
+  // Stale-state recovery: if the timer hit 0 and the snapshot is still
+  // ROUND_ACTIVE after 15 seconds, the server's round-completion broadcast
+  // never arrived — the WS is dead. Force a reconnect to re-sync state.
+  useEffect(() => {
+    if (timeRemaining !== 0) return;
+    if (snapshot?.status !== "ROUND_ACTIVE") return;
+    if (snapshot?.config?.roundTimerSec === 0) return;
+    if (!wsRef.current) return;
+
+    const timer = setTimeout(() => {
+      // Re-check: if still stuck at 0 on the same round, force reconnect.
+      if (snapshot?.status === "ROUND_ACTIVE" && wsRef.current) {
+        console.warn("[STALE_STATE_RECOVERY] Timer at 0 for 15s in ROUND_ACTIVE — forcing WS reconnect");
+        wsRef.current.reconnect();
+      }
+    }, 15000);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeRemaining, snapshot?.status, snapshot?.currentRoundIndex]);
+
   // Live countdown timer for RESULT phase
   useEffect(() => {
     if (!snapshot || snapshot.status !== "ROUND_COMPLETE") {

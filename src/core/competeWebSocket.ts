@@ -13,7 +13,8 @@ export type WebSocketMessage =
   | { type: "ERROR"; message: string }
   | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
   | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number }
-  | { type: "PLAY_AGAIN"; newGameId: string };
+  | { type: "PLAY_AGAIN"; newGameId: string }
+  | { type: "PONG" };
 
 export type CompeteWebSocketCallbacks = {
   onStateUpdate?: (snapshot: unknown) => void;
@@ -36,6 +37,7 @@ export class CompeteWebSocket {
   private manuallyDisconnected = false;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private lastAppliedSnapshotVersion = -1;
+  private lastPongReceived = 0;
 
   constructor(
     gameId: string,
@@ -73,9 +75,19 @@ export class CompeteWebSocket {
       console.log("[CompeteWebSocket] Connected");
       this.reconnectAttempts = 0;
       this.manuallyDisconnected = false;
+      this.lastPongReceived = Date.now();
       this.callbacks.onConnect?.();
       this.heartbeatInterval = setInterval(() => {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          // Force reconnect if no PONG received within 45s (missed 2+ heartbeats).
+          // This detects half-open TCP connections where onclose never fires.
+          if (Date.now() - this.lastPongReceived > 45000) {
+            console.warn("[CompeteWebSocket] Heartbeat timeout — no PONG in 45s, force reconnecting");
+            this.ws.close();
+            this.ws = null;
+            this.attemptReconnect();
+            return;
+          }
           this.ws.send(JSON.stringify({ type: "PING" }));
         }
       }, 20000);
@@ -141,6 +153,9 @@ export class CompeteWebSocket {
         break;
       case "PLAY_AGAIN":
         this.callbacks.onPlayAgain?.(data.newGameId);
+        break;
+      case "PONG":
+        this.lastPongReceived = Date.now();
         break;
       case "ERROR": {
         const msg = data.message ?? "";
