@@ -526,6 +526,8 @@
     "all_time": "All-time",
     "err_load_failed": "Failed to load data. Please try again.",
     "retry": "Retry",
+    "clear_session_restart": "Clear session & restart",
+    "taking_too_long": "Taking too long?",
     "no_results_today": "No results yet for today.",
     "accuracy_pct": "Accuracy %",
     "unknown_player": "Unknown"

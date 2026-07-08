@@ -520,6 +520,8 @@
     "all_time": "Tout le temps",
     "err_load_failed": "Échec du chargement. Réessayez.",
     "retry": "Réessayer",
+    "clear_session_restart": "Effacer la session et redémarrer",
+    "taking_too_long": "Trop long ?",
     "no_results_today": "Aucun résultat pour aujourd'hui.",
     "accuracy_pct": "Précision %",
     "unknown_player": "Inconnu"
