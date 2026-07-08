@@ -47,7 +47,7 @@ export async function GET(
         rc.year_guess,
         rc.location_lat,
         rc.location_lng,
-        l.country AS region
+        l.continent AS region
       FROM round_results rr
       LEFT JOIN round_commits rc
         ON rc.game_id = rr.game_id

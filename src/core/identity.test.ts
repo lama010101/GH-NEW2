@@ -194,6 +194,18 @@ describe("identity state machine — KC-007", () => {
       }
       // getUser() must never be called.
       expect(auth.getUser).not.toHaveBeenCalled();
+    }, 30000);
+
+    it("sets 'unauthenticated' immediately when refresh token is invalid (no retries)", async () => {
+      const { bootstrapIdentity } = await loadIdentity();
+      const auth = await getMockAuth();
+      auth.getSession.mockClear();
+      auth.getSession.mockRejectedValue(new Error("Refresh token is not valid"));
+
+      const state = await bootstrapIdentity();
+      expect(state.status).toBe("unauthenticated");
+      // getSession should have been called only once — no retries for invalid refresh token.
+      expect(auth.getSession).toHaveBeenCalledTimes(1);
     });
 
     it("does not re-bootstrap if already ready (returns cached state)", async () => {

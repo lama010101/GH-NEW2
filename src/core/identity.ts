@@ -85,19 +85,22 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
     // redirect. (This is the exact deadlock MP-FIX-AUTH-GOTRUE-DEADLOCK-003
     // removed from getValidAccessToken; the same fix applies here.)
     //
-    // Strategy: try getSession() up to 3 times with backoff. Each attempt is
-    // wrapped in a 5s Promise.race timeout so a hung lock-holding refresh
+    // Strategy: try getSession() up to 5 times with backoff. Each attempt is
+    // wrapped in a 10s Promise.race timeout so a hung lock-holding refresh
     // network call cannot block us forever; the backoff gives the in-flight
     // refresh time to complete and release the lock so the next attempt
     // succeeds. A null session (cookie genuinely absent) → unauthenticated.
     // A throw/timeout on every attempt → error (transient lock/network issue).
-    const maxAttempts = 3;
+    // An "invalid refresh token" error is not transient — the refresh token
+    // is genuinely invalid (e.g. user was deleted/recreated server-side), so
+    // we go to "unauthenticated" immediately instead of wasting retries.
+    const maxAttempts = 5;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const { data: { session } } = await Promise.race([
           supabaseBrowser.auth.getSession(),
           new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("getSession() timed out")), 5000)
+            setTimeout(() => reject(new Error("getSession() timed out")), 10000)
           ),
         ]);
         if (session?.user?.id) {
@@ -121,13 +124,22 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
         cachedState = { status: "unauthenticated" };
         return cachedState;
       } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        // "Refresh token is not valid" is a permanent auth failure, not a
+        // transient lock/timeout. Retrying won't help — the refresh token is
+        // genuinely invalid. Go to "unauthenticated" so the UI shows the auth
+        // modal instead of a permanent "Something went wrong" error screen.
+        if (errMsg.includes("Refresh token") || errMsg.includes("not valid")) {
+          cachedState = { status: "unauthenticated" };
+          return cachedState;
+        }
         if (attempt < maxAttempts - 1) {
           await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
           continue;
         }
         cachedState = {
           status: "error",
-          error: err instanceof Error ? err.message : "Unknown identity bootstrap error",
+          error: errMsg,
         };
         return cachedState;
       }

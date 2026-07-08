@@ -568,6 +568,7 @@
     "countries": "Countries"
   },
   "account": {
+    "title": "Account",
     "username": "Username",
     "email": "Email",
     "member_since": "Member since",
@@ -575,7 +576,10 @@
     "save": "Save",
     "saved": "✓ Saved",
     "err_save_failed": "Failed to save. Try again.",
-    "sign_out_failed": "Sign out failed"
+    "sign_out_failed": "Sign out failed",
+    "settings": "Settings",
+    "sound": "Sound",
+    "vibrate": "Vibrate"
   },
   "avatar_picker": {
     "title": "Choose Avatar",

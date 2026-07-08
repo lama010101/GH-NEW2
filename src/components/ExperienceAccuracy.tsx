@@ -49,7 +49,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
         <div className={experienceCardCls}>
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
-            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('experience')}</h3>
+            <h2 className={styles.sectionTitle}>{t('experience')}</h2>
           </div>
           {!hideStatsRow && (
           <div className="grid grid-cols-4 gap-3 mb-6">
@@ -100,14 +100,14 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
             {experienceTab === 'when' && (
               data.byWhen.length > 0 ? (
                 data.byWhen.map((item) => (
-                  <div key={item.label} className={styles.regionRowWithCount}>
+                  <div key={item.label} className={`${styles.regionRowWithCount} ${!item.stockImg && !item.icon ? styles.regionRowNoImage : ''}`}>
+                    {item.stockImg ? (
+                      <span className={styles.regionImage}><img src={item.stockImg} alt="" className={styles.regionImageImg} /></span>
+                    ) : item.icon ? (
+                      <span className={styles.regionIcon}>{item.icon}</span>
+                    ) : null}
                     <div className={styles.regionLabelWrap}>
                       <div className={styles.regionLabelHead}>
-                        {item.stockImg ? (
-                          <span className={styles.regionIcon}><img src={item.stockImg} alt="" className={styles.regionIconImg} /></span>
-                        ) : item.icon ? (
-                          <span className={styles.regionIcon}>{item.icon}</span>
-                        ) : null}
                         <span className={styles.regionLabel}>{item.label}</span>
                         {item.span && <span className={styles.regionSpan}>{item.span}</span>}
                       </div>
@@ -126,14 +126,14 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
             {experienceTab === 'where' && (
               data.byWhere.length > 0 ? (
                 data.byWhere.map((item) => (
-                  <div key={item.label} className={styles.regionRowWithCount}>
+                  <div key={item.label} className={`${styles.regionRowWithCount} ${!item.stockImg && !item.icon ? styles.regionRowNoImage : ''}`}>
+                    {item.stockImg ? (
+                      <span className={styles.regionImage}><img src={item.stockImg} alt="" className={styles.regionImageImg} /></span>
+                    ) : item.icon ? (
+                      <span className={styles.regionIcon}>{item.icon}</span>
+                    ) : null}
                     <div className={styles.regionLabelWrap}>
                       <div className={styles.regionLabelHead}>
-                        {item.stockImg ? (
-                          <span className={styles.regionIcon}><img src={item.stockImg} alt="" className={styles.regionIconImg} /></span>
-                        ) : item.icon ? (
-                          <span className={styles.regionIcon}>{item.icon}</span>
-                        ) : null}
                         <span className={styles.regionLabel}>{item.label}</span>
                         {item.span && <span className={styles.regionSpan}>{item.span}</span>}
                       </div>
@@ -159,7 +159,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
         <div className={accuracyCardCls}>
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
-            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('accuracy')}</h3>
+            <h2 className={styles.sectionTitle}>{t('accuracy')}</h2>
           </div>
           <div className={styles.tabBar}>
             <button
@@ -181,10 +181,14 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
             {accuracyTab === 'when' && (
               data.byWhen.length > 0 ? (
                 data.byWhen.map((item) => (
-                  <div key={item.label} className={styles.regionRowWithCount}>
+                  <div key={item.label} className={`${styles.regionRowWithCount} ${!item.stockImg && !item.icon ? styles.regionRowNoImage : ''}`}>
+                    {item.stockImg ? (
+                      <span className={styles.regionImage}><img src={item.stockImg} alt="" className={styles.regionImageImg} /></span>
+                    ) : item.icon ? (
+                      <span className={styles.regionIcon}>{item.icon}</span>
+                    ) : null}
                     <div className={styles.regionLabelWrap}>
                       <div className={styles.regionLabelHead}>
-                        {item.icon && <span className={styles.regionIcon}>{item.icon}</span>}
                         <span className={styles.regionLabel}>{item.label}</span>
                         {item.span && <span className={styles.regionSpan}>{item.span}</span>}
                       </div>
@@ -203,14 +207,14 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
             {accuracyTab === 'where' && (
               data.byWhere.length > 0 ? (
                 data.byWhere.map((item) => (
-                  <div key={item.label} className={styles.regionRowWithCount}>
+                  <div key={item.label} className={`${styles.regionRowWithCount} ${!item.stockImg && !item.icon ? styles.regionRowNoImage : ''}`}>
+                    {item.stockImg ? (
+                      <span className={styles.regionImage}><img src={item.stockImg} alt="" className={styles.regionImageImg} /></span>
+                    ) : item.icon ? (
+                      <span className={styles.regionIcon}>{item.icon}</span>
+                    ) : null}
                     <div className={styles.regionLabelWrap}>
                       <div className={styles.regionLabelHead}>
-                        {item.stockImg ? (
-                          <span className={styles.regionIcon}><img src={item.stockImg} alt="" className={styles.regionIconImg} /></span>
-                        ) : item.icon ? (
-                          <span className={styles.regionIcon}>{item.icon}</span>
-                        ) : null}
                         <span className={styles.regionLabel}>{item.label}</span>
                         {item.span && <span className={styles.regionSpan}>{item.span}</span>}
                       </div>
