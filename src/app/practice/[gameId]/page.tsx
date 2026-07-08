@@ -14,7 +14,7 @@ import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
-import { supabaseBrowser } from "@/core/supabaseBrowser";
+import { supabaseBrowser, readSession } from "@/core/supabaseBrowser";
 import { computeTimeRemaining } from "@/core/competeUtils";
 import { PracticeSettingsModal, type PracticeModalSettings } from "@/components/practice/PracticeSettingsModal";
 import { savePracticeSettings } from "@/components/practice/practiceSettings";
@@ -105,7 +105,7 @@ export default function PracticeGamePage() {
     setBusy(true);
     ;(async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const session = await readSession();
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -276,7 +276,7 @@ export default function PracticeGamePage() {
 
     ;(async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const session = await readSession();
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -393,7 +393,7 @@ export default function PracticeGamePage() {
 
     ;(async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const session = await readSession();
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -439,7 +439,7 @@ export default function PracticeGamePage() {
 
     ;(async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const session = await readSession();
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
@@ -489,7 +489,7 @@ export default function PracticeGamePage() {
     setPracticeCreating(true);
     ;(async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const session = await readSession();
         const accessToken = session?.access_token;
         if (!accessToken) throw new Error(t('not_authenticated'));
 
