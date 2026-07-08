@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity'
+import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, type IdentityState } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
@@ -139,6 +139,17 @@ function HomePageInner() {
 
   const [showNavModal, setShowNavModal] = useState(false)
   const [practiceModalOpen, setPracticeModalOpen] = useState(false)
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false)
+
+  // Show escape hatch after 10s of continuous loading
+  useEffect(() => {
+    if (identity.status === 'ready') {
+      setShowLoadingTimeout(false)
+      return
+    }
+    const timer = setTimeout(() => setShowLoadingTimeout(true), 10000)
+    return () => clearTimeout(timer)
+  }, [identity.status])
 
   const handleNav = (path: string) => {
     router.push(path)
@@ -148,6 +159,11 @@ function HomePageInner() {
     savePracticeSettings(settings)
     setPracticeModalOpen(false)
     router.push('/practice')
+  }
+
+  const handleForceClear = () => {
+    forceClearAuthStorage()
+    window.location.replace('/login')
   }
 
   if (identity.status === 'error') {
@@ -175,6 +191,13 @@ function HomePageInner() {
           >
             {t('game.retry')}
           </button>
+          <button
+            type="button"
+            onClick={handleForceClear}
+            style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,100,100,0.3)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
+          >
+            {t('game.clear_session_restart')}
+          </button>
         </div>
       </div>
     )
@@ -185,7 +208,21 @@ function HomePageInner() {
       <div className={styles.pageRoot}>
         <div aria-hidden="true" className={styles.bgImage} />
         <div className={styles.bgOverlay} />
-        <div className={styles.loadingIndicator}>{t('common.loading')}</div>
+        <div className={styles.loadingIndicator}>
+          <div>{t('common.loading')}</div>
+          {showLoadingTimeout && (
+            <>
+              <div style={{ marginTop: 8, fontSize: 'var(--font-sm)', opacity: 0.8 }}>{t('game.taking_too_long')}</div>
+              <button
+                type="button"
+                onClick={handleForceClear}
+                style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,100,100,0.3)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
+              >
+                {t('game.clear_session_restart')}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     )
   }
