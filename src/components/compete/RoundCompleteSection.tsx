@@ -193,11 +193,12 @@ export default function RoundCompleteSection({
             isMe: r.playerId === playerId,
             score: r.score,
             cumulativeScore: r.cumulativeScore,
+            cumulativeAccuracy: r.cumulativeAccuracy,
           }));
 
         const allRoundsLeaderboardRows = (roundResults ?? [])
           .slice()
-          .sort((a, b) => b.cumulativeScore - a.cumulativeScore)
+          .sort((a, b) => b.cumulativeAccuracy - a.cumulativeAccuracy)
           .map((r, i) => ({
             playerId: r.playerId,
             rank: i + 1,
@@ -206,6 +207,7 @@ export default function RoundCompleteSection({
             isMe: r.playerId === playerId,
             score: r.score,
             cumulativeScore: r.cumulativeScore,
+            cumulativeAccuracy: r.cumulativeAccuracy,
           }));
         return (
           <>
@@ -360,16 +362,6 @@ export default function RoundCompleteSection({
                 </div>
               </div>
 
-              {/* OVERALL GAME ACCURACY — cumulative % across all rounds played */}
-              {myResult && (
-                <div className={styles.gameAccuracyStrip}>
-                  <span className={styles.gameAccuracyLabel}>
-                    <span className={styles.leaderboardAccentBar} />
-                    {t('game_accuracy')}
-                  </span>
-                  <span className={styles.gameAccuracyVal}>{Math.round(myResult.cumulativeAccuracy)}</span>
-                </div>
-              )}
             </div>
 
             {/* ROUND LEADERBOARD CARD — hidden in practice (solo) mode */}
@@ -403,14 +395,15 @@ export default function RoundCompleteSection({
               <div className={styles.leaderboardHeader}>
                 <span className={styles.leaderboardHeaderRank}>#</span>
                 <span className={styles.leaderboardHeaderName}>{t('col_player')}</span>
-                <span className={styles.leaderboardHeaderScore}>{leaderboardTab === 'thisRound' ? t('col_score') : t('col_total')}</span>
+                <span className={styles.leaderboardHeaderScore}>{leaderboardTab === 'thisRound' ? t('col_score') : t('col_accuracy')}</span>
               </div>
               {(leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows).map(row => {
-                const hue = Math.round((Math.max(0, Math.min(100, row.accuracy)) / 100) * 120);
+                const accForHue = leaderboardTab === 'thisRound' ? row.accuracy : row.cumulativeAccuracy;
+                const hue = Math.round((Math.max(0, Math.min(100, accForHue)) / 100) * 120);
                 const accColor = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
                 const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
-                const displayValue = leaderboardTab === 'thisRound' ? Math.round(row.accuracy) : row.cumulativeScore;
-                const displaySuffix = leaderboardTab === 'thisRound' ? '%' : '';
+                const displayValue = leaderboardTab === 'thisRound' ? Math.round(row.accuracy) : Math.round(row.cumulativeAccuracy);
+                const displaySuffix = '%';
                 return (
                   <div key={row.rank} className={`${styles.lbRow} ${row.isMe ? styles.lbRowSelfAccent : ""}`}>
                     <span className={`${styles.lbRank} ${row.rank === 1 ? styles.lbRankGold : ""}`}>{row.rank}</span>
