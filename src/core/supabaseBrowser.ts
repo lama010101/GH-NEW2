@@ -1,7 +1,7 @@
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient, Session } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -32,13 +32,13 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
  * Returns session or null on any error (never throws).
  * NO Promise.race, NO timeout, NO retry.
  */
-let readSessionInFlight: Promise<any> | null = null;
+let readSessionInFlight: Promise<Session | null> | null = null;
 
-export async function readSession(): Promise<any> {
+export async function readSession(): Promise<Session | null> {
   if (readSessionInFlight) {
     return readSessionInFlight;
   }
-  readSessionInFlight = (async (): Promise<any> => {
+  readSessionInFlight = (async (): Promise<Session | null> => {
     try {
       const { data: { session } } = await supabaseBrowser.auth.getSession();
       return session;
