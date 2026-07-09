@@ -467,7 +467,12 @@ export default class GameServer {
           this.snapshot.status === "ROUND_COMPLETE" &&
           snapshot.status === "ROUND_ACTIVE") {
         this.readyForNext.clear();
-        console.log("[PartyKit] New round started, readyForNext cleared");
+        // MP-FIX-SYNC-DESYNC-001: Reset completeInFlight (set true by SUBMIT_GUESS
+        // early-completion path) and ensure roundTimerHandle is cleared so the new
+        // round's timer scheduling is not blocked by stale state from the prior round.
+        this.completeInFlight = false;
+        this.roundTimerHandle = null;
+        console.log("[PartyKit] New round started, readyForNext cleared, completeInFlight reset");
       }
       console.log("[PARTYKIT_APPLY_PLAYERS]", {
         totalPlayers: snapshot.players.length,
@@ -1318,6 +1323,24 @@ export default class GameServer {
             const fullResponse = await response.json();
             const results = Array.isArray(fullResponse.results) ? fullResponse.results : null;
             this.pendingResults = results;
+
+            // MP-FIX-SYNC-DESYNC-001: If /guess completed the round early (all players
+            // submitted before timer expiry), cancel the pending roundTimerHandle so
+            // triggerRoundExpiry cannot fire a second /complete call for the same round.
+            // Also set completeInFlight to block triggerRoundExpiry's re-entry guard.
+            // Populate roundResultsForClient on the snapshot so the broadcastStateUpdate
+            // fallback (this.pendingResults ?? roundResultsForClient) yields results even
+            // if a racy second broadcast occurs after pendingResults is cleared.
+            if (isRuntimeState(fullResponse) && fullResponse.status === "ROUND_COMPLETE") {
+              if (this.roundTimerHandle !== null) {
+                clearTimeout(this.roundTimerHandle);
+                this.roundTimerHandle = null;
+              }
+              this.completeInFlight = true;
+              if (results !== null) {
+                fullResponse.roundResultsForClient = results;
+              }
+            }
 
             // Clamp is now applied atomically inside submitGuess (sessionCore.ts)
             // and persisted as a PRESSURE_APPLIED event in the same transaction as
