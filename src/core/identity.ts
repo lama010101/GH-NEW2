@@ -37,16 +37,12 @@ function resetReadyPromise() {
 
 async function fetchDisplayName(userId: string): Promise<string> {
   try {
-    const { data, error } = await Promise.race([
-      supabaseBrowser
-        .from("profiles")
-        .select("display_name")
-        .eq("id", userId)
-        .maybeSingle(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("fetchDisplayName timeout")), 5000)
-      ),
-    ]);
+    const { data, error } = await supabaseBrowser
+      .from("profiles")
+      .select("display_name")
+      .eq("id", userId)
+      .maybeSingle()
+      .abortSignal(AbortSignal.timeout(5000));
 
     if (data?.display_name) {
       return data.display_name.trim();
