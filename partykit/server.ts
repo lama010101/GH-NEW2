@@ -938,28 +938,32 @@ export default class GameServer {
       socketCount: this.connections.size,
     });
 
+    // MP-FIX-SYNC-DESYNC-002: Hoist config construction outside the per-connection loop.
+    // All config fields depend only on session-level snapshotWithReadyState, not on
+    // per-connection socketPlayerId. Computing once avoids N rebuilds for N connections.
+    const snapshotRecord = snapshotWithReadyState as Record<string, unknown>;
+
+    // Build config object from config data to satisfy SessionConfig type
+    const configRecord = snapshotRecord["config"] as Record<string, unknown> | undefined;
+    const players = snapshotRecord["players"] as Array<{ playerId: string; isHost: boolean }> | undefined;
+    const hostPlayer = players?.find(p => p.isHost);
+
+    const config = {
+      mode: (configRecord?.["mode"] as "practice" | "sync" | "async") ?? "sync",
+      roundTimerSec: (configRecord?.["roundTimerSec"] as number) ?? (snapshotRecord["roundTimerSec"] as number) ?? 60,
+      totalRounds: (configRecord?.["totalRounds"] as number) ?? 5,
+      yearMin: (configRecord?.["yearMin"] as number) ?? (snapshotRecord["yearMin"] as number) ?? -400,
+      yearMax: (configRecord?.["yearMax"] as number) ?? (snapshotRecord["yearMax"] as number) ?? new Date().getFullYear(),
+      selectedEras: (configRecord?.["selectedEras"] as string[] | undefined) ?? (snapshotRecord["selectedEras"] as string[] | undefined) ?? null,
+      resultsAutoAdvanceSec: (configRecord?.["resultsAutoAdvanceSec"] as number) ?? (snapshotRecord["resultsAutoAdvanceSec"] as number) ?? 90,
+      hostPlayerId: hostPlayer?.playerId ?? null,
+      sessionDeadline: (configRecord?.["sessionDeadline"] as string | null) ?? null,
+      startedAt: (configRecord?.["startedAt"] as string | null) ?? null,
+      completedAt: (configRecord?.["completedAt"] as string | null) ?? null,
+    };
+
     for (const connection of this.room.getConnections()) {
       const socketPlayerId = this.connections.get(connection.id);
-      const snapshotRecord = snapshotWithReadyState as Record<string, unknown>;
-
-      // Build config object from config data to satisfy SessionConfig type
-      const configRecord = snapshotRecord["config"] as Record<string, unknown> | undefined;
-      const players = snapshotRecord["players"] as Array<{ playerId: string; isHost: boolean }> | undefined;
-      const hostPlayer = players?.find(p => p.isHost);
-
-      const config = {
-        mode: (configRecord?.["mode"] as "practice" | "sync" | "async") ?? "sync",
-        roundTimerSec: (configRecord?.["roundTimerSec"] as number) ?? (snapshotRecord["roundTimerSec"] as number) ?? 60,
-        totalRounds: (configRecord?.["totalRounds"] as number) ?? 5,
-        yearMin: (configRecord?.["yearMin"] as number) ?? (snapshotRecord["yearMin"] as number) ?? -400,
-        yearMax: (configRecord?.["yearMax"] as number) ?? (snapshotRecord["yearMax"] as number) ?? new Date().getFullYear(),
-        selectedEras: (configRecord?.["selectedEras"] as string[] | undefined) ?? (snapshotRecord["selectedEras"] as string[] | undefined) ?? null,
-        resultsAutoAdvanceSec: (configRecord?.["resultsAutoAdvanceSec"] as number) ?? (snapshotRecord["resultsAutoAdvanceSec"] as number) ?? 90,
-        hostPlayerId: hostPlayer?.playerId ?? null,
-        sessionDeadline: (configRecord?.["sessionDeadline"] as string | null) ?? null,
-        startedAt: (configRecord?.["startedAt"] as string | null) ?? null,
-        completedAt: (configRecord?.["completedAt"] as string | null) ?? null,
-      };
 
       const perSocketSnapshot = {
         ...snapshotRecord,
