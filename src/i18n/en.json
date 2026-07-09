@@ -305,6 +305,7 @@
     "col_player": "Player",
     "col_score": "Score",
     "col_total": "Total",
+    "col_accuracy": "Accuracy",
     "experience": "EXPERIENCE",
     "correct_location": "Correct",
     "correct_year": "Correct",
