@@ -14,7 +14,7 @@ import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
-import { supabaseBrowser, readSession } from "@/core/supabaseBrowser";
+import { supabaseBrowser, readSession, forceClearAuthStorage } from "@/core/supabaseBrowser";
 import { computeTimeRemaining } from "@/core/competeUtils";
 import { PracticeSettingsModal, type PracticeModalSettings } from "@/components/practice/PracticeSettingsModal";
 import { savePracticeSettings } from "@/components/practice/practiceSettings";
