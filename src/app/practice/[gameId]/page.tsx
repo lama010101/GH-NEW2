@@ -276,8 +276,9 @@ export default function PracticeGamePage() {
     const capturedLat = guessLatRef.current;
     const capturedLng = guessLngRef.current;
 
-    if (capturedYear === null && capturedLat === null && capturedLng === null) return;
-
+    // Timer expiry must always submit — even with null values (no guess placed).
+    // The server accepts null year/location and completes the round. Without this,
+    // the round never ends when the player hasn't entered anything.
     autoSubmitFiredRef.current = true;
     submittedHintPenaltyRef.current = {
       accPenalty: hintResult.accPenalty,
