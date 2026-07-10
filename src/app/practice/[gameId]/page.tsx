@@ -14,7 +14,8 @@ import RoundActiveSection from "@/components/compete/RoundActiveSection";
 import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
-import { supabaseBrowser, readSession, forceClearAuthStorage } from "@/core/supabaseBrowser";
+import { supabaseBrowser, readSession } from "@/core/supabaseBrowser";
+import { forceClearAuthStorage } from "@/core/identity";
 import { computeTimeRemaining } from "@/core/competeUtils";
 import { PracticeSettingsModal, type PracticeModalSettings } from "@/components/practice/PracticeSettingsModal";
 import { savePracticeSettings } from "@/components/practice/practiceSettings";
@@ -57,6 +58,7 @@ export default function PracticeGamePage() {
   const [topbarAvatarUrl, setTopbarAvatarUrl] = useState<string | null>(null);
   const [topbarInitials, setTopbarInitials] = useState("PL");
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
   const submittedHintPenaltyRef = useRef<{ accPenalty: number; xpPenalty: number; purchasedIds: string[]; whereAccPenalty: number; whenAccPenalty: number }>({
     accPenalty: 0,
     xpPenalty: 0,
@@ -80,7 +82,20 @@ export default function PracticeGamePage() {
 
     ;(async () => {
       try {
-        const response = await fetch(`/api/compete/${gameId}?playerId=${playerId}`, { cache: "no-store" });
+        const _snapshotController = new AbortController()
+        const _snapshotTimeout = setTimeout(() => _snapshotController.abort(), 15_000)
+        let response: Response
+        try {
+          response = await fetch(`/api/compete/${gameId}?playerId=${playerId}`, { cache: "no-store", signal: _snapshotController.signal })
+        } catch (err: unknown) {
+          if (err instanceof Error && err.name === 'AbortError') {
+            if (!cancelled) setError('Session load timed out. Please try again.')
+            return
+          }
+          throw err
+        } finally {
+          clearTimeout(_snapshotTimeout)
+        }
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
           throw new Error(data.error ?? t('failed_load_session'));
@@ -335,6 +350,12 @@ export default function PracticeGamePage() {
     img.src = nextImageUrl;
   }, [snapshot?.currentRoundIndex, snapshot?.status, snapshot?.rounds]);
 
+  // 10s escape hatch: if loading screen persists, surface a recovery button.
+  useEffect(() => {
+    const _loadTimer = setTimeout(() => setShowLoadingTimeout(true), 10_000)
+    return () => clearTimeout(_loadTimer)
+  }, [])
+
   const viewer = useMemo(() => {
     if (!snapshot || !playerId) return null;
     return snapshot.players.find((p) => p.playerId === playerId) ?? null;
@@ -540,6 +561,14 @@ export default function PracticeGamePage() {
           </span>
           {error && (
             <span className={pageStyles.loadingError}>{error}</span>
+          )}
+          {showLoadingTimeout && (
+            <button
+              onClick={() => { forceClearAuthStorage(); window.location.href = '/'; }}
+              style={{ marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer', background: 'var(--color-orange, #f97316)', color: '#fff', border: 'none', borderRadius: '6px' }}
+            >
+              Taking too long? Clear session &amp; return home
+            </button>
           )}
         </div>
       </div>
