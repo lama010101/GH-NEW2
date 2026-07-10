@@ -2620,7 +2620,8 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     // multiplayer early-closure rule (close if < 2 players remain) must NOT
     // apply to them, or solo sessions close after round 0 instead of advancing.
     const isSoloMode = session.mode === "practice" || session.mode === "daily";
-    const shouldCloseEarly = !isSoloMode && nonLeftCount < 2;
+    const totalEverJoined = activePlayerRows.length; // includes players who left
+    const shouldCloseEarly = !isSoloMode && totalEverJoined >= 2 && nonLeftCount < 2;
 
     if (nextRoundIndex < session.total_rounds && !shouldCloseEarly) {
       const sessionCreatedEventForAdvance = await client.query<{ payload: { eventIds: string[] } }>(
