@@ -684,6 +684,9 @@
 .readyName {
   color: var(--gh-success);
   margin-right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* ── Bottom bar (nav row) ── */

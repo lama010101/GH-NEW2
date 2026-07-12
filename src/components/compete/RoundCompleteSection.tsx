@@ -602,9 +602,11 @@ export default function RoundCompleteSection({
                   {snapshot.readyForNext && snapshot.readyForNext.length > 0 && (
                     <span className={styles.readyNames}>
                       {snapshot.readyForNext.map(pid => {
-                        const name = snapshot.players.find(p => p.playerId === pid)?.displayName ?? pid.slice(0, 8);
+                        const p = snapshot.players.find(pl => pl.playerId === pid);
+                        const name = p?.displayName ?? pid.slice(0, 8);
                         return (
                           <span key={pid} className={styles.readyName}>
+                            <PlayerAvatar avatarUrl={p?.avatarUrl ?? null} displayName={name} size={24} />
                             <span style={getUsernameGradientStyle(pid)}>{name}</span> ✓
                           </span>
                         );
