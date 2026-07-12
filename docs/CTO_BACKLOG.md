@@ -330,6 +330,16 @@ Read-only verification of the committed `createDailySession` path (HEAD 15a1ccb)
 
 **Overall: ALL 7 SCENARIOS PASS.** The committed Daily mode (`createDailySession`: pinned daily events, auto-ready host, transactional game-end with challenge-date leaderboard writes) is verified correct end-to-end against the live DB. Note (UI, out of scope for this task): `src/app/daily/game/[gameId]/round/[n]/page.tsx` has no LOBBY→ROUND_ACTIVE auto-start call (unlike `src/app/practice/[gameId]/page.tsx` which calls `/api/practice/[gameId]/start`); the server path works (D2 PASS via direct `startCompeteSession`), but the daily round page may never transition out of LOBBY in the browser. Flagged for a separate UI task — NOT fixed here.
 
+## Section K — Sync Compete Golden-Path Regression Guard (MP-GUARD-SYNC-REGRESSION-001)
+
+Two-context Playwright golden-path spec + husky pre-push gate to protect the sync compete path from regressions during UI work. Phase A0 (read-only inventory + spec design) approved; build split into Part A (manifest, liveness, UI helper) and Part B (spec, config, hook, KC-009).
+
+| Sub-task | Status | Commit | Notes |
+|----------|--------|--------|-------|
+| Phase A0 — inventory + spec design | APPROVED | n/a (read-only) | Plan approved with corrected rulings: UI-drive + WS-observe, 2 rounds, PLAY_AGAIN included with new-gameId + roster verification, pre-push hook only (no CI in scope). |
+| BUILD-A — manifest, liveness, UI helper | BUILD-A complete | a88c82c | 3 new files, no existing file modified. `scripts/dev/sync-compete-protected-files.txt` (13-pattern manifest), `scripts/dev/check-compete-stack.sh` (port 3000 + 1999 liveness, loud failure, chmod +x), `scripts/test/playwright/helpers/compete-ui.ts` (submitGuessViaUI). tsc clean, lint zero errors, liveness loud-failure path verified. |
+| BUILD-B — spec, config, hook, KC-009 | PENDING | — | Part B follows in a separate prompt. |
+
 ## Section J — Deferred Items
 
 | ID | Item | Status | Notes |
