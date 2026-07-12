@@ -170,3 +170,42 @@ safely rolled back if a regression is introduced.
 - Reference incident: 2026-07-07, SessionComplete.tsx — sed edits were correctly applied, then silently reverted and end-of-file corrupted by a stale IDE buffer flush.
 
 ---
+
+### [KC-009] Sync compete pre-push golden-path gate (mandatory)
+**Applies to:** Every push touching the sync compete protected-file list
+(`scripts/dev/sync-compete-protected-files.txt`)
+
+**Constraint:**
+The husky `pre-push` hook runs the two-context golden-path Playwright spec
+(`scripts/test/playwright/specs/sync-compete-golden-path.spec.ts`) before any
+push that touches a protected file. The spec exercises the full sync compete
+happy path (2 players, 2 rounds, PLAY_AGAIN) with per-context read-only WS
+cross-assertion, plus preflight grep guards for KC-001/002/005/007.
+
+Rules:
+1. The hook MUST fail loudly (non-zero exit) if either the Next.js dev server
+   (port 3000) or PartyKit (port 1999) is not running. The gate never silently
+   passes. Use `scripts/dev/check-compete-stack.sh` for the liveness check.
+2. The `--no-verify` bypass is accepted for rescue pushes, but does NOT replace
+   the mandatory manual two-browser smoke test that must be performed pre-deploy
+   regardless of hook outcome.
+3. The protected-file list is data-driven from
+   `scripts/dev/sync-compete-protected-files.txt` — edit the manifest, not the
+   hook, when the file list changes.
+4. The spec MUST NOT be weakened to make the gate pass. If the spec is flaky,
+   fix the flakiness; do not loosen assertions. A green gate that does not
+   catch regressions is worse than no gate.
+
+**History:** Sync compete regressed multiple times during UI work (MP-FIX-SYNC-
+DESYNC-001/002, BUG-FIX-COMPETE-EARLY-CLOSURE-001) because no fast gate existed
+between the 45-min heavy simulation suite and manual testing. The heavy suite
+is too slow to run pre-push; manual testing is too easy to skip.
+
+**Regression guard (include in ALL prompts touching the hook or spec):**
+  test -f .husky/pre-push && grep -q "sync-compete-golden-path" .husky/pre-push
+  # Must return a match. If empty = hook removed or bypassed = FAIL.
+
+  test -f scripts/dev/check-compete-stack.sh && grep -q "1999" scripts/dev/check-compete-stack.sh
+  # Must return a match. If empty = partykit liveness check removed = FAIL.
+
+---

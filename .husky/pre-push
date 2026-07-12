@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# MP-GUARD-SYNC-REGRESSION-001 — pre-push gate for sync compete path.
+# Runs the golden-path Playwright spec ONLY when the push touches a
+# protected file. Fails loudly if the dev stack is down — never a silent pass.
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+# Read protected file list (one glob per line) from the manifest
+PROTECTED_FILE="scripts/dev/sync-compete-protected-files.txt"
+if [ ! -f "$PROTECTED_FILE" ]; then
+  echo "PRE-PUSH: protected-file manifest not found at $PROTECTED_FILE — skipping gate."
+  exit 0
+fi
+
+# Determine the diff base: prefer @{push} (the remote-tracking ref for the
+# current branch). On first push of a new branch, @{push} may not resolve —
+# fall back to origin/main and echo which base was used so a false negative
+# (no protected file matched because the wrong range was compared) is
+# diagnosable rather than silent.
+DIFF_BASE=""
+if git rev-parse --verify '@{push}' >/dev/null 2>&1; then
+  DIFF_BASE="@{push}"
+  echo "PRE-PUSH: comparing against @{push}"
+else
+  DIFF_BASE="origin/main"
+  echo "PRE-PUSH: no upstream — comparing against origin/main"
+fi
+
+PUSHED_FILES=$(git diff --name-only "$DIFF_BASE"..HEAD 2>/dev/null)
+if [ -z "$PUSHED_FILES" ]; then
+  echo "PRE-PUSH: no pushed files to check — skipping golden-path gate."
+  exit 0
+fi
+
+# Check if any pushed file matches any pattern in the manifest.
+# One clean loop: for each pushed file, try each manifest pattern.
+# Comment lines (# ...) and empty lines in the manifest are skipped.
+TOUCHES_PROTECTED=0
+while IFS= read -r f; do
+  while IFS= read -r pattern; do
+    # Skip empty lines and comments
+    [ -z "$pattern" ] && continue
+    case "$pattern" in \#*) continue ;; esac
+    # shellcheck disable=SC2254
+    case "$f" in
+      $pattern) TOUCHES_PROTECTED=1; break ;;
+    esac
+  done < "$PROTECTED_FILE"
+done <<< "$PUSHED_FILES"
+
+if [ "$TOUCHES_PROTECTED" -eq 0 ]; then
+  echo "PRE-PUSH: no protected sync-compete files touched — skipping golden-path gate."
+  exit 0
+fi
+
+echo "PRE-PUSH: protected sync-compete file touched — running golden-path spec."
+
+# Loud-failure liveness check (dev server :3000 + partykit :1999)
+bash scripts/dev/check-compete-stack.sh
+STACK_EXIT=$?
+if [ "$STACK_EXIT" -ne 0 ]; then
+  echo "PRE-PUSH: FAILED — dev stack not running. Start with: npm run dev"
+  echo "PRE-PUSH: The gate never silently passes. Fix the stack and re-push."
+  exit 1
+fi
+
+# Run the golden-path spec: scripts/test/playwright/specs/sync-compete-golden-path.spec.ts
+# (3-min timeout enforced by the sync-golden project config)
+npx playwright test --config=scripts/test/playwright/playwright.config.ts \
+  --project=sync-golden
+SPEC_EXIT=$?
+
+if [ "$SPEC_EXIT" -ne 0 ]; then
+  echo "PRE-PUSH: FAILED — sync compete golden-path spec failed."
+  echo "PRE-PUSH: See report: npx playwright show-report"
+  echo "PRE-PUSH: To bypass (rescue only): git push --no-verify"
+  echo "PRE-PUSH: Bypass does NOT replace the mandatory manual two-browser smoke test pre-deploy (KC-009)."
+  exit 1
+fi
+
+echo "PRE-PUSH: sync compete golden-path passed."
+exit 0
