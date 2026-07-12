@@ -25,7 +25,7 @@ MP-FIX-ZINDEX-REGRESSION-003. Each time it regressed because a subsequent task
 overwrote the container rule without knowing this constraint existed.
 
 **Regression guard (include in ALL prompts touching RoundActiveSection.module.css):**
-  grep -n "sheetFieldWrap" src/components/compete/RoundActiveSection.module.css | grep "z-index: 1001"
+  grep -A4 "sheetFieldWrap" src/components/compete/RoundActiveSection.module.css | grep "z-index: 1001"
   # Must return a match. If empty = FAIL, rollback immediately.
 
 ---
