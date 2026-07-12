@@ -42,6 +42,13 @@ export default defineConfig({
       use: { ...devices['iPhone 14'] },
       testMatch: /task-02-iphone-navbar\.spec\.ts/,
     },
+    {
+      name: 'sync-golden',
+      testMatch: /sync-compete-golden-path\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+      timeout: 300000, // 5-min cap — under heavy dev load, login + 2 rounds + play-again needs headroom
+      retries: 0, // no retries — a slow gate gets bypassed; fix flakiness, don't retry past it
+    },
   ],
   globalSetup: require.resolve('./fixtures/auth'),
   globalTeardown: require.resolve('./fixtures/auth'),
