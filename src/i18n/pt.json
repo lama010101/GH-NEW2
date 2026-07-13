@@ -478,6 +478,12 @@
     "map_error_title": "Falha ao renderizar o mapa",
     "map_error_details": "Verifique o console para detalhes",
     "badge_alt": "Distintivo {tier} {dimension}",
+    "badge_tier_gold": "Perfeito",
+    "badge_tier_silver": "Incrível",
+    "badge_tier_bronze": "Ótimo",
+    "badge_dim_location": "Localização",
+    "badge_dim_year": "Ano",
+    "badge_dim_combo": "Combo",
     "clear_session_restart": "Limpar sessão e reiniciar",
     "taking_too_long": "Demorando demais?"
   },

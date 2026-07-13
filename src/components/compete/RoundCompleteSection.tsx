@@ -7,6 +7,7 @@ import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereCard from "@/components/compete/WhereCard";
 import WhenCard from "@/components/compete/WhenCard";
 import InlineImageBadge from "@/components/compete/InlineImageBadge";
+import BadgePopup from "@/components/compete/BadgePopup";
 import RatingControl from "@/components/compete/RatingControl";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -654,6 +655,27 @@ export default function RoundCompleteSection({
                 </button>
               </div>
             </div>
+
+            {/* BADGE POPUPS — sequential, 1.5s each, triggered after ring animation */}
+            {(() => {
+              const trigger = isAccuracyVisible && isRingDone;
+              const comboBadge = myResult?.badges?.find(b => b.dimension === 'combo');
+              const locBadge = myResult?.badges?.find(b => b.dimension === 'location');
+              const yearBadge = myResult?.badges?.find(b => b.dimension === 'year');
+              return (
+                <>
+                  {comboBadge && (
+                    <BadgePopup dimension="combo" tier={comboBadge.tier as 'gold' | 'silver' | 'bronze'} triggered={trigger} delay={0} />
+                  )}
+                  {locBadge && (
+                    <BadgePopup dimension="location" tier={locBadge.tier as 'gold' | 'silver' | 'bronze'} triggered={trigger} delay={1500} />
+                  )}
+                  {yearBadge && (
+                    <BadgePopup dimension="year" tier={yearBadge.tier as 'gold' | 'silver' | 'bronze'} triggered={trigger} delay={3000} />
+                  )}
+                </>
+              );
+            })()}
           </>
         );
       })()}
