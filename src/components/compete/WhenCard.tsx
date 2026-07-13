@@ -240,8 +240,8 @@ export default function WhenCard({
             <span className={styles.expandLabel}>{t('leaderboard')}</span>
           </div>
           {(() => {
-            const myRank = roundResults?.find(r => r.playerId === playerId)?.rank ?? null;
-            return myRank != null ? <span className={styles.expandRank}>#{myRank}</span> : null;
+            const myRank = whenRows.findIndex(r => r.isMe) + 1;
+            return myRank > 0 ? <span className={styles.expandRank}>#{myRank}</span> : null;
           })()}
         </div>
         {whenLbExpanded && (
@@ -249,8 +249,6 @@ export default function WhenCard({
             {whenRows.map((row, idx) => {
               const hue = row.acc != null ? Math.round((row.acc / 100) * 120) : null;
               const accColor = hue != null ? `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))` : "var(--gh-text-muted)";
-              const resultRow = roundResults?.find(r => r.playerId === row.playerId);
-              const rank = resultRow?.rank ?? null;
               const avatarUrl = snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
               const isLast = idx === whenRows.length - 1;
               return (
@@ -258,7 +256,7 @@ export default function WhenCard({
                   key={row.playerId}
                   className={`${styles.lbRow} ${row.isMe ? styles.lbRowSelf : ""} ${!isLast ? styles.lbRowDivider : ""}`}
                 >
-                  <span className={styles.lbRank}>{rank ?? "—"}</span>
+                  <span className={styles.lbRank}>{idx + 1}</span>
                   <span className={styles.lbNameGroup}>
                     <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} size={40} />
                     <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
