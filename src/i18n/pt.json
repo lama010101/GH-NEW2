@@ -175,7 +175,10 @@
     "compete_desc": "Jogue contra seus amigos.\nTempo real ou por turnos.",
     "daily_desc": "Nova competição todo dia,\nOs mesmos eventos para todos.",
     "levelup_desc": "Dificuldade progressiva\nSuba no ranking.",
-    "practice_desc": "Aprimore suas habilidades solo\nPartidas personalizadas ilimitadas."
+    "practice_desc": "Aprimore suas habilidades solo\nPartidas personalizadas ilimitadas.",
+    "play_mode_aria": "Jogar {mode}",
+    "compete_play_aria": "Jogar",
+    "compete_delete_aria": "Excluir"
   },
   "common": {
     "next_round": "Próxima rodada",
@@ -474,7 +477,9 @@
     "tier_year_label": "ANO",
     "map_error_title": "Falha ao renderizar o mapa",
     "map_error_details": "Verifique o console para detalhes",
-    "badge_alt": "Distintivo {tier} {dimension}"
+    "badge_alt": "Distintivo {tier} {dimension}",
+    "clear_session_restart": "Limpar sessão e reiniciar",
+    "taking_too_long": "Demorando demais?"
   },
   "auth": {
     "sign_in": "Entrar",
@@ -602,6 +607,7 @@
     "meta_title": "Guess-History — Teste seu conhecimento de quando e onde",
     "meta_description": "Um jogo de adivinhação histórica. Veja eventos reais da história e adivinhe o ano e local exatos. Desafie amigos, suba no ranking e prove seu conhecimento de história.",
     "logo_alt": "Guess-History",
+    "rank_label": "Rank",
     "tagline": "Onde e quando aconteceu?",
     "hero_description": "Teste seu conhecimento de história. Veja eventos reais e adivinhe o ano e local exatos. Desafie amigos, suba no ranking e prove que você entende de história.",
     "waitlist_prompt": "Entre na lista de espera para acesso antecipado:",
@@ -621,5 +627,21 @@
     "your_username": "Seu nome de usuário",
     "lets_play": "Vamos jogar!",
     "skip_for_now": "Pular por agora"
+  },
+  "rank": {
+    "rank_label": "Rank",
+    "next_label": "Próximo",
+    "rank_1": "Andarilho",
+    "rank_2": "Desbravador",
+    "rank_3": "Pioneiro",
+    "rank_4": "Cartógrafo",
+    "rank_5": "Explorador",
+    "rank_6": "Navegador",
+    "rank_7": "Cronista",
+    "rank_8": "Historiador",
+    "rank_9": "Erudito",
+    "rank_10": "Cartógrafo Real",
+    "next_rank": "{xp} XP até {title}",
+    "max_rank": "Rank máximo alcançado"
   }
 }

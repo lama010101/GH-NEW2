@@ -175,7 +175,10 @@
     "compete_desc": "Play against your friends.\nReal-Time: Up to 5 mins\nTurn-Based: Up to 14 days",
     "daily_desc": "A new challenge every day.\nSame events for everyone.\nClimb the leaderboard.",
     "levelup_desc": "Beat levels and earn XP.\nProgressive difficulty from 1 to 100.\nUnlock new challenges.",
-    "practice_desc": "Hone your skills solo.\nCustom timer and year range.\nUnlimited practice games."
+    "practice_desc": "Hone your skills solo.\nCustom timer and year range.\nUnlimited practice games.",
+    "play_mode_aria": "Play {mode}",
+    "compete_play_aria": "Play",
+    "compete_delete_aria": "Delete"
   },
   "common": {
     "next_round": "Next Round",
@@ -618,6 +621,7 @@
     "meta_title": "Guess-History — Test Your Knowledge of When and Where",
     "meta_description": "A historical guessing game. See real events from history and guess the exact year and location. Challenge friends, climb the leaderboard, and prove your history skills.",
     "logo_alt": "Guess-History",
+    "rank_label": "Rank",
     "tagline": "Where and when did it happen?",
     "hero_description": "Test your knowledge of history. See real events and guess the exact year and location. Challenge your friends, climb the leaderboard, and prove you know your history.",
     "waitlist_prompt": "Join the waitlist to get early access:",
@@ -632,6 +636,7 @@
   },
   "rank": {
     "rank_label": "Rank",
+    "next_label": "Next",
     "rank_1": "Wanderer",
     "rank_2": "Pathfinder",
     "rank_3": "Trailblazer",

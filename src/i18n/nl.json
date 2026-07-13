@@ -175,7 +175,10 @@
     "compete_desc": "Speel tegen je vrienden.\nReal-time of beurt-gebaseerd.",
     "daily_desc": "Elke dag een nieuwe wedstrijd,\nDezelfde events voor iedereen.",
     "levelup_desc": "Progressieve moeilijkheid\nBeklim de ranglijst.",
-    "practice_desc": "Slijp je vaardigheden solo\nOnbeperkte aangepaste spellen."
+    "practice_desc": "Slijp je vaardigheden solo\nOnbeperkte aangepaste spellen.",
+    "play_mode_aria": "Speel {mode}",
+    "compete_play_aria": "Spelen",
+    "compete_delete_aria": "Verwijderen"
   },
   "common": {
     "next_round": "Volgende ronde",
@@ -474,7 +477,9 @@
     "tier_year_label": "JAAR",
     "map_error_title": "Kaart kon niet worden weergegeven",
     "map_error_details": "Controleer de console voor details",
-    "badge_alt": "Badge {tier} {dimension}"
+    "badge_alt": "Badge {tier} {dimension}",
+    "clear_session_restart": "Sessie wissen en herstarten",
+    "taking_too_long": "Duurt het te lang?"
   },
   "auth": {
     "sign_in": "Inloggen",
@@ -602,6 +607,7 @@
     "meta_title": "Guess-History — Test je kennis van wanneer en waar",
     "meta_description": "Een historisch raadspel. Bekijk echte events uit de geschiedenis en raad het exacte jaar en de locatie. Daag vrienden uit, beklim de ranglijst en bewijs je geschiedeniskennis.",
     "logo_alt": "Guess-History",
+    "rank_label": "Rang",
     "tagline": "Waar en wanneer gebeurde het?",
     "hero_description": "Test je kennis van geschiedenis. Bekijk echte events en raad het exacte jaar en de locatie. Daag je vrienden uit, beklim de ranglijst en bewijs dat je de geschiedenis kent.",
     "waitlist_prompt": "Sluit je aan bij de wachtlijst voor vroege toegang:",
@@ -613,6 +619,22 @@
     "waitlist_err_invalid_email": "Voer een geldig e-mailadres in.",
     "waitlist_err_generic": "Er ging iets mis. Probeer opnieuw.",
     "waitlist_err_network": "Netwerkfout. Probeer opnieuw."
+  },
+  "rank": {
+    "rank_label": "Rang",
+    "next_label": "Volgende",
+    "rank_1": "Zwerver",
+    "rank_2": "Padvinder",
+    "rank_3": "Pionier",
+    "rank_4": "Cartograaf",
+    "rank_5": "Ontdekkingsreiziger",
+    "rank_6": "Navigatie",
+    "rank_7": "Kroniekschrijver",
+    "rank_8": "Historicus",
+    "rank_9": "Geleerde",
+    "rank_10": "Koninklijke Cartograaf",
+    "next_rank": "{xp} XP tot {title}",
+    "max_rank": "Maximale rang bereikt"
   },
   "welcome": {
     "title": "Welkom bij Guess-History!",

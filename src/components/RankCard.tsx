@@ -55,11 +55,11 @@ export default function RankCard({ totalXp, open, inline = false, bare = false }
           <span className={styles.rankXp}>{Math.floor(xp).toLocaleString()}<i>XP</i></span>
         </div>
         <div className={styles.rankNextLine}>
-          <span className={styles.rankNextLabel}>Next</span>
+          <span className={styles.rankNextLabel}>{t('next_label')}</span>
           <span className={styles.rankNextTitle}>
             {info.isMaxRank
               ? t('max_rank')
-              : `${info.xpToNext?.toLocaleString() ?? '0'} XP to ${nextTitle}`}
+              : t('next_rank', { xp: info.xpToNext?.toLocaleString() ?? '0', title: nextTitle })}
           </span>
         </div>
         <div className={styles.rankBarMain}>

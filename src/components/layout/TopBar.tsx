@@ -29,7 +29,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
       </button>
       <div className={styles.xpPillCol}>
         <div className={styles.xpPill}>
-          <span className={styles.xpPillBadge}>Rank {tier}</span>
+          <span className={styles.xpPillBadge}>{t('rank_label')} {tier}</span>
           <span className={styles.xpPillAccuracy} style={(() => {
             const n = Number(accuracy)
             if (!Number.isFinite(n)) return undefined

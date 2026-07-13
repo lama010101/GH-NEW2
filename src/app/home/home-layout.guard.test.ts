@@ -37,9 +37,11 @@ describe("home page — horizontal card layout guard (FEAT-HOME-UI-PROTO-MERGE)"
       expect(pageSrc).not.toContain("useRankOpen");
     });
 
-    it("imports MODE_CARD_TITLE and MODE_CARD_SUBTITLE from home/types", () => {
-      expect(pageSrc).toContain("MODE_CARD_TITLE");
-      expect(pageSrc).toContain("MODE_CARD_SUBTITLE");
+    it("uses i18n for mode card titles and descriptions (not hardcoded constants)", () => {
+      expect(pageSrc).toContain("t(`home.${mode}_name`)");
+      expect(pageSrc).toContain("t(`home.${mode}_desc`)");
+      expect(pageSrc).not.toContain("MODE_CARD_TITLE");
+      expect(pageSrc).not.toContain("MODE_CARD_SUBTITLE");
     });
 
     it("renders RankCard inline (scrolls with page, not fixed)", () => {

@@ -36,15 +36,6 @@ function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) 
   return t('notifications.d_ago', { n: Math.floor(diff / 86400000) })
 }
 
-function timeAgoFull(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  if (diff < 60000) return 'just now'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)} min ago`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)} hour${Math.floor(diff / 3600000) !== 1 ? 's' : ''} ago`
-  const days = Math.floor(diff / 86400000)
-  return `${days} day${days !== 1 ? 's' : ''} ago`
-}
-
 function PlayIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -315,7 +306,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     type="button"
                     onClick={() => handleAccept(invite.id, invite.game_id)}
                     className={cpStyles.goBtn}
-                    aria-label="Play"
+                    aria-label={t('home.compete_play_aria')}
                   >
                     <PlayIcon />
                   </button>
@@ -323,7 +314,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleDecline(invite.id) }}
                     className={cpStyles.deleteBtn}
-                    aria-label="Delete"
+                    aria-label={t('home.compete_delete_aria')}
                   >
                     ✕
                   </button>
@@ -349,7 +340,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     <img src={game.opponent_avatar} alt="" className={cpStyles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
                   ) : null}
                   <div className={cpStyles.avatarFallback} style={{ display: game.opponent_avatar ? "none" : "flex" }}>
-                    {(game.opponent_name ?? '??').slice(0, 2).toUpperCase()}
+                    {(game.opponent_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}
                   </div>
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>{game.opponent_name}</span>
@@ -367,7 +358,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     type="button"
                     onClick={() => onLobby(game.game_id)}
                     className={cpStyles.goBtn}
-                    aria-label="Play"
+                    aria-label={t('home.compete_play_aria')}
                   >
                     <PlayIcon />
                   </button>
@@ -393,7 +384,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                     <img src={game.opponent_avatar} alt="" className={cpStyles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
                   ) : null}
                   <div className={cpStyles.avatarFallback} style={{ display: game.opponent_avatar ? "none" : "flex" }}>
-                    {(game.opponent_name ?? '??').slice(0, 2).toUpperCase()}
+                    {(game.opponent_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}
                   </div>
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>{game.opponent_name}</span>
@@ -404,7 +395,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                         </span>
                       )}
                       {' '}
-                      {game.completed_at ? timeAgoFull(game.completed_at) : ''}
+                      {game.completed_at ? timeAgo(game.completed_at, t) : ''}
                     </span>
                   </div>
                   <div className={cpStyles.scoreWrap}>
@@ -437,7 +428,7 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
                   <button
                     type="button"
                     className={cpStyles.deleteBtn}
-                    aria-label="Delete"
+                    aria-label={t('home.compete_delete_aria')}
                   >
                     ✕
                   </button>

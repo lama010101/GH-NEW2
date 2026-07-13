@@ -175,7 +175,10 @@
     "compete_desc": "フレンドと対戦。\nリアルタイムまたはターン制。",
     "daily_desc": "毎日新しい競技、\n全員に同じイベント。",
     "levelup_desc": "段階的難易度\nランキングを登る。",
-    "practice_desc": "ソロでスキル向上\n無制限のカスタムゲーム。"
+    "practice_desc": "ソロでスキル向上\n無制限のカスタムゲーム。",
+    "play_mode_aria": "{mode}をプレイ",
+    "compete_play_aria": "プレイ",
+    "compete_delete_aria": "削除"
   },
   "common": {
     "next_round": "次のラウンド",
@@ -474,7 +477,25 @@
     "tier_year_label": "年",
     "map_error_title": "マップの表示に失敗しました",
     "map_error_details": "詳細はコンソールを確認してください",
-    "badge_alt": "{tier} {dimension} バッジ"
+    "badge_alt": "{tier} {dimension} バッジ",
+    "clear_session_restart": "セッションをクリアして再起動",
+    "taking_too_long": "時間がかかりすぎていますか？"
+  },
+  "rank": {
+    "rank_label": "ランク",
+    "next_label": "次",
+    "rank_1": "放浪者",
+    "rank_2": "道しるべ",
+    "rank_3": "開拓者",
+    "rank_4": "地図作成者",
+    "rank_5": "探検家",
+    "rank_6": "航海士",
+    "rank_7": "年代記編者",
+    "rank_8": "歴史家",
+    "rank_9": "学者",
+    "rank_10": "ロイヤル地図作成者",
+    "next_rank": "{title}まで{xp} XP",
+    "max_rank": "最大ランクに到達"
   },
   "auth": {
     "sign_in": "ログイン",
@@ -602,6 +623,7 @@
     "meta_title": "Guess-History — 歴史の知識を試そう",
     "meta_description": "歴史推測ゲーム。実際の歴史イベントを見て、正確な年と場所を当てよう。フレンドに挑戦し、ランキングを登り、歴史の知識を証明。",
     "logo_alt": "Guess-History",
+    "rank_label": "ランク",
     "tagline": "どこで、いつ起きた？",
     "hero_description": "歴史の知識を試しましょう。実際のイベントを見て、正確な年と場所を当てよう。フレンドに挑戦し、ランキングを登りましょう。",
     "waitlist_prompt": "早期アクセスのウェイトリストに参加：",
