@@ -6,6 +6,7 @@ import { getMessages, getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { defaultLocale, LOCALE_COOKIE, locales, rtlLocales, type Locale } from '@/i18n/config';
 import { THEME_COOKIE, type Theme, resolveTheme } from '@/lib/theme';
+import { HapticFeedback } from '@/components/HapticFeedback';
 import "./globals.css";
 
 /**
@@ -79,6 +80,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
+        <HapticFeedback />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </body>
     </html>
