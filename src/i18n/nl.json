@@ -478,6 +478,12 @@
     "map_error_title": "Kaart kon niet worden weergegeven",
     "map_error_details": "Controleer de console voor details",
     "badge_alt": "Badge {tier} {dimension}",
+    "badge_tier_gold": "Perfect",
+    "badge_tier_silver": "Geweldig",
+    "badge_tier_bronze": "Goed",
+    "badge_dim_location": "Locatie",
+    "badge_dim_year": "Jaar",
+    "badge_dim_combo": "Combo",
     "clear_session_restart": "Sessie wissen en herstarten",
     "taking_too_long": "Duurt het te lang?"
   },

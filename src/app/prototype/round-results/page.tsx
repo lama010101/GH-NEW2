@@ -210,6 +210,48 @@ function BadgeWithEffect({
   );
 }
 
+// Full-screen badge popup — shows the badge label text (e.g. "Great Location!")
+// in large readable type with the corresponding webp image underneath.
+// No background. Auto-dismisses after 1.5s. Sequential via delay prop.
+function BadgePopup({
+  dimension,
+  tier,
+  triggered,
+  delay = 0,
+}: {
+  dimension: "combo" | "location" | "year";
+  tier: "gold" | "silver" | "bronze";
+  triggered: boolean;
+  delay?: number;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!triggered) return;
+    const showTimer = setTimeout(() => setVisible(true), delay);
+    const hideTimer = setTimeout(() => setVisible(false), delay + 1500);
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [triggered, delay]);
+
+  if (!visible) return null;
+
+  const tierLabel = tier === "gold" ? "Perfect" : tier === "silver" ? "Amazing" : "Great";
+  const dimLabel = dimension === "location" ? "Location" : dimension === "year" ? "Year" : "Combo";
+  const text = `${tierLabel} ${dimLabel}!`;
+  const imagePath = `/badges/${dimension}_${tier}.webp`;
+
+  return (
+    <div className={styles.badgePopup}>
+      <div className={styles.badgePopupText}>{text}</div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={imagePath} alt={text} className={styles.badgePopupImg} />
+    </div>
+  );
+}
+
 // WHEN timeline (mock) — ticks + correct marker + player markers.
 function WhenTimeline({ rows }: { rows: Result[] }) {
   const years = [CORRECT_YEAR, ...rows.map((r) => r.guessYear)];
@@ -591,6 +633,32 @@ export default function RoundResultsPrototypePage() {
           <button className={styles.nextBtn}>Next →</button>
         </div>
       </div>
+
+      {/* ── Badge popups (sequential, 1.5s each, no background) ── */}
+      {me.badge && (
+        <BadgePopup
+          dimension="combo"
+          tier={me.badge.tier}
+          triggered={badgesRevealed}
+          delay={0}
+        />
+      )}
+      {me.whereBadges && (
+        <BadgePopup
+          dimension="location"
+          tier={me.whereBadges.tier}
+          triggered={badgesRevealed}
+          delay={1500}
+        />
+      )}
+      {me.whenBadges && (
+        <BadgePopup
+          dimension="year"
+          tier={me.whenBadges.tier}
+          triggered={badgesRevealed}
+          delay={3000}
+        />
+      )}
     </main>
     </>
   );

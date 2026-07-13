@@ -478,6 +478,12 @@
     "map_error_title": "Rendering della mappa non riuscito",
     "map_error_details": "Controlla la console per i dettagli",
     "badge_alt": "Medaglia {tier} {dimension}",
+    "badge_tier_gold": "Perfetto",
+    "badge_tier_silver": "Incredibile",
+    "badge_tier_bronze": "Ottimo",
+    "badge_dim_location": "Posizione",
+    "badge_dim_year": "Anno",
+    "badge_dim_combo": "Combo",
     "clear_session_restart": "Cancella sessione e riavvia",
     "taking_too_long": "Ci sta mettendo troppo?"
   },

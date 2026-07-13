@@ -478,6 +478,12 @@
     "map_error_title": "Karte konnte nicht gerendert werden",
     "map_error_details": "Siehe Konsole für Details",
     "badge_alt": "Abzeichen {tier} {dimension}",
+    "badge_tier_gold": "Perfekt",
+    "badge_tier_silver": "Erstaunlich",
+    "badge_tier_bronze": "Großartig",
+    "badge_dim_location": "Ort",
+    "badge_dim_year": "Jahr",
+    "badge_dim_combo": "Combo",
     "clear_session_restart": "Sitzung löschen und neu starten",
     "taking_too_long": "Dauert es zu lange?"
   },

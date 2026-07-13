@@ -478,6 +478,12 @@
     "map_error_title": "地图渲染失败",
     "map_error_details": "查看控制台了解详情",
     "badge_alt": "{tier} {dimension} 徽章",
+    "badge_tier_gold": "完美",
+    "badge_tier_silver": "惊人",
+    "badge_tier_bronze": "优秀",
+    "badge_dim_location": "位置",
+    "badge_dim_year": "年份",
+    "badge_dim_combo": "连击",
     "clear_session_restart": "清除会话并重启",
     "taking_too_long": "耗时太长？"
   },

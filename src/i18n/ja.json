@@ -478,6 +478,12 @@
     "map_error_title": "マップの表示に失敗しました",
     "map_error_details": "詳細はコンソールを確認してください",
     "badge_alt": "{tier} {dimension} バッジ",
+    "badge_tier_gold": "パーフェクト",
+    "badge_tier_silver": "アメイジング",
+    "badge_tier_bronze": "グレート",
+    "badge_dim_location": "位置",
+    "badge_dim_year": "年",
+    "badge_dim_combo": "コンボ",
     "clear_session_restart": "セッションをクリアして再起動",
     "taking_too_long": "時間がかかりすぎていますか？"
   },

@@ -478,6 +478,12 @@
     "map_error_title": "فشل عرض الخريطة",
     "map_error_details": "تحقق من وحدة التحكم للتفاصيل",
     "badge_alt": "وسام {tier} {dimension}",
+    "badge_tier_gold": "مثالي",
+    "badge_tier_silver": "مذهل",
+    "badge_tier_bronze": "رائع",
+    "badge_dim_location": "الموقع",
+    "badge_dim_year": "السنة",
+    "badge_dim_combo": "كومبو",
     "clear_session_restart": "مسح الجلسة وإعادة التشغيل",
     "taking_too_long": "هل يستغرق وقتًا طويلاً؟"
   },

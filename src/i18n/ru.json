@@ -478,6 +478,12 @@
     "map_error_title": "Ошибка отрисовки карты",
     "map_error_details": "Подробности см. в консоли",
     "badge_alt": "Значок {tier} {dimension}",
+    "badge_tier_gold": "Идеально",
+    "badge_tier_silver": "Потрясающе",
+    "badge_tier_bronze": "Отлично",
+    "badge_dim_location": "Локация",
+    "badge_dim_year": "Год",
+    "badge_dim_combo": "Комбо",
     "clear_session_restart": "Очистить сессию и перезапустить",
     "taking_too_long": "Слишком долго?"
   },

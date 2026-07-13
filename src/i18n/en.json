@@ -484,7 +484,13 @@
     "tier_year_label": "YEAR",
     "map_error_title": "Map failed to render",
     "map_error_details": "Check console for details",
-    "badge_alt": "{tier} {dimension} badge"
+    "badge_alt": "{tier} {dimension} badge",
+    "badge_tier_gold": "Perfect",
+    "badge_tier_silver": "Amazing",
+    "badge_tier_bronze": "Great",
+    "badge_dim_location": "Location",
+    "badge_dim_year": "Year",
+    "badge_dim_combo": "Combo"
   },
   "auth": {
     "sign_in": "Sign In",
