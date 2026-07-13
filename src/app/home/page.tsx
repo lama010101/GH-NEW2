@@ -157,7 +157,6 @@ function HomePageInner() {
 
   const handlePracticeStart = (settings: PracticeModalSettings) => {
     savePracticeSettings(settings)
-    setPracticeModalOpen(false)
     router.push('/practice')
   }
 
