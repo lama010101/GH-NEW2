@@ -189,8 +189,11 @@ export default function WhereCard({
             </span>
           </div>
           {(() => {
-            const myRank = roundResults?.find(r => r.playerId === playerId)?.rank ?? null;
-            return myRank != null ? (
+            const whereSorted = (roundResults ?? [])
+              .slice()
+              .sort((a, b) => b.locationScore - a.locationScore);
+            const myRank = whereSorted.findIndex(r => r.playerId === playerId) + 1;
+            return myRank > 0 ? (
               <span className={styles.expandRank}>
                 #{myRank}
               </span>
@@ -201,7 +204,7 @@ export default function WhereCard({
           <div className={styles.lbList}>
             {(roundResults ?? [])
               .slice()
-              .sort((a, b) => a.rank - b.rank)
+              .sort((a, b) => b.locationScore - a.locationScore)
               .map((r, idx) => {
                 const distanceKm = r.guessLat != null && r.guessLng != null && correctLat != null && correctLng != null
                   ? haversineKm(r.guessLat, r.guessLng, correctLat, correctLng)
@@ -215,7 +218,7 @@ export default function WhereCard({
                     borderBottom: idx < (roundResults?.length ?? 0) - 1 ? "1px solid rgba(51,51,51,1)" : "none",
                   }}>
                     <span className={styles.lbRank}>
-                      {r.rank ?? "—"}
+                      {idx + 1}
                     </span>
                     <PlayerAvatar
                       avatarUrl={snapshotPlayers.find(p => p.playerId === r.playerId)?.avatarUrl ?? null}
