@@ -1,7 +1,6 @@
 // ============================================================================
 // PartyKit Server — DO-Authoritative Real-Time System
 // TASK: MP-DO-AUTHORITATIVE-006
-// MP-GUARD-SYNC-REGRESSION-001-VERIFY: no-op comment for positive hook trigger test
 //
 // ARCHITECTURE (strict):
 //   DB = canonical truth (persistence, replay)
