@@ -1,5 +1,6 @@
 import type { SessionPlayer } from "./types";
 
+// KC-009 gate live-fire test
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getUsernameGradientStyle(_playerId: string): React.CSSProperties {
   return {
