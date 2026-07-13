@@ -3,6 +3,7 @@
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import dynamic from "next/dynamic";
 import { useState, useRef, useEffect, useCallback, useTransition, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from 'next-intl';
 import { YearPicker } from "@/components/YearPicker";
 import NotificationBell from "@/components/NotificationBell";
@@ -690,7 +691,11 @@ export default function RoundActiveSection({
         </div>
       </div>
 
-      {/* TIMER */}
+      {/* TIMER — portaled to document.body so it escapes the .section stacking
+          context and paints above ALL modals (settings 10000, hints 1000,
+          submit overlay 9000, fullscreen 9999). z-index: 10001 in CSS.
+          When the WHERE sheet is open, reposition to top-left below the sheet
+          header so it does not cover the guessed-location marker. */}
       {timeRemaining !== null && snapshot.config?.roundTimerSec !== 0 && (() => {
         const totalSec: number = (snapshot.config as { roundTimerSec?: number }).roundTimerSec || 120;
         const radius = 26;
@@ -699,8 +704,11 @@ export default function RoundActiveSection({
         const strokeDashoffset = circumference * (1 - progress);
         const isUrgent = timeRemaining <= 10;
         const ringColor = isUrgent ? "#ef4444" : timeRemaining <= 30 ? "#f97316" : "#22c55e";
-        return (
-          <div className={`${styles.timerWrapper} ${isUrgent ? styles.timerUrgent : ""}`}>
+        const posClass = activePanel === 'where'
+          ? styles.timerWrapperWhereSheet
+          : styles.timerWrapperCentered;
+        return createPortal(
+          <div className={`${styles.timerWrapper} ${posClass} ${isUrgent ? styles.timerUrgent : ""}`}>
             <svg
               width="72"
               height="72"
@@ -727,7 +735,8 @@ export default function RoundActiveSection({
             <span className={`${styles.timerText} ${isUrgent ? styles.timerTextUrgent : ""}`}>
               {formatTime(timeRemaining)}
             </span>
-          </div>
+          </div>,
+          document.body
         );
       })()}
 
