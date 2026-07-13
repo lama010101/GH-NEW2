@@ -175,7 +175,10 @@
     "compete_desc": "Juega contra tus amigos.\nTiempo real o por turnos.",
     "daily_desc": "Nueva competición cada día,\nLos mismos eventos para todos.",
     "levelup_desc": "Dificultad progresiva\nSube en la clasificación.",
-    "practice_desc": "Mejora tus habilidades en solitario\nPartidas personalizadas ilimitadas."
+    "practice_desc": "Mejora tus habilidades en solitario\nPartidas personalizadas ilimitadas.",
+    "play_mode_aria": "Jugar a {mode}",
+    "compete_play_aria": "Jugar",
+    "compete_delete_aria": "Eliminar"
   },
   "common": {
     "next_round": "Siguiente ronda",
@@ -474,7 +477,9 @@
     "tier_year_label": "AÑO",
     "map_error_title": "Error al renderizar el mapa",
     "map_error_details": "Consulta la consola para más detalles",
-    "badge_alt": "Insignia {tier} {dimension}"
+    "badge_alt": "Insignia {tier} {dimension}",
+    "clear_session_restart": "Borrar sesión y reiniciar",
+    "taking_too_long": "¿Tardando demasiado?"
   },
   "auth": {
     "sign_in": "Iniciar sesión",
@@ -598,10 +603,27 @@
     "join_game": "Unirse a partida",
     "someone": "Alguien"
   },
+  "rank": {
+    "rank_label": "Rango",
+    "next_label": "Siguiente",
+    "rank_1": "Vagabundo",
+    "rank_2": "Buscador",
+    "rank_3": "Pionero",
+    "rank_4": "Cartógrafo",
+    "rank_5": "Explorador",
+    "rank_6": "Navegante",
+    "rank_7": "Cronista",
+    "rank_8": "Historiador",
+    "rank_9": "Erudito",
+    "rank_10": "Cartógrafo Real",
+    "next_rank": "{xp} XP hasta {title}",
+    "max_rank": "Rango máximo alcanzado"
+  },
   "landing": {
     "meta_title": "Guess-History — Pon a prueba tu conocimiento de cuándo y dónde",
     "meta_description": "Un juego de adivinanza histórica. Ve eventos reales y adivina el año y la ubicación exactos. Desafía amigos, sube en la clasificación y demuestra tus conocimientos.",
     "logo_alt": "Guess-History",
+    "rank_label": "Rango",
     "tagline": "¿Dónde y cuándo ocurrió?",
     "hero_description": "Pon a prueba tu conocimiento de la historia. Ve eventos reales y adivina el año y la ubicación exactos. Desafía amigos, sube en la clasificación y demuestra que conoces la historia.",
     "waitlist_prompt": "Únete a la lista de espera para acceso anticipado:",

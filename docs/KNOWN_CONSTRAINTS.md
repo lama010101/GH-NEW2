@@ -209,3 +209,56 @@ is too slow to run pre-push; manual testing is too easy to skip.
   # Must return a match. If empty = partykit liveness check removed = FAIL.
 
 ---
+
+### [KC-010] Playwright actionability bypass — CSS glow + sheet backdrop (golden-path spec)
+**Affected files:** `scripts/test/playwright/helpers/compete-ui.ts`,
+`scripts/test/playwright/specs/sync-compete-golden-path.spec.ts`
+
+**Constraint:**
+The golden-path spec uses two techniques that bypass Playwright's default
+actionability checks. Both are deliberate workarounds for known UI issues,
+not shortcuts to make the test pass. They create a coverage gap that MUST
+be understood by anyone editing the spec or the components it exercises.
+
+1. **`force: true` on WHEN button click** — The WHEN button has a CSS glow
+   animation (`whenBtnGlow` in `RoundActiveSection.module.css`) that makes
+   Playwright's actionability check consider the element unstable. The
+   `force: true` flag bypasses this check. If the glow animation is removed
+   or changed, the `force: true` should also be removed so Playwright can
+   verify the button is actually clickable.
+
+2. **`page.evaluate(() => element.click())` for sheet transitions** — The
+   WHERE/WHEN bottom sheets have a backdrop (`sheetBackdrop`) that intercepts
+   Playwright's pointer-based clicks. The helper uses `page.evaluate` to fire
+   `element.click()` directly on the DOM element, bypassing the backdrop.
+   This is necessary because Playwright's click simulates a real pointer event
+   that hits the topmost element at the coordinates (the backdrop), not the
+   button behind it.
+
+**Coverage gap (CRITICAL):**
+DOM-level clicks via `page.evaluate(() => element.click())` bypass
+Playwright's pointer-interception checks. This means:
+- If a backdrop regression makes buttons unclickable for REAL users (pointer
+  events blocked by the backdrop), the golden-path spec will NOT catch it —
+  the DOM click fires the React onClick handler directly, ignoring whether
+  the element is actually reachable by a real pointer.
+- The spec verifies that the React handlers fire and state transitions
+  correctly, but does NOT verify that a real user can physically click the
+  buttons through the UI.
+- This gap is accepted for the golden-path gate because the alternative
+  (making the spec fully pointer-accurate) would require fixing the backdrop
+  interception issue in the component CSS, which is a separate task. A
+  pointer-accurate regression test for backdrop interception should be added
+  as a separate spec if backdrop regressions become recurrent.
+
+**Regression guard (include in ALL prompts touching compete-ui.ts):**
+  grep -n "force: true" scripts/test/playwright/helpers/compete-ui.ts
+  # Must return at least 2 matches (WHEN button + map click). If zero = the
+  # force bypass was removed without fixing the underlying actionability issue.
+
+  grep -n "page.evaluate" scripts/test/playwright/helpers/compete-ui.ts
+  # Must return at least 4 matches (close WHEN backdrop, open WHERE, close
+  # WHERE backdrop, submit). If zero = DOM-click bypass removed without fixing
+  # backdrop interception.
+
+---

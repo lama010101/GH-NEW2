@@ -8,7 +8,7 @@ import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
-import { MODE_CARD_GRADIENT, MODE_CARD_TITLE, MODE_CARD_SUBTITLE, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
+import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
 import { loadPracticeSettings, savePracticeSettings } from '@/components/practice/practiceSettings'
 import styles from './home.module.css'
@@ -332,8 +332,8 @@ function ModeCard({
 }) {
   const t = useTranslations()
   const gradient = MODE_CARD_GRADIENT[mode]
-  const title = MODE_CARD_TITLE[mode] ?? t(`home.${mode}_name`)
-  const desc = MODE_CARD_SUBTITLE[mode] ?? t(`home.${mode}_desc`)
+  const title = t(`home.${mode}_name`)
+  const desc = t(`home.${mode}_desc`)
   const isCompete = mode === 'compete'
 
   const getIconSrc = () => {
@@ -419,7 +419,7 @@ function ModeCard({
             type="button"
             className={styles.playPill}
             onClick={handlePlay}
-            aria-label={`Play ${title}`}
+            aria-label={t('home.play_mode_aria', { mode: title })}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M8 5v14l11-7z" fill="currentColor" />

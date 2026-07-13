@@ -175,7 +175,10 @@
     "compete_desc": "Jouez contre vos amis.\nTemps réel ou par tour.",
     "daily_desc": "Une nouvelle compétition chaque jour,\nLes mêmes événements pour tous.",
     "levelup_desc": "Difficulté progressive\nGrimpez au classement.",
-    "practice_desc": "Perfectionnez-vous en solo\nParties personnalisées illimitées."
+    "practice_desc": "Perfectionnez-vous en solo\nParties personnalisées illimitées.",
+    "play_mode_aria": "Jouer à {mode}",
+    "compete_play_aria": "Jouer",
+    "compete_delete_aria": "Supprimer"
   },
   "common": {
     "next_round": "Manche suivante",
@@ -605,6 +608,7 @@
     "meta_title": "Guess-History — Testez vos connaissances sur le quand et le où",
     "meta_description": "Un jeu d'histoire. Découvrez de vrais événements historiques et devinez l'année et le lieu exacts. Défiez vos amis, grimpez au classement et prouvez vos connaissances en histoire.",
     "logo_alt": "Guess-History",
+    "rank_label": "Rang",
     "tagline": "Où et quand cela s'est-il passé ?",
     "hero_description": "Testez vos connaissances en histoire. Découvrez de vrais événements et devinez l'année et le lieu exacts. Défiez vos amis, grimpez au classement et prouvez que vous maîtrisez l'histoire.",
     "waitlist_prompt": "Inscrivez-vous sur la liste d'attente pour un accès anticipé :",
@@ -624,5 +628,21 @@
     "your_username": "Votre nom d'utilisateur",
     "lets_play": "C'est parti !",
     "skip_for_now": "Passer pour l'instant"
+  },
+  "rank": {
+    "rank_label": "Rang",
+    "next_label": "Suivant",
+    "rank_1": "Vagabond",
+    "rank_2": "Traqueur",
+    "rank_3": "Pionnier",
+    "rank_4": "Cartographe",
+    "rank_5": "Explorateur",
+    "rank_6": "Navigateur",
+    "rank_7": "Chroniqueur",
+    "rank_8": "Historien",
+    "rank_9": "Érudit",
+    "rank_10": "Cartographe Royal",
+    "next_rank": "{xp} XP jusqu'à {title}",
+    "max_rank": "Rang maximum atteint"
   }
 }

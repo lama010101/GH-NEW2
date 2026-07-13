@@ -175,7 +175,10 @@
     "compete_desc": "Gioca contro i tuoi amici.\nTempo reale o a turni.",
     "daily_desc": "Una nuova competizione ogni giorno,\nGli stessi eventi per tutti.",
     "levelup_desc": "Difficoltà progressiva\nScala la classifica.",
-    "practice_desc": "Affina le abilità da solo\nPartite personalizzate illimitate."
+    "practice_desc": "Affina le abilità da solo\nPartite personalizzate illimitate.",
+    "play_mode_aria": "Gioca a {mode}",
+    "compete_play_aria": "Gioca",
+    "compete_delete_aria": "Elimina"
   },
   "common": {
     "next_round": "Round successivo",
@@ -474,7 +477,9 @@
     "tier_year_label": "ANNO",
     "map_error_title": "Rendering della mappa non riuscito",
     "map_error_details": "Controlla la console per i dettagli",
-    "badge_alt": "Medaglia {tier} {dimension}"
+    "badge_alt": "Medaglia {tier} {dimension}",
+    "clear_session_restart": "Cancella sessione e riavvia",
+    "taking_too_long": "Ci sta mettendo troppo?"
   },
   "auth": {
     "sign_in": "Accedi",
@@ -602,6 +607,7 @@
     "meta_title": "Guess-History — Metti alla prova le tue conoscenze su quando e dove",
     "meta_description": "Un gioco storico a ipotesi. Osserva eventi reali della storia e indovina l'anno e il luogo esatti. Sfida gli amici, scala la classifica e dimostra le tue competenze storiche.",
     "logo_alt": "Guess-History",
+    "rank_label": "Rango",
     "tagline": "Dove e quando è successo?",
     "hero_description": "Metti alla prova le tue conoscenze di storia. Osserva eventi reali e indovina l'anno e il luogo esatti. Sfida i tuoi amici, scala la classifica e dimostra di conoscere la storia.",
     "waitlist_prompt": "Unisciti alla lista d'attesa per l'accesso anticipato:",
@@ -613,6 +619,22 @@
     "waitlist_err_invalid_email": "Inserisci un indirizzo email valido.",
     "waitlist_err_generic": "Qualcosa è andato storto. Riprova.",
     "waitlist_err_network": "Errore di rete. Riprova."
+  },
+  "rank": {
+    "rank_label": "Rango",
+    "next_label": "Prossimo",
+    "rank_1": "Vagabondo",
+    "rank_2": "Esploratore",
+    "rank_3": "Pioniere",
+    "rank_4": "Cartografo",
+    "rank_5": "Esploratore",
+    "rank_6": "Navigatore",
+    "rank_7": "Cronista",
+    "rank_8": "Storico",
+    "rank_9": "Studioso",
+    "rank_10": "Cartografo Reale",
+    "next_rank": "{xp} XP fino a {title}",
+    "max_rank": "Rango massimo raggiunto"
   },
   "welcome": {
     "title": "Benvenuto su Guess-History!",

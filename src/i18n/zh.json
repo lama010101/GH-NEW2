@@ -175,7 +175,10 @@
     "compete_desc": "与好友对战。\n实时或回合制。",
     "daily_desc": "每天新竞赛，\n所有人相同的事件。",
     "levelup_desc": "渐进式难度\n攀登排行榜。",
-    "practice_desc": "独自练习提升技能\n无限自定义游戏。"
+    "practice_desc": "独自练习提升技能\n无限自定义游戏。",
+    "play_mode_aria": "播放 {mode}",
+    "compete_play_aria": "播放",
+    "compete_delete_aria": "删除"
   },
   "common": {
     "next_round": "下一回合",
@@ -474,7 +477,9 @@
     "tier_year_label": "年",
     "map_error_title": "地图渲染失败",
     "map_error_details": "查看控制台了解详情",
-    "badge_alt": "{tier} {dimension} 徽章"
+    "badge_alt": "{tier} {dimension} 徽章",
+    "clear_session_restart": "清除会话并重启",
+    "taking_too_long": "耗时太长？"
   },
   "auth": {
     "sign_in": "登录",
@@ -602,6 +607,7 @@
     "meta_title": "Guess-History — 测试你的历史知识",
     "meta_description": "一款历史猜谜游戏。观看真实历史事件，猜出确切的年份和地点。挑战好友，攀登排行榜，证明你的历史实力。",
     "logo_alt": "Guess-History",
+    "rank_label": "段位",
     "tagline": "它发生在哪里，何时？",
     "hero_description": "测试你的历史知识。观看真实事件，猜出确切的年份和地点。挑战好友，攀登排行榜，证明你了解历史。",
     "waitlist_prompt": "加入候补名单获取抢先体验：",
@@ -621,5 +627,21 @@
     "your_username": "你的用户名",
     "lets_play": "开始游戏！",
     "skip_for_now": "暂时跳过"
+  },
+  "rank": {
+    "rank_label": "段位",
+    "next_label": "下一个",
+    "rank_1": "漫游者",
+    "rank_2": "寻路者",
+    "rank_3": "开拓者",
+    "rank_4": "制图师",
+    "rank_5": "探索者",
+    "rank_6": "领航员",
+    "rank_7": "编年者",
+    "rank_8": "历史学家",
+    "rank_9": "学者",
+    "rank_10": "皇家制图师",
+    "next_rank": "{xp} XP 到 {title}",
+    "max_rank": "已达到最高段位"
   }
 }

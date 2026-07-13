@@ -175,7 +175,10 @@
     "compete_desc": "Spiele gegen deine Freunde.\nEchtzeit oder rundenbasiert.",
     "daily_desc": "Jeden Tag ein neuer Wettbewerb,\nGleiche Ereignisse für alle.",
     "levelup_desc": "Progressive Schwierigkeit\nSteige in der Bestenliste auf.",
-    "practice_desc": "Verbessere deine Fähigkeiten solo\nUnbegrenzte individuelle Spiele."
+    "practice_desc": "Verbessere deine Fähigkeiten solo\nUnbegrenzte individuelle Spiele.",
+    "play_mode_aria": "{mode} spielen",
+    "compete_play_aria": "Spielen",
+    "compete_delete_aria": "Löschen"
   },
   "common": {
     "next_round": "Nächste Runde",
@@ -474,7 +477,9 @@
     "tier_year_label": "JAHR",
     "map_error_title": "Karte konnte nicht gerendert werden",
     "map_error_details": "Siehe Konsole für Details",
-    "badge_alt": "Abzeichen {tier} {dimension}"
+    "badge_alt": "Abzeichen {tier} {dimension}",
+    "clear_session_restart": "Sitzung löschen und neu starten",
+    "taking_too_long": "Dauert es zu lange?"
   },
   "auth": {
     "sign_in": "Anmelden",
@@ -598,10 +603,27 @@
     "join_game": "Spiel beitreten",
     "someone": "Jemand"
   },
+  "rank": {
+    "rank_label": "Rang",
+    "next_label": "Weiter",
+    "rank_1": "Wanderer",
+    "rank_2": "Pfadfinder",
+    "rank_3": "Trailblazer",
+    "rank_4": "Kartograf",
+    "rank_5": "Entdecker",
+    "rank_6": "Navigator",
+    "rank_7": "Chronist",
+    "rank_8": "Historiker",
+    "rank_9": "Gelehrter",
+    "rank_10": "Königlicher Kartograf",
+    "next_rank": "{xp} XP bis {title}",
+    "max_rank": "Maximaler Rang erreicht"
+  },
   "landing": {
     "meta_title": "Guess-History — Teste dein Wissen über Wann und Wo",
     "meta_description": "Ein Geschichts-Ratespiel. Sieh echte historische Ereignisse und rate das genaue Jahr und den Ort. Fordere Freunde heraus, steige in der Bestenliste auf und beweise dein Geschichtswissen.",
     "logo_alt": "Guess-History",
+    "rank_label": "Rang",
     "tagline": "Wo und wann ist es passiert?",
     "hero_description": "Teste dein Geschichtswissen. Sieh echte Ereignisse und rate das genaue Jahr und den Ort. Fordere Freunde heraus, steige in der Bestenliste auf und beweise, dass du Geschichte kennst.",
     "waitlist_prompt": "Tritt der Warteliste für frühen Zugang bei:",
