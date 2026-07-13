@@ -139,16 +139,29 @@
 /* ── Timer ── */
 
 .timerWrapper {
-  position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 42;
+  position: fixed;
+  z-index: 10001;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 72px;
   height: 72px;
+}
+
+/* Default centered position (top-center, above all modals via portal to body) */
+.timerWrapperCentered {
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* WHERE sheet open: move timer to top-left, below the sheet header,
+   so it does not cover the guessed-location marker in the center map.
+   Sheet header (location name + close button) is ~60px tall; 70px clears it. */
+.timerWrapperWhereSheet {
+  top: 70px;
+  left: 16px;
+  transform: none;
 }
 
 .timerSvg {
