@@ -109,7 +109,14 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
       if (mode === "signin") {
         result = await supabaseBrowser.auth.signInWithPassword({ email, password });
       } else {
-        result = await supabaseBrowser.auth.signUp({ email, password });
+        const next = searchParams.get("next") || "/home";
+        result = await supabaseBrowser.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          },
+        });
       }
 
       if (result.error) {
