@@ -44,17 +44,11 @@ function PlayIcon() {
   )
 }
 
-export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: {
+export function CompetePanel({ onLobby, playerId }: {
   onLobby: (gameId: string) => void
   playerId: string
-  displayName: string
-  onRequireAuth: () => void
 }) {
   const t = useTranslations()
-  const [showJoinInput, setShowJoinInput] = useState(false)
-  const [code, setCode] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string|null>(null)
   const [invites, setInvites] = useState<Array<{
     id: string
     game_id: string
@@ -145,63 +139,6 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, fetchInvites])
-
-  const handleCreate = async () => {
-    if (!playerId) { onRequireAuth(); return }
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/compete/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId,
-          displayName,
-          mode: 'sync',
-          roundTimerSec: 120,
-          totalRounds: 5,
-          yearMin: -400,
-          yearMax: 2025,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t('game.failed_create_session'))
-      onLobby(data.gameId)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t('game.error_creating_game'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleJoin = async () => {
-    if (!playerId) { onRequireAuth(); return }
-    if (!code) return
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/compete/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomCode: code }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t('game.room_not_found'))
-      onLobby(data.gameId)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t('game.room_not_found'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleJoinClick = () => {
-    if (!showJoinInput) {
-      setShowJoinInput(true)
-      return
-    }
-    handleJoin()
-  }
 
   const handleAccept = async (inviteId: string, gameId: string) => {
     await supabaseBrowser
@@ -438,40 +375,6 @@ export function CompetePanel({ onLobby, playerId, displayName, onRequireAuth }: 
           )
         )}
       </div>
-
-      {/* Join code input */}
-      {showJoinInput && (
-        <input
-          value={code}
-          onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-          placeholder={t('home.compete_code_placeholder')}
-          maxLength={6}
-          className={cpStyles.joinCodeInput}
-          autoFocus
-        />
-      )}
-
-      {/* CTA buttons */}
-      <div className={cpStyles.cardCtaRow}>
-        <button
-          onClick={handleJoinClick}
-          disabled={loading || (showJoinInput && !code)}
-          className={`${cpStyles.cardCtaBtn} ${cpStyles.cardCtaBtnOutline}`}
-        >
-          {showJoinInput ? <><PeopleIcon /> {t('home.compete_go')}</> : <><PeopleIcon /> {t('home.compete_join_game')}</>}
-        </button>
-        <button
-          onClick={handleCreate}
-          disabled={loading}
-          className={`${cpStyles.cardCtaBtn} ${cpStyles.cardCtaBtnBlue}`}
-        >
-          <PlusIcon /> {t('home.compete_create_game')}
-        </button>
-      </div>
-
-      {error && (
-        <div className={cpStyles.errorText}>{error}</div>
-      )}
     </>
   );
 }
@@ -483,24 +386,6 @@ function InviteIcon() {
       <path d="M2 20c0-4 3.6-7 8-7" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round"/>
       <line x1="19" y1="13" x2="19" y2="21" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round"/>
       <line x1="15" y1="17" x2="23" y2="17" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round"/>
-    </svg>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
-}
-
-function PeopleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
 }

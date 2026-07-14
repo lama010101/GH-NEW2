@@ -72,6 +72,10 @@
   padding: 12px 0;
   cursor: pointer;
   transition: opacity 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .startBtn:hover {
@@ -85,4 +89,19 @@
 .startBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@keyframes ghStartBtnSpin {
+  to { transform: rotate(360deg); }
+}
+
+.startBtnSpinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: ghStartBtnSpin 0.8s linear infinite;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
