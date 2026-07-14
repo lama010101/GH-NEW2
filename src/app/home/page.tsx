@@ -334,6 +334,37 @@ function ModeCard({
   const title = t(`home.${mode}_name`)
   const desc = t(`home.${mode}_desc`)
   const isCompete = mode === 'compete'
+  const [navigating, setNavigating] = useState(false)
+  const [competeLoading, setCompeteLoading] = useState(false)
+  const [competeError, setCompeteError] = useState<string | null>(null)
+
+  const handleCompeteCreate = async () => {
+    if (!playerId) { onRequireAuth(); return }
+    setCompeteLoading(true)
+    setCompeteError(null)
+    try {
+      const res = await fetch('/api/compete/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId,
+          displayName,
+          mode: 'sync',
+          roundTimerSec: 120,
+          totalRounds: 5,
+          yearMin: -400,
+          yearMax: 2025,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t('game.failed_create_session'))
+      onLobby(data.gameId)
+    } catch (e) {
+      setCompeteError(e instanceof Error ? e.message : t('game.error_creating_game'))
+    } finally {
+      setCompeteLoading(false)
+    }
+  }
 
   const getIconSrc = () => {
     switch (mode) {
@@ -346,8 +377,8 @@ function ModeCard({
   }
 
   const handlePlay = () => {
-    if (mode === 'daily') onNavigate('/daily')
-    else if (mode === 'levelup') onNavigate('/levelup')
+    if (mode === 'daily') { setNavigating(true); onNavigate('/daily') }
+    else if (mode === 'levelup') { setNavigating(true); onNavigate('/levelup') }
     else if (mode === 'practice') onPracticeStart()
   }
 
@@ -372,17 +403,38 @@ function ModeCard({
                 ))}
               </p>
             </div>
+
+            {/* CREATE pill button on the RIGHT (plus icon, same .playPill
+                style as the play pill in the other cards) */}
+            <button
+              type="button"
+              className={styles.playPill}
+              onClick={handleCompeteCreate}
+              disabled={competeLoading}
+              aria-label={t('home.play_mode_aria', { mode: title })}
+            >
+              {competeLoading ? (
+                <span className={styles.playPillSpinner} aria-hidden="true" />
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
           </div>
 
           {/* Compete panel below the icon+text row */}
           <div className={styles.competePanelWrap}>
             <CompetePanel
               playerId={playerId}
-              displayName={displayName}
               onLobby={onLobby}
-              onRequireAuth={onRequireAuth}
             />
           </div>
+          {competeError && (
+            <div style={{ color: 'var(--gh-danger)', fontSize: 'var(--font-2xs)', padding: '4px 20px 12px' }}>
+              {competeError}
+            </div>
+          )}
         </div>
       </div>
     )
@@ -418,11 +470,16 @@ function ModeCard({
             type="button"
             className={styles.playPill}
             onClick={handlePlay}
+            disabled={navigating}
             aria-label={t('home.play_mode_aria', { mode: title })}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M8 5v14l11-7z" fill="currentColor" />
-            </svg>
+            {navigating ? (
+              <span className={styles.playPillSpinner} aria-hidden="true" />
+            ) : (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M8 5v14l11-7z" fill="currentColor" />
+              </svg>
+            )}
           </button>
         </div>
       </div>

@@ -116,6 +116,7 @@ export function PracticeSettingsModal({
   });
 
   const [availableRegionContinents, setAvailableRegionContinents] = useState<string[] | null>(null);
+  const [starting, setStarting] = useState(false);
   useEffect(() => {
     let cancelled = false;
     async function fetchRegions() {
@@ -205,6 +206,7 @@ export function PracticeSettingsModal({
   if (!isOpen) return null;
 
   const handleStart = () => {
+    setStarting(true);
     const selectedContinents = REGIONS
       .filter(r => selectedRegions.has(r.id))
       .flatMap(r => r.continents);
@@ -343,7 +345,8 @@ export function PracticeSettingsModal({
           </div>
         </div>
 
-        <button type="button" className={modalStyles.startBtn} onClick={handleStart} disabled={busy}>
+        <button type="button" className={modalStyles.startBtn} onClick={handleStart} disabled={busy || starting}>
+          {starting && <span className={modalStyles.startBtnSpinner} aria-hidden="true" />}
           {t("home.practice_start")}
         </button>
       </div>
