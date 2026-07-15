@@ -107,19 +107,25 @@
   -webkit-box-orient: vertical;
 }
 
-/* ── Big play icon button on the RIGHT (icon-only, no text) ── */
+/* ── Compact icon+text CTA button on the RIGHT ──
+   Used for the play pill (non-compete) and the create pill (compete). */
 .playPill {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   background: rgba(255, 255, 255, 0.22);
   color: var(--gh-text-primary);
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 8px 12px;
+  border-radius: 999px;
   border: none;
   cursor: pointer;
   flex-shrink: 0;
+  white-space: nowrap;
   transition: background 0.15s, transform 0.15s;
 }
 
