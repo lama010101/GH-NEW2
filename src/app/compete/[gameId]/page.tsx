@@ -352,8 +352,15 @@ export default function CompeteGamePage() {
       setTimerClamped(true);
       setTimeout(() => setTimerClamped(false), 600);
     },
-    onError: (message) => {
+    onError: (message, code) => {
       setError(message);
+      if (code === "PLAYER_KICKED") {
+        router.push("/home");
+      }
+    },
+    onKicked: () => {
+      setError(t('lobby.kicked_toast'));
+      router.push("/home");
     },
     onDisconnect: () => {
       setWsDisconnected(true);

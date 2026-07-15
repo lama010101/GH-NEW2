@@ -234,6 +234,7 @@
     "players": "玩家（{current}/{total}）",
     "ready_count": "{count} 人已准备",
     "kick_player": "踢出玩家",
+    "kicked_toast": "您已被主持人移出此游戏。",
     "remove_invite": "移除邀请",
     "invited": "已邀请",
     "no_players_yet": "暂无玩家",

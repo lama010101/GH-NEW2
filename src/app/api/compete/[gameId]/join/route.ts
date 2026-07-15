@@ -55,10 +55,11 @@ export async function POST(
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to join compete session";
     const status = message.includes("Session not found") ? 404 : 400;
+    const code = (error as Error & { code?: string }).code;
     console.error("[JOIN_ROUTE_ERROR]", {
       gameId: params.gameId,
       error: message,
     });
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message, code }, { status });
   }
 }

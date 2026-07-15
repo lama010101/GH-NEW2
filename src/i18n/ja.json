@@ -234,6 +234,7 @@
     "players": "プレイヤー（{current}/{total}）",
     "ready_count": "{count}人準備完了",
     "kick_player": "プレイヤーをキック",
+    "kicked_toast": "ホストによってこのゲームから削除されました。",
     "remove_invite": "招待を削除",
     "invited": "招待済み",
     "no_players_yet": "まだプレイヤーがいません",

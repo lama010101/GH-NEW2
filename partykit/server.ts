@@ -223,7 +223,8 @@ export type ServerMessage =
 // Messages sent TO clients
 export type ClientMessage =
   | { type: "STATE_UPDATE"; snapshot: unknown; results?: unknown[] }
-  | { type: "ERROR"; message: string }
+  | { type: "ERROR"; message: string; code?: string }
+  | { type: "KICKED"; gameId: string }
   | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
   | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number }
   | { type: "PONG" };
@@ -1214,11 +1215,13 @@ export default class GameServer {
             const text = await response.text();
             console.error(`[JOIN_ROOM] API error ${response.status}: ${text}`);
             let errorMsg = "Unable to rejoin game";
+            let errorCode: string | undefined;
             try {
-              const parsed = JSON.parse(text) as { error?: string };
+              const parsed = JSON.parse(text) as { error?: string; code?: string };
               if (parsed.error) errorMsg = parsed.error.replace(/session/gi, "game");
+              errorCode = parsed.code;
             } catch {}
-            this.sendError(sender, errorMsg);
+            this.sendError(sender, errorMsg, errorCode);
             break;
           }
           const snapshot = await response.json();
@@ -1772,6 +1775,20 @@ export default class GameServer {
             break;
           }
           const snapshot = await response.json();
+          console.log(`[KICK_PLAYER] API success, snapshot players: ${snapshot.players?.length}`);
+
+          // Notify the kicked player in real time: send a dedicated KICKED
+          // message to their live connection(s) via a per-socket loop.
+          // The client sets manuallyDisconnected=true on receipt, preventing
+          // reconnect-loop. Must target only the kicked player (per-socket
+          // send, never broadcast to the whole room).
+          for (const connection of this.room.getConnections()) {
+            const connPlayerId = this.connections.get(connection.id);
+            if (connPlayerId === data.targetPlayerId) {
+              connection.send(JSON.stringify({ type: "KICKED", gameId: this.room.id }));
+            }
+          }
+
           this.applySnapshotAndBroadcast(snapshot);
           break;
         }
@@ -1817,8 +1834,8 @@ export default class GameServer {
     }
   }
 
-  private sendError(connection: Connection, message: string): void {
-    const errMsg: ClientMessage = { type: "ERROR", message };
+  private sendError(connection: Connection, message: string, code?: string): void {
+    const errMsg: ClientMessage = { type: "ERROR", message, code };
     connection.send(JSON.stringify(errMsg));
   }
 }
