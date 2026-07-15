@@ -44,6 +44,33 @@ const STATE_TIMEOUT = 60000;
 // ─────────────────────────────────────────────────────────────────────
 test.describe('Sync Compete Golden Path', () => {
   test.beforeAll(async () => {
+    // ── S0a: Supabase connectivity preflight — fail fast (≤5s) if the
+    // auth endpoint is unreachable, rather than burning a full Playwright
+    // cycle (60-180s) on a ConnectTimeoutError deep in the test body.
+    // MP-GUARD-SYNC-REGRESSION-001-VERIFY-CLOSEOUT
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    if (!supabaseUrl) {
+      throw new Error('Supabase unreachable — NEXT_PUBLIC_SUPABASE_URL not set. Check connectivity.');
+    }
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(`${supabaseUrl}/auth/v1/health`, {
+        signal: controller.signal,
+        headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '' },
+      });
+      clearTimeout(timeout);
+      if (!res.ok && res.status !== 401 && res.status !== 403) {
+        throw new Error(`Supabase unreachable — auth health check returned HTTP ${res.status}. Check connectivity.`);
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        throw new Error('Supabase unreachable — auth health check timed out after 5s. Check connectivity.');
+      }
+      throw new Error(`Supabase unreachable — ${err.message}. Check connectivity.`);
+    }
+
+    // ── S0b: Preflight KC grep guards ──
     const read = (p: string) =>
       fs.readFileSync(path.resolve(process.cwd(), p), 'utf8');
 
