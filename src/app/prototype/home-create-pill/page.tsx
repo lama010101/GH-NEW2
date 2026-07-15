@@ -108,6 +108,7 @@ type Strings = {
   levelup_desc: string;
   practice_desc: string;
   new_challenge: string;
+  compete_create_game: string;
   compete_tab_invitations: string;
   compete_tab_your_turn: string;
   compete_tab_completed: string;
@@ -138,6 +139,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "Progressive difficulty\nClimb the leaderboard",
     practice_desc: "Hone your skills solo\nUnlimited custom games.",
     new_challenge: "New challenge",
+    compete_create_game: "CREATE",
     compete_tab_invitations: "INVITATIONS",
     compete_tab_your_turn: "YOUR TURN",
     compete_tab_completed: "COMPLETED",
@@ -166,6 +168,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "Difficulté progressive\nGrimpez au classement.",
     practice_desc: "Perfectionnez-vous en solo\nParties personnalisées illimitées.",
     new_challenge: "Nouveau défi",
+    compete_create_game: "CRÉER",
     compete_tab_invitations: "INVITATIONS",
     compete_tab_your_turn: "VOTRE TOUR",
     compete_tab_completed: "TERMINÉ",
@@ -194,6 +197,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "Dificultad progresiva\nSube en la clasificación.",
     practice_desc: "Mejora tus habilidades en solitario\nPartidas personalizadas ilimitadas.",
     new_challenge: "Nuevo reto",
+    compete_create_game: "CREAR",
     compete_tab_invitations: "INVITACIONES",
     compete_tab_your_turn: "TU TURNO",
     compete_tab_completed: "COMPLETADAS",
@@ -222,6 +226,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "Progressive Schwierigkeit\nSteige in der Bestenliste auf.",
     practice_desc: "Verbessere deine Fähigkeiten solo\nUnbegrenzte individuelle Spiele.",
     new_challenge: "Neue Herausforderung",
+    compete_create_game: "ERSTELLEN",
     compete_tab_invitations: "EINLADUNGEN",
     compete_tab_your_turn: "DEIN ZUG",
     compete_tab_completed: "ABGESCHLOSSEN",
@@ -250,6 +255,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "Difficoltà progressiva\nScala la classifica.",
     practice_desc: "Affina le tue abilità da solo\nGiochi personalizzati illimitati.",
     new_challenge: "Nuova sfida",
+    compete_create_game: "CREA",
     compete_tab_invitations: "INVITI",
     compete_tab_your_turn: "IL TUO TURNO",
     compete_tab_completed: "COMPLETATE",
@@ -278,6 +284,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "Dificuldade progressiva\nSuba no ranking.",
     practice_desc: "Aprimore suas habilidades sozinho\nJogos personalizados ilimitados.",
     new_challenge: "Novo desafio",
+    compete_create_game: "CRIAR",
     compete_tab_invitations: "CONVITES",
     compete_tab_your_turn: "SEU TURNO",
     compete_tab_completed: "CONCLUÍDAS",
@@ -306,6 +313,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "Oplopende moeilijkheid\nKlim in het klassement.",
     practice_desc: "Verbeter je vaardigheden alleen\nOnbeperkte aangepaste spellen.",
     new_challenge: "Nieuwe uitdaging",
+    compete_create_game: "MAAK",
     compete_tab_invitations: "UITNODIGINGEN",
     compete_tab_your_turn: "JOUW BEURT",
     compete_tab_completed: "VOLTOOID",
@@ -334,6 +342,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "Нарастающая сложность\nПоднимайтесь в таблице лидеров.",
     practice_desc: "Оттачивайте навыки в одиночку\nБезлимитные пользовательские игры.",
     new_challenge: "Новый вызов",
+    compete_create_game: "СОЗДАТЬ",
     compete_tab_invitations: "ПРИГЛАШЕНИЯ",
     compete_tab_your_turn: "ВАШ ХОД",
     compete_tab_completed: "ЗАВЕРШЁННЫЕ",
@@ -362,6 +371,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "段階的難易度\nランキングを登る。",
     practice_desc: "ソロでスキル向上\n無制限のカスタムゲーム。",
     new_challenge: "新しいチャレンジ",
+    compete_create_game: "作成",
     compete_tab_invitations: "招待",
     compete_tab_your_turn: "あなたのターン",
     compete_tab_completed: "完了",
@@ -390,6 +400,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "渐进式难度\n攀登排行榜。",
     practice_desc: "独自练习提升技能\n无限自定义游戏。",
     new_challenge: "新挑战",
+    compete_create_game: "创建",
     compete_tab_invitations: "邀请",
     compete_tab_your_turn: "你的回合",
     compete_tab_completed: "已结束",
@@ -418,6 +429,7 @@ const STRINGS: Record<Locale, Strings> = {
     levelup_desc: "صعوبة تصاعدية\nاصعد لوحة المتصدرين.",
     practice_desc: "صق مهاراتك فردياً\nألعاب مخصصة غير محدودة.",
     new_challenge: "تحدي جديد",
+    compete_create_game: "أنشئ",
     compete_tab_invitations: "دعوات",
     compete_tab_your_turn: "دورك",
     compete_tab_completed: "مكتملة",
@@ -707,14 +719,14 @@ function ModeCard({ mode, s, rtl }: { mode: Mode; s: Strings; rtl: boolean }) {
               </p>
             </div>
 
-            {/* CREATE pill button on the RIGHT (plus icon, same .playPill style
-                as the play pill in the other cards) */}
+            {/* CREATE pill button on the RIGHT (plus icon + "CREATE" label) */}
             <button
               type="button"
               className={styles.playPill}
-              aria-label={`Create ${title}`}
+              aria-label={`${s.compete_create_game} ${title}`}
             >
               <CreateIcon />
+              {s.compete_create_game}
             </button>
           </div>
 
@@ -768,13 +780,14 @@ function ModeCard({ mode, s, rtl }: { mode: Mode; s: Strings; rtl: boolean }) {
             )}
           </div>
 
-          {/* Play pill button on the RIGHT (triangle icon) */}
+          {/* Play pill button on the RIGHT (triangle icon + "PLAY" label) */}
           <button
             type="button"
             className={styles.playPill}
-            aria-label={`Play ${title}`}
+            aria-label={`${s.compete_play} ${title}`}
           >
             <PlayIcon rtl={rtl} />
+            {s.compete_play}
           </button>
         </div>
       </div>
