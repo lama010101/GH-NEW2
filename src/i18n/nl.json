@@ -234,6 +234,7 @@
     "players": "Spelers ({current}/{total})",
     "ready_count": "{count} klaar",
     "kick_player": "Verwijder speler",
+    "kicked_toast": "Je bent door de host uit dit spel verwijderd.",
     "remove_invite": "Verwijder uitnodiging",
     "invited": "UITGENODIGD",
     "no_players_yet": "Nog geen spelers",

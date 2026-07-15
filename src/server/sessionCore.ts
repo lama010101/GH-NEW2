@@ -117,6 +117,7 @@ export type SessionPlayerRow = {
   ready: boolean;
   is_host: boolean;
   avatar_url: string | null;
+  kicked: boolean;
 };
 
 // NOTE: round_timing table exists but is NOT used for phase derivation.
@@ -333,7 +334,7 @@ export async function loadSessionRow(gameId: string, executor: DbExecutor = dbPo
 export async function loadSessionPlayerRows(gameId: string, executor: DbExecutor = dbPool): Promise<SessionPlayerRow[]> {
   const result = await executor.query<SessionPlayerRow>(
     `
-      SELECT game_id, player_id, display_name, joined_at, left_at, ready, is_host, avatar_url
+      SELECT game_id, player_id, display_name, joined_at, left_at, ready, is_host, avatar_url, kicked
       FROM session_players
       WHERE game_id = $1
       ORDER BY joined_at ASC, player_id ASC
@@ -911,6 +912,19 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
     throw new Error("Practice sessions cannot be joined");
   }
 
+  // Kick guard: hard-block rejoin if this player was kicked from this game.
+  // Must run BEFORE the upsert so a kicked player's left_at is never cleared.
+  // Uses dbPool (same pool as the rest of this function).
+  const kickedCheck = await dbPool.query<{ kicked: boolean }>(
+    `SELECT kicked FROM session_players WHERE game_id = $1 AND player_id = $2`,
+    [gameId, playerId]
+  );
+  if (kickedCheck.rows[0]?.kicked === true) {
+    const err = new Error("You were removed from this game by the host") as Error & { code?: string };
+    err.code = "PLAYER_KICKED";
+    throw err;
+  }
+
   // Late join guard: reject new players joining after game has started
   const currentSnapshot = await loadCompeteSessionSnapshot(gameId, null);
   if (currentSnapshot && currentSnapshot.status !== "LOBBY") {
@@ -1471,11 +1485,20 @@ export async function kickCompetePlayer(input: KickCompetePlayerInput): Promise<
       throw new Error("Cannot kick the host");
     }
 
-    // Kick: set left_at
+    // Kick: set left_at AND kicked=TRUE (distinguishes kick from graceful disconnect)
     await client.query(
       `UPDATE session_players
-       SET left_at = now()
+       SET left_at = now(), kicked = TRUE
        WHERE game_id = $1 AND player_id = $2`,
+      [gameId, targetPlayerId]
+    );
+
+    // Cancel any pending invitation for the kicked player so it disappears
+    // from their Home page pending-invitation list.
+    await client.query(
+      `UPDATE game_invitations
+       SET status = 'cancelled'
+       WHERE game_id = $1 AND invitee_id = $2 AND status = 'pending'`,
       [gameId, targetPlayerId]
     );
 

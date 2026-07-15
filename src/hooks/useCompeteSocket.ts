@@ -14,7 +14,8 @@ interface UseCompeteSocketParams {
   onStateUpdate: (snapshot: CompeteSessionSnapshot) => void;
   onPlayerSubmitted: (submittedPlayerId: string, playerName: string) => void;
   onTimerClamped: (newPhaseEndsAt: string) => void;
-  onError: (message: string) => void;
+  onError: (message: string, code?: string) => void;
+  onKicked?: () => void;
   onDisconnect?: () => void;
   onRoundResults: (results: RoundResult[]) => void;
   onSetBusy: (value: boolean) => void;
@@ -33,6 +34,7 @@ export default function useCompeteSocket({
   onPlayerSubmitted,
   onTimerClamped,
   onError,
+  onKicked,
   onDisconnect,
   onRoundResults,
   onSetBusy,
@@ -95,9 +97,12 @@ export default function useCompeteSocket({
         onTimerClamped: (newPhaseEndsAt) => {
           onTimerClamped(newPhaseEndsAt);
         },
-        onError: (message) => {
-          onError(message);
+        onError: (message, code) => {
+          onError(message, code);
           onSetBusy(false); // Action failed — clear busy flag
+        },
+        onKicked: () => {
+          onKicked?.();
         },
         onDisconnect: () => {
           onDisconnect?.();

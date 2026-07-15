@@ -10,7 +10,8 @@
 
 export type WebSocketMessage =
   | { type: "STATE_UPDATE"; snapshot: unknown; results?: unknown[] }
-  | { type: "ERROR"; message: string }
+  | { type: "ERROR"; message: string; code?: string }
+  | { type: "KICKED"; gameId: string }
   | { type: "PLAYER_SUBMITTED"; playerId: string; playerName: string }
   | { type: "TIMER_CLAMPED"; newPhaseEndsAt: string; clampedToSec: number }
   | { type: "PLAY_AGAIN"; newGameId: string }
@@ -18,7 +19,8 @@ export type WebSocketMessage =
 
 export type CompeteWebSocketCallbacks = {
   onStateUpdate?: (snapshot: unknown) => void;
-  onError?: (message: string) => void;
+  onError?: (message: string, code?: string) => void;
+  onKicked?: () => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
   onPlayerSubmitted?: (playerId: string, playerName: string) => void;
@@ -157,8 +159,19 @@ export class CompeteWebSocket {
       case "PONG":
         this.lastPongReceived = Date.now();
         break;
+      case "KICKED":
+        // Host kicked this player — prevent reconnect and notify UI.
+        this.manuallyDisconnected = true;
+        this.callbacks.onKicked?.();
+        break;
       case "ERROR": {
         const msg = data.message ?? "";
+        // Explicit non-recoverable: kick rejection must never trigger reconnect.
+        if (data.code === "PLAYER_KICKED") {
+          this.manuallyDisconnected = true;
+          this.callbacks.onError?.(msg, data.code);
+          return;
+        }
         const isRecoverable =
           msg.toLowerCase().includes("session") ||
           msg.toLowerCase().includes("failed to load") ||

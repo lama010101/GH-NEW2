@@ -33,6 +33,7 @@ export async function GET(_request: NextRequest) {
        JOIN session_players sp ON sp.game_id = s.game_id
        WHERE sp.player_id = $1
          AND s.mode IN ('sync', 'async')
+         AND NOT sp.kicked
        ORDER BY s.created_at DESC
        LIMIT 20`,
       [playerId]

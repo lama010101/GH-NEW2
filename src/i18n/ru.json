@@ -234,6 +234,7 @@
     "players": "Игроки ({current}/{total})",
     "ready_count": "{count} готово",
     "kick_player": "Выгнать игрока",
+    "kicked_toast": "Вы были удалены из этой игры хостом.",
     "remove_invite": "Удалить приглашение",
     "invited": "ПРИГЛАШЁН",
     "no_players_yet": "Игроков пока нет",

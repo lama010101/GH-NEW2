@@ -234,6 +234,7 @@
     "players": "Players ({current}/{total})",
     "ready_count": "{count} ready",
     "kick_player": "Kick player",
+    "kicked_toast": "You were removed from this game by the host.",
     "remove_invite": "Remove invite",
     "invited": "INVITED",
     "no_players_yet": "No players yet",
