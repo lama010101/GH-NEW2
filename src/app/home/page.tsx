@@ -404,8 +404,7 @@ function ModeCard({
               </p>
             </div>
 
-            {/* CREATE pill button on the RIGHT (plus icon, same .playPill
-                style as the play pill in the other cards) */}
+            {/* CREATE pill button on the RIGHT (plus icon + i18n create label) */}
             <button
               type="button"
               className={styles.playPill}
@@ -416,9 +415,12 @@ function ModeCard({
               {competeLoading ? (
                 <span className={styles.playPillSpinner} aria-hidden="true" />
               ) : (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {t('home.compete_create_game')}
+                </>
               )}
             </button>
           </div>
@@ -465,7 +467,7 @@ function ModeCard({
             )}
           </div>
 
-          {/* Play pill button on the RIGHT */}
+          {/* Play pill button on the RIGHT (triangle icon + i18n play label) */}
           <button
             type="button"
             className={styles.playPill}
@@ -476,9 +478,12 @@ function ModeCard({
             {navigating ? (
               <span className={styles.playPillSpinner} aria-hidden="true" />
             ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M8 5v14l11-7z" fill="currentColor" />
-              </svg>
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M8 5v14l11-7z" fill="currentColor" />
+                </svg>
+                {t('home.compete_play')}
+              </>
             )}
           </button>
         </div>
