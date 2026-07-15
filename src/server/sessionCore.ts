@@ -473,7 +473,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     currentRoundIndex: currentRound,
     // True iff ≥1 active players AND every active player is ready.
     // Derived; never stored.
-    allPlayersReady: activePlayers.length >= 1 && activePlayers.every((p) => p.ready),
+    allPlayersReady: activePlayers.length >= (gameState.session.mode === "sync" ? 2 : 1) && activePlayers.every((p) => p.ready),
     roundStartsAt,
     roundEndsAt,
     viewerPlayerId: viewerPlayerId ?? null,
@@ -1512,8 +1512,13 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
     const playerRows = await loadSessionPlayerRows(gameId, client);
     const activePlayers = playerRows.filter((p) => p.left_at === null);
 
-    if (activePlayers.length < 1) {
-      throw new Error("At least 1 player required to start");
+    const minPlayers = session.mode === "sync" ? 2 : 1;
+    if (activePlayers.length < minPlayers) {
+      throw new Error(
+        session.mode === "sync"
+          ? "At least 2 players required to start a sync game"
+          : "At least 1 player required to start"
+      );
     }
 
     // Only the host may start the game. Host identity is DB-authoritative
