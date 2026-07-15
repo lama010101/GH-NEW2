@@ -193,6 +193,7 @@ type RuntimeState = {
   readyForNext?: string[];
   resultPhaseEndsAt?: number;
   resultPhaseStartedAt?: string | null;
+  config?: { mode?: string };
 };
 
 function isRuntimeState(value: unknown): value is RuntimeState {
@@ -251,8 +252,13 @@ export default class GameServer {
   // out of the active roster within a round.
   private static readonly LEAVE_GRACE_MS = 15_000;
   private static readonly ROUND_EXPIRY_SUBMIT_GRACE_MS = 1_000;
-  // Solo play allowed: host may start alone (no minimum 2 players).
-  private static readonly MIN_PLAYERS_TO_START = 1;
+
+  // Mode-aware minimum players to start: sync requires 2, all other modes
+  // (async, practice, daily) require 1. Reverts the temporary solo-start
+  // override (MP-FIX-COMPETE-SOLO-START-TEMP-001) for sync specifically.
+  private minPlayersToStart(mode: string): number {
+    return mode === "sync" ? 2 : 1;
+  }
 
   // Runtime state — derived, rebuildable from DB at any time.
   // This is the DO's authoritative view. DB remains canonical truth.
@@ -522,7 +528,7 @@ export default class GameServer {
   private async attemptAutoStart(gameId: string): Promise<void> {
     if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") return;
     const activePlayers = this.snapshot.players.filter(p => p.leftAt === null);
-    const allReady = activePlayers.length >= GameServer.MIN_PLAYERS_TO_START &&
+    const allReady = activePlayers.length >= this.minPlayersToStart(this.snapshot.config?.mode ?? "sync") &&
       activePlayers.every(p => p.ready === true);
     if (!allReady) return;
     if (this.startInFlight) {
@@ -897,9 +903,10 @@ export default class GameServer {
         autoAdvanceSec > 0
           ? new Date(this.snapshot.resultPhaseStartedAt).getTime() + autoAdvanceMs
           : undefined;
+      const activePlayers = this.snapshot.players.filter(p => p.leftAt === null);
       const allPlayersReady =
-        this.snapshot.players.length >= 1 &&
-        this.snapshot.players.every(p => p.ready === true);
+        activePlayers.length >= this.minPlayersToStart(this.snapshot.config?.mode ?? "sync") &&
+        activePlayers.every(p => p.ready === true);
 
       const snapshotVersion = this.broadcastVersionCounter;
       snapshotWithReadyState = {
