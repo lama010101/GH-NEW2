@@ -116,10 +116,13 @@ type Strings = {
   compete_no_your_turn: string;
   compete_no_completed: string;
   compete_invite_meta: string;
+  compete_invite_sent: string;
   compete_mode_rush: string;
   compete_mode_relax: string;
   compete_round_label: string;
   compete_play: string;
+  compete_play_aria: string;
+  compete_delete_aria: string;
   compete_win: string;
   compete_loss: string;
   compete_draw: string;
@@ -147,10 +150,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "No games waiting for your turn",
     compete_no_completed: "No completed games yet",
     compete_invite_meta: "{mode} · sent {time}",
+    compete_invite_sent: "sent {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "Round {current} / {total}",
     compete_play: "PLAY",
+    compete_play_aria: "Play",
+    compete_delete_aria: "Delete",
     compete_win: "W",
     compete_loss: "L",
     compete_draw: "D",
@@ -176,10 +182,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "Aucune partie en attente",
     compete_no_completed: "Aucune partie terminée",
     compete_invite_meta: "{mode} · envoyé {time}",
+    compete_invite_sent: "envoyé {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "Manche {current} / {total}",
     compete_play: "JOUER",
+    compete_play_aria: "Jouer",
+    compete_delete_aria: "Supprimer",
     compete_win: "G",
     compete_loss: "P",
     compete_draw: "N",
@@ -205,10 +214,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "Sin partidas esperando tu turno",
     compete_no_completed: "Sin partidas completadas",
     compete_invite_meta: "{mode} · enviado {time}",
+    compete_invite_sent: "enviado {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "Ronda {current} / {total}",
     compete_play: "JUGAR",
+    compete_play_aria: "Jugar",
+    compete_delete_aria: "Eliminar",
     compete_win: "G",
     compete_loss: "P",
     compete_draw: "E",
@@ -234,10 +246,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "Keine Spiele warten auf deinen Zug",
     compete_no_completed: "Noch keine abgeschlossenen Spiele",
     compete_invite_meta: "{mode} · gesendet {time}",
+    compete_invite_sent: "gesendet {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "Runde {current} / {total}",
     compete_play: "SPIELEN",
+    compete_play_aria: "Spielen",
+    compete_delete_aria: "Löschen",
     compete_win: "S",
     compete_loss: "N",
     compete_draw: "U",
@@ -263,10 +278,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "Nessuna partita in attesa del tuo turno",
     compete_no_completed: "Nessuna partita completata",
     compete_invite_meta: "{mode} · inviato {time}",
+    compete_invite_sent: "inviato {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "Turno {current} / {total}",
     compete_play: "GIOCA",
+    compete_play_aria: "Gioca",
+    compete_delete_aria: "Elimina",
     compete_win: "V",
     compete_loss: "P",
     compete_draw: "N",
@@ -292,10 +310,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "Nenhuma partida aguardando sua vez",
     compete_no_completed: "Nenhuma partida concluída",
     compete_invite_meta: "{mode} · enviado {time}",
+    compete_invite_sent: "enviado {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "Rodada {current} / {total}",
     compete_play: "JOGAR",
+    compete_play_aria: "Jogar",
+    compete_delete_aria: "Excluir",
     compete_win: "V",
     compete_loss: "D",
     compete_draw: "E",
@@ -321,10 +342,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "Geen spellen wachten op jouw beurt",
     compete_no_completed: "Nog geen voltooide spellen",
     compete_invite_meta: "{mode} · verzonden {time}",
+    compete_invite_sent: "verzonden {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "Ronde {current} / {total}",
     compete_play: "SPEEL",
+    compete_play_aria: "Spelen",
+    compete_delete_aria: "Verwijderen",
     compete_win: "W",
     compete_loss: "V",
     compete_draw: "G",
@@ -350,10 +374,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "Нет игр, ожидающих вашего хода",
     compete_no_completed: "Завершённых игр пока нет",
     compete_invite_meta: "{mode} · отправлено {time}",
+    compete_invite_sent: "отправлено {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "Раунд {current} / {total}",
     compete_play: "ИГРАТЬ",
+    compete_play_aria: "Играть",
+    compete_delete_aria: "Удалить",
     compete_win: "В",
     compete_loss: "П",
     compete_draw: "Н",
@@ -379,10 +406,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "あなたのターンのゲームはありません",
     compete_no_completed: "完了したゲームはまだありません",
     compete_invite_meta: "{mode} · 送信 {time}",
+    compete_invite_sent: "送信 {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "ラウンド {current} / {total}",
     compete_play: "プレイ",
+    compete_play_aria: "プレイ",
+    compete_delete_aria: "削除",
     compete_win: "勝",
     compete_loss: "負",
     compete_draw: "分",
@@ -408,10 +438,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "没有等待你的回合的游戏",
     compete_no_completed: "还没有已结束的游戏",
     compete_invite_meta: "{mode} · 发送于 {time}",
+    compete_invite_sent: "发送于 {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "第 {current} / {total} 回合",
     compete_play: "开始",
+    compete_play_aria: "播放",
+    compete_delete_aria: "删除",
     compete_win: "胜",
     compete_loss: "负",
     compete_draw: "平",
@@ -437,10 +470,13 @@ const STRINGS: Record<Locale, Strings> = {
     compete_no_your_turn: "لا توجد ألعاب بانتظار دورك",
     compete_no_completed: "لا توجد ألعاب مكتملة بعد",
     compete_invite_meta: "{mode} · أُرسلت {time}",
+    compete_invite_sent: "أُرسلت {time}",
     compete_mode_rush: "Rush",
     compete_mode_relax: "Relax",
     compete_round_label: "الجولة {current} / {total}",
     compete_play: "العب",
+    compete_play_aria: "العب",
+    compete_delete_aria: "حذف",
     compete_win: "ف",
     compete_loss: "خ",
     compete_draw: "ت",
@@ -489,34 +525,55 @@ function useDailyCountdown(): string {
 }
 
 // ── Mock compete data (mirrors prod CompetePanel data shape) ──
+// Covers all prod scenarios: avatar/no-avatar, mode/no-mode, win/loss/draw,
+// no-score, leaderboard rank, all accuracy color tiers.
 type MockInvite = {
   id: string;
   inviter_name: string;
-  mode: "sync" | "async";
+  avatar_url?: string;
+  mode?: "sync" | "async";
   created_at: string;
 };
 type MockGame = {
   id: string;
   opponent_name: string;
+  opponent_avatar?: string;
   round_current: number;
   round_total: number;
-  mode: "sync" | "async";
+  mode?: "sync" | "async";
   status: "your_turn" | "completed";
   score_you?: number;
   score_them?: number;
   accuracy_you?: number;
+  completed_at?: string;
+  leaderboard_rank?: number;
 };
 
 const MOCK_INVITES: MockInvite[] = [
-  { id: "i1", inviter_name: "Maria S.", mode: "sync", created_at: new Date(Date.now() - 5 * 60000).toISOString() },
+  { id: "i1", inviter_name: "Maria S.", avatar_url: "https://i.pravatar.cc/64?img=1", mode: "sync", created_at: new Date(Date.now() - 5 * 60000).toISOString() },
   { id: "i2", inviter_name: "Kenji T.", mode: "async", created_at: new Date(Date.now() - 2 * 3600000).toISOString() },
+  { id: "i3", inviter_name: "Unknown", created_at: new Date(Date.now() - 3 * 86400000).toISOString() },
 ];
 
 const MOCK_GAMES: MockGame[] = [
+  // Your Turn — async (Relax), no avatar
   { id: "g1", opponent_name: "Sofia L.", round_current: 3, round_total: 5, mode: "async", status: "your_turn" },
-  { id: "g2", opponent_name: "James B.", round_current: 1, round_total: 5, mode: "sync", status: "your_turn" },
-  { id: "g3", opponent_name: "Yuki N.", round_current: 5, round_total: 5, mode: "async", status: "completed", score_you: 3, score_them: 2, accuracy_you: 84 },
-  { id: "g4", opponent_name: "Omar K.", round_current: 5, round_total: 5, mode: "sync", status: "completed", score_you: 1, score_them: 4, accuracy_you: 52 },
+  // Your Turn — sync (Rush), with avatar
+  { id: "g2", opponent_name: "James B.", opponent_avatar: "https://i.pravatar.cc/64?img=2", round_current: 1, round_total: 5, mode: "sync", status: "your_turn" },
+  // Your Turn — no mode, no avatar
+  { id: "g3", opponent_name: "Liam C.", round_current: 2, round_total: 5, status: "your_turn" },
+  // Completed — WIN, accuracy 92 (green ≥85), async, with avatar, no rank
+  { id: "g4", opponent_name: "Yuki N.", opponent_avatar: "https://i.pravatar.cc/64?img=3", round_current: 5, round_total: 5, mode: "async", status: "completed", score_you: 3, score_them: 2, accuracy_you: 92, completed_at: new Date(Date.now() - 2 * 3600000).toISOString() },
+  // Completed — LOSS, accuracy 35 (red <40), sync, no avatar, no rank
+  { id: "g5", opponent_name: "Omar K.", round_current: 5, round_total: 5, mode: "sync", status: "completed", score_you: 1, score_them: 4, accuracy_you: 35, completed_at: new Date(Date.now() - 86400000).toISOString() },
+  // Completed — DRAW, accuracy 65 (gold ≥60), async, no avatar, rank #3
+  { id: "g6", opponent_name: "Elena R.", round_current: 5, round_total: 5, mode: "async", status: "completed", score_you: 2, score_them: 2, accuracy_you: 65, completed_at: new Date(Date.now() - 2 * 86400000).toISOString(), leaderboard_rank: 3 },
+  // Completed — WIN, accuracy 72 (orange ≥40), sync, no avatar, rank #1
+  { id: "g7", opponent_name: "Hans W.", round_current: 5, round_total: 5, mode: "sync", status: "completed", score_you: 4, score_them: 1, accuracy_you: 72, completed_at: new Date(Date.now() - 5 * 86400000).toISOString(), leaderboard_rank: 1 },
+  // Completed — no score (null), no mode, no avatar, no rank → "Completed" label
+  { id: "g8", opponent_name: "Priya M.", round_current: 5, round_total: 5, status: "completed", completed_at: new Date(Date.now() - 10 * 86400000).toISOString() },
+  // Completed — WIN, accuracy 88 (green ≥85), no mode, with avatar, rank #12
+  { id: "g9", opponent_name: "Carlos D.", opponent_avatar: "https://i.pravatar.cc/64?img=4", round_current: 5, round_total: 5, status: "completed", score_you: 5, score_them: 0, accuracy_you: 88, completed_at: new Date(Date.now() - 15 * 86400000).toISOString(), leaderboard_rank: 12 },
 ];
 
 function timeAgoLabel(iso: string): string {
@@ -542,6 +599,27 @@ function accColor(pct: number): string {
 //    NOTE: the JOIN GAME / CREATE GAME CTA row and the join-code input are
 //    intentionally removed per the prototype spec. Only the 3-tab mini-card
 //    with invitations / your-turn / completed game lists remains. ──
+
+// Small play icon (18px) used inside the green goBtn — matches prod CompetePanel.
+function GoPlayIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M8 5v14l11-7z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function InviteIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="10" cy="8" r="4" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M2 20c0-4 3.6-7 8-7" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="19" y1="13" x2="19" y2="21" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="15" y1="17" x2="23" y2="17" stroke="rgba(255,255,255,0.75)" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function CompetePanel({ s }: { s: Strings }) {
   const [tab, setTab] = useState<"invitations" | "your_turn" | "completed">("invitations");
 
@@ -573,24 +651,62 @@ function CompetePanel({ s }: { s: Strings }) {
       {/* Invitations tab */}
       {tab === "invitations" &&
         (MOCK_INVITES.length === 0 ? (
-          <div className={styles.emptyState}>{s.compete_no_invitations}</div>
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIconWrap}>
+              <InviteIcon />
+            </div>
+            <span>{s.compete_no_invitations}</span>
+          </div>
         ) : (
           <div className={styles.gameList}>
             {MOCK_INVITES.map((inv) => (
               <div key={inv.id} className={styles.gameRow}>
-                <div className={styles.avatarFallback}>
+                {inv.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={inv.avatar_url}
+                    alt=""
+                    className={styles.avatarImg}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden");
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={styles.avatarFallback}
+                  style={{ display: inv.avatar_url ? "none" : "flex" }}
+                  hidden={!!inv.avatar_url}
+                >
                   {inv.inviter_name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className={styles.gameInfo}>
                   <span className={styles.gameName}>{inv.inviter_name}</span>
                   <span className={styles.gameSub}>
-                    {fillTemplate(s.compete_invite_meta, {
-                      mode: inv.mode === "sync" ? s.compete_mode_rush : s.compete_mode_relax,
-                      time: timeAgoLabel(inv.created_at),
-                    })}
+                    {inv.mode
+                      ? fillTemplate(s.compete_invite_meta, {
+                          mode: inv.mode === "sync" ? s.compete_mode_rush : s.compete_mode_relax,
+                          time: timeAgoLabel(inv.created_at),
+                        })
+                      : fillTemplate(s.compete_invite_sent, {
+                          time: timeAgoLabel(inv.created_at),
+                        })}
                   </span>
                 </div>
-                <button type="button" className={styles.declineBtn}>✕</button>
+                <button
+                  type="button"
+                  className={styles.goBtn}
+                  aria-label={s.compete_play_aria}
+                >
+                  <GoPlayIcon />
+                </button>
+                <button
+                  type="button"
+                  className={styles.deleteBtn}
+                  aria-label={s.compete_delete_aria}
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
@@ -604,22 +720,47 @@ function CompetePanel({ s }: { s: Strings }) {
           <div className={styles.gameList}>
             {yourTurn.map((g) => (
               <div key={g.id} className={styles.gameRow}>
-                <div className={styles.avatarFallback}>
+                {g.opponent_avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={g.opponent_avatar}
+                    alt=""
+                    className={styles.avatarImg}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden");
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={styles.avatarFallback}
+                  style={{ display: g.opponent_avatar ? "none" : "flex" }}
+                  hidden={!!g.opponent_avatar}
+                >
                   {g.opponent_name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className={styles.gameInfo}>
                   <span className={styles.gameName}>{g.opponent_name}</span>
                   <span className={styles.gameSub}>
+                    {g.mode && (
+                      <span className={styles.modeBadgeInline}>
+                        {g.mode === "sync" ? s.compete_mode_rush : s.compete_mode_relax}
+                      </span>
+                    )}
+                    {" "}
                     {fillTemplate(s.compete_round_label, {
                       current: String(g.round_current),
                       total: String(g.round_total),
                     })}
                   </span>
                 </div>
-                <span className={styles.modeBadge}>
-                  {g.mode === "sync" ? s.compete_mode_rush : s.compete_mode_relax}
-                </span>
-                <span className={styles.playBadge}>{s.compete_play}</span>
+                <button
+                  type="button"
+                  className={styles.goBtn}
+                  aria-label={s.compete_play_aria}
+                >
+                  <GoPlayIcon />
+                </button>
               </div>
             ))}
           </div>
@@ -633,16 +774,35 @@ function CompetePanel({ s }: { s: Strings }) {
           <div className={styles.gameList}>
             {completed.map((g) => (
               <div key={g.id} className={styles.gameRow}>
-                <div className={styles.avatarFallback}>
+                {g.opponent_avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={g.opponent_avatar}
+                    alt=""
+                    className={styles.avatarImg}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden");
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={styles.avatarFallback}
+                  style={{ display: g.opponent_avatar ? "none" : "flex" }}
+                  hidden={!!g.opponent_avatar}
+                >
                   {g.opponent_name.slice(0, 2).toUpperCase()}
                 </div>
                 <div className={styles.gameInfo}>
                   <span className={styles.gameName}>{g.opponent_name}</span>
                   <span className={styles.gameSub}>
-                    {fillTemplate(s.compete_round_label, {
-                      current: String(g.round_current),
-                      total: String(g.round_total),
-                    })}
+                    {g.mode && (
+                      <span className={styles.modeBadgeInline}>
+                        {g.mode === "sync" ? s.compete_mode_rush : s.compete_mode_relax}
+                      </span>
+                    )}
+                    {" "}
+                    {g.completed_at ? timeAgoLabel(g.completed_at) : ""}
                   </span>
                 </div>
                 <div className={styles.scoreWrap}>
@@ -674,6 +834,16 @@ function CompetePanel({ s }: { s: Strings }) {
                     <span className={styles.completedLabel}>{s.compete_completed}</span>
                   )}
                 </div>
+                {g.leaderboard_rank != null && (
+                  <span className={styles.rankBadge}>#{g.leaderboard_rank}</span>
+                )}
+                <button
+                  type="button"
+                  className={styles.deleteBtn}
+                  aria-label={s.compete_delete_aria}
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
