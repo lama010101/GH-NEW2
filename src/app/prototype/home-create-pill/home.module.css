@@ -321,31 +321,36 @@
   -webkit-box-orient: vertical;
 }
 
-/* ── Round pill button on the RIGHT (icon-only, no text) ──
-   Mirrors prod home.module.css .playPill.
-   Used for both the play pill (non-compete) and the create pill (compete). */
+/* ── Pill button on the RIGHT (icon + text label) ──
+   Compact CTA used for both the play pill (non-compete) and the create pill
+   (compete). Shows the icon plus a short uppercase label ("PLAY"/"CREATE"). */
 .playPill {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   background: rgba(255, 255, 255, 0.22);
   color: var(--gh-text-primary);
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 8px 12px;
+  border-radius: 999px;
   border: none;
   cursor: pointer;
   flex-shrink: 0;
+  white-space: nowrap;
   transition: background 0.15s, transform 0.15s;
 }
 
 .playPill:hover {
   background: rgba(255, 255, 255, 0.36);
-  transform: scale(1.06);
+  transform: scale(1.04);
 }
 
 .playPill:active {
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
 .playPill svg {
