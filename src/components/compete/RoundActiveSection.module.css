@@ -1083,6 +1083,26 @@
   background: var(--gh-glass-bg-hover);
 }
 
+.settingsHomeBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@keyframes ghSettingsHomeSpin {
+  to { transform: rotate(360deg); }
+}
+
+.settingsHomeSpinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: ghSettingsHomeSpin 0.8s linear infinite;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
 .settingsHomeIcon {
   display: flex;
   align-items: center;
