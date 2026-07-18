@@ -75,6 +75,7 @@ const PROFILE = {
   level: 14,
   levelProgress: 0.62, // 62% to next level
   avgAccuracy: 87,
+  totalXp: 8_400, // Tier 3 (Trailblazer, 5_000–20_000 XP)
 };
 
 // ── Mode card metadata (mirrors prod home/types.ts) ──
@@ -128,6 +129,19 @@ type Strings = {
   compete_draw: string;
   compete_completed: string;
   compete_xp_unit: string;
+  rank_next_label: string;
+  rank_next_rank: string;
+  rank_max_rank: string;
+  rank_1: string;
+  rank_2: string;
+  rank_3: string;
+  rank_4: string;
+  rank_5: string;
+  rank_6: string;
+  rank_7: string;
+  rank_8: string;
+  rank_9: string;
+  rank_10: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -162,6 +176,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "D",
     compete_completed: "Completed",
     compete_xp_unit: "XP",
+    rank_next_label: "Next",
+    rank_next_rank: "{xp} XP to {title}",
+    rank_max_rank: "Max rank achieved",
+    rank_1: "Wanderer",
+    rank_2: "Pathfinder",
+    rank_3: "Trailblazer",
+    rank_4: "Cartographer",
+    rank_5: "Explorer",
+    rank_6: "Navigator",
+    rank_7: "Chronicler",
+    rank_8: "Historian",
+    rank_9: "Scholar",
+    rank_10: "Cartographer Royal",
   },
   fr: {
     tagline: "Où et quand cela s'est-il passé ?",
@@ -194,6 +221,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "N",
     compete_completed: "Terminé",
     compete_xp_unit: "XP",
+    rank_next_label: "Suivant",
+    rank_next_rank: "{xp} XP jusqu'à {title}",
+    rank_max_rank: "Rang maximum atteint",
+    rank_1: "Vagabond",
+    rank_2: "Traqueur",
+    rank_3: "Pionnier",
+    rank_4: "Cartographe",
+    rank_5: "Explorateur",
+    rank_6: "Navigateur",
+    rank_7: "Chroniqueur",
+    rank_8: "Historien",
+    rank_9: "Érudit",
+    rank_10: "Cartographe Royal",
   },
   es: {
     tagline: "¿Dónde y cuándo ocurrió?",
@@ -226,6 +266,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "E",
     compete_completed: "Completada",
     compete_xp_unit: "XP",
+    rank_next_label: "Siguiente",
+    rank_next_rank: "{xp} XP hasta {title}",
+    rank_max_rank: "Rango máximo alcanzado",
+    rank_1: "Vagabundo",
+    rank_2: "Buscador",
+    rank_3: "Pionero",
+    rank_4: "Cartógrafo",
+    rank_5: "Explorador",
+    rank_6: "Navegante",
+    rank_7: "Cronista",
+    rank_8: "Historiador",
+    rank_9: "Erudito",
+    rank_10: "Cartógrafo Real",
   },
   de: {
     tagline: "Wo und wann ist es passiert?",
@@ -258,6 +311,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "U",
     compete_completed: "Abgeschlossen",
     compete_xp_unit: "XP",
+    rank_next_label: "Weiter",
+    rank_next_rank: "{xp} XP bis {title}",
+    rank_max_rank: "Maximaler Rang erreicht",
+    rank_1: "Wanderer",
+    rank_2: "Pfadfinder",
+    rank_3: "Trailblazer",
+    rank_4: "Kartograf",
+    rank_5: "Entdecker",
+    rank_6: "Navigator",
+    rank_7: "Chronist",
+    rank_8: "Historiker",
+    rank_9: "Gelehrter",
+    rank_10: "Königlicher Kartograf",
   },
   it: {
     tagline: "Dove e quando è successo?",
@@ -290,6 +356,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "N",
     compete_completed: "Completata",
     compete_xp_unit: "XP",
+    rank_next_label: "Prossimo",
+    rank_next_rank: "{xp} XP fino a {title}",
+    rank_max_rank: "Rango massimo raggiunto",
+    rank_1: "Vagabondo",
+    rank_2: "Esploratore",
+    rank_3: "Pioniere",
+    rank_4: "Cartografo",
+    rank_5: "Esploratore",
+    rank_6: "Navigatore",
+    rank_7: "Cronista",
+    rank_8: "Storico",
+    rank_9: "Studioso",
+    rank_10: "Cartografo Reale",
   },
   pt: {
     tagline: "Onde e quando aconteceu?",
@@ -322,6 +401,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "E",
     compete_completed: "Concluída",
     compete_xp_unit: "XP",
+    rank_next_label: "Próximo",
+    rank_next_rank: "{xp} XP até {title}",
+    rank_max_rank: "Rank máximo alcançado",
+    rank_1: "Andarilho",
+    rank_2: "Desbravador",
+    rank_3: "Pioneiro",
+    rank_4: "Cartógrafo",
+    rank_5: "Explorador",
+    rank_6: "Navegador",
+    rank_7: "Cronista",
+    rank_8: "Historiador",
+    rank_9: "Erudito",
+    rank_10: "Cartógrafo Real",
   },
   nl: {
     tagline: "Waar en wanneer is het gebeurd?",
@@ -354,6 +446,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "G",
     compete_completed: "Voltooid",
     compete_xp_unit: "XP",
+    rank_next_label: "Volgende",
+    rank_next_rank: "{xp} XP tot {title}",
+    rank_max_rank: "Maximale rang bereikt",
+    rank_1: "Zwerver",
+    rank_2: "Padvinder",
+    rank_3: "Pionier",
+    rank_4: "Cartograaf",
+    rank_5: "Ontdekkingsreiziger",
+    rank_6: "Navigatie",
+    rank_7: "Kroniekschrijver",
+    rank_8: "Historicus",
+    rank_9: "Geleerde",
+    rank_10: "Koninklijke Cartograaf",
   },
   ru: {
     tagline: "Где и когда это произошло?",
@@ -386,6 +491,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "Н",
     compete_completed: "Завершено",
     compete_xp_unit: "XP",
+    rank_next_label: "Далее",
+    rank_next_rank: "{xp} XP до {title}",
+    rank_max_rank: "Максимальный ранг достигнут",
+    rank_1: "Странник",
+    rank_2: "Следопыт",
+    rank_3: "Первопроходец",
+    rank_4: "Картограф",
+    rank_5: "Исследователь",
+    rank_6: "Штурман",
+    rank_7: "Летописец",
+    rank_8: "Историк",
+    rank_9: "Учёный",
+    rank_10: "Картограф Роял",
   },
   ja: {
     tagline: "どこで、いつ起きた？",
@@ -418,6 +536,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "分",
     compete_completed: "完了",
     compete_xp_unit: "XP",
+    rank_next_label: "次",
+    rank_next_rank: "{title}まで{xp} XP",
+    rank_max_rank: "最大ランクに到達",
+    rank_1: "放浪者",
+    rank_2: "道しるべ",
+    rank_3: "開拓者",
+    rank_4: "地図作成者",
+    rank_5: "探検家",
+    rank_6: "航海士",
+    rank_7: "年代記編者",
+    rank_8: "歴史家",
+    rank_9: "学者",
+    rank_10: "ロイヤル地図作成者",
   },
   zh: {
     tagline: "它发生在哪里，何时？",
@@ -450,6 +581,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "平",
     compete_completed: "已结束",
     compete_xp_unit: "经验值",
+    rank_next_label: "下一个",
+    rank_next_rank: "{xp} XP 到 {title}",
+    rank_max_rank: "已达到最高段位",
+    rank_1: "漫游者",
+    rank_2: "寻路者",
+    rank_3: "开拓者",
+    rank_4: "制图师",
+    rank_5: "探索者",
+    rank_6: "领航员",
+    rank_7: "编年者",
+    rank_8: "历史学家",
+    rank_9: "学者",
+    rank_10: "皇家制图师",
   },
   ar: {
     tagline: "أين ومتى حدث؟",
@@ -482,6 +626,19 @@ const STRINGS: Record<Locale, Strings> = {
     compete_draw: "ت",
     compete_completed: "مكتملة",
     compete_xp_unit: "نقطة",
+    rank_next_label: "التالي",
+    rank_next_rank: "{xp} XP حتى {title}",
+    rank_max_rank: "تم الوصول إلى أعلى رتبة",
+    rank_1: "الهائم",
+    rank_2: "مكتشف المسار",
+    rank_3: "الرائد",
+    rank_4: "رسام الخرائط",
+    rank_5: "المستكشف",
+    rank_6: "الملاح",
+    rank_7: "المؤرخ",
+    rank_8: "المؤرخ",
+    rank_9: "العالم",
+    rank_10: "رسام الخرائط الملكي",
   },
 };
 
@@ -593,6 +750,84 @@ function accColor(pct: number): string {
   if (pct >= 60) return "var(--gh-gold)";
   if (pct >= 40) return "var(--gh-orange)";
   return "var(--gh-danger)";
+}
+
+// ── Rank system (inlined from prod src/core/rank.ts) ──
+const RANK_THRESHOLDS = [0, 1_000, 5_000, 20_000, 50_000, 125_000, 300_000, 600_000, 1_200_000, 2_500_000];
+const RANK_IMAGE: Record<number, string> = {
+  1:  "/images/rank-titles/wanderer.jpg",
+  2:  "/images/rank-titles/pathfinder.jpg",
+  3:  "/images/rank-titles/trailblazer.jpg",
+  4:  "/images/rank-titles/cartographer.jpg",
+  5:  "/images/rank-titles/explorer.jpg",
+  6:  "/images/rank-titles/navigator.jpg",
+  7:  "/images/rank-titles/chronicler.jpg",
+  8:  "/images/rank-titles/historian.jpg",
+  9:  "/images/rank-titles/scholar.jpg",
+  10: "/images/rank-titles/cartographer_royal.jpg",
+};
+
+function rankForXp(totalXp: number) {
+  const xp = Math.max(0, Math.floor(totalXp));
+  let idx = 0;
+  for (let i = 0; i < RANK_THRESHOLDS.length; i++) {
+    if (xp >= RANK_THRESHOLDS[i]) idx = i;
+    else break;
+  }
+  const isMaxRank = idx === RANK_THRESHOLDS.length - 1;
+  const threshold = RANK_THRESHOLDS[idx];
+  const nextThreshold = isMaxRank ? null : RANK_THRESHOLDS[idx + 1];
+  const xpIntoTier = xp - threshold;
+  const xpToNext = nextThreshold !== null ? nextThreshold - xp : null;
+  const span = nextThreshold !== null ? nextThreshold - threshold : 0;
+  const progressPct = nextThreshold !== null
+    ? Math.min(100, Math.max(0, Math.round((xpIntoTier / span) * 100)))
+    : 100;
+  return { tier: idx + 1, isMaxRank, xpToNext, progressPct, xp };
+}
+
+// ── RankCard (inlined from prod src/components/RankCard.tsx, standalone) ──
+function RankCard({ s, totalXp }: { s: Strings; totalXp: number }) {
+  const info = rankForXp(totalXp);
+  const titleKey = `rank_${info.tier}` as keyof Strings;
+  const title = s[titleKey] as string;
+  const nextTitleKey = info.isMaxRank ? null : (`rank_${info.tier + 1}` as keyof Strings);
+  const nextTitle = nextTitleKey ? (s[nextTitleKey] as string) : "";
+  const imgSrc = RANK_IMAGE[info.tier] ?? RANK_IMAGE[1];
+
+  return (
+    <div className={styles.rankCardWrap}>
+      <section className={styles.rankCard}>
+        <div className={styles.rankMain}>
+          <div className={styles.rankMedallion}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imgSrc} alt={title} className={styles.rankMedImg} draggable={false} />
+            <span className={styles.rankMedTier}>T{info.tier}</span>
+          </div>
+          <div className={styles.rankBody}>
+            <div className={styles.rankHead}>
+              <h3 className={styles.rankTitle}>{title}</h3>
+              <span className={styles.rankXp}>{Math.floor(info.xp).toLocaleString()}<i>XP</i></span>
+            </div>
+            <div className={styles.rankNextLine}>
+              <span className={styles.rankNextLabel}>{s.rank_next_label}</span>
+              <span className={styles.rankNextTitle}>
+                {info.isMaxRank
+                  ? s.rank_max_rank
+                  : fillTemplate(s.rank_next_rank, {
+                      xp: (info.xpToNext ?? 0).toLocaleString(),
+                      title: nextTitle,
+                    })}
+              </span>
+            </div>
+            <div className={styles.rankBarMain}>
+              <span className={styles.rankBarFillMain} style={{ width: `${info.progressPct}%` }} />
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 // ── Compete panel (mirrors prod CompetePanel: tabs + content)
@@ -1078,6 +1313,9 @@ export default function HomeCreatePillPrototypePage() {
         {/* Scrollable content */}
         <div className={styles.scroll}>
           <div className={styles.content}>
+            {/* Rank progress card (inline, scrolls with content) */}
+            <RankCard s={s} totalXp={PROFILE.totalXp} />
+
             {/* Tagline */}
             <div className={styles.tagline}>{s.tagline}</div>
 
