@@ -408,7 +408,6 @@ export default class GameServer {
       }
     }
     this.snapshot = snapshot;
-    this.broadcastVersionCounter += 1;
     console.timeEnd("[PERF] loadFromDB:apiFetch");
     this.snapshotLoaded = true;
     // Rebuild readyForNext from READY_NEXT events for the current round only
@@ -510,7 +509,6 @@ export default class GameServer {
       }
     }
     this.snapshot = snapshot;
-    this.broadcastVersionCounter += 1;
     this.snapshotLoaded = true;
     this.scheduleRoundTimer();
     console.log("[STATE_UPDATE_OUTBOUND]", {
@@ -891,6 +889,7 @@ export default class GameServer {
       location: "broadcastStateUpdate"
     });
     if (!this.snapshot) return;
+    this.broadcastVersionCounter += 1;
     let snapshotWithReadyState: unknown = this.snapshot;
     let resultPhaseEndsAt: number | undefined;
     if (isRuntimeState(this.snapshot)) {
