@@ -1,5 +1,7 @@
 # MP-GUARD-SYNC-REGRESSION-001 — files whose push triggers the golden-path gate.
 partykit/server.ts
+src/server/sessionCore.ts
+src/server/getGameState.ts
 src/app/compete/**
 src/app/api/compete/**
 src/components/compete/**
