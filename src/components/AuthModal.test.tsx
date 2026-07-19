@@ -78,7 +78,7 @@ describe("AuthModal Google OAuth — KC-007", () => {
     const auth = await getMockAuth();
     render(React.createElement(AuthModal, { isOpen: true, onClose: vi.fn(), required: false }));
 
-    const googleButton = screen.getAllByRole("button").find(b =>
+    const googleButton = screen.getAllByRole("button").find((b: HTMLElement) =>
       /google/i.test(b.textContent || "")
     );
 
@@ -99,7 +99,7 @@ describe("AuthModal Google OAuth — KC-007", () => {
     const auth = await getMockAuth();
     render(React.createElement(AuthModal, { isOpen: true, onClose: vi.fn(), required: false }));
 
-    const googleButton = screen.getAllByRole("button").find(b =>
+    const googleButton = screen.getAllByRole("button").find((b: HTMLElement) =>
       /google/i.test(b.textContent || "")
     );
 
@@ -139,7 +139,7 @@ describe("AuthModal email auth — KC-007", () => {
 
     // Fill in email and password
     const inputs = screen.getAllByRole("textbox");
-    const emailInput = inputs.find(i => i.getAttribute("type") === "email" || i.getAttribute("type") === "text") || inputs[0];
+    const emailInput = inputs.find((i: HTMLElement) => i.getAttribute("type") === "email" || i.getAttribute("type") === "text") || inputs[0];
     if (emailInput) {
       fireEvent.change(emailInput, { target: { value: "test@test.com" } });
     }
@@ -150,7 +150,7 @@ describe("AuthModal email auth — KC-007", () => {
     }
 
     // Find submit button (sign in / log in)
-    const submitButton = screen.getAllByRole("button").find(b =>
+    const submitButton = screen.getAllByRole("button").find((b: HTMLElement) =>
       /sign_in|signin|log_in|login/i.test(b.textContent || "") && !/google/i.test(b.textContent || "")
     );
     if (submitButton) {
@@ -175,7 +175,7 @@ describe("AuthModal email auth — KC-007", () => {
     render(React.createElement(AuthModal, { isOpen: true, onClose: vi.fn(), required: false }));
 
     const inputs = screen.getAllByRole("textbox");
-    const emailInput = inputs.find(i => i.getAttribute("type") === "email" || i.getAttribute("type") === "text") || inputs[0];
+    const emailInput = inputs.find((i: HTMLElement) => i.getAttribute("type") === "email" || i.getAttribute("type") === "text") || inputs[0];
     if (emailInput) {
       fireEvent.change(emailInput, { target: { value: "test@test.com" } });
     }
@@ -185,7 +185,7 @@ describe("AuthModal email auth — KC-007", () => {
       fireEvent.change(passwordInputs[0], { target: { value: "wrongpass" } });
     }
 
-    const submitButton = screen.getAllByRole("button").find(b =>
+    const submitButton = screen.getAllByRole("button").find((b: HTMLElement) =>
       /sign_in|signin|log_in|login/i.test(b.textContent || "") && !/google/i.test(b.textContent || "")
     );
     if (submitButton) {
