@@ -39,7 +39,7 @@ const QUICK_LINKS: QuickLink[] = [
 
 const GS_STEPS: GsStep[] = [
   { num: '01', titleKey: 'gs_01_title', descKey: 'gs_01_desc' },
-  { num: '02', titleKey: 'gs_02_title', descKey: 'Start with Practice mode to learn the ropes. The timer is optional (15 s–5 min), and you have unlimited retries—just explore and get comfortable.' },
+  { num: '02', titleKey: 'gs_02_title', descKey: 'gs_02_desc' },
   { num: '03', titleKey: 'gs_03_title', descKey: 'gs_03_desc' },
   { num: '04', titleKey: 'gs_04_title', descKey: 'gs_04_desc' },
 ]
@@ -56,8 +56,8 @@ const GAME_MODES: GameMode[] = [
     key: 'practice',
     titleKey: 'practice',
     subKey: 'solo_warmup',
-    descKey: 'Hone your skills with unlimited practice games. The timer is optional and filters are fully customizable.',
-    featuresKey: 'Optional timer (15 s–5 min), Unlimited retries, Custom era and region filters, Instant feedback',
+    descKey: 'gm_practice_desc',
+    featuresKey: 'gm_practice_features',
     gradient: 'linear-gradient(135deg, #7c3008, #ea6820)',
   },
   {
@@ -81,41 +81,41 @@ const GAME_MODES: GameMode[] = [
 const CATEGORIES: Category[] = [
   { id: 'c1', icon: '🗺️', titleKey: 'cat_placing', descKey: 'cat_placing_desc' },
   { id: 'c2', icon: '📅', titleKey: 'cat_year', descKey: 'cat_year_desc' },
-  { id: 'c3', icon: '💡', titleKey: 'cat_hints', descKey: 'Hints are free, not purchased. Each hint tier reduces the relevant raw accuracy by a percentage: tier 1 = 10%, tier 2 = 20%, tier 3 = 30%, tier 4 = 40%, tier 5 = 50%. Penalties are applied proportionally and capped at 100%, so a hint can never reduce a score below 0%.' },
+  { id: 'c3', icon: '💡', titleKey: 'cat_hints', descKey: 'cat_hints_desc' },
   { id: 'c4', icon: '🥇', titleKey: 'cat_badges', descKey: 'cat_badges_desc' },
   { id: 'c5', icon: '⚙️', titleKey: 'cat_account', descKey: 'cat_account_desc' },
   { id: 'c6', icon: '🔔', titleKey: 'cat_notifications', descKey: 'cat_notifications_desc' },
-  { id: 'c7', icon: '🏆', titleKey: 'Rank & Progression', descKey: 'Your total XP unlocks 10 rank tiers, from Wanderer (0 XP) to Cartographer Royal (2,500,000 XP). Ranks are derived from your stats and are never stored separately.' },
-  { id: 'c8', icon: '🌍', titleKey: 'Era & Region Filters', descKey: 'Hosts can filter events by era—Ancient, Medieval, Early Modern, Modern, Contemporary—and by world region: Africa, Antarctica, Asia, Europe, North America, Oceania, South America. Only events matching the selected filters will appear in the game.' },
-  { id: 'c9', icon: '⏱️', titleKey: 'Results Auto-Advance', descKey: 'After everyone submits, results are shown and the game automatically moves to the next round. The default wait is 90 seconds; hosts can set it from 0 to 300 seconds.' },
-  { id: 'c10', icon: '⏳', titleKey: 'Relax Deadlines', descKey: 'In Relax (turn-based) mode, each player has up to 14 days to take a turn. The host sets the deadline when creating the game.' },
+  { id: 'c7', icon: '🏆', titleKey: 'cat_rank_progression', descKey: 'cat_rank_progression_desc' },
+  { id: 'c8', icon: '🌍', titleKey: 'cat_era_region', descKey: 'cat_era_region_desc' },
+  { id: 'c9', icon: '⏱️', titleKey: 'cat_results_auto_advance', descKey: 'cat_results_auto_advance_desc' },
+  { id: 'c10', icon: '⏳', titleKey: 'cat_relax_deadlines', descKey: 'cat_relax_deadlines_desc' },
 ]
 
 const FAQ: FaqItem[] = [
-  { id: 'f1', qKey: 'faq_q1', aKey: 'Each round gives up to 200 XP: up to 100 for WHERE and 100 for WHEN. Location accuracy is 100 * exp(-distanceKm / 1500), capped at 20,000 km. Year accuracy is 100 * exp(-effectiveYearDiff / 40), where effectiveYearDiff is your year gap divided by an era scale (sqrt((referenceYear - eventYear) / 50), with a minimum age of 50 years). Hint penalties are then applied proportionally to the raw scores.' },
+  { id: 'f1', qKey: 'faq_q1', aKey: 'faq_a1' },
   { id: 'f2', qKey: 'faq_q2', aKey: 'faq_a2' },
-  { id: 'f3', qKey: 'faq_q3', aKey: 'Practice is a solo warm-up with an optional timer and unlimited retries. Daily Challenge offers the same events for everyone every 24 hours with a global leaderboard. Compete lets you face friends in real-time Rush or turn-based Relax matches. Level Up is planned but not yet available.' },
-  { id: 'f4', qKey: 'faq_q4', aKey: 'Hints are free. Each hint belongs to one of five tiers and reduces the relevant raw accuracy by a percentage: tier 1 = 10%, tier 2 = 20%, tier 3 = 30%, tier 4 = 40%, tier 5 = 50%. The penalty is applied proportionally, so a hint can never make a score negative. Year hints are additionally age-discounted by era scale, making older events cheaper to hint.' },
+  { id: 'f3', qKey: 'faq_q3', aKey: 'faq_a3' },
+  { id: 'f4', qKey: 'faq_q4', aKey: 'faq_a4' },
   { id: 'f5', qKey: 'faq_q5', aKey: 'faq_a5' },
   { id: 'f6', qKey: 'faq_q6', aKey: 'faq_a6' },
   { id: 'f7', qKey: 'faq_q7', aKey: 'faq_a7' },
   { id: 'f8', qKey: 'faq_q8', aKey: 'faq_a8' },
   { id: 'f9', qKey: 'faq_q9', aKey: 'faq_a9' },
-  { id: 'f10', qKey: 'What is the pressure clamp?', aKey: 'In Rush mode, as soon as the first player submits a guess, the round timer drops to 30 seconds for everyone still guessing. This keeps the game moving and prevents long waits.' },
+  { id: 'f10', qKey: 'faq_q10', aKey: 'faq_a10' },
 ]
 
 const SHORTCUTS: Shortcut[] = [
-  { key: 'Esc', actionKey: 'Close modals and the fullscreen image viewer' },
-  { key: 'Enter', actionKey: 'Open the full player list in the lobby search' },
-  { key: 'Tab', actionKey: 'Move focus between interactive controls' },
+  { key: 'Esc', actionKey: 'kb_esc_action' },
+  { key: 'Enter', actionKey: 'kb_enter_action' },
+  { key: 'Tab', actionKey: 'kb_tab_action' },
 ]
 
 const TROUBLESHOOTING: Trouble[] = [
   { id: 't1', problemKey: 'ts_t1_problem', solutionKey: 'ts_t1_solution' },
   { id: 't2', problemKey: 'ts_t2_problem', solutionKey: 'ts_t2_solution' },
   { id: 't3', problemKey: 'ts_t3_problem', solutionKey: 'ts_t3_solution' },
-  { id: 't4', problemKey: 'ts_t4_problem', solutionKey: 'Hints are free. Tap the hint button, review the accuracy cost shown, and confirm to reveal the clue. The cost is a percentage penalty applied to your raw score.' },
-  { id: 't5', problemKey: 'ts_t5_problem', solutionKey: 'Check if you used hints—each tier reduces the relevant raw accuracy by 10%-50% proportionally. Also verify your distance from the actual location and year difference. The max per round is 200 XP (100 location + 100 year).' },
+  { id: 't4', problemKey: 'ts_t4_problem', solutionKey: 'ts_t4_solution' },
+  { id: 't5', problemKey: 'ts_t5_problem', solutionKey: 'ts_t5_solution' },
 ]
 
 /* ---------- Search index ---------- */
