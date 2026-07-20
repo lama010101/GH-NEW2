@@ -739,10 +739,10 @@ const MOCK_GAMES: MockGame[] = [
   { id: "g2", opponent_name: "James B.", opponent_avatar: "https://i.pravatar.cc/64?img=2", round_current: 1, round_total: 5, mode: "sync", status: "your_turn" },
   // Your Turn — no mode, no avatar
   { id: "g3", opponent_name: "Liam C.", round_current: 2, round_total: 5, status: "your_turn" },
-  // Completed — WIN, accuracy 92 (green ≥85), async, with avatar, no rank
-  { id: "g4", opponent_name: "Yuki N.", opponent_avatar: "https://i.pravatar.cc/64?img=3", round_current: 5, round_total: 5, mode: "async", status: "completed", score_you: 3, score_them: 2, accuracy_you: 92, completed_at: new Date(Date.now() - 2 * 3600000).toISOString() },
-  // Completed — LOSS, accuracy 35 (red <40), sync, no avatar, no rank
-  { id: "g5", opponent_name: "Omar K.", round_current: 5, round_total: 5, mode: "sync", status: "completed", score_you: 1, score_them: 4, accuracy_you: 35, completed_at: new Date(Date.now() - 86400000).toISOString() },
+  // Completed — WIN, accuracy 92 (green ≥85), async, with avatar, rank #2
+  { id: "g4", opponent_name: "Yuki N.", opponent_avatar: "https://i.pravatar.cc/64?img=3", round_current: 5, round_total: 5, mode: "async", status: "completed", score_you: 3, score_them: 2, accuracy_you: 92, completed_at: new Date(Date.now() - 2 * 3600000).toISOString(), leaderboard_rank: 2 },
+  // Completed — LOSS, accuracy 35 (red <40), sync, no avatar, rank #5
+  { id: "g5", opponent_name: "Omar K.", round_current: 5, round_total: 5, mode: "sync", status: "completed", score_you: 1, score_them: 4, accuracy_you: 35, completed_at: new Date(Date.now() - 86400000).toISOString(), leaderboard_rank: 5 },
   // Completed — DRAW, accuracy 65 (gold ≥60), async, no avatar, rank #3
   { id: "g6", opponent_name: "Elena R.", round_current: 5, round_total: 5, mode: "async", status: "completed", score_you: 2, score_them: 2, accuracy_you: 65, completed_at: new Date(Date.now() - 2 * 86400000).toISOString(), leaderboard_rank: 3 },
   // Completed — WIN, accuracy 72 (orange ≥40), sync, no avatar, rank #1
