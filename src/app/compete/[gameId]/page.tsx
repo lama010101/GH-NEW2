@@ -614,7 +614,7 @@ export default function CompeteGamePage() {
                 type="button"
                 onClick={handleForceClear}
                 className={btnStyles.button}
-                style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, background: 'rgba(255,100,100,0.3)' }}
+                style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, background: 'rgba(var(--gh-danger-rgb), 0.3)' }}
               >
                 {t('game.clear_session_restart')}
               </button>
@@ -627,7 +627,7 @@ export default function CompeteGamePage() {
                 type="button"
                 onClick={handleForceClear}
                 className={btnStyles.button}
-                style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, background: 'rgba(255,100,100,0.3)' }}
+                style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, background: 'rgba(var(--gh-danger-rgb), 0.3)' }}
               >
                 {t('game.clear_session_restart')}
               </button>

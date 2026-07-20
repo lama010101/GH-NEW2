@@ -241,7 +241,7 @@ function Rail({ items, selected, itemWidth, labelFn, onSelect, committed, tierLa
                   borderRadius: 8,
                   fontSize: 13,
                   fontWeight: isActive ? 500 : 400,
-                  color: isActive ? 'white' : INACTIVE_COLOR,
+                  color: isActive ? 'var(--gh-text-primary)' : INACTIVE_COLOR,
                   background: isActive ? (isConfirmed ? ACTIVE_BG_COMMITTED : ACTIVE_BG) : 'transparent',
                   border: isActive ? (isConfirmed ? ACTIVE_BORDER_COMMITTED : ACTIVE_BORDER) : 'none',
                   transform: isActive ? 'scale(1.05)' : 'none',

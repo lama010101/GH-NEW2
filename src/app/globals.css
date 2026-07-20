@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
+/* Wire Tailwind dark variant to the app's data-theme attribute. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 
 * {
   box-sizing: border-box;

@@ -49,8 +49,8 @@
   height: 56px;
   flex-shrink: 0;
   overflow: hidden;
-  border: 2px solid #fb923c;
-  box-shadow: 0 0 18px rgba(251,146,60,0.27);
+  border: 2px solid var(--gh-orange);
+  box-shadow: 0 0 18px rgba(var(--gh-orange-rgb), 0.27);
   border-radius: 14px;
 }
 
@@ -130,7 +130,7 @@
 }
 
 .rankNextTitle {
-  color: #fb923c;
+  color: var(--gh-orange);
   font-weight: 800;
 }
 
@@ -145,7 +145,7 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #fb923c, #f97316);
+  background: linear-gradient(90deg, var(--gh-orange), #f97316);
   transition: width 0.9s cubic-bezier(0.16,1,0.3,1);
 }
 

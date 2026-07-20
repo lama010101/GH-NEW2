@@ -33,7 +33,7 @@ const createIcon = (color: string) => {
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      border: 2px solid white;
+      border: 2px solid var(--gh-text-primary);
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     "></div>`,
     iconSize: [16, 16],
@@ -41,13 +41,13 @@ const createIcon = (color: string) => {
   });
 };
 
-const correctIcon = createIcon("#22C55E"); // Green
+const correctIcon = createIcon("var(--gh-success)"); // Green
 
 const createAvatarIcon = (avatarUrl: string | null | undefined, label: string | undefined): L.DivIcon => {
   const initial = label ? label.charAt(0).toUpperCase() : "?";
   const circleContent = avatarUrl
-    ? `<img src="${avatarUrl}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); object-fit: cover; display: block;" />`
-    : `<div style="width: 36px; height: 36px; border-radius: 50%; background: #4b5563; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">${initial}</div>`;
+    ? `<img src="${avatarUrl}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--gh-text-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.4); object-fit: cover; display: block;" />`
+    : `<div style="width: 36px; height: 36px; border-radius: 50%; background: var(--gh-avatar-fallback-bg); display: flex; align-items: center; justify-content: center; color: var(--gh-text-primary); font-weight: 600; font-size: 14px; border: 2px solid var(--gh-text-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.4);">${initial}</div>`;
 
   const html = `
     <div style="position: relative; width: 36px; height: 36px; overflow: visible;">

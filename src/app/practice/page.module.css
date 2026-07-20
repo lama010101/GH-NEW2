@@ -49,3 +49,8 @@
   font-weight: 500;
   letter-spacing: 0.01em;
 }
+
+/* The loading screen uses a dark background image in both themes. */
+[data-theme="light"] .loadingLabel {
+  color: rgba(255, 255, 255, 0.75);
+}
