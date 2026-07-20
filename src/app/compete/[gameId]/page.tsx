@@ -45,6 +45,7 @@ export default function CompeteGamePage() {
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
   const t = useTranslations('game');
+  const tLobby = useTranslations('lobby');
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
@@ -353,14 +354,16 @@ export default function CompeteGamePage() {
       setTimeout(() => setTimerClamped(false), 600);
     },
     onError: (message, code) => {
-      setError(message);
       if (code === "PLAYER_KICKED") {
-        router.push("/home");
+        setError(tLobby('kicked_toast'));
+        router.push("/home?kicked=1");
+        return;
       }
+      setError(message);
     },
     onKicked: () => {
-      setError(t('lobby.kicked_toast'));
-      router.push("/home");
+      setError(tLobby('kicked_toast'));
+      router.push("/home?kicked=1");
     },
     onDisconnect: () => {
       setWsDisconnected(true);

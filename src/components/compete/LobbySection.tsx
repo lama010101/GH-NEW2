@@ -156,7 +156,6 @@ export default function LobbySection({
 
   /* ── Invite panel ── */
   const [linkCopied, setLinkCopied] = useState(false);
-  const [codeCopied, setCodeCopied] = useState(false);
   const [lastInvited, setLastInvited] = useState<LastInvitedPlayer[]>([]);
   const [inviteStates, setInviteStates] = useState<Record<string, 'idle' | 'pending' | 'sent' | 'error'>>({});
   const [playerPool, setPlayerPool] = useState<PlayerPoolEntry[]>([]);
@@ -454,8 +453,9 @@ export default function LobbySection({
     setPendingInvites((prev) => prev.filter((p) => !joinedIds.has(p.id)));
   }, [snapshot.players]);
 
-  // Build priority display list
-  const inLobbyIds = new Set(snapshot.players.map((p) => p.playerId));
+  // Build priority display list. Only active players should block re-invitation;
+  // kicked/left players remain in snapshot.players but are inviteable again.
+  const inLobbyIds = new Set(snapshot.players.filter((p) => p.leftAt === null).map((p) => p.playerId));
   const viewerId = viewer?.playerId ?? null;
   const lastInvitedFiltered = lastInvited.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId);
   const lastInvitedIds = new Set(lastInvitedFiltered.map((p) => p.id));
@@ -524,22 +524,12 @@ export default function LobbySection({
     }
   };
 
-  const handleCopyLink = async () => {
+  const handleShareLink = async () => {
     try {
       const link = typeof window !== "undefined" ? window.location.href : "";
       await navigator.clipboard.writeText(link);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleCopyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(roomCode);
-      setCodeCopied(true);
-      setTimeout(() => setCodeCopied(false), 2000);
     } catch {
       // ignore
     }
@@ -570,6 +560,7 @@ export default function LobbySection({
             <span className={styles['lobby-status-chip']}>
               <span className={styles['lobby-status-dot']} />
               {t('lobby.waiting')}
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--gh-text-primary)', letterSpacing: '1px' }}>{roomCode}</span>
             </span>
           </div>
         </div>
@@ -588,18 +579,13 @@ export default function LobbySection({
             <div className={styles['lobby-subsection-header']}>
               <span className={styles['lobby-accent-bar-sm']} />
               <span className={styles['lobby-subsection-title']}>{t('lobby.invite_players')}</span>
-              <div className={styles['lobbyShareBtnGroup']}>
-                <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyLink} data-testid="lobby-copy-link">
-                  {t('lobby.copy_link')}
-                </button>
-                <button type="button" className={styles['lobbyShareBtn']} onClick={handleCopyCode} data-testid="lobby-copy-code">
-                  {t('lobby.copy_code')}
-                </button>
-              </div>
+              <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
+                {t('lobby.copy_link')}
+              </button>
             </div>
-            {(linkCopied || codeCopied) && (
+            {linkCopied && (
               <span className={styles['lobbyCopiedToast']}>
-                {linkCopied ? t('lobby.link_copied') : t('lobby.code_copied')}
+                {t('lobby.link_copied')}
               </span>
             )}
             <div className={styles['lobbySearchWrap']}>
