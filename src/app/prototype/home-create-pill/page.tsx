@@ -47,6 +47,26 @@ function CreateIcon() {
   );
 }
 
+function AvatarIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-4 3.6-8 8-8s8 4 8 8" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
 // ── Locale model (mirrors src/i18n/config.ts) ──
 type Locale = "en" | "fr" | "es" | "de" | "it" | "pt" | "nl" | "ru" | "ja" | "zh" | "ar";
 
@@ -733,8 +753,8 @@ const MOCK_GAMES: MockGame[] = [
   { id: "g9", opponent_name: "Carlos D.", opponent_avatar: "https://i.pravatar.cc/64?img=4", round_current: 5, round_total: 5, status: "completed", score_you: 5, score_them: 0, accuracy_you: 88, completed_at: new Date(Date.now() - 15 * 86400000).toISOString(), leaderboard_rank: 12 },
 ];
 
-function timeAgoLabel(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
+function timeAgoLabel(iso: string, now?: number): string {
+  const diff = (now ?? Date.now()) - new Date(iso).getTime();
   if (diff < 60000) return "now";
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`;
@@ -857,6 +877,10 @@ function InviteIcon() {
 
 function CompetePanel({ s }: { s: Strings }) {
   const [tab, setTab] = useState<"invitations" | "your_turn" | "completed">("invitations");
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    setNow(Date.now());
+  }, []);
 
   const yourTurn = MOCK_GAMES.filter((g) => g.status === "your_turn");
   const completed = MOCK_GAMES.filter((g) => g.status === "completed");
@@ -913,7 +937,7 @@ function CompetePanel({ s }: { s: Strings }) {
                   style={{ display: inv.avatar_url ? "none" : "flex" }}
                   hidden={!!inv.avatar_url}
                 >
-                  {inv.inviter_name.slice(0, 2).toUpperCase()}
+                  <AvatarIcon />
                 </div>
                 <div className={styles.gameInfo}>
                   <span className={styles.gameName}>{inv.inviter_name}</span>
@@ -921,10 +945,10 @@ function CompetePanel({ s }: { s: Strings }) {
                     {inv.mode
                       ? fillTemplate(s.compete_invite_meta, {
                           mode: inv.mode === "sync" ? s.compete_mode_rush : s.compete_mode_relax,
-                          time: timeAgoLabel(inv.created_at),
+                          time: now ? timeAgoLabel(inv.created_at, now) : "—",
                         })
                       : fillTemplate(s.compete_invite_sent, {
-                          time: timeAgoLabel(inv.created_at),
+                          time: now ? timeAgoLabel(inv.created_at, now) : "—",
                         })}
                   </span>
                 </div>
@@ -940,7 +964,7 @@ function CompetePanel({ s }: { s: Strings }) {
                   className={styles.deleteBtn}
                   aria-label={s.compete_delete_aria}
                 >
-                  ✕
+                  <TrashIcon />
                 </button>
               </div>
             ))}
@@ -972,7 +996,7 @@ function CompetePanel({ s }: { s: Strings }) {
                   style={{ display: g.opponent_avatar ? "none" : "flex" }}
                   hidden={!!g.opponent_avatar}
                 >
-                  {g.opponent_name.slice(0, 2).toUpperCase()}
+                  <AvatarIcon />
                 </div>
                 <div className={styles.gameInfo}>
                   <span className={styles.gameName}>{g.opponent_name}</span>
@@ -1026,7 +1050,7 @@ function CompetePanel({ s }: { s: Strings }) {
                   style={{ display: g.opponent_avatar ? "none" : "flex" }}
                   hidden={!!g.opponent_avatar}
                 >
-                  {g.opponent_name.slice(0, 2).toUpperCase()}
+                  <AvatarIcon />
                 </div>
                 <div className={styles.gameInfo}>
                   <span className={styles.gameName}>{g.opponent_name}</span>
@@ -1037,34 +1061,14 @@ function CompetePanel({ s }: { s: Strings }) {
                       </span>
                     )}
                     {" "}
-                    {g.completed_at ? timeAgoLabel(g.completed_at) : ""}
+                    {g.completed_at ? (now ? timeAgoLabel(g.completed_at, now) : "—") : ""}
                   </span>
                 </div>
                 <div className={styles.scoreWrap}>
                   {g.score_you != null && g.score_them != null ? (
-                    <>
-                      <span
-                        className={`${styles.resultBadge} ${
-                          g.score_you > g.score_them
-                            ? styles.resultWin
-                            : g.score_you < g.score_them
-                            ? styles.resultLoss
-                            : styles.resultDraw
-                        }`}
-                      >
-                        {g.score_you > g.score_them
-                          ? s.compete_win
-                          : g.score_you < g.score_them
-                          ? s.compete_loss
-                          : s.compete_draw}
-                      </span>
-                      <span className={styles.accuracyValue} style={{ color: accColor(g.accuracy_you ?? 0) }}>
-                        {g.accuracy_you ?? 0}
-                      </span>
-                      <span className={styles.xpValue}>
-                        {g.score_you} {s.compete_xp_unit}
-                      </span>
-                    </>
+                    <span className={styles.accuracyValue} style={{ color: accColor(g.accuracy_you ?? 0) }}>
+                      {g.accuracy_you ?? 0}<span style={{ fontSize: "0.75em", opacity: 0.7, marginLeft: 1 }}>%</span>
+                    </span>
                   ) : (
                     <span className={styles.completedLabel}>{s.compete_completed}</span>
                   )}
@@ -1077,7 +1081,7 @@ function CompetePanel({ s }: { s: Strings }) {
                   className={styles.deleteBtn}
                   aria-label={s.compete_delete_aria}
                 >
-                  ✕
+                  <TrashIcon />
                 </button>
               </div>
             ))}
