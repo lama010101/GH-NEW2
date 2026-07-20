@@ -27,8 +27,8 @@ export function DailyPanel({ onPlay }: { onPlay: () => void }) {
     <div className={styles.dailyPanel}>
       <div className={styles.timerBox}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8"/>
-          <path d="M12 7v5l3 3" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round"/>
+          <circle cx="12" cy="12" r="10" stroke="var(--gh-text-secondary)" strokeWidth="1.8"/>
+          <path d="M12 7v5l3 3" stroke="var(--gh-text-secondary)" strokeWidth="1.8" strokeLinecap="round"/>
         </svg>
         <span className={styles.timerLabel}>
           {t('home.daily_new_challenge')} <span className={styles.timerCountdown}>{countdown}</span>

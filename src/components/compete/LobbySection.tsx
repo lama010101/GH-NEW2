@@ -645,7 +645,7 @@ export default function LobbySection({
                           onClick={() => toggleFollow(player.id)}
                           aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
                         >
-                          <span style={{ color: followedIds.has(player.id) ? '#f0c060' : 'rgba(255,255,255,0.5)' }}>
+                          <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
                             {followedIds.has(player.id) ? '★' : '☆'}
                           </span>
                         </button>
@@ -731,7 +731,7 @@ export default function LobbySection({
                             onClick={() => toggleFollow(player.id)}
                             aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
                           >
-                            <span style={{ color: followedIds.has(player.id) ? '#f0c060' : 'rgba(255,255,255,0.5)' }}>
+                            <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
                               {followedIds.has(player.id) ? '★' : '☆'}
                             </span>
                           </button>
@@ -769,7 +769,7 @@ export default function LobbySection({
               <span className={styles['lobbyReadyIndicator']}>
                 <span
                   className={styles['lobbyReadyDot']}
-                  style={{ background: readyCount > 0 ? "#4ade80" : "rgba(255,255,255,0.25)" }}
+                  style={{ background: readyCount > 0 ? "var(--gh-success)" : "var(--gh-border-default)" }}
                 />
                 {t('lobby.ready_count', { count: readyCount })}
               </span>
@@ -785,7 +785,7 @@ export default function LobbySection({
                     </div>
                     {!isViewerPlayer && (
                       <button className={styles['lobbyStarBtnInline']} onClick={() => toggleFollow(p.playerId)} aria-label={t('lobby.toggle_follow')}>
-                        <span style={{ color: followedIds.has(p.playerId) ? '#f0c060' : 'rgba(255,255,255,0.45)' }}>
+                        <span style={{ color: followedIds.has(p.playerId) ? 'var(--gh-gold)' : 'var(--gh-text-tertiary)' }}>
                           {followedIds.has(p.playerId) ? '★' : '☆'}
                         </span>
                       </button>

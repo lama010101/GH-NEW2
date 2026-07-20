@@ -65,10 +65,10 @@ function getHintLabel(hint: EventHint, t: (key: string) => string): string {
 
 function penaltyBorderColor(pct: number): string {
   if (pct === 0) return "transparent";
-  if (pct <= 20) return "rgba(126,217,87,0.4)";
-  if (pct <= 40) return "rgba(232,192,34,0.4)";
-  if (pct <= 60) return "rgba(232,119,34,0.4)";
-  return "rgba(232,68,34,0.4)";
+  if (pct <= 20) return "rgba(var(--gh-success-rgb), 0.4)";
+  if (pct <= 40) return "rgba(var(--gh-gold-rgb), 0.4)";
+  if (pct <= 60) return "rgba(var(--gh-orange-rgb), 0.4)";
+  return "rgba(var(--gh-danger-rgb), 0.4)";
 }
 
 function getHintDescription(hint: EventHint, t: (key: string, params?: Record<string, string | number | Date>) => string): string {

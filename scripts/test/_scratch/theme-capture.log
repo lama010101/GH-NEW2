@@ -1,0 +1,116 @@
+◇ injecting env (20) from .env.local // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injecting env (0) from .env.local // tip: ⌘ suppress logs { quiet: true }
+[PREFLIGHT] Load average: 1min=0.00 5min=0.00 15min=0.00
+[PLAYWRIGHT SETUP] Creating test users...
+[PLAYWRIGHT SETUP] User gh-test-player-1@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-1@test.guess-history.com with ID efd2ce2b-140c-42fe-b6fe-f510ab5a25f3
+[PLAYWRIGHT SETUP] User gh-test-player-2@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-2@test.guess-history.com with ID a239818c-6180-4fcd-bc30-94c2f16d13ed
+[PLAYWRIGHT SETUP] User gh-test-player-3@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-3@test.guess-history.com with ID a4f2e900-d133-4b2b-b160-a3704a724aa6
+[PLAYWRIGHT SETUP] User gh-test-player-4@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-4@test.guess-history.com with ID 776f7448-105c-45a6-805c-d28acdd4a831
+[PLAYWRIGHT SETUP] User gh-test-player-5@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-5@test.guess-history.com with ID f0e45af8-c9c9-45bb-9605-c19588614d60
+[PLAYWRIGHT SETUP] User gh-test-player-6@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-6@test.guess-history.com with ID dbfe7cb0-2d6b-4d97-bf38-a6c00d443d93
+[PLAYWRIGHT SETUP] User gh-test-player-7@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-7@test.guess-history.com with ID d2c2df00-3d1b-40e7-9ad0-46f6ba250871
+[PLAYWRIGHT SETUP] User gh-test-player-8@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-8@test.guess-history.com with ID 2e721c52-3b04-4548-b90d-981712cd5178
+[PLAYWRIGHT SETUP] User gh-test-player-9@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-9@test.guess-history.com with ID c6f85d9b-7cc7-4414-bb70-7e7d88889900
+[PLAYWRIGHT SETUP] User gh-test-player-10@test.guess-history.com already exists, deleting...
+[PLAYWRIGHT SETUP] Created user gh-test-player-10@test.guess-history.com with ID 0a7f9be2-abc1-4a78-bb30-64aab5a43f9f
+[PLAYWRIGHT SETUP] Wrote 10 user IDs to D:\GH-NEW2\.test-user-ids.json
+[PLAYWRIGHT SETUP] All test users created successfully
+[PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues
+[THEME] ======== LIGHT theme capture ========
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[THEME:light] Created game ae4f8654-fbe8-4371-bce3-ae61d574cb00
+[WS:TestPlayer1] Connecting to ws://localhost:1999/parties/lobby/ae4f8654-fbe8-4371-bce3-ae61d574cb00?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJlZmQyY2UyYi0xNDBjLTQyZmUtYjZmZS1mNTEwYWI1YTI1ZjMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0NDcwNjk2LCJpYXQiOjE3ODQ0NjcwOTYsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMUB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4NDQ2NzA5Nn1dLCJzZXNzaW9uX2lkIjoiOTJlZDlkYjgtZDQ5ZC00MWYzLWI5ODktZjE4ZWM1ZDlkYTEwIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.4cAmDFnX8lA57rRioDRriXyjidWtVhX8_8GR0Fm5b7TUC3-oZzIGabCfF0-fNjpGojGg3wWcwC7pBaw7dgZ0cg
+[WS:TestPlayer2] Connecting to ws://localhost:1999/parties/lobby/ae4f8654-fbe8-4371-bce3-ae61d574cb00?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJhMjM5ODE4Yy02MTgwLTRmY2QtYmMzMC05NGMyZjE2ZDEzZWQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0NDcwNjk3LCJpYXQiOjE3ODQ0NjcwOTcsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4NDQ2NzA5N31dLCJzZXNzaW9uX2lkIjoiNzVmNjlmNWEtMGY2Ni00NTZkLTlmMDYtNjVlMzg3ZTI0NTZlIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.J-V1-gvxSbwC77wFS78kmaLIkuSbFxQ0TTO9Zkyr_hQ-5_NRbLsqaTZvypXLi0HkW_CLcqCk6UVaUUgTifM_Fw
+[WS:TestPlayer2] Connected
+[WS:TestPlayer1] Connected
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[THEME:light] Screenshot: D:\GH-NEW2\scripts\test\_scratch\theme-screenshots\light-lobby.png
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=ROUND_ACTIVE round=0
+[WS:TestPlayer2] state=ROUND_ACTIVE round=0
+[THEME:light] Screenshot: D:\GH-NEW2\scripts\test\_scratch\theme-screenshots\light-round-active.png
+[WS:TestPlayer1] state=ROUND_ACTIVE round=0
+[WS:TestPlayer2] state=ROUND_ACTIVE round=0
+[WS:TestPlayer1] state=ROUND_COMPLETE round=0
+[WS:TestPlayer2] state=ROUND_COMPLETE round=0
+[THEME:light] Screenshot: D:\GH-NEW2\scripts\test\_scratch\theme-screenshots\light-round-complete.png
+[THEME] ======== DARK theme capture ========
+[AUTH] Logging in gh-test-player-1@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-1@test.guess-history.com logged in successfully (auth cookie set)
+[AUTH] Logging in gh-test-player-2@test.guess-history.com via AuthModal...
+[AUTH] gh-test-player-2@test.guess-history.com logged in successfully (auth cookie set)
+[THEME:dark] Created game 2f7532a5-ee40-469c-930b-403ec94b20d1
+[WS:TestPlayer1] Connecting to ws://localhost:1999/parties/lobby/2f7532a5-ee40-469c-930b-403ec94b20d1?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJlZmQyY2UyYi0xNDBjLTQyZmUtYjZmZS1mNTEwYWI1YTI1ZjMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0NDcwNzk0LCJpYXQiOjE3ODQ0NjcxOTQsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMUB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4NDQ2NzE5NH1dLCJzZXNzaW9uX2lkIjoiMmZmM2IzOGMtM2QzNC00MWI2LTlkOGEtMjQxNDYyODk1OWE1IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.c-co_jEvvJff-GJ_B7GaU8ozaJ1wA2q1P_SHt63JDxEcHRMkAaAz2brGdkHSjKsjeyvk6R44D-uAWer-jZvckw
+[WS:TestPlayer2] Connecting to ws://localhost:1999/parties/lobby/2f7532a5-ee40-469c-930b-403ec94b20d1?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJhMjM5ODE4Yy02MTgwLTRmY2QtYmMzMC05NGMyZjE2ZDEzZWQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0NDcwNzk0LCJpYXQiOjE3ODQ0NjcxOTQsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4NDQ2NzE5NH1dLCJzZXNzaW9uX2lkIjoiMzkyZTdiMjktZDMzNi00YWFmLWIxZWEtNDFmOTE5NGQ4OTBmIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.ttJSNJF38F_942xelKtx1bLI9Y5yUOSX5CNCmhtlzV6Fahui0YHIK9vTqXrHrz2_Cqt40ytpx0D-m-6I13o6PQ
+[WS:TestPlayer2] Connected
+[WS:TestPlayer1] Connected
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer2] Closed code=1006 reason=
+[WS:TestPlayer1] Closed code=1006 reason=
+[THEME:dark] Screenshot: D:\GH-NEW2\scripts\test\_scratch\theme-screenshots\dark-lobby.png
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=LOBBY round=0
+[WS:TestPlayer2] state=LOBBY round=0
+[WS:TestPlayer1] state=ROUND_ACTIVE round=0
+[WS:TestPlayer2] state=ROUND_ACTIVE round=0
+[THEME:dark] Screenshot: D:\GH-NEW2\scripts\test\_scratch\theme-screenshots\dark-round-active.png
+[WS:TestPlayer1] state=ROUND_ACTIVE round=0
+[WS:TestPlayer2] state=ROUND_ACTIVE round=0
+[WS:TestPlayer1] state=ROUND_COMPLETE round=0
+[WS:TestPlayer2] state=ROUND_COMPLETE round=0
+[THEME:dark] Screenshot: D:\GH-NEW2\scripts\test\_scratch\theme-screenshots\dark-round-complete.png
+[THEME] All captures complete
+[PLAYWRIGHT TEARDOWN] Cleaning up test users...
+[PLAYWRIGHT TEARDOWN] Deleted user efd2ce2b-140c-42fe-b6fe-f510ab5a25f3
+[PLAYWRIGHT TEARDOWN] Deleted user a239818c-6180-4fcd-bc30-94c2f16d13ed
+[PLAYWRIGHT TEARDOWN] Deleted user a4f2e900-d133-4b2b-b160-a3704a724aa6
+[PLAYWRIGHT TEARDOWN] Deleted user 776f7448-105c-45a6-805c-d28acdd4a831
+[PLAYWRIGHT TEARDOWN] Deleted user f0e45af8-c9c9-45bb-9605-c19588614d60
+[PLAYWRIGHT TEARDOWN] Deleted user dbfe7cb0-2d6b-4d97-bf38-a6c00d443d93
+[PLAYWRIGHT TEARDOWN] Deleted user d2c2df00-3d1b-40e7-9ad0-46f6ba250871
+[PLAYWRIGHT TEARDOWN] Deleted user 2e721c52-3b04-4548-b90d-981712cd5178
+[PLAYWRIGHT TEARDOWN] Deleted user c6f85d9b-7cc7-4414-bb70-7e7d88889900
+[PLAYWRIGHT TEARDOWN] Deleted user 0a7f9be2-abc1-4a78-bb30-64aab5a43f9f
+[PLAYWRIGHT TEARDOWN] Cleaned up orphaned user gh-test-signup-1783533983474@test.guess-history.com
+[PLAYWRIGHT TEARDOWN] Cleaned up orphaned user gh-test-signup-1783513572840@test.guess-history.com
+[PLAYWRIGHT TEARDOWN] Cleaned up orphaned user gh-test-signup-1782922068826@test.guess-history.com
+[PLAYWRIGHT TEARDOWN] Cleaned up orphaned user test-user-1782816481663@test.guess-history.com
+[PLAYWRIGHT TEARDOWN] Cleaned up orphaned user test-user-1782816124138@test.guess-history.com
+[WS:TestPlayer2] Closed code=1006 reason=
+[WS:TestPlayer1] Closed code=1006 reason=
+[PLAYWRIGHT TEARDOWN] Cleaned up orphaned user test-user-1782816088975@test.guess-history.com
+[PLAYWRIGHT TEARDOWN] Cleaned up orphaned user test-user-1782816031569@test.guess-history.com
+[PLAYWRIGHT TEARDOWN] Removed D:\GH-NEW2\.test-user-ids.json
+[PLAYWRIGHT TEARDOWN] Cleanup complete
