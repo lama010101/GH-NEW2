@@ -32,7 +32,7 @@
   background: var(--gh-danger);
   color: var(--gh-text-primary);
   border-radius: var(--gh-radius-pill);
-  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 700;
   padding: 1px 5px;
   margin-left: 4px;
@@ -202,7 +202,7 @@
   border: none;
   cursor: pointer;
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   line-height: 1;
   opacity: 0.8;
@@ -223,7 +223,7 @@
 .rankBadge {
   background: rgba(var(--gh-teal-rgb), 0.18);
   color: var(--gh-teal);
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   padding: 3px 7px;
   border-radius: var(--gh-radius-pill);
@@ -236,7 +236,7 @@
   display: inline-block;
   background: var(--gh-glass-bg-hover);
   color: var(--gh-text-secondary);
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   padding: 1px 6px;
   border-radius: var(--gh-radius-pill);
@@ -250,7 +250,7 @@
 .playBadge {
   background: var(--gh-blue);
   color: var(--gh-text-primary);
-  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--gh-radius-pill);
@@ -259,7 +259,7 @@
 .modeBadge {
   background: var(--gh-glass-bg-hover);
   color: var(--gh-text-secondary);
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   padding: 3px 8px;
   border-radius: var(--gh-radius-pill);
@@ -277,7 +277,7 @@
   display: inline-block;
   padding: 1px 7px;
   border-radius: 6px;
-  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 700;
   color: var(--gh-text-primary);
   margin-right: 6px;

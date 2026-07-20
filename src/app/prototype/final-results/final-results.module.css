@@ -39,14 +39,14 @@
 }
 
 .protoTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.85;
 }
 
 .protoHint {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   opacity: 0.55;
 }
@@ -72,14 +72,14 @@
 }
 
 .bannerKicker {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 2.5px;
   color: #22d3ee;
 }
 
 .bannerTitle {
-  font-size: 30px;
+  font-size: var(--font-3xl);
   font-weight: 800;
   margin: 8px 0 0;
   letter-spacing: -0.5px;
@@ -94,7 +94,7 @@
 
 .bannerStats {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.7);
   display: flex;
@@ -130,7 +130,7 @@
 }
 
 .cardTitle {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   margin: 0;
 }
@@ -159,19 +159,19 @@
 }
 
 .ringValue {
-  font-size: 38px;
+  font-size: var(--font-4xl);
   font-weight: 800;
 }
 
 .ringPct {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.6);
   margin-left: 2px;
 }
 
 .ringLabel {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -193,14 +193,14 @@
 }
 
 .xpValue {
-  font-size: 26px;
+  font-size: var(--font-3xl);
   font-weight: 800;
   color: #ffd54a;
   line-height: 1;
 }
 
 .xpLabel {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.55);
   margin-top: 3px;
 }
@@ -223,12 +223,12 @@
 }
 
 .splitLabel {
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: rgba(255, 255, 255, 0.65);
 }
 
 .splitVal {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
 }
 
@@ -271,7 +271,7 @@
 .lbRank {
   width: 22px;
   text-align: center;
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: rgba(255, 255, 255, 0.6);
 }
@@ -282,7 +282,7 @@
 
 .lbName {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -294,7 +294,7 @@
 }
 
 .youTag {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: #22d3ee;
   background: rgba(34, 211, 238, 0.15);
@@ -303,13 +303,13 @@
 }
 
 .lbXp {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: #ffd54a;
 }
 
 .lbAcc {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   width: 44px;
   text-align: right;
@@ -333,7 +333,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.7);
@@ -345,7 +345,7 @@
 }
 
 .roundTitle {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
@@ -353,13 +353,13 @@
 }
 
 .roundMeta {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.5);
   margin-top: 2px;
 }
 
 .roundScore {
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: #ffd54a;
 }
@@ -375,7 +375,7 @@
 }
 
 .winnerLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 0.5px;
   color: #ffd54a;
@@ -383,7 +383,7 @@
 }
 
 .winnerName {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
 }
 
@@ -412,7 +412,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   cursor: pointer;
 }
@@ -423,7 +423,7 @@
   border-radius: 12px;
   border: none;
   cursor: pointer;
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: #06181c;
   background: #22d3ee;

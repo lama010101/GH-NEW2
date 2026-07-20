@@ -113,7 +113,7 @@
   border: 2px solid var(--gh-border-medium);
   background: var(--gh-modal-overlay);
   color: var(--gh-text-primary);
-  font-size: 24px;
+  font-size: var(--font-2xl);
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -269,7 +269,7 @@
   border: 1px solid var(--gh-border-default);
   border-radius: 20px;
   padding: 4px 10px;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 600;
   color: var(--gh-text-secondary);
   white-space: nowrap;
@@ -337,7 +337,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-text-secondary);
   text-transform: uppercase;

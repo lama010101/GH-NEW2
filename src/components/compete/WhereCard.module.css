@@ -71,7 +71,7 @@
 }
 
 .scoreSuffix {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 600;
   color: var(--gh-text-secondary);
 }
@@ -82,7 +82,7 @@
   align-items: center;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 600;
   background: var(--chip-bg);
   border: 0.5px solid var(--chip-border);
@@ -112,7 +112,7 @@
   align-items: center;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-style: italic;
   background: var(--gh-near-miss-bg);
   border: 0.5px solid var(--gh-near-miss-border);
@@ -127,7 +127,7 @@
 .hintPenalty {
   display: inline-flex;
   align-items: center;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-danger);
   font-weight: 600;
   background: var(--gh-penalty-bg);
@@ -208,7 +208,7 @@
 }
 
 .expandLabel {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 600;
   color: var(--gh-teal);
   text-transform: uppercase;
@@ -216,7 +216,7 @@
 }
 
 .expandLabelAccent {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 600;
   color: var(--gh-text-primary);
   text-transform: uppercase;
@@ -224,7 +224,7 @@
 }
 
 .expandRank {
-  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs); 
   color: var(--gh-text-primary);
   font-weight: 600;
 }
@@ -256,7 +256,7 @@
 
 .lbYouTag {
   color: var(--gh-text-muted);
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   margin-left: 4px;
 }
 
@@ -270,7 +270,7 @@
   background: transparent;
   border-radius: 0;
   padding: 0;
-  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 800;
 }
 
@@ -293,7 +293,7 @@
 }
 
 .hintTierText {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   color: var(--gh-teal);
   text-transform: uppercase;

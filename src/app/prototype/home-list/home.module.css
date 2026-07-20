@@ -50,14 +50,14 @@
 }
 
 .protoTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.85;
 }
 
 .protoHint {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   opacity: 0.55;
 }
@@ -68,7 +68,7 @@
 }
 
 .protoLink {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-teal);
   text-decoration: none;
@@ -148,7 +148,7 @@
 }
 
 .levelPillBadge {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 0.4px;
   color: #06181c;
@@ -454,7 +454,7 @@
   background: var(--gh-danger);
   color: var(--gh-text-primary);
   border-radius: var(--gh-radius-pill);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   padding: 1px 5px;
   margin-inline-start: 4px;
@@ -546,7 +546,7 @@
 .playBadge {
   background: var(--gh-blue);
   color: var(--gh-text-primary);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--gh-radius-pill);
@@ -557,7 +557,7 @@
 .modeBadge {
   background: var(--gh-glass-bg-hover);
   color: var(--gh-text-secondary);
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   padding: 3px 8px;
   border-radius: var(--gh-radius-pill);
@@ -577,7 +577,7 @@
   display: inline-block;
   padding: 1px 7px;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--gh-text-primary);
   margin-inline-end: 6px;
@@ -748,7 +748,7 @@
 }
 
 .langFlag {
-  font-size: 16px;
+  font-size: var(--font-base);
   line-height: 1;
 }
 
@@ -893,14 +893,14 @@
 }
 
 .rankTitle {
-  font-size: 17px;
+  font-size: var(--font-lg);
   font-weight: 800;
   margin: 0;
   line-height: 1.1;
 }
 
 .rankXp {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: #ffd54a;
   white-space: nowrap;
@@ -909,7 +909,7 @@
 
 .rankXp i {
   font-style: normal;
-  font-size: 9px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   margin-left: 3px;
   opacity: 0.7;
@@ -919,7 +919,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
 }
 
@@ -1016,7 +1016,7 @@
 }
 
 .rankSubLabel {
-  font-size: 9px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 1px;
   flex-shrink: 0;

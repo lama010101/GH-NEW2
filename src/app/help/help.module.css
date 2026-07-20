@@ -46,7 +46,7 @@
 }
 
 .kicker {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--gh-orange);
@@ -133,7 +133,7 @@
   background: var(--gh-icon-bg);
   color: var(--gh-text-secondary);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -155,7 +155,7 @@
 }
 
 .sectionTitle {
-  font-size: 22px;
+  font-size: var(--font-2xl);
   font-weight: 700;
   margin: 0 0 18px;
   letter-spacing: -0.01em;
@@ -187,7 +187,7 @@
 
 .sectionChevron {
   flex: 0 0 auto;
-  font-size: 24px;
+  font-size: var(--font-2xl);
   color: var(--gh-orange);
   line-height: 1;
 }
@@ -274,7 +274,7 @@
 }
 
 .quickIcon {
-  font-size: 26px;
+  font-size: var(--font-3xl);
 }
 
 .quickTitle {
@@ -421,7 +421,7 @@
 
 .faqChevron {
   flex: 0 0 auto;
-  font-size: 20px;
+  font-size: var(--font-xl);
   color: var(--gh-orange);
   line-height: 1;
 }
@@ -522,14 +522,14 @@
 }
 
 .modeTitle {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--gh-mode-title);
   text-shadow: 0 1px 3px var(--gh-mode-shadow);
 }
 
 .modeSub {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-mode-sub);
   text-transform: uppercase;
@@ -552,7 +552,7 @@
 }
 
 .modeFeatures li {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-mode-feature);
   padding: 3px 8px;
@@ -708,7 +708,7 @@
     margin-top: 24px;
   }
   .sectionTitle {
-    font-size: 18px;
+    font-size: var(--font-lg);
   }
   /* Quick links: horizontal scroll on mobile */
   .quickScroll {

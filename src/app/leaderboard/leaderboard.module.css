@@ -221,7 +221,7 @@
   text-align: left;
   padding: 14px 8px 10px;
   color: var(--gh-text-muted);
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;

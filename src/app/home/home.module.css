@@ -116,7 +116,7 @@
   gap: 5px;
   background: rgba(255, 255, 255, 0.22);
   color: var(--gh-text-primary);
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.4px;

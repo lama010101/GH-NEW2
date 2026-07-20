@@ -109,13 +109,13 @@
 }
 
 .avatarMeta {
-  font-size: 12px; /* layout-constrained — do not tokenize */;
+  font-size: var(--font-2xs); ;
   color: var(--gh-text-muted);
   margin-bottom: 2px;
 }
 
 .avatarMetaLast {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-text-muted);
 }
 

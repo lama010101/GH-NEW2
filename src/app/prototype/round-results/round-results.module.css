@@ -39,14 +39,14 @@
 }
 
 .protoTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.85;
 }
 
 .protoHint {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   opacity: 0.55;
 }
@@ -59,7 +59,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--font-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,7 +103,7 @@
 
 .cardHeadRank {
   margin-left: auto;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 800;
   color: #fb923c;
 }
@@ -116,7 +116,7 @@
 }
 
 .cardTitle {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   margin: 0;
 }
@@ -129,7 +129,7 @@
 }
 
 .eventTitle {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   text-align: center;
   padding: 14px 16px 10px;
@@ -145,7 +145,7 @@
 }
 
 .eventMeta {
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #fb923c;
   text-align: center;
@@ -165,23 +165,23 @@
   cursor: pointer;
   text-align: center;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
 .histContextIcon {
-  font-size: 14px;
+  font-size: var(--font-sm);
   flex-shrink: 0;
 }
 
 .histContextLabel {
-  font-size: 14px;
+  font-size: var(--font-sm);
   color: rgba(255, 255, 255, 0.7);
   font-weight: 600;
 }
 
 .histContextArrow {
-  font-size: 16px;
+  font-size: var(--font-base);
   color: rgba(255, 255, 255, 0.5);
   transition: transform 0.2s ease;
   display: inline-block;
@@ -196,7 +196,7 @@
   max-height: 0;
   transition: max-height 0.25s ease;
   padding: 0 16px;
-  font-size: 14px;
+  font-size: var(--font-sm);
   color: rgba(255, 255, 255, 0.75);
   line-height: 1.7;
 }
@@ -207,7 +207,7 @@
 }
 
 .chev {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   transition: transform 0.2s;
 }
@@ -246,7 +246,7 @@
 }
 
 .totalXpVal {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 800;
   color: #fff;
 }
@@ -292,7 +292,7 @@
 }
 
 .miniCardTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.8);
 }
@@ -308,7 +308,7 @@
 
 .miniRingVal {
   position: absolute;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 800;
   line-height: 1;
 }
@@ -388,7 +388,7 @@
 }
 
 .badgePopupText {
-  font-size: 38px;
+  font-size: var(--font-4xl);
   font-weight: 800;
   color: #fff;
   text-align: center;
@@ -425,7 +425,7 @@
 }
 
 .miniBadgeCount {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 800;
   color: #fb923c;
 }
@@ -438,13 +438,13 @@
 }
 
 .miniXpVal {
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: #fff;
 }
 
 .miniXpLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: #fff;
 }
@@ -489,14 +489,14 @@
 .lbRank {
   width: 26px;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 800;
   color: rgba(255, 255, 255, 0.6);
 }
 
 .lbName {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -508,7 +508,7 @@
 }
 
 .youTag {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: #fb923c;
   background: rgba(251, 146, 60, 0.15);
@@ -517,7 +517,7 @@
 }
 
 .lbAcc {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   width: 44px;
   text-align: right;
@@ -539,7 +539,7 @@
   padding: 10px;
   border-radius: 12px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 700;
   background: rgba(255, 255, 255, 0.05);
   border: 1.5px solid rgba(255, 255, 255, 0.12);
@@ -579,7 +579,7 @@
 }
 
 .breakCorrectLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
@@ -587,20 +587,20 @@
 }
 
 .breakCorrectValue {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 800;
   line-height: 1.2;
 }
 
 .breakScore {
-  font-size: 22px;
+  font-size: var(--font-2xl);
   font-weight: 800;
   flex-shrink: 0;
 }
 
 .breakSub {
   display: block;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.5);
   padding: 2px 18px 0;
 }
@@ -636,7 +636,7 @@
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.4);
   white-space: nowrap;
 }
@@ -652,7 +652,7 @@
 }
 
 .correctFlag {
-  font-size: 9px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 0.5px;
   color: #4ade80;
@@ -662,7 +662,7 @@
 }
 
 .correctYearTl {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: #4ade80;
   margin-top: 2px;
@@ -687,7 +687,7 @@
 }
 
 .tlYear {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -732,7 +732,7 @@
 }
 
 .mapPinLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   margin-top: 4px;
   white-space: nowrap;
@@ -767,13 +767,13 @@
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 700;
   cursor: pointer;
 }
 
 .chev {
-  font-size: 18px;
+  font-size: var(--font-lg);
   line-height: 1;
   color: rgba(255, 255, 255, 0.5);
   transition: transform 0.18s;
@@ -806,7 +806,7 @@
 .subLbRank {
   width: 22px;
   text-align: center;
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 800;
   color: rgba(255, 255, 255, 0.6);
   flex-shrink: 0;
@@ -814,7 +814,7 @@
 
 .subLbName {
   flex: 1;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -822,12 +822,12 @@
 }
 
 .subLbDetail {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.5);
 }
 
 .subLbAcc {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   width: 42px;
   text-align: right;
@@ -847,7 +847,7 @@
 }
 
 .hintLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   letter-spacing: 0.5px;
   color: rgba(255, 255, 255, 0.5);
@@ -855,7 +855,7 @@
 }
 
 .hintText {
-  font-size: 14px;
+  font-size: var(--font-sm);
   color: rgba(255, 255, 255, 0.85);
 }
 
@@ -872,14 +872,14 @@
 }
 
 .countdownText {
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: rgba(255, 255, 255, 0.7);
 }
 
 .readyNames {
   display: flex;
   gap: 12px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
 }
 
@@ -930,7 +930,7 @@
 }
 
 .roundLabel {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.7);
 }
@@ -954,7 +954,7 @@
   border-radius: 12px;
   border: none;
   cursor: pointer;
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: #1a0a00;
   background: #fb923c;

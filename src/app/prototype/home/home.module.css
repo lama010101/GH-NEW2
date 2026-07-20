@@ -46,14 +46,14 @@
 }
 
 .protoTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.85;
 }
 
 .protoHint {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   opacity: 0.55;
 }
@@ -124,7 +124,7 @@
 }
 
 .levelPillBadge {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 0.4px;
   color: #06181c;
@@ -229,19 +229,19 @@
 }
 
 .ringValue {
-  font-size: 30px;
+  font-size: var(--font-3xl);
   font-weight: 800;
   line-height: 1;
 }
 
 .ringPct {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.6);
 }
 
 .ringLabel {
-  font-size: 9px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -264,7 +264,7 @@
 }
 
 .heroName {
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 800;
   margin: 0;
   letter-spacing: -0.3px;
@@ -274,7 +274,7 @@
 }
 
 .heroLevelBadge {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 0.4px;
   color: #06181c;
@@ -300,7 +300,7 @@
 }
 
 .levelHint {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.45);
 }
 
@@ -319,7 +319,7 @@
 }
 
 .accTileLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 0.5px;
 }
@@ -338,7 +338,7 @@
 }
 
 .accTileVal {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   text-align: right;
 }
@@ -363,12 +363,12 @@
 }
 
 .statVal {
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 800;
 }
 
 .statLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.5);
   text-align: center;
 }

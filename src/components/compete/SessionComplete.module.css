@@ -33,7 +33,7 @@
 
 .siteTitle {
   color: var(--gh-text-muted);
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -81,14 +81,14 @@
 }
 
 .bannerKicker {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 800;
   letter-spacing: 2.5px;
   color: var(--gh-orange);
 }
 
 .bannerTitle {
-  font-size: 30px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-3xl); 
   font-weight: 800;
   margin: 8px 0 0;
   letter-spacing: -0.5px;
@@ -104,7 +104,7 @@
 
 .bannerStats {
   margin-top: 8px;
-  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 600;
   color: var(--gh-text-secondary);
   display: flex;
@@ -143,7 +143,7 @@
 }
 
 .cardTitle {
-  font-size: 16px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-base); 
   font-weight: 700;
   margin: 0;
   color: var(--gh-text-primary);
@@ -184,7 +184,7 @@
 }
 
 .statTileLabelWhere {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -192,7 +192,7 @@
 }
 
 .statTileLabelWhen {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -200,13 +200,13 @@
 }
 
 .statTileVal {
-  font-size: 22px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xl); 
   font-weight: 800;
   line-height: 1;
 }
 
 .statTileSub {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-text-muted);
   text-align: center;
 }
@@ -262,7 +262,7 @@
 .medal {
   width: 22px;
   text-align: center;
-  font-size: 15px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 800;
   color: var(--gh-text-muted);
   flex-shrink: 0;
@@ -294,7 +294,7 @@
 
 .rankName {
   min-width: 0;
-  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -302,7 +302,7 @@
 }
 
 .youTag {
-  font-size: 10px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   color: var(--gh-orange);
   background: var(--gh-glow-orange);
@@ -312,7 +312,7 @@
 }
 
 .winTag {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -343,12 +343,12 @@
 }
 
 .rankAcc {
-  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 800;
 }
 
 .rankXp {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   color: var(--gh-text-primary);
 }
@@ -375,7 +375,7 @@
 }
 
 .badgeSummaryLabel {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   color: var(--gh-text-secondary);
   text-transform: uppercase;
@@ -383,7 +383,7 @@
 }
 
 .noBadges {
-  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs); 
   color: var(--gh-text-muted);
   font-style: italic;
 }
@@ -417,13 +417,13 @@
 }
 
 .badgeTallyCount {
-  font-size: 18px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-lg); 
   font-weight: 800;
   color: var(--gh-text-primary);
 }
 
 .badgeTallyTier {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -441,7 +441,7 @@
 }
 
 .statGroupLabel {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   color: var(--gh-text-secondary);
   text-transform: uppercase;
@@ -461,7 +461,7 @@
 }
 
 .statGroupRowLabel {
-  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs); 
   font-weight: 600;
   color: var(--gh-text-primary);
   min-width: 100px;
@@ -488,7 +488,7 @@
 }
 
 .statGroupRowVal {
-  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs); 
   font-weight: 700;
   color: var(--gh-badge-gold);
   flex-shrink: 0;
@@ -514,13 +514,13 @@
 }
 
 .gameStatVal {
-  font-size: 18px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-lg); 
   font-weight: 800;
   color: var(--gh-text-primary);
 }
 
 .gameStatLabel {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 600;
   color: var(--gh-text-muted);
   text-transform: uppercase;
@@ -569,7 +569,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 800;
   background: var(--gh-bg-elevated);
   color: var(--gh-text-secondary);
@@ -583,7 +583,7 @@
 
 .roundTitle {
   display: block;
-  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
@@ -593,19 +593,19 @@
 
 .roundMeta {
   display: block;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-text-muted);
   margin-top: 2px;
 }
 
 .roundMyAcc {
-  font-size: 15px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 800;
   flex-shrink: 0;
 }
 
 .chev {
-  font-size: 18px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-lg); 
   color: var(--gh-text-muted);
   flex-shrink: 0;
   transition: transform 0.2s ease;
@@ -657,13 +657,13 @@
 }
 
 .miniVal {
-  font-size: 18px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-lg); 
   font-weight: 800;
   line-height: 1;
 }
 
 .miniLabel {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -671,7 +671,7 @@
 }
 
 .miniLabelWhere {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -679,7 +679,7 @@
 }
 
 .miniLabelWhen {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -687,7 +687,7 @@
 }
 
 .miniSub {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-text-muted);
 }
 
@@ -706,7 +706,7 @@
 }
 
 .bestLabel {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 800;
   letter-spacing: 0.5px;
   color: var(--gh-badge-gold);
@@ -716,7 +716,7 @@
 .bestName {
   min-width: 0;
   color: var(--gh-text-secondary);
-  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs); 
   font-weight: 700;
   overflow: hidden;
   text-align: right;
@@ -755,7 +755,7 @@
   height: 46px;
   border-radius: 12px;
   cursor: pointer;
-  font-size: 15px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 800;
 }
 

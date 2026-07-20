@@ -113,7 +113,7 @@
 }
 
 .description {
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: var(--gh-modal-text-secondary);
   font-style: italic;
   text-align: center;
@@ -159,7 +159,7 @@
   color: var(--gh-btn-text);
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   cursor: pointer;
   margin-bottom: 12px;

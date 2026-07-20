@@ -31,7 +31,7 @@
 }
 
 .protoTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.85;
@@ -43,7 +43,7 @@
 }
 
 .protoLink {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-teal);
   text-decoration: none;
@@ -65,7 +65,7 @@
 }
 
 .headerTitle {
-  font-size: 28px;
+  font-size: var(--font-3xl);
   font-weight: 800;
   margin: 0 0 8px;
   font-family: 'Bebas Neue', sans-serif;
@@ -74,7 +74,7 @@
 }
 
 .headerSub {
-  font-size: 14px;
+  font-size: var(--font-sm);
   color: rgba(255, 255, 255, 0.6);
   margin: 0;
   line-height: 1.5;
@@ -84,7 +84,7 @@
   background: rgba(255, 255, 255, 0.1);
   padding: 1px 6px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-family: 'SF Mono', 'Monaco', monospace;
 }
 
@@ -131,7 +131,7 @@
   right: 10px;
   background: rgba(0, 0, 0, 0.6);
   color: var(--gh-teal);
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   padding: 3px 10px;
   border-radius: 999px;
@@ -147,7 +147,7 @@
 }
 
 .cardTitle {
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 800;
   margin: 0;
   font-family: 'Bebas Neue', sans-serif;
@@ -168,7 +168,7 @@
 }
 
 .metaLabel {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.5px;
@@ -176,7 +176,7 @@
 }
 
 .metaVal {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
 }
@@ -185,7 +185,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--font-2xs);
 }
 
 .imgLabel {
@@ -202,7 +202,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   flex-wrap: wrap;
 }
 
@@ -226,6 +226,6 @@
   }
 
   .headerTitle {
-    font-size: 22px;
+    font-size: var(--font-2xl);
   }
 }

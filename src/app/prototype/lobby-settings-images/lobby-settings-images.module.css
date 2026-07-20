@@ -46,14 +46,14 @@
 }
 
 .protoTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.85;
 }
 
 .protoHint {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   opacity: 0.55;
 }
@@ -87,14 +87,14 @@
 }
 
 .title {
-  font-size: 24px;
+  font-size: var(--font-2xl);
   font-weight: 800;
   letter-spacing: -0.5px;
   margin: 0;
 }
 
 .subtitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 500;
   opacity: 0.6;
   margin: 4px 0 0;
@@ -125,7 +125,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: #fff;
   background: linear-gradient(135deg, #7c3008, #ea6820);
@@ -137,13 +137,13 @@
 }
 
 .versionTitle {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   margin: 0;
 }
 
 .versionDesc {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 500;
   opacity: 0.55;
   margin: 2px 0 0;
@@ -151,7 +151,7 @@
 
 .refreshBtn {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-teal, #22d3ee);
   background: transparent;
@@ -173,7 +173,7 @@
 
 /* ── DB status ── */
 .dbStatusLoading {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 500;
   color: rgba(255, 255, 255, 0.5);
   padding: 8px 12px;
@@ -182,7 +182,7 @@
 }
 
 .dbStatusOk {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 500;
   color: #4ade80;
   padding: 8px 12px;
@@ -191,7 +191,7 @@
 }
 
 .dbStatusError {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 500;
   color: #f87171;
   padding: 8px 12px;
@@ -214,12 +214,12 @@
 }
 
 .settingLabel {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
 .selectAllBtn {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-orange, #fb923c);
   background: transparent;
@@ -312,7 +312,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: var(--font-4xl);
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(139, 92, 246, 0.15));
 }
 
@@ -331,7 +331,7 @@
 }
 
 .imgLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   text-align: center;
   color: #fff;
@@ -340,7 +340,7 @@
 }
 
 .imgSpan {
-  font-size: 9px;
+  font-size: var(--font-2xs);
   font-weight: 500;
   text-align: center;
   color: rgba(255, 255, 255, 0.75);

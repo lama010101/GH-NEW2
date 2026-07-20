@@ -131,7 +131,7 @@
 }
 
 .totalXpVal {
-  font-size: 18px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-lg); 
   font-weight: 800;
   color: var(--gh-text-primary);
 }
@@ -148,7 +148,7 @@
   background: var(--gh-penalty-bg);
   border-radius: var(--gh-radius-pill);
   padding: 2px 8px;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-penalty-text);
   font-weight: 600;
 }
@@ -196,7 +196,7 @@
 }
 
 .miniCardTitle {
-  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs); 
   font-weight: 700;
   color: var(--gh-text-secondary);
 }
@@ -212,7 +212,7 @@
 
 .miniRingVal {
   position: absolute;
-  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs); 
   font-weight: 800;
   line-height: 1;
 }
@@ -233,13 +233,13 @@
 }
 
 .miniXpVal {
-  font-size: 15px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 800;
   color: var(--gh-text-primary);
 }
 
 .miniXpLabel {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   color: var(--gh-text-primary);
 }
@@ -285,7 +285,7 @@
 
 .cardHeadRank {
   margin-left: auto;
-  font-size: 18px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-lg); 
   font-weight: 800;
   color: var(--gh-orange);
 }
@@ -305,7 +305,7 @@
   background: var(--gh-mini-card-bg);
   border: 1.5px solid var(--gh-border-default);
   padding: 10px;
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--gh-text-secondary);
   cursor: pointer;
@@ -371,7 +371,7 @@
 }
 
 .lbRank {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-text-muted);
   min-width: 14px;
 }
@@ -393,12 +393,12 @@
 
 .lbYouTag {
   color: var(--gh-text-muted);
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   margin-left: 4px;
 }
 
 .lbYouPill {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-orange);
   background: var(--gh-glow-orange);
@@ -408,7 +408,7 @@
 
 .lbNoGuessTag {
   color: var(--gh-text-muted);
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-style: italic;
   margin-left: 4px;
 }
@@ -417,7 +417,7 @@
   background: transparent;
   border-radius: 0;
   padding: 0;
-  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-sm); 
   font-weight: 800;
 }
 
@@ -542,7 +542,7 @@
 }
 
 .breakCorrectLabel {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 600;
   color: var(--gh-text-muted);
   text-transform: uppercase;
@@ -550,7 +550,7 @@
 }
 
 .breakCorrectValue {
-  font-size: 18px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-lg); 
   font-weight: 800;
   line-height: 1.2;
 }
@@ -564,14 +564,14 @@
 }
 
 .breakScore {
-  font-size: 22px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xl); 
   font-weight: 800;
   flex-shrink: 0;
 }
 
 .breakSub {
   display: block;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-text-muted);
   padding: 2px 18px 0;
 }
@@ -621,7 +621,7 @@
 }
 
 .hintRevealedText {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-text-secondary);
   font-style: italic;
   margin-top: 1px;
@@ -634,7 +634,7 @@
   border: 0.5px solid var(--gh-penalty-pill-border);
   border-radius: var(--gh-radius-pill);
   padding: 2px 7px;
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   color: var(--gh-penalty-pill-text);
   font-weight: 600;
   flex-shrink: 0;
@@ -670,14 +670,14 @@
 }
 
 .countdownText {
-  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs); 
   color: var(--gh-text-secondary);
 }
 
 .readyNames {
   display: flex;
   gap: 12px;
-  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-xs); 
   font-weight: 600;
   overflow-x: auto;
   flex-wrap: nowrap;
@@ -753,7 +753,7 @@
 }
 
 .roundLabel {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs); 
   font-weight: 700;
   color: var(--gh-text-secondary);
   white-space: nowrap;
@@ -764,7 +764,7 @@
   background: var(--gh-orange);
   color: var(--gh-btn-text);
   font-weight: 800;
-  font-size: 15px;
+  font-size: var(--font-sm);
   border: none;
   border-radius: 12px;
   padding: 12px 26px;
@@ -835,7 +835,7 @@
   gap: 4px;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   background: var(--badge-bg);
   border: 0.5px solid var(--badge-border);

@@ -20,7 +20,7 @@
 }
 
 .badgePopupText {
-  font-size: 38px;
+  font-size: var(--font-4xl);
   font-weight: 800;
   color: var(--gh-modal-text-primary);
   text-align: center;

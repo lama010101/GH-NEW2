@@ -39,14 +39,14 @@
 }
 
 .protoTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.85;
 }
 
 .protoHint {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   opacity: 0.55;
 }
@@ -81,12 +81,12 @@
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
 .editBtn {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -126,7 +126,7 @@
 }
 
 .cardTitle {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   margin: 0;
 }
@@ -151,7 +151,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: var(--font-3xl);
   font-weight: 800;
   color: #fff;
   background: linear-gradient(135deg, #22d3ee, #8b5cf6);
@@ -163,7 +163,7 @@
   bottom: -4px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 0.5px;
   color: #06181c;
@@ -179,7 +179,7 @@
 }
 
 .name {
-  font-size: 24px;
+  font-size: var(--font-2xl);
   font-weight: 800;
   margin: 0;
   letter-spacing: -0.3px;
@@ -187,7 +187,7 @@
 
 .handle {
   display: block;
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: rgba(255, 255, 255, 0.5);
   margin-top: 2px;
 }
@@ -209,7 +209,7 @@
 
 .levelHint {
   display: block;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.45);
   margin-top: 5px;
 }
@@ -234,12 +234,12 @@
 }
 
 .statVal {
-  font-size: 22px;
+  font-size: var(--font-2xl);
   font-weight: 800;
 }
 
 .statLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.5);
   text-align: center;
 }
@@ -269,19 +269,19 @@
 }
 
 .ringValue {
-  font-size: 32px;
+  font-size: var(--font-4xl);
   font-weight: 800;
   line-height: 1;
 }
 
 .ringPct {
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.6);
 }
 
 .ringLabel {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -305,7 +305,7 @@
 }
 
 .accTileLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 0.5px;
 }
@@ -324,13 +324,13 @@
 }
 
 .accTileVal {
-  font-size: 15px;
+  font-size: var(--font-sm);
   font-weight: 800;
   text-align: right;
 }
 
 .accFoot {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.45);
 }
 
@@ -352,12 +352,12 @@
 }
 
 .badgeTierCount {
-  font-size: 24px;
+  font-size: var(--font-2xl);
   font-weight: 800;
 }
 
 .badgeTierLabel {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.7);
 }
@@ -387,13 +387,13 @@
 }
 
 .badgeDimLabel {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.7);
   flex: 1;
 }
 
 .badgeDimCount {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
 }
 
@@ -424,17 +424,17 @@
 }
 
 .modeName {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
 }
 
 .modeAcc {
-  font-size: 22px;
+  font-size: var(--font-2xl);
   font-weight: 800;
 }
 
 .modeGames {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.55);
 }
 
@@ -461,7 +461,7 @@
 }
 
 .regionLabel {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
   white-space: nowrap;
@@ -470,7 +470,7 @@
 }
 
 .regionSpan {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: rgba(255, 255, 255, 0.45);
   white-space: nowrap;
   overflow: hidden;
@@ -491,13 +491,13 @@
 }
 
 .regionPct {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 800;
   text-align: right;
 }
 
 .regionCount {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.45);
   text-align: right;
@@ -517,7 +517,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -555,12 +555,12 @@
 }
 
 .accountKey {
-  font-size: 14px;
+  font-size: var(--font-sm);
   color: rgba(255, 255, 255, 0.7);
 }
 
 .accountVal {
-  font-size: 14px;
+  font-size: var(--font-sm);
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -570,7 +570,7 @@
   padding: 13px;
   border-radius: 12px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #f87171;
   background: rgba(239, 68, 68, 0.12);

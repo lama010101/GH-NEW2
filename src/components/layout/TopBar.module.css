@@ -43,7 +43,7 @@
 
 /* Gold "Rank N" badge inside the score pill */
 .xpPillBadge {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 0.4px;
   color: #06181c;

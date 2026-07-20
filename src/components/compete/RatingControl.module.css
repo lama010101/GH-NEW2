@@ -11,7 +11,7 @@
   color: var(--gh-text-secondary);
   border-radius: 8px;
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
@@ -35,7 +35,7 @@
   border: 1px solid var(--gh-border-default);
   background: var(--gh-glass-bg);
   color: var(--gh-text-secondary);
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -62,7 +62,7 @@
 }
 
 .savedLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--gh-text-secondary);
 }
 
@@ -73,7 +73,7 @@
   border: none;
   background: transparent;
   color: var(--gh-text-secondary);
-  font-size: 16px;
+  font-size: var(--font-base);
   line-height: 1;
   cursor: pointer;
   display: inline-flex;

@@ -14,7 +14,7 @@
 }
 
 .sectionTitle {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   margin: 0;
   color: var(--gh-text-primary);
@@ -58,7 +58,7 @@
   border: 1px solid var(--gh-border-default);
   background: var(--gh-glass-bg);
   color: var(--gh-text-secondary);
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -137,7 +137,7 @@
 }
 
 .regionLabel {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--gh-text-primary);
   white-space: nowrap;
@@ -161,7 +161,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: var(--font-xl);
   line-height: 1;
   background: var(--gh-glass-bg);
   overflow: hidden;
@@ -189,7 +189,7 @@
 
 .regionSpan {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 500;
   color: var(--gh-text-muted);
 }
@@ -217,14 +217,14 @@
 }
 
 .regionPct {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 800;
   text-align: right;
   white-space: nowrap;
 }
 
 .regionCount {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-text-muted);
   text-align: right;
@@ -237,5 +237,5 @@
   gap: 4px;
   padding: 24px 0;
   color: var(--gh-text-muted);
-  font-size: 13px;
+  font-size: var(--font-xs);
 }

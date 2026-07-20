@@ -38,7 +38,7 @@
   border: 2px solid var(--gh-border-medium);
   background: var(--gh-glass-bg-hover);
   color: var(--gh-text-primary);
-  font-size: 24px;
+  font-size: var(--font-2xl);
   cursor: pointer;
   display: flex;
   align-items: center;
