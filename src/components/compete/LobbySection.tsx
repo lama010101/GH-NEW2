@@ -782,14 +782,18 @@ export default function LobbySection({
                   <div key={p.playerId} className={`${styles['lobbyRosterRow']} ${p.ready ? styles['lobbyRosterRowReady'] : ''}`} data-testid={`lobby-player-${p.playerId}`} data-ready={p.ready ? 'true' : 'false'} data-host={p.isHost ? 'true' : 'false'}>
                     <div className={styles['lobbyAvatarWrap']}>
                       <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
+                      {!isViewerPlayer && (
+                        <button
+                          className={styles['lobbyStarBtn']}
+                          onClick={() => toggleFollow(p.playerId)}
+                          aria-label={followedIds.has(p.playerId) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
+                        >
+                          <span style={{ color: followedIds.has(p.playerId) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
+                            {followedIds.has(p.playerId) ? '★' : '☆'}
+                          </span>
+                        </button>
+                      )}
                     </div>
-                    {!isViewerPlayer && (
-                      <button className={styles['lobbyStarBtnInline']} onClick={() => toggleFollow(p.playerId)} aria-label={t('lobby.toggle_follow')}>
-                        <span style={{ color: followedIds.has(p.playerId) ? 'var(--gh-gold)' : 'var(--gh-text-tertiary)' }}>
-                          {followedIds.has(p.playerId) ? '★' : '☆'}
-                        </span>
-                      </button>
-                    )}
                     <div className={styles['lobbyRosterMeta']}>
                       <span className={styles['lobbyRosterName']}>
                         {displayName}
