@@ -4,7 +4,7 @@
 Each log entry: `Task ID | Status | Files Changed | Notes`
 Status values: `DONE` | `IN PROGRESS` | `BLOCKED` | `SKIPPED` | `PLAN`
 
-| GH-FIX-017 | DONE | src/app/home/home.module.css, docs/PROGRESS.md | Switched `/home` background image to a responsive asset: uses `/mobile-home_background.webp.png` by default and `/desktop-home_background.webp.png` at viewports ≥768px. The two new image files must be added to `public/` before deployment. |
+| GH-FIX-017 | DONE | src/app/home/home.module.css, docs/PROGRESS.md | Switched `/home` background image to a responsive asset: uses `/mobile-home_background.webp` by default and `/desktop-home_background.webp` at viewports ≥768px. The two new image files must be added to `public/` before deployment. |
 
 | GH-FIX-001 | DONE | src/components/compete/SessionComplete.tsx, src/components/compete/SessionComplete.module.css, src/components/compete/RoundCompleteSection.tsx, src/components/FullscreenImageViewer.module.css, src/components/RankCard.module.css, docs/PROGRESS.md | Results & Leaderboard Display Fixes: (1) RoundCompleteSection and SessionComplete scroll to top on load. (2) RankCard and SessionComplete final-rankings XP text switched from gold/yellow to `var(--gh-text-primary)` for theme-aware white. (3) Final leaderboard hides XP and shows only percentage with a `%` suffix sized at `0.333em` and inheriting the accuracy color. (4) Final round breakdown mini-tiles relabeled from `avg ... km/yrs` to `{km} km away` / `{n} years off` via existing `distance_label` and `year_diff_label` i18n keys. (5) FullscreenImageViewer close button repositioned to bottom center with safe-area inset. (6) Final Experience tab sorted by `totalXp` descending. `tsc --noEmit` and `npm run lint` pass. |
 
