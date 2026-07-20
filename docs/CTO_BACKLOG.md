@@ -353,3 +353,11 @@ Two-context Playwright golden-path spec + husky pre-push gate to protect the syn
 | MP-FIX-SYNC-LOBBY-ENFORCEMENT-001-BUG1 | Sync mode min-players enforcement | DONE | partykit/server.ts, src/server/sessionCore.ts | Sync requires 2 players to start; async/practice/daily require 1. Commit ab36d6b. (2026-07-15) |
 
 | MP-FIX-SYNC-LOBBY-ENFORCEMENT-001-BUG2 | Kicked player redirected with toast; server hard-blocks rejoin | DONE | supabase/migrations/20260715000000_add_kicked_to_session_players.sql, src/server/sessionCore.ts, partykit/server.ts, src/core/competeWebSocket.ts, src/hooks/useCompeteSocket.ts, src/app/compete/[gameId]/page.tsx, src/app/api/compete/[gameId]/join/route.ts, src/app/api/compete/active-games/route.ts, src/i18n/{en,fr,es,de,it,ja,nl,pt,ru,ar,zh}.json | Distinguish kick from graceful disconnect via kicked column; real-time KICKED WS message; server hard-blocks rejoin with PLAYER_KICKED code; client redirects to /home with toast; active-games excludes kicked; pending invitations cancelled at kick-time. Commit [pending]. (2026-07-15) |
+
+## GH-FIX PR Closure Batch (GH-FIX-015)
+
+| ID | Title | Status | Main Commit | Notes |
+|----|-------|--------|-------------|-------|
+| GH-FIX-006 | Play Again navigation waits for echoed broadcast | CLOSED | 4142bd4 | 2-player, 2-round Playwright golden-path verified on main after GH-FIX-014 join fix; host identity preserved across Play Again cycle. |
+| GH-FIX-007 | Atomic 8-player cap in sync-lobby joins | CLOSED | 2837f2a | 8-cap verified on main after GH-FIX-014: 7 guests + host = 8, 9th rejected with `Session is full (8 players max)`, concurrency race with 1 slot left produced exactly one success / one rejection. |
+| GH-FIX-014 | Fix broken Compete join (FOR UPDATE + aggregate regression) | CLOSED | cb8ffd4 | Replaced invalid `SELECT COUNT(*) ... FOR UPDATE` with row-level `SELECT player_id ... FOR UPDATE`; direct curl join returns 200, tsc/lint/build pass, 3/3 isolated Play Again Playwright runs pass. |
