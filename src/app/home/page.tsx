@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, type IdentityState } from '@/core/identity'
+import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, type IdentityState } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
@@ -61,6 +61,10 @@ function HomePageInner() {
       .then(data => {
         if (data.avatar) {
           setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
+          if (data.profile?.display_name) {
+            updateCachedDisplayName(data.profile.display_name);
+          }
+          setProfileVersion(v => v + 1);
         }
       })
       .catch(() => {})
