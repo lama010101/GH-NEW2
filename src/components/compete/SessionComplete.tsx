@@ -92,13 +92,14 @@ export default function SessionComplete({
         throw new Error(data.error || t('failed_lobby'));
       }
       const data = await response.json();
+      // Broadcast PLAY_AGAIN to the current room. Navigation is triggered by the
+      // echoed PLAY_AGAIN message via CompeteGamePage's useCompeteSocket
+      // onPlayAgain callback, so the broadcast is delivered to all guests before
+      // the host disconnects to join the new lobby.
       sendMessage({ type: "PLAY_AGAIN", playerId, newGameId: data.gameId });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      router.push(`/compete/${data.gameId}`);
     } catch (error) {
       console.error("Failed to create lobby:", error);
       setLobbyError(t('failed_lobby_retry'));
-    } finally {
       setIsCreatingLobby(false);
     }
   };
