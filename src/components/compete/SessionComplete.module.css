@@ -350,7 +350,12 @@
 .rankXp {
   font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 700;
-  color: var(--gh-badge-gold);
+  color: var(--gh-text-primary);
+}
+
+.rankPctSuffix {
+  font-size: 0.333em;
+  margin-left: 1px;
 }
 
 /* ── Achievements card ── */

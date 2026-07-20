@@ -45,6 +45,7 @@ export default function CompeteGamePage() {
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
   const t = useTranslations('game');
+  const tLobby = useTranslations('lobby');
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
@@ -55,6 +56,7 @@ export default function CompeteGamePage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [localSubmitted, setLocalSubmitted] = useState(false);
+  const [showGuessedLabel, setShowGuessedLabel] = useState(false);
   const [timerClamped, setTimerClamped] = useState(false);
   const [playerSubmittedToast, setPlayerSubmittedToast] = useState<string | null>(null);
   const playerSubmittedToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -353,14 +355,16 @@ export default function CompeteGamePage() {
       setTimeout(() => setTimerClamped(false), 600);
     },
     onError: (message, code) => {
-      setError(message);
       if (code === "PLAYER_KICKED") {
-        router.push("/home");
+        setError(tLobby('kicked_toast'));
+        router.push("/home?kicked=1");
+        return;
       }
+      setError(message);
     },
     onKicked: () => {
-      setError(t('lobby.kicked_toast'));
-      router.push("/home");
+      setError(tLobby('kicked_toast'));
+      router.push("/home?kicked=1");
     },
     onDisconnect: () => {
       setWsDisconnected(true);
@@ -405,6 +409,18 @@ export default function CompeteGamePage() {
       window.scrollTo({ top: 0, behavior: "instant" });
     }
   }, [snapshot?.status]);
+
+  // Show "Guessed" confirmation for 3s after self-submission, then return to
+  // the existing "Waiting for" / "Guessed" state for the current mode.
+  useEffect(() => {
+    if (!localSubmitted) {
+      setShowGuessedLabel(false);
+      return;
+    }
+    setShowGuessedLabel(true);
+    const id = setTimeout(() => setShowGuessedLabel(false), 3000);
+    return () => clearTimeout(id);
+  }, [localSubmitted]);
 
   // Preload next round image when current round changes
   useEffect(() => {
@@ -681,7 +697,7 @@ export default function CompeteGamePage() {
             </div>
             <div className={pageStyles.submitOverlayWaiting}>
               <p className={pageStyles.submitOverlayWaitingLabel}>
-                {snapshot.config.mode === 'async' ? t('guessed') : t('waiting_for')}
+                {showGuessedLabel || snapshot.config.mode === 'async' ? t('guessed') : t('waiting_for')}
               </p>
               <ul className={pageStyles.submitOverlayPlayerList}>
                 {snapshot.players

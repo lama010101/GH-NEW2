@@ -679,6 +679,16 @@
   gap: 12px;
   font-size: 13px; /* layout-constrained — do not tokenize */
   font-weight: 600;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+
+.readyNames::-webkit-scrollbar {
+  display: none;
 }
 
 .readyName {
@@ -687,6 +697,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
 }
 
 /* ── Bottom bar (nav row) ── */
