@@ -315,6 +315,7 @@ export function CompetePanel({ onLobby, playerId }: {
                 <div
                   key={game.id}
                   className={cpStyles.gameRow}
+                  onClick={() => onLobby(game.game_id)}
                 >
                   {game.opponent_avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -366,6 +367,7 @@ export function CompetePanel({ onLobby, playerId }: {
                     type="button"
                     className={cpStyles.deleteBtn}
                     aria-label={t('home.compete_delete_aria')}
+                    onClick={(e) => { e.stopPropagation(); }}
                   >
                     ✕
                   </button>
