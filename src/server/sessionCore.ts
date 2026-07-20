@@ -1036,6 +1036,23 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
   // Player joins are tracked via session_players table only.
   // Phase authority remains exclusively with round_events per spec.
 
+  // Auto-favorite: the active host follows any player added to the roster.
+  const hostResult = await dbPool.query<{ player_id: string }>(
+    `SELECT player_id FROM session_players
+     WHERE game_id = $1 AND is_host = true AND left_at IS NULL
+     LIMIT 1`,
+    [gameId]
+  );
+  const hostPlayerId = hostResult.rows[0]?.player_id;
+  if (hostPlayerId && hostPlayerId !== playerId) {
+    await dbPool.query(
+      `INSERT INTO public.player_follows (follower_id, followed_id)
+       VALUES ($1, $2)
+       ON CONFLICT (follower_id, followed_id) DO NOTHING`,
+      [hostPlayerId, playerId]
+    );
+  }
+
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
   if (!snapshot) {
     throw new Error("Session not found");
@@ -1500,6 +1517,13 @@ export async function kickCompetePlayer(input: KickCompetePlayerInput): Promise<
        SET status = 'cancelled'
        WHERE game_id = $1 AND invitee_id = $2 AND status = 'pending'`,
       [gameId, targetPlayerId]
+    );
+
+    // Auto-unfavorite: remove the kicked player from the host's follows.
+    await client.query(
+      `DELETE FROM public.player_follows
+       WHERE follower_id = $1 AND followed_id = $2`,
+      [playerId, targetPlayerId]
     );
 
     await client.query("COMMIT");
