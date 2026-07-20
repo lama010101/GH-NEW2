@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from 'next-intl';
 import RainbowRing from "@/components/compete/RainbowRing";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
@@ -126,6 +126,28 @@ export default function RoundCompleteSection({
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [snapshot.currentRoundIndex, roundResults]);
+
+  // GH-FIX-003: optimistic ready-for-next state. The server broadcast can be
+  // delayed or overtaken by the ROUND_ACTIVE transition, so the local player's
+  // ready state is added immediately on clicking Next and reconciled with the
+  // authoritative snapshot. It is cleared whenever the round changes.
+  const [optimisticReadyIds, setOptimisticReadyIds] = useState<Set<string>>(new Set());
+  const effectiveReadyForNext = useMemo(() => {
+    const ids = new Set<string>(snapshot.readyForNext ?? []);
+    optimisticReadyIds.forEach(id => ids.add(id));
+    return Array.from(ids);
+  }, [snapshot.readyForNext, optimisticReadyIds]);
+
+  const handleNextClick = () => {
+    if (playerId) {
+      setOptimisticReadyIds(prev => new Set(prev).add(playerId));
+    }
+    onAdvanceRound();
+  };
+
+  useEffect(() => {
+    setOptimisticReadyIds(new Set());
+  }, [snapshot.currentRoundIndex]);
 
   useEffect(() => {
     setIsAccuracyVisible(false);
@@ -598,16 +620,16 @@ export default function RoundCompleteSection({
 
             {/* BOTTOM BAR WRAPPER — countdown (above) + nav row (proto-style) */}
             <div className={styles.bottomBarWrap}>
-              {((resultSecsLeft !== null && resultSecsLeft > 0) || (snapshot.readyForNext && snapshot.readyForNext.length > 0)) && (
+              {((resultSecsLeft !== null && resultSecsLeft > 0) || effectiveReadyForNext.length > 0) && (
                 <div className={styles.countdown}>
                   {resultSecsLeft !== null && resultSecsLeft > 0 && (
                     <span className={styles.countdownText}>
                       {t('auto_advancing_in', { n: resultSecsLeft })}
                     </span>
                   )}
-                  {snapshot.readyForNext && snapshot.readyForNext.length > 0 && (
+                  {effectiveReadyForNext.length > 0 && (
                     <span className={styles.readyNames}>
-                      {snapshot.readyForNext.map(pid => {
+                      {effectiveReadyForNext.map(pid => {
                         const p = snapshot.players.find(pl => pl.playerId === pid);
                         const name = p?.displayName ?? pid.slice(0, 8);
                         return (
@@ -650,11 +672,11 @@ export default function RoundCompleteSection({
                   </span>
                 </div>
                 <button
-                  className={`${styles.nextButton} ${snapshot.readyForNext?.includes(playerId ?? "") ? styles.nextButtonDisabled : ""}`}
-                  onClick={onAdvanceRound}
-                  disabled={snapshot.readyForNext?.includes(playerId ?? "") || busy}
+                  className={`${styles.nextButton} ${effectiveReadyForNext.includes(playerId ?? "") ? styles.nextButtonDisabled : ""}`}
+                  onClick={handleNextClick}
+                  disabled={effectiveReadyForNext.includes(playerId ?? "") || busy}
                   data-testid="round-next-btn"
-                  data-ready={snapshot.readyForNext?.includes(playerId ?? "") ? 'true' : 'false'}
+                  data-ready={effectiveReadyForNext.includes(playerId ?? "") ? 'true' : 'false'}
                 >
                   {busy ? <span className={styles.nextButtonSpinner} /> : t('next_arrow')}
                 </button>
