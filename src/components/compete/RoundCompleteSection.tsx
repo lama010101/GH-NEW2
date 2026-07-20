@@ -696,7 +696,7 @@ export default function RoundCompleteSection({
             className={activeStyles.settingsCloseBtn}
           >
             <svg viewBox="0 0 10 10" fill="none" width="12" height="12">
-              <path d="M2 2l6 6M8 2L2 8" stroke="rgba(255,255,255,0.75)" strokeWidth="1.4" strokeLinecap="round" />
+              <path d="M2 2l6 6M8 2L2 8" stroke="var(--gh-text-secondary)" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </button>
 
@@ -710,7 +710,7 @@ export default function RoundCompleteSection({
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className={activeStyles.toggle}
                 style={{
-                  "--toggle-bg": soundEnabled ? "var(--gh-orange)" : "rgba(255, 255, 255, 0.15)",
+                  "--toggle-bg": soundEnabled ? "var(--gh-orange)" : "var(--gh-modal-toggle-off)",
                   "--toggle-left": soundEnabled ? "22px" : "2px",
                 } as React.CSSProperties}
               >
@@ -725,7 +725,7 @@ export default function RoundCompleteSection({
                 onClick={() => setVibrateEnabled(!vibrateEnabled)}
                 className={activeStyles.toggle}
                 style={{
-                  "--toggle-bg": vibrateEnabled ? "var(--gh-orange)" : "rgba(255, 255, 255, 0.15)",
+                  "--toggle-bg": vibrateEnabled ? "var(--gh-orange)" : "var(--gh-modal-toggle-off)",
                   "--toggle-left": vibrateEnabled ? "22px" : "2px",
                 } as React.CSSProperties}
               >

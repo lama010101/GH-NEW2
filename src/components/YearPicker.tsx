@@ -109,13 +109,13 @@ function yearsForDecade(d: number, min: number, max: number): number[] {
   return out;
 }
 
-const INDICATOR_COLOR = 'rgba(0, 180, 255, 0.5)';
-const ACTIVE_BG = 'rgba(0, 180, 255, 0.18)';
-const ACTIVE_BORDER = '1.5px solid rgba(0, 180, 255, 0.6)';
-const ACTIVE_BG_COMMITTED = 'rgba(0, 220, 120, 0.18)';
-const ACTIVE_BORDER_COMMITTED = '1.5px solid rgba(0, 220, 120, 0.6)';
-const INACTIVE_COLOR = 'rgba(255,255,255,0.65)';
-const LABEL_COLOR = 'rgba(255,255,255,0.60)';
+const INDICATOR_COLOR = 'rgba(var(--gh-blue-rgb), 0.5)';
+const ACTIVE_BG = 'rgba(var(--gh-blue-rgb), 0.18)';
+const ACTIVE_BORDER = '1.5px solid rgba(var(--gh-blue-rgb), 0.6)';
+const ACTIVE_BG_COMMITTED = 'rgba(var(--gh-success-rgb), 0.18)';
+const ACTIVE_BORDER_COMMITTED = '1.5px solid rgba(var(--gh-success-rgb), 0.6)';
+const INACTIVE_COLOR = 'var(--gh-text-secondary)';
+const LABEL_COLOR = 'var(--gh-text-muted)';
 const FADE_MASK = `linear-gradient(to right, transparent 0px, black ${FADE_W}px, black calc(100% - ${FADE_W}px), transparent 100%)`;
 
 interface RailProps {

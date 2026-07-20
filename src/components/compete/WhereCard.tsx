@@ -214,8 +214,8 @@ export default function WhereCard({
                 const locAccColor = locHue != null ? `hsl(${locHue}, 100%, var(--gh-acc-lightness, 50%))` : "var(--gh-text-muted)";
                 return (
                   <div key={r.playerId} className={styles.lbRow} style={{
-                    background: r.playerId === playerId ? "rgba(255,255,255,0.06)" : "transparent",
-                    borderBottom: idx < (roundResults?.length ?? 0) - 1 ? "1px solid rgba(51,51,51,1)" : "none",
+                    background: r.playerId === playerId ? "var(--gh-row-self-bg)" : "transparent",
+                    borderBottom: idx < (roundResults?.length ?? 0) - 1 ? "1px solid var(--gh-row-divider)" : "none",
                   }}>
                     <span className={styles.lbRank}>
                       {idx + 1}

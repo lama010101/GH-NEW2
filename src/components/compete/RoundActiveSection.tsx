@@ -655,7 +655,7 @@ export default function RoundActiveSection({
                   setImgRetryKey((k) => k + 1);
                 }}
               >
-                <svg className={styles.imgErrorIcon} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className={styles.imgErrorIcon} viewBox="0 0 24 24" fill="none" stroke="var(--gh-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                   <circle cx="8.5" cy="8.5" r="1.5" />
                   <polyline points="21 15 16 10 5 21" />
@@ -704,7 +704,7 @@ export default function RoundActiveSection({
         const progress = Math.max(0, Math.min(1, timeRemaining / totalSec));
         const strokeDashoffset = circumference * (1 - progress);
         const isUrgent = timeRemaining <= 10;
-        const ringColor = isUrgent ? "#ef4444" : timeRemaining <= 30 ? "#f97316" : "#22c55e";
+        const ringColor = isUrgent ? "var(--gh-danger)" : timeRemaining <= 30 ? "var(--gh-orange)" : "var(--gh-success)";
         const posClass = activePanel === 'where'
           ? styles.timerWrapperWhereSheet
           : styles.timerWrapperCentered;
@@ -718,8 +718,8 @@ export default function RoundActiveSection({
             >
               <circle
                 cx="36" cy="36" r={radius}
-                fill="rgba(0,0,0,0.55)"
-                stroke="rgba(255,255,255,0.12)"
+                fill="var(--gh-bg-elevated)"
+                stroke="var(--gh-border-default)"
                 strokeWidth="3"
               />
               <circle
@@ -750,7 +750,7 @@ export default function RoundActiveSection({
             className={styles.settingsBtn}
             aria-label={t('settings')}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gh-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
@@ -783,7 +783,7 @@ export default function RoundActiveSection({
                   {!p.hasSubmitted && !submittedToasts[p.playerId] && (
                     <div
                       className={styles.submittedToast}
-                      style={{ animation: "none", opacity: 1, color: "var(--gh-text-tertiary, rgba(255,255,255,0.45))" }}
+                      style={{ animation: "none", opacity: 1, color: "var(--gh-text-tertiary)" }}
                     >
                       {t('waiting_for')}
                     </div>
@@ -853,7 +853,7 @@ export default function RoundActiveSection({
               onClick={() => setMapFullscreen(false)}
               className={styles.mapCloseBtn}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gh-text-primary)" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
                 <line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -882,7 +882,7 @@ export default function RoundActiveSection({
             data-testid="round-hints-btn"
           >
             <span className={styles.hintsCount}>{hintsUsedCount ?? 0}</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gh-text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9.663 17h4.673M12 3v1m0 16v1M4.22 4.22l.707.707M19.778 19.778l-.707-.707M3 12h1m16 0h1M4.22 19.778l.707-.707M19.778 4.22l-.707.707M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
             </svg>
           </button>
@@ -1156,7 +1156,7 @@ export default function RoundActiveSection({
             className={styles.settingsCloseBtn}
           >
             <svg viewBox="0 0 10 10" fill="none" width="12" height="12">
-              <path d="M2 2l6 6M8 2L2 8" stroke="rgba(255,255,255,0.75)" strokeWidth="1.4" strokeLinecap="round" />
+              <path d="M2 2l6 6M8 2L2 8" stroke="var(--gh-text-secondary)" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </button>
 
@@ -1170,7 +1170,7 @@ export default function RoundActiveSection({
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className={styles.toggle}
                 style={{
-                  "--toggle-bg": soundEnabled ? "var(--gh-orange)" : "rgba(255, 255, 255, 0.15)",
+                  "--toggle-bg": soundEnabled ? "var(--gh-orange)" : "var(--gh-modal-toggle-off)",
                   "--toggle-left": soundEnabled ? "22px" : "2px",
                 } as React.CSSProperties}
               >
@@ -1185,7 +1185,7 @@ export default function RoundActiveSection({
                 onClick={() => setVibrateEnabled(!vibrateEnabled)}
                 className={styles.toggle}
                 style={{
-                  "--toggle-bg": vibrateEnabled ? "var(--gh-orange)" : "rgba(255, 255, 255, 0.15)",
+                  "--toggle-bg": vibrateEnabled ? "var(--gh-orange)" : "var(--gh-modal-toggle-off)",
                   "--toggle-left": vibrateEnabled ? "22px" : "2px",
                 } as React.CSSProperties}
               >

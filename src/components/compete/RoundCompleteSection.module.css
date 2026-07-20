@@ -783,7 +783,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border: 2.5px solid var(--gh-border-medium);
   border-top-color: var(--gh-btn-text);
   animation: nextBtnSpin 0.7s linear infinite;
 }
