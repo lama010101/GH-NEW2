@@ -37,7 +37,12 @@ fi
 # One clean loop: for each pushed file, try each manifest pattern.
 # Comment lines (# ...) and empty lines in the manifest are skipped.
 TOUCHES_PROTECTED=0
-while IFS= read -r f; do
+OLD_IFS="$IFS"
+set -f
+IFS='
+'
+for f in $PUSHED_FILES; do
+  [ -n "$f" ] || continue
   while IFS= read -r pattern; do
     # Skip empty lines and comments
     [ -z "$pattern" ] && continue
@@ -47,7 +52,12 @@ while IFS= read -r f; do
       $pattern) TOUCHES_PROTECTED=1; break ;;
     esac
   done < "$PROTECTED_FILE"
-done <<< "$PUSHED_FILES"
+  if [ "$TOUCHES_PROTECTED" -ne 0 ]; then
+    break
+  fi
+done
+IFS="$OLD_IFS"
+set +f
 
 if [ "$TOUCHES_PROTECTED" -eq 0 ]; then
   echo "PRE-PUSH: no protected sync-compete files touched — skipping golden-path gate."
