@@ -86,7 +86,7 @@ const CATEGORIES: Category[] = [
   { id: 'c5', icon: '⚙️', titleKey: 'cat_account', descKey: 'cat_account_desc' },
   { id: 'c6', icon: '🔔', titleKey: 'cat_notifications', descKey: 'cat_notifications_desc' },
   { id: 'c7', icon: '🏆', titleKey: 'Rank & Progression', descKey: 'Your total XP unlocks 10 rank tiers, from Wanderer (0 XP) to Cartographer Royal (2,500,000 XP). Ranks are derived from your stats and are never stored separately.' },
-  { id: 'c8', icon: '🌍', titleKey: 'Era & Region Filters', descKey: 'Hosts can filter events by era—Ancient, Medieval, Early Modern, Modern, Contemporary—and by world region. Only events matching the selected filters will appear in the game.' },
+  { id: 'c8', icon: '🌍', titleKey: 'Era & Region Filters', descKey: 'Hosts can filter events by era—Ancient, Medieval, Early Modern, Modern, Contemporary—and by world region: Africa, Antarctica, Asia, Europe, North America, Oceania, South America. Only events matching the selected filters will appear in the game.' },
   { id: 'c9', icon: '⏱️', titleKey: 'Results Auto-Advance', descKey: 'After everyone submits, results are shown and the game automatically moves to the next round. The default wait is 90 seconds; hosts can set it from 0 to 300 seconds.' },
   { id: 'c10', icon: '⏳', titleKey: 'Relax Deadlines', descKey: 'In Relax (turn-based) mode, each player has up to 14 days to take a turn. The host sets the deadline when creating the game.' },
 ]
