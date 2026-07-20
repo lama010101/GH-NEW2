@@ -126,21 +126,9 @@ export async function onIdentityReady(): Promise<string> {
 export async function signOut(): Promise<void> {
   signingOut = true;
   try {
-    const { error } = await supabaseBrowser.auth.signOut({ scope: 'local' });
-    if (error) {
-      // signOut() returns { error } rather than throwing. Force-clear the
-      // Supabase auth cookies client-side so the next OAuth call does not
-      // reuse a stale session.
-      if (typeof document !== 'undefined') {
-        document.cookie.split(';').forEach((cookie) => {
-          const name = cookie.split('=')[0].trim();
-          if (name.startsWith('sb-') && name.endsWith('-auth-token')) {
-            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-          }
-        });
-      }
-    }
+    await supabaseBrowser.auth.signOut({ scope: 'local' });
   } finally {
+    forceClearAuthStorage();
     bootstrapped = false;
     cachedState = { status: "unauthenticated" };
     resetReadyPromise();
