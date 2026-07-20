@@ -193,10 +193,10 @@ Status values: `DONE` | `IN PROGRESS` | `BLOCKED` | `SKIPPED` | `PLAN`
 - [Appendix — Detailed Task Descriptions & Notes](#appendix--detailed-task-descriptions--notes)
 
 ## Summary
-- Total log rows: **989** across **946** unique task IDs
-- Task IDs appearing in multiple log rows: **36** (43 extra rows from repeated/sequel entries)
+- Total log rows: **1002** across **957** unique task IDs
+- Task IDs appearing in multiple log rows: **38** (45 extra rows from repeated/sequel entries)
 - Status breakdown:
-  - DONE: 984
+  - DONE: 997
   - SKIPPED: 5
   - IN PROGRESS: 0
   - BLOCKED: 0
@@ -1896,31 +1896,31 @@ NEXTJS_BASE_URL fallback in partykit.json needed to be set to production Vercel 
 - No code changes, configuration only
 - Timer path now has correct production fallback
 - Client-origin detection still takes priority for normal gameplay
- | MP-FIX-EVENT-DATA-001 | DONE | src/core/types.ts, src/server/getGameState.ts | Added RoundEventContent type and rounds field to CompeteSessionSnapshot; getGameState now fetches event content (title, year, lat/lng, imageUrl) from events/locations/images tables using fetchEventById; rounds array ordered by round index |
+| MP-FIX-EVENT-DATA-001 | DONE | src/core/types.ts, src/server/getGameState.ts | Added RoundEventContent type and rounds field to CompeteSessionSnapshot; getGameState now fetches event content (title, year, lat/lng, imageUrl) from events/locations/images tables using fetchEventById; rounds array ordered by round index |
 
-|   M P - F I X - V I E W E R - B R O A D C A S T - 0 0 1   |   D O N E   |   p a r t y k i t / s e r v e r . t s   |   F i x e d   b r o a d c a s t S t a t e U p d a t e   t o   s e n d   p e r - s o c k e t   m e s s a g e s   w i t h   c o r r e c t   v i e w e r P l a y e r I d   i n j e c t e d   p e r   r e c i p i e n t .   R e p l a c e d   t h i s . r o o m . b r o a d c a s t ( )   w i t h   l o o p   o v e r   t h i s . r o o m . c o n n e c t i o n s .   V a l i d a t i o n :   g r e p   f o r   r o o m . b r o a d c a s t   r e t u r n s   0   m a t c h e s   i n   b r o a d c a s t S t a t e U p d a t e   c o n t e x t ,   g r e p   f o r   c o n n e c t i o n s / c o n n e c t i o n . s e n d   r e t u r n s   e"1   m a t c h .   D a t e :   2 0 2 6 - 0 5 - 1 3   | 
- 
- |   M P - F I X - V I E W E R - B R O A D C A S T - 0 0 2   |   D O N E   |   p a r t y k i t / s e r v e r . t s   |   F i x e d   b r o a d c a s t S t a t e U p d a t e   t o   u s e   r o o m . g e t C o n n e c t i o n s ( )   i n s t e a d   o f   f a b r i c a t e d   r o o m . c o n n e c t i o n s   i t e r a b l e .   R e m o v e d   c o n n e c t i o n s   p r o p e r t y   f r o m   R o o m   i n t e r f a c e .   D a t e :   2 0 2 6 - 0 5 - 1 3   | 
- 
- |   M P - F I X - P A R T Y K I T - T Y P E S - 0 0 2   |   D O N E   |   p a r t y k i t / s e r v e r . t s   |   C o r r e c t e d   h a n d - r o l l e d   R o o m   a n d   C o n n e c t i o n   i n t e r f a c e s   t o   a c c u r a t e l y   m i r r o r   o f f i c i a l   p a r t y k i t / s e r v e r . d . t s   s i g n a t u r e s .   D a t e :   2 0 2 6 - 0 5 - 1 3   | 
- 
- |   M P - F I X - D I S P L A Y N A M E - 0 0 2   |   D O N E   |   s r c / c o r e / i d e n t i t y . t s ,   s r c / h o o k s / u s e I d e n t i t y . t s   |   E x t e n d e d   u s e I d e n t i t y   t o   f e t c h   d i s p l a y N a m e   f r o m   p r o f i l e s   t a b l e .   A d d e d   f e t c h D i s p l a y N a m e   h e l p e r .   D a t e :   2 0 2 6 - 0 5 - 1 3   | 
- 
- |   M P - F I X - D I S P L A Y N A M E - 0 0 3   |   D O N E   |   s r c / h o o k s / u s e C o m p e t e S o c k e t . t s ,   s r c / a p p / c o m p e t e / [ g a m e I d ] / p a g e . t s x   |   R e p l a c e d   s e s s i o n S t o r a g e   d i s p l a y N a m e   s o u r c e   w i t h   u s e I d e n t i t y ( )   d i s p l a y N a m e .   R e m o v e d   P l a y e r - f a l l b a c k .   D a t e :   2 0 2 6 - 0 5 - 1 3   | 
- 
- |   M P - F I X - W S - H E A R T B E A T - 0 0 1   |   D O N E   |   s r c / c o r e / c o m p e t e W e b S o c k e t . t s   |   A d d e d   2 0 s   k e e p a l i v e   p i n g   t o   p r e v e n t   C l o u d f l a r e   i d l e   c o n n e c t i o n   d r o p s .   c l e a r H e a r t b e a t   c a l l e d   o n   c l o s e   a n d   d i s c o n n e c t .   D a t e :   2 0 2 6 - 0 5 - 1 3   | 
- 
- |   M P - F I X - W S - H E A R T B E A T - 0 0 2   |   D O N E   |   p a r t y k i t / s e r v e r . t s   |   A d d e d   s i l e n t   P I N G   c a s e   t o   s u p p r e s s   u n h a n d l e d   m e s s a g e   w a r n i n g .   D a t e :   2 0 2 6 - 0 5 - 1 3   | 
- 
- |   M P - F I X - C L A M P - 0 0 1   |   D O N E   |   p a r t y k i t / s e r v e r . t s   |   F i x e d   c l a m p   c o n d i t i o n   t o   i n t e g e r   m s   c o m p a r i s o n .   R e p l a c e d   r o o m . b r o a d c a s t ( )   f o r   T I M E R _ C L A M P E D   a n d   P L A Y E R _ S U B M I T T E D   w i t h   p e r - s o c k e t   l o o p s .   D a t e :   2 0 2 6 - 0 5 - 1 3 
- 
- |   M P - F I X - C L A M P - 0 0 2   |   D O N E   |   s r c / s e r v e r / e v e n t S t r e a m . t s   |   P R E S S U R E _ A P P L I E D   a l r e a d y   p r e s e n t   i n   F S M   t r a n s i t i o n s   ( G U E S S _ S U B M I T T E D   a n d   P R E S S U R E _ A P P L I E D ) .   N o   c h a n g e s   n e e d e d .   D a t e :   2 0 2 6 - 0 5 - 1 3 
- 
- |   M P - F I X - C L A M P - 0 0 3   |   D O N E   |   s r c / s e r v e r / e v e n t S t r e a m . t s   |   F o r c e - w r o t e   V A L I D _ P H A S E _ T R A N S I T I O N S   w i t h   P R E S S U R E _ A P P L I E D   i n   c o r r e c t   o r d e r   f o r   G U E S S _ S U B M I T T E D   a n d   P R E S S U R E _ A P P L I E D   s e t s .   D a t e :   2 0 2 6 - 0 5 - 1 3 
- 
- |   M P - F I X - C L A M P - 0 0 4   |   D O N E   |   s r c / s e r v e r / s e s s i o n C o r e . t s ,   p a r t y k i t / s e r v e r . t s   |   F i x e d   a s s e r t V a l i d E x e c u t i o n C o n t e x t   t o   a c c e p t   P a r t y K i t   e x e c u t i o n   c o n t e x t .   R e m o v e d   b r e a k   t h a t   s w a l l o w e d   b r o a d c a s t   o n   p r e s s u r e   f a i l u r e .   D a t e :   2 0 2 6 - 0 5 - 1 3 
- 
- | MP-FIX-LOBBY-SELF-001 | DONE | partykit/server.ts | Registered connectionId→playerId in JOIN_ROOM handler. Replaced manual connection.send in onConnect with broadcastStateUpdate(). | 2026-05-15 |
+| MP-FIX-VIEWER-BROADCAST-001 | DONE | partykit/server.ts | Fixed broadcastStateUpdate to send per-socket messages with correct viewerPlayerId injected per recipient. Replaced this.room.broadcast() with loop over this.room.connections. Validation: grep for room.broadcast returns 0 matches in broadcastStateUpdate context, grep for connections/connection.send returns 1 match. Date: 2026-05-13 |
+
+| MP-FIX-VIEWER-BROADCAST-002 | DONE | partykit/server.ts | Fixed broadcastStateUpdate to use room.getConnections() instead of fabricated room.connections iterable. Removed connections property from Room interface. Date: 2026-05-13 |
+
+| MP-FIX-PARTYKIT-TYPES-002 | DONE | partykit/server.ts | Corrected hand-rolled Room and Connection interfaces to accurately mirror official partykit/server.d.ts signatures. Date: 2026-05-13 |
+
+| MP-FIX-DISPLAYNAME-002 | DONE | src/core/identity.ts, src/hooks/useIdentity.ts | Extended useIdentity to fetch displayName from profiles table. Added fetchDisplayName helper. Date: 2026-05-13 |
+
+| MP-FIX-DISPLAYNAME-003 | DONE | src/hooks/useCompeteSocket.ts, src/app/compete/[gameId]/page.tsx | Replaced sessionStorage displayName source with useIdentity() displayName. Removed Player-fallback. Date: 2026-05-13 |
+
+| MP-FIX-WS-HEARTBEAT-001 | DONE | src/core/competeWebSocket.ts | Added 20s keepalive ping to prevent Cloudflare idle connection drops. clearHeartbeat called on close and disconnect. Date: 2026-05-13 |
+
+| MP-FIX-WS-HEARTBEAT-002 | DONE | partykit/server.ts | Added silent PING case to suppress unhandled message warning. Date: 2026-05-13 |
+
+| MP-FIX-CLAMP-001 | DONE | partykit/server.ts | Fixed clamp condition to integer ms comparison. Replaced room.broadcast() for TIMER_CLAMPED and PLAYER_SUBMITTED with per-socket loops. Date: 2026-05-13
+
+| MP-FIX-CLAMP-002 | DONE | src/server/eventStream.ts | PRESSURE_APPLIED already present in FSM transitions (GUESS_SUBMITTED and PRESSURE_APPLIED). No changes needed. Date: 2026-05-13
+
+| MP-FIX-CLAMP-003 | DONE | src/server/eventStream.ts | Force-wrote VALID_PHASE_TRANSITIONS with PRESSURE_APPLIED in correct order for GUESS_SUBMITTED and PRESSURE_APPLIED sets. Date: 2026-05-13
+
+| MP-FIX-CLAMP-004 | DONE | src/server/sessionCore.ts, partykit/server.ts | Fixed assertValidExecutionContext to accept PartyKit execution context. Removed break that swallowed broadcast on pressure failure. Date: 2026-05-13
+
+| MP-FIX-LOBBY-SELF-001 | DONE | partykit/server.ts | Registered connectionId→playerId in JOIN_ROOM handler. Replaced manual connection.send in onConnect with broadcastStateUpdate(). | 2026-05-15 |
 
 ## MP-FIX-IMGPRELOAD-001
 File modified: src/app/compete/[gameId]/page.tsx
@@ -2937,4 +2937,4 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 | GH-FIX-014 | DONE | src/server/sessionCore.ts | Merged PR #25 (cb8ffd4): fixed broken Compete join by replacing `SELECT COUNT(*) ... FOR UPDATE` with row-level `SELECT player_id ... FOR UPDATE` and counting rows in application code (Option A). Local verification on main: direct curl join returns 200, 8-player cap enforced, concurrency race with 1 slot left produced exactly one success / one rejection, 3/3 isolated Play Again Playwright runs pass, tsc/lint/build pass. (2026-07-20) |
 | GH-FIX-015 | DONE | src/server/sessionCore.ts | Merged PR #25 to main (cb8ffd4) and post-merge fresh-install verification: rm -rf node_modules && npm ci, tsc --noEmit, npm run lint, npm run build all pass; direct curl join, 8-cap, and isolated Play Again Playwright run all pass on main. (2026-07-20) |
 
-| MP-DOC-PROGRESS-AUDIT-001 | DONE | docs/PROGRESS.md | Audited stale `PROGRESS.md` statuses and Summary counts. Marked completed tasks DONE, reclassified `MP-BUILD-HOME-015` as SKIPPED, normalized two pending-verification statuses to plain DONE, and updated the Summary block to current totals. (2026-07-20) |
+| MP-DOC-PROGRESS-AUDIT-001 | DONE | docs/PROGRESS.md | Audited stale `PROGRESS.md` statuses and Summary counts. Marked completed tasks DONE, reclassified `MP-BUILD-HOME-015` as SKIPPED, normalized two pending-verification statuses to plain DONE, fixed the UTF-16LE/NUL-encoded section so the file is clean UTF-8, and updated the Summary block to current totals. (2026-07-20) |
