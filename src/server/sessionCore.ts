@@ -979,11 +979,15 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
     // 8-player cap per GAME_MODES_SPEC.md Section 5.13. Active rejoiners are
     // already counted in the active set and therefore bypass the check.
     if (!isActiveRejoiner) {
-      const activeCountResult = await client.query<{ count: string }>(
-        `SELECT COUNT(*) as count FROM session_players WHERE game_id = $1 AND left_at IS NULL FOR UPDATE`,
+      // Row-level FOR UPDATE on the actual active rows (no aggregate), then
+      // count in application code. Postgres rejects `SELECT COUNT(*) FOR UPDATE`;
+      // this is equivalent and also locks the active set so concurrent
+      // kick/leave cannot mutate it while the cap is evaluated.
+      const activeCountResult = await client.query<{ player_id: string }>(
+        `SELECT player_id FROM session_players WHERE game_id = $1 AND left_at IS NULL FOR UPDATE`,
         [gameId]
       );
-      const activeCount = parseInt(activeCountResult.rows[0]?.count || "0", 10);
+      const activeCount = activeCountResult.rows.length;
       if (activeCount >= 8) {
         await client.query("ROLLBACK");
         throw new Error("Session is full (8 players max)");
