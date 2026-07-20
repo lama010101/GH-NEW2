@@ -155,13 +155,12 @@
   transform: translateX(-50%);
 }
 
-/* WHERE sheet open: move timer to top-left, below the sheet header,
-   so it does not cover the guessed-location marker in the center map.
-   Sheet header (location name + close button) is ~60px tall; 70px clears it. */
+/* WHERE sheet open: move timer to top-center of the Where card,
+   below the sheet header so it does not cover the guessed-location marker. */
 .timerWrapperWhereSheet {
   top: 70px;
-  left: 16px;
-  transform: none;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .timerSvg {
