@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, type IdentityState } from '@/core/identity'
+import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, type IdentityState } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
@@ -18,9 +18,20 @@ import RankCard from '@/components/RankCard'
 
 function HomePageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const t = useTranslations()
 
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
+  const [kickedMessage, setKickedMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (searchParams.get('kicked') === '1') {
+      setKickedMessage(t('lobby.kicked_toast'))
+      const timer = setTimeout(() => setKickedMessage(null), 5000)
+      router.replace('/home', { scroll: false })
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams, router, t])
   const [welcomeData, setWelcomeData] = useState<{
     avatar: {
       id: string;
@@ -50,6 +61,10 @@ function HomePageInner() {
       .then(data => {
         if (data.avatar) {
           setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
+          if (data.profile?.display_name) {
+            updateCachedDisplayName(data.profile.display_name);
+          }
+          setProfileVersion(v => v + 1);
         }
       })
       .catch(() => {})
@@ -256,6 +271,24 @@ function HomePageInner() {
         initials={initials}
         onAvatarClick={() => setShowNavModal(true)}
       />
+
+      {kickedMessage && (
+        <div
+          role="alert"
+          style={{
+            position: 'relative',
+            zIndex: 50,
+            padding: '10px 16px',
+            background: 'var(--gh-error)',
+            color: 'var(--gh-text-primary)',
+            textAlign: 'center',
+            fontSize: 'var(--font-sm)',
+            fontWeight: 600,
+          }}
+        >
+          {kickedMessage}
+        </div>
+      )}
 
       {/* Scrollable content area — rank card scrolls with the page (inline, not fixed) */}
       <div className={`${styles['page-scroll']} ${styles.pageScrollRankOpen}`}>

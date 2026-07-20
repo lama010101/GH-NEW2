@@ -43,6 +43,13 @@ export default function SessionComplete({
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [totalXp, setTotalXp] = useState<number | null>(null);
 
+  // Scroll final results to top once the round data is loaded.
+  useEffect(() => {
+    if (allRoundResults) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [allRoundResults]);
+
   // Fetch viewer's global total XP for the rank title progress card
   // (single source of truth: player_global_stats.total_xp → rankForXp → RankCard)
   useEffect(() => {
@@ -92,13 +99,14 @@ export default function SessionComplete({
         throw new Error(data.error || t('failed_lobby'));
       }
       const data = await response.json();
+      // Broadcast PLAY_AGAIN to the current room. Navigation is triggered by the
+      // echoed PLAY_AGAIN message via CompeteGamePage's useCompeteSocket
+      // onPlayAgain callback, so the broadcast is delivered to all guests before
+      // the host disconnects to join the new lobby.
       sendMessage({ type: "PLAY_AGAIN", playerId, newGameId: data.gameId });
-      await new Promise(resolve => setTimeout(resolve, 300));
-      router.push(`/compete/${data.gameId}`);
     } catch (error) {
       console.error("Failed to create lobby:", error);
       setLobbyError(t('failed_lobby_retry'));
-    } finally {
       setIsCreatingLobby(false);
     }
   };
@@ -252,7 +260,7 @@ export default function SessionComplete({
           byWhenMap.set(eraKey, existing);
         }
         const byWhen = [...byWhenMap.entries()]
-          .sort(([a], [b]) => (ERA_META[a]?.order ?? 99) - (ERA_META[b]?.order ?? 99))
+          .sort(([, a], [, b]) => b.totalXp - a.totalXp)
           .map(([eraKey, val]) => ({
             label: tGame(eraKey),
             avgAccuracy: Math.round(val.totalAcc / val.roundCount),
@@ -275,7 +283,7 @@ export default function SessionComplete({
           byWhereMap.set(region, existing);
         }
         const byWhere = [...byWhereMap.entries()]
-          .sort(([a], [b]) => (REGION_META[a]?.order ?? 99) - (REGION_META[b]?.order ?? 99))
+          .sort(([, a], [, b]) => b.totalXp - a.totalXp)
           .map(([regionKey, val]) => {
             const meta = REGION_META[regionKey];
             // Use the same i18n key pattern as the lobby: region_<continent_lowered_with_underscores>
@@ -416,8 +424,7 @@ export default function SessionComplete({
                         </div>
                       </div>
                       <div className={styles.rankScore}>
-                        <span className={styles.rankAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, player.avgAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{player.avgAccuracy}</span>
-                        <span className={styles.rankXp}>{player.totalScore.toLocaleString()} {tGame('xp_unit')}</span>
+                        <span className={styles.rankAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, player.avgAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
                       </div>
                     </div>
                   );
@@ -573,12 +580,12 @@ export default function SessionComplete({
                             <div className={styles.miniTile}>
                               <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgLocationScore}</span>
                               <span className={styles.miniLabelWhere}>{tGame('where')}</span>
-                              <span className={styles.miniSub}>{tGame('avg_label')} {Math.round(roundStats.avgDistanceKm)} {tGame('km_unit')}</span>
+                              <span className={styles.miniSub}>{tGame('distance_label', { km: Math.round(roundStats.avgDistanceKm) })}</span>
                             </div>
                             <div className={styles.miniTile}>
                               <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgTimeScore}</span>
                               <span className={styles.miniLabelWhen}>{tGame('when')}</span>
-                              <span className={styles.miniSub}>{tGame('avg_label')} {Math.round(roundStats.avgYearDiff)} {tGame('yrs_unit')}</span>
+                              <span className={styles.miniSub}>{tGame('year_diff_label', { n: Math.round(roundStats.avgYearDiff) })}</span>
                             </div>
                           </div>
 
