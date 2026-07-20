@@ -1519,6 +1519,13 @@ export async function kickCompetePlayer(input: KickCompetePlayerInput): Promise<
       [gameId, targetPlayerId]
     );
 
+    // Auto-unfavorite: remove the kicked player from the host's follows.
+    await client.query(
+      `DELETE FROM public.player_follows
+       WHERE follower_id = $1 AND followed_id = $2`,
+      [playerId, targetPlayerId]
+    );
+
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
