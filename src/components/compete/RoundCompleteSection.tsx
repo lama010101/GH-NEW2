@@ -122,6 +122,11 @@ export default function RoundCompleteSection({
   });
   const [localePending, startLocaleTransition] = useTransition();
 
+  // Scroll round results to top whenever they become visible.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [snapshot.currentRoundIndex, roundResults]);
+
   useEffect(() => {
     setIsAccuracyVisible(false);
     setIsWhereVisible(false);
