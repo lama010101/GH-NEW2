@@ -912,64 +912,11 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
     throw new Error("Practice sessions cannot be joined");
   }
 
-  // Kick guard: hard-block rejoin if this player was kicked from this game.
-  // Must run BEFORE the upsert so a kicked player's left_at is never cleared.
-  // Uses dbPool (same pool as the rest of this function).
-  const kickedCheck = await dbPool.query<{ kicked: boolean }>(
-    `SELECT kicked FROM session_players WHERE game_id = $1 AND player_id = $2`,
-    [gameId, playerId]
-  );
-  if (kickedCheck.rows[0]?.kicked === true) {
-    const err = new Error("You were removed from this game by the host") as Error & { code?: string };
-    err.code = "PLAYER_KICKED";
-    throw err;
-  }
-
-  // Late join guard: reject new players joining after game has started
+  // Late join guard snapshot: used inside the transaction to avoid repeated
+  // heavy state reconstruction. Reconnect checks happen under the lock.
   const currentSnapshot = await loadCompeteSessionSnapshot(gameId, null);
-  if (currentSnapshot && currentSnapshot.status !== "LOBBY") {
-    // Check if player already exists in session_players (reconnect vs new joiner)
-    const existingPlayerResult = await dbPool.query<{ count: string }>(
-      `SELECT COUNT(*) as count FROM session_players WHERE game_id = $1 AND player_id = $2`,
-      [gameId, playerId]
-    );
-    const existingPlayerCount = parseInt(existingPlayerResult.rows[0]?.count || "0", 10);
-    
-    if (existingPlayerCount === 0) {
-      // New player attempting to join after game started
-      throw new Error("Game already in progress");
-    }
-    // If count > 0: player is reconnecting → allow through
-  }
-  // If snapshot does not exist: allow through (session is being created)
 
-  // M2 FIX: 8-player cap per GAME_MODES_SPEC.md Section 5.13.
-  // Only applies to NEW joiners — rejoining players (row exists with left_at)
-  // are always allowed through so they don't get locked out of their own game.
-  if (currentSnapshot && currentSnapshot.status === "LOBBY") {
-    const activeCountResult = await dbPool.query<{ count: string }>(
-      `SELECT COUNT(*) as count FROM session_players WHERE game_id = $1 AND left_at IS NULL`,
-      [gameId]
-    );
-    const activeCount = parseInt(activeCountResult.rows[0]?.count || "0", 10);
-    const isRejoining = (await dbPool.query<{ count: string }>(
-      `SELECT COUNT(*) as count FROM session_players WHERE game_id = $1 AND player_id = $2`,
-      [gameId, playerId]
-    )).rows[0]?.count !== "0";
-    if (!isRejoining && activeCount >= 8) {
-      throw new Error("Session is full (8 players max)");
-    }
-  }
-
-  verifyLog("INSERT", "session_players", "OK", `joining player_id=${playerId} game_id=${gameId} — executing`);
-  // Rejoin-aware upsert:
-  //   - Fresh join: inserts with left_at=NULL, ready=false, is_host=false.
-  //   - Rejoin (row exists): clears left_at (player was transiently disconnected)
-  //     and refreshes display_name only if a non-empty one was supplied.
-  //   - ready / is_host are preserved across rejoin (no implicit reset).
-  // This is the counterpart to /leave, which only sets left_at=now().
-  // Without clearing left_at here, a single WS close (StrictMode remount, HMR,
-  // tab refresh, transient network blip) permanently kicks the player out.
+  // Resolve display name + avatar outside the transaction to keep the lock short.
   const joiningAvatarResult = await dbPool.query<{ display_name: string; avatar_url: string }>(
     `SELECT p.display_name, p.avatar_url
      FROM public.profiles p
@@ -989,37 +936,101 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
     );
     joiningAvatarUrl = fallbackResult.rows[0]?.avatar_url ?? null;
   }
-  await dbPool.query(
-    `INSERT INTO session_players (game_id, player_id, display_name, joined_at, left_at, ready, is_host, avatar_url)
-     VALUES ($1, $2, $3, now(), NULL, false, false, $4)
-     ON CONFLICT (game_id, player_id) DO UPDATE
-       SET left_at = NULL,
-           display_name = CASE
-             WHEN EXCLUDED.display_name <> '' THEN EXCLUDED.display_name
-             ELSE session_players.display_name
-           END,
-           avatar_url = EXCLUDED.avatar_url`,
-    [gameId, playerId, joinDisplayName, joiningAvatarUrl]
-  );
 
-  // Host self-heal: if the rejoining player is still marked is_host but host
-  // was concurrently reassigned away, we leave the current host alone (the
-  // partial unique index `uq_session_players_one_host_per_game` guarantees at
-  // most one host). If there is NO active host at all (e.g. original host was
-  // alone and disconnected), promote this rejoining player to host so the
-  // lobby remains startable. This is idempotent and never violates the index.
-  await dbPool.query(
-    `UPDATE session_players
-     SET is_host = true
-     WHERE game_id = $1
-       AND player_id = $2
-       AND left_at IS NULL
-       AND NOT EXISTS (
-         SELECT 1 FROM session_players
-         WHERE game_id = $1 AND is_host = true AND left_at IS NULL
-       )`,
-    [gameId, playerId]
-  );
+  // Atomic join transaction:
+  // - pg_advisory_xact_lock serializes all joins for this game.
+  // - player row FOR UPDATE blocks concurrent kick/leave.
+  // - active count FOR UPDATE locks the current active player set so the cap
+  //   is evaluated against a stable snapshot and enforced at exactly 8.
+  let client: DbTransactionClient | null = null;
+  try {
+    client = await getTransactionClient();
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`,
+      [gameId]
+    );
+
+    const playerRowResult = await client.query<{ kicked: boolean; left_at: Date | null }>(
+      `SELECT kicked, left_at FROM session_players WHERE game_id = $1 AND player_id = $2 FOR UPDATE`,
+      [gameId, playerId]
+    );
+    const playerRow = playerRowResult.rows[0];
+
+    if (playerRow?.kicked === true) {
+      await client.query("ROLLBACK");
+      const err = new Error("You were removed from this game by the host") as Error & { code?: string };
+      err.code = "PLAYER_KICKED";
+      throw err;
+    }
+
+    const isActiveRejoiner = playerRow !== undefined && playerRow.left_at === null;
+
+    // Late join guard: if the game is no longer in the lobby, only active
+    // reconnecting players are allowed through.
+    if (currentSnapshot && currentSnapshot.status !== "LOBBY") {
+      if (!isActiveRejoiner) {
+        await client.query("ROLLBACK");
+        throw new Error("Game already in progress");
+      }
+    }
+
+    // 8-player cap per GAME_MODES_SPEC.md Section 5.13. Active rejoiners are
+    // already counted in the active set and therefore bypass the check.
+    if (!isActiveRejoiner) {
+      const activeCountResult = await client.query<{ count: string }>(
+        `SELECT COUNT(*) as count FROM session_players WHERE game_id = $1 AND left_at IS NULL FOR UPDATE`,
+        [gameId]
+      );
+      const activeCount = parseInt(activeCountResult.rows[0]?.count || "0", 10);
+      if (activeCount >= 8) {
+        await client.query("ROLLBACK");
+        throw new Error("Session is full (8 players max)");
+      }
+    }
+
+    verifyLog("INSERT", "session_players", "OK", `joining player_id=${playerId} game_id=${gameId} — executing`);
+
+    await client.query(
+      `INSERT INTO session_players (game_id, player_id, display_name, joined_at, left_at, ready, is_host, avatar_url)
+       VALUES ($1, $2, $3, now(), NULL, false, false, $4)
+       ON CONFLICT (game_id, player_id) DO UPDATE
+         SET left_at = NULL,
+             display_name = CASE
+               WHEN EXCLUDED.display_name <> '' THEN EXCLUDED.display_name
+               ELSE session_players.display_name
+             END,
+             avatar_url = EXCLUDED.avatar_url`,
+      [gameId, playerId, joinDisplayName, joiningAvatarUrl]
+    );
+
+    // Host self-heal: if the rejoining player is still marked is_host but host
+    // was concurrently reassigned away, we leave the current host alone (the
+    // partial unique index `uq_session_players_one_host_per_game` guarantees at
+    // most one host). If there is NO active host at all (e.g. original host was
+    // alone and disconnected), promote this rejoining player to host so the
+    // lobby remains startable. This is idempotent and never violates the index.
+    await client.query(
+      `UPDATE session_players
+       SET is_host = true
+       WHERE game_id = $1
+         AND player_id = $2
+         AND left_at IS NULL
+         AND NOT EXISTS (
+           SELECT 1 FROM session_players
+           WHERE game_id = $1 AND is_host = true AND left_at IS NULL
+         )`,
+      [gameId, playerId]
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client?.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client?.release();
+  }
 
   // ─────────────────────────────────────────────────────────────────────────────
   // ZERO-TRUST: Cross-connection verification AFTER write (MP-CORE-LOOP-003)
