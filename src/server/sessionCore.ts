@@ -603,7 +603,8 @@ function clampResultsAutoAdvanceSec(value: number | undefined): number {
 export async function createCompeteSession(input: CreateCompeteSessionInput): Promise<CompeteSessionSnapshot> {
   const mode = input.mode ?? "sync";
   const roundTimerSec = clampRoundTimer(input.roundTimerSec);
-  const totalRounds = normalizeTotalRounds(input.totalRounds);
+  // Relax is always 5 rounds; no host selector (GAME_MODES_SPEC.md v1.5 §5.3).
+  const totalRounds = mode === "async" ? MAX_ROUNDS : normalizeTotalRounds(input.totalRounds);
   const yearMin = normalizeYearBoundary(input.yearMin, -400, "yearMin");
   const yearMax = normalizeYearBoundary(input.yearMax, 2026, "yearMax");
   const resultsAutoAdvanceSec = clampResultsAutoAdvanceSec(input.resultsAutoAdvanceSec);
