@@ -4,6 +4,8 @@
 **Status:** AUTHORITATIVE — Any deviation must be explicitly justified and documented  
 **Audience:** AI coders and developers building the multiplayer game from scratch
 
+> **Current-state note (2026-07-21):** This document remains the architectural master spec. Mode-specific behavior (Practice, Daily, Level Up, Compete Rush/Relax) is now governed by `docs/GAME_MODES_SPEC.md` v1.5. The canonical schema is maintained in `docs/DATABASE_SCHEMA_STATE.md`. Compete Relax (async) has moved to **Option A** (fully independent per-player pacing, 5 rounds, optional per-round timer, `player_round_events` table) — see `docs/GAME_MODES_SPEC.md` §5 for the current contract.
+
 ---
 
 ## TABLE OF CONTENTS
@@ -225,15 +227,15 @@ Stored in `sessions` table:
 |---|---|
 | `game_id` | UUID, primary key |
 | `mode` | `'sync'` or `'async'` |
-| `round_timer_sec` | Duration of each round timer (sync mode) |
-| `total_rounds` | How many rounds in the game |
+| `round_timer_sec` | Duration of each round timer (sync mode); in async (Relax) it is an optional per-round timer that auto-submits only the expiring player |
+| `total_rounds` | How many rounds in the game; **Relax (async) is locked to 5** |
 | `year_min` / `year_max` | Year range constraint |
-| `session_deadline` | Async only: timestamp when the whole game expires |
+| `session_deadline` | Async only: timestamp when the whole game expires (range 1–14 days, default 3 days) |
 | `seed` | Fixed random seed for deterministic question selection |
 
 **Global timers:**
 - **Sync mode:** Each round's `startAt` timestamp
-- **Async mode:** `session_deadline = now + D days` (no per-round timer)
+- **Async mode:** `session_deadline = now + D days` (D = 1–14, default 3) bounds the whole session; an optional per-round timer (same slider range as sync, default OFF) auto-submits only the expiring player
 
 **Event sequence:** List of question IDs / seeds for each round, **fixed at game start** using the session seed.
 
@@ -312,6 +314,18 @@ CREATE TABLE round_events (
   metadata     JSONB              -- optional extra context
 );
 
+-- Per-player round event log — used by async (Relax) Compete Option A
+CREATE TABLE player_round_events (
+  id                 BIGSERIAL PRIMARY KEY,
+  game_id            UUID NOT NULL,
+  player_id          UUID NOT NULL,
+  round_index        INT NOT NULL,
+  event_type         VARCHAR NOT NULL,
+  payload            JSONB,
+  occurred_at        TIMESTAMP NOT NULL DEFAULT now(),
+  verification_token UUID NOT NULL DEFAULT gen_random_uuid()
+);
+
 -- Audit / diagnostics log (reused from legacy)
 CREATE TABLE partykit_logs (
   log_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -329,6 +343,7 @@ CREATE TABLE partykit_logs (
 CREATE INDEX idx_round_commits_game    ON round_commits (game_id, round_index);
 CREATE INDEX idx_round_results_game    ON round_results (game_id, round_index);
 CREATE INDEX idx_round_events_game     ON round_events  (game_id, round_index);
+CREATE INDEX idx_player_round_events_game ON player_round_events (game_id, player_id, round_index);
 CREATE INDEX idx_session_players_game  ON session_players (game_id);
 ```
 
@@ -428,41 +443,29 @@ Round ends when **either**:
   - All players click "Next", **or**
   - The 30-second timer expires (forces continuation)
 
-### 9.2 Async Mode
+### 9.2 Async Mode (Relax — Option A)
 
-Async mode has **no per-round timer**. There is only a long-term session deadline.
+Relax is the asynchronous Compete sub-mode. As of `GAME_MODES_SPEC.md` v1.5 it uses **fully independent per-player pacing** (Option A): every player plays all 5 rounds at their own speed and never waits on another player.
 
-#### Session Timer
-```
-session_deadline = game_start_time + D days    (D configurable, e.g. 1–7 days)
-```
+#### Session Configuration
+- `total_rounds` is **locked to 5** for async.
+- `session_deadline = game_start_time + D days` where D is configurable from **1–14 days**, default 3.
+- `round_timer_sec` is an **optional host-enabled per-round timer** (reuse the sync slider, 10s–5min, default OFF). When ON it auto-submits **only the expiring player**; it has no other effect on the session.
 
-Players submit their rounds independently at any time before the deadline.
+#### Per-Player Round Progress
+- Each player has a private `IMAGE_PHASE → GUESS_PHASE → RESULT_PHASE` loop per round.
+- A player advances to the next round immediately after viewing their result; no global "Next" consensus is required.
+- Players can leave and resume at any time before `session_deadline`.
 
-#### Simultaneous Turns
-- Rounds run as "simultaneous turns."
-- When one player submits, the server **notifies other players** but does not halt anything.
-- No countdown pressure exists.
+#### Event Stream
+- Sync (Rush) continues to use `round_events` for global phase transitions.
+- Async (Relax) writes per-player round events to `player_round_events` (`ROUND_STARTED`, `GUESS_SUBMITTED`, `ROUND_COMPLETE`, `PLAYER_SESSION_COMPLETE`).
+- `round_results` are still written per player per round; `rank` is `NULL` because there is no synchronous leaderboard until the session finalizes.
 
-#### Results Screen (Async) — Partial Leaderboard Build
-
-The Results screen progressively fills as players submit:
-
-| State | What Players See | "Next" Button |
-|---|---|---|
-| After 1st player submits | 1st player sees their own result only | Disabled |
-| After 2nd player submits | 1st and 2nd see 2-player leaderboard | Disabled |
-| After **all** players submit | All see full leaderboard | **Enabled for everyone** |
-
-#### Async Example (3-player game)
-
-```
-Player A submits → A sees their score. Next disabled.
-Player B submits → A and B see A+B scores. Next disabled.
-Player C submits → A, B, C all see full leaderboard. Next ENABLED.
-```
-
-No additional timing logic beyond the session deadline is needed for async.
+#### Results & Leaderboard
+- Each player sees only their own result after each round.
+- Final leaderboard is computed when the session ends (deadline reached or all players have completed all rounds).
+- No partial leaderboard is shown between individual submissions because rounds are independent.
 
 ---
 
@@ -1010,9 +1013,9 @@ Phases must be implemented in this order. Do not skip or reorder.
 - Expected: `round_results` matches original in-memory scores exactly
 
 ### 23.10 Async Session Deadline
-- Setup: `session_deadline` = 1 minute in the future
+- Setup: `session_deadline` = short future timestamp (or the configured 1–14 day deadline)
 - Action: Deadline passes with players mid-game
-- Expected: Server closes session, writes final `round_results` for submitted rounds, others score 0
+- Expected: Server finalizes the session, writes final `round_results` for all submitted rounds, and scores unsubmitted rounds as 0. Each player's progress is reconstructed from `player_round_events`.
 
 ---
 
@@ -1025,7 +1028,7 @@ The system is **INVALID** if any of the following occur:
 | Any state mutation bypasses DB | Session becomes unrecoverable on DO crash |
 | Any randomness is non-deterministic | Replay produces different results; replay guarantee lost |
 | Any client influences game state | Cheating vector opened |
-| Any phase transition is not logged in `round_events` | Cannot audit or replay game history |
+| Any phase transition is not logged in `round_events` (sync) or `player_round_events` (async) | Cannot audit or replay game history |
 | Any score cannot be recomputed from DB alone | Scoring is untrustworthy |
 | Correct answers sent to client before reveal | Anti-cheat broken |
 | Timer authority delegated to client | Timer desync, cheating vector |
