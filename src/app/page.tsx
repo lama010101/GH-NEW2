@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import { getTranslations } from 'next-intl/server'
 import { WaitlistForm } from '@/components/landing/WaitlistForm'
+import styles from './page.module.css'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('landing')
@@ -24,7 +25,7 @@ export default async function LandingPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
       {/* Background image + dark overlay (same as /home) */}
-      <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: 'url(/home_background.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+      <div aria-hidden="true" className={styles.bgImage} />
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 1, background: 'var(--gh-modal-overlay)' }} />
 
       {/* Logo (same asset as TopBar) */}
