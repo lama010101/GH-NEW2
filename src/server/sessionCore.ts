@@ -1664,6 +1664,10 @@ export type SubmitGuessInput = {
   locationGuess: LatLng | null;
   hintsUsed: string[];
   _executionContext?: "partykit" | "api";
+  // Optional hint from callers (e.g. PartyKit DO) that already know session.mode.
+  // submitGuess still re-verifies mode inside its transaction; this only avoids
+  // an extra preflight query on the sync hot path.
+  sessionMode?: "sync" | "async";
 };
 
 function assertValidExecutionContext(input: { _executionContext?: string }): void {
@@ -1698,9 +1702,10 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   }
 
   // Route async (Relax) submissions to isolated per-player round authority.
-  // The sync code path below is intentionally left byte-identical.
-  const preflightSession = await loadSessionRow(gameId);
-  if (preflightSession?.mode === "async") {
+  // If a trusted caller (e.g. PartyKit DO) already knows the session mode, use
+  // the hint to avoid an extra preflight DB read on the sync hot path. The mode
+  // is re-verified inside the transaction before any writes occur.
+  if (input.sessionMode === "async") {
     return submitGuessAsync(input);
   }
 
@@ -1739,6 +1744,17 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     const session = await loadSessionRow(gameId, client);
     if (!session) {
       throw new Error("Session not found");
+    }
+
+    // If the mode hint was missing/wrong and this is actually an async session,
+    // delegate to the per-player authority. This keeps the sync hot path from
+    // paying for an extra preflight query while never writing round_events for
+    // an async session.
+    if (session.mode === "async") {
+      await client.query("ROLLBACK");
+      client.release();
+      clientReleased = true;
+      return submitGuessAsync(input);
     }
 
     // Consolidated guard queries — single CTE to check round start, round complete, existing commit, fetch session event IDs, fetch the ROUND_STARTED phaseEndsAt (needed for the inline pressure clamp on the first submission), and fetch scoring_reference_year (frozen at session creation for deterministic era scaling).
