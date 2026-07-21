@@ -1,9 +1,15 @@
 # GAME MODES SPECIFICATION
 **Project:** Guess-History  
 **Document:** GAME_MODES_SPEC.md  
-**Version:** 1.4  
+**Version:** 1.5  
 **Status:** AUTHORITATIVE  
-**Date:** 2026-06-28
+**Date:** 2026-07-21
+
+**Changes from v1.4:**
+- Compete Relax (async) round-completion model changed from **batch/Option B** to **fully independent per-player pacing/Option A**: each player plays all 5 rounds at their own speed, never waiting on any other player.
+- Compete Relax rounds are now **locked to always 5**, with no host rounds selector.
+- Compete Relax gains an **optional host-enabled per-round timer** that auto-submits only the expiring player (no other effect on the session).
+- §1.6, §5.2, §5.3, §5.8, §6 updated accordingly. No other behavioral changes.
 
 **Changes from v1.3:**
 - Compete Relax (async) gains an **optional Round Timer** (host-configurable in lobby, reuses Rush slider 10s–5min, default 2min / OFF). Bounds each player's GUESS_PHASE independently while the session deadline still bounds the whole session.
@@ -224,15 +230,14 @@ Evaluated server-side at the end of every RESULT_PHASE in every mode. Never pers
 - When a player submits, in-app broadcast sent to all connected players: "Player X has submitted" (score not revealed)
 
 **Compete Relax (async):**
-- No per-round timer. Session deadline governs overall expiry.
-- Each player submits independently at any time before the deadline
-- On submission: submitting player's RESULT_PHASE shown immediately
-- Push notification sent to all other session players: "Player X submitted round N"
-- In-app broadcast also sent to any currently connected players
-- After viewing result, player taps "Next Round" — they do not wait for others
-- Partial leaderboard builds as players submit (only submitted players visible per round)
-- Full leaderboard shown only after all players have submitted that round
-- If deadline passes with unsubmitted rounds, those players score zero and the session closes
+- Session deadline governs overall expiry (1–14 days, host-configurable). Host may additionally enable an optional per-round timer (see §5.3); if enabled, timer expiry auto-submits for that player only per §1.7 — it has no effect on any other player.
+- Each player plays all 5 rounds fully independently, at their own pace. A player never waits on any other player, at any round.
+- On submission: submitting player's RESULT_PHASE shown immediately, for that player only.
+- In-app broadcast + push notification sent to all other session players ONLY when a player completes their final (5th) round. Per-round submissions by other players do NOT trigger a notification.
+- After viewing result, player taps "Next Round" manually — no auto-advance, ever, in Relax.
+- Round and final leaderboards are ALWAYS visible to all session players and always show every player: players who have not yet reached/submitted that round appear as pending (no score); players who have submitted show their score. Never gated on other players' completion.
+- Players may leave and resume at any time via Home → Challenges → "YOUR TURN" tab (in-progress) or "COMPLETED" tab (once they've finished all 5 rounds).
+- If the session deadline passes with unsubmitted rounds for a given player, those rounds score zero for that player only — it has no effect on other players' progress.
 
 ### 1.7 Shared UI Rules
 
@@ -498,11 +503,11 @@ Real-time multiplayer. 2 to 8 players in a shared session, guessing the same eve
 | | Rush | Relax |
 |---|---|---|
 | **Timing** | Synchronous — all players live simultaneously | Asynchronous — players submit independently |
-| **Round timer** | Yes, per-round countdown (10s–5min) | Optional — host may enable per-round countdown (10s–5min) or leave OFF |
+| **Round timer** | Yes, per-round countdown (10s–5min) | Optional (host-enabled), auto-submits that player only on expiry |
 | **Pressure mechanic** | First-submission clamp to 30s | None |
 | **Session deadline** | None | 1–14 days |
 | **Round advance** | All tap Next OR Rush round-advance timeout (30s) | Each player independently |
-| **Submission notify** | In-app broadcast | In-app + push notification |
+| **Submission notify** | In-app broadcast | In-app + push, ONLY on a player's full-session completion (not per-round) |
 
 ### 5.3 Configuration
 
@@ -510,15 +515,15 @@ Set by the host in the lobby. Other players cannot modify settings.
 
 | Parameter | Rush options | Relax options | Default |
 |---|---|---|---|
-| Rounds | 3, 5, or 10 | 3, 5, or 10 | 5 |
-| Round Timer | Slider: 10s to 5min | Slider: 10s to 5min, or OFF | 2min (Rush) / OFF (Relax) |
+| Rounds | 3, 5, or 10 | Always 5, no selector | 5 |
+| Round Timer | Slider: 10s to 5min | Optional toggle + slider: 10s to 5min (host may leave off) | 2min (Rush) / OFF (Relax) |
 | Session Deadline | N/A | Slider: 1–14 days | 3 days |
 | Year Range | Preset ranges or custom | Same | Full range |
 | Player limit | 2–8 | 2–8 | 8 |
 
 **Rush timer slider:** Non-linear scale — 10s, 15s, 20s, 30s, 45s, 60s, 90s, 2min, 3min, 5min.
 
-**Relax Round Timer:** Reuses the Rush slider scale (10s–5min). Host may toggle it OFF (default). When enabled, each player's GUESS_PHASE is independently bounded by the per-round countdown; the session deadline still bounds the whole session. Timer expiry auto-submits that player's current inputs (per §1.6 / §7 shared rules). Pressure clamp (first-submission → 30s) does NOT apply in Relax — it is Rush-only (see §5.2).
+**Relax Round Timer:** Optional per-player countdown. Host may toggle it OFF (default). When enabled, each player's GUESS_PHASE is independently bounded by the per-round countdown; the session deadline still bounds the whole session. Timer expiry auto-submits that player's current inputs (per §1.6 / §7 shared rules) and has zero effect on any other player. Pressure clamp (first-submission → 30s) does NOT apply in Relax — it is Rush-only (see §5.2).
 
 **Relax deadline slider:** 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 days. Displayed as "X days". The duration is anchored at START_GAME: `session_deadline = startedAt + X days`. Before the game starts, only the duration is stored; the absolute deadline is computed when the host starts the session.
 
@@ -571,14 +576,13 @@ LOBBY → STARTING → QUESTION → ANSWER → LOCKED → RESULT → SCOREBOARD
 
 ### 5.8 Relax Round Flow
 
-- Session deadline bounds the whole session (1–14 days, anchored at START_GAME).
-- Per-round timer is **optional** (host-configurable in lobby). When OFF (default), no per-round countdown — players submit independently within the session deadline. When enabled (10s–5min), each player's GUESS_PHASE is independently bounded by the countdown; timer expiry auto-submits that player's current inputs.
-- Each player submits independently.
-- On submission: RESULT_PHASE shown to that player immediately. Push notification + in-app broadcast to all others: "Player X submitted round N."
-- Player taps "Next Round" immediately — does not wait for others.
-- Partial leaderboard builds per round as players submit.
-- Full leaderboard shown only after all players have submitted that round.
-- Deadline passed with unsubmitted rounds: those players score zero, session closes.
+- Session deadline governs overall expiry (1–14 days, anchored at START_GAME). Host may optionally enable a per-round timer (§5.3); if set, it auto-submits for that player only on expiry and has zero effect on other players.
+- Each player plays all 5 rounds fully independently at their own pace — never waiting on any other player, at any round.
+- On submission: RESULT_PHASE shown to that player immediately, for that player alone.
+- Player taps "Next Round" manually — no auto-advance under any circumstance in Relax.
+- Round and final leaderboards are always visible to all session players, showing every player's row: pending (no score) if they haven't reached/submitted that round yet, scored if they have. Never gated on full-round completion.
+- In-app + push notification sent to all other session players only when a player finishes all 5 rounds.
+- Deadline passed with unsubmitted rounds for a given player: that player's remaining rounds score zero. Other players are unaffected and continue independently.
 
 ### 5.9 Badge System in Compete
 
@@ -627,8 +631,8 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 | Dimension | Practice | Daily | Level Up | Compete Rush | Compete Relax |
 |---|---|---|---|---|---|
 | Players | 1 | 1 | 1 | 2–8 | 2–8 |
-| Rounds | 5 | 5 | 5 | 3, 5, or 10 | 3, 5, or 10 |
-| Timer | Optional 10s–5min | Mandatory 90s | Mandatory (formula) | Mandatory 10s–5min | Optional 10s–5min (default OFF) |
+| Rounds | 5 | 5 | 5 | 3, 5, or 10 | Always 5 |
+| Timer | Optional 10s–5min | Mandatory 90s | Mandatory (formula) | Mandatory 10s–5min | Optional (host-enabled, per-player) |
 | Deadline | None | None | None | None | 1–14 days |
 | Year range | Player sets | Full range | Formula-computed | Host sets | Host sets |
 | Same events for all | No | Yes (globally) | No | Yes (per session) | Yes (per session) |
