@@ -53,6 +53,7 @@ function HomePageInner() {
   const [welcomeLoading, setWelcomeLoading] = useState(false)
   const welcomeHandledRef = useRef(false)
   const [welcomeCompleted, setWelcomeCompleted] = useState<boolean | null>(null)
+  const [isNewUserForWelcome, setIsNewUserForWelcome] = useState(false)
 
   const triggerAssignAvatar = useCallback(() => {
     if (welcomeHandledRef.current) return
@@ -98,13 +99,12 @@ function HomePageInner() {
   // Trigger the welcome flow only when we know the persisted flag is false.
   // The profile fetch effect below is the single source of truth for welcome_completed.
   useEffect(() => {
-    if (identity.status !== 'ready') return
-    if (!identity.isNewUser) return
+    if (!isNewUserForWelcome) return
     if (welcomeCompleted === null) return
     if (welcomeCompleted) return
     if (welcomeHandledRef.current) return
     triggerAssignAvatar()
-  }, [identity, welcomeCompleted, triggerAssignAvatar])
+  }, [isNewUserForWelcome, welcomeCompleted, triggerAssignAvatar])
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
@@ -121,6 +121,7 @@ function HomePageInner() {
       setAccuracy('--')
       setXp('--')
       setTotalXpNum(null)
+      setIsNewUserForWelcome(false)
       return
     }
     const pid = (identity as { status: string; playerId?: string }).playerId
@@ -130,6 +131,19 @@ function HomePageInner() {
     // Without this guard, Player A's profile data overwrites Player B's UI.
     let cancelled = false
     ;(async () => {
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession()
+        if (cancelled) return
+        if (session?.user && session.user.id === pid) {
+          const createdAt = new Date(session.user.created_at).getTime()
+          const lastSignIn = session.user.last_sign_in_at ? new Date(session.user.last_sign_in_at).getTime() : createdAt
+          setIsNewUserForWelcome(Math.abs(createdAt - lastSignIn) < 300_000)
+        } else {
+          setIsNewUserForWelcome(false)
+        }
+      } catch {
+        setIsNewUserForWelcome(false)
+      }
       try {
         const { data: stats } = await supabaseBrowser.from('player_global_stats').select('avg_accuracy,total_xp').eq('player_id', pid).single()
         if (cancelled) return
