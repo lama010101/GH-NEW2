@@ -8,10 +8,16 @@
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-image: url(/home_background.webp);
+  background-image: url(/desktop-home_background.webp);
   background-size: cover;
   background-position: center;
   pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .bgImage {
+    background-image: url(/mobile-home_background.webp);
+  }
 }
 
 .bgScrim {
@@ -53,9 +59,15 @@
 .loadingBg {
   position: absolute;
   inset: 0;
-  background-image: url(/home_background.webp);
+  background-image: url(/desktop-home_background.webp);
   background-size: cover;
   background-position: center;
+}
+
+@media (max-width: 768px) {
+  .loadingBg {
+    background-image: url(/mobile-home_background.webp);
+  }
 }
 
 .loadingScrim {
