@@ -30,7 +30,7 @@ This document is the single source of truth for the behavioral, structural, and 
 
 Binding references:
 - `docs/GUESS_HISTORY_MASTER_SPEC.md` — architecture, scoring, phase FSM
-- `docs/CORE_UI_AND_FEATURES.md` — round gameplay UI
+- `docs/GAME_MODES_SPEC.md` §1 (universal round structure) and §2 (Practice) — round gameplay UI
 - `docs/BADGE_SYSTEM.md` — badge evaluation
 - `docs/STATS_SYSTEM.md` — stat persistence
 - `docs/DATABASE_SCHEMA_STATE.md` — canonical table definitions

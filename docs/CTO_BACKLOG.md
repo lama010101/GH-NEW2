@@ -46,7 +46,7 @@
 
 ### Harness-Itself Defects (MP-PLAN-TESTHARNESS-FULL-FIX-001 / MP-EXEC-TESTHARNESS-FULL-FIX-001)
 
-Defects found in the harness itself (not app bugs). Plan: `docs/MP-PLAN-TESTHARNESS-FULL-FIX-001.md`.
+Defects found in the harness itself (not app bugs). Plan tracked in `CTO_BACKLOG.md` under this section.
 
 | ID | Defect | Status | Commit | Task |
 |----|--------|--------|--------|------|

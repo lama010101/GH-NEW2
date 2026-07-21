@@ -13,7 +13,7 @@ This document defines the complete UI, UX, and behavioral specification for the 
 
 Binding references:
 - `docs/GUESS_HISTORY_MASTER_SPEC.md` — game mode architecture
-- `docs/CORE_UI_AND_FEATURES.md` — Practice mode flow
+- `docs/GAME_MODES_SPEC.md` §2 — Practice mode flow
 - `docs/STATS_SYSTEM.md` — XP and level data
 
 ---

@@ -13,10 +13,10 @@ TITLE: <TITLE>
 Binding documents:
 - docs/GUESS_HISTORY_MASTER_SPEC.md
 - docs/DATABASE_SCHEMA_STATE.md
-- docs/EXECUTION_PLAN.md
+- docs/archive/plans/EXECUTION_PLAN_20260511.md
 
 System rules:
-- DB (round_events) = SINGLE source of truth
+- DB (round_events for sync, player_round_events for async) = SINGLE source of truth
 - Snapshot = DERIVED ONLY (never authoritative)
 - System must be deterministic (rebuild from DB only)
 - NO hidden coupling
