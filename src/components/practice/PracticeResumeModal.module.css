@@ -1,0 +1,27 @@
+.card {
+  gap: 20px;
+}
+
+.message {
+  margin: 0;
+  color: var(--gh-modal-text-secondary);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resumeBtn {
+  background: var(--gh-orange);
+  color: var(--gh-btn-text);
+}
+
+.newBtn {
+  background: transparent;
+  color: var(--gh-text-primary);
+  border: 1px solid var(--gh-glass-border);
+}

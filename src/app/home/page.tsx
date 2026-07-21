@@ -10,6 +10,7 @@ import { DailyPanel } from '@/components/home/DailyPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
 import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
+import { PracticeResumeModal } from '@/components/practice/PracticeResumeModal'
 import { loadPracticeSettings, savePracticeSettings } from '@/components/practice/practiceSettings'
 import styles from './home.module.css'
 import { NavModal } from '@/components/NavModal'
@@ -180,6 +181,9 @@ function HomePageInner() {
 
   const [showNavModal, setShowNavModal] = useState(false)
   const [practiceModalOpen, setPracticeModalOpen] = useState(false)
+  const [resumeModalOpen, setResumeModalOpen] = useState(false)
+  const [resumeGameId, setResumeGameId] = useState<string | null>(null)
+  const [practiceTileLoading, setPracticeTileLoading] = useState(false)
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false)
 
   // Show escape hatch after 10s of continuous loading
@@ -198,7 +202,43 @@ function HomePageInner() {
 
   const handlePracticeStart = (settings: PracticeModalSettings) => {
     savePracticeSettings(settings)
+    if (currentPlayerId && typeof window !== 'undefined') {
+      localStorage.removeItem(`gh_practice_game_${currentPlayerId}`)
+    }
     router.push('/practice')
+  }
+
+  const handlePracticeTileClick = async () => {
+    if (!currentPlayerId) return
+    if (typeof window === 'undefined') {
+      setPracticeModalOpen(true)
+      return
+    }
+    const storageKey = `gh_practice_game_${currentPlayerId}`
+    const storedGameId = localStorage.getItem(storageKey)
+    if (!storedGameId) {
+      setPracticeModalOpen(true)
+      return
+    }
+    setPracticeTileLoading(true)
+    try {
+      const res = await fetch(`/api/compete/${storedGameId}?playerId=${currentPlayerId}`, { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        if (data && data.status && data.status !== 'SESSION_COMPLETE') {
+          setResumeGameId(storedGameId)
+          setResumeModalOpen(true)
+          return
+        }
+      }
+      localStorage.removeItem(storageKey)
+      setPracticeModalOpen(true)
+    } catch {
+      localStorage.removeItem(storageKey)
+      setPracticeModalOpen(true)
+    } finally {
+      setPracticeTileLoading(false)
+    }
   }
 
   const handleForceClear = () => {
@@ -339,7 +379,8 @@ function HomePageInner() {
               onRequireAuth={() => {}}
               onNavigate={handleNav}
               onLobby={(gameId) => router.push(`/compete/${gameId}`)}
-              onPracticeStart={() => setPracticeModalOpen(true)}
+              onPracticeStart={handlePracticeTileClick}
+              practiceLoading={practiceTileLoading}
             />
           ))}
         </div>
@@ -367,6 +408,21 @@ function HomePageInner() {
         onStart={handlePracticeStart}
         initialSettings={loadPracticeSettings()}
       />
+      <PracticeResumeModal
+        isOpen={resumeModalOpen}
+        onClose={() => setResumeModalOpen(false)}
+        onResume={() => {
+          setResumeModalOpen(false)
+          if (resumeGameId) router.push(`/practice/${resumeGameId}`)
+        }}
+        onCreateNew={() => {
+          setResumeModalOpen(false)
+          if (currentPlayerId && typeof window !== 'undefined' && resumeGameId) {
+            localStorage.removeItem(`gh_practice_game_${currentPlayerId}`)
+          }
+          setPracticeModalOpen(true)
+        }}
+      />
     </div>
   )
 }
@@ -378,7 +434,8 @@ function ModeCard({
   onRequireAuth,
   onNavigate,
   onLobby,
-  onPracticeStart
+  onPracticeStart,
+  practiceLoading
 }: {
   mode: Mode
   playerId: string
@@ -387,6 +444,7 @@ function ModeCard({
   onNavigate: (path: string) => void
   onLobby: (gameId: string) => void
   onPracticeStart: () => void
+  practiceLoading?: boolean
 }) {
   const t = useTranslations()
   const gradient = MODE_CARD_GRADIENT[mode]
@@ -438,7 +496,7 @@ function ModeCard({
   const handlePlay = () => {
     if (mode === 'daily') { setNavigating(true); onNavigate('/daily') }
     else if (mode === 'levelup') { setNavigating(true); onNavigate('/levelup') }
-    else if (mode === 'practice') onPracticeStart()
+    else if (mode === 'practice') { onPracticeStart() }
   }
 
   // Compete card: icon+text row, then full CompetePanel below
@@ -531,10 +589,10 @@ function ModeCard({
             type="button"
             className={styles.playPill}
             onClick={handlePlay}
-            disabled={navigating}
+            disabled={navigating || (mode === 'practice' && practiceLoading)}
             aria-label={t('home.play_mode_aria', { mode: title })}
           >
-            {navigating ? (
+            {navigating || (mode === 'practice' && practiceLoading) ? (
               <span className={styles.playPillSpinner} aria-hidden="true" />
             ) : (
               <>
