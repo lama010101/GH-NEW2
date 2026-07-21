@@ -594,6 +594,15 @@ export default class GameServer {
     const snapshotConfig = (this.snapshot as Record<string, unknown>)?.config as Record<string, unknown> | undefined;
     const mode = (snapshotConfig?.["mode"] as string) ?? "sync";
     const isAsync = mode === "async";
+
+    // Async (Relax) sessions intentionally have no DO-driven global round expiry
+    // until Phase 2b builds per-player timers. Returning here prevents both the
+    // round-expiry and result-auto-advance branches from scheduling anything.
+    if (isAsync) {
+      console.log("[PartyKit] Async: expiry scheduling deferred to Phase 2b/4, no-op");
+      return;
+    }
+
     // Session deadline (async only, computed at START_GAME as startedAt + days)
     const sessionDeadline = (snapshotConfig?.["sessionDeadline"] as string | null) ?? null;
 
@@ -701,6 +710,11 @@ export default class GameServer {
    * snapshots — no re-fetch.
    */
   private async triggerRoundExpiry(expectedRoundIndex: number): Promise<void> {
+    if (isRuntimeState(this.snapshot) && this.snapshot.config?.mode === "async") {
+      console.log("[PartyKit] triggerRoundExpiry: async no-op");
+      return;
+    }
+
     const currentRoundIndex = isRuntimeState(this.snapshot) ? this.snapshot.currentRoundIndex : null;
     if (currentRoundIndex !== expectedRoundIndex) {
       console.log(`[PartyKit] Stale round timer ignored: expected round ${expectedRoundIndex}, current round ${currentRoundIndex}`);
@@ -791,6 +805,10 @@ export default class GameServer {
   }
 
   private async triggerResultAutoAdvance(expectedRoundIndex: number): Promise<void> {
+    if (isRuntimeState(this.snapshot) && this.snapshot.config?.mode === "async") {
+      console.log("[PartyKit] triggerResultAutoAdvance: async no-op");
+      return;
+    }
     if (!isRuntimeState(this.snapshot)) return;
     if (this.snapshot.status !== "ROUND_COMPLETE") return;
     if (this.snapshot.currentRoundIndex !== expectedRoundIndex) return;
@@ -970,22 +988,73 @@ export default class GameServer {
       completedAt: (configRecord?.["completedAt"] as string | null) ?? null,
     };
 
+    const isAsync = config.mode === "async";
+    const playerSnapshots = isAsync
+      ? (snapshotRecord["playerSnapshots"] as Record<string, Record<string, unknown>> | undefined)
+      : undefined;
+
     for (const connection of this.room.getConnections()) {
       const socketPlayerId = this.connections.get(connection.id);
 
-      const perSocketSnapshot = {
-        ...snapshotRecord,
-        viewerPlayerId: socketPlayerId ?? null,
-        config
-      };
+      let perSocketSnapshot: Record<string, unknown>;
+      let results: unknown = undefined;
+      if (isAsync && playerSnapshots && socketPlayerId && playerSnapshots[socketPlayerId]) {
+        perSocketSnapshot = {
+          ...playerSnapshots[socketPlayerId],
+          viewerPlayerId: socketPlayerId,
+          config,
+          readyForNext: (snapshotRecord["readyForNext"] as string[] | undefined) ?? [],
+          resultPhaseEndsAt: snapshotRecord["resultPhaseEndsAt"] as number | undefined,
+          allPlayersReady: snapshotRecord["allPlayersReady"] as boolean | undefined,
+          snapshotVersion: snapshotRecord["snapshotVersion"] as number | undefined
+        };
+        results = playerSnapshots[socketPlayerId]["results"] ?? undefined;
+      } else {
+        perSocketSnapshot = {
+          ...snapshotRecord,
+          viewerPlayerId: socketPlayerId ?? null,
+          config
+        };
+        results = this.pendingResults ?? (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined;
+      }
 
       connection.send(JSON.stringify({
         type: "STATE_UPDATE",
         snapshot: perSocketSnapshot,
-        results: this.pendingResults ?? (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
+        results
       }));
     }
     this.pendingResults = null; // clear after broadcast
+  }
+
+  /**
+   * Fetch a per-player cold-start snapshot for a newly connected async socket.
+   * This is the only allowed loadCompeteSessionSnapshot call for an async
+   * socket before any write on that connection, mirroring the DO cold-start
+   * pattern documented in MP-DO-AUTHORITATIVE-006.
+   */
+  private async sendPlayerSnapshot(connection: Connection, playerId: string): Promise<void> {
+    try {
+      const baseUrl = this.getNextJsBaseUrl();
+      const response = await fetch(`${baseUrl}/api/compete/${encodeURIComponent(this.room.id)}`, {
+        headers: {
+          "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? "",
+          "x-viewer-player-id": playerId,
+        },
+      });
+      if (!response.ok) {
+        console.error(`[PartyKit] sendPlayerSnapshot failed: ${response.status}`);
+        return;
+      }
+      const snapshot = await response.json();
+      connection.send(JSON.stringify({
+        type: "STATE_UPDATE",
+        snapshot: { ...snapshot as Record<string, unknown>, viewerPlayerId: playerId },
+        results: (snapshot as Record<string, unknown>).results ?? undefined,
+      }));
+    } catch (err) {
+      console.error("[PartyKit] sendPlayerSnapshot error:", err instanceof Error ? err.message : err);
+    }
   }
 
   async onConnect(connection: Connection, ctx: { request: { headers: { get: (name: string) => string | null } } }): Promise<void> {
@@ -1034,11 +1103,16 @@ export default class GameServer {
     // viewerPlayerId is null here because socket is not yet registered.
     // Correct viewerPlayerId arrives with JOIN_ROOM broadcast moments later.
     if (this.snapshotLoaded && this.snapshot) {
-      connection.send(JSON.stringify({
-        type: "STATE_UPDATE",
-        snapshot: { ...this.snapshot as Record<string, unknown>, viewerPlayerId: null },
-        results: (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
-      }));
+      const isAsync = isRuntimeState(this.snapshot) && this.snapshot.config?.mode === "async";
+      if (isAsync && verifiedUid) {
+        await this.sendPlayerSnapshot(connection, verifiedUid);
+      } else {
+        connection.send(JSON.stringify({
+          type: "STATE_UPDATE",
+          snapshot: { ...this.snapshot as Record<string, unknown>, viewerPlayerId: null },
+          results: (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
+        }));
+      }
     }
 
     // Do NOT broadcast snapshot here to all sockets. The client sends JOIN_ROOM
@@ -1542,18 +1616,22 @@ export default class GameServer {
                   clearTimeout(this.resultTimerHandle);
                   this.resultTimerHandle = null;
                 }
-                const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/advance`;
+                const apiUrl = isAsyncReadyNext
+                  ? `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/advance-player`
+                  : `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/advance`;
                 const response = await fetch(apiUrl, {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
                     "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
                   },
-                  body: JSON.stringify({
-                    cause: TransitionCause.PLAYER,
-                    playerId: data.playerId,
-                    roundIndex: data.roundIndex
-                  })
+                  body: JSON.stringify(isAsyncReadyNext
+                    ? { playerId: data.playerId }
+                    : {
+                        cause: TransitionCause.PLAYER,
+                        playerId: data.playerId,
+                        roundIndex: data.roundIndex
+                      })
                 });
                 if (!response.ok) {
                   const text = await response.text();
