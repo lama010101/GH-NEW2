@@ -12,7 +12,9 @@ import type { Pool } from "pg";
 import {
   CompeteSessionSnapshot,
   CreateCompeteSessionInput,
+  EventHint,
   LatLng,
+  RoundEventContent,
   SessionConfig,
   SessionPlayer,
   SessionStatus,
@@ -38,7 +40,11 @@ import {
 import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { dailySeed } from "@/core/dailySeed";
-import { getGameState, deriveStateFromEventStream } from "@/server/getGameState";
+import { getGameState, deriveStateFromEventStream, type ReconstructedGameState } from "@/server/getGameState";
+import {
+  derivePlayerStateFromEventStream,
+  type PlayerRoundEvent
+} from "@/server/eventStream";
 import { appendEvent, loadLastEventWithLock } from "@/server/eventStore";
 import { TransitionCause } from "@/core/transitionCause";
 import { transition } from "@/server/engine/transition";
@@ -275,6 +281,10 @@ export function mapSessionRowToConfig(row: SessionRow): SessionConfig {
   };
 }
 
+type CompeteSessionSnapshotWithPlayerSnapshots = CompeteSessionSnapshot & {
+  playerSnapshots?: Record<string, CompeteSessionSnapshot>;
+};
+
 /**
  * Map a session_players row to a SessionPlayer.
  *
@@ -373,12 +383,467 @@ function eventTypeToSessionStatus(eventType: string | null): SessionStatus {
     case "READY_NEXT":
     case "RESULT_STARTED":
       return "ROUND_COMPLETE";
+    case "PLAYER_SESSION_COMPLETE":
     case "SESSION_COMPLETE":
       return "SESSION_COMPLETE";
     default:
       // Empty event stream or unknown event type defaults to LOBBY
       return "LOBBY";
   }
+}
+
+type PlayerRoundState = {
+  currentRound: number;
+  phase: string | null;
+  roundStartsAt: string | null;
+  resultPhaseStartedAt: string | null;
+  reachedRounds: Set<number>;
+  completedRounds: Set<number>;
+  submittedRounds: Set<number>;
+};
+
+type AsyncSnapshotBase = {
+  session: SessionRow;
+  players: SessionPlayerRow[];
+  eventIds: string[];
+  globalRoundStartedAt: string | null;
+  allPlayerEvents: Map<string, PlayerRoundEvent[]>;
+  roundResultScores: Map<string, number>;
+  roundEventContent: RoundEventContent[];
+  eventContentMap: Map<string, RoundEventContent>;
+  roundEventsForViewer: (viewerPlayerId: string) => PlayerRoundEvent[];
+};
+
+async function loadGlobalRoundEventsForAsync(
+  gameId: string,
+  executor: DbExecutor
+): Promise<{ eventIds: string[]; globalRoundStartedAt: string | null }> {
+  const result = await executor.query<{
+    event_type: string;
+    round_index: number | null;
+    payload: Record<string, unknown>;
+  }>(
+    `SELECT event_type, round_index, payload
+     FROM round_events
+     WHERE game_id = $1
+       AND event_type IN ('SESSION_CREATED', 'ROUND_STARTED')
+       AND (event_type != 'ROUND_STARTED' OR round_index = 0)
+     ORDER BY id ASC`,
+    [gameId]
+  );
+
+  const sessionCreated = result.rows.find(r => r.event_type === "SESSION_CREATED");
+  const roundStarted = result.rows.find(r => r.event_type === "ROUND_STARTED");
+  const eventIds = ((sessionCreated?.payload as Record<string, unknown>)?.eventIds as string[]) ?? [];
+  const globalRoundStartedAt = (roundStarted?.payload?.startedAt as string) ?? null;
+  return { eventIds, globalRoundStartedAt };
+}
+
+async function loadPlayerRoundEventsForAsync(
+  gameId: string,
+  executor: DbExecutor
+): Promise<Map<string, PlayerRoundEvent[]>> {
+  const result = await executor.query<{
+    id: number;
+    player_id: string;
+    round_index: number;
+    event_type: string;
+    payload: Record<string, unknown>;
+    occurred_at: Date;
+  }>(
+    `SELECT id, player_id, round_index, event_type, payload, occurred_at
+     FROM player_round_events
+     WHERE game_id = $1
+     ORDER BY id ASC`,
+    [gameId]
+  );
+
+  const map = new Map<string, PlayerRoundEvent[]>();
+  for (const row of result.rows) {
+    const event: PlayerRoundEvent = {
+      id: row.id,
+      roundIndex: row.round_index,
+      eventType: row.event_type,
+      payload: row.payload,
+      createdAt: row.occurred_at.toISOString(),
+    };
+    const existing = map.get(row.player_id) ?? [];
+    existing.push(event);
+    map.set(row.player_id, existing);
+  }
+  return map;
+}
+
+async function loadRoundResultScoresForAsync(
+  gameId: string,
+  executor: DbExecutor
+): Promise<Map<string, number>> {
+  const result = await executor.query<{
+    player_id: string;
+    round_index: number;
+    score: number;
+  }>(
+    `SELECT player_id, round_index, score
+     FROM round_results
+     WHERE game_id = $1`,
+    [gameId]
+  );
+
+  const map = new Map<string, number>();
+  for (const row of result.rows) {
+    map.set(`${row.player_id}:${row.round_index}`, row.score);
+  }
+  return map;
+}
+
+async function loadRoundEventContentForAsync(
+  eventIds: string[],
+  executor: DbExecutor
+): Promise<RoundEventContent[]> {
+  if (eventIds.length === 0) {
+    return [];
+  }
+
+  const eventResult = await executor.query<{
+    event_id: string;
+    title: string;
+    description: string | null;
+    event_year: number;
+    latitude: number | null;
+    longitude: number | null;
+    display_name: string | null;
+    image_url: string | null;
+  }>(
+    `SELECT
+      e.id AS event_id,
+      e.title,
+      e.description,
+      e.event_year,
+      l.latitude,
+      l.longitude,
+      l.display_name,
+      (
+        SELECT i.url
+        FROM images i
+        WHERE i.event_id = e.id
+        ORDER BY i.display_order ASC NULLS LAST
+        LIMIT 1
+      ) AS image_url
+    FROM events e
+    LEFT JOIN locations l ON l.event_id = e.id
+    WHERE e.id = ANY($1::uuid[])`,
+    [eventIds]
+  );
+
+  const hintsResult = await executor.query<{
+    event_id: string;
+    id: string;
+    tier: number;
+    type: string;
+    content: string;
+    metadata: Record<string, unknown> | null;
+    display_order: number;
+  }>(
+    `SELECT
+      h.event_id,
+      h.id,
+      h.tier,
+      h.type,
+      h.content,
+      h.metadata,
+      h.display_order
+    FROM hints h
+    WHERE h.event_id = ANY($1::uuid[])
+    ORDER BY h.display_order, h.tier`,
+    [eventIds]
+  );
+
+  const hintsByEventId = new Map<string, EventHint[]>();
+  for (const row of hintsResult.rows) {
+    const hint: EventHint = {
+      id: row.id,
+      event_id: row.event_id,
+      tier: row.tier,
+      type: row.type,
+      content: row.content,
+      metadata: row.metadata,
+      display_order: row.display_order,
+    };
+    const existing = hintsByEventId.get(row.event_id) ?? [];
+    existing.push(hint);
+    hintsByEventId.set(row.event_id, existing);
+  }
+
+  const eventMap = new Map(eventResult.rows.map(row => [row.event_id, row]));
+  return eventIds.map(id => {
+    const ev = eventMap.get(id);
+    return {
+      eventId: id,
+      title: ev?.title ?? '',
+      year: ev?.event_year ?? (null as unknown as number),
+      latitude: ev?.latitude ?? (null as unknown as number),
+      longitude: ev?.longitude ?? (null as unknown as number),
+      locationName: ev?.display_name ?? null,
+      imageUrl: ev?.image_url ?? null,
+      description: ev?.description ?? null,
+      hints: hintsByEventId.get(id) ?? [],
+    };
+  });
+}
+
+function derivePlayerRoundState(
+  playerEvents: PlayerRoundEvent[],
+  globalRoundStartedAt: string | null
+): PlayerRoundState {
+  const reached = new Set<number>();
+  const completed = new Set<number>();
+  const submitted = new Set<number>();
+
+  if (globalRoundStartedAt !== null) {
+    reached.add(0);
+  }
+
+  if (playerEvents.length === 0) {
+    return {
+      currentRound: 0,
+      phase: globalRoundStartedAt !== null ? "ROUND_STARTED" : null,
+      roundStartsAt: globalRoundStartedAt,
+      resultPhaseStartedAt: null,
+      reachedRounds: reached,
+      completedRounds: completed,
+      submittedRounds: submitted,
+    };
+  }
+
+  const { currentRound, currentPhase: phase } = derivePlayerStateFromEventStream(playerEvents);
+
+  let roundStartsAt: string | null = globalRoundStartedAt;
+  let resultPhaseStartedAt: string | null = null;
+
+  for (const ev of playerEvents) {
+    const roundIndex = ev.roundIndex;
+    if (ev.eventType === "ROUND_STARTED") {
+      roundStartsAt = (ev.payload?.startedAt as string) ?? roundStartsAt;
+      reached.add(roundIndex);
+    } else if (ev.eventType === "GUESS_SUBMITTED") {
+      submitted.add(roundIndex);
+    } else if (ev.eventType === "ROUND_COMPLETE") {
+      resultPhaseStartedAt = (ev.payload?.resultPhaseStartedAt as string) ?? null;
+      completed.add(roundIndex);
+      submitted.add(roundIndex);
+    } else if (ev.eventType === "PLAYER_SESSION_COMPLETE") {
+      completed.add(roundIndex);
+      submitted.add(roundIndex);
+    }
+  }
+
+  return {
+    currentRound,
+    phase,
+    roundStartsAt,
+    resultPhaseStartedAt,
+    reachedRounds: reached,
+    completedRounds: completed,
+    submittedRounds: submitted,
+  };
+}
+
+function buildAsyncPlayerSnapshotFromBase(
+  gameId: string,
+  viewerPlayerId: string,
+  base: AsyncSnapshotBase
+): CompeteSessionSnapshot {
+  const { session, players: playerRows, eventIds, globalRoundStartedAt, allPlayerEvents, roundResultScores, eventContentMap } = base;
+  const viewerEvents = allPlayerEvents.get(viewerPlayerId) ?? [];
+  const playerState = derivePlayerRoundState(viewerEvents, globalRoundStartedAt);
+
+  const activePlayerRows = playerRows.filter(p => p.left_at === null && p.kicked !== true);
+  const allPlayersReady = activePlayerRows.length >= 1 && activePlayerRows.every(p => p.ready);
+
+  const players: SessionPlayer[] = playerRows.map(row => {
+    const events = allPlayerEvents.get(row.player_id) ?? [];
+    const state = derivePlayerRoundState(events, globalRoundStartedAt);
+    const hasSubmitted = state.submittedRounds.has(state.currentRound);
+    return mapSessionPlayerRowToPlayer(row, hasSubmitted);
+  });
+
+  const hiddenAnswerValue = null as unknown as number;
+
+  const rounds = eventIds.map((id, roundIndex) => {
+    const ev = eventContentMap.get(id);
+    const revealContent = playerState.reachedRounds.has(roundIndex);
+    const revealAnswer = playerState.completedRounds.has(roundIndex);
+    const playerScores: Record<string, number> = {};
+    if (revealContent) {
+      for (const row of activePlayerRows) {
+        const key = `${row.player_id}:${roundIndex}`;
+        if (roundResultScores.has(key)) {
+          playerScores[row.player_id] = roundResultScores.get(key)!;
+        }
+      }
+    }
+    return {
+      eventId: id,
+      title: revealContent ? (ev?.title ?? '') : '',
+      year: revealAnswer ? ev?.year ?? 0 : hiddenAnswerValue,
+      latitude: revealAnswer ? ev?.latitude ?? 0 : hiddenAnswerValue,
+      longitude: revealAnswer ? ev?.longitude ?? 0 : hiddenAnswerValue,
+      locationName: revealAnswer ? ev?.locationName ?? null : null,
+      imageUrl: revealContent ? (ev?.imageUrl ?? null) : null,
+      description: revealContent ? (ev?.description ?? null) : null,
+      hints: revealContent ? (ev?.hints ?? []) : [],
+      playerScores,
+    };
+  });
+
+  const events = viewerEvents.map(ev => ({
+    id: ev.id,
+    roundIndex: ev.roundIndex,
+    eventType: ev.eventType,
+    payload: ev.payload,
+    createdAt: ev.createdAt,
+  }));
+
+  return {
+    gameId,
+    status: eventTypeToSessionStatus(playerState.phase),
+    config: mapSessionRowToConfig(session),
+    players,
+    currentRoundIndex: playerState.currentRound,
+    allPlayersReady,
+    roundStartsAt: playerState.roundStartsAt,
+    roundEndsAt: null,
+    viewerPlayerId: viewerPlayerId,
+    timeRemaining: null,
+    rounds: rounds as unknown as RoundEventContent[],
+    events,
+    readyForNext: [],
+    resultPhaseStartedAt: playerState.resultPhaseStartedAt,
+    roomCode: session.room_code,
+  };
+}
+
+async function loadAsyncSnapshotBase(
+  gameId: string,
+  executor: DbExecutor
+): Promise<AsyncSnapshotBase> {
+  const globalEvents = await loadGlobalRoundEventsForAsync(gameId, executor);
+  const [session, players, allPlayerEvents, roundResultScores, roundEventContent] = await Promise.all([
+    loadSessionRow(gameId, executor),
+    loadSessionPlayerRows(gameId, executor),
+    loadPlayerRoundEventsForAsync(gameId, executor),
+    loadRoundResultScoresForAsync(gameId, executor),
+    loadRoundEventContentForAsync(globalEvents.eventIds, executor),
+  ]);
+
+  if (!session) {
+    throw new Error(`[loadAsyncSnapshotBase] Session not found: ${gameId}`);
+  }
+
+  const eventContentMap = new Map(roundEventContent.map(r => [r.eventId, r]));
+
+  return {
+    session,
+    players,
+    eventIds: globalEvents.eventIds,
+    globalRoundStartedAt: globalEvents.globalRoundStartedAt,
+    allPlayerEvents,
+    roundResultScores,
+    roundEventContent,
+    eventContentMap,
+    roundEventsForViewer: (viewerPlayerId: string) => allPlayerEvents.get(viewerPlayerId) ?? [],
+  };
+}
+
+async function buildAsyncPlayerSnapshotForViewer(
+  gameId: string,
+  viewerPlayerId: string,
+  executor: DbExecutor
+): Promise<CompeteSessionSnapshot> {
+  const base = await loadAsyncSnapshotBase(gameId, executor);
+  return buildAsyncPlayerSnapshotFromBase(gameId, viewerPlayerId, base);
+}
+
+async function buildAsyncPlayerSnapshotsForActivePlayers(
+  gameId: string,
+  executor: DbExecutor
+): Promise<Record<string, CompeteSessionSnapshot>> {
+  const base = await loadAsyncSnapshotBase(gameId, executor);
+  const activePlayerRows = base.players.filter(p => p.left_at === null && p.kicked !== true);
+  const playerSnapshots: Record<string, CompeteSessionSnapshot> = {};
+  for (const player of activePlayerRows) {
+    playerSnapshots[player.player_id] = buildAsyncPlayerSnapshotFromBase(gameId, player.player_id, base);
+  }
+  return playerSnapshots;
+}
+
+function buildAsyncBaseSnapshot(gameState: ReconstructedGameState): CompeteSessionSnapshot {
+  const session = gameState.session;
+  const { currentRound, currentPhase: phaseEventType } = deriveStateFromEventStream(gameState.events);
+  const status = eventTypeToSessionStatus(phaseEventType);
+  const players: SessionPlayer[] = gameState.players.map((p) => ({
+    playerId: p.playerId,
+    displayName: p.displayName || p.playerId.slice(0, 8),
+    joinedAt: p.joinedAt,
+    leftAt: p.leftAt,
+    ready: p.ready,
+    isHost: p.isHost,
+    avatarUrl: p.avatarUrl ?? null,
+    hasSubmitted: false,
+  }));
+  const activePlayers = players.filter((p) => p.leftAt === null);
+  const roundStartedEvent = gameState.events
+    .filter(e => e.eventType === "ROUND_STARTED" && e.roundIndex === currentRound)
+    .pop();
+  const roundStartsAt = (roundStartedEvent?.payload?.startedAt as string) ?? null;
+  const roundCompleteEvent = gameState.events
+    .filter(e => e.eventType === "ROUND_COMPLETE" && e.roundIndex === currentRound)
+    .pop();
+  const resultPhaseStartedAt = (roundCompleteEvent?.payload?.resultPhaseStartedAt as string) ?? null;
+  const hiddenAnswerValue = null as unknown as number;
+  const rounds = gameState.roundEventContent.map(r => ({
+    ...r,
+    title: '',
+    year: hiddenAnswerValue,
+    latitude: hiddenAnswerValue,
+    longitude: hiddenAnswerValue,
+    locationName: null,
+    imageUrl: null,
+    description: null,
+    hints: [],
+  }));
+  const config: SessionConfig = {
+    mode: session.mode,
+    roundTimerSec: session.roundTimerSec,
+    totalRounds: session.totalRounds,
+    yearMin: session.yearMin,
+    yearMax: session.yearMax,
+    resultsAutoAdvanceSec: session.resultsAutoAdvanceSec,
+    selectedEras: session.selectedEras,
+    selectedRegions: session.selectedRegions,
+    hostPlayerId: activePlayers.find(p => p.isHost)?.playerId ?? null,
+    sessionDeadline: session.sessionDeadline,
+    sessionDeadlineDays: session.sessionDeadlineDays,
+    startedAt: null,
+    completedAt: null,
+  };
+  return {
+    gameId: session.gameId,
+    status,
+    config,
+    players,
+    currentRoundIndex: currentRound,
+    allPlayersReady: activePlayers.length >= 1 && activePlayers.every((p) => p.ready),
+    roundStartsAt,
+    roundEndsAt: null,
+    viewerPlayerId: null,
+    timeRemaining: null,
+    rounds: rounds as RoundEventContent[],
+    events: gameState.events,
+    readyForNext: [],
+    resultPhaseStartedAt,
+    roomCode: session.roomCode,
+  };
 }
 
 export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?: string | null): Promise<CompeteSessionSnapshot | null> {
@@ -392,6 +857,14 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
 
   // STEP 1: Load canonical state from DB via getGameState (pure reconstruction)
   const gameState = await getGameState(gameId);
+
+  // Async sessions use per-player event streams for state derivation.
+  if (gameState.session.mode === "async") {
+    if (viewerPlayerId) {
+      return buildAsyncPlayerSnapshotForViewer(gameId, viewerPlayerId, dbPool);
+    }
+    return buildAsyncBaseSnapshot(gameState);
+  }
 
   // STEP 2: Derive phase from event stream (ONLY valid method per spec)
   const { currentRound, currentPhase: phaseEventType } = deriveStateFromEventStream(gameState.events);
@@ -543,6 +1016,12 @@ export async function assertParticipantOrPartyKit(
 ): Promise<{ ok: true; playerId: string | null } | { ok: false; status: number; error: string }> {
   // PartyKit DO bypass
   if (verifyPartyKitSecret(request.headers.get("x-partykit-secret"))) {
+    // Optional per-socket viewer id for async cold-start snapshot. Only
+    // trusted server-side callers (PartyKit) can supply this header.
+    const viewerHeader = request.headers.get("x-viewer-player-id");
+    if (viewerHeader && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(viewerHeader)) {
+      return { ok: true, playerId: viewerHeader };
+    }
     return { ok: true, playerId: null };
   }
 
@@ -896,7 +1375,7 @@ export async function createDailySession(input: {
   return snapshot;
 }
 
-export async function joinCompeteSession(input: { gameId: string; displayName: string; playerId: string }): Promise<CompeteSessionSnapshot> {
+export async function joinCompeteSession(input: { gameId: string; displayName: string; playerId: string }): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   const gameId = input.gameId.trim();
   const playerId = input.playerId;
 
@@ -1072,6 +1551,11 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
   if (!snapshot) {
     throw new Error("Session not found");
+  }
+
+  if (session.mode === "async") {
+    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
+    return { ...snapshot, playerSnapshots };
   }
 
   return snapshot;
@@ -1558,7 +2042,7 @@ export async function kickCompetePlayer(input: KickCompetePlayerInput): Promise<
   return snapshot;
 }
 
-export async function startCompeteSession(input: StartCompeteSessionInput): Promise<CompeteSessionSnapshot> {
+export async function startCompeteSession(input: StartCompeteSessionInput): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   const gameId = input.gameId.trim();
   const playerId = input.playerId.trim();
   const cause = input.cause;
@@ -1654,6 +2138,11 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
     throw new Error("Session not found");
   }
 
+  if (snapshot.config.mode === "async") {
+    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
+    return { ...snapshot, playerSnapshots };
+  }
+
   return snapshot;
 }
 
@@ -1679,7 +2168,7 @@ function assertValidExecutionContext(input: { _executionContext?: string }): voi
   }
 }
 
-export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessionSnapshot> {
+export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   assertValidExecutionContext(input);
   const { gameId, playerId, roundIndex, yearGuess, locationGuess, hintsUsed } = input;
 
@@ -2210,7 +2699,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 
 // INVARIANT: pressure clamp must never apply here — async has no shared
 // countdown. See MP-RELAX-PRESSURE-001.
-async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSessionSnapshot> {
+async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   assertValidExecutionContext(input);
   const { gameId, playerId, roundIndex, yearGuess, locationGuess, hintsUsed } = input;
 
@@ -2285,17 +2774,19 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
     // Idempotent return if this round is already complete.
     if (guard.round_complete) {
       await client.query("COMMIT");
-      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
+      const snapshot = playerSnapshots[playerId];
       if (!snapshot) throw new Error("Session not found");
-      return snapshot;
+      return { ...snapshot, playerSnapshots };
     }
 
     // Idempotent return if a commit already exists (concurrent submission).
     if (guard.has_existing_commit) {
       await client.query("COMMIT");
-      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
+      const snapshot = playerSnapshots[playerId];
       if (!snapshot) throw new Error("Session not found");
-      return snapshot;
+      return { ...snapshot, playerSnapshots };
     }
 
     // The requested round must be the player's current expected round.
@@ -2407,9 +2898,10 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
 
     if ((insertResult as unknown as { rowCount: number | null }).rowCount === 0) {
       await client.query("COMMIT");
-      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
+      const snapshot = playerSnapshots[playerId];
       if (!snapshot) throw new Error("Session not found");
-      return snapshot;
+      return { ...snapshot, playerSnapshots };
     }
 
     const guessToken = generateVerificationToken();
@@ -2455,32 +2947,25 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
       );
     }
 
+    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+    const actingPlayerSnapshot = playerSnapshots[playerId];
+    if (!actingPlayerSnapshot) throw new Error("Session not found");
+
     await client.query("COMMIT");
+    return { ...actingPlayerSnapshot, playerSnapshots };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
   }
-
-  let snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-  if (!snapshot) {
-    await new Promise(r => setTimeout(r, 300));
-    snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-  }
-  if (!snapshot) {
-    await new Promise(r => setTimeout(r, 500));
-    snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-  }
-  if (!snapshot) throw new Error("Session not found");
-  return snapshot;
 }
 
 export async function advancePlayerRoundAsync(
   gameId: string,
   playerId: string,
   _executionContext?: "partykit" | "api"
-): Promise<CompeteSessionSnapshot> {
+): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   assertValidExecutionContext({ _executionContext });
 
   const client = await getTransactionClient();
@@ -2516,17 +3001,18 @@ export async function advancePlayerRoundAsync(
       );
     }
 
+    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+    const actingPlayerSnapshot = playerSnapshots[playerId];
+    if (!actingPlayerSnapshot) throw new Error("Session not found");
+
     await client.query("COMMIT");
+    return { ...actingPlayerSnapshot, playerSnapshots };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
   }
-
-  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-  if (!snapshot) throw new Error("Session not found");
-  return snapshot;
 }
 
 export async function markPlayerRoundAbsent(

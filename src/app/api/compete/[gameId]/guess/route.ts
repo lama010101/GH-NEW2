@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyPartyKitSecret } from "@/server/partykitAuth";
 import { submitGuess, getRoundResults } from "@/server/sessionCore";
+import type { CompeteSessionSnapshot } from "@/core/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,7 +57,18 @@ export async function POST(
       results = await getRoundResults(gameId, body.roundIndex);
     }
 
-    return NextResponse.json({ ...snapshot, results });
+    // Async per-player snapshots carry their own results inside the bundle.
+    const snapshotWithPlayerSnapshots = snapshot as CompeteSessionSnapshot & {
+      playerSnapshots?: Record<string, unknown>;
+    };
+    if (snapshotWithPlayerSnapshots.playerSnapshots && body.playerId) {
+      const playerSnapshot = snapshotWithPlayerSnapshots.playerSnapshots[body.playerId] as Record<string, unknown> | undefined;
+      if (playerSnapshot) {
+        playerSnapshot.results = results;
+      }
+    }
+
+    return NextResponse.json({ ...snapshotWithPlayerSnapshots, results });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to submit guess";
     const stack = error instanceof Error ? error.stack : undefined;
