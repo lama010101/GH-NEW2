@@ -582,7 +582,7 @@ If the DO restarts mid-round:
 | Round timer (sync) | Configurable, e.g. 120s | Set by host in lobby |
 | First-submission pressure | 20s remaining | Triggered by first submit |
 | Results screen (sync) | 30s | Auto-advances if not all clicked Next |
-| Session deadline (async) | `now + D days` | D = 1–7, configurable |
+| Session deadline (async) | `now + D days` | D = 1–14, default 3, configurable |
 
 ---
 
