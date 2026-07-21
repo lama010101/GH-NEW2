@@ -747,8 +747,8 @@ const MOCK_GAMES: MockGame[] = [
   { id: "g6", opponent_name: "Elena R.", round_current: 5, round_total: 5, mode: "async", status: "completed", score_you: 2, score_them: 2, accuracy_you: 65, completed_at: new Date(Date.now() - 2 * 86400000).toISOString(), leaderboard_rank: 3 },
   // Completed — WIN, accuracy 72 (orange ≥40), sync, no avatar, rank #1
   { id: "g7", opponent_name: "Hans W.", round_current: 5, round_total: 5, mode: "sync", status: "completed", score_you: 4, score_them: 1, accuracy_you: 72, completed_at: new Date(Date.now() - 5 * 86400000).toISOString(), leaderboard_rank: 1 },
-  // Completed — no score (null), no mode, no avatar, no rank → "Completed" label
-  { id: "g8", opponent_name: "Priya M.", round_current: 5, round_total: 5, status: "completed", completed_at: new Date(Date.now() - 10 * 86400000).toISOString() },
+  // Completed — LOSS, accuracy 0 (<40 red), no mode, no avatar, rank #10
+  { id: "g8", opponent_name: "Priya M.", round_current: 5, round_total: 5, status: "completed", score_you: 0, score_them: 5, accuracy_you: 0, completed_at: new Date(Date.now() - 10 * 86400000).toISOString(), leaderboard_rank: 10 },
   // Completed — WIN, accuracy 88 (green ≥85), no mode, with avatar, rank #12
   { id: "g9", opponent_name: "Carlos D.", opponent_avatar: "https://i.pravatar.cc/64?img=4", round_current: 5, round_total: 5, status: "completed", score_you: 5, score_them: 0, accuracy_you: 88, completed_at: new Date(Date.now() - 15 * 86400000).toISOString(), leaderboard_rank: 12 },
 ];
@@ -934,7 +934,6 @@ function CompetePanel({ s }: { s: Strings }) {
                 ) : null}
                 <div
                   className={styles.avatarFallback}
-                  style={{ display: inv.avatar_url ? "none" : "flex" }}
                   hidden={!!inv.avatar_url}
                 >
                   <AvatarIcon />
@@ -993,7 +992,6 @@ function CompetePanel({ s }: { s: Strings }) {
                 ) : null}
                 <div
                   className={styles.avatarFallback}
-                  style={{ display: g.opponent_avatar ? "none" : "flex" }}
                   hidden={!!g.opponent_avatar}
                 >
                   <AvatarIcon />
@@ -1047,7 +1045,6 @@ function CompetePanel({ s }: { s: Strings }) {
                 ) : null}
                 <div
                   className={styles.avatarFallback}
-                  style={{ display: g.opponent_avatar ? "none" : "flex" }}
                   hidden={!!g.opponent_avatar}
                 >
                   <AvatarIcon />
@@ -1065,17 +1062,11 @@ function CompetePanel({ s }: { s: Strings }) {
                   </span>
                 </div>
                 <div className={styles.scoreWrap}>
-                  {g.score_you != null && g.score_them != null ? (
-                    <span className={styles.accuracyValue} style={{ color: accColor(g.accuracy_you ?? 0) }}>
-                      {g.accuracy_you ?? 0}<span style={{ fontSize: "0.75em", opacity: 0.7, marginLeft: 1 }}>%</span>
-                    </span>
-                  ) : (
-                    <span className={styles.completedLabel}>{s.compete_completed}</span>
-                  )}
+                  <span className={styles.accuracyValue} style={{ color: accColor(g.accuracy_you ?? 0) }}>
+                    {g.accuracy_you ?? 0}<span style={{ fontSize: "0.75em", opacity: 0.7, marginLeft: 1 }}>%</span>
+                  </span>
                 </div>
-                {g.leaderboard_rank != null && (
-                  <span className={styles.rankBadge}>#{g.leaderboard_rank}</span>
-                )}
+                <span className={styles.rankBadge}>{g.leaderboard_rank != null ? `#${g.leaderboard_rank}` : "#—"}</span>
                 <button
                   type="button"
                   className={styles.deleteBtn}
