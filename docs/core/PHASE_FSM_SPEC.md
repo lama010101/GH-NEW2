@@ -2,7 +2,7 @@
 
 ## 0. AUTHORITY
 
-**PRIMARY:** `docs/MASTER IMPLEMENTATION PLAN — MULTIPLAYER CORE.md` Section 2
+**PRIMARY:** `docs/GAME_MODES_SPEC.md` v1.5 (mode behavior) and `docs/core/EVENT_STREAM_SPEC.md` (event streams)
 
 **Status:** CANONICAL — All phase transitions MUST comply.
 
@@ -29,7 +29,7 @@ The FSM ensures deterministic, event-driven phase progression with explicit tran
 
 ### 2.2 Phase Sources
 
-- Phases are DERIVED from `round_events` table ONLY
+- Phases are DERIVED from `round_events` (sync/Rush) or `player_round_events` (async/Relax) tables
 - Runtime phase in DO memory is NON-AUTHORITATIVE cache
 - On recovery, phase is ALWAYS reconstructed from event stream
 
@@ -59,6 +59,28 @@ ROUND_COMPLETE
 SESSION_COMPLETE
   └──→ (terminal — no exits)
 ```
+
+### 3.1b Async (Relax) Per-Player FSM
+
+In async mode each player has a private per-round loop; there is no global round consensus:
+
+```
+PLAYER_ROUND_STARTED (per player/round)
+  ├──→ GUESS_SUBMITTED
+  └──→ ROUND_COMPLETE (timer expiry, if timer enabled)
+
+GUESS_SUBMITTED
+  └──→ ROUND_COMPLETE
+
+ROUND_COMPLETE
+  ├──→ PLAYER_ROUND_STARTED (next round, if round < 5)
+  └──→ PLAYER_SESSION_COMPLETE (round 5)
+
+PLAYER_SESSION_COMPLETE
+  └──→ (terminal for that player)
+```
+
+The session-level `SESSION_COMPLETE` event is emitted once all players have either reached `PLAYER_SESSION_COMPLETE` or the `session_deadline` has passed.
 
 ### 3.2 Formal Transition Table
 
@@ -101,6 +123,8 @@ function derivePhase(lastEvent: EventRecord): Phase {
       return 'ROUND_ACTIVE';
     case 'ROUND_COMPLETE':
       return 'ROUND_COMPLETE';
+    case 'PLAYER_SESSION_COMPLETE':
+      return 'ROUND_COMPLETE';   // player finished all rounds; session may still be active
     case 'SESSION_COMPLETE':
       return 'SESSION_COMPLETE';
     default:

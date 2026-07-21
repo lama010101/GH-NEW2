@@ -2,7 +2,7 @@
 
 ## 0. AUTHORITY
 
-**PRIMARY:** `docs/MASTER IMPLEMENTATION PLAN — MULTIPLAYER CORE.md` Section 0.1, 0.2
+**PRIMARY:** `docs/GAME_MODES_SPEC.md` v1.5 (mode behavior) and `docs/DATABASE_SCHEMA_STATE.md` (canonical tables)
 
 **Status:** CANONICAL — All event stream processing MUST comply.
 
@@ -18,12 +18,13 @@ The event stream is the **canonical replay source**. All game state must be reco
 
 ## 2. SOURCE OF TRUTH
 
-**Table:** `round_events` (append-only)
+**Tables:** `round_events` (append-only, sync/Rush) and `player_round_events` (append-only, async/Relax Option A)
 
 **Authority:** Event stream is the ONLY source for:
 - Phase state (current phase derived from last event)
 - Round progression
 - Session lifecycle
+- Per-player round progress in async (Relax) mode
 
 **Enforcement:**
 - Every phase transition MUST emit an event
@@ -45,6 +46,18 @@ CREATE TABLE round_events (
   payload JSONB,                      -- event-specific data
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+-- Async (Relax) per-player round events
+CREATE TABLE player_round_events (
+  id BIGSERIAL PRIMARY KEY,
+  game_id UUID NOT NULL REFERENCES sessions(game_id),
+  player_id UUID NOT NULL,
+  round_index INT NOT NULL,
+  event_type VARCHAR NOT NULL,        -- e.g. ROUND_STARTED, GUESS_SUBMITTED, ROUND_COMPLETE, PLAYER_SESSION_COMPLETE
+  payload JSONB,
+  occurred_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  verification_token UUID NOT NULL DEFAULT gen_random_uuid()
+);
 ```
 
 ### 3.2 EventType Enum
@@ -55,7 +68,8 @@ CREATE TABLE round_events (
 | `ROUND_STARTED` | Round | Round begins (timer starts) |
 | `GUESS_SUBMITTED` | Round | Player submits guess |
 | `ROUND_COMPLETE` | Round | Round ends (all guesses in or timeout) |
-| `SESSION_COMPLETE` | Session | Game ends (all rounds complete) |
+| `PLAYER_SESSION_COMPLETE` | Player (async) | One player has finished all 5 rounds |
+| `SESSION_COMPLETE` | Session | Game ends (all rounds complete or deadline reached) |
 
 ### 3.3 Payload Schemas
 
