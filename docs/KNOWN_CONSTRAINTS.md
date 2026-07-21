@@ -262,3 +262,27 @@ Playwright's pointer-interception checks. This means:
   # backdrop interception.
 
 ---
+
+### [KC-011] No hardcoded `font-size` pixel values in CSS modules
+**Affected files:** Any `.module.css` or `.css` file under `src/`
+**Affected rule:** `.devin/rules/css-no-hardcoded-tokens.md`  
+**Guard test:** `src/guards/css-no-hardcoded-font-sizes.guard.test.ts`
+
+**Constraint:**
+All UI typography must use the global CSS tokens defined in `src/app/globals.css`
+(`--font-2xs` through `--font-4xl`). Hardcoded `font-size: <number>px` values are
+forbidden in component styles. The guard test is a ratchet: it snapshots the
+per-file count of hardcoded font-size lines (baseline dated 2026-07-07) and
+fails if any file's count increases or if a new file introduces hardcoded sizes.
+The baseline may only decrease as files are migrated to tokens.
+
+**Allowed exceptions:**
+- `src/app/globals.css` — defines the tokens.
+- Inline styles in TSX are outside the guard's scope but should still prefer
+tokens (`var(--font-base)` etc.) where possible.
+
+**Regression guard (include in ALL prompts touching CSS modules):**
+  npm test -- src/guards/css-no-hardcoded-font-sizes.guard.test.ts
+  # Must pass. A failure means a new hardcoded font-size was introduced.
+
+---

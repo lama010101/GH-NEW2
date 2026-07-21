@@ -1,333 +1,244 @@
 # HOME PAGE SPEC
 **Project:** Guess-History  
 **Document:** HOME_PAGE_SPEC.md  
-**Version:** 1.0  
-**Status:** AUTHORITATIVE — v1.0 (2026-04-28). The implementation has since evolved; see `src/app/home/page.tsx` and related components for the current UI.  
-**Date:** 2026-04-28  
+**Version:** 1.1  
+**Status:** AUTHORITATIVE — aligned with current implementation  
+**Date:** 2026-07-21
 
 ---
 
 ## 0. Document Authority
 
-This document defines the complete UI, UX, and behavioral specification for the Guess-History home page. Any implementation that deviates from this spec is wrong. All four mode cards, the background system, the top bar, and the info panel are covered here.
+This document describes the current `/home` page UI and behavior as implemented in:
+
+- `src/app/home/page.tsx`
+- `src/app/home/home.module.css`
+- `src/components/layout/TopBar.tsx`
+- `src/components/home/CompetePanel.tsx`
+- `src/components/home/DailyPanel.tsx`
+- `src/components/home/types.ts`
+- `src/components/RankCard.tsx`
+- `src/components/NavModal.tsx`
+- `src/components/WelcomeModal.tsx`
+- `src/components/practice/PracticeSettingsModal.tsx`
+- `src/components/practice/PracticeResumeModal.tsx`
 
 Binding references:
-- `docs/GUESS_HISTORY_MASTER_SPEC.md` — game mode architecture
-- `docs/GAME_MODES_SPEC.md` §2 — Practice mode flow
-- `docs/STATS_SYSTEM.md` — XP and level data
+- `docs/GAME_MODES_SPEC.md` — mode rules
+- `docs/STATS_SYSTEM.md` — XP/accuracy sources
+- `src/core/rank.ts` — rank title and tier derivation
+- `src/i18n/en.json` (namespace `home`) — UI copy
 
 ---
 
 ## 1. Layout Overview
 
-The home page is a **single full-viewport screen**. There is no scroll. All content fits within 100vh × 100vw.
+The home page is a **full-viewport, scrollable** screen.
 
-```
-┌─────────────────────────────────────────────┐
-│  TOP BAR   [XP Pill]           [Bell][Avatar]│
-│                                              │
-│           GUESS-HISTORY                      │
-│                                              │
-│  [DAILY] [PRACTICE] [LEVEL UP] [COMPETE]     │  ← Mode cards (carousel)
-│                                              │
-│  [INFO PANEL — contextual, slides in/out]    │
-└─────────────────────────────────────────────┘
-```
+- Background: fixed full-bleed `home_background.webp` image with a dark scrim overlay (`var(--gh-modal-overlay)`).
+- Content layer: a vertically scrolling area (`page-scroll`) padded below the fixed top bar.
+- Max content width: `480px` mobile, `600px` desktop (`@media (min-width: 768px)`).
+- Scroll is handled by the content layer, not the body, so the top bar stays fixed.
 
-**Background:** Full-bleed collage of historical photographs (see Section 3).  
-**Foreground layers (z-order, bottom to top):** background mosaic → dark overlay → content.
+Vertical content order:
+
+1. Fixed `TopBar` (z-index above content).
+2. Optional kicked toast banner (`?kicked=1`).
+3. Inline `RankCard`.
+4. Centered tagline.
+5. Vertical stack of four `ModeCard`s: **Compete → Daily → Level Up → Practice**.
+6. Modals: `NavModal`, `WelcomeModal`, `PracticeSettingsModal`, `PracticeResumeModal`.
 
 ---
 
 ## 2. Top Bar
 
-### 2.1 Layout
+Implemented by `TopBar.tsx`.
 
-Single horizontal bar, full width, sits at the top of the content layer. Two zones: left (XP pill) and right (bell + avatar).
+### 2.1 Left zone — logo
+- Clickable `Image` pointing to `/icons/logo.webp`.
+- Navigates to `/home` on click.
 
-### 2.2 XP Pill (left)
+### 2.2 Middle zone — rank / accuracy pill
+- Left side: `RANK {tier}` where tier is derived from `totalXp` via `rankForXp`.
+- Right side: global accuracy integer followed by `%`.
+- Accuracy color is a dynamic HSL green-to-red gradient based on the value.
 
-Displays the authenticated player's current stats. Two values separated by a vertical divider:
-
-| Element | Content | Style |
-|---|---|---|
-| Accuracy | Player's global accuracy percentage, integer only, e.g. `37 %` | White, 12–13px, weight 500 |
-| Divider | `\|` | Muted, low opacity |
-| XP | Total XP formatted with thousands separator, e.g. `59 325 XP` | Gold/amber tint (#f0c060), 12–13px, weight 500 |
-
-The pill has a semi-transparent background (`rgba(255,255,255,0.09)`), a 0.5px white border at low opacity, and a pill border radius (20px).
-
-**No chevron/arrow button next to the XP pill.** The pill is display-only. A future leaderboard entry point will be defined in a separate spec when that feature is scoped.
-
-### 2.3 Right Zone
-
-Two elements, left to right:
-
-**Bell icon** — notification access. Circular button, same semi-transparent treatment as the XP pill. Bell SVG icon, white at 65% opacity.
-
-**Avatar** — circular player profile photo or initials fallback. 30–32px diameter. 1.5px white border at 28% opacity.
+### 2.3 Right zone
+- `NotificationBell` — opens the notifications route/modal.
+- Circular avatar button. Shows `avatarUrl` if set; otherwise two-letter initials from the profile display name.
+- Clicking the avatar opens `NavModal`.
 
 ---
 
-## 3. Background — Historical Photo Mosaic
+## 3. Authentication & Loading State
 
-### 3.1 Purpose
-
-Full-bleed decorative background built from a grid of cropped historical photographs. Provides thematic atmosphere. Must never distract from foreground content.
-
-### 3.2 Grid Specification
-
-- **Grid:** 5 columns × 3 rows = 15 cells
-- **Gap:** 3px between cells
-- **Coverage:** 100% of viewport width and height (absolute positioned, `inset: 0`)
-- **Images:** Sourced from the historical events image pool (same pool used in gameplay). Images are cropped to fill their cell (object-fit: cover). Cells do not need uniform aspect ratios — natural overflow is acceptable.
-- **Image assignment:** Random at page load. Images should be varied — no two adjacent cells showing the same event or era.
-
-### 3.3 Dark Overlay
-
-A single full-bleed overlay sits on top of the mosaic. Gradient: `rgba(0,0,0,0.28)` at top → `rgba(0,0,0,0.60)` at bottom. Opacity of the mosaic itself: `0.32–0.35`. The combined effect makes the mosaic readable as texture but never as individual identifiable images — it is ambiance, not content.
-
-### 3.4 Fallback
-
-If images are unavailable (preflight failure, network issue), cells fall back to dark muted fills in varying warm/cool tones. The overlay and grid structure remain intact. The page must never appear broken due to image load failure.
+- The page bootstraps identity with `bootstrapIdentity()`.
+- If `identity.status === 'unauthenticated'`, the user is redirected to `/login?next=/home`.
+- While loading, a full-screen loading indicator is shown. If it lasts more than 10s, a "clear session and restart" escape hatch appears.
+- If identity bootstrap errors, a retry button and a force-clear button are shown instead of a blank screen.
 
 ---
 
-## 4. Logo
+## 4. New-User Welcome Flow
 
-Centered horizontally between the top bar and the mode cards.
-
-- Text: `GUESS-HISTORY`
-- Font: app default sans-serif, weight 700, ~24–26px, letter-spacing 1px
-- Color split:
-  - `GUESS-` → white
-  - `HIS` → purple (`#c084fc`)
-  - `TORY` → orange (`#fb923c`)
-- Text shadow: `0 2px 8px rgba(0,0,0,0.5)` for legibility over background
+- New users are detected by comparing `created_at` and `last_sign_in_at` on the Supabase session (< 5 minutes) AND `profiles.welcome_completed === false`.
+- A one-shot `triggerAssignAvatar()` POSTs to `/api/user/assign-avatar` and receives a generated historical avatar plus a display name.
+- `WelcomeModal` opens automatically with the generated avatar and initial display name.
+- On save, `PATCH /api/user/update-username` sets `display_name` and `welcome_completed: true`.
+- The top-bar stats and initials are re-fetched after save via `profileVersion`.
 
 ---
 
-## 5. Mode Cards
+## 5. Rank Card
 
-### 5.1 Layout
-
-Four cards displayed in a **horizontal row**, equal flex width, with 8–10px gap. On mobile, this becomes a **swipeable horizontal carousel** where the active card is centered and adjacent cards are partially visible (~20px peeking in from each side).
-
-### 5.2 Card Anatomy
-
-Each card consists of two stacked zones:
-
-**Art zone (top):** Square aspect ratio (1:1). Gradient background specific to the mode. Contains a 3D-style icon SVG at ~66% of the zone width, centered, with a subtle drop shadow. May contain additional in-art elements (badges, indicators).
-
-**Label zone (bottom):** Colored background (darker shade of the mode's gradient). Two lines of text, centered:
-- Mode name: 10–11px, weight 700, all caps, letter-spacing 1.1px, white
-- Mode subtitle: 8.5–9px, weight 500, all caps, letter-spacing 0.7px, white at 65% opacity
-
-### 5.3 Selection State
-
-- **Default:** no visible selection ring
-- **Selected:** `outline: 2px solid rgba(255,255,255,0.55)`, card translates up 3px (`translateY(-3px)`)
-- **Tap/click active:** `scale(0.97)` briefly
-- Only one card can be selected at a time
-- On page load, **Practice** is selected by default
-
-### 5.4 Mode: Daily
-
-| Property | Value |
-|---|---|
-| Art background | Dark blue gradient: `#0d2a50` → `#1a3f7a` |
-| Label background | `#0d2040` |
-| Icon | 3D calendar with clock indicator showing today's date highlighted |
-| In-art badge | `LIVE` — red pill (`#ef4444`), top-right corner of art zone, 7.5px uppercase |
-| Mode name | DAILY |
-| Subtitle | TODAY'S CHALLENGE |
-
-### 5.5 Mode: Practice
-
-| Property | Value |
-|---|---|
-| Art background | Orange gradient: `#7c3a0a` → `#d96b1a` |
-| Label background | `#6a3008` |
-| Icon | 3D target/bullseye with arrow |
-| Mode name | PRACTICE |
-| Subtitle | SOLO WARM-UP |
-
-### 5.6 Mode: Level Up
-
-| Property | Value |
-|---|---|
-| Art background | Purple gradient: `#4a1a7a` → `#9b4dca` |
-| Label background | `#3a1060` |
-| Icon | 3D upward arrow / rocket emerging from a platform |
-| In-art badge | Current level pill, e.g. `Level 5` — centered, bottom of art zone, semi-transparent white pill |
-| Mode name | LEVEL UP |
-| Subtitle | PROGRESSIVE RUNS |
-
-### 5.7 Mode: Compete
-
-| Property | Value |
-|---|---|
-| Art background | Teal gradient: `#0a4a3a` → `#1a9a7a` |
-| Label background | `#093a2a` |
-| Icon | 3D figures (players) with a trophy |
-| Mode name | COMPETE |
-| Subtitle | FRIENDS LOBBY |
+- Rendered inline below the top bar.
+- `RankCard` derives everything from `totalXp` using `rankForXp`.
+- Shows:
+  - Rank medallion image (from `/images/rank-titles/`).
+  - Tier badge (`T{tier}`).
+  - Rank title (localized).
+  - Total XP formatted with locale.
+  - Next-rank line + progress bar (orange fill, width from `progressPct`).
 
 ---
 
-## 6. Info Panel
+## 6. Tagline
 
-### 6.1 Behavior
+Centered text below the rank card:
 
-The info panel sits directly below the cards row. It is **hidden by default** and **slides in with a transition** when a card is selected. Transition: `max-height 0 → auto` with `opacity 0 → 1` over 280–300ms ease. When switching cards, the panel fades out (180ms), content swaps, then fades back in.
+> "Where and when did it happen?"
 
-The panel is **contextual** — its content is entirely determined by the selected mode. See Sections 6.2–6.5.
-
-### 6.2 Daily Panel
-
-Displayed when Daily card is selected.
-
-**Content (top to bottom):**
-
-1. **Countdown line:** Small pulsing red dot + text: `Today's challenge resets in Xh Ym`. Time is live-updated every minute. Text color `#93c5fd`.
-2. **CTA button:** `Play Today's Challenge` — full width, blue gradient, rounded (10px radius).
-
-**Rules:**
-- If the player has already completed today's challenge, the CTA button changes to `View Today's Results` and is non-destructive (navigates to the completed result view, does not start a new game).
-- No settings. Daily parameters are fixed server-side and not configurable by the player.
-
-### 6.3 Practice Panel
-
-Displayed when Practice card is selected.
-
-**Content (top to bottom):**
-
-1. **Round Timer toggle row:** Toggle (on/off) + label `Round Timer` + current value (e.g. `2:00`). When toggled off, the value is hidden. When toggled on, a time selector appears inline.
-2. **Year Range toggle row:** Toggle (on/off) + label `Year Range` + two values for start and end year (e.g. `655 — 2025`), both in orange. When toggled off, defaults to full range (`-100 — current year`).
-3. **Start button:** `Start Practice` — full width, orange gradient, rounded.
-
-**Rules:**
-- Default state: both toggles on. Default timer: 2:00. Default year range: full range.
-- Settings are persisted to localStorage and restored on next visit.
-- Year range values are tappable/clickable and open an inline picker (spec for picker deferred to Practice Mode Spec).
-- Timer value is tappable/clickable and opens an inline time picker (spec deferred to Practice Mode Spec).
-
-### 6.4 Level Up Panel
-
-Displayed when Level Up card is selected.
-
-**Content (top to bottom):**
-
-1. **Level line:** `Level X → Level X+1` left-aligned. Right-aligned: `Min accuracy to pass: Y%` in muted white.
-2. **Progress bar:** Horizontal bar showing progress within the current level (games played toward next promotion threshold). Purple fill, full width.
-3. **Difficulty pills row:** Three equal pills side by side showing the fixed parameters for the current level:
-   - `Year Range` + value (e.g. `1776–2025`)
-   - `Timer` + value (e.g. `4:30`)
-   - `Rounds` + value (always `5`)
-4. **Start button:** `Start Level X` — full width, purple gradient, rounded.
-
-**Rules:**
-- All parameters in this panel are **read-only**. The player cannot change them. The game sets them based on the current level.
-- If the player has not yet started Level Up mode, show Level 1 parameters and `Start Level 1`.
-
-### 6.5 Compete Panel
-
-Displayed when Compete card is selected.
-
-**Content (top to bottom):**
-
-1. **Option selector:** Two equal-width option buttons side by side:
-   - `Create lobby` / `New game`
-   - `Join with code` / `Enter code`
-   - Only one can be active at a time. Active state: teal-tinted background + teal border. Default: Create lobby.
-2. **CTA button:** `Go to Lobby` — full width, teal gradient, rounded.
-
-**Rules:**
-- Selecting `Join with code` reveals a code input field between the option selector and the CTA button. The code input is a single-line text field, centered, uppercase, max 8 characters.
-- `Go to Lobby` is disabled (dimmed, non-clickable) when `Join with code` is selected and the input is empty.
-- Navigates to `/compete` route.
+Localized via `home.tagline`.
 
 ---
 
-## 7. Navigation Behavior
+## 7. Mode Cards
 
-| Action | Destination |
-|---|---|
-| Daily → Play Today's Challenge | `/daily` (daily game session) |
-| Practice → Start Practice | Triggers preflight → `/practice/game/room/{roomId}/round/1` |
-| Level Up → Start Level X | Triggers preflight → `/levelup/game/{sessionId}/round/1` |
-| Compete → Go to Lobby (create) | `/compete` (creates new session) |
-| Compete → Go to Lobby (join) | `/compete/{gameId}` (joins existing session) |
-| Bell icon | `/notifications` |
-| Avatar | `/profile` |
+All four cards share a horizontal row layout:
 
----
+- Left: square icon thumbnail (`96px`) with a 15% white background and mode icon image from `/icons/{mode}_large.webp`.
+- Middle: title + two-line description.
+- Right: pill CTA button.
 
-## 8. Authenticated vs Unauthenticated State
+Card gradients are defined in `MODE_CARD_GRADIENT` (`src/components/home/types.ts`):
 
-| State | Behavior |
-|---|---|
-| Authenticated | Full home page as described above |
-| Unauthenticated | Home page renders identically but CTAs redirect to `/login?return=<mode>`. XP pill shows `-- % \| -- XP`. |
-
-Guest play is **not supported** in this version. All modes require authentication.
-
----
-
-## 9. Responsive Behavior
-
-| Breakpoint | Layout |
-|---|---|
-| Desktop (≥ 768px) | All 4 cards visible simultaneously in a row, equal width |
-| Mobile (< 768px) | Horizontal carousel: center card full-width-minus-padding, adjacent cards peek 20px on each side. Swipe gesture advances selection and updates info panel. |
-
-On mobile, the info panel is fixed below the carousel. It does not scroll with the card swipe.
-
----
-
-## 10. Performance Requirements
-
-- Background mosaic images must be lazy-loaded. The overlay and card content render immediately regardless of image load state.
-- Info panel content is rendered eagerly for all four modes (not lazy) — switching panels must be instantaneous with no loading state.
-- The countdown timer for Daily updates client-side every 60 seconds. No network call required for the countdown.
-
----
-
-## 11. Forbidden Patterns
-
-- No hero marketing copy on the home page.
-- No stats, history, or recent games shown on the home page at this stage.
-- No auto-advancing carousel animation. Card selection is always manual.
-- No chevron or arrow button in the XP pill or adjacent to it.
-- No default year selected on the Practice year range picker — the player must actively set values.
-- No modal overlays on the home page. All contextual content uses the inline info panel only.
-
----
-
-## 12. Mode Behavioral Summary
-
-| Mode | Parameters Set By | Min Accuracy Required | Session Type |
+| Mode | Gradient key | Title copy key | Description copy key |
 |---|---|---|---|
-| Daily | Server (fixed per day) | None — participation only | Solo, server-seeded |
-| Practice | Player (timer + year range) | None | Solo, client-configured |
-| Level Up | System (per level formula) | Yes — must pass to advance | Solo, system-configured |
-| Compete | Host (in lobby) | None | Multiplayer, lobby-configured |
+| Compete | `compete` | `home.compete_name` (`CHALLENGE`) | `home.compete_desc` |
+| Daily | `daily` | `home.daily_name` (`DAILY`) | `home.daily_desc` |
+| Level Up | `levelup` | `home.levelup_name` (`LEVEL UP`) | `home.levelup_desc` |
+| Practice | `practice` | `home.practice_name` (`PRACTICE`) | `home.practice_desc` |
+
+CTA pills:
+- Non-compete cards show a play icon + `home.compete_play` (`PLAY`).
+- Compete card shows a plus icon + `home.compete_create_game` (`CREATE`).
 
 ---
 
-## 13. Level Up Mode — Difficulty Formula
+## 8. Mode-Specific Behavior
 
-Level Up parameters scale deterministically with level number. The formula is authoritative:
+### 8.1 Compete card
 
-| Parameter | Formula | Level 1 Example | Level 10 Example | Level 100 Example |
-|---|---|---|---|---|
-| Year range width | `200 + (level × 18)` years, centered on 2025 | 218 years (1807–2025) | 380 years (1645–2025) | 2000 years (25–2025) |
-| Timer (seconds) | `300 - (level × 2)`, minimum 60s | 298s (≈ 5:00) | 280s (≈ 4:40) | 100s (≈ 1:40) |
-| Min accuracy to pass | `50 + (level × 0.3)`%, capped at 80% | 50.3% | 53% | 80% |
-| Rounds per game | Always 5 | 5 | 5 | 5 |
+- **Quick create:** the `CREATE` pill POSTs to `/api/compete/create` with a default sync configuration:
+  - `mode: 'sync'`
+  - `roundTimerSec: 120`
+  - `totalRounds: 5`
+  - `yearMin: -400`
+  - `yearMax: 2025`
+  - then navigates to `/compete/{gameId}`.
+- **CompetePanel** is rendered inside the card body below the icon/text row.
 
-These values are computed server-side at session creation. The client displays them read-only. The coder must not hardcode level parameters — they must always be derived from the formula.
+### 8.2 CompetePanel tabs
+
+Three tabs: `INVITATIONS`, `YOUR TURN`, `COMPLETED`.
+
+**Invitations**
+- Fetched from `/api/invitations/pending`.
+- Live-updated via Supabase realtime on `game_invitations` INSERT for the current player, and refreshed every 15s and on window focus.
+- Each row shows inviter avatar/initials, name, mode (`Rush` or `Relax`), time ago, accept (`✓` play) and decline (`✕`) buttons.
+- Accept updates invitation status to `accepted`, marks the matching notification as read, then navigates to the lobby.
+
+**Your Turn**
+- Fetched from `/api/compete/active-games`.
+- Lists active games where it is the player's turn.
+- Each row shows opponent avatar/initials, opponent name, mode badge, round label (`Round {current} / {total}`), and a play button.
+
+**Completed**
+- Lists completed games.
+- Shows result badge (`W` / `L` / `D`), the player's accuracy colored by value, XP earned, and leaderboard rank if available.
+
+### 8.3 Daily card
+
+- `DailyPanel` is rendered inline below the description.
+- It shows a clock icon + `New challenge in {h}h {m}m`, counting down to the next UTC midnight and refreshing every minute.
+- The `PLAY` pill navigates to `/daily`.
+
+### 8.4 Level Up card
+
+- The `PLAY` pill navigates to `/levelup`.
+- Lobby/settings for Level Up are handled on the `/levelup` route, not on the home page.
+
+### 8.5 Practice card
+
+- The `PLAY` pill checks `localStorage` for `gh_practice_game_{playerId}`.
+- If a stored game id exists, the app fetches `/api/compete/{storedGameId}?playerId={playerId}`:
+  - If the game is not `SESSION_COMPLETE`, `PracticeResumeModal` opens (Resume or Create New).
+  - Otherwise the stale localStorage entry is removed and `PracticeSettingsModal` opens.
+- `PracticeSettingsModal` lets the player configure:
+  - Round timer: toggle + slider from `TIMER_MIN_SEC` (15s) to `TIMER_MAX_SEC` (300s); `0` means off.
+  - Era presets: Ancient, Medieval, Early Modern, Modern, Contemporary (at least one must remain selected).
+  - Region presets: Africa, Asia, Europe, North America, Oceania & Antarctica, South America.
+- Defaults: all eras selected, all regions selected, timer `0` (off).
+- Settings are persisted via `savePracticeSettings` and restored when the modal reopens.
+- On start, settings are saved, the local practice game id is cleared, and the player is routed to `/practice`.
 
 ---
 
-*Spec version 1.0 — Guess-History Home Page — authored 2026-04-28*
+## 9. Navigation Modal
+
+Opened by clicking the avatar in the top bar.
+
+- Avatar + display name header.
+- Menu items: **Home**, **Leaderboard**, **Profile & Stats** (`/progress`), **Account** (`/account`), **Help** (`/help`).
+- Language dropdown.
+- Theme toggle (light/dark).
+- **Sign Out** — calls `signOut()` then navigates to `/` (or `/login` on failure).
+- Closes on backdrop click or `Escape`.
+
+---
+
+## 10. Kicked Toast
+
+If the URL contains `?kicked=1`, a red dismissible toast is shown for 5s and the query parameter is removed.
+
+---
+
+## 11. Responsive Behavior
+
+| Viewport | Behavior |
+|---|---|
+| Mobile (< 768px) | Single column; cards stack vertically; max-width `480px`; top bar compact. |
+| Desktop (≥ 768px) | Centered column; max-width `600px`; top bar unchanged. |
+
+The page is always scrollable; there is no horizontal carousel.
+
+---
+
+## 12. Performance & UX Rules
+
+- Background image is a single static asset; no mosaic grid is rendered.
+- Rank and mode cards render eagerly; panels do not lazy-load.
+- All images (`avatar`, rank medallion, mode icons) degrade gracefully to initials or hidden elements.
+- The home page does **not** auto-advance anything.
+- No hero marketing copy, no stats history list, no recent-games list outside the CompetePanel.
+
+---
+
+## 13. Localization
+
+All user-facing strings are localized through `next-intl` from the `home` namespace in `src/i18n/*.json`. Colors, spacing, and layout use CSS variables (`var(--gh-text-primary)`, `var(--font-xl)`, etc.).
+
+---
+
+*Spec version 1.1 — Guess-History Home Page — aligned with implementation as of 2026-07-21*

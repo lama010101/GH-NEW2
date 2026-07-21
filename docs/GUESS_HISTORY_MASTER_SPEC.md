@@ -515,23 +515,44 @@ questionIndex = PRNG(seed + roundNumber)
 
 ### 11.2 Server Flow
 
+#### Sync (Rush)
+
 ```
-1. Validate: current phase == ANSWER
+1. Validate: current global phase == ANSWER
 2. Validate: player has not already submitted this round
 3. INSERT into round_commits (append-only, idempotent via composite PK)
 4. If duplicate → silently ignore
-5. Emit PLAYER_SUBMITTED to all clients (sync/Rush)
-6. Check: if all players submitted → trigger round-end logic (sync/Rush)
+5. Emit PLAYER_SUBMITTED to round_events (all clients receive it)
+6. Check: if all active players submitted OR timer expired →
+   transition global phase to LOCKED → RESULT → SCOREBOARD
 ```
 
-For sync (Rush) the round ends once all active players submit or the timer expires. For async (Relax) each player resolves independently; see `docs/backend/round_resolution.md` and `docs/GAME_MODES_SPEC.md` §5.
+The round ends for all players simultaneously once the timer expires or every active player has submitted.
+
+#### Async (Relax — Option A)
+
+```
+1. Validate: player's own per-player phase == ANSWER
+2. Validate: player has not already submitted this round
+3. INSERT into round_commits (append-only, idempotent via composite PK)
+4. If duplicate → silently ignore
+5. Emit GUESS_SUBMITTED to player_round_events (for this player only)
+6. Compute and write round_results for this player immediately
+7. Transition player's own phase: ANSWER → RESULT → NEXT_ROUND
+   (or PLAYER_SESSION_COMPLETE on the final round)
+```
+
+Each player resolves independently. There is no global round timer blocking other players; the optional per-round timer only auto-submits the expiring player. See `docs/backend/round_resolution.md` and `docs/GAME_MODES_SPEC.md` §5.
 
 ### 11.3 Lock Phase
 
-Once `LOCKED` phase begins:
-- **No further writes** to `round_commits` for this round are accepted
-- DO enforces this at runtime
-- DB enforces this optionally via constraint window or check in server logic
+**Sync (Rush):**
+- Once the global `LOCKED` phase begins, **no further writes** to `round_commits` for this round are accepted.
+- The DO enforces this at runtime; the DB may enforce it via a constraint window or server logic.
+
+**Async (Relax — Option A):**
+- The "lock" is per player. A player's `ANSWER` phase ends when they submit or their optional per-round timer expires.
+- After that point, no further submissions are accepted for that `(game_id, player_id, round_index)` (the composite PK already prevents duplicates).
 
 ---
 
@@ -547,6 +568,8 @@ For the exact algorithm and constants, see `docs/backend/scoring_spec.md`.
 
 ### 12.2 Flow
 
+**Sync (Rush) — triggered when the global round ends:**
+
 ```
 1. Fetch all round_commits for (game_id, round_index)
 2. Compute distance / year accuracy per player
@@ -554,6 +577,17 @@ For the exact algorithm and constants, see `docs/backend/scoring_spec.md`.
 4. Write results to round_results
 5. Write scoring events to round_events
 ```
+
+**Async (Relax — Option A) — triggered per player on their own submission:**
+
+```
+1. Fetch the single round_commits row for (game_id, player_id, round_index)
+2. Compute distance / year accuracy for that player
+3. Write the result to round_results
+4. Write scoring events to player_round_events
+```
+
+Async scoring is per player and per round; there is no cross-player normalization or leaderboard until the session finalizes.
 
 ### 12.3 Score Computation Notes
 
