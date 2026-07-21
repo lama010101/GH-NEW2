@@ -593,7 +593,9 @@ async function loadRoundEventContentForAsync(
 
 function derivePlayerRoundState(
   playerEvents: PlayerRoundEvent[],
-  globalRoundStartedAt: string | null
+  globalRoundStartedAt: string | null,
+  gameId?: string,
+  playerId?: string
 ): PlayerRoundState {
   const reached = new Set<number>();
   const completed = new Set<number>();
@@ -615,7 +617,22 @@ function derivePlayerRoundState(
     };
   }
 
-  const { currentRound, currentPhase: phase } = derivePlayerStateFromEventStream(playerEvents);
+  let currentRound: number;
+  let phase: string | null;
+  try {
+    const state = derivePlayerStateFromEventStream(playerEvents);
+    currentRound = state.currentRound;
+    phase = state.currentPhase;
+  } catch (error) {
+    const sequence = playerEvents.map(e => `${e.roundIndex ?? '?'}:${e.eventType}`).join(" -> ");
+    const context = gameId && playerId ? ` gameId=${gameId} playerId=${playerId}` : "";
+    console.error(
+      `[derivePlayerRoundState] malformed player_round_events stream${context}; sequence=[${sequence}]; ${error instanceof Error ? error.message : String(error)}. Falling back to degraded state.`
+    );
+    const lastRoundIndex = playerEvents[playerEvents.length - 1]?.roundIndex ?? 0;
+    currentRound = typeof lastRoundIndex === "number" && lastRoundIndex >= 0 ? lastRoundIndex : 0;
+    phase = null;
+  }
 
   let roundStartsAt: string | null = globalRoundStartedAt;
   let resultPhaseStartedAt: string | null = null;
@@ -655,14 +672,14 @@ function buildAsyncPlayerSnapshotFromBase(
 ): CompeteSessionSnapshot {
   const { session, players: playerRows, eventIds, globalRoundStartedAt, allPlayerEvents, roundResultScores, eventContentMap } = base;
   const viewerEvents = allPlayerEvents.get(viewerPlayerId) ?? [];
-  const playerState = derivePlayerRoundState(viewerEvents, globalRoundStartedAt);
+  const playerState = derivePlayerRoundState(viewerEvents, globalRoundStartedAt, gameId, viewerPlayerId);
 
   const activePlayerRows = playerRows.filter(p => p.left_at === null && p.kicked !== true);
   const allPlayersReady = activePlayerRows.length >= 1 && activePlayerRows.every(p => p.ready);
 
   const players: SessionPlayer[] = playerRows.map(row => {
     const events = allPlayerEvents.get(row.player_id) ?? [];
-    const state = derivePlayerRoundState(events, globalRoundStartedAt);
+    const state = derivePlayerRoundState(events, globalRoundStartedAt, gameId, row.player_id);
     const hasSubmitted = state.submittedRounds.has(state.currentRound);
     return mapSessionPlayerRowToPlayer(row, hasSubmitted);
   });
