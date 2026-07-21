@@ -1018,6 +1018,11 @@ export default class GameServer {
         results = this.pendingResults ?? (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined;
       }
 
+      // Ensure the message carries exactly one results field (top-level), not a
+      // duplicate inside the snapshot object. CompeteWebSocket merges this
+      // top-level value into snapshot.results on the client.
+      delete perSocketSnapshot["results"];
+
       connection.send(JSON.stringify({
         type: "STATE_UPDATE",
         snapshot: perSocketSnapshot,

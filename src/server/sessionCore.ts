@@ -674,12 +674,10 @@ function buildAsyncPlayerSnapshotFromBase(
     const revealContent = playerState.reachedRounds.has(roundIndex);
     const revealAnswer = playerState.completedRounds.has(roundIndex);
     const playerScores: Record<string, number> = {};
-    if (revealContent) {
-      for (const row of activePlayerRows) {
-        const key = `${row.player_id}:${roundIndex}`;
-        if (roundResultScores.has(key)) {
-          playerScores[row.player_id] = roundResultScores.get(key)!;
-        }
+    for (const row of activePlayerRows) {
+      const key = `${row.player_id}:${roundIndex}`;
+      if (roundResultScores.has(key)) {
+        playerScores[row.player_id] = roundResultScores.get(key)!;
       }
     }
     return {
