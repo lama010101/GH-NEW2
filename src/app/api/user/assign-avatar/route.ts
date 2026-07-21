@@ -44,7 +44,7 @@ export async function POST(_request: NextRequest) {
       const { data: avatar } = await serviceRoleClient
         .from("avatars")
         .select("*")
-        .eq("image_url", profile.avatar_url)
+        .or(`firebase_url.eq.${profile.avatar_url},image_url.eq.${profile.avatar_url}`)
         .single();
 
       if (avatar) {
