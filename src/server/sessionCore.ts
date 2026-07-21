@@ -1697,6 +1697,13 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     }
   }
 
+  // Route async (Relax) submissions to isolated per-player round authority.
+  // The sync code path below is intentionally left byte-identical.
+  const preflightSession = await loadSessionRow(gameId);
+  if (preflightSession?.mode === "async") {
+    return submitGuessAsync(input);
+  }
+
   const client = await getTransactionClient();
   let clientReleased = false;
   let shouldVerifyRoundResults = false;
@@ -2176,6 +2183,471 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   if (!snapshot) throw new Error("Session not found");
 
   return snapshot;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ASYNC (RELAX) PER-PLAYER ROUND AUTHORITY — MP-FEAT-RELAX-SOLO-PACING-PHASE1-001
+// All functions below write ONLY to player_round_events and shared tables;
+// they never write to round_events and never read other players' state.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// INVARIANT: pressure clamp must never apply here — async has no shared
+// countdown. See MP-RELAX-PRESSURE-001.
+async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSessionSnapshot> {
+  assertValidExecutionContext(input);
+  const { gameId, playerId, roundIndex, yearGuess, locationGuess, hintsUsed } = input;
+
+  if (!Number.isInteger(roundIndex) || roundIndex < 0 || roundIndex >= MAX_ROUNDS) {
+    throw new Error("roundIndex must be an integer between 0 and 4");
+  }
+
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+
+    // Serialize per-player round events for this game+player.
+    await client.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':async'))`,
+      [gameId, playerId]
+    );
+
+    const guardResult = await client.query<{
+      mode: "practice" | "sync" | "async" | "daily";
+      total_rounds: number;
+      scoring_reference_year: number;
+      has_existing_commit: boolean;
+      round_complete: boolean;
+      session_event_ids: string[] | null;
+      last_complete_round: number | null;
+    }>(
+      `WITH
+        session_meta AS (
+          SELECT mode, total_rounds, scoring_reference_year FROM sessions WHERE game_id = $1
+        ),
+        existing_commit AS (
+          SELECT 1 FROM round_commits
+          WHERE game_id = $1 AND player_id = $2 AND round_index = $3
+          LIMIT 1
+        ),
+        round_complete AS (
+          SELECT 1 FROM player_round_events
+          WHERE game_id = $1 AND player_id = $2 AND round_index = $3 AND event_type = 'ROUND_COMPLETE'
+          LIMIT 1
+        ),
+        last_complete AS (
+          SELECT MAX(round_index) AS round_index FROM player_round_events
+          WHERE game_id = $1 AND player_id = $2 AND event_type = 'ROUND_COMPLETE'
+        ),
+        session_created AS (
+          SELECT payload FROM round_events
+          WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+          ORDER BY id ASC LIMIT 1
+        )
+      SELECT
+        (SELECT mode FROM session_meta) AS mode,
+        (SELECT total_rounds FROM session_meta) AS total_rounds,
+        (SELECT scoring_reference_year FROM session_meta) AS scoring_reference_year,
+        EXISTS(SELECT 1 FROM existing_commit) AS has_existing_commit,
+        EXISTS(SELECT 1 FROM round_complete) AS round_complete,
+        (SELECT (SELECT payload->'eventIds' FROM session_created)::jsonb) AS session_event_ids,
+        (SELECT round_index FROM last_complete) AS last_complete_round`,
+      [gameId, playerId, roundIndex]
+    );
+
+    const guard = guardResult.rows[0];
+    if (!guard || guard.total_rounds === null || guard.total_rounds === undefined) {
+      throw new Error("Session not found");
+    }
+    if (guard.mode !== "async") {
+      throw new Error("submitGuessAsync can only be used in async sessions");
+    }
+    if (roundIndex >= guard.total_rounds) {
+      throw new Error("roundIndex out of bounds for this session");
+    }
+
+    // Idempotent return if this round is already complete.
+    if (guard.round_complete) {
+      await client.query("COMMIT");
+      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      if (!snapshot) throw new Error("Session not found");
+      return snapshot;
+    }
+
+    // Idempotent return if a commit already exists (concurrent submission).
+    if (guard.has_existing_commit) {
+      await client.query("COMMIT");
+      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      if (!snapshot) throw new Error("Session not found");
+      return snapshot;
+    }
+
+    // The requested round must be the player's current expected round.
+    const expectedRoundIndex = (guard.last_complete_round ?? -1) + 1;
+    if (roundIndex !== expectedRoundIndex) {
+      throw new Error(`Round ${roundIndex} is not the player's current round (expected ${expectedRoundIndex})`);
+    }
+
+    // Ensure the per-player ROUND_STARTED row exists for this round.
+    const startedResult = await client.query<{ exists: boolean }>(
+      `SELECT EXISTS(
+         SELECT 1 FROM player_round_events
+         WHERE game_id = $1 AND player_id = $2 AND round_index = $3 AND event_type = 'ROUND_STARTED'
+       ) AS exists`,
+      [gameId, playerId, roundIndex]
+    );
+    if (!startedResult.rows[0].exists) {
+      const startedToken = generateVerificationToken();
+      await client.query(
+        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+         VALUES ($1, $2, $3, 'ROUND_STARTED', $4::jsonb, now(), $5)
+         ON CONFLICT DO NOTHING`,
+        [gameId, playerId, roundIndex, JSON.stringify({ startedAt: new Date().toISOString() }), startedToken]
+      );
+    }
+
+    const eventIds = guard.session_event_ids;
+    if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) {
+      throw new Error("Event ID not found for round index");
+    }
+
+    const event = await fetchEventById(eventIds[roundIndex], client);
+    if (!event) throw new Error("Could not load event");
+
+    const hintRows = hintsUsed.length > 0
+      ? (await client.query<{ id: string; type: string; tier: number }>(
+          `SELECT id, type, tier FROM hints WHERE id = ANY($1::uuid[])`,
+          [hintsUsed]
+        )).rows
+      : [];
+
+    let whenPenaltyRate = 0;
+    let wherePenaltyRate = 0;
+    for (const h of hintRows) {
+      const p = TIER_PENALTY_RATE[h.tier] ?? 0;
+      if (h.type === 'when') whenPenaltyRate += p;
+      if (h.type === 'where') wherePenaltyRate += p;
+    }
+    whenPenaltyRate = Math.min(whenPenaltyRate, 100);
+    wherePenaltyRate = Math.min(wherePenaltyRate, 100);
+
+    const referenceYear = guard.scoring_reference_year ?? 2025;
+
+    const result = evaluateRound(
+      event,
+      { year: yearGuess, location: locationGuess },
+      roundIndex,
+      false,
+      whenPenaltyRate,
+      wherePenaltyRate,
+      referenceYear
+    );
+
+    const score = result.roundXp;
+    const hintsUsedCount = hintsUsed.length;
+
+    if (hintRows.length > 0) {
+      const hintValues = hintRows.map((_, i) => {
+        const base = i * 4;
+        return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`;
+      }).join(', ');
+      const hintParams = hintRows.flatMap(h => [gameId, playerId, roundIndex, h.id]);
+      await client.query(
+        `INSERT INTO round_hints (game_id, player_id, round_index, hint_id)
+         VALUES ${hintValues}
+         ON CONFLICT DO NOTHING`,
+        hintParams
+      );
+    }
+
+    const commitToken = generateVerificationToken();
+    verifyLog("INSERT", "round_commits", "OK", `player_id=${playerId} round=${roundIndex} score=${score} token=${commitToken.slice(0, 8)}... — async executing`);
+    const insertResult = await client.query(
+      `INSERT INTO round_commits
+         (game_id, player_id, round_index, submitted_at, year_guess,
+          location_lat, location_lng, hints_used, score,
+          acc_penalty, acc_penalty_when, acc_penalty_where,
+          acc_penalty_when_rate, acc_penalty_where_rate,
+          verification_token)
+       VALUES ($1, $2, $3, now(), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       ON CONFLICT (game_id, player_id, round_index) DO NOTHING`,
+      [
+        gameId,
+        playerId,
+        roundIndex,
+        yearGuess,
+        locationGuess?.lat ?? null,
+        locationGuess?.lng ?? null,
+        hintsUsedCount,
+        score,
+        whenPenaltyRate + wherePenaltyRate,
+        whenPenaltyRate,
+        wherePenaltyRate,
+        whenPenaltyRate,
+        wherePenaltyRate,
+        commitToken
+      ]
+    );
+
+    if ((insertResult as unknown as { rowCount: number | null }).rowCount === 0) {
+      await client.query("COMMIT");
+      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      if (!snapshot) throw new Error("Session not found");
+      return snapshot;
+    }
+
+    const guessToken = generateVerificationToken();
+    await client.query(
+      `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+       VALUES ($1, $2, $3, 'GUESS_SUBMITTED', $4::jsonb, now(), $5)`,
+      [gameId, playerId, roundIndex, JSON.stringify({ playerId, yearGuess, score, verificationToken: commitToken }), guessToken]
+    );
+
+    const resultToken = generateVerificationToken();
+    await client.query(
+      `INSERT INTO round_results
+         (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token)
+       VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $8, $9)
+       ON CONFLICT (game_id, round_index, player_id) DO NOTHING`,
+      [
+        gameId,
+        roundIndex,
+        playerId,
+        score,
+        result.distanceKm,
+        result.yearDiff,
+        result.locationAccuracy,
+        result.yearAccuracy,
+        resultToken
+      ]
+    );
+
+    const completeToken = generateVerificationToken();
+    await client.query(
+      `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+       VALUES ($1, $2, $3, 'ROUND_COMPLETE', $4::jsonb, now(), $5)`,
+      [gameId, playerId, roundIndex, JSON.stringify({ score, resultPhaseStartedAt: new Date().toISOString() }), completeToken]
+    );
+
+    if (roundIndex === guard.total_rounds - 1) {
+      const sessionCompleteToken = generateVerificationToken();
+      await client.query(
+        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+         VALUES ($1, $2, $3, 'PLAYER_SESSION_COMPLETE', $4::jsonb, now(), $5)
+         ON CONFLICT DO NOTHING`,
+        [gameId, playerId, roundIndex, JSON.stringify({ totalRounds: guard.total_rounds }), sessionCompleteToken]
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  let snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    await new Promise(r => setTimeout(r, 300));
+    snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  }
+  if (!snapshot) {
+    await new Promise(r => setTimeout(r, 500));
+    snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  }
+  if (!snapshot) throw new Error("Session not found");
+  return snapshot;
+}
+
+export async function advancePlayerRoundAsync(
+  gameId: string,
+  playerId: string,
+  _executionContext?: "partykit" | "api"
+): Promise<CompeteSessionSnapshot> {
+  assertValidExecutionContext({ _executionContext });
+
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':async'))`,
+      [gameId, playerId]
+    );
+
+    const session = await loadSessionRow(gameId, client);
+    if (!session) throw new Error("Session not found");
+    if (session.mode !== "async") {
+      throw new Error("advancePlayerRoundAsync can only be used in async sessions");
+    }
+
+    const lastCompleteResult = await client.query<{ round_index: number | null }>(
+      `SELECT MAX(round_index) AS round_index FROM player_round_events
+       WHERE game_id = $1 AND player_id = $2 AND event_type = 'ROUND_COMPLETE'`,
+      [gameId, playerId]
+    );
+    const lastCompleteRound = lastCompleteResult.rows[0]?.round_index ?? null;
+    const nextRoundIndex = (lastCompleteRound ?? -1) + 1;
+
+    if (nextRoundIndex < session.total_rounds) {
+      const token = generateVerificationToken();
+      await client.query(
+        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+         VALUES ($1, $2, $3, 'ROUND_STARTED', $4::jsonb, now(), $5)
+         ON CONFLICT DO NOTHING`,
+        [gameId, playerId, nextRoundIndex, JSON.stringify({ startedAt: new Date().toISOString() }), token]
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) throw new Error("Session not found");
+  return snapshot;
+}
+
+export async function markPlayerRoundAbsent(
+  gameId: string,
+  playerId: string,
+  roundIndex: number,
+  _executionContext?: "partykit" | "api"
+): Promise<CompeteSessionSnapshot> {
+  assertValidExecutionContext({ _executionContext });
+
+  if (!Number.isInteger(roundIndex) || roundIndex < 0 || roundIndex >= MAX_ROUNDS) {
+    throw new Error("roundIndex must be an integer between 0 and 4");
+  }
+
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':absent'))`,
+      [gameId, playerId]
+    );
+
+    const guardResult = await client.query<{
+      mode: "practice" | "sync" | "async" | "daily";
+      total_rounds: number;
+      scoring_reference_year: number;
+      round_complete: boolean;
+      session_event_ids: string[] | null;
+    }>(
+      `WITH
+        session_meta AS (
+          SELECT mode, total_rounds, scoring_reference_year FROM sessions WHERE game_id = $1
+        ),
+        round_complete AS (
+          SELECT 1 FROM player_round_events
+          WHERE game_id = $1 AND player_id = $2 AND round_index = $3 AND event_type = 'ROUND_COMPLETE'
+          LIMIT 1
+        ),
+        session_created AS (
+          SELECT payload FROM round_events
+          WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+          ORDER BY id ASC LIMIT 1
+        )
+      SELECT
+        (SELECT mode FROM session_meta) AS mode,
+        (SELECT total_rounds FROM session_meta) AS total_rounds,
+        (SELECT scoring_reference_year FROM session_meta) AS scoring_reference_year,
+        EXISTS(SELECT 1 FROM round_complete) AS round_complete,
+        (SELECT (SELECT payload->'eventIds' FROM session_created)::jsonb) AS session_event_ids`,
+      [gameId, playerId, roundIndex]
+    );
+
+    const guard = guardResult.rows[0];
+    if (!guard || guard.total_rounds === null || guard.total_rounds === undefined) {
+      throw new Error("Session not found");
+    }
+    if (guard.mode !== "async") {
+      throw new Error("markPlayerRoundAbsent can only be used in async sessions");
+    }
+
+    if (guard.round_complete) {
+      await client.query("COMMIT");
+      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+      if (!snapshot) throw new Error("Session not found");
+      return snapshot;
+    }
+
+    const eventIds = guard.session_event_ids;
+    if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) {
+      throw new Error("Event ID not found for round index");
+    }
+    const event = await fetchEventById(eventIds[roundIndex], client);
+    if (!event) throw new Error("Could not load event");
+
+    const referenceYear = guard.scoring_reference_year ?? 2025;
+    const result = evaluateRound(
+      event,
+      { year: null, location: null },
+      roundIndex,
+      false,
+      0,
+      0,
+      referenceYear
+    );
+
+    const commitToken = generateVerificationToken();
+    await client.query(
+      `INSERT INTO round_commits
+         (game_id, player_id, round_index, submitted_at, year_guess,
+          location_lat, location_lng, hints_used, score, absent,
+          acc_penalty, acc_penalty_when, acc_penalty_where,
+          acc_penalty_when_rate, acc_penalty_where_rate,
+          verification_token)
+       VALUES ($1, $2, $3, now(), NULL, NULL, NULL, 0, 0, TRUE, 0, 0, 0, 0, 0, $4)
+       ON CONFLICT (game_id, player_id, round_index) DO NOTHING`,
+      [gameId, playerId, roundIndex, commitToken]
+    );
+
+    const resultToken = generateVerificationToken();
+    await client.query(
+      `INSERT INTO round_results
+         (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token)
+       VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $8, $9)
+       ON CONFLICT (game_id, round_index, player_id) DO NOTHING`,
+      [gameId, playerId, roundIndex, 0, result.distanceKm, result.yearDiff, result.locationAccuracy, result.yearAccuracy, resultToken]
+    );
+
+    const completeToken = generateVerificationToken();
+    await client.query(
+      `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+       VALUES ($1, $2, $3, 'ROUND_COMPLETE', $4::jsonb, now(), $5)
+       ON CONFLICT DO NOTHING`,
+      [gameId, playerId, roundIndex, JSON.stringify({ absent: true, score: 0, resultPhaseStartedAt: new Date().toISOString() }), completeToken]
+    );
+
+    if (roundIndex === guard.total_rounds - 1) {
+      const sessionCompleteToken = generateVerificationToken();
+      await client.query(
+        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+         VALUES ($1, $2, $3, 'PLAYER_SESSION_COMPLETE', $4::jsonb, now(), $5)
+         ON CONFLICT DO NOTHING`,
+        [gameId, playerId, roundIndex, JSON.stringify({ totalRounds: guard.total_rounds }), sessionCompleteToken]
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  // Advance the player to the next round using the same per-player authority.
+  // This function is defined here but not yet wired to any timer trigger; Phase 2
+  // will connect DO alarms / on-access expiry checks to it.
+  return advancePlayerRoundAsync(gameId, playerId, _executionContext);
 }
 
 async function insertMissingCommits(
