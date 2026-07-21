@@ -248,3 +248,81 @@ export function deriveStateFromEventStream(inputEvents: RoundEvent[]): {
 
   return { currentRound, currentPhase };
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// PER-PLAYER PHASE AUTHORITY — Compete Relax (async) only
+// Mirrors the global FSM above but scoped to a single player's event stream in
+// player_round_events. Reuses the same deterministic principles.
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Valid phase transitions for a single player's per-round event stream.
+ * PLAYER_SESSION_COMPLETE is terminal.
+ */
+export const VALID_PLAYER_PHASE_TRANSITIONS: Record<string, Set<string>> = {
+  "ROUND_STARTED": new Set(["GUESS_SUBMITTED", "ROUND_COMPLETE"]),
+  "GUESS_SUBMITTED": new Set(["ROUND_COMPLETE"]),
+  "ROUND_COMPLETE": new Set(["ROUND_STARTED", "PLAYER_SESSION_COMPLETE"]),
+  "PLAYER_SESSION_COMPLETE": new Set([])
+};
+
+export type PlayerRoundEvent = {
+  id: number;
+  roundIndex: number;
+  eventType: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+};
+
+/**
+ * Derive current round and phase for one player from their own player_round_events.
+ * Assumes events are ordered by id ASC (chronological). Empty stream returns
+ * currentRound 0 / currentPhase null — caller must apply session-level defaults.
+ */
+export function derivePlayerStateFromEventStream(inputEvents: PlayerRoundEvent[]): {
+  currentRound: number;
+  currentPhase: string | null;
+} {
+  const events = [...inputEvents];
+  Object.freeze(events);
+
+  if (events.length === 0) {
+    return { currentRound: 0, currentPhase: null };
+  }
+
+  const firstEvent = events[0];
+  const validInitialPhases = new Set(["ROUND_STARTED"]);
+  if (!validInitialPhases.has(firstEvent.eventType)) {
+    throw new Error(
+      `INVALID_PLAYER_PHASE_TRANSITION: First per-player event (id=${firstEvent.id}) ` +
+      `has phase "${firstEvent.eventType}" but must be one of: ${Array.from(validInitialPhases).join(", ")}.`
+    );
+  }
+
+  for (let i = 1; i < events.length; i++) {
+    const prevEvent = events[i - 1];
+    const currEvent = events[i];
+    const allowedNextPhases = VALID_PLAYER_PHASE_TRANSITIONS[prevEvent.eventType];
+    if (allowedNextPhases === undefined) {
+      throw new Error(
+        `INVALID_PLAYER_PHASE_TRANSITION: Per-player event ${prevEvent.id} has unknown phase "${prevEvent.eventType}".`
+      );
+    }
+    if (!allowedNextPhases.has(currEvent.eventType)) {
+      throw new Error(
+        `INVALID_PLAYER_PHASE_TRANSITION: Cannot transition from "${prevEvent.eventType}" ` +
+        `(event ${prevEvent.id}) to "${currEvent.eventType}" (event ${currEvent.id}). ` +
+        `Allowed transitions from "${prevEvent.eventType}": [${Array.from(allowedNextPhases).join(", ") || "(none — terminal state)"}]`
+      );
+    }
+  }
+
+  const lastEvent = events[events.length - 1];
+  if (!lastEvent.eventType) {
+    throw new Error(
+      `MISSING_PLAYER_PHASE_EVENT: Last per-player event (id=${lastEvent.id}) has no eventType.`
+    );
+  }
+
+  return { currentRound: lastEvent.roundIndex ?? 0, currentPhase: lastEvent.eventType };
+}
