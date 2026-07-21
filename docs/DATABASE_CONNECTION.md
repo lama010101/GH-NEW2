@@ -1,182 +1,162 @@
 # Database Connection Guide
 
-This guide helps coders connect to the GENERATOR project database and troubleshoot common connection issues.
+This guide documents how the Guess-History application connects to Supabase (Postgres + PostgREST) and how developers can verify that connection.
 
-## Quick Start
+The authoritative connection setup lives in:
 
-### Prerequisites
-- Node.js 18+ installed
-- Project dependencies installed (`npm install`)
-- Access to the Supabase project credentials
+- `src/core/supabaseBrowser.ts` — browser-side Supabase client
+- `src/core/supabaseServer.ts` — server-side Supabase clients
+- `src/server/db.ts` — direct `pg` pool used by server-side game logic
 
-### Step 1: Environment Setup
-Copy the example environment file:
-```bash
-cp .env.example .env.local
-```
+## Required environment variables
 
-### Step 2: Fill Required Variables
-Edit `.env.local` with the following required variables:
+Create a `.env.local` file in the repo root. The variables that must be present for local development are:
 
 ```env
-# Supabase Project Configuration
-SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-SUPABASE_SECRET_KEY=your-secret-key
+# Supabase PostgREST endpoint (public + used by SSR/auth)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-# Database Connection (REQUIRED)
-SUPABASE_DB_PASSWORD=your-db-password
+# Supabase Service Role key (server-side only, never exposed to the browser)
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Direct PostgreSQL connection string (used by src/server/db.ts Pool)
+# Use the Supabase pooler/transaction string, e.g.:
 SUPABASE_DB_CONNECTION=postgresql://postgres.project-ref:password@aws-1-us-east-2.pooler.supabase.com:6543/postgres
 ```
 
-### Step 3: Test Connection
-Run the database inspection script:
-```bash
-npm run db:inspect
-```
+### Optional variables
 
-Or run the detailed report:
-```bash
-npx tsx scripts/simple_db_report.ts
-```
+- `SUPABASE_DB_POOLER` — some scripts prefer this variable and fall back to `SUPABASE_DB_CONNECTION`
+- `NEXT_PUBLIC_PARTY_KIT_HOST` — PartyKit durable object host, e.g. `localhost:1999` for local dev
+- `PARTYKIT_SECRET` — used by `src/server/partykitAuth.ts` to authenticate DO requests
+- `ENABLE_ZERO_TRUST=true` — turns on the execution-proof verification system in `src/server/db.ts`
+- `ADMIN_BYPASS_TOKEN` — optional middleware bypass token
 
-## Connection Methods
+## Connection patterns
 
-### Method 1: Supabase Client (Recommended)
-Use the built-in Supabase client for application-level operations:
+### 1. Server-side direct PostgreSQL pool
+
+Game engine code uses the singleton pool from `src/server/db.ts`:
+
 ```typescript
-import { getSupabaseServerClient } from '../src/lib/supabaseServer';
+import { getDbPool } from "@/server/db";
 
-const supabase = getSupabaseServerClient();
-const { data, error } = await supabase.from('prompts').select('*');
+const result = await getDbPool().query(
+  "SELECT current_database() AS db, version() AS v"
+);
 ```
 
-### Method 2: Direct PostgreSQL Connection
-For administrative tasks and detailed reporting:
+The pool is created at first use, validates the connection immediately, and hard-fails on startup if `SUPABASE_DB_CONNECTION` is missing. See `src/server/db.ts` lines 29–97.
+
+### 2. Server-side Supabase client (service role)
+
+For server components / API routes that need PostgREST access with RLS bypass:
+
 ```typescript
-import { Pool } from 'pg';
+import { createSupabaseServerClient } from "@/core/supabaseServer";
 
-const pool = new Pool({
-  connectionString: process.env.SUPABASE_DB_CONNECTION,
-  ssl: { rejectUnauthorized: false }
-});
+const supabase = createSupabaseServerClient();
+const { data, error } = await supabase.from("sessions").select("*");
+```
 
-const result = await pool.query('SELECT COUNT(*) FROM prompts');
+### 3. Cookie-authenticated server client
+
+For API routes that must act on behalf of the logged-in user:
+
+```typescript
+import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+
+const supabase = createAuthenticatedServerClient();
+```
+
+### 4. Browser client
+
+Client components import the singleton browser client:
+
+```typescript
+import { supabaseBrowser } from "@/core/supabaseBrowser";
+```
+
+## Verifying the connection
+
+### Validate the connection-string format
+
+```bash
+npx tsx scripts/validateConnection.ts
+```
+
+### List all database tables
+
+```bash
+npx tsx --env-file=.env.local scripts/listTables.ts
+```
+
+### Inspect core multiplayer schema
+
+```bash
+npx tsx --env-file=.env.local scripts/check_schema.ts
+```
+
+### Audit core tables and RLS status
+
+```bash
+npx tsx --env-file=.env.local scripts/audit-tables.ts
+```
+
+### Apply local SQL migrations
+
+Historical seed migrations live in `scripts/migrations/` and can be applied manually:
+
+```bash
+npx tsx --env-file=.env.local scripts/runMigrations.ts
+```
+
+Production/current migrations live in `supabase/migrations/` and are normally applied with the Supabase CLI:
+
+```bash
+supabase db push
 ```
 
 ## Troubleshooting
 
-### Common Issues
+### "SUPABASE_DB_CONNECTION environment variable is REQUIRED"
 
-#### 1. "Missing environment variable" Error
-**Cause:** Required environment variables not set in `.env.local`
-**Solution:** Ensure all required variables are present:
-```env
-SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-SUPABASE_SECRET_KEY=
-SUPABASE_DB_PASSWORD=
-SUPABASE_DB_CONNECTION=
-```
+`src/server/db.ts` refuses to start without a direct Postgres connection. Ensure `.env.local` contains a valid `SUPABASE_DB_CONNECTION` string and that your shell has loaded it (e.g. `source .env.local` or use `--env-file=.env.local` with `tsx`).
 
-#### 2. "Invalid API key" Error
-**Cause:** Incorrect or expired Supabase keys
-**Solution:** 
-- Verify keys in Supabase dashboard
-- Ensure service role key (not anon key) is used
-- Check for trailing spaces or special characters
+### "NEXT_PUBLIC_SUPABASE_URL is not set"
 
-#### 3. "getaddrinfo ENOTFOUND" Error
-**Cause:** Network connectivity or incorrect connection string
-**Solution:**
-- Verify Supabase URL format: `https://project-ref.supabase.co`
-- Check connection string format: `postgresql://postgres.project-ref:password@host:port/database`
-- Ensure no firewall blocks the connection
+The browser client and SSR helpers require `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. These variables must be present at build time and at runtime.
 
-#### 4. SSL/TLS Certificate Issues
-**Cause:** SSL verification problems
-**Solution:** Add SSL configuration to pool:
-```typescript
-const pool = new Pool({
-  connectionString: process.env.SUPABASE_DB_CONNECTION,
-  ssl: { 
-    rejectUnauthorized: false  // For development only
-  }
-});
-```
+### "Invalid API key"
 
-### Debug Steps
+- Confirm the key in `SUPABASE_SERVICE_ROLE_KEY` is the service-role key, not the anon key.
+- Check for trailing whitespace or newlines in `.env.local`.
+- Verify the key is still valid in the Supabase dashboard.
 
-1. **Verify Environment Loading**
-```bash
-npx tsx -e "
-import * as dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅' : '❌');
-console.log('SUPABASE_DB_CONNECTION:', process.env.SUPABASE_DB_CONNECTION ? '✅' : '❌');
-"
-```
+### `getaddrinfo ENOTFOUND` / connection timeout
 
-2. **Test Basic Connectivity**
-```bash
-npx tsx scripts/simple_db_report.ts
-```
+- Confirm the project ref in `NEXT_PUBLIC_SUPABASE_URL` matches the user in `SUPABASE_DB_CONNECTION`.
+- For the pooler string, use the host and port shown in Supabase Dashboard → Database → Connect → "Transaction" pooler.
+- Ensure no local firewall/VPN is blocking port `6543`.
 
-3. **Check Supabase Client**
-```bash
-npx tsx -e "
-import '../src/infrastructure/env/loadEnvironment';
-const { getSupabaseServerClient } = require('../src/lib/supabaseServer');
-const supabase = getSupabaseServerClient();
-supabase.from('prompts').select('count').then(console.log).catch(console.error);
-"
-```
+### SSL certificate errors
 
-## Database Schema Overview
+The `pg` pool sets `ssl: { rejectUnauthorized: false }` for development. Do not disable SSL verification in production.
 
-### Core Tables
-- **prompts** (40 columns) - Main prompt entities
-- **auth_model_results** (9 columns) - Verification results
-- **auth_reports** (8 columns) - Verification reports
-- **prompt_verifications** (6 columns) - Verification tracking
+## Security notes
 
-### Observability Tables
-- **verification_audit_log** - Audit trail
-- **verification_metrics** - Performance metrics
-- **promotion_audit_log** - Promotion tracking
+- Never commit `.env.local` or any file containing service-role keys.
+- Use `SUPABASE_SERVICE_ROLE_KEY` only in server-side code.
+- The browser client must use `NEXT_PUBLIC_SUPABASE_ANON_KEY` only.
+- All state mutations must go through `src/server/sessionCore.ts` and be written to PostgreSQL; PartyKit is a runtime executor, not a source of truth.
 
-### Key Constraints
-- Unique fingerprint constraint on prompts table
-- Foreign key relationships between verification tables
-- Comprehensive indexing for performance
+## Useful scripts reference
 
-## Best Practices
-
-### Security
-- Never commit `.env.local` to version control
-- Use service role keys only for server-side operations
-- Rotate keys regularly in production
-
-### Performance
-- Use the Supabase client for application code
-- Use direct PostgreSQL only for administrative tasks
-- Leverage existing indexes for queries
-
-### Development
-- Test connections after environment changes
-- Use the provided scripts for verification
-- Check the database report before major changes
-
-## Getting Help
-
-1. Check this guide first for common issues
-2. Run the diagnostic scripts provided
-3. Verify environment variables are correctly set
-4. Consult the project architecture documentation
-
-## Scripts Reference
-
-- `npm run db:inspect` - Basic table accessibility check
-- `npx tsx scripts/simple_db_report.ts` - Comprehensive database report
-- `npm run db:test` - Supabase connectivity test
-- `npm run env:check` - Environment validation
+| Script | Purpose |
+|---|---|
+| `scripts/validateConnection.ts` | Parse and DNS-check `SUPABASE_DB_CONNECTION` |
+| `scripts/listTables.ts` | List every table by schema |
+| `scripts/check_schema.ts` | Inspect `sessions` / `session_players` columns |
+| `scripts/audit-tables.ts` | Check core tables, columns, and RLS |
+| `scripts/runMigrations.ts` | Apply all `.sql` files under `scripts/migrations/` |

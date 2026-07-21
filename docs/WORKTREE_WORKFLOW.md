@@ -4,7 +4,7 @@ We use git worktrees to avoid file-collision incidents between concurrent tracks
 
 ## Two-tier workflow
 
-- **Architecture / CTO tasks:** work in the main checkout (`D:/GH-NEW2`) on `main`.
+- **Architecture / CTO tasks:** work in the main checkout (`<repo-root>`, e.g. `GH-NEW2`) on `main`.
 - **UI / polish tasks:** create a dedicated worktree with `new-uix-worktree.sh`.
 
 ## Typical task flow
@@ -13,14 +13,14 @@ We use git worktrees to avoid file-collision incidents between concurrent tracks
    ```bash
    ./scripts/dev/new-uix-worktree.sh css-theme
    ```
-2. Do normal development in `../GH-NEW-uix-css-theme`.
+2. Do normal development in `<repo-root>/../GH-NEW-uix-css-theme`.
 3. Before merging, run the overlap check from the main checkout:
    ```bash
    ./scripts/dev/check-protected-overlap.sh uix/css-theme
    ```
 4. Merge the branch, then remove the worktree:
    ```bash
-   git worktree remove ../GH-NEW-uix-css-theme --force
+   git worktree remove <repo-root>/../GH-NEW-uix-css-theme --force
    git branch -D uix/css-theme
    ```
 
