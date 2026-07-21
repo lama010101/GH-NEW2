@@ -2,7 +2,7 @@
 
 ## 0. AUTHORITY
 
-**PRIMARY:** `docs/MASTER IMPLEMENTATION PLAN — MULTIPLAYER CORE.md` Section 0.3
+**PRIMARY:** `docs/GUESS_HISTORY_MASTER_SPEC.md` (architecture and replay contract) and `docs/core/EVENT_STREAM_SPEC.md` (event stream source of truth)
 
 **Status:** CANONICAL — All deterministic behavior MUST comply.
 

@@ -2,7 +2,7 @@
 **Project:** Guess-History  
 **Document:** HOME_PAGE_SPEC.md  
 **Version:** 1.0  
-**Status:** AUTHORITATIVE  
+**Status:** AUTHORITATIVE — v1.0 (2026-04-28). The implementation has since evolved; see `src/app/home/page.tsx` and related components for the current UI.  
 **Date:** 2026-04-28  
 
 ---

@@ -23,8 +23,9 @@ Round ends when:
 SYNC MODE:
 - timer expired OR all players submitted
 
-ASYNC MODE:
-- all players submitted OR session deadline reached
+ASYNC MODE (Relax — Option A):
+- per-player: the individual player submitted OR their optional per-round timer expired
+- session-wide: session deadline reached (finalizes unsubmitted rounds as 0 for all remaining players)
 
 ---
 

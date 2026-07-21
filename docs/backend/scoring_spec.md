@@ -20,17 +20,17 @@ Source: `round_commits`
 
 For each player:
 
-- guess_lat
-- guess_lng
-- guess_year
-- hints_used
-- submitted_at
+- `year_guess`
+- `location_lat`
+- `location_lng`
+- `hints_used`
+- `submitted_at`
 
-Source: event data (server-side)
+Source: event data (`events` table, server-side)
 
-- actual_lat
-- actual_lng
-- actual_year
+- `location_lat`
+- `location_lng`
+- `correct_year`
 
 ---
 
@@ -74,7 +74,7 @@ locationScore = locationAccuracy
 
 ## 5. TIME SCORE
 
-yearDiff = abs(guess_year - actual_year)
+yearDiff = abs(year_guess - correct_year)
 
 Era scaling: older events are harder to guess the year for, so the effective
 year difference is divided by eraScale (>= 1). referenceYear is frozen at
