@@ -24,7 +24,7 @@ export async function PATCH(_request: NextRequest) {
 
   const { user } = auth;
 
-  let body: { display_name?: unknown };
+  let body: { display_name?: unknown; welcome_completed?: unknown };
   try {
     body = await _request.json();
   } catch {
@@ -34,6 +34,11 @@ export async function PATCH(_request: NextRequest) {
   const displayNameRaw = body.display_name;
   if (typeof displayNameRaw !== "string") {
     return NextResponse.json({ error: "display_name is required" }, { status: 400 });
+  }
+
+  const welcomeCompletedRaw = body.welcome_completed;
+  if (welcomeCompletedRaw !== undefined && typeof welcomeCompletedRaw !== "boolean") {
+    return NextResponse.json({ error: "welcome_completed must be a boolean" }, { status: 400 });
   }
 
   const displayName = displayNameRaw.trim();
@@ -47,12 +52,17 @@ export async function PATCH(_request: NextRequest) {
   const serviceRoleClient = createSupabaseServerClient();
 
   try {
+    const updateData: { display_name: string; updated_at: string; welcome_completed?: boolean } = {
+      display_name: displayName,
+      updated_at: new Date().toISOString(),
+    };
+    if (welcomeCompletedRaw === true) {
+      updateData.welcome_completed = true;
+    }
+
     const { error: updateError } = await serviceRoleClient
       .from("profiles")
-      .update({
-        display_name: displayName,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", user.id);
 
     if (updateError) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, type IdentityState } from '@/core/identity'
@@ -23,6 +23,7 @@ function HomePageInner() {
 
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
   const [kickedMessage, setKickedMessage] = useState<string | null>(null)
+  const currentPlayerId = (identity as { status: string; playerId?: string }).playerId
 
   useEffect(() => {
     if (searchParams.get('kicked') === '1') {
@@ -51,8 +52,9 @@ function HomePageInner() {
   } | null>(null)
   const [welcomeLoading, setWelcomeLoading] = useState(false)
   const welcomeHandledRef = useRef(false)
+  const [welcomeCompleted, setWelcomeCompleted] = useState<boolean | null>(null)
 
-  const triggerAssignAvatar = () => {
+  const triggerAssignAvatar = useCallback(() => {
     if (welcomeHandledRef.current) return
     welcomeHandledRef.current = true
     setWelcomeLoading(true)
@@ -69,16 +71,13 @@ function HomePageInner() {
       })
       .catch(() => {})
       .finally(() => setWelcomeLoading(false));
-  }
+  }, [])
 
   useEffect(() => {
     bootstrapIdentity().then((state) => {
       setIdentity(state);
       if (state.status === 'unauthenticated') {
         router.replace('/login?next=/home');
-      }
-      if (state.status === 'ready' && state.isNewUser) {
-        triggerAssignAvatar();
       }
     })
     return subscribeToIdentityChanges((state) => {
@@ -87,13 +86,25 @@ function HomePageInner() {
         router.replace('/login?next=/home');
         return;
       }
-      if (state.status === 'ready') {
-        if (state.isNewUser) {
-          triggerAssignAvatar();
-        }
-      }
     });
   }, [router])
+
+  // Reset the one-shot welcome guard whenever the authenticated player changes
+  // so a different account in the same browser context gets its own onboarding.
+  useEffect(() => {
+    welcomeHandledRef.current = false
+  }, [currentPlayerId])
+
+  // Trigger the welcome flow only when we know the persisted flag is false.
+  // The profile fetch effect below is the single source of truth for welcome_completed.
+  useEffect(() => {
+    if (identity.status !== 'ready') return
+    if (!identity.isNewUser) return
+    if (welcomeCompleted === null) return
+    if (welcomeCompleted) return
+    if (welcomeHandledRef.current) return
+    triggerAssignAvatar()
+  }, [identity, welcomeCompleted, triggerAssignAvatar])
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
@@ -129,10 +140,11 @@ function HomePageInner() {
         }
       } catch {}
       try {
-        const { data: profile } = await supabaseBrowser.from('profiles').select('display_name,avatar_url').eq('id', pid).single()
+        const { data: profile } = await supabaseBrowser.from('profiles').select('display_name,avatar_url,welcome_completed').eq('id', pid).single()
         if (cancelled) return
         if (profile) {
           setAvatarUrl(profile.avatar_url ?? null)
+          setWelcomeCompleted(profile.welcome_completed ?? false)
           if (profile.display_name) setInitials(profile.display_name.slice(0,2).toUpperCase())
         }
       } catch {}
