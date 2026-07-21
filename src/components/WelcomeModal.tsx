@@ -72,7 +72,7 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
     fetch("/api/user/update-username", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ display_name: nextName }),
+      body: JSON.stringify({ display_name: nextName, welcome_completed: true }),
     })
       .then(() => {
         updateCachedDisplayName(nextName);
