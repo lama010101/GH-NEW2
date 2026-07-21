@@ -1314,6 +1314,9 @@ export default class GameServer {
           this.submitInFlight++;
           try {
             const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/guess`;
+            const snapshotMode = isRuntimeState(this.snapshot)
+              ? (this.snapshot as RuntimeState).config?.mode
+              : undefined;
             const response = await fetch(apiUrl, {
               method: "POST",
               headers: {
@@ -1327,6 +1330,7 @@ export default class GameServer {
                 lat: data.lat ?? null,
                 lng: data.lng ?? null,
                 hintsUsed: Array.isArray(data.hintsUsed) ? data.hintsUsed : [],
+                mode: snapshotMode ?? "sync",
               })
             });
             if (!response.ok) {
