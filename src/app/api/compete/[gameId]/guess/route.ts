@@ -21,6 +21,7 @@ export async function POST(
       lat?: number | null;
       lng?: number | null;
       hintsUsed?: string[];
+      mode?: "sync" | "async";
     };
 
     if (gameId.length === 0) {
@@ -45,7 +46,8 @@ export async function POST(
           ? { lat: body.lat, lng: body.lng }
           : null,
       hintsUsed: Array.isArray(body.hintsUsed) ? body.hintsUsed : [],
-      _executionContext: "api"
+      _executionContext: "api",
+      sessionMode: body.mode
     });
 
     // Get results if round is complete
