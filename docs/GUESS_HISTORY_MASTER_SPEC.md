@@ -520,9 +520,11 @@ questionIndex = PRNG(seed + roundNumber)
 2. Validate: player has not already submitted this round
 3. INSERT into round_commits (append-only, idempotent via composite PK)
 4. If duplicate → silently ignore
-5. Emit PLAYER_SUBMITTED to all clients
-6. Check: if all players submitted → trigger round-end logic
+5. Emit PLAYER_SUBMITTED to all clients (sync/Rush)
+6. Check: if all players submitted → trigger round-end logic (sync/Rush)
 ```
+
+For sync (Rush) the round ends once all active players submit or the timer expires. For async (Relax) each player resolves independently; see `docs/backend/round_resolution.md` and `docs/GAME_MODES_SPEC.md` §5.
 
 ### 11.3 Lock Phase
 
@@ -540,6 +542,8 @@ Once `LOCKED` phase begins:
 - Deterministic (same inputs always produce same output)
 - Fully recomputable from DB data alone
 - **Never** compute final scores only in memory
+
+For the exact algorithm and constants, see `docs/backend/scoring_spec.md`.
 
 ### 12.2 Flow
 
