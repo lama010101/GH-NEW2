@@ -225,7 +225,7 @@ After successful task:
 
 Update:
 
-D:\GH-NEW\docs\PROGRESS.md
+D:\GH-NEW2\docs\PROGRESS.md
 
 Must include:
 

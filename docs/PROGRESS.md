@@ -1780,7 +1780,7 @@ All `getGameState` failures (replay validation errors, DB connection errors, FSM
 - Invalid event stream (`deriveStateFromEventStream` FSM violation)
 - DB timeout or connection failure
 **Root Cause Location:**
-`@d:\GH-NEW\src\server\sessionCore.ts:335-341`
+`@d:\GH-NEW2\src\server\sessionCore.ts:335-341`
 **Before:**
 const gameState = await getGameState(gameId).catch((err) => {
   console.error('[loadCompeteSessionSnapshot] getGameState failed for', gameId, err instanceof Error ? err.message : err);
@@ -1824,7 +1824,7 @@ const gameState = await getGameState(gameId);
 **Deliverable:** Fixed TypeScript no-explicit-any error in debug logging by replacing as any cast with explicit type assertion pattern consistent with existing codebase.
 Vercel build failed with error: src/server/sessionCore.ts:1428:81 Error: Unexpected any. Specify a different type.
 Line 1428 was inside diagnostic logging added by MP-DEBUG-SCORE-001, logging INSERT rowCount using (insertResult as any).rowCount.
-d:\GH-NEW\src\server\sessionCore.ts:1428
+d:\GH-NEW2\src\server\sessionCore.ts:1428
 **Changes Made:**
 - Added QueryResult to pg import at line 10
 - Replaced as any cast with as unknown as { rowCount: number | null } pattern
@@ -1840,7 +1840,7 @@ d:\GH-NEW\src\server\sessionCore.ts:1428
 **Deliverable:** Removed unused QueryResult import from pg import on line 10.
 Vercel build failed with error: src/server/sessionCore.ts:10:21 Error: 'QueryResult' is defined but never used.
 QueryResult was added in MP-FIX-BUILD-001 but the final solution used inline type assertion instead, making the import unused.
-d:\GH-NEW\src\server\sessionCore.ts:10
+d:\GH-NEW2\src\server\sessionCore.ts:10
 import type { Pool, QueryResult } from "pg";
 import type { Pool } from "pg";
 - tsc --noEmit confirms zero errors in src/server/sessionCore.ts
@@ -1859,7 +1859,7 @@ import type { Pool } from "pg";
 ### Task MP-FIX-PARTYKIT-BASEURL-001: Set NEXTJS_BASE_URL to production Vercel URL in PartyKit deployment COMPLETE (April 29, 2026)
 **Deliverable:** Fixed PartyKit deployment to call production Vercel URL instead of localhost.
 partykit.json had NEXTJS_BASE_URL set to http://localhost:3000, causing deployed Cloudflare Worker to call localhost instead of production Vercel. All /guess, /complete, and /advance API calls from PartyKit were silently failing in production.
-d:\GH-NEW\partykit.json:8-10
+d:\GH-NEW2\partykit.json:8-10
   "vars": {
     "NEXTJS_BASE_URL": "http://localhost:3000"
   }
@@ -1874,7 +1874,7 @@ Updated worker name from "guess-history-party" to "guess-history-multiplayer" to
 ### Task MP-FIX-PARTYKIT-BASEURL-002: Derive NEXTJS_BASE_URL dynamically from connection Origin header COMPLETE (April 29, 2026)
 **Deliverable:** PartyKit now derives NEXTJS_BASE_URL from connection Origin header instead of hardcoded env var.
 NEXTJS_BASE_URL was hardcoded in partykit.json as localhost:3000, breaking all API calls in production when deployed.
-d:\GH-NEW\partykit/server.ts
+d:\GH-NEW2\partykit/server.ts
 1. Added private field: private detectedBaseUrl: string | null = null;
 2. Updated onConnect to detect base URL from Origin header at connection start
 3. Updated getNextJsBaseUrl() to use detectedBaseUrl first, then fall back to env var

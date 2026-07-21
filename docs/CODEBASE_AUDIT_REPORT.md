@@ -1,4 +1,4 @@
-# GH-NEW Codebase Audit Report
+# GH-NEW2 Codebase Audit Report
 
 **Date:** 2026-06-18
 **Scope:** Full deep investigation — architecture, security, database, frontend, testing, i18n, dependencies, build/deploy, game logic, performance

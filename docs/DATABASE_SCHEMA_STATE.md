@@ -2,7 +2,7 @@
 **Task:** MP-FIX-DOCS-001  
 **Status:** UPDATED — PK VERIFIED, MIGRATION CHAIN DOCUMENTED  
 **Date:** 2026-05-18  
-**Project:** gzvixlvkwjsrtmtybtkf (GH-NEW, us-east-2)  
+**Project:** gzvixlvkwjsrtmtybtkf (GH-NEW2, us-east-2)  
 **Audit:** MP-INV-SCHEMA-PK-001 — PK verified via pg_indexes
 
 ---

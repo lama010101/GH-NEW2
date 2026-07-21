@@ -1,4 +1,4 @@
-# GH-NEW Codebase Audit Report
+# GH-NEW2 Codebase Audit Report
 **Date:** 2025-01-XX
 **Scope:** Full read-only audit covering TypeScript & Logic, Database & Schema, CSS & Visual Consistency, Translations, Architecture & Spec Compliance, and File Hygiene
 

@@ -1,5 +1,5 @@
 # CTO BACKLOG & BUG TRACKER
-**Project:** Guess-History (GH-NEW)
+**Project:** Guess-History (GH-NEW2)
 **Maintained by:** Claude (CTO) — updated via coder prompts, never edited directly by coders without instruction
 **Status:** ACTIVE — single source of truth for bug/task status, supersedes long-form status text in Claude's memory
 

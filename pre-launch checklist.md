@@ -1,6 +1,6 @@
 # PRE-LAUNCH CHECKLIST
 
-## PROJECT: Guess-History (GH-NEW)
+## PROJECT: Guess-History (GH-NEW2)
 ## STATUS: LIVING DOCUMENT — appended to as items are identified
 ## CREATED: 2026-06-19
 
@@ -11,7 +11,7 @@
 This file tracks decisions that are **acceptable now, at pre-launch /
 pre-revenue stage, but become blockers before any commercial launch**
 (public release, monetization, paid acquisition, or any point at which
-GH-NEW stops being internal testing and starts being a product with
+GH-NEW2 stops being internal testing and starts being a product with
 real users and/or revenue).
 
 Items here are not bugs and not "someday" nice-to-haves. They are
@@ -45,7 +45,7 @@ free, immediately working, visually confirmed by Lolo.
 
 **The actual risk:**
 CARTO's published basemaps terms (carto.com/basemaps) state that
-commercial use requires an Enterprise license. GH-NEW is currently
+commercial use requires an Enterprise license. GH-NEW2 is currently
 pre-revenue/internal testing, so this was accepted as a reasonable
 risk for the current stage. It is **not** licensed for a commercial,
 publicly launched, monetized product as currently implemented.
@@ -85,7 +85,7 @@ a Zustand store field (`mapLabelLanguage`), persisted to Supabase via
 Settings, and read by both the map `TileLayer` and the Nominatim
 geocoding client to switch `accept-language`.
 
-GH-NEW's current implementation (MP-IMPL-MAP-LANG-001) hardcodes
+GH-NEW2's current implementation (MP-IMPL-MAP-LANG-001) hardcodes
 English only — no store field, no Supabase column, no Settings UI —
 by deliberate scope decision, shaped so the toggle can be added later
 without restructuring the tile-selection logic itself.
