@@ -1180,7 +1180,7 @@ Only now is the architecture validated.
 - ✅ Missing ROUND_START detected (FSM catches first)
 - ✅ Deterministic replay verified
 - ✅ No fallback/default target allowed
-**Memory Updated:** `docs/memory/backend_architecture.md` — Added "Round Authority Rule" section
+**Memory Updated:** `docs/GUESS_HISTORY_MASTER_SPEC.md` — Added "Round Authority Rule" section
 **Compliance Verified:**
 - ✅ Target set ONLY by ROUND_STARTED
 - ✅ No reassignment of target possible
@@ -1272,9 +1272,9 @@ npm run test zeroTrust.execution
 - Replay validated with exact match
 - Execution proofs v2 emitted with all fields
 **Memory Files Updated:**
-- `docs/memory/backend_architecture.md` → v5 with hard enforcement
-- `docs/memory/operational_rules.md` → DB mandatory at runtime
-- `docs/memory/project_overview.md` → System maturity v5
+- `docs/GUESS_HISTORY_MASTER_SPEC.md` → v5 with hard enforcement
+- `docs/KNOWN_CONSTRAINTS.md` → DB mandatory at runtime
+- `docs/GAME_MODES_SPEC.md` → System maturity v5
 - ✅ System CRASHES at module load if DB not connected
 - ✅ `assertDbConnectionVerified()` prevents fake paths
 - ✅ `acquireConnectionA/B()` return different backend PIDs
@@ -1421,9 +1421,9 @@ verification_token: <uuid_from_db>
 | `verifyWriteCrossConnection()` | Basic existence check |
 - Real DB writes confirmed
 - Execution proofs present for all operations
-- `docs/memory/backend_architecture.md` → v4 with "Execution Proof Layer" section
-- `docs/memory/operational_rules.md` → Real DB enforcement + proof requirements
-- `docs/memory/project_overview.md` → System maturity update
+- `docs/GUESS_HISTORY_MASTER_SPEC.md` → v4 with "Execution Proof Layer" section
+- `docs/KNOWN_CONSTRAINTS.md` → Real DB enforcement + proof requirements
+- `docs/GAME_MODES_SPEC.md` → System maturity update
 - ✅ Real Supabase DB used (no mocks/fakes)
 - ✅ All corruption scenarios FAIL deterministically
 - ✅ Deterministic replay matches EXACTLY
@@ -1465,8 +1465,8 @@ verification_token: <uuid_from_db>
 - "Deterministic replay" → `verifyDeterministicReplay` validates reconstructability
 - "Migration integrity" → `assertMigrationIntegrity` is startup gate
 **Memory Updated:**
-- `docs/memory/backend_architecture.md` — Added "Zero-Trust Verification Layer" section
-- `docs/memory/operational_rules.md` — Documented MP-CORE-LOOP-003 functions and flow
+- `docs/GUESS_HISTORY_MASTER_SPEC.md` — Added "Zero-Trust Verification Layer" section
+- `docs/KNOWN_CONSTRAINTS.md` — Documented MP-CORE-LOOP-003 functions and flow
 ### Task MP-DB-001 through MP-DB-006: Database Schema Tasks ✅ COMPLETE (April 2026)
 **MP-DB-001:** Migration `008_add_sessions_seed.sql` — Added `seed` column to `sessions` table
 - ✅ `game_id` is PK (UUID)
@@ -2328,7 +2328,7 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 **Date:** 2025-01-XX
 **Status:** COMPLETED
 **Files Modified:** None (read-only audit)
-**Description:** Comprehensive audit covering TypeScript & Logic, Database & Schema, CSS & Visual Consistency, Translations, Architecture & Spec Compliance, and File Hygiene. Generated detailed report at docs/AUDIT_REPORT.md.
+**Description:** Comprehensive audit covering TypeScript & Logic, Database & Schema, CSS & Visual Consistency, Translations, Architecture & Spec Compliance, and File Hygiene. Generated detailed report at docs/archive/AUDIT_REPORT_2025.md.
 
 **Key Findings:**
 - TypeScript compilation: PASSED
@@ -2338,7 +2338,7 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 - Auth: Properly gated on home page
 - Tests: 12 passed, 3 failed (era-based year decay calculations)
 
-**Report Location:** docs/AUDIT_REPORT.md
+**Report Location:** docs/archive/AUDIT_REPORT_2025.md
 
 ## Text Changes - 2026-06-11
 - File modified: src/i18n/en.json
