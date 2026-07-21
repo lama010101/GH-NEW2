@@ -14,10 +14,10 @@ This document is the single source of truth for the implementation of **Daily mo
 
 Binding references:
 - `docs/GAME_MODES_SPEC.md` §1 (universal round structure), §3 (Daily)
-- `docs/LEADERBOARD_SYSTEM.md` v2.0 §6.2, §6.3, §7.1, §7.2, §8.4
+- the leaderboard system (see `GAME_MODES_SPEC.md` §3.5 and `DATABASE_SCHEMA_STATE.md` for table definitions)
 - `docs/STATS_SYSTEM.md` (single-writer, game-end-only)
 - `docs/BADGE_SYSTEM.md` (per-round evaluation, never persisted)
-- `docs/PROGRESSION_SYSTEM.md` v1.1 (Rank/Title triggers from Daily)
+- the progression system (Rank/Title triggers from Daily; see `src/core/rank.ts`)
 - `docs/DATABASE_SCHEMA_STATE.md`
 - Stats overhaul ruling: `player_global_stats` is **LOCKED** — no new columns. New metrics go to `player_progression_stats`, `player_accuracy_history`, `player_era_stats`.
 
@@ -201,7 +201,7 @@ Runs exactly once, when round 5's result is confirmed (or on lazy finalization �
 ```
 BEGIN
   1. leaderboard_daily INSERT (date, player_id, avg_accuracy, total_xp)
-     ON CONFLICT DO NOTHING                    -- LEADERBOARD_SYSTEM §8.4
+     ON CONFLICT DO NOTHING                    -- leaderboard system: duplicate-day no-op
   2. IF rows_inserted = 1:
      leaderboard_daily_alltime UPSERT
        (running avg_accuracy, total_xp += session xp, games_played += 1)
@@ -216,13 +216,12 @@ BEGIN
      never persisted standalone)
   8. daily_attempts.status = 'completed', completed_at = now()
 COMMIT
-Then (outside transaction): Rank/Title re-evaluation per
-PROGRESSION_SYSTEM.md v1.1 — Rank reads
+Then (outside transaction): Rank/Title re-evaluation per the progression system — rank reads
 leaderboard_levelup.total_xp + leaderboard_daily_alltime.total_xp.
 ```
 
 Notes:
-- Steps 1–2 atomicity and the duplicate-day no-op cascade are exactly `LEADERBOARD_SYSTEM.md` §8.4. Do not reimplement differently.
+- Steps 1–2 atomicity and the duplicate-day no-op cascade are handled by the leaderboard system. Do not reimplement differently.
 - The exact column contracts for steps 4–6 are owned by the stats-overhaul plan (MP-PLAN-STATS-OVERHAUL-001). If those tables do not yet exist when Daily ships, steps 4–6 are implemented against that plan's approved schema in the same task chain — Daily MUST NOT invent parallel columns.
 - Shipping Daily unlocks the deferred migrations MP-WRITE-STATS-006 and MP-MIG-STATS-005 (Compete removal from `player_global_stats`). Those remain **separate tasks** — not part of the Daily implementation.
 
@@ -278,7 +277,7 @@ All under the direct API stack, authenticated, server-side scoring. Exact route 
 | `POST /api/daily/start` | Runs §6. Returns gameId + round 1 payload + `phaseEndsAt`. Idempotent: returns existing attempt on double-call. |
 | `POST /api/daily/{gameId}/guess` | Round submission → server scores → writes commits/results → returns result payload (correct answer revealed here only). Idempotent via composite PK. |
 | `POST /api/daily/{gameId}/advance` | Confirms result viewed, issues next round payload + fresh `phaseEndsAt`; on round 5 triggers §8 and returns final-screen payload. |
-| `GET /api/daily/leaderboard?view=today\|alltime&date=` | Top 50 + requesting player's own rank, per `LEADERBOARD_SYSTEM.md` §6.2/§6.3. |
+| `GET /api/daily/leaderboard?view=today\|alltime&date=` | Top 50 + requesting player's own rank. |
 
 Security: every gameId-scoped route verifies the authenticated uid owns the attempt (BOLA check — same class as the Compete GET-route fixes). Standing rule 3 applies: task must include an explicit unauthenticated-curl check.
 
@@ -290,7 +289,7 @@ Security: every gameId-scoped route verifies the authenticated uid owns the atte
 /daily                          entry — status-driven (play / resume / result)
 /daily/game/{gameId}/round/{n}  round play
 /daily/game/{gameId}/results    final screen (also the read-only revisit view)
-/leaderboard → Daily tab        per LEADERBOARD_SYSTEM.md §9.1
+/leaderboard → Daily tab
 ```
 
 Home page Daily card states: **Play** (not started) / **Resume** (in progress) / **Done ✓ + countdown** (completed/expired).
@@ -303,8 +302,8 @@ Timestamped migrations (current repo convention), applied with the direct-pg fal
 
 1. `create_daily_challenges` — §4.2 + RLS
 2. `create_daily_attempts` — §5.1 + RLS
-3. `create_leaderboard_daily` + index — exactly `LEADERBOARD_SYSTEM.md` §7.1 (if not already applied)
-4. `create_leaderboard_daily_alltime` + index — exactly §7.2 (if not already applied)
+3. `create_leaderboard_daily` + index (if not already applied)
+4. `create_leaderboard_daily_alltime` + index (if not already applied)
 
 RLS on all four: SELECT for `authenticated`; no INSERT/UPDATE/DELETE for authenticated (service role writes only). `daily_challenges.event_ids` is safe to expose via SELECT only **after** verifying event IDs alone leak no answers to the client (event rows containing `correct_year`/geo data must not be readable pre-reveal) — if they do, restrict `daily_challenges` SELECT to service role and never ship event IDs to the client before their round.
 
@@ -326,7 +325,7 @@ RLS on all four: SELECT for `authenticated`; no INSERT/UPDATE/DELETE for authent
 
 - Push notification "today's challenge is live" reminders
 - Friends-only daily comparison
-- Weekly/monthly views (deferred per `LEADERBOARD_SYSTEM.md` §13)
+- Weekly/monthly views (deferred)
 - Yesterday's-answers review browsing of past challenges
 - Cron-based pre-generation (lazy generation suffices; a cron can be added later without contract change)
 
@@ -348,7 +347,7 @@ Daily mode is valid ONLY IF:
 - [ ] Stale attempt auto-finalizes with zeros for its original date and unblocks today
 - [ ] Share card output contains no event-identifying information
 - [ ] Unauthenticated curl to every gameId-scoped route returns 401/403
-- [ ] Rank/Title re-evaluation fires at Daily game end per PROGRESSION_SYSTEM v1.1
+- [ ] Rank/Title re-evaluation fires at Daily game end per the progression system
 - [ ] No PartyKit/WebSocket code paths touched
 
 ---
