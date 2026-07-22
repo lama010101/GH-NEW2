@@ -198,6 +198,71 @@ export default function SessionComplete({
         const wonRoundsByMe = leaderboard.find(p => p.playerId === playerId)?.wonRounds.length ?? 0;
         const rankSuffix = (n: number) => n === 1 ? tGame('rank_st') : n === 2 ? tGame('rank_nd') : n === 3 ? tGame('rank_rd') : tGame('rank_th');
 
+        // ── MVP Awards ──
+        type MvpPlayer = {
+          playerId: string;
+          displayName: string;
+          isMe: boolean;
+          stats: NonNullable<ReturnType<typeof computePlayerStats>>;
+          totalScore: number;
+          totalDistanceKm: number;
+          totalYearDiff: number;
+          roundCount: number;
+        };
+
+        const mvpPlayers: MvpPlayer[] = snapshot.players
+          .map((p) => {
+            const playerResults = allRoundResults.filter((r) => r.playerId === p.playerId);
+            const stats = computePlayerStats(p.playerId);
+            if (!stats) return null;
+            return {
+              playerId: p.playerId,
+              displayName: playerLabel(snapshot.players, p.playerId),
+              isMe: p.playerId === playerId,
+              stats,
+              totalScore: stats.totalScore,
+              totalDistanceKm: playerResults.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0),
+              totalYearDiff: playerResults.reduce((sum, r) => sum + (r.yearDiff ?? 0), 0),
+              roundCount: playerResults.length,
+            };
+          })
+          .filter((p): p is MvpPlayer => p !== null && p.roundCount === snapshot.config.totalRounds);
+
+        type MvpCategory = {
+          key: string;
+          label: string;
+          icon: string;
+          getValue: (stats: MvpPlayer['stats']) => number;
+        };
+
+        const mvpAwards = [
+          { key: 'overall', label: tGame('mvp_overall'), icon: '🏆', getValue: (s: MvpPlayer['stats']) => s.avgAccuracy },
+          { key: 'year', label: tGame('mvp_year'), icon: '/badges/when.webp', getValue: (s: MvpPlayer['stats']) => s.avgYearAccuracy },
+          { key: 'location', label: tGame('mvp_location'), icon: '/badges/where.webp', getValue: (s: MvpPlayer['stats']) => s.avgLocationAccuracy },
+          { key: 'consistency', label: tGame('mvp_consistency'), icon: '🏆', getValue: (s: MvpPlayer['stats']) => s.avgConsistency },
+        ]
+          .map((cat) => {
+            if (mvpPlayers.length === 0) return null;
+            const sorted = [...mvpPlayers].sort((a, b) => {
+              const aVal = cat.getValue(a.stats);
+              const bVal = cat.getValue(b.stats);
+              if (bVal !== aVal) return bVal - aVal;
+              if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+              if (a.totalDistanceKm !== b.totalDistanceKm) return a.totalDistanceKm - b.totalDistanceKm;
+              if (a.totalYearDiff !== b.totalYearDiff) return a.totalYearDiff - b.totalYearDiff;
+              return 0;
+            });
+            const first = sorted[0];
+            const winners = sorted.filter((p) => (
+              cat.getValue(p.stats) === cat.getValue(first.stats) &&
+              p.totalScore === first.totalScore &&
+              p.totalDistanceKm === first.totalDistanceKm &&
+              p.totalYearDiff === first.totalYearDiff
+            ));
+            return { ...cat, winners };
+          })
+          .filter((award): award is MvpCategory & { winners: MvpPlayer[] } => award !== null);
+
         // ── Achievements: badges, XP per era/region, stats ──
         const myRoundResults = (allRoundResults ?? []).filter(r => r.playerId === playerId);
         const eraForYear = (year: number): string => {
@@ -429,6 +494,44 @@ export default function SessionComplete({
                     </div>
                   );
                 })}
+                </div>
+              </section>
+              )}
+
+              {!isPractice && snapshot.players.length > 1 && mvpAwards.length > 0 && (
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('mvp_awards')}</h2>
+                </div>
+                <div className={styles.mvpList}>
+                  {mvpAwards.map((award) => (
+                    <div key={award.key} className={styles.mvpRow}>
+                      <span className={styles.mvpIcon}>
+                        {award.icon.startsWith('/') ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={award.icon} alt="" width={24} height={24} />
+                          </>
+                        ) : (
+                          award.icon
+                        )}
+                      </span>
+                      <span className={styles.mvpLabel}>{award.label}</span>
+                      <span className={styles.mvpNames}>
+                        {award.winners.map((w, i) => (
+                          <span key={w.playerId}>
+                            <span className={`${styles.mvpName} ${w.isMe ? styles.mvpNameMe : ''}`}>
+                              {w.isMe ? tGame('mvp_you') : w.displayName}
+                            </span>
+                            {i < award.winners.length - 1 && (
+                              <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
+                            )}
+                          </span>
+                        ))}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </section>
               )}
