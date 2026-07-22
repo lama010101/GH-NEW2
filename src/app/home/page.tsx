@@ -533,7 +533,7 @@ function ModeCard({
                 <span className={styles.playPillSpinner} aria-hidden="true" />
               ) : (
                 <>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   {t('home.compete_create_game')}
@@ -596,7 +596,7 @@ function ModeCard({
               <span className={styles.playPillSpinner} aria-hidden="true" />
             ) : (
               <>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M8 5v14l11-7z" fill="currentColor" />
                 </svg>
                 {t('home.compete_play')}
