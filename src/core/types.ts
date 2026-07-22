@@ -72,6 +72,7 @@ export type RoundEventContent = {
   imageUrl: string | null;
   description: string | null;
   hints: EventHint[];
+  playerScores?: Record<string, number>;
 };
 
 export type GuessState = {

@@ -167,44 +167,35 @@ export default function RoundActiveSection({
 
   // Partial leaderboard for async (Relax) mode — spec §5.8:
   // "Partial leaderboard builds per round as players submit."
-  // Built from GUESS_SUBMITTED events for the current round (already in snapshot.events).
-  // Each event payload carries { playerId, yearGuess, score }.
-  // Only shown in async mode AND when at least one opponent has submitted.
+  // In async per-player snapshots, snapshot.events only contains the viewer's own
+  // player_round_events. The server populates rounds[currentRound].playerScores
+  // with a per-player score map once each player has a round_results row.
+  // Every player in snapshot.players must appear — submitted rows show the score,
+  // pending rows mirror the no-guess treatment from RoundCompleteSection.
   const isAsync = snapshot.config?.mode === "async";
   const partialLeaderboard = useMemo(() => {
     if (!isAsync || snapshot.status !== "ROUND_ACTIVE") return [];
-    const events = Array.isArray(snapshot.events) ? snapshot.events : [];
-    const currentRound = snapshot.currentRoundIndex;
-    const submitted = events
-      .filter(
-        (e) =>
-          e.eventType === "GUESS_SUBMITTED" &&
-          e.roundIndex === currentRound &&
-          e.payload &&
-          typeof (e.payload as Record<string, unknown>).playerId === "string"
-      )
-      .map((e) => {
-        const p = e.payload as Record<string, unknown>;
+    const currentRound = snapshot.rounds?.[snapshot.currentRoundIndex];
+    const playerScores = currentRound?.playerScores ?? {};
+    const roster = snapshot.players ?? [];
+    return roster
+      .map((p) => {
+        const score = playerScores[p.playerId];
         return {
-          playerId: p.playerId as string,
-          score: typeof p.score === "number" ? p.score : 0,
-        };
-      });
-    // Deduplicate by playerId (keep last), then sort descending by score.
-    const byPlayer = new Map<string, number>();
-    for (const s of submitted) byPlayer.set(s.playerId, s.score);
-    return Array.from(byPlayer.entries())
-      .map(([pid, score]) => {
-        const player = snapshot.players?.find((pl) => pl.playerId === pid);
-        return {
-          playerId: pid,
-          displayName: player?.displayName ?? pid.slice(0, 8),
-          avatarUrl: player?.avatarUrl ?? null,
-          score,
+          playerId: p.playerId,
+          displayName: p.displayName || p.playerId.slice(0, 8),
+          avatarUrl: p.avatarUrl ?? null,
+          score: typeof score === "number" ? score : null,
+          isMe: p.playerId === playerId,
         };
       })
-      .sort((a, b) => b.score - a.score);
-  }, [isAsync, snapshot.status, snapshot.events, snapshot.currentRoundIndex, snapshot.players]);
+      .sort((a, b) => {
+        if (a.score === null && b.score === null) return 0;
+        if (a.score === null) return 1;
+        if (b.score === null) return -1;
+        return b.score - a.score;
+      });
+  }, [isAsync, snapshot.status, snapshot.currentRoundIndex, snapshot.rounds, snapshot.players, playerId]);
 
   // Cinematic auto-pan on mount
   useEffect(() => {
@@ -820,16 +811,24 @@ export default function RoundActiveSection({
             <span className={styles.partialLeaderboardAccentBar} />
             {t('round_leaderboard')}
           </div>
-          {partialLeaderboard.map((row, idx) => (
-            <div
-              key={row.playerId}
-              className={`${styles.partialLeaderboardRow} ${row.playerId === playerId ? styles.partialLeaderboardRowMe : ""}`}
-            >
-              <span className={styles.partialLeaderboardRank}>{idx + 1}</span>
-              <span className={styles.partialLeaderboardName}>{row.displayName}</span>
-              <span className={styles.partialLeaderboardScore}>{Math.round(row.score)}</span>
-            </div>
-          ))}
+          {partialLeaderboard.map((row, idx) => {
+            const isSubmitted = row.score !== null;
+            return (
+              <div
+                key={row.playerId}
+                className={`${styles.partialLeaderboardRow} ${row.isMe ? styles.partialLeaderboardRowMe : ""}`}
+              >
+                <span className={styles.partialLeaderboardRank}>{isSubmitted ? idx + 1 : "—"}</span>
+                <span className={styles.partialLeaderboardName}>
+                  {row.displayName}
+                  {!isSubmitted && <span className={styles.partialLeaderboardNoGuessTag}>{t('no_guess')}</span>}
+                </span>
+                <span className={`${styles.partialLeaderboardScore} ${row.score === null ? styles.partialLeaderboardScoreEmpty : ""}`}>
+                  {row.score !== null ? Math.round(row.score) : "—"}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 

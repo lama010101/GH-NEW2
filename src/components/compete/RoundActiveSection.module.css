@@ -386,6 +386,22 @@
   font-weight: 600;
 }
 
+.partialLeaderboardScoreEmpty {
+  background: transparent;
+  color: var(--gh-text-muted);
+  border-radius: 0;
+  padding: 0;
+  font-size: var(--font-xs);
+  font-weight: 600;
+}
+
+.partialLeaderboardNoGuessTag {
+  color: var(--gh-text-muted);
+  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-style: italic;
+  margin-left: 4px;
+}
+
 .mapFullscreenOverlay {
   position: fixed;
   inset: 0;
