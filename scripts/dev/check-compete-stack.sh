@@ -10,14 +10,14 @@ NEXT_PORT=3000
 PARTY_PORT=1999
 FAIL=0
 
-if lsof -nP -iTCP:"${NEXT_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
+if ss -ltn 2>/dev/null | grep -qE ":${NEXT_PORT} "; then
   echo "DEV SERVER: RUNNING on port ${NEXT_PORT}"
 else
   echo "DEV SERVER: NOT RUNNING on port ${NEXT_PORT}"
   FAIL=1
 fi
 
-if lsof -nP -iTCP:"${PARTY_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
+if ss -ltn 2>/dev/null | grep -qE ":${PARTY_PORT} "; then
   echo "PARTYKIT: RUNNING on port ${PARTY_PORT}"
 else
   echo "PARTYKIT: NOT RUNNING on port ${PARTY_PORT}"
