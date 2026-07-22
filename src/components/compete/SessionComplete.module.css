@@ -728,6 +728,76 @@
   color: var(--gh-orange);
 }
 
+/* ── MVP awards ── */
+
+.mvpList {
+  padding: 0 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mvpRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--gh-mini-card-bg);
+  border: 1px solid var(--gh-mini-card-border);
+}
+
+.mvpIcon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.mvpIcon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.mvpLabel {
+  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-weight: 700;
+  color: var(--gh-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex: 1;
+}
+
+.mvpNames {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mvpName {
+  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-weight: 700;
+  color: var(--gh-text-primary);
+  white-space: nowrap;
+}
+
+.mvpNameMe {
+  color: var(--gh-orange);
+}
+
+.mvpAnd {
+  color: var(--gh-text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* ── Dock spacer ── */
 
 .dockSpacer {
