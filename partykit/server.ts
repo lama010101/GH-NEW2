@@ -445,7 +445,9 @@ export default class GameServer {
       }
     }
 
-    this.scheduleRoundTimer();
+    await this.scheduleRoundTimer().catch((err) =>
+      console.error("[PartyKit] scheduleRoundTimer (loadFromDB) failed:", err instanceof Error ? err.message : err)
+    );
   }
 
   /**
@@ -510,7 +512,7 @@ export default class GameServer {
     }
     this.snapshot = snapshot;
     this.snapshotLoaded = true;
-    this.scheduleRoundTimer();
+    void this.scheduleRoundTimer();
     console.log("[STATE_UPDATE_OUTBOUND]", {
       roundEndsAt: (isRuntimeState(this.snapshot) ? this.snapshot.roundEndsAt : null) ?? null,
       status: (isRuntimeState(this.snapshot) ? this.snapshot.status : null) ?? null,
@@ -574,7 +576,7 @@ export default class GameServer {
    * NOTE: The actual timeout/advance logic is handled by the /advance
    * API route which checks for expired rounds. The DO just triggers it.
    */
-  private scheduleRoundTimer(): void {
+  private async scheduleRoundTimer(): Promise<void> {
     // Clear any existing timer
     if (this.roundTimerHandle !== null) {
       clearTimeout(this.roundTimerHandle);
@@ -586,7 +588,7 @@ export default class GameServer {
     }
     // Clear any existing DO alarm (async mode uses alarms instead of setTimeout
     // so timers fire even with zero connected clients — Compete Relax Option B §10.1)
-    this.room.storage.deleteAlarm().catch(() => {});
+    await this.room.storage.deleteAlarm().catch(() => {});
 
     if (!this.snapshot || !isRuntimeState(this.snapshot)) return;
 
@@ -595,16 +597,10 @@ export default class GameServer {
     const mode = (snapshotConfig?.["mode"] as string) ?? "sync";
     const isAsync = mode === "async";
 
-    // Async (Relax) sessions intentionally have no DO-driven global round expiry
-    // until Phase 2b builds per-player timers. Returning here prevents both the
-    // round-expiry and result-auto-advance branches from scheduling anything.
     if (isAsync) {
-      console.log("[PartyKit] Async: expiry scheduling deferred to Phase 2b/4, no-op");
+      await this.scheduleAsyncRoundTimer();
       return;
     }
-
-    // Session deadline (async only, computed at START_GAME as startedAt + days)
-    const sessionDeadline = (snapshotConfig?.["sessionDeadline"] as string | null) ?? null;
 
     if (this.snapshot.status === "ROUND_COMPLETE" && this.snapshot.resultPhaseStartedAt) {
       const autoAdvanceSec = this.snapshot.resultsAutoAdvanceSec ?? 90;
@@ -615,11 +611,6 @@ export default class GameServer {
         const expectedRoundIndex = this.snapshot.currentRoundIndex;
         if (delay <= 0) {
           this.triggerResultAutoAdvance(expectedRoundIndex);
-        } else if (isAsync) {
-          // Async: use DO alarm (persists through DO eviction / zero clients)
-          this.room.storage.setAlarm(resultPhaseEndsAt).catch((err) =>
-            console.error("[PartyKit] setAlarm (result phase) failed:", err)
-          );
         } else {
           this.resultTimerHandle = setTimeout(() => {
             this.resultTimerHandle = null;
@@ -633,33 +624,18 @@ export default class GameServer {
     // Only schedule for active rounds
     if (this.snapshot.status !== "ROUND_ACTIVE") return;
 
-    // Compute effective expiry: earliest of roundEndsAt and sessionDeadline (async only).
-    // In async mode with no round timer (roundTimerSec=0, the default), roundEndsAt is
-    // null — but the session deadline still applies and must trigger round completion.
-    // See Compete Relax (Option B) §5.1(c) / §6.
     const now = Date.now();
     const expectedRoundIndex = this.snapshot.currentRoundIndex;
     const roundEndsAtMs = this.snapshot.roundEndsAt ? new Date(this.snapshot.roundEndsAt).getTime() : null;
-    const sessionDeadlineMs = isAsync && sessionDeadline ? new Date(sessionDeadline).getTime() : null;
 
-    let endsAt: number | null = roundEndsAtMs;
-    if (sessionDeadlineMs !== null) {
-      endsAt = endsAt !== null ? Math.min(endsAt, sessionDeadlineMs) : sessionDeadlineMs;
-    }
-    if (endsAt === null) return; // no expiry mechanism available (sync with no timer)
+    if (roundEndsAtMs === null) return; // no expiry mechanism available (sync with no timer)
 
-    const delay = endsAt - now;
+    const delay = roundEndsAtMs - now;
 
     if (delay <= 0) {
       // Round already expired — trigger advance immediately
       console.log("[PartyKit] Round expired, triggering advance");
       this.triggerRoundExpiry(expectedRoundIndex);
-    } else if (isAsync) {
-      // Async: use DO alarm (persists through DO eviction / zero clients)
-      console.log(`[PartyKit] Round alarm scheduled (async): ${Math.round(delay / 1000)}s`);
-      this.room.storage.setAlarm(endsAt).catch((err) =>
-        console.error("[PartyKit] setAlarm (round active) failed:", err)
-      );
     } else {
       // Schedule advance for when the round expires
       console.log(`[PartyKit] Round timer scheduled: ${Math.round(delay / 1000)}s`);
@@ -667,6 +643,41 @@ export default class GameServer {
         this.roundTimerHandle = null;
         this.triggerRoundExpiry(expectedRoundIndex);
       }, delay);
+    }
+  }
+
+  /**
+   * Async (Relax) per-player round timer scheduling.
+   * Fetches the single earliest expiring active player from the DB and sets one
+   * DO alarm. Does nothing when no active player has a per-round timer set.
+   */
+  private async scheduleAsyncRoundTimer(): Promise<void> {
+    const gameId = this.room.id;
+    const baseUrl = this.getNextJsBaseUrl();
+    const nextExpiryUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/next-expiry`;
+    const secret = (this.room.env.PARTYKIT_SECRET as string) ?? "";
+
+    try {
+      const res = await fetch(nextExpiryUrl, {
+        headers: { "x-partykit-secret": secret }
+      });
+      if (!res.ok) {
+        console.error("[PartyKit] next-expiry fetch failed:", res.status);
+        return;
+      }
+      const next = await res.json() as { playerId?: string; roundIndex?: number; phaseEndsAt?: string | null } | null;
+      if (!next || !next.phaseEndsAt || !next.playerId) {
+        console.log("[PartyKit] Async: no per-player timer to schedule");
+        return;
+      }
+      const phaseEndsAtMs = new Date(next.phaseEndsAt).getTime();
+      const alarmTime = Math.max(phaseEndsAtMs, Date.now() + 1);
+      await this.room.storage.setAlarm(alarmTime).catch((err) =>
+        console.error("[PartyKit] setAlarm (async round) failed:", err)
+      );
+      console.log(`[PartyKit] Async: per-player alarm scheduled for ${Math.round((alarmTime - Date.now()) / 1000)}s`);
+    } catch (err) {
+      console.error("[PartyKit] scheduleAsyncRoundTimer error:", err instanceof Error ? err.message : err);
     }
   }
 
@@ -695,10 +706,98 @@ export default class GameServer {
 
     if (!isRuntimeState(this.snapshot)) return;
 
+    if (this.snapshot.config?.mode === "async") {
+      await this.handleAsyncExpiryAlarm();
+      return;
+    }
+
     if (this.snapshot.status === "ROUND_ACTIVE") {
       await this.triggerRoundExpiry(this.snapshot.currentRoundIndex);
     } else if (this.snapshot.status === "ROUND_COMPLETE") {
       await this.triggerResultAutoAdvance(this.snapshot.currentRoundIndex);
+    }
+  }
+
+  /**
+   * Async (Relax) per-player expiry alarm handler.
+   * Repeatedly fetches the earliest expiring active player and marks them absent
+   * until no expired player remains, then applies the final snapshot+bundle and
+   * reschedules the next alarm. Bounded to avoid an infinite loop if expiry rows
+   * fail to clear.
+   */
+  private async handleAsyncExpiryAlarm(): Promise<void> {
+    const gameId = this.room.id;
+    const baseUrl = this.getNextJsBaseUrl();
+    const secret = (this.room.env.PARTYKIT_SECRET as string) ?? "";
+
+    const activePlayerCount = isRuntimeState(this.snapshot)
+      ? this.snapshot.players.filter(p => p.leftAt === null).length
+      : 0;
+    const maxIterations = Math.max(1, Math.min(activePlayerCount, 20));
+
+    let lastSnapshot: unknown = null;
+    let processed = 0;
+
+    for (let i = 0; i < maxIterations; i++) {
+      const nextExpiryUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/next-expiry`;
+      let next: { playerId?: string; roundIndex?: number; phaseEndsAt?: string | null } | null = null;
+      try {
+        const nextRes = await fetch(nextExpiryUrl, {
+          headers: { "x-partykit-secret": secret }
+        });
+        if (!nextRes.ok) {
+          console.error("[PartyKit] next-expiry fetch failed:", nextRes.status);
+          break;
+        }
+        next = await nextRes.json() as { playerId?: string; roundIndex?: number; phaseEndsAt?: string | null } | null;
+      } catch (err) {
+        console.error("[PartyKit] next-expiry fetch error:", err instanceof Error ? err.message : err);
+        break;
+      }
+
+      if (!next || !next.phaseEndsAt || !next.playerId || typeof next.roundIndex !== "number") {
+        break;
+      }
+
+      const phaseEndsAtMs = new Date(next.phaseEndsAt).getTime();
+      if (phaseEndsAtMs > Date.now() + 1) {
+        // Earliest expiry is still in the future; reschedule and stop.
+        await this.room.storage.setAlarm(phaseEndsAtMs).catch((err) =>
+          console.error("[PartyKit] setAlarm (async future expiry) failed:", err)
+        );
+        break;
+      }
+
+      const absentRes = await fetch(
+        `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/player-absent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-partykit-secret": secret,
+          },
+          body: JSON.stringify({ playerId: next.playerId, roundIndex: next.roundIndex }),
+        }
+      );
+      if (!absentRes.ok) {
+        console.error(`[PartyKit] player-absent failed for ${next.playerId}:`, absentRes.status);
+        break;
+      }
+
+      lastSnapshot = await absentRes.json();
+      processed += 1;
+    }
+
+    if (processed === maxIterations && maxIterations >= 20) {
+      console.error("[PartyKit] handleAsyncExpiryAlarm: hit iteration safety bound, stopping loop");
+    }
+
+    if (lastSnapshot) {
+      this.applySnapshotAndBroadcast(lastSnapshot);
+    } else {
+      await this.scheduleRoundTimer().catch((err) =>
+        console.error("[PartyKit] scheduleRoundTimer (async expiry fallback) failed:", err)
+      );
     }
   }
 

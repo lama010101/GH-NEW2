@@ -51,7 +51,7 @@ export default defineConfig({
     },
   ],
   globalSetup: require.resolve('./fixtures/auth'),
-  globalTeardown: require.resolve('./fixtures/auth'),
+  // globalSetup returns the teardown function; do not set a separate globalTeardown path
   // Run setup-auth after globalSetup to create storageState files
   // This is handled by modifying globalSetup to call setup-auth
 });

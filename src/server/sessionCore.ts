@@ -396,6 +396,7 @@ type PlayerRoundState = {
   currentRound: number;
   phase: string | null;
   roundStartsAt: string | null;
+  roundEndsAt: string | null;
   resultPhaseStartedAt: string | null;
   reachedRounds: Set<number>;
   completedRounds: Set<number>;
@@ -407,6 +408,7 @@ type AsyncSnapshotBase = {
   players: SessionPlayerRow[];
   eventIds: string[];
   globalRoundStartedAt: string | null;
+  globalPhaseEndsAt: string | null;
   allPlayerEvents: Map<string, PlayerRoundEvent[]>;
   roundResultScores: Map<string, number>;
   roundEventContent: RoundEventContent[];
@@ -417,7 +419,7 @@ type AsyncSnapshotBase = {
 async function loadGlobalRoundEventsForAsync(
   gameId: string,
   executor: DbExecutor
-): Promise<{ eventIds: string[]; globalRoundStartedAt: string | null }> {
+): Promise<{ eventIds: string[]; globalRoundStartedAt: string | null; globalPhaseEndsAt: string | null }> {
   const result = await executor.query<{
     event_type: string;
     round_index: number | null;
@@ -436,7 +438,8 @@ async function loadGlobalRoundEventsForAsync(
   const roundStarted = result.rows.find(r => r.event_type === "ROUND_STARTED");
   const eventIds = ((sessionCreated?.payload as Record<string, unknown>)?.eventIds as string[]) ?? [];
   const globalRoundStartedAt = (roundStarted?.payload?.startedAt as string) ?? null;
-  return { eventIds, globalRoundStartedAt };
+  const globalPhaseEndsAt = (roundStarted?.payload?.phaseEndsAt as string) ?? null;
+  return { eventIds, globalRoundStartedAt, globalPhaseEndsAt };
 }
 
 async function loadPlayerRoundEventsForAsync(
@@ -450,8 +453,9 @@ async function loadPlayerRoundEventsForAsync(
     event_type: string;
     payload: Record<string, unknown>;
     occurred_at: Date;
+    phase_ends_at: Date | null;
   }>(
-    `SELECT id, player_id, round_index, event_type, payload, occurred_at
+    `SELECT id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at
      FROM player_round_events
      WHERE game_id = $1
      ORDER BY id ASC`,
@@ -466,6 +470,7 @@ async function loadPlayerRoundEventsForAsync(
       eventType: row.event_type,
       payload: row.payload,
       createdAt: row.occurred_at.toISOString(),
+      phaseEndsAt: row.phase_ends_at ? row.phase_ends_at.toISOString() : null,
     };
     const existing = map.get(row.player_id) ?? [];
     existing.push(event);
@@ -594,6 +599,7 @@ async function loadRoundEventContentForAsync(
 function derivePlayerRoundState(
   playerEvents: PlayerRoundEvent[],
   globalRoundStartedAt: string | null,
+  globalPhaseEndsAt: string | null,
   gameId?: string,
   playerId?: string
 ): PlayerRoundState {
@@ -610,6 +616,7 @@ function derivePlayerRoundState(
       currentRound: 0,
       phase: globalRoundStartedAt !== null ? "ROUND_STARTED" : null,
       roundStartsAt: globalRoundStartedAt,
+      roundEndsAt: globalPhaseEndsAt,
       resultPhaseStartedAt: null,
       reachedRounds: reached,
       completedRounds: completed,
@@ -635,12 +642,14 @@ function derivePlayerRoundState(
   }
 
   let roundStartsAt: string | null = globalRoundStartedAt;
+  let roundEndsAt: string | null = globalPhaseEndsAt;
   let resultPhaseStartedAt: string | null = null;
 
   for (const ev of playerEvents) {
     const roundIndex = ev.roundIndex;
     if (ev.eventType === "ROUND_STARTED") {
       roundStartsAt = (ev.payload?.startedAt as string) ?? roundStartsAt;
+      roundEndsAt = ev.phaseEndsAt ?? (ev.payload?.phaseEndsAt as string) ?? roundEndsAt;
       reached.add(roundIndex);
     } else if (ev.eventType === "GUESS_SUBMITTED") {
       submitted.add(roundIndex);
@@ -658,6 +667,7 @@ function derivePlayerRoundState(
     currentRound,
     phase,
     roundStartsAt,
+    roundEndsAt,
     resultPhaseStartedAt,
     reachedRounds: reached,
     completedRounds: completed,
@@ -670,16 +680,16 @@ function buildAsyncPlayerSnapshotFromBase(
   viewerPlayerId: string,
   base: AsyncSnapshotBase
 ): CompeteSessionSnapshot {
-  const { session, players: playerRows, eventIds, globalRoundStartedAt, allPlayerEvents, roundResultScores, eventContentMap } = base;
+  const { session, players: playerRows, eventIds, globalRoundStartedAt, globalPhaseEndsAt, allPlayerEvents, roundResultScores, eventContentMap } = base;
   const viewerEvents = allPlayerEvents.get(viewerPlayerId) ?? [];
-  const playerState = derivePlayerRoundState(viewerEvents, globalRoundStartedAt, gameId, viewerPlayerId);
+  const playerState = derivePlayerRoundState(viewerEvents, globalRoundStartedAt, globalPhaseEndsAt, gameId, viewerPlayerId);
 
   const activePlayerRows = playerRows.filter(p => p.left_at === null && p.kicked !== true);
   const allPlayersReady = activePlayerRows.length >= 1 && activePlayerRows.every(p => p.ready);
 
   const players: SessionPlayer[] = playerRows.map(row => {
     const events = allPlayerEvents.get(row.player_id) ?? [];
-    const state = derivePlayerRoundState(events, globalRoundStartedAt, gameId, row.player_id);
+    const state = derivePlayerRoundState(events, globalRoundStartedAt, globalPhaseEndsAt, gameId, row.player_id);
     const hasSubmitted = state.submittedRounds.has(state.currentRound);
     return mapSessionPlayerRowToPlayer(row, hasSubmitted);
   });
@@ -729,7 +739,7 @@ function buildAsyncPlayerSnapshotFromBase(
     currentRoundIndex: playerState.currentRound,
     allPlayersReady,
     roundStartsAt: playerState.roundStartsAt,
-    roundEndsAt: null,
+    roundEndsAt: playerState.roundEndsAt,
     viewerPlayerId: viewerPlayerId,
     timeRemaining: null,
     rounds: rounds as unknown as RoundEventContent[],
@@ -764,6 +774,7 @@ async function loadAsyncSnapshotBase(
     players,
     eventIds: globalEvents.eventIds,
     globalRoundStartedAt: globalEvents.globalRoundStartedAt,
+    globalPhaseEndsAt: globalEvents.globalPhaseEndsAt,
     allPlayerEvents,
     roundResultScores,
     roundEventContent,
@@ -772,13 +783,75 @@ async function loadAsyncSnapshotBase(
   };
 }
 
+async function ensurePlayerRoundStarted(
+  gameId: string,
+  playerId: string,
+  base: AsyncSnapshotBase,
+  executor: DbExecutor
+): Promise<boolean> {
+  if (base.session.mode !== "async") return false;
+  if (base.globalRoundStartedAt === null) return false;
+
+  const playerEvents = base.allPlayerEvents.get(playerId) ?? [];
+  let currentRound = 0;
+  let currentPhase: string | null = null;
+
+  if (playerEvents.length === 0) {
+    currentRound = 0;
+    currentPhase = "ROUND_STARTED";
+  } else {
+    const state = derivePlayerStateFromEventStream(playerEvents);
+    currentRound = state.currentRound;
+    currentPhase = state.currentPhase;
+  }
+
+  // Only backfill a missing ROUND_STARTED for the round the player is actively
+  // expected to be playing. Never start the next round while they are still in
+  // the result phase of the previous round.
+  if (currentPhase !== "ROUND_STARTED" && currentPhase !== "GUESS_SUBMITTED") {
+    return false;
+  }
+
+  const existsResult = await executor.query<{ exists: boolean }>(
+    `SELECT EXISTS(
+       SELECT 1 FROM player_round_events
+       WHERE game_id = $1 AND player_id = $2 AND round_index = $3 AND event_type = 'ROUND_STARTED'
+     ) AS exists`,
+    [gameId, playerId, currentRound]
+  );
+  if (existsResult.rows[0].exists) return false;
+
+  const startedAt = new Date();
+  const phaseEndsAt = base.session.round_timer_sec > 0
+    ? new Date(startedAt.getTime() + base.session.round_timer_sec * 1000).toISOString()
+    : null;
+  const token = generateVerificationToken();
+  const insertResult = await executor.query(
+    `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at, verification_token)
+     VALUES ($1, $2, $3, 'ROUND_STARTED', $4::jsonb, $5, $6, $7)
+     ON CONFLICT DO NOTHING`,
+    [
+      gameId,
+      playerId,
+      currentRound,
+      JSON.stringify({ startedAt: startedAt.toISOString() }),
+      startedAt,
+      phaseEndsAt ? new Date(phaseEndsAt) : null,
+      token,
+    ]
+  );
+  return ((insertResult as unknown as { rowCount: number | null }).rowCount ?? 0) === 1;
+}
+
 async function buildAsyncPlayerSnapshotForViewer(
   gameId: string,
   viewerPlayerId: string,
   executor: DbExecutor
 ): Promise<CompeteSessionSnapshot> {
   const base = await loadAsyncSnapshotBase(gameId, executor);
-  return buildAsyncPlayerSnapshotFromBase(gameId, viewerPlayerId, base);
+  const inserted = await ensurePlayerRoundStarted(gameId, viewerPlayerId, base, executor);
+  const refreshedBase = inserted ? await loadAsyncSnapshotBase(gameId, executor) : base;
+  return buildAsyncPlayerSnapshotFromBase(gameId, viewerPlayerId, refreshedBase);
 }
 
 async function buildAsyncPlayerSnapshotsForActivePlayers(
@@ -787,9 +860,16 @@ async function buildAsyncPlayerSnapshotsForActivePlayers(
 ): Promise<Record<string, CompeteSessionSnapshot>> {
   const base = await loadAsyncSnapshotBase(gameId, executor);
   const activePlayerRows = base.players.filter(p => p.left_at === null && p.kicked !== true);
-  const playerSnapshots: Record<string, CompeteSessionSnapshot> = {};
+  let anyInserted = false;
   for (const player of activePlayerRows) {
-    playerSnapshots[player.player_id] = buildAsyncPlayerSnapshotFromBase(gameId, player.player_id, base);
+    const inserted = await ensurePlayerRoundStarted(gameId, player.player_id, base, executor);
+    if (inserted) anyInserted = true;
+  }
+  const refreshedBase = anyInserted ? await loadAsyncSnapshotBase(gameId, executor) : base;
+  const refreshedActivePlayerRows = refreshedBase.players.filter(p => p.left_at === null && p.kicked !== true);
+  const playerSnapshots: Record<string, CompeteSessionSnapshot> = {};
+  for (const player of refreshedActivePlayerRows) {
+    playerSnapshots[player.player_id] = buildAsyncPlayerSnapshotFromBase(gameId, player.player_id, refreshedBase);
   }
   return playerSnapshots;
 }
@@ -1098,7 +1178,10 @@ function clampResultsAutoAdvanceSec(value: number | undefined): number {
 
 export async function createCompeteSession(input: CreateCompeteSessionInput): Promise<CompeteSessionSnapshot> {
   const mode = input.mode ?? "sync";
-  const roundTimerSec = clampRoundTimer(input.roundTimerSec);
+  // Default async per-round timer to OFF (0); sync retains the 120s default.
+  const roundTimerSec = clampRoundTimer(
+    input.roundTimerSec === undefined && mode === "async" ? 0 : input.roundTimerSec
+  );
   // Relax is always 5 rounds; no host selector (GAME_MODES_SPEC.md v1.5 §5.3).
   const totalRounds = mode === "async" ? MAX_ROUNDS : normalizeTotalRounds(input.totalRounds);
   const yearMin = normalizeYearBoundary(input.yearMin, -400, "yearMin");
@@ -2142,6 +2225,28 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
       cause
     }, 0);
 
+    // Per-player round-0 start for async (Relax): each active player gets their
+    // own ROUND_STARTED event with an independent phase_ends_at. Late joiners are
+    // backfilled lazily by buildAsyncPlayerSnapshotsForActivePlayers.
+    if (session.mode === "async") {
+      for (const player of activePlayers) {
+        const playerToken = generateVerificationToken();
+        await client.query(
+          `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at, verification_token)
+           VALUES ($1, $2, 0, 'ROUND_STARTED', $3::jsonb, $4, $5, $6)
+           ON CONFLICT DO NOTHING`,
+          [
+            gameId,
+            player.player_id,
+            JSON.stringify({ startedAt: startStartedAt }),
+            startNow,
+            startPhaseEndsAt ? new Date(startPhaseEndsAt) : null,
+            playerToken,
+          ]
+        );
+      }
+    }
+
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -2737,6 +2842,7 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
     const guardResult = await client.query<{
       mode: "practice" | "sync" | "async" | "daily";
       total_rounds: number;
+      round_timer_sec: number;
       scoring_reference_year: number;
       has_existing_commit: boolean;
       round_complete: boolean;
@@ -2745,7 +2851,7 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
     }>(
       `WITH
         session_meta AS (
-          SELECT mode, total_rounds, scoring_reference_year FROM sessions WHERE game_id = $1
+          SELECT mode, total_rounds, round_timer_sec, scoring_reference_year FROM sessions WHERE game_id = $1
         ),
         existing_commit AS (
           SELECT 1 FROM round_commits
@@ -2769,6 +2875,7 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
       SELECT
         (SELECT mode FROM session_meta) AS mode,
         (SELECT total_rounds FROM session_meta) AS total_rounds,
+        (SELECT round_timer_sec FROM session_meta) AS round_timer_sec,
         (SELECT scoring_reference_year FROM session_meta) AS scoring_reference_year,
         EXISTS(SELECT 1 FROM existing_commit) AS has_existing_commit,
         EXISTS(SELECT 1 FROM round_complete) AS round_complete,
@@ -2821,12 +2928,24 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
       [gameId, playerId, roundIndex]
     );
     if (!startedResult.rows[0].exists) {
+      const startedAt = new Date();
+      const phaseEndsAt = guard.round_timer_sec > 0
+        ? new Date(startedAt.getTime() + guard.round_timer_sec * 1000).toISOString()
+        : null;
       const startedToken = generateVerificationToken();
       await client.query(
-        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
-         VALUES ($1, $2, $3, 'ROUND_STARTED', $4::jsonb, now(), $5)
+        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at, verification_token)
+         VALUES ($1, $2, $3, 'ROUND_STARTED', $4::jsonb, $5, $6, $7)
          ON CONFLICT DO NOTHING`,
-        [gameId, playerId, roundIndex, JSON.stringify({ startedAt: new Date().toISOString() }), startedToken]
+        [
+          gameId,
+          playerId,
+          roundIndex,
+          JSON.stringify({ startedAt: startedAt.toISOString() }),
+          startedAt,
+          phaseEndsAt ? new Date(phaseEndsAt) : null,
+          startedToken,
+        ]
       );
     }
 
@@ -3009,12 +3128,24 @@ export async function advancePlayerRoundAsync(
     const nextRoundIndex = (lastCompleteRound ?? -1) + 1;
 
     if (nextRoundIndex < session.total_rounds) {
+      const startedAt = new Date();
+      const phaseEndsAt = session.round_timer_sec > 0
+        ? new Date(startedAt.getTime() + session.round_timer_sec * 1000).toISOString()
+        : null;
       const token = generateVerificationToken();
       await client.query(
-        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
-         VALUES ($1, $2, $3, 'ROUND_STARTED', $4::jsonb, now(), $5)
+        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at, verification_token)
+         VALUES ($1, $2, $3, 'ROUND_STARTED', $4::jsonb, $5, $6, $7)
          ON CONFLICT DO NOTHING`,
-        [gameId, playerId, nextRoundIndex, JSON.stringify({ startedAt: new Date().toISOString() }), token]
+        [
+          gameId,
+          playerId,
+          nextRoundIndex,
+          JSON.stringify({ startedAt: startedAt.toISOString() }),
+          startedAt,
+          phaseEndsAt ? new Date(phaseEndsAt) : null,
+          token,
+        ]
       );
     }
 
@@ -3037,7 +3168,7 @@ export async function markPlayerRoundAbsent(
   playerId: string,
   roundIndex: number,
   _executionContext?: "partykit" | "api"
-): Promise<CompeteSessionSnapshot> {
+): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   assertValidExecutionContext({ _executionContext });
 
   if (!Number.isInteger(roundIndex) || roundIndex < 0 || roundIndex >= MAX_ROUNDS) {
@@ -3048,8 +3179,11 @@ export async function markPlayerRoundAbsent(
   try {
     await client.query("BEGIN");
 
+    // Serialize with submitGuessAsync and advancePlayerRoundAsync on the same
+    // per-player async key so a last-second submission and timer expiry cannot
+    // both win.
     await client.query(
-      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':absent'))`,
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':async'))`,
       [gameId, playerId]
     );
 
@@ -3092,10 +3226,12 @@ export async function markPlayerRoundAbsent(
     }
 
     if (guard.round_complete) {
+      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+      const actingPlayerSnapshot = playerSnapshots[playerId];
+      if (!actingPlayerSnapshot) throw new Error("Session not found");
+
       await client.query("COMMIT");
-      const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
-      if (!snapshot) throw new Error("Session not found");
-      return snapshot;
+      return { ...actingPlayerSnapshot, playerSnapshots };
     }
 
     const eventIds = guard.session_event_ids;
@@ -3135,7 +3271,7 @@ export async function markPlayerRoundAbsent(
          (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token)
        VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $8, $9)
        ON CONFLICT (game_id, round_index, player_id) DO NOTHING`,
-      [gameId, playerId, roundIndex, 0, result.distanceKm, result.yearDiff, result.locationAccuracy, result.yearAccuracy, resultToken]
+      [gameId, roundIndex, playerId, 0, result.distanceKm, result.yearDiff, result.locationAccuracy, result.yearAccuracy, resultToken]
     );
 
     const completeToken = generateVerificationToken();
@@ -3156,18 +3292,18 @@ export async function markPlayerRoundAbsent(
       );
     }
 
+    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+    const actingPlayerSnapshot = playerSnapshots[playerId];
+    if (!actingPlayerSnapshot) throw new Error("Session not found");
+
     await client.query("COMMIT");
+    return { ...actingPlayerSnapshot, playerSnapshots };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
   }
-
-  // Advance the player to the next round using the same per-player authority.
-  // This function is defined here but not yet wired to any timer trigger; Phase 2
-  // will connect DO alarms / on-access expiry checks to it.
-  return advancePlayerRoundAsync(gameId, playerId, _executionContext);
 }
 
 async function insertMissingCommits(
