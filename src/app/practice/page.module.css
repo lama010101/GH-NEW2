@@ -7,9 +7,15 @@
 .loadingBg {
   position: absolute;
   inset: 0;
-  background-image: url(/home_background.webp);
+  background-image: url(/desktop-home_background.webp);
   background-size: cover;
   background-position: center;
+}
+
+@media (max-width: 768px) {
+  .loadingBg {
+    background-image: url(/mobile-home_background.webp);
+  }
 }
 
 .loadingScrim {
