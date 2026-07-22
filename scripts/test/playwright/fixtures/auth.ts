@@ -176,6 +176,8 @@ async function globalSetup() {
 
   console.log('[PLAYWRIGHT SETUP] All test users created successfully');
   console.log('[PLAYWRIGHT SETUP] Note: UI-based storageState auth skipped due to selector timing issues');
+
+  return globalTeardown;
 }
 
 /**

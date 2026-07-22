@@ -272,6 +272,7 @@ export type PlayerRoundEvent = {
   eventType: string;
   payload: Record<string, unknown>;
   createdAt: string;
+  phaseEndsAt?: string | null;
 };
 
 /**
