@@ -788,9 +788,9 @@ async function ensurePlayerRoundStarted(
   playerId: string,
   base: AsyncSnapshotBase,
   executor: DbExecutor
-): Promise<void> {
-  if (base.session.mode !== "async") return;
-  if (base.globalRoundStartedAt === null) return;
+): Promise<boolean> {
+  if (base.session.mode !== "async") return false;
+  if (base.globalRoundStartedAt === null) return false;
 
   const playerEvents = base.allPlayerEvents.get(playerId) ?? [];
   let currentRound = 0;
@@ -809,7 +809,7 @@ async function ensurePlayerRoundStarted(
   // expected to be playing. Never start the next round while they are still in
   // the result phase of the previous round.
   if (currentPhase !== "ROUND_STARTED" && currentPhase !== "GUESS_SUBMITTED") {
-    return;
+    return false;
   }
 
   const existsResult = await executor.query<{ exists: boolean }>(
@@ -819,14 +819,14 @@ async function ensurePlayerRoundStarted(
      ) AS exists`,
     [gameId, playerId, currentRound]
   );
-  if (existsResult.rows[0].exists) return;
+  if (existsResult.rows[0].exists) return false;
 
   const startedAt = new Date();
   const phaseEndsAt = base.session.round_timer_sec > 0
     ? new Date(startedAt.getTime() + base.session.round_timer_sec * 1000).toISOString()
     : null;
   const token = generateVerificationToken();
-  await executor.query(
+  const insertResult = await executor.query(
     `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at, verification_token)
      VALUES ($1, $2, $3, 'ROUND_STARTED', $4::jsonb, $5, $6, $7)
      ON CONFLICT DO NOTHING`,
@@ -840,6 +840,7 @@ async function ensurePlayerRoundStarted(
       token,
     ]
   );
+  return ((insertResult as unknown as { rowCount: number | null }).rowCount ?? 0) === 1;
 }
 
 async function buildAsyncPlayerSnapshotForViewer(
@@ -848,8 +849,8 @@ async function buildAsyncPlayerSnapshotForViewer(
   executor: DbExecutor
 ): Promise<CompeteSessionSnapshot> {
   const base = await loadAsyncSnapshotBase(gameId, executor);
-  await ensurePlayerRoundStarted(gameId, viewerPlayerId, base, executor);
-  const refreshedBase = await loadAsyncSnapshotBase(gameId, executor);
+  const inserted = await ensurePlayerRoundStarted(gameId, viewerPlayerId, base, executor);
+  const refreshedBase = inserted ? await loadAsyncSnapshotBase(gameId, executor) : base;
   return buildAsyncPlayerSnapshotFromBase(gameId, viewerPlayerId, refreshedBase);
 }
 
@@ -859,10 +860,12 @@ async function buildAsyncPlayerSnapshotsForActivePlayers(
 ): Promise<Record<string, CompeteSessionSnapshot>> {
   const base = await loadAsyncSnapshotBase(gameId, executor);
   const activePlayerRows = base.players.filter(p => p.left_at === null && p.kicked !== true);
+  let anyInserted = false;
   for (const player of activePlayerRows) {
-    await ensurePlayerRoundStarted(gameId, player.player_id, base, executor);
+    const inserted = await ensurePlayerRoundStarted(gameId, player.player_id, base, executor);
+    if (inserted) anyInserted = true;
   }
-  const refreshedBase = await loadAsyncSnapshotBase(gameId, executor);
+  const refreshedBase = anyInserted ? await loadAsyncSnapshotBase(gameId, executor) : base;
   const refreshedActivePlayerRows = refreshedBase.players.filter(p => p.left_at === null && p.kicked !== true);
   const playerSnapshots: Record<string, CompeteSessionSnapshot> = {};
   for (const player of refreshedActivePlayerRows) {
