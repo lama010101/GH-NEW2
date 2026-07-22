@@ -3268,7 +3268,7 @@ export async function markPlayerRoundAbsent(
          (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token)
        VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $8, $9)
        ON CONFLICT (game_id, round_index, player_id) DO NOTHING`,
-      [gameId, playerId, roundIndex, 0, result.distanceKm, result.yearDiff, result.locationAccuracy, result.yearAccuracy, resultToken]
+      [gameId, roundIndex, playerId, 0, result.distanceKm, result.yearDiff, result.locationAccuracy, result.yearAccuracy, resultToken]
     );
 
     const completeToken = generateVerificationToken();
