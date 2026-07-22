@@ -1,6 +1,8 @@
 # GUESS-HISTORY — Implementation Progress
 
 ## Format
+|| MP-FIX-RELAX-PHASE2B-DOUBLEQUERY-001 | DONE | src/server/sessionCore.ts | Changed `ensurePlayerRoundStarted` return type from `Promise<void>` to `Promise<boolean>`; it returns `true` only when it inserts a `player_round_events` `ROUND_STARTED` row. Both `buildAsyncPlayerSnapshotForViewer` and `buildAsyncPlayerSnapshotsForActivePlayers` now reload `loadAsyncSnapshotBase` only when an insert occurred; for the active-players builder, a single `anyInserted` flag groups the reload at the end of the loop. This removes the permanent double DB load on the async hot path while preserving the late-joiner/backfill path. `tsc --noEmit` 0 errors; `npm run lint` 0 errors (pre-existing warnings only). Custom query-count validation script confirmed: `startCompeteSession` loads `loadAsyncSnapshotBase` twice (snapshot + active-player broadcast), host `loadCompeteSessionSnapshot` loads once, a simulated late-joiner `loadCompeteSessionSnapshot` loads twice (insert + reload), and `submitGuess` with two active players missing `ROUND_STARTED` rows loads twice. The existing Vitest integration suite has pre-existing `room_code` not-null and cross-connection PID assumptions that fail unrelated to this change; the sync golden-path Playwright spec could not be exercised in this environment because `lsof` is non-functional and Playwright global setup fails on duplicate test-user registration. Pushed to `devin/mp-build-relax-phase2b-timer-001`. (2026-07-22) |
+
 Each log entry: `Task ID | Status | Files Changed | Notes`
 Status values: `DONE` | `IN PROGRESS` | `BLOCKED` | `SKIPPED` | `PLAN`
 
