@@ -3,7 +3,7 @@
 -- ROUND_STARTED event is written and the host has enabled a round timer;
 -- it remains NULL when the timer is off.
 ALTER TABLE public.player_round_events
-  ADD COLUMN IF NOT EXISTS phase_ends_at TIMESTAMP NULL;
+  ADD COLUMN IF NOT EXISTS phase_ends_at TIMESTAMPTZ NULL;
 
 -- Support the "earliest expiring active player" query used by the PartyKit DO
 -- per-player timer scheduler. Partial index scoped to ROUND_STARTED rows with a
