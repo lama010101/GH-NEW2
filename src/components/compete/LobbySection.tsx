@@ -559,7 +559,7 @@ export default function LobbySection({
           <div className={styles['lobby-header-meta']}>
             <span className={styles['lobby-status-chip']}>
               <span className={styles['lobby-status-dot']} />
-              {t('lobby.waiting')}
+              {t('lobby.waiting', { ready: readyCount, total: totalPlayers })}
               <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--gh-text-primary)', letterSpacing: '1px' }}>{roomCode}</span>
             </span>
           </div>
