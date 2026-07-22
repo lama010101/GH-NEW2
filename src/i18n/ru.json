@@ -347,6 +347,7 @@
     "results_timer_label": "Следующий раунд через {n}с",
     "submitted": "Отправлено",
     "guess_submitted": "Ответ отправлен!",
+    "player_submitted_round": "{name} отправил(а) раунд {n}",
     "your_location": "Ваше местоположение",
     "your_year": "Ваш год",
     "waiting_for": "Ожидание",

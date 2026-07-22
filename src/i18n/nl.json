@@ -347,6 +347,7 @@
     "results_timer_label": "Volgende ronde over {n}s",
     "submitted": "Ingediend",
     "guess_submitted": "Gok ingediend!",
+    "player_submitted_round": "{name} heeft ronde {n} ingediend",
     "your_location": "Jouw locatie",
     "your_year": "Jouw jaar",
     "waiting_for": "Wachten op",

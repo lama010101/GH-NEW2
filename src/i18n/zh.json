@@ -347,6 +347,7 @@
     "results_timer_label": "{n}秒后进入下一回合",
     "submitted": "已提交",
     "guess_submitted": "答案已提交！",
+    "player_submitted_round": "{name} 已提交第 {n} 回合",
     "your_location": "你的位置",
     "your_year": "你的年份",
     "waiting_for": "等待中",

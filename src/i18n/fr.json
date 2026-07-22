@@ -348,6 +348,7 @@
     "results_timer_label": "Prochaine manche dans {n}s",
     "submitted": "Soumis",
     "guess_submitted": "Réponse soumise !",
+    "player_submitted_round": "{name} a soumis la manche {n}",
     "your_location": "Votre position",
     "your_year": "Votre année",
     "waiting_for": "En attente de",

@@ -347,6 +347,7 @@
     "results_timer_label": "{n}秒後に次のラウンド",
     "submitted": "送信済み",
     "guess_submitted": "回答を送信しました！",
+    "player_submitted_round": "{name}がラウンド {n}を提出しました",
     "your_location": "あなたの位置",
     "your_year": "あなたの年号",
     "waiting_for": "待機中",

@@ -347,6 +347,7 @@
     "results_timer_label": "Próxima rodada em {n}s",
     "submitted": "Enviado",
     "guess_submitted": "Palpite enviado!",
+    "player_submitted_round": "{name} enviou a rodada {n}",
     "your_location": "Sua localização",
     "your_year": "Seu ano",
     "waiting_for": "Aguardando",
