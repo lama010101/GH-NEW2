@@ -347,6 +347,7 @@
     "results_timer_label": "Round successivo tra {n}s",
     "submitted": "Inviato",
     "guess_submitted": "Ipotesi inviata!",
+    "player_submitted_round": "{name} ha inviato il round {n}",
     "your_location": "La tua posizione",
     "your_year": "Il tuo anno",
     "waiting_for": "In attesa di",

@@ -347,6 +347,7 @@
     "results_timer_label": "Nächste Runde in {n}s",
     "submitted": "Abgesendet",
     "guess_submitted": "Antwort abgesendet!",
+    "player_submitted_round": "{name} hat Runde {n} abgegeben",
     "your_location": "Dein Ort",
     "your_year": "Dein Jahr",
     "waiting_for": "Warte auf",

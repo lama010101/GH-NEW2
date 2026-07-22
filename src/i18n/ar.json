@@ -347,6 +347,7 @@
     "results_timer_label": "الجولة التالية خلال {n}ث",
     "submitted": "تم الإرسال",
     "guess_submitted": "تم إرسال التخمين!",
+    "player_submitted_round": "أرسل {name} الجولة {n}",
     "your_location": "موقعك",
     "your_year": "سنتك",
     "waiting_for": "بانتظار",

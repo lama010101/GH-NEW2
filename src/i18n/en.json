@@ -348,6 +348,7 @@
     "results_timer_label": "Next round in {n}s",
     "submitted": "Submitted",
     "guess_submitted": "Guess submitted!",
+    "player_submitted_round": "{name} submitted round {n}",
     "your_location": "Your location",
     "your_year": "Your year",
     "waiting_for": "Waiting for",
