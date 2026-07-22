@@ -44,6 +44,17 @@ function PlayIcon() {
   )
 }
 
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  )
+}
+
 export function CompetePanel({ onLobby, playerId }: {
   onLobby: (gameId: string) => void
   playerId: string
@@ -253,7 +264,7 @@ export function CompetePanel({ onLobby, playerId }: {
                     className={cpStyles.deleteBtn}
                     aria-label={t('home.compete_delete_aria')}
                   >
-                    ✕
+                    <TrashIcon />
                   </button>
                 </div>
               ))}
@@ -337,39 +348,21 @@ export function CompetePanel({ onLobby, playerId }: {
                     </span>
                   </div>
                   <div className={cpStyles.scoreWrap}>
-                    {game.score_you != null && game.score_them != null ? (
-                      <>
-                        <span className={`${cpStyles.resultBadge} ${
-                          game.score_you > game.score_them
-                            ? cpStyles.resultWin
-                            : game.score_you < game.score_them
-                            ? cpStyles.resultLoss
-                            : cpStyles.resultDraw
-                        }`}>
-                          {game.score_you > game.score_them ? t('home.compete_win') : game.score_you < game.score_them ? t('home.compete_loss') : t('home.compete_draw')}
-                        </span>
-                        <span
-                          className={cpStyles.accuracyValue}
-                          style={{ color: getAccuracyColor(game.accuracy_you ?? 0) }}
-                        >
-                          {game.accuracy_you ?? 0}
-                        </span>
-                        <span className={cpStyles.xpValue}>{game.score_you} {t('home.compete_xp_unit')}</span>
-                      </>
-                    ) : (
-                      <span className={cpStyles.completedLabel}>{t('home.compete_completed')}</span>
-                    )}
+                    <span
+                      className={cpStyles.accuracyValue}
+                      style={{ color: getAccuracyColor(game.accuracy_you ?? 0) }}
+                    >
+                      {game.accuracy_you ?? 0}<span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: 1 }}>%</span>
+                    </span>
                   </div>
-                  {game.leaderboard_rank != null && (
-                    <span className={cpStyles.rankBadge}>#{game.leaderboard_rank}</span>
-                  )}
+                  <span className={cpStyles.rankBadge}>{game.leaderboard_rank != null ? `#${game.leaderboard_rank}` : '#—'}</span>
                   <button
                     type="button"
                     className={cpStyles.deleteBtn}
                     aria-label={t('home.compete_delete_aria')}
                     onClick={(e) => { e.stopPropagation(); }}
                   >
-                    ✕
+                    <TrashIcon />
                   </button>
                 </div>
               ))}

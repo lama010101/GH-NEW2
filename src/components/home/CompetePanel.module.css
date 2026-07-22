@@ -99,7 +99,7 @@
 .gameList {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 2px;
   max-height: 280px;
   overflow-y: auto;
 }
@@ -271,6 +271,8 @@
 .scoreWrap {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  gap: 4px;
 }
 
 .resultBadge {
