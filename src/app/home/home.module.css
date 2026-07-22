@@ -90,8 +90,14 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0;
-  font-family: var(--font-bebas, 'Bebas Neue', sans-serif);
+  font-family: var(--font-bebas), 'Bebas Neue', sans-serif;
   line-height: 1;
+}
+
+[dir="rtl"] .cardTitleLeft {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .cardDescLeft {
