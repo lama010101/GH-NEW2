@@ -129,6 +129,12 @@ export default function useCompeteTimer({
       return;
     }
 
+    // Relax (async) rounds do not use a synchronized result-phase countdown.
+    if (snapshot.config?.mode === "async") {
+      setResultSecsLeft(null);
+      return;
+    }
+
     // Fallback: derive resultPhaseEndsAt from events array if server value absent
     let effectiveResultPhaseEndsAt = snapshot.resultPhaseEndsAt;
 
@@ -161,7 +167,7 @@ export default function useCompeteTimer({
 
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snapshot?.status, snapshot?.resultPhaseEndsAt, snapshot?.events]);
+  }, [snapshot?.status, snapshot?.resultPhaseEndsAt, snapshot?.events, snapshot?.config?.mode]);
 
   return { timeRemaining, resultSecsLeft };
 }
