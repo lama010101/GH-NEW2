@@ -223,6 +223,7 @@ export default function RoundCompleteSection({
             score: r.score,
             cumulativeScore: r.cumulativeScore,
             cumulativeAccuracy: r.cumulativeAccuracy,
+            didSubmit: r.didSubmit,
           }));
 
         const allRoundsLeaderboardRows = (roundResults ?? [])
@@ -237,6 +238,7 @@ export default function RoundCompleteSection({
             score: r.score,
             cumulativeScore: r.cumulativeScore,
             cumulativeAccuracy: r.cumulativeAccuracy,
+            didSubmit: r.didSubmit,
           }));
         return (
           <>
@@ -427,6 +429,7 @@ export default function RoundCompleteSection({
                 <span className={styles.leaderboardHeaderScore}>{leaderboardTab === 'thisRound' ? t('col_score') : t('col_accuracy')}</span>
               </div>
               {(leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows).map(row => {
+                const isThisRoundNoGuess = leaderboardTab === 'thisRound' && !row.didSubmit;
                 const accForHue = leaderboardTab === 'thisRound' ? row.accuracy : row.cumulativeAccuracy;
                 const hue = Math.round((Math.max(0, Math.min(100, accForHue)) / 100) * 120);
                 const accColor = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
@@ -435,7 +438,9 @@ export default function RoundCompleteSection({
                 const displaySuffix = '%';
                 return (
                   <div key={row.rank} className={`${styles.lbRow} ${row.isMe ? styles.lbRowSelfAccent : ""}`}>
-                    <span className={`${styles.lbRank} ${row.rank === 1 ? styles.lbRankGold : ""}`}>{row.rank}</span>
+                    <span className={`${styles.lbRank} ${!isThisRoundNoGuess && row.rank === 1 ? styles.lbRankGold : ""}`}>
+                      {isThisRoundNoGuess ? '—' : row.rank}
+                    </span>
                     <span className={styles.lbNameCell}>
                       <span className={styles.lbNameInner}>
                         <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} size={40} />
@@ -444,11 +449,16 @@ export default function RoundCompleteSection({
                         </span>
                       </span>
                       {row.isMe && <span className={styles.lbYouPill}>{t('you')}</span>}
+                      {isThisRoundNoGuess && <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>}
                     </span>
-                    <span className={styles.lbAccPill}>
-                      <span style={{ color: accColor, fontSize: "var(--font-base)" }}>{displayValue}</span>
-                      <span className={styles.lbAccSuffix}>{displaySuffix}</span>
-                    </span>
+                    {isThisRoundNoGuess ? (
+                      <span className={styles.lbAccEmpty}>—</span>
+                    ) : (
+                      <span className={styles.lbAccPill}>
+                        <span style={{ color: accColor, fontSize: "var(--font-base)" }}>{displayValue}</span>
+                        <span className={styles.lbAccSuffix}>{displaySuffix}</span>
+                      </span>
+                    )}
                   </div>
                 );
               })}
