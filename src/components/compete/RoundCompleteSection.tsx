@@ -91,6 +91,7 @@ export default function RoundCompleteSection({
   const tNav = useTranslations('nav');
 
   const isPractice = snapshot.config.mode === "practice";
+  const isAsync = snapshot.config.mode === "async";
 
   const accuracyCardRef = useRef<HTMLDivElement>(null);
   const whereCardRef = useRef<HTMLDivElement>(null);
@@ -620,7 +621,7 @@ export default function RoundCompleteSection({
 
             {/* BOTTOM BAR WRAPPER — countdown (above) + nav row (proto-style) */}
             <div className={styles.bottomBarWrap}>
-              {((resultSecsLeft !== null && resultSecsLeft > 0) || effectiveReadyForNext.length > 0) && (
+              {!isAsync && ((resultSecsLeft !== null && resultSecsLeft > 0) || effectiveReadyForNext.length > 0) && (
                 <div className={styles.countdown}>
                   {resultSecsLeft !== null && resultSecsLeft > 0 && (
                     <span className={styles.countdownText}>
@@ -672,9 +673,9 @@ export default function RoundCompleteSection({
                   </span>
                 </div>
                 <button
-                  className={`${styles.nextButton} ${effectiveReadyForNext.includes(playerId ?? "") ? styles.nextButtonDisabled : ""}`}
+                  className={`${styles.nextButton} ${!isAsync && effectiveReadyForNext.includes(playerId ?? "") ? styles.nextButtonDisabled : ""}`}
                   onClick={handleNextClick}
-                  disabled={effectiveReadyForNext.includes(playerId ?? "") || busy}
+                  disabled={(!isAsync && effectiveReadyForNext.includes(playerId ?? "")) || busy}
                   data-testid="round-next-btn"
                   data-ready={effectiveReadyForNext.includes(playerId ?? "") ? 'true' : 'false'}
                 >
