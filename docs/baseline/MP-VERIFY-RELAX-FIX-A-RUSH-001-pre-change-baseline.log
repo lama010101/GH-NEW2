@@ -1,0 +1,47 @@
+=== Rush Reconnect Smoke ===
+BASE_URL=http://localhost:3001 PARTYKIT_HOST=localhost:1998 DISCONNECT_MS=15000
+Game created: 4f8967b8-259b-4342-99fd-80d4ad4a0c95
+[HOST][log] [CompeteWebSocket] Connecting to: ws://localhost:1998/parties/lobby/4f8967b8-259b-4342-99fd-80d4ad4a0c95?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIyOTA5MzVjMC1kNWIxLTRkMmUtYWFlZi0zMjdmMjI5NDdkNzkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0ODA3MTE0LCJpYXQiOjE3ODQ4MDM1MTQsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMUB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4NDgwMzUxNH1dLCJzZXNzaW9uX2lkIjoiYTI3MmQwZGYtMDVhNC00NGYzLWJiNjktYzgyNTc1YmNkMTg2IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.1yD9uUk8HyXnEQ2_PuWJ7MYZPmX5O5uDjlu7ToaxO5ip--04x6BJuMMcHwGK2LgQawfG8IiQn8RFNPAnNXTiWw
+[GUEST][log] [CompeteWebSocket] Connecting to: ws://localhost:1998/parties/lobby/4f8967b8-259b-4342-99fd-80d4ad4a0c95?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwN2RiYzE1NC1iYjFhLTRmMTMtOTk0Zi1mNmEwMDIxOWZhYjgiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0ODA3MTE0LCJpYXQiOjE3ODQ4MDM1MTQsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4NDgwMzUxNH1dLCJzZXNzaW9uX2lkIjoiNWNiNDM3NjctOWQ0Yi00NDYwLTg2OWYtNDdhM2Y5YjI1NDU0IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.kvIVzbbT0fl3QFZIWALCHnJ2luMIKSAkmV2ZSMDag2YEFklyUMKW3KYre3KmtAcsZki2PbexKlBfMorpVi8abA
+[GUEST][log] [CompeteWebSocket] Connected
+[HOST][log] [CompeteWebSocket] Connected
+[WS:HOST] [HOST] status=LOBBY round=0 snapshotVersion=undefined
+[WS:GUEST] [GUEST] status=LOBBY round=0 snapshotVersion=undefined
+[WS:HOST] [HOST] status=LOBBY round=0 snapshotVersion=3
+[WS:GUEST] [GUEST] status=LOBBY round=0 snapshotVersion=3
+[WS:HOST] [HOST] status=LOBBY round=0 snapshotVersion=4
+[WS:GUEST] [GUEST] status=LOBBY round=0 snapshotVersion=4
+[WS:HOST] [HOST] status=LOBBY round=0 snapshotVersion=5
+[WS:GUEST] [GUEST] status=LOBBY round=0 snapshotVersion=5
+[WS:HOST] [HOST] status=LOBBY round=0 snapshotVersion=6
+[WS:GUEST] [GUEST] status=LOBBY round=0 snapshotVersion=6
+[WS:HOST] [HOST] status=ROUND_ACTIVE round=0 snapshotVersion=7
+[WS:GUEST] [GUEST] status=ROUND_ACTIVE round=0 snapshotVersion=7
+Round active before disconnect
+--- GUEST DISCONNECT (15000ms) ---
+[GUEST2][log] [CompeteWebSocket] Connecting to: ws://localhost:1998/parties/lobby/4f8967b8-259b-4342-99fd-80d4ad4a0c95?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwN2RiYzE1NC1iYjFhLTRmMTMtOTk0Zi1mNmEwMDIxOWZhYjgiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0ODA3MTE0LCJpYXQiOjE3ODQ4MDM1MTQsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMkB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMiIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4NDgwMzUxNH1dLCJzZXNzaW9uX2lkIjoiNWNiNDM3NjctOWQ0Yi00NDYwLTg2OWYtNDdhM2Y5YjI1NDU0IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.kvIVzbbT0fl3QFZIWALCHnJ2luMIKSAkmV2ZSMDag2YEFklyUMKW3KYre3KmtAcsZki2PbexKlBfMorpVi8abA
+[GUEST2][log] [CompeteWebSocket] Connected
+GUEST2 visible status after reconnect: ROUND_ACTIVE
+[WS:GUEST2-WS] [GUEST2-WS] status=ROUND_ACTIVE round=0 snapshotVersion=undefined
+GUEST2 WS last: [GUEST2-WS] status=ROUND_ACTIVE round=0 snapshotVersion=undefined
+[WS:HOST] [HOST] status=ROUND_ACTIVE round=0 snapshotVersion=8
+[WS:GUEST] [GUEST] status=ROUND_ACTIVE round=0 snapshotVersion=8
+[WS:GUEST2-WS] [GUEST2-WS] status=ROUND_ACTIVE round=0 snapshotVersion=8
+[WS:HOST] [HOST] status=ROUND_ACTIVE round=0 snapshotVersion=9
+[WS:GUEST] [GUEST] status=ROUND_ACTIVE round=0 snapshotVersion=9
+[WS:GUEST2-WS] [GUEST2-WS] status=ROUND_ACTIVE round=0 snapshotVersion=9
+[WS:HOST] [HOST] status=ROUND_ACTIVE round=0 snapshotVersion=10
+[WS:GUEST] [GUEST] status=ROUND_ACTIVE round=0 snapshotVersion=10
+[WS:GUEST2-WS] [GUEST2-WS] status=ROUND_ACTIVE round=0 snapshotVersion=10
+[WS:HOST] [HOST] status=ROUND_COMPLETE round=0 snapshotVersion=11
+[WS:GUEST] [GUEST] status=ROUND_COMPLETE round=0 snapshotVersion=11
+[WS:GUEST2-WS] [GUEST2-WS] status=ROUND_COMPLETE round=0 snapshotVersion=11
+Round completed after guest reconnect
+--- HOST DISCONNECT (15000ms) ---
+[HOST2][log] [CompeteWebSocket] Connecting to: ws://localhost:1998/parties/lobby/4f8967b8-259b-4342-99fd-80d4ad4a0c95?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIyOTA5MzVjMC1kNWIxLTRkMmUtYWFlZi0zMjdmMjI5NDdkNzkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0ODA3MTE0LCJpYXQiOjE3ODQ4MDM1MTQsImVtYWlsIjoiZ2gtdGVzdC1wbGF5ZXItMUB0ZXN0Lmd1ZXNzLWhpc3RvcnkuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJkaXNwbGF5X25hbWUiOiJUZXN0UGxheWVyMSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc4NDgwMzUxNH1dLCJzZXNzaW9uX2lkIjoiYTI3MmQwZGYtMDVhNC00NGYzLWJiNjktYzgyNTc1YmNkMTg2IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.1yD9uUk8HyXnEQ2_PuWJ7MYZPmX5O5uDjlu7ToaxO5ip--04x6BJuMMcHwGK2LgQawfG8IiQn8RFNPAnNXTiWw
+[HOST2][log] [CompeteWebSocket] Connected
+HOST2 visible status after reconnect: ROUND_COMPLETE
+[WS:HOST2-WS] [HOST2-WS] status=ROUND_COMPLETE round=0 snapshotVersion=undefined
+HOST2 WS last: [HOST2-WS] status=ROUND_COMPLETE round=0 snapshotVersion=undefined
+HOST2 did not land in ROUND_ACTIVE; skipping submit
+=== Smoke complete ===
