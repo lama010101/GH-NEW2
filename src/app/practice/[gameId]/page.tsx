@@ -15,7 +15,7 @@ import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser, readSession } from "@/core/supabaseBrowser";
-import { forceClearAuthStorage } from "@/core/identity";
+import { forceClearAuthStorage, updateCachedDisplayName } from "@/core/identity";
 import { computeTimeRemaining } from "@/core/competeUtils";
 import { PracticeSettingsModal, type PracticeModalSettings } from "@/components/practice/PracticeSettingsModal";
 import { savePracticeSettings } from "@/components/practice/practiceSettings";
@@ -176,6 +176,7 @@ export default function PracticeGamePage() {
         if (profile) {
           if (profile.avatar_url) setTopbarAvatarUrl(profile.avatar_url);
           if (profile.display_name) setTopbarInitials(profile.display_name.slice(0, 2).toUpperCase());
+          if (profile.display_name) updateCachedDisplayName(profile.display_name);
         }
       } catch {}
     })();

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
+import { updateCachedDisplayName } from '@/core/identity';
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser';
 import styles from './profile.module.css';
 import TopBar from '@/components/layout/TopBar';
@@ -168,6 +169,7 @@ export default function ProfilePage() {
           }
         }
 
+        if (profileResult?.display_name) updateCachedDisplayName(profileResult.display_name);
         setProfileData({
           displayName: profileResult?.display_name ?? null,
           avatarUrl: profileResult?.avatar_url ?? null,
