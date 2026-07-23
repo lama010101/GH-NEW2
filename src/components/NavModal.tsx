@@ -38,6 +38,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
     { id: 'leaderboard',  label: t('leaderboard'),   icon: LEADERBOARD_ICON,   action: () => navigate('/leaderboard') },
     { id: 'profile_stats',label: t('profile_stats'), icon: PROFILE_ICON,       action: () => navigate('/progress') },
     { id: 'account',      label: t('account'), icon: ACCOUNT_ICON,       action: () => navigate('/account') },
+    { id: 'grow',         label: t('grow'),           icon: GROW_ICON,          action: () => navigate('/grow') },
     { id: 'help',         label: t('help'),           icon: HELP_ICON,          action: () => navigate('/help') },
   ]
 
@@ -153,6 +154,13 @@ const HELP_ICON = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <circle cx="12" cy="12" r="10"/>
     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17" strokeWidth="2.5"/>
+  </svg>
+)
+
+const GROW_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22V8" />
+    <path d="M5 10c0-3.5 3.5-7 7-7s7 3.5 7 7c0 2.5-1.5 4.5-3.5 6L12 8l-3.5 8C6.5 14.5 5 12.5 5 10z" />
   </svg>
 )
 

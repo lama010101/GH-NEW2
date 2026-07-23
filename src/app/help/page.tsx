@@ -541,6 +541,23 @@ export default function HelpPage() {
           </div>
         </section>
 
+        {/* Grow CTA */}
+        <section className={styles.contact} aria-labelledby="grow-cta-heading">
+          <h2 id="grow-cta-heading" className={styles.contactTitle}>
+            {t('grow_cta')}
+          </h2>
+          <div className={styles.contactActions}>
+            <button
+              type="button"
+              onClick={() => router.push('/grow')}
+              data-analytics="help-grow-cta"
+              className={styles.contactPrimary}
+            >
+              {t('grow_cta')}
+            </button>
+          </div>
+        </section>
+
         {/* Back to Top */}
         <button
           className={styles.backToTop}
