@@ -539,6 +539,9 @@ export default function PracticeGamePage() {
         const data = await response.json();
         const newGameId = data.gameId;
         if (!newGameId) throw new Error('No gameId in response');
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`gh_practice_game_${playerId}`, newGameId);
+        }
         router.push(`/practice/${newGameId}`);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to start practice');
