@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, type IdentityState } from '@/core/identity'
-import { supabaseBrowser } from '@/core/supabaseBrowser'
+import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
@@ -133,7 +133,7 @@ function HomePageInner() {
     let cancelled = false
     ;(async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession()
+        const session = await readSession()
         if (cancelled) return
         if (session?.user && session.user.id === pid) {
           const createdAt = new Date(session.user.created_at).getTime()
@@ -161,6 +161,9 @@ function HomePageInner() {
           setAvatarUrl(profile.avatar_url ?? null)
           setWelcomeCompleted(profile.welcome_completed ?? false)
           if (profile.display_name) setInitials(profile.display_name.slice(0,2).toUpperCase())
+          if (profile.display_name && (identity as { displayName?: string }).displayName !== profile.display_name) {
+            updateCachedDisplayName(profile.display_name)
+          }
         }
       } catch {}
       // profileVersion is used to force re-fetch when WelcomeModal saves

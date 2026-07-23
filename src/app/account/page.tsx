@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
-import { signOut } from '@/core/identity'
+import { signOut, updateCachedDisplayName } from '@/core/identity'
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
@@ -141,6 +141,7 @@ export default function AccountPage() {
 
       setDisplayName(profile?.display_name ?? '')
       setSavedName(profile?.display_name ?? '')
+      if (profile?.display_name) updateCachedDisplayName(profile.display_name)
       setEmail(userEmail)
       setCreatedAt(userCreatedAt)
     }
