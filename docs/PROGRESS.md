@@ -1,4 +1,4 @@
-# GUESS-HISTORY — Implementation Progress
+﻿# GUESS-HISTORY — Implementation Progress
 
 ## Format
 
@@ -2962,4 +2962,9 @@ DESCRIPTION: Cleaned dead CSS (legacy carousel, card item classes, unused utilit
 
 | MP-FIX-AUTH-SIGNOUT-CHUNKED-COOKIE-001 | DONE | src/core/identity.ts | Fixed sign-out leaving session recoverable after a failed/aborted /logout call. Root cause: signOut()'s error-path cookie clear only matched sb-*-auth-token exactly, missing chunked cookies (sb-*-auth-token.0/.1) and the PKCE code-verifier cookie; @supabase/ssr's combineChunks reconstructed a valid session from the leftover chunks, so sign-out appeared to work in the UI while the session remained valid server-side on reload. Fix: replaced the narrow inline cookie-clear with an unconditional call to the existing forceClearAuthStorage() helper (already correctly clears all sb-* cookies + localStorage) in signOut()'s finally block — runs regardless of auth.signOut() outcome. tsc: 0 new errors. lint: 0 errors (pre-existing warnings only). Live-verified twice: chunked-cookie + aborted-logout repro (PASS — all cookies cleared, correct /login redirect) and happy-path regression (PASS — unchanged behavior). git diff --name-only: identity.ts only. Commit 7db2363, PR #26, merged a18acedf1f15713609dbd7329e9a5b04e4f12d3a. (2026-07-20) |
 
-| MP-FIX-HOME-COMPETE-DESC-001 | DONE | src/i18n/en.json | Aligned the English compete card subtitle with the home-create-pill prototype: `home.compete_desc` changed from the three-line timing detail to `Play against your friends.\nReal-time or Turn-based`, matching all other locales and the intended short subtitle. Local validation: `npm run typecheck` exit 0, `npm run lint` exit 0 (pre-existing warnings only), `npx vitest run src/middleware.test.ts src/core/identity.test.ts src/app/auth/callback/route.test.ts src/components/AuthModal.test.tsx` 45/45 pass, `npm run build` exit 0. PR #47. (2026-07-23) |
+| MP-FIX-HOME-COMPETE-DESC-001 | DONE | src/i18n/en.json | Aligned the English compete card subtitle with the home-create-pill prototype: home.compete_desc changed from the three-line timing detail to Play against your friends.\nReal-time or Turn-based, matching all other locales and the intended short subtitle. Local validation: 
+pm run typecheck exit 0, 
+pm run lint exit 0 (pre-existing warnings only), 
+px vitest run src/middleware.test.ts src/core/identity.test.ts src/app/auth/callback/route.test.ts src/components/AuthModal.test.tsx 45/45 pass, 
+pm run build exit 0. PR #47. (2026-07-23) |
+| MP-PROTO-LANDING-DESKTOP-001 | DONE | src/app/prototype/landing/page.tsx, src/middleware.ts | New desktop landing mockup at /prototype/landing with two-column layout (brand hero left, sign-in module right) using gh-* design tokens. Sign-in module is self-contained and mock-only (Google, email/password, remember-me, forgot password, sign-up toggle). Added /prototype to middleware public paths so the prototype is reachable without auth. tsc --noEmit, npm run lint, npm run build (placeholder Supabase env), and 45 auth unit tests pass locally. (2026-07-23) |
