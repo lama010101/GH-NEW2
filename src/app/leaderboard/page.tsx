@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
+import { updateCachedDisplayName } from '@/core/identity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
@@ -112,6 +113,7 @@ function LeaderboardPageInner() {
         if (profile) {
           if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
           if (profile.display_name) setInitials(profile.display_name.slice(0, 2).toUpperCase());
+          if (profile.display_name) updateCachedDisplayName(profile.display_name);
         }
       } catch {}
     })();
