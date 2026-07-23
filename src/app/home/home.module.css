@@ -84,7 +84,7 @@
 }
 
 .cardTitleLeft {
-  font-size: var(--font-2xl);
+  font-size: var(--font-xl);
   font-weight: 800;
   color: var(--gh-text-primary);
   text-transform: uppercase;
