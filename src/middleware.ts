@@ -26,6 +26,7 @@ function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
   if (pathname.startsWith("/_next/")) return true;
   if (pathname.startsWith("/favicon")) return true;
+  if (pathname.startsWith("/prototype")) return true;
   if (PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))) return true;
   const lastDot = pathname.lastIndexOf(".");
   if (lastDot !== -1 && STATIC_ASSET_EXTENSIONS.includes(pathname.slice(lastDot).toLowerCase())) {
