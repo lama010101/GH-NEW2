@@ -1,0 +1,36 @@
+=== Rush WebSocket baseline capture ===
+Game ID: b76e45e6-2435-46cb-be5b-6e4eb94e26ee
+Host user: df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+Guest user: 17ae6473-8fbf-48e8-8b44-72ec270e1c84
+
+--- Host console (filtered) ---
+[HOST][log] [CompeteWebSocket] Connecting to: ws://localhost:1999/parties/lobby/b76e45e6-2435-46cb-be5b-6e4eb94e26ee?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJkZjhkYmUwOC0zNzMxLTRmMTEtYjgxMy1hMWZlNWY3M2EwZTMiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0ODAzODc3LCJpYXQiOjE3ODQ4MDAyNzcsImVtYWlsIjoiZ2gtYmFzZWxpbmUtYS0xQHRlc3QuZ3Vlc3MtaGlzdG9yeS5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImRpc3BsYXlfbmFtZSI6IkJhc2VsaW5lQTEiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZX0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3ODQ4MDAyNzZ9XSwic2Vzc2lvbl9pZCI6ImM3MWQwMjFkLTRkNjQtNDVhMS1iNDE2LWNjMWUxZDM3OTQ2NyIsImlzX2Fub255bW91cyI6ZmFsc2V9.jUN0KhJRiTl_SGbsh3sKpnB13k6K4mvkDjXQp8PVZWHteFGv-aLYtlZparUBFCwCYnNnlcB1PPX55zOxjl5eTg
+[HOST][log] [CompeteWebSocket] Connected
+
+--- Guest console (filtered) ---
+[GUEST][log] [CompeteWebSocket] Connecting to: ws://localhost:1999/parties/lobby/b76e45e6-2435-46cb-be5b-6e4eb94e26ee?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjBhYTdkM2Y5LTY4NDAtNDQ0Ni05ZTMzLTE5NTkzZTQwNDMwMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2d6dml4bHZrd2pzcnRtdHlidGtmLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIxN2FlNjQ3My04ZmJmLTQ4ZTgtOGI0NC03MmVjMjcwZTFjODQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzg0ODAzODc3LCJpYXQiOjE3ODQ4MDAyNzcsImVtYWlsIjoiZ2gtYmFzZWxpbmUtYS0yQHRlc3QuZ3Vlc3MtaGlzdG9yeS5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImRpc3BsYXlfbmFtZSI6IkJhc2VsaW5lQTIiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZX0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3ODQ4MDAyNzd9XSwic2Vzc2lvbl9pZCI6IjkwYjNhNTk2LTE3NGUtNDRmMC1iMDgwLTYwYzAxZGRmNWIzZCIsImlzX2Fub255bW91cyI6ZmFsc2V9.JoZRuijAB87fw5vuvqlkdP2-AiqEuHm7cj4TKqVbaUsXJ45uYyA4iw5wnNjlyD_CJv8tAWxHzcCrfLHyMRLeGA
+[GUEST][log] [CompeteWebSocket] Connected
+
+--- WS driver snapshots ---
+[WS-DRIVER:HOST] status=LOBBY round=0 snapshotVersion=undefined viewer=null
+[WS-DRIVER:HOST] status=LOBBY round=0 snapshotVersion=3 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:HOST] status=LOBBY round=0 snapshotVersion=4 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:HOST] status=LOBBY round=0 snapshotVersion=5 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:HOST] status=LOBBY round=0 snapshotVersion=6 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:HOST] status=ROUND_ACTIVE round=0 snapshotVersion=7 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:HOST] status=ROUND_ACTIVE round=0 snapshotVersion=8 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:HOST] status=ROUND_COMPLETE round=0 snapshotVersion=9 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:HOST] status=ROUND_COMPLETE round=0 snapshotVersion=10 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:HOST] status=ROUND_COMPLETE round=0 snapshotVersion=11 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:HOST] status=ROUND_ACTIVE round=1 snapshotVersion=12 viewer=df8dbe08-3731-4f11-b813-a1fe5f73a0e3
+[WS-DRIVER:GUEST] status=LOBBY round=0 snapshotVersion=undefined viewer=null
+[WS-DRIVER:GUEST] status=LOBBY round=0 snapshotVersion=3 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84
+[WS-DRIVER:GUEST] status=LOBBY round=0 snapshotVersion=4 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84
+[WS-DRIVER:GUEST] status=LOBBY round=0 snapshotVersion=5 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84
+[WS-DRIVER:GUEST] status=LOBBY round=0 snapshotVersion=6 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84
+[WS-DRIVER:GUEST] status=ROUND_ACTIVE round=0 snapshotVersion=7 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84
+[WS-DRIVER:GUEST] status=ROUND_ACTIVE round=0 snapshotVersion=8 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84
+[WS-DRIVER:GUEST] status=ROUND_COMPLETE round=0 snapshotVersion=9 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84
+[WS-DRIVER:GUEST] status=ROUND_COMPLETE round=0 snapshotVersion=10 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84
+[WS-DRIVER:GUEST] status=ROUND_COMPLETE round=0 snapshotVersion=11 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84
+[WS-DRIVER:GUEST] status=ROUND_ACTIVE round=1 snapshotVersion=12 viewer=17ae6473-8fbf-48e8-8b44-72ec270e1c84

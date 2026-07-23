@@ -39,6 +39,7 @@ export class CompeteWebSocket {
   private manuallyDisconnected = false;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private lastAppliedSnapshotVersion = -1;
+  private pendingVersionReset = false;
   private lastPongReceived = 0;
 
   constructor(
@@ -78,6 +79,7 @@ export class CompeteWebSocket {
       this.reconnectAttempts = 0;
       this.manuallyDisconnected = false;
       this.lastPongReceived = Date.now();
+      this.pendingVersionReset = true;
       this.callbacks.onConnect?.();
       this.heartbeatInterval = setInterval(() => {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -96,6 +98,10 @@ export class CompeteWebSocket {
     };
 
     this.ws.onmessage = (event) => {
+      if (event.target !== this.ws) {
+        console.warn("[CompeteWebSocket] Ignoring message from inactive socket");
+        return;
+      }
       try {
         const data = JSON.parse(event.data) as WebSocketMessage;
         this.handleMessage(data);
@@ -130,6 +136,13 @@ export class CompeteWebSocket {
   private handleMessage(data: WebSocketMessage): void {
     switch (data.type) {
       case "STATE_UPDATE": {
+        if (this.pendingVersionReset) {
+          const snapshotConfig = ((data.snapshot as Record<string, unknown>)?.config) as Record<string, unknown> | undefined;
+          if (snapshotConfig?.mode === "async") {
+            this.lastAppliedSnapshotVersion = -1;
+          }
+          this.pendingVersionReset = false;
+        }
         // Monotonic version guard: reject stale out-of-order broadcasts.
         // Only active when snapshotVersion is present on the incoming snapshot.
         const incomingVersion = (data.snapshot as Record<string, unknown>)?.snapshotVersion;
