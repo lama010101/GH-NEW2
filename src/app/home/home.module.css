@@ -84,13 +84,13 @@
 }
 
 .cardTitleLeft {
-  font-size: var(--font-2xl);
+  font-size: var(--font-xl);
   font-weight: 800;
   color: var(--gh-text-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0;
-  font-family: var(--font-bebas), 'Bebas Neue', sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   line-height: 1;
 }
 
