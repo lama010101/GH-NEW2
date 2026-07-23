@@ -43,6 +43,7 @@ export default function useCompeteSocket({
   onPlayAgain,
 }: UseCompeteSocketParams) {
   const wsRef = useRef<CompeteWebSocket | null>(null);
+  const lastRoundIndexRef = useRef<number | undefined>(undefined);
 
   // Connect WebSocket — BLOCKED until Supabase identity is ready.
   // DO delivers authoritative state via STATE_UPDATE.
@@ -71,6 +72,15 @@ export default function useCompeteSocket({
           if (isCompeteSessionSnapshot(rawSnapshot)) {
             console.log("[CompeteGamePage] State update received, players:", rawSnapshot.players.map(p => ({ id: p.playerId.slice(0,8), name: p.displayName, isHost: p.isHost })));
             onStateUpdate(rawSnapshot);
+
+            if (rawSnapshot.config?.mode === "async") {
+              const currentRound = rawSnapshot.currentRoundIndex;
+              if (rawSnapshot.status !== "ROUND_ACTIVE" || (lastRoundIndexRef.current !== undefined && currentRound !== lastRoundIndexRef.current)) {
+                onSetLocalSubmitted(false);
+                onClearSubmissionToasts();
+              }
+              lastRoundIndexRef.current = currentRound;
+            }
 
             // If the snapshot includes pre-fetched results (from /complete route), apply them directly
             if (

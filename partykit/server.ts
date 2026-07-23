@@ -1139,6 +1139,8 @@ export default class GameServer {
    */
   private async sendPlayerSnapshot(connection: Connection, playerId: string): Promise<void> {
     try {
+      this.broadcastVersionCounter += 1;
+      const snapshotVersion = this.broadcastVersionCounter;
       const baseUrl = this.getNextJsBaseUrl();
       const response = await fetch(`${baseUrl}/api/compete/${encodeURIComponent(this.room.id)}`, {
         headers: {
@@ -1153,7 +1155,7 @@ export default class GameServer {
       const snapshot = await response.json();
       connection.send(JSON.stringify({
         type: "STATE_UPDATE",
-        snapshot: { ...snapshot as Record<string, unknown>, viewerPlayerId: playerId },
+        snapshot: { ...snapshot as Record<string, unknown>, viewerPlayerId: playerId, snapshotVersion },
         results: (snapshot as Record<string, unknown>).results ?? undefined,
       }));
     } catch (err) {
