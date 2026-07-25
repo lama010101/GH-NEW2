@@ -4,7 +4,7 @@ const NEW_USER_WINDOW_MS = 300_000;
 
 export type IdentityState =
   | { status: "loading" }
-  | { status: "ready"; playerId: string; isAnonymous: boolean; displayName: string; isNewUser: boolean }
+  | { status: "ready"; playerId: string; isAnonymous: boolean; displayName: string; avatarUrl: string | null; isNewUser: boolean }
   | { status: "unauthenticated" }
   | { status: "error"; error: string };
 
@@ -87,6 +87,7 @@ export async function bootstrapIdentity(): Promise<IdentityState> {
         playerId: user.id,
         isAnonymous,
         displayName,
+        avatarUrl: null,
         isNewUser
       };
       resolveReady?.(user.id);
@@ -150,6 +151,18 @@ export function updateCachedDisplayName(name: string): void {
 }
 
 /**
+ * Updates the cached avatar URL and notifies all subscribers.
+ * Use this after a profile avatar_url fetch/change so that every consumer
+ * of identity (NavModal, TopBar, etc.) reflects the new value without a
+ * page refresh.
+ */
+export function updateCachedAvatarUrl(url: string | null): void {
+  if (cachedState.status !== 'ready') return;
+  cachedState = { ...cachedState, avatarUrl: url };
+  notifySubscribers(cachedState);
+}
+
+/**
  * Force-clears all Supabase auth storage (cookies and localStorage) without calling GoTrue.
  * This is a lock-free escape hatch for recovery scenarios where auth methods might deadlock.
  */
@@ -196,6 +209,7 @@ export function subscribeToIdentityChanges(
           playerId: session.user.id,
           isAnonymous,
           displayName,
+          avatarUrl: null,
           isNewUser
         };
         resolveReady?.(session.user.id);

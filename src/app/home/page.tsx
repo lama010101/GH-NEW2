@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, type IdentityState } from '@/core/identity'
+import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, updateCachedAvatarUrl, type IdentityState } from '@/core/identity'
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel } from '@/components/home/DailyPanel'
@@ -68,6 +68,9 @@ function HomePageInner() {
           setWelcomeData({ avatar: data.avatar, displayName: data.profile.display_name });
           if (data.profile?.display_name) {
             updateCachedDisplayName(data.profile.display_name);
+          }
+          if (data.avatar?.image_url) {
+            updateCachedAvatarUrl(data.avatar.image_url);
           }
           setProfileVersion(v => v + 1);
         }
@@ -164,6 +167,9 @@ function HomePageInner() {
           if (profile.display_name) setInitials(profile.display_name.slice(0,2).toUpperCase())
           if (profile.display_name && (identity as { displayName?: string }).displayName !== profile.display_name) {
             updateCachedDisplayName(profile.display_name)
+          }
+          if (profile.avatar_url) {
+            updateCachedAvatarUrl(profile.avatar_url)
           }
         }
       } catch {}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { DM_Sans } from 'next/font/google'
 import { useIdentity } from '@/hooks/useIdentity'
-import { updateCachedDisplayName } from '@/core/identity'
+import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import TopBar from '@/components/layout/TopBar'
 import { NavModal } from '@/components/NavModal'
@@ -181,6 +181,7 @@ export default function HelpPage() {
           if (profile.avatar_url) setAvatarUrl(profile.avatar_url)
           if (profile.display_name) setInitials(profile.display_name.slice(0, 2).toUpperCase())
           if (profile.display_name) updateCachedDisplayName(profile.display_name)
+          if (profile.avatar_url) updateCachedAvatarUrl(profile.avatar_url)
         }
       } catch {}
     })()
