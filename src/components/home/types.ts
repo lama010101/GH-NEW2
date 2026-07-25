@@ -30,10 +30,10 @@ export const MODE_CARD_TITLE: Record<string, string> = {
 }
 
 export const MODE_CARD_SUBTITLE: Record<string, string> = {
-  compete:  'Play against your friends.\nReal-time or Turn-based',
-  daily:    'New competition every day,\nSame events for everyone.',
-  levelup:  'Progressive difficulty\nClimb the leaderboard',
-  practice: 'Hone your skills solo\nUnlimited custom games.',
+  compete:  'Play with your friends.\nReal-time or Turn-based',
+  daily:    'Same events.\nRank worldwide',
+  levelup:  'Climb levels.\nEarn experience XP.',
+  practice: 'Play solo.\nUnlimited',
 }
 
 // Card order for vertical layout (top to bottom)
