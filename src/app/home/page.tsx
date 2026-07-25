@@ -469,8 +469,7 @@ function ModeCard({
         body: JSON.stringify({
           playerId,
           displayName,
-          mode: 'sync',
-          roundTimerSec: 120,
+          mode: 'async',
           totalRounds: 5,
           yearMin: -400,
           yearMax: 2025,
