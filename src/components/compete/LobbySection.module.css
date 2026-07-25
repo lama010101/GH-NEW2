@@ -1,7 +1,7 @@
 /* ── Shell ── */
 .lobby-shell {
   display: grid;
-  gap: 16px;
+  gap: 10px;
   padding-bottom: 96px;
 }
 .lobby-title-bar {
@@ -70,7 +70,7 @@
   display: grid;
   gap: 16px;
   grid-template-columns: 1fr 1fr;
-  grid-template-areas: "roster settings";
+  grid-template-areas: "settings roster";
   align-items: start;
 }
 .lobby-card {
@@ -130,9 +130,10 @@
   gap: 8px;
 }
 .lobby-subsection-title {
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--gh-text-primary);
+  margin: 0;
 }
 
 /* ── Horizontal rail ── */
@@ -671,8 +672,8 @@
   .lobby-grid {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "roster"
-      "settings";
+      "settings"
+      "roster";
     gap: 12px;
   }
   .lobby-title-text {
@@ -996,15 +997,20 @@
   background: var(--gh-glass-bg-hover);
 }
 
-.lobby-header { position: relative; padding: 8px 4px 0; }
+.lobby-header { position: relative; padding: 0 4px 0; }
 .lobby-header-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 10px; }
 .lobby-header-meta { display: flex; justify-content: flex-end; }
 .lobby-mode-badge { font-size: 12px; /* layout-constrained — do not tokenize */ font-weight: 800; letter-spacing: 1.5px; color: var(--gh-orange); background: rgba(var(--gh-orange-rgb), 0.12); border: 1px solid rgba(var(--gh-orange-rgb), 0.35); padding: 4px 10px; border-radius: 999px; }
 .lobby-status-chip { display: inline-flex; align-items: center; gap: 7px; font-size: var(--font-2xs); font-weight: 600; color: var(--gh-text-secondary); }
 .lobby-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gh-orange); box-shadow: 0 0 8px rgba(var(--gh-orange-rgb), 0.7); animation: pulseDot 1.8s ease-in-out infinite; }
 @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-.lobby-title-h1 { font-size: var(--font-3xl); font-weight: 800; margin: 0 0 8px; letter-spacing: -0.5px; text-align: center; color: var(--gh-text-primary); }
+.lobby-title-h1 { font-size: var(--font-3xl); font-weight: 800; margin: 0 0 4px; letter-spacing: -0.5px; text-align: center; color: var(--gh-text-primary); }
 .lobby-accent-bar-sm { width: 4px; height: 18px; border-radius: 999px; background: var(--gh-orange); flex-shrink: 0; }
+.lobby-section-number {
+  font-weight: 600;
+  color: var(--gh-text-secondary, var(--gh-text-primary));
+  margin-right: 4px;
+}
 .lobbyRosterList { display: flex; flex-direction: column; gap: 8px; }
 .lobbyRosterRow { display: flex; align-items: center; gap: 12px; background: var(--gh-glass-bg); border: 1px solid var(--gh-border-subtle); border-radius: 14px; padding: 10px 12px; transition: border-color 0.2s, background 0.2s; }
 .lobbyRosterRowReady { border-color: rgba(var(--gh-success-rgb), 0.35); background: rgba(var(--gh-success-rgb), 0.06); }
