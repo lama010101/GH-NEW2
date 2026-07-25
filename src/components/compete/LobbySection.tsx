@@ -35,6 +35,8 @@ type PlayerPoolEntry = { id: string; displayName: string; avatarUrl: string | nu
 const LS_KEY = "gh_last_invited_players";
 const LS_MAX = 10;
 const ROUND_TIMER_DEFAULT_SEC = 120;
+const ROUND_TIMER_TICKS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 300];
+const DEADLINE_TICKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 function readLastInvited(): LastInvitedPlayer[] {
   if (typeof window === "undefined") return [];
@@ -73,9 +75,10 @@ type RangeSliderProps = {
   disabled?: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   format: (value: number) => string;
+  ticks?: number[];
 };
 
-function RangeSlider({ className, min, max, step, value, disabled, onChange, format }: RangeSliderProps) {
+function RangeSlider({ className, min, max, step, value, disabled, onChange, format, ticks }: RangeSliderProps) {
   const [dragging, setDragging] = useState(false);
   const percent = max === min ? 0 : ((value - min) / (max - min)) * 100;
 
@@ -88,6 +91,22 @@ function RangeSlider({ className, min, max, step, value, disabled, onChange, for
 
   return (
     <>
+      {ticks && ticks.length > 0 && (
+        <div className={styles['slider-ticks']}>
+          {ticks
+            .filter((v) => v >= min && v <= max)
+            .map((v) => {
+              const tickPercent = max === min ? 0 : ((v - min) / (max - min)) * 100;
+              return (
+                <span
+                  key={v}
+                  className={styles['slider-tick']}
+                  style={{ left: `${tickPercent}%` }}
+                />
+              );
+            })}
+        </div>
+      )}
       <input
         type="range"
         className={className}
@@ -154,11 +173,20 @@ export default function LobbySection({
      Local value is ONLY for drag feedback; authority stays in snapshot. */
   const [sliderValue, setSliderValue] = useState(snapshot.config.roundTimerSec);
   const timerDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevModeRef = useRef(snapshot.config.mode);
 
   // Sync timer slider to authoritative snapshot value whenever it changes externally.
   useEffect(() => {
     setSliderValue(snapshot.config.roundTimerSec);
   }, [snapshot.config.roundTimerSec]);
+
+  // Relax per-round timer defaults OFF: reset to 0 when the host switches into async mode.
+  useEffect(() => {
+    if (snapshot.config.mode === 'async' && prevModeRef.current !== 'async' && snapshot.config.roundTimerSec > 0) {
+      onSetTimer?.(0);
+    }
+    prevModeRef.current = snapshot.config.mode;
+  }, [snapshot.config.mode, snapshot.config.roundTimerSec, onSetTimer]);
 
   /* Year range transient state — synced from snapshot on every update. */
   const [yearMinValue, setYearMinValue] = useState(snapshot.config.yearMin);
@@ -700,6 +728,7 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
+                          ticks={ROUND_TIMER_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
@@ -894,6 +923,7 @@ export default function LobbySection({
                           onSetSubMode?.("async", val);
                         }, 400);
                       }}
+                      ticks={DEADLINE_TICKS}
                       format={(v) => (v === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: v }))}
                     />
                   </span>
@@ -950,6 +980,7 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
+                          ticks={ROUND_TIMER_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
