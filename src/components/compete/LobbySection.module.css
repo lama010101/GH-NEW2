@@ -1,7 +1,7 @@
 /* ── Shell ── */
 .lobby-shell {
   display: grid;
-  gap: 10px;
+  gap: 5px;
   padding-bottom: 96px;
 }
 .lobby-title-bar {
@@ -1054,3 +1054,46 @@
 .lobbyImgCaption { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 0 4px 4px; pointer-events: none; }
 .lobbyImgLabel { font-size: 10px; font-weight: 700; text-align: center; color: #fff; line-height: 1.15; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 .lobbyImgSpan { font-size: 8px; font-weight: 500; text-align: center; color: rgba(255,255,255,0.75); line-height: 1.1; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+
+/* ── Slider value bubble (drag feedback) ── */
+.sliderBubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+  background: var(--gh-bg-base);
+  border: 1px solid var(--gh-orange);
+  box-shadow: var(--gh-shadow-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.05s ease, transform 0.05s ease;
+  z-index: 2;
+  white-space: nowrap;
+}
+.sliderBubbleVisible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Collapsible era/region presets ── */
+.lobby-presets-disclosure { border-bottom: 1px solid var(--gh-border-subtle); }
+.lobby-presets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.lobby-presets-chevron { flex-shrink: 0; color: var(--gh-text-secondary); transition: transform 0.2s ease; }
+.lobby-presets-chevron-open { transform: rotate(180deg); }
+.lobby-presets-content { display: flex; flex-direction: column; gap: 0; }

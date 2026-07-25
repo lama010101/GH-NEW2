@@ -733,7 +733,7 @@ export default function CompeteGamePage() {
 
         {snapshot.status === "LOBBY" ? (
           <>
-            <div className={pageStyles.lobbyTopBarSpacer} style={{ height: 80 }} />
+            <div className={pageStyles.lobbyTopBarSpacer} style={{ height: 40 }} />
             {wsDisconnected && (
               <section
                 className={`card ${pageStyles.connectionLostCard}`}
