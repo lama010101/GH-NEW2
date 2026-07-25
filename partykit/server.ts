@@ -1108,12 +1108,15 @@ export default class GameServer {
           snapshotVersion: snapshotRecord["snapshotVersion"] as number | undefined
         };
         results = playerSnapshots[socketPlayerId]["results"] ?? undefined;
+      } else if (isAsync && playerSnapshots) {
+        continue;
       } else {
         perSocketSnapshot = {
           ...snapshotRecord,
           viewerPlayerId: socketPlayerId ?? null,
           config
         };
+        delete perSocketSnapshot["playerSnapshots"];
         results = this.pendingResults ?? (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined;
       }
 
