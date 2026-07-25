@@ -910,10 +910,10 @@ async function buildAsyncPlayerSnapshotForViewer(
   return buildAsyncPlayerSnapshotFromBase(gameId, viewerPlayerId, refreshedBase);
 }
 
-async function buildAsyncPlayerSnapshotsForActivePlayers(
+async function loadAsyncSnapshotBaseForActivePlayers(
   gameId: string,
   executor: DbExecutor
-): Promise<Record<string, CompeteSessionSnapshot>> {
+): Promise<AsyncSnapshotBase> {
   const base = await loadAsyncSnapshotBase(gameId, executor);
   const activePlayerRows = base.players.filter(p => p.left_at === null && p.kicked !== true);
   let anyInserted = false;
@@ -921,13 +921,27 @@ async function buildAsyncPlayerSnapshotsForActivePlayers(
     const inserted = await ensurePlayerRoundStarted(gameId, player.player_id, base, executor);
     if (inserted) anyInserted = true;
   }
-  const refreshedBase = anyInserted ? await loadAsyncSnapshotBase(gameId, executor) : base;
-  const refreshedActivePlayerRows = refreshedBase.players.filter(p => p.left_at === null && p.kicked !== true);
+  return anyInserted ? await loadAsyncSnapshotBase(gameId, executor) : base;
+}
+
+function buildAsyncPlayerSnapshotsFromBase(
+  gameId: string,
+  base: AsyncSnapshotBase
+): Record<string, CompeteSessionSnapshot> {
+  const activePlayerRows = base.players.filter(p => p.left_at === null && p.kicked !== true);
   const playerSnapshots: Record<string, CompeteSessionSnapshot> = {};
-  for (const player of refreshedActivePlayerRows) {
-    playerSnapshots[player.player_id] = buildAsyncPlayerSnapshotFromBase(gameId, player.player_id, refreshedBase);
+  for (const player of activePlayerRows) {
+    playerSnapshots[player.player_id] = buildAsyncPlayerSnapshotFromBase(gameId, player.player_id, base);
   }
   return playerSnapshots;
+}
+
+async function buildAsyncPlayerSnapshotsForActivePlayers(
+  gameId: string,
+  executor: DbExecutor
+): Promise<Record<string, CompeteSessionSnapshot>> {
+  const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, executor);
+  return buildAsyncPlayerSnapshotsFromBase(gameId, base);
 }
 
 function buildAsyncBaseSnapshot(gameState: ReconstructedGameState): CompeteSessionSnapshot {
@@ -2893,6 +2907,7 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
   }
 
   const client = await getTransactionClient();
+  let clientReleased = false;
   try {
     await client.query("BEGIN");
 
@@ -2960,8 +2975,11 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
 
     // Idempotent return if this round is already complete.
     if (guard.round_complete) {
+      const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
       await client.query("COMMIT");
-      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+      client.release();
+      clientReleased = true;
+      const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
       const snapshot = playerSnapshots[playerId];
       if (!snapshot) throw new Error("Session not found");
       return { ...snapshot, playerSnapshots };
@@ -2969,8 +2987,11 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
 
     // Idempotent return if a commit already exists (concurrent submission).
     if (guard.has_existing_commit) {
+      const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
       await client.query("COMMIT");
-      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+      client.release();
+      clientReleased = true;
+      const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
       const snapshot = playerSnapshots[playerId];
       if (!snapshot) throw new Error("Session not found");
       return { ...snapshot, playerSnapshots };
@@ -3096,8 +3117,11 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
     );
 
     if ((insertResult as unknown as { rowCount: number | null }).rowCount === 0) {
+      const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
       await client.query("COMMIT");
-      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+      client.release();
+      clientReleased = true;
+      const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
       const snapshot = playerSnapshots[playerId];
       if (!snapshot) throw new Error("Session not found");
       return { ...snapshot, playerSnapshots };
@@ -3146,17 +3170,23 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
       );
     }
 
-    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+    const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
+    await client.query("COMMIT");
+    client.release();
+    clientReleased = true;
+    const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
     const actingPlayerSnapshot = playerSnapshots[playerId];
     if (!actingPlayerSnapshot) throw new Error("Session not found");
-
-    await client.query("COMMIT");
     return { ...actingPlayerSnapshot, playerSnapshots };
   } catch (error) {
-    await client.query("ROLLBACK");
+    if (!clientReleased) {
+      await client.query("ROLLBACK");
+    }
     throw error;
   } finally {
-    client.release();
+    if (!clientReleased) {
+      client.release();
+    }
   }
 }
 
@@ -3168,6 +3198,7 @@ export async function advancePlayerRoundAsync(
   assertValidExecutionContext({ _executionContext });
 
   const client = await getTransactionClient();
+  let clientReleased = false;
   try {
     await client.query("BEGIN");
 
@@ -3212,17 +3243,23 @@ export async function advancePlayerRoundAsync(
       );
     }
 
-    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+    const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
+    await client.query("COMMIT");
+    client.release();
+    clientReleased = true;
+    const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
     const actingPlayerSnapshot = playerSnapshots[playerId];
     if (!actingPlayerSnapshot) throw new Error("Session not found");
-
-    await client.query("COMMIT");
     return { ...actingPlayerSnapshot, playerSnapshots };
   } catch (error) {
-    await client.query("ROLLBACK");
+    if (!clientReleased) {
+      await client.query("ROLLBACK");
+    }
     throw error;
   } finally {
-    client.release();
+    if (!clientReleased) {
+      client.release();
+    }
   }
 }
 
@@ -3239,6 +3276,7 @@ export async function markPlayerRoundAbsent(
   }
 
   const client = await getTransactionClient();
+  let clientReleased = false;
   try {
     await client.query("BEGIN");
 
@@ -3289,11 +3327,13 @@ export async function markPlayerRoundAbsent(
     }
 
     if (guard.round_complete) {
-      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+      const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
+      await client.query("COMMIT");
+      client.release();
+      clientReleased = true;
+      const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
       const actingPlayerSnapshot = playerSnapshots[playerId];
       if (!actingPlayerSnapshot) throw new Error("Session not found");
-
-      await client.query("COMMIT");
       return { ...actingPlayerSnapshot, playerSnapshots };
     }
 
@@ -3355,17 +3395,23 @@ export async function markPlayerRoundAbsent(
       );
     }
 
-    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
+    const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
+    await client.query("COMMIT");
+    client.release();
+    clientReleased = true;
+    const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
     const actingPlayerSnapshot = playerSnapshots[playerId];
     if (!actingPlayerSnapshot) throw new Error("Session not found");
-
-    await client.query("COMMIT");
     return { ...actingPlayerSnapshot, playerSnapshots };
   } catch (error) {
-    await client.query("ROLLBACK");
+    if (!clientReleased) {
+      await client.query("ROLLBACK");
+    }
     throw error;
   } finally {
-    client.release();
+    if (!clientReleased) {
+      client.release();
+    }
   }
 }
 
