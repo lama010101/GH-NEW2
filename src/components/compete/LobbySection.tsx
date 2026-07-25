@@ -9,6 +9,7 @@ import { ImageButton } from "@/components/shared/ImageButton";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import styles from './LobbySection.module.css';
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
+import { Zap, Leaf } from 'lucide-react';
 
 interface LobbySectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -580,12 +581,28 @@ export default function LobbySection({
               className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`}
               onClick={() => isHost && onSetSubMode?.("async", maxTurnDays)}
               disabled={!isHost || busy}
-            >{t('lobby.turn_by_turn')}</button>
+            >
+              <span className={styles['lobbyTabContent']}>
+                <Leaf size={18} className={styles['lobbyTabIcon']} />
+                <span className={styles['lobbyTabText']}>
+                  <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
+                  <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
+                </span>
+              </span>
+            </button>
             <button
               className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
               onClick={() => isHost && onSetSubMode?.("sync", maxTurnDays)}
               disabled={!isHost || busy}
-            >{t('lobby.realtime')}</button>
+            >
+              <span className={styles['lobbyTabContent']}>
+                <Zap size={18} className={styles['lobbyTabIcon']} />
+                <span className={styles['lobbyTabText']}>
+                  <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
+                  <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
+                </span>
+              </span>
+            </button>
           </div>
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
@@ -974,9 +991,11 @@ export default function LobbySection({
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
               <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span>
-              <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
-                {t('lobby.copy_link')}
-              </button>
+              <span className={styles['lobbyShareBtnGroup']}>
+                <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
+                  {t('lobby.copy_link')}
+                </button>
+              </span>
             </div>
             {linkCopied && (
               <span className={styles['lobbyCopiedToast']}>

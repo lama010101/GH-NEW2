@@ -575,8 +575,8 @@
 }
 .lobby-year-range-wrap input[type="range"]::-webkit-slider-thumb {
   pointer-events: all;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--gh-orange);
   -webkit-appearance: none;
@@ -587,8 +587,8 @@
 }
 .lobby-year-range-wrap input[type="range"]::-moz-range-thumb {
   pointer-events: all;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--gh-orange);
   cursor: pointer;
@@ -636,8 +636,8 @@
 .lobby-timer-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--gh-orange);
   border: 2px solid var(--gh-text-primary);
@@ -654,8 +654,8 @@
   box-shadow: 0 0 14px rgba(var(--gh-orange-rgb), 0.6);
 }
 .lobby-timer-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: var(--gh-orange);
   border: 2px solid var(--gh-text-primary);
@@ -1029,9 +1029,14 @@
 .lobbyHostInline { font-size: 12px; /* layout-constrained — do not tokenize */ font-weight: 600; color: var(--gh-gold); }
 .lobbyRosterEmpty { padding: 20px; text-align: center; font-size: var(--font-xs); color: var(--gh-text-muted); }
 .lobbyTabRow { display: flex; gap: 6px; margin-bottom: 16px; background: var(--gh-glass-bg); border-radius: 12px; padding: 4px; }
-.lobbyTabBtn { flex: 1; padding: 9px 0; border-radius: 9px; border: none; cursor: pointer; font-size: var(--font-xs); font-weight: 700; letter-spacing: 0.2px; color: var(--gh-text-secondary); background: transparent; transition: background 0.18s, color 0.18s; }
+.lobbyTabBtn { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px 0; border-radius: 9px; border: none; cursor: pointer; color: var(--gh-text-secondary); background: transparent; transition: background 0.18s, color 0.18s; }
 .lobbyTabBtnActive { background: rgba(var(--gh-orange-rgb), 0.18); color: var(--gh-orange); border: 1px solid rgba(var(--gh-orange-rgb), 0.35); }
 .lobbyTabBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.lobbyTabContent { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; }
+.lobbyTabIcon { flex-shrink: 0; color: currentColor; }
+.lobbyTabText { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; min-width: 0; }
+.lobbyTabMain { font-size: var(--font-xs); font-weight: 700; letter-spacing: 0.2px; color: currentColor; }
+.lobbyTabSub { font-size: var(--font-2xs); font-weight: 600; color: currentColor; opacity: 0.85; }
 .lobbySettingRowBlock { flex-direction: column; align-items: stretch; gap: 0; min-width: 0; max-width: 100%; }
 .lobbySettingRowHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .lobbySelectAllBtn { font-size: 12px; /* layout-constrained — do not tokenize */ font-weight: 600; color: var(--gh-orange); background: transparent; border: 1px solid var(--gh-orange); border-radius: 6px; padding: 3px 8px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
