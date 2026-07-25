@@ -12,6 +12,7 @@ export type UseIdentityReturn = {
   state: IdentityState;
   playerId: string | null;
   displayName: string | null;
+  avatarUrl: string | null;
   isReady: boolean;
   isLoading: boolean;
   error: string | null;
@@ -33,9 +34,10 @@ export function useIdentity(): UseIdentityReturn {
 
   const playerId = state.status === "ready" ? state.playerId : null;
   const displayName = state.status === "ready" ? state.displayName : null;
+  const avatarUrl = state.status === "ready" ? state.avatarUrl : null;
   const isReady = state.status === "ready";
   const isLoading = state.status === "loading";
   const error = state.status === "error" ? state.error : null;
 
-  return { state, playerId, displayName, isReady, isLoading, error };
+  return { state, playerId, displayName, avatarUrl, isReady, isLoading, error };
 }

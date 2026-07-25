@@ -34,7 +34,7 @@ import NotificationBell from "@/components/NotificationBell";
 import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
-import { forceClearAuthStorage, bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from '@/core/identity';
+import { forceClearAuthStorage, bootstrapIdentity, subscribeToIdentityChanges, updateCachedDisplayName, updateCachedAvatarUrl, type IdentityState } from '@/core/identity';
 import useCompeteTimer from "@/hooks/useCompeteTimer";
 import useCompeteSocket from "@/hooks/useCompeteSocket";
 import btnStyles from "@/components/ui/Button.module.css";
@@ -159,6 +159,8 @@ export default function CompeteGamePage() {
         if (profile) {
           if (profile.avatar_url) setTopbarAvatarUrl(profile.avatar_url);
           if (profile.display_name) setTopbarInitials(profile.display_name.slice(0, 2).toUpperCase());
+          if (profile.display_name) updateCachedDisplayName(profile.display_name);
+          if (profile.avatar_url) updateCachedAvatarUrl(profile.avatar_url);
         }
       } catch {}
     })();
