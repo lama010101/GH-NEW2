@@ -9,7 +9,7 @@ import { ImageButton } from "@/components/shared/ImageButton";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import styles from './LobbySection.module.css';
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
-import { Zap, Leaf } from 'lucide-react';
+import { Zap, Leaf, ChevronDown } from 'lucide-react';
 
 interface LobbySectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -34,6 +34,7 @@ type PlayerPoolEntry = { id: string; displayName: string; avatarUrl: string | nu
 
 const LS_KEY = "gh_last_invited_players";
 const LS_MAX = 10;
+const ROUND_TIMER_DEFAULT_SEC = 120;
 
 function readLastInvited(): LastInvitedPlayer[] {
   if (typeof window === "undefined") return [];
@@ -61,6 +62,51 @@ function formatTimerDisplay(sec: number, offLabel: string): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}m ${s.toString().padStart(2, "0")}s`;
+}
+
+type RangeSliderProps = {
+  className: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  disabled?: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  format: (value: number) => string;
+};
+
+function RangeSlider({ className, min, max, step, value, disabled, onChange, format }: RangeSliderProps) {
+  const [dragging, setDragging] = useState(false);
+  const percent = max === min ? 0 : ((value - min) / (max - min)) * 100;
+
+  useEffect(() => {
+    if (!dragging) return;
+    const handlePointerUp = () => setDragging(false);
+    document.addEventListener('pointerup', handlePointerUp);
+    return () => document.removeEventListener('pointerup', handlePointerUp);
+  }, [dragging]);
+
+  return (
+    <>
+      <input
+        type="range"
+        className={className}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+        onPointerDown={() => setDragging(true)}
+      />
+      <span
+        className={`${styles['sliderBubble']} ${dragging ? styles['sliderBubbleVisible'] : ''}`}
+        style={{ left: `${percent}%` }}
+      >
+        {format(value)}
+      </span>
+    </>
+  );
 }
 
 type EraId = 'ancient' | 'medieval' | 'earlymodern' | 'modern' | 'contemporary';
@@ -163,6 +209,7 @@ export default function LobbySection({
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllModal, setShowAllModal] = useState(false);
   const [modalSearchQuery, setModalSearchQuery] = useState('');
+  const [presetsExpanded, setPresetsExpanded] = useState(false);
 
   /* ── Settings tab UI state ── */
   // Tab is derived from the authoritative snapshot.config.mode (single source of truth).
@@ -613,7 +660,7 @@ export default function LobbySection({
                   <button
                     type="button"
                     onClick={() => {
-                      const val = sliderValue > 0 ? 0 : 120;
+                      const val = sliderValue > 0 ? 0 : ROUND_TIMER_DEFAULT_SEC;
                       setSliderValue(val);
                       if (timerDebounceRef.current) clearTimeout(timerDebounceRef.current);
                       timerDebounceRef.current = setTimeout(() => {
@@ -638,8 +685,7 @@ export default function LobbySection({
                             width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%`,
                           }}
                         />
-                        <input
-                          type="range"
+                        <RangeSlider
                           className={styles['lobby-timer-slider']}
                           min={TIMER_MIN_SEC}
                           max={TIMER_MAX_SEC}
@@ -654,6 +700,7 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
+                          format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
                       <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
@@ -704,8 +751,7 @@ export default function LobbySection({
                             width: `${((resultsTimerValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%`,
                           }}
                         />
-                        <input
-                          type="range"
+                        <RangeSlider
                           className={styles['lobby-timer-slider']}
                           min={TIMER_MIN_SEC}
                           max={TIMER_MAX_SEC}
@@ -720,6 +766,7 @@ export default function LobbySection({
                               onSetResultsTimer?.(val);
                             }, 400);
                           }}
+                          format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
                       <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
@@ -738,76 +785,90 @@ export default function LobbySection({
                 </span>
               )}
             </div>
-            <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
-              <div className={styles['lobbySettingRowHead']}>
-                <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
-                {isHost && (
-                  <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
-                    {allErasSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
-                  </button>
-                )}
-              </div>
-              <div className={styles['lobbyEraRail']} ref={centerEarlyModernOnMobile}>
-                {ERAS.map(era => {
-                  const on = selectedEras.has(era.id);
-                  return (
-                    <ImageButton
-                      key={era.id}
-                      label={tGame(`era_${era.id}` as string)}
-                      sublabel={era.span}
-                      stockImg={era.stockImg}
-                      emoji={era.icon}
-                      selected={on}
-                      disabled={!isHost}
-                      onClick={() => isHost && toggleEra(era.id)}
-                      className={styles['lobbyImgBtn']}
-                      onClassName={styles['lobbyImgBtnOn']}
-                      offClassName={styles['lobbyImgBtnOff']}
-                      imgClassName={styles['lobbyImgPhoto']}
-                      overlayClassName={styles['lobbyImgOverlay']}
-                      fallbackClassName={styles['lobbyImgFallback']}
-                      captionClassName={styles['lobbyImgCaption']}
-                      labelClassName={styles['lobbyImgLabel']}
-                      sublabelClassName={styles['lobbyImgSpan']}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-            <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
-              <div className={styles['lobbySettingRowHead']}>
-                <span className={styles['lobby-setting-label']}>{tGame('region_presets')}</span>
-                {isHost && (
-                  <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllRegions}>
-                    {allRegionsSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
-                  </button>
-                )}
-              </div>
-              <div className={styles['lobbyEraRail']}>
-                {visibleRegions.map(region => {
-                  const on = selectedRegions.has(region.id);
-                  return (
-                    <ImageButton
-                      key={region.id}
-                      label={tGame(`region_${region.id}` as string)}
-                      stockImg={region.stockImg}
-                      emoji={region.icon}
-                      selected={on}
-                      disabled={!isHost}
-                      onClick={() => isHost && toggleRegion(region.id)}
-                      className={styles['lobbyImgBtn']}
-                      onClassName={styles['lobbyImgBtnOn']}
-                      offClassName={styles['lobbyImgBtnOff']}
-                      imgClassName={styles['lobbyImgPhoto']}
-                      overlayClassName={styles['lobbyImgOverlay']}
-                      fallbackClassName={styles['lobbyImgFallback']}
-                      captionClassName={styles['lobbyImgCaption']}
-                      labelClassName={styles['lobbyImgLabel']}
-                      sublabelClassName={styles['lobbyImgSpan']}
-                    />
-                  );
-                })}
-              </div>
+            <div className={styles['lobby-presets-disclosure']}>
+              <button
+                type="button"
+                className={styles['lobby-presets-header']}
+                onClick={() => setPresetsExpanded(v => !v)}
+              >
+                <span className={styles['lobby-setting-label']}>Era & Region Presets</span>
+                <ChevronDown size={16} className={`${styles['lobby-presets-chevron']} ${presetsExpanded ? styles['lobby-presets-chevron-open'] : ''}`} />
+              </button>
+              {presetsExpanded && (
+                <div className={styles['lobby-presets-content']}>
+                  <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
+                    <div className={styles['lobbySettingRowHead']}>
+                      <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
+                      {isHost && (
+                        <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
+                          {allErasSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles['lobbyEraRail']} ref={centerEarlyModernOnMobile}>
+                      {ERAS.map(era => {
+                        const on = selectedEras.has(era.id);
+                        return (
+                          <ImageButton
+                            key={era.id}
+                            label={tGame(`era_${era.id}` as string)}
+                            sublabel={era.span}
+                            stockImg={era.stockImg}
+                            emoji={era.icon}
+                            selected={on}
+                            disabled={!isHost}
+                            onClick={() => isHost && toggleEra(era.id)}
+                            className={styles['lobbyImgBtn']}
+                            onClassName={styles['lobbyImgBtnOn']}
+                            offClassName={styles['lobbyImgBtnOff']}
+                            imgClassName={styles['lobbyImgPhoto']}
+                            overlayClassName={styles['lobbyImgOverlay']}
+                            fallbackClassName={styles['lobbyImgFallback']}
+                            captionClassName={styles['lobbyImgCaption']}
+                            labelClassName={styles['lobbyImgLabel']}
+                            sublabelClassName={styles['lobbyImgSpan']}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
+                    <div className={styles['lobbySettingRowHead']}>
+                      <span className={styles['lobby-setting-label']}>{tGame('region_presets')}</span>
+                      {isHost && (
+                        <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllRegions}>
+                          {allRegionsSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles['lobbyEraRail']}>
+                      {visibleRegions.map(region => {
+                        const on = selectedRegions.has(region.id);
+                        return (
+                          <ImageButton
+                            key={region.id}
+                            label={tGame(`region_${region.id}` as string)}
+                            stockImg={region.stockImg}
+                            emoji={region.icon}
+                            selected={on}
+                            disabled={!isHost}
+                            onClick={() => isHost && toggleRegion(region.id)}
+                            className={styles['lobbyImgBtn']}
+                            onClassName={styles['lobbyImgBtnOn']}
+                            offClassName={styles['lobbyImgBtnOff']}
+                            imgClassName={styles['lobbyImgPhoto']}
+                            overlayClassName={styles['lobbyImgOverlay']}
+                            fallbackClassName={styles['lobbyImgFallback']}
+                            captionClassName={styles['lobbyImgCaption']}
+                            labelClassName={styles['lobbyImgLabel']}
+                            sublabelClassName={styles['lobbyImgSpan']}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             </>)}
             {settingsTab === 'turnturn' && (<>
@@ -818,8 +879,7 @@ export default function LobbySection({
                   <span className={styles['lobby-timer-slider-wrap']}>
                     <div className={styles['lobby-timer-slider-track']} />
                     <div className={styles['lobby-timer-slider-fill']} style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }} />
-                    <input
-                      type="range"
+                    <RangeSlider
                       className={styles['lobby-timer-slider']}
                       min={1}
                       max={14}
@@ -834,6 +894,7 @@ export default function LobbySection({
                           onSetSubMode?.("async", val);
                         }, 400);
                       }}
+                      format={(v) => (v === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: v }))}
                     />
                   </span>
                   <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
@@ -849,7 +910,7 @@ export default function LobbySection({
                   <button
                     type="button"
                     onClick={() => {
-                      const val = sliderValue > 0 ? 0 : 120;
+                      const val = sliderValue > 0 ? 0 : ROUND_TIMER_DEFAULT_SEC;
                       setSliderValue(val);
                       if (timerDebounceRef.current) clearTimeout(timerDebounceRef.current);
                       timerDebounceRef.current = setTimeout(() => {
@@ -874,8 +935,7 @@ export default function LobbySection({
                             width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%`,
                           }}
                         />
-                        <input
-                          type="range"
+                        <RangeSlider
                           className={styles['lobby-timer-slider']}
                           min={TIMER_MIN_SEC}
                           max={TIMER_MAX_SEC}
@@ -890,6 +950,7 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
+                          format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
                       <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>
@@ -908,76 +969,90 @@ export default function LobbySection({
                 </span>
               )}
             </div>
-            <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
-              <div className={styles['lobbySettingRowHead']}>
-                <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
-                {isHost && (
-                  <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
-                    {allErasSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
-                  </button>
-                )}
-              </div>
-              <div className={styles['lobbyEraRail']} ref={centerEarlyModernOnMobile}>
-                {ERAS.map(era => {
-                  const on = selectedEras.has(era.id);
-                  return (
-                    <ImageButton
-                      key={era.id}
-                      label={tGame(`era_${era.id}` as string)}
-                      sublabel={era.span}
-                      stockImg={era.stockImg}
-                      emoji={era.icon}
-                      selected={on}
-                      disabled={!isHost}
-                      onClick={() => isHost && toggleEra(era.id)}
-                      className={styles['lobbyImgBtn']}
-                      onClassName={styles['lobbyImgBtnOn']}
-                      offClassName={styles['lobbyImgBtnOff']}
-                      imgClassName={styles['lobbyImgPhoto']}
-                      overlayClassName={styles['lobbyImgOverlay']}
-                      fallbackClassName={styles['lobbyImgFallback']}
-                      captionClassName={styles['lobbyImgCaption']}
-                      labelClassName={styles['lobbyImgLabel']}
-                      sublabelClassName={styles['lobbyImgSpan']}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-            <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
-              <div className={styles['lobbySettingRowHead']}>
-                <span className={styles['lobby-setting-label']}>{tGame('region_presets')}</span>
-                {isHost && (
-                  <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllRegions}>
-                    {allRegionsSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
-                  </button>
-                )}
-              </div>
-              <div className={styles['lobbyEraRail']}>
-                {visibleRegions.map(region => {
-                  const on = selectedRegions.has(region.id);
-                  return (
-                    <ImageButton
-                      key={region.id}
-                      label={tGame(`region_${region.id}` as string)}
-                      stockImg={region.stockImg}
-                      emoji={region.icon}
-                      selected={on}
-                      disabled={!isHost}
-                      onClick={() => isHost && toggleRegion(region.id)}
-                      className={styles['lobbyImgBtn']}
-                      onClassName={styles['lobbyImgBtnOn']}
-                      offClassName={styles['lobbyImgBtnOff']}
-                      imgClassName={styles['lobbyImgPhoto']}
-                      overlayClassName={styles['lobbyImgOverlay']}
-                      fallbackClassName={styles['lobbyImgFallback']}
-                      captionClassName={styles['lobbyImgCaption']}
-                      labelClassName={styles['lobbyImgLabel']}
-                      sublabelClassName={styles['lobbyImgSpan']}
-                    />
-                  );
-                })}
-              </div>
+            <div className={styles['lobby-presets-disclosure']}>
+              <button
+                type="button"
+                className={styles['lobby-presets-header']}
+                onClick={() => setPresetsExpanded(v => !v)}
+              >
+                <span className={styles['lobby-setting-label']}>Era & Region Presets</span>
+                <ChevronDown size={16} className={`${styles['lobby-presets-chevron']} ${presetsExpanded ? styles['lobby-presets-chevron-open'] : ''}`} />
+              </button>
+              {presetsExpanded && (
+                <div className={styles['lobby-presets-content']}>
+                  <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
+                    <div className={styles['lobbySettingRowHead']}>
+                      <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
+                      {isHost && (
+                        <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
+                          {allErasSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles['lobbyEraRail']} ref={centerEarlyModernOnMobile}>
+                      {ERAS.map(era => {
+                        const on = selectedEras.has(era.id);
+                        return (
+                          <ImageButton
+                            key={era.id}
+                            label={tGame(`era_${era.id}` as string)}
+                            sublabel={era.span}
+                            stockImg={era.stockImg}
+                            emoji={era.icon}
+                            selected={on}
+                            disabled={!isHost}
+                            onClick={() => isHost && toggleEra(era.id)}
+                            className={styles['lobbyImgBtn']}
+                            onClassName={styles['lobbyImgBtnOn']}
+                            offClassName={styles['lobbyImgBtnOff']}
+                            imgClassName={styles['lobbyImgPhoto']}
+                            overlayClassName={styles['lobbyImgOverlay']}
+                            fallbackClassName={styles['lobbyImgFallback']}
+                            captionClassName={styles['lobbyImgCaption']}
+                            labelClassName={styles['lobbyImgLabel']}
+                            sublabelClassName={styles['lobbyImgSpan']}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
+                    <div className={styles['lobbySettingRowHead']}>
+                      <span className={styles['lobby-setting-label']}>{tGame('region_presets')}</span>
+                      {isHost && (
+                        <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllRegions}>
+                          {allRegionsSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles['lobbyEraRail']}>
+                      {visibleRegions.map(region => {
+                        const on = selectedRegions.has(region.id);
+                        return (
+                          <ImageButton
+                            key={region.id}
+                            label={tGame(`region_${region.id}` as string)}
+                            stockImg={region.stockImg}
+                            emoji={region.icon}
+                            selected={on}
+                            disabled={!isHost}
+                            onClick={() => isHost && toggleRegion(region.id)}
+                            className={styles['lobbyImgBtn']}
+                            onClassName={styles['lobbyImgBtnOn']}
+                            offClassName={styles['lobbyImgBtnOff']}
+                            imgClassName={styles['lobbyImgPhoto']}
+                            overlayClassName={styles['lobbyImgOverlay']}
+                            fallbackClassName={styles['lobbyImgFallback']}
+                            captionClassName={styles['lobbyImgCaption']}
+                            labelClassName={styles['lobbyImgLabel']}
+                            sublabelClassName={styles['lobbyImgSpan']}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             </>)}
           </div>
