@@ -36,6 +36,7 @@ const LS_KEY = "gh_last_invited_players";
 const LS_MAX = 10;
 const ROUND_TIMER_DEFAULT_SEC = 120;
 const ROUND_TIMER_TICKS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 300];
+const ROUND_TIMER_MAJOR_TICKS = ROUND_TIMER_TICKS.filter((v) => v % 60 === 0);
 const DEADLINE_TICKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 function readLastInvited(): LastInvitedPlayer[] {
@@ -729,7 +730,7 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
-                          ticks={ROUND_TIMER_TICKS}
+                          ticks={ROUND_TIMER_MAJOR_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
@@ -949,7 +950,7 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
-                          ticks={ROUND_TIMER_TICKS}
+                          ticks={ROUND_TIMER_MAJOR_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
