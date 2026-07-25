@@ -952,6 +952,11 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   // NO alternative phase derivation paths allowed.
   // ═════════════════════════════════════════════════════════════════════════════
 
+  // Lazy-check fallback for async (Relax) session deadline enforcement.
+  // This is cheap insurance (guard is read-only and only fires when the
+  // session_deadline has passed) for the edge case where the DO alarm did not.
+  await maybeFinalizeAsyncSessionDeadline(gameId);
+
   // STEP 1: Load canonical state from DB via getGameState (pure reconstruction)
   const gameState = await getGameState(gameId);
 
@@ -3300,6 +3305,243 @@ export async function markPlayerRoundAbsent(
 
     await client.query("COMMIT");
     return { ...actingPlayerSnapshot, playerSnapshots };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function finalizeAsyncSessionDeadline(
+  gameId: string,
+  executor: DbTransactionClient
+): Promise<number> {
+  const sessionResult = await executor.query<{
+    mode: string;
+    total_rounds: number;
+    scoring_reference_year: number;
+    session_deadline: Date | null;
+  }>(
+    `SELECT mode, total_rounds, scoring_reference_year, session_deadline
+     FROM sessions
+     WHERE game_id = $1
+     FOR UPDATE`,
+    [gameId]
+  );
+  const session = sessionResult.rows[0];
+  if (!session || session.mode !== "async" || !session.session_deadline) {
+    return 0;
+  }
+  if (session.session_deadline.getTime() > Date.now()) {
+    return 0;
+  }
+
+  const sessionCreatedResult = await executor.query<{ eventIds: string[] }>(
+    `SELECT payload->'eventIds' AS "eventIds"
+     FROM round_events
+     WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+     ORDER BY id ASC
+     LIMIT 1`,
+    [gameId]
+  );
+  const eventIds = sessionCreatedResult.rows[0]?.eventIds;
+  if (!Array.isArray(eventIds) || eventIds.length < session.total_rounds) {
+    return 0;
+  }
+
+  const activePlayersResult = await executor.query<{ player_id: string }>(
+    `SELECT sp.player_id
+     FROM session_players sp
+     WHERE sp.game_id = $1
+       AND sp.left_at IS NULL
+       AND sp.kicked IS NOT TRUE
+       AND NOT EXISTS (
+         SELECT 1 FROM player_round_events pre
+         WHERE pre.game_id = sp.game_id
+           AND pre.player_id = sp.player_id
+           AND pre.event_type = 'PLAYER_SESSION_COMPLETE'
+       )
+     ORDER BY sp.player_id ASC`,
+    [gameId]
+  );
+  if (activePlayersResult.rows.length === 0) {
+    return 0;
+  }
+
+  const referenceYear = session.scoring_reference_year ?? 2025;
+  const sessionDeadline = session.session_deadline;
+  const totalRounds = session.total_rounds;
+
+  let finalizedCount = 0;
+
+  for (const row of activePlayersResult.rows) {
+    const playerId = row.player_id;
+
+    await executor.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':async'))`,
+      [gameId, playerId]
+    );
+
+    const completedCheck = await executor.query<{ exists: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM player_round_events
+         WHERE game_id = $1 AND player_id = $2 AND event_type = 'PLAYER_SESSION_COMPLETE'
+       ) AS exists`,
+      [gameId, playerId]
+    );
+    if (completedCheck.rows[0]?.exists) {
+      continue;
+    }
+
+    const lastCompleteResult = await executor.query<{ round_index: number | null }>(
+      `SELECT MAX(round_index) AS round_index FROM player_round_events
+       WHERE game_id = $1 AND player_id = $2 AND event_type = 'ROUND_COMPLETE'`,
+      [gameId, playerId]
+    );
+    const lastCompleteRound = lastCompleteResult.rows[0]?.round_index ?? -1;
+
+    for (let roundIndex = lastCompleteRound + 1; roundIndex < totalRounds; roundIndex++) {
+      // For rounds the player never reached, we still need a ROUND_STARTED event
+      // in their per-player stream so the snapshot builder can reveal the round
+      // content and mark it reached/completed. `occurred_at = session_deadline`
+      // is a deliberate placeholder timestamp for this deadline-forced
+      // completion; it is NOT the moment the player actually opened the round,
+      // so future analytics should not treat it as a real view time.
+      const startedToken = generateVerificationToken();
+      await executor.query(
+        `INSERT INTO player_round_events
+           (game_id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at, verification_token)
+         VALUES ($1, $2, $3, 'ROUND_STARTED', $4::jsonb, $5, NULL, $6)
+         ON CONFLICT DO NOTHING`,
+        [
+          gameId,
+          playerId,
+          roundIndex,
+          JSON.stringify({ startedAt: sessionDeadline.toISOString() }),
+          sessionDeadline,
+          startedToken
+        ]
+      );
+
+      const event = await fetchEventById(eventIds[roundIndex], executor);
+      if (!event) {
+        throw new Error(`Event not found for round ${roundIndex}`);
+      }
+      const result = evaluateRound(
+        event,
+        { year: null, location: null },
+        roundIndex,
+        false,
+        0,
+        0,
+        referenceYear
+      );
+
+      const commitToken = generateVerificationToken();
+      await executor.query(
+        `INSERT INTO round_commits
+           (game_id, player_id, round_index, submitted_at, year_guess, location_lat, location_lng,
+            hints_used, score, absent, acc_penalty, acc_penalty_when, acc_penalty_where,
+            acc_penalty_when_rate, acc_penalty_where_rate, verification_token)
+         VALUES ($1, $2, $3, $4, NULL, NULL, NULL, 0, 0, TRUE, 0, 0, 0, 0, 0, $5)
+         ON CONFLICT (game_id, player_id, round_index) DO NOTHING`,
+        [gameId, playerId, roundIndex, sessionDeadline, commitToken]
+      );
+
+      const resultToken = generateVerificationToken();
+      await executor.query(
+        `INSERT INTO round_results
+           (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token)
+         VALUES ($1, $2, $3, $4, NULL, $5, $6, $7, $8, $9)
+         ON CONFLICT (game_id, round_index, player_id) DO NOTHING`,
+        [
+          gameId,
+          roundIndex,
+          playerId,
+          0,
+          result.distanceKm,
+          result.yearDiff,
+          result.locationAccuracy,
+          result.yearAccuracy,
+          resultToken
+        ]
+      );
+
+      const completeToken = generateVerificationToken();
+      await executor.query(
+        `INSERT INTO player_round_events
+           (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+         VALUES ($1, $2, $3, 'ROUND_COMPLETE', $4::jsonb, $5, $6)
+         ON CONFLICT DO NOTHING`,
+        [
+          gameId,
+          playerId,
+          roundIndex,
+          JSON.stringify({ absent: true, score: 0, resultPhaseStartedAt: sessionDeadline.toISOString() }),
+          sessionDeadline,
+          completeToken
+        ]
+      );
+    }
+
+    const sessionCompleteToken = generateVerificationToken();
+    await executor.query(
+      `INSERT INTO player_round_events
+         (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+       VALUES ($1, $2, $3, 'PLAYER_SESSION_COMPLETE', $4::jsonb, $5, $6)
+       ON CONFLICT DO NOTHING`,
+      [
+        gameId,
+        playerId,
+        totalRounds - 1,
+        JSON.stringify({ totalRounds, finalizedByDeadline: true }),
+        sessionDeadline,
+        sessionCompleteToken
+      ]
+    );
+
+    finalizedCount++;
+  }
+
+  return finalizedCount;
+}
+
+export async function maybeFinalizeAsyncSessionDeadline(gameId: string): Promise<number> {
+  const guardResult = await dbPool.query<{ exists: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM sessions s
+       WHERE s.game_id = $1
+         AND s.mode = 'async'
+         AND s.session_deadline IS NOT NULL
+         AND s.session_deadline < now()
+         AND EXISTS (
+           SELECT 1
+           FROM session_players sp
+           WHERE sp.game_id = s.game_id
+             AND sp.left_at IS NULL
+             AND sp.kicked IS NOT TRUE
+             AND NOT EXISTS (
+               SELECT 1 FROM player_round_events pre
+               WHERE pre.game_id = sp.game_id
+                 AND pre.player_id = sp.player_id
+                 AND pre.event_type = 'PLAYER_SESSION_COMPLETE'
+             )
+         )
+     ) AS exists`,
+    [gameId]
+  );
+  if (!guardResult.rows[0]?.exists) {
+    return 0;
+  }
+
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+    const finalized = await finalizeAsyncSessionDeadline(gameId, client);
+    await client.query("COMMIT");
+    return finalized;
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
