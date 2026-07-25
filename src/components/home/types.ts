@@ -37,4 +37,4 @@ export const MODE_CARD_SUBTITLE: Record<string, string> = {
 }
 
 // Card order for vertical layout (top to bottom)
-export const VERTICAL_CARD_ORDER: Mode[] = ['compete', 'daily', 'levelup', 'practice']
+export const VERTICAL_CARD_ORDER: Mode[] = ['compete', 'daily', 'practice', 'levelup']

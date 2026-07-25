@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Settings } from "lucide-react";
 import styles from "./WelcomeModal.module.css";
 import { AvatarPickerModal } from "./AvatarPickerModal";
-import { updateCachedDisplayName } from "@/core/identity";
+import { updateCachedDisplayName, updateCachedAvatarUrl } from "@/core/identity";
 
 export interface WelcomeModalProps {
   isOpen: boolean;
@@ -76,6 +76,7 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
     })
       .then(() => {
         updateCachedDisplayName(nextName);
+        if (avatarUrl) updateCachedAvatarUrl(avatarUrl);
         onSaved?.();
       })
       .catch(() => {});
