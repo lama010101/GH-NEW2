@@ -2549,6 +2549,8 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     if ((insertResult as unknown as { rowCount: number | null }).rowCount === 0) {
       // Commit already exists (concurrent submission) — return current snapshot
       await client.query("COMMIT");
+      client.release();
+      clientReleased = true;
       const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
       if (!snapshot) throw new Error("Session not found");
       return snapshot;
@@ -2898,7 +2900,7 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
     // Idempotent return if this round is already complete.
     if (guard.round_complete) {
       await client.query("COMMIT");
-      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
+      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
       const snapshot = playerSnapshots[playerId];
       if (!snapshot) throw new Error("Session not found");
       return { ...snapshot, playerSnapshots };
@@ -2907,7 +2909,7 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
     // Idempotent return if a commit already exists (concurrent submission).
     if (guard.has_existing_commit) {
       await client.query("COMMIT");
-      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
+      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
       const snapshot = playerSnapshots[playerId];
       if (!snapshot) throw new Error("Session not found");
       return { ...snapshot, playerSnapshots };
@@ -3034,7 +3036,7 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
 
     if ((insertResult as unknown as { rowCount: number | null }).rowCount === 0) {
       await client.query("COMMIT");
-      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
+      const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, client);
       const snapshot = playerSnapshots[playerId];
       if (!snapshot) throw new Error("Session not found");
       return { ...snapshot, playerSnapshots };
