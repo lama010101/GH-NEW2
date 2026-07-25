@@ -1182,7 +1182,7 @@ function clampResultsAutoAdvanceSec(value: number | undefined): number {
 }
 
 export async function createCompeteSession(input: CreateCompeteSessionInput): Promise<CompeteSessionSnapshot> {
-  const mode = input.mode ?? "sync";
+  const mode = input.mode ?? "async";
   // Default async per-round timer to OFF (0); sync retains the 120s default.
   const roundTimerSec = clampRoundTimer(
     input.roundTimerSec === undefined && mode === "async" ? 0 : input.roundTimerSec
@@ -1252,10 +1252,11 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
       try {
         await client.query(`SAVEPOINT room_code_attempt`);
         verifyLog("INSERT", "sessions", "OK", `game_id=${gameId} — executing`);
+        const sessionDeadlineDays = mode === "async" ? 3 : null;
         await client.query(
-          `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, results_auto_advance_sec, seed, room_code, scoring_reference_year)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, EXTRACT(YEAR FROM now())::INT)`,
-          [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, resultsAutoAdvanceSec, seed, roomCode]
+          `INSERT INTO sessions (game_id, mode, round_timer_sec, total_rounds, year_min, year_max, results_auto_advance_sec, seed, room_code, session_deadline_days, scoring_reference_year)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, EXTRACT(YEAR FROM now())::INT)`,
+          [gameId, mode, roundTimerSec, totalRounds, yearMin, yearMax, resultsAutoAdvanceSec, seed, roomCode, sessionDeadlineDays]
         );
         await client.query(`RELEASE SAVEPOINT room_code_attempt`);
         roomCodeInsertSuccess = true;

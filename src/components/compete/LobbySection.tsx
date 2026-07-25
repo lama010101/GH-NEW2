@@ -573,20 +573,19 @@ export default function LobbySection({
         {/* ── Game Settings Card ── */}
         <div className={`${styles['lobby-card']} ${styles['lobby-settings']}`}>
           <div className={styles['lobby-card-header']}>
-            <span className={styles['lobby-accent-bar']} />
             <h3><span className={styles['lobby-section-number']}>1</span>{t('lobby.game_settings')}</h3>
           </div>
           <div className={styles['lobbyTabRow']}>
-            <button
-              className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
-              onClick={() => isHost && onSetSubMode?.("sync", maxTurnDays)}
-              disabled={!isHost || busy}
-            >{t('lobby.realtime')}</button>
             <button
               className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`}
               onClick={() => isHost && onSetSubMode?.("async", maxTurnDays)}
               disabled={!isHost || busy}
             >{t('lobby.turn_by_turn')}</button>
+            <button
+              className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
+              onClick={() => isHost && onSetSubMode?.("sync", maxTurnDays)}
+              disabled={!isHost || busy}
+            >{t('lobby.realtime')}</button>
           </div>
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
@@ -974,7 +973,6 @@ export default function LobbySection({
           {viewer?.isHost && (
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-accent-bar-sm']} />
               <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span>
               <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
                 {t('lobby.copy_link')}
