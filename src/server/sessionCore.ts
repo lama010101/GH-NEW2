@@ -14,6 +14,7 @@ import {
   CreateCompeteSessionInput,
   EventHint,
   LatLng,
+  PlayerRoundResult,
   RoundEventContent,
   SessionConfig,
   SessionPlayer,
@@ -403,6 +404,8 @@ type PlayerRoundState = {
   submittedRounds: Set<number>;
 };
 
+type RoundResultDetail = { score: number; locationScore: number; timeScore: number; };
+
 type AsyncSnapshotBase = {
   session: SessionRow;
   players: SessionPlayerRow[];
@@ -410,7 +413,7 @@ type AsyncSnapshotBase = {
   globalRoundStartedAt: string | null;
   globalPhaseEndsAt: string | null;
   allPlayerEvents: Map<string, PlayerRoundEvent[]>;
-  roundResultScores: Map<string, number>;
+  roundResultScores: Map<string, RoundResultDetail>;
   roundEventContent: RoundEventContent[];
   eventContentMap: Map<string, RoundEventContent>;
   roundEventsForViewer: (viewerPlayerId: string) => PlayerRoundEvent[];
@@ -482,21 +485,27 @@ async function loadPlayerRoundEventsForAsync(
 async function loadRoundResultScoresForAsync(
   gameId: string,
   executor: DbExecutor
-): Promise<Map<string, number>> {
+): Promise<Map<string, RoundResultDetail>> {
   const result = await executor.query<{
     player_id: string;
     round_index: number;
-    score: number;
+    score: number | null;
+    location_score: number | null;
+    time_score: number | null;
   }>(
-    `SELECT player_id, round_index, score
+    `SELECT player_id, round_index, score, location_score, time_score
      FROM round_results
      WHERE game_id = $1`,
     [gameId]
   );
 
-  const map = new Map<string, number>();
+  const map = new Map<string, RoundResultDetail>();
   for (const row of result.rows) {
-    map.set(`${row.player_id}:${row.round_index}`, row.score);
+    map.set(`${row.player_id}:${row.round_index}`, {
+      score: row.score ?? 0,
+      locationScore: row.location_score ?? 0,
+      timeScore: row.time_score ?? 0,
+    });
   }
   return map;
 }
@@ -694,19 +703,66 @@ function buildAsyncPlayerSnapshotFromBase(
     return mapSessionPlayerRowToPlayer(row, hasSubmitted);
   });
 
+  const guessSubmittedSet = new Set<string>();
+  for (const [playerId, events] of allPlayerEvents.entries()) {
+    for (const ev of events) {
+      if (ev.eventType === "GUESS_SUBMITTED") {
+        guessSubmittedSet.add(`${playerId}:${ev.roundIndex}`);
+      }
+    }
+  }
+
+  const roundResultDetailsByPlayer = new Map<string, Array<{ roundIndex: number } & RoundResultDetail>>();
+  for (const [key, detail] of roundResultScores.entries()) {
+    const sep = key.lastIndexOf(':');
+    const playerId = key.slice(0, sep);
+    const roundIndex = parseInt(key.slice(sep + 1), 10);
+    const arr = roundResultDetailsByPlayer.get(playerId) ?? [];
+    arr.push({ roundIndex, ...detail });
+    roundResultDetailsByPlayer.set(playerId, arr);
+  }
+
+  const playerRoundResultsByRound = new Map<string, Map<number, PlayerRoundResult>>();
+  for (const [playerId, rows] of roundResultDetailsByPlayer.entries()) {
+    rows.sort((a, b) => a.roundIndex - b.roundIndex);
+    const byRound = new Map<number, PlayerRoundResult>();
+    let cumulativeScore = 0;
+    let cumulativeAccRawSum = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      cumulativeScore += row.score;
+      const accRaw = (row.locationScore + row.timeScore) / 2;
+      cumulativeAccRawSum += accRaw;
+      const accuracy = Math.round(accRaw);
+      const cumulativeAccuracy = Math.round(cumulativeAccRawSum / (i + 1));
+      const didSubmit = guessSubmittedSet.has(`${playerId}:${row.roundIndex}`);
+      byRound.set(row.roundIndex, { score: row.score, accuracy, cumulativeScore, cumulativeAccuracy, didSubmit });
+    }
+    playerRoundResultsByRound.set(playerId, byRound);
+  }
+
+  const getPlayerRoundResult = (playerId: string, roundIndex: number): PlayerRoundResult => {
+    const byRound = playerRoundResultsByRound.get(playerId);
+    const exact = byRound?.get(roundIndex);
+    if (exact) return exact;
+    const rows = roundResultDetailsByPlayer.get(playerId) ?? [];
+    const priorRows = rows.filter(r => r.roundIndex <= roundIndex);
+    const cumulativeScore = priorRows.reduce((sum, r) => sum + r.score, 0);
+    const cumulativeAccRawSum = priorRows.reduce((sum, r) => sum + (r.locationScore + r.timeScore) / 2, 0);
+    const cumulativeAccuracy = priorRows.length > 0 ? Math.round(cumulativeAccRawSum / priorRows.length) : 0;
+    return { score: 0, accuracy: 0, cumulativeScore, cumulativeAccuracy, didSubmit: false };
+  };
+
   const hiddenAnswerValue = null as unknown as number;
 
   const rounds = eventIds.map((id, roundIndex) => {
     const ev = eventContentMap.get(id);
     const revealContent = playerState.reachedRounds.has(roundIndex);
     const revealAnswer = playerState.completedRounds.has(roundIndex);
-    const playerScores: Record<string, number> = {};
+    const playerRoundResults: Record<string, PlayerRoundResult> = {};
     if (revealContent) {
       for (const row of activePlayerRows) {
-        const key = `${row.player_id}:${roundIndex}`;
-        if (roundResultScores.has(key)) {
-          playerScores[row.player_id] = roundResultScores.get(key)!;
-        }
+        playerRoundResults[row.player_id] = getPlayerRoundResult(row.player_id, roundIndex);
       }
     }
     return {
@@ -719,7 +775,7 @@ function buildAsyncPlayerSnapshotFromBase(
       imageUrl: revealContent ? (ev?.imageUrl ?? null) : null,
       description: revealContent ? (ev?.description ?? null) : null,
       hints: revealContent ? (ev?.hints ?? []) : [],
-      playerScores,
+      playerRoundResults,
     };
   });
 

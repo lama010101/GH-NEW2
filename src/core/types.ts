@@ -62,6 +62,14 @@ export type EventRecord = {
   difficulty?: number;
 };
 
+export type PlayerRoundResult = {
+  score: number;
+  accuracy: number;
+  cumulativeScore: number;
+  cumulativeAccuracy: number;
+  didSubmit: boolean;
+};
+
 export type RoundEventContent = {
   eventId: string;
   title: string;
@@ -72,7 +80,7 @@ export type RoundEventContent = {
   imageUrl: string | null;
   description: string | null;
   hints: EventHint[];
-  playerScores?: Record<string, number>;
+  playerRoundResults?: Record<string, PlayerRoundResult>;
 };
 
 export type GuessState = {

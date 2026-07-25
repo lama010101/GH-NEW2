@@ -211,35 +211,75 @@ export default function RoundCompleteSection({
         const myDistanceKm = (guessLat != null && guessLng != null)
           ? haversineKm(guessLat, guessLng, correctLat, correctLng)
           : null;
-        const leaderboardRows = (roundResults ?? [])
-          .slice()
-          .sort((a, b) => b.score - a.score)
-          .map((r, i) => ({
-            playerId: r.playerId,
-            rank: i + 1,
-            displayName: snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8),
-            accuracy: r.accuracy,
-            isMe: r.playerId === playerId,
-            score: r.score,
-            cumulativeScore: r.cumulativeScore,
-            cumulativeAccuracy: r.cumulativeAccuracy,
-            didSubmit: r.didSubmit,
-          }));
+        const playerRoundResults = round.playerRoundResults ?? {};
+        const asyncBaseRows = isAsync
+          ? Object.entries(playerRoundResults).map(([pid, r]) => {
+              const p = snapshot.players.find(x => x.playerId === pid);
+              return {
+                playerId: pid,
+                rank: 0,
+                displayName: p?.displayName || pid.slice(0, 8),
+                accuracy: r.accuracy,
+                isMe: pid === playerId,
+                score: r.score,
+                cumulativeScore: r.cumulativeScore,
+                cumulativeAccuracy: r.cumulativeAccuracy,
+                didSubmit: r.didSubmit,
+              };
+            })
+          : [];
 
-        const allRoundsLeaderboardRows = (roundResults ?? [])
-          .slice()
-          .sort((a, b) => b.cumulativeAccuracy - a.cumulativeAccuracy)
-          .map((r, i) => ({
-            playerId: r.playerId,
-            rank: i + 1,
-            displayName: snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8),
-            accuracy: r.accuracy,
-            isMe: r.playerId === playerId,
-            score: r.score,
-            cumulativeScore: r.cumulativeScore,
-            cumulativeAccuracy: r.cumulativeAccuracy,
-            didSubmit: r.didSubmit,
-          }));
+        const sortByScoreThenPlayer = (a: typeof asyncBaseRows[number], b: typeof asyncBaseRows[number]) => {
+          if (a.didSubmit !== b.didSubmit) return a.didSubmit ? -1 : 1;
+          if (b.score !== a.score) return b.score - a.score;
+          return a.playerId.localeCompare(b.playerId);
+        };
+
+        const sortByCumulativeThenPlayer = (a: typeof asyncBaseRows[number], b: typeof asyncBaseRows[number]) => {
+          if (a.didSubmit !== b.didSubmit) return a.didSubmit ? -1 : 1;
+          if (b.cumulativeAccuracy !== a.cumulativeAccuracy) return b.cumulativeAccuracy - a.cumulativeAccuracy;
+          return a.playerId.localeCompare(b.playerId);
+        };
+
+        const leaderboardRows = isAsync
+          ? asyncBaseRows
+              .slice()
+              .sort(sortByScoreThenPlayer)
+              .map((r, i) => ({ ...r, rank: i + 1 }))
+          : (roundResults ?? [])
+              .slice()
+              .sort((a, b) => b.score - a.score)
+              .map((r, i) => ({
+                playerId: r.playerId,
+                rank: i + 1,
+                displayName: snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8),
+                accuracy: r.accuracy,
+                isMe: r.playerId === playerId,
+                score: r.score,
+                cumulativeScore: r.cumulativeScore,
+                cumulativeAccuracy: r.cumulativeAccuracy,
+                didSubmit: r.didSubmit,
+              }));
+
+        const allRoundsLeaderboardRows = isAsync
+          ? asyncBaseRows
+              .slice()
+              .sort(sortByCumulativeThenPlayer)
+              .map((r, i) => ({ ...r, rank: i + 1 }))
+          : (roundResults ?? [])
+              .slice()
+              .sort((a, b) => b.cumulativeAccuracy - a.cumulativeAccuracy)
+              .map((r, i) => ({
+                playerId: r.playerId,
+                rank: i + 1,
+                displayName: snapshot.players.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8),
+                accuracy: r.accuracy,
+                isMe: r.playerId === playerId,
+                score: r.score,
+                cumulativeScore: r.cumulativeScore,
+                cumulativeAccuracy: r.cumulativeAccuracy,
+                didSubmit: r.didSubmit,
+              }));
         return (
           <>
             {/* EVENT CARD */}

@@ -168,24 +168,25 @@ export default function RoundActiveSection({
   // Partial leaderboard for async (Relax) mode — spec §5.8:
   // "Partial leaderboard builds per round as players submit."
   // In async per-player snapshots, snapshot.events only contains the viewer's own
-  // player_round_events. The server populates rounds[currentRound].playerScores
-  // with a per-player score map once each player has a round_results row.
+  // player_round_events. The server populates rounds[currentRound].playerRoundResults
+  // with per-player results once each player has a round_results row.
   // Every player in snapshot.players must appear — submitted rows show the score,
   // pending rows mirror the no-guess treatment from RoundCompleteSection.
   const isAsync = snapshot.config?.mode === "async";
   const partialLeaderboard = useMemo(() => {
     if (!isAsync || snapshot.status !== "ROUND_ACTIVE") return [];
     const currentRound = snapshot.rounds?.[snapshot.currentRoundIndex];
-    const playerScores = currentRound?.playerScores ?? {};
+    const playerRoundResults = currentRound?.playerRoundResults ?? {};
     const roster = snapshot.players ?? [];
     return roster
       .map((p) => {
-        const score = playerScores[p.playerId];
+        const result = playerRoundResults[p.playerId];
+        const score = result?.didSubmit ? result.score : null;
         return {
           playerId: p.playerId,
           displayName: p.displayName || p.playerId.slice(0, 8),
           avatarUrl: p.avatarUrl ?? null,
-          score: typeof score === "number" ? score : null,
+          score,
           isMe: p.playerId === playerId,
         };
       })
