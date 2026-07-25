@@ -48,7 +48,7 @@ test.describe('Sync Compete Golden Path', () => {
     // auth endpoint is unreachable, rather than burning a full Playwright
     // cycle (60-180s) on a ConnectTimeoutError deep in the test body.
     // MP-GUARD-SYNC-REGRESSION-001-VERIFY-CLOSEOUT
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     if (!supabaseUrl) {
       throw new Error('Supabase unreachable — NEXT_PUBLIC_SUPABASE_URL not set. Check connectivity.');
     }
