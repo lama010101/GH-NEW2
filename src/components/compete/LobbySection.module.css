@@ -89,7 +89,7 @@
   box-shadow: var(--gh-general-card-shadow);
 }
 .lobby-roster-card { grid-area: roster; }
-.lobby-settings { grid-area: settings; }
+.lobby-settings { grid-area: settings; min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box; }
 .lobby-card-header {
   display: flex;
   align-items: center;
@@ -391,6 +391,9 @@
   gap: 0;
   min-width: 0;
   max-width: 100%;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  box-sizing: border-box;
 }
 .lobby-setting-item {
   display: flex;
@@ -402,6 +405,8 @@
   transition: background 0.15s;
   min-width: 0;
   max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 .lobby-setting-item:last-child {
   border-bottom: none;
@@ -1037,11 +1042,11 @@
 .lobbyTabText { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; min-width: 0; }
 .lobbyTabMain { font-size: var(--font-xs); font-weight: 700; letter-spacing: 0.2px; color: currentColor; }
 .lobbyTabSub { font-size: var(--font-2xs); font-weight: 600; color: currentColor; opacity: 0.85; }
-.lobbySettingRowBlock { flex-direction: column; align-items: stretch; gap: 0; min-width: 0; max-width: 100%; }
+.lobbySettingRowBlock { flex-direction: column; align-items: stretch; gap: 0; min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box; }
 .lobbySettingRowHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .lobbySelectAllBtn { font-size: 12px; /* layout-constrained — do not tokenize */ font-weight: 600; color: var(--gh-orange); background: transparent; border: 1px solid var(--gh-orange); border-radius: 6px; padding: 3px 8px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
 .lobbySelectAllBtn:hover { background: rgba(var(--gh-orange-rgb), 0.10); }
-.lobbyEraRail { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; -ms-overflow-style: none; min-width: 0; max-width: 100%; width: 100%; }
+.lobbyEraRail { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; -ms-overflow-style: none; min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box; }
 .lobbyEraRail::-webkit-scrollbar { display: none; }
 .lobbyImgBtn { position: relative; flex: 0 0 auto; width: 80px; height: 80px; padding: 0; border: 2px solid transparent; border-radius: 14px; cursor: pointer; text-align: center; transition: opacity 0.15s, border-color 0.15s; background: var(--gh-glass-bg); overflow: hidden; }
 .lobbyImgBtnOn { opacity: 1; border-color: var(--gh-teal); }
@@ -1080,8 +1085,28 @@
   transform: translateX(-50%) translateY(0);
 }
 
+/* ── Slider tick marks (visual only) ── */
+.slider-ticks {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.slider-tick {
+  position: absolute;
+  top: 50%;
+  width: 2px;
+  height: 6px;
+  background: var(--gh-border-medium);
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+}
+
 /* ── Collapsible era/region presets ── */
-.lobby-presets-disclosure { border-bottom: 1px solid var(--gh-border-subtle); }
+.lobby-presets-disclosure { border-bottom: 1px solid var(--gh-border-subtle); min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box; }
 .lobby-presets-header {
   display: flex;
   align-items: center;
@@ -1096,4 +1121,4 @@
 }
 .lobby-presets-chevron { flex-shrink: 0; color: var(--gh-text-secondary); transition: transform 0.2s ease; }
 .lobby-presets-chevron-open { transform: rotate(180deg); }
-.lobby-presets-content { display: flex; flex-direction: column; gap: 0; }
+.lobby-presets-content { display: flex; flex-direction: column; gap: 0; min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box; overflow-x: hidden; }
