@@ -18,6 +18,12 @@ const PUBLIC_API_ROUTES = [
   "/api/waitlist",
 ];
 
+// PartyKit DO routes that carry their own x-partykit-secret validation. They must
+// be reachable without a browser session so the route handler can return 401/403.
+const PARTYKIT_SECRET_ROUTES = [
+  /^\/api\/compete\/[0-9a-fA-F-]+\/finalize-deadline$/,
+];
+
 const STATIC_ASSET_EXTENSIONS = [
   ".webp", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".gif", ".css", ".woff", ".woff2", ".mp3",
 ];
@@ -28,6 +34,7 @@ function isPublicPath(pathname: string): boolean {
   if (pathname.startsWith("/favicon")) return true;
   if (pathname.startsWith("/prototype")) return true;
   if (PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))) return true;
+  if (PARTYKIT_SECRET_ROUTES.some((route) => route.test(pathname))) return true;
   const lastDot = pathname.lastIndexOf(".");
   if (lastDot !== -1 && STATIC_ASSET_EXTENSIONS.includes(pathname.slice(lastDot).toLowerCase())) {
     return true;

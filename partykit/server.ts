@@ -54,6 +54,9 @@ interface Room {
     setAlarm(scheduledTime: number | Date): Promise<void>;
     deleteAlarm(): Promise<void>;
     getAlarm(): Promise<number | null>;
+    get(key: string): Promise<unknown>;
+    put(key: string, value: unknown): Promise<void>;
+    delete(key: string): Promise<void>;
   };
   broadcast: (msg: string | ArrayBuffer | ArrayBufferView, without?: string[]) => void;
   getConnection(id: string): Connection | undefined;
@@ -264,6 +267,10 @@ export default class GameServer {
   // Runtime state — derived, rebuildable from DB at any time.
   // This is the DO's authoritative view. DB remains canonical truth.
   // INVARIANT: if snapshotLoaded=true, snapshot is a valid RuntimeState.
+  // Cached room id — needed because PartyKit dev forbids accessing room.id inside
+  // the onAlarm handler, but constructor runs with room.id available.
+  private gameId = "";
+
   private snapshot: unknown | null = null;
   private snapshotLoaded = false;
 
@@ -367,8 +374,9 @@ export default class GameServer {
   }
 
   constructor(readonly room: Room) {
+    this.gameId = room.id;
     console.log("[DO_INSTANCE]", {
-      room: this.room.id,
+      room: this.gameId,
       location: "constructor"
     });
   }
@@ -384,7 +392,18 @@ export default class GameServer {
    * NOT called after writes — use applySnapshotAndBroadcast() instead.
    */
   private async loadFromDB(): Promise<void> {
-    const gameId = this.room.id;
+    // In the onAlarm handler PartyKit (dev) forbids accessing room.id. The gameId
+    // is persisted to room.storage whenever the async alarm is scheduled, and on
+    // first connect it falls back to room.id and caches itself.
+    let gameId: string | undefined;
+    const storedGameId = await this.room.storage.get("gameId");
+    if (typeof storedGameId === "string") {
+      gameId = storedGameId;
+    } else {
+      gameId = this.room.id;
+      await this.room.storage.put("gameId", gameId).catch(() => {});
+    }
+    this.gameId = gameId;
     console.time("[PERF] loadFromDB:apiFetch");
     const baseUrl = this.getNextJsBaseUrl();
     const snapUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}`;
@@ -652,7 +671,16 @@ export default class GameServer {
    * DO alarm. Does nothing when no active player has a per-round timer set.
    */
   private async scheduleAsyncRoundTimer(): Promise<void> {
-    const gameId = this.room.id;
+    // room.id is not accessible inside the onAlarm handler, so the gameId is
+    // read from storage (written by loadFromDB / previous schedule calls).
+    const storedGameId = await this.room.storage.get("gameId");
+    let gameId: string;
+    if (typeof storedGameId === "string") {
+      gameId = storedGameId;
+    } else {
+      gameId = this.room.id;
+      await this.room.storage.put("gameId", gameId).catch(() => {});
+    }
     const baseUrl = this.getNextJsBaseUrl();
     const nextExpiryUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/next-expiry`;
     const secret = (this.room.env.PARTYKIT_SECRET as string) ?? "";
@@ -665,9 +693,9 @@ export default class GameServer {
         console.error("[PartyKit] next-expiry fetch failed:", res.status);
         return;
       }
-      const next = await res.json() as { playerId?: string; roundIndex?: number; phaseEndsAt?: string | null } | null;
-      if (!next || !next.phaseEndsAt || !next.playerId) {
-        console.log("[PartyKit] Async: no per-player timer to schedule");
+      const next = await res.json() as { playerId?: string; roundIndex?: number; phaseEndsAt?: string | null; isSessionDeadline?: boolean } | null;
+      if (!next || !next.phaseEndsAt) {
+        console.log("[PartyKit] Async: no timer to schedule");
         return;
       }
       const phaseEndsAtMs = new Date(next.phaseEndsAt).getTime();
@@ -691,6 +719,15 @@ export default class GameServer {
    * See Compete Relax (Option B) §10.1 — PartyKit DO alarms.
    */
   async onAlarm(): Promise<void> {
+    // PartyKit dev forbids accessing room.id inside the onAlarm handler, so the
+    // gameId is read from the storage entry written when the alarm was scheduled.
+    const storedGameId = await this.room.storage.get("gameId");
+    const gameId = typeof storedGameId === "string" ? storedGameId : "";
+    if (gameId.length === 0) {
+      console.error("[PartyKit] onAlarm: missing gameId in storage");
+      return;
+    }
+
     if (!this.snapshotLoaded) {
       try {
         this.snapshotLoading = true;
@@ -707,7 +744,7 @@ export default class GameServer {
     if (!isRuntimeState(this.snapshot)) return;
 
     if (this.snapshot.config?.mode === "async") {
-      await this.handleAsyncExpiryAlarm();
+      await this.handleAsyncExpiryAlarm(gameId);
       return;
     }
 
@@ -725,8 +762,7 @@ export default class GameServer {
    * reschedules the next alarm. Bounded to avoid an infinite loop if expiry rows
    * fail to clear.
    */
-  private async handleAsyncExpiryAlarm(): Promise<void> {
-    const gameId = this.room.id;
+  private async handleAsyncExpiryAlarm(gameId: string): Promise<void> {
     const baseUrl = this.getNextJsBaseUrl();
     const secret = (this.room.env.PARTYKIT_SECRET as string) ?? "";
 
@@ -740,7 +776,7 @@ export default class GameServer {
 
     for (let i = 0; i < maxIterations; i++) {
       const nextExpiryUrl = `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/next-expiry`;
-      let next: { playerId?: string; roundIndex?: number; phaseEndsAt?: string | null } | null = null;
+      let next: { playerId?: string; roundIndex?: number; phaseEndsAt?: string | null; isSessionDeadline?: boolean } | null = null;
       try {
         const nextRes = await fetch(nextExpiryUrl, {
           headers: { "x-partykit-secret": secret }
@@ -749,13 +785,13 @@ export default class GameServer {
           console.error("[PartyKit] next-expiry fetch failed:", nextRes.status);
           break;
         }
-        next = await nextRes.json() as { playerId?: string; roundIndex?: number; phaseEndsAt?: string | null } | null;
+        next = await nextRes.json() as { playerId?: string; roundIndex?: number; phaseEndsAt?: string | null; isSessionDeadline?: boolean } | null;
       } catch (err) {
         console.error("[PartyKit] next-expiry fetch error:", err instanceof Error ? err.message : err);
         break;
       }
 
-      if (!next || !next.phaseEndsAt || !next.playerId || typeof next.roundIndex !== "number") {
+      if (!next || !next.phaseEndsAt || (typeof next.playerId !== "string" && !next.isSessionDeadline) || (typeof next.roundIndex !== "number" && !next.isSessionDeadline)) {
         break;
       }
 
@@ -765,6 +801,27 @@ export default class GameServer {
         await this.room.storage.setAlarm(phaseEndsAtMs).catch((err) =>
           console.error("[PartyKit] setAlarm (async future expiry) failed:", err)
         );
+        break;
+      }
+
+      if (next.isSessionDeadline) {
+        const finalizeRes = await fetch(
+          `${baseUrl}/api/compete/${encodeURIComponent(gameId)}/finalize-deadline`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": secret,
+            },
+            body: JSON.stringify({}),
+          }
+        );
+        if (!finalizeRes.ok) {
+          console.error(`[PartyKit] finalize-deadline failed:`, finalizeRes.status);
+          break;
+        }
+        lastSnapshot = await finalizeRes.json();
+        processed += 1;
         break;
       }
 
@@ -1002,7 +1059,7 @@ export default class GameServer {
    */
   private broadcastStateUpdate(): void {
     console.log("[DO_INSTANCE]", {
-      room: this.room.id,
+      room: this.gameId,
       location: "broadcastStateUpdate"
     });
     if (!this.snapshot) return;
@@ -1058,7 +1115,7 @@ export default class GameServer {
     });
 
     console.log("[DO_BROADCAST_ROOM]", {
-      room: this.room.id,
+      room: this.gameId,
       socketCount: this.connections.size,
     });
 

@@ -262,3 +262,32 @@ Playwright's pointer-interception checks. This means:
   # backdrop interception.
 
 ---
+
+### [KC-011] Relax (async) session-deadline finalization is snapshot-route only, not active-games list
+**Affected files:** `src/app/api/compete/active-games/route.ts` (intentionally not touched), `src/server/sessionCore.ts:loadCompeteSessionSnapshot`, `src/app/api/compete/[gameId]/finalize-deadline/route.ts`
+
+**Constraint:**
+The lazy-check fallback for async session deadline enforcement hooks into
+`loadCompeteSessionSnapshot` only — it finalizes a past-deadline Relax session
+whenever a player opens the specific game page (`GET /api/compete/[gameId]`)
+or the DO cold-starts from the same route.
+
+`active-games` does **not** call the finalizer. Its `status` derivation in
+`src/app/api/compete/active-games/route.ts:80-128` is built around global
+`round_events` (the sync/Rush source of truth), not per-player
+`player_round_events`. Updating the home list to reflect per-player async
+completion states is a separate display concern and is out of scope for the
+deadline-enforcement task.
+
+Therefore, a player may open their home list after a Relax session's deadline
+has already passed and the DO alarm has already finalized every player in the
+DB, yet still see the card as "in progress" until they (or someone) opens the
+specific `/compete/[gameId]` page. This is accepted behavior, not a regression.
+
+**Regression guard:**
+Any future work touching `active-games` status derivation for async sessions
+must either explicitly include `finalize-deadline` wiring or update the home
+list's async status logic separately; it must not be reported as a new bug
+without referencing this constraint.
+
+---
