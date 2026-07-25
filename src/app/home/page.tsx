@@ -13,6 +13,7 @@ import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/
 import { PracticeResumeModal } from '@/components/practice/PracticeResumeModal'
 import { loadPracticeSettings, savePracticeSettings } from '@/components/practice/practiceSettings'
 import styles from './home.module.css'
+import authModalStyles from '@/components/AuthModal.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
 import RankCard from '@/components/RankCard'
@@ -457,6 +458,7 @@ function ModeCard({
   const [navigating, setNavigating] = useState(false)
   const [competeLoading, setCompeteLoading] = useState(false)
   const [competeError, setCompeteError] = useState<string | null>(null)
+  const [comingSoonOpen, setComingSoonOpen] = useState(false)
 
   const handleCompeteCreate = async () => {
     if (!playerId) { onRequireAuth(); return }
@@ -498,7 +500,7 @@ function ModeCard({
 
   const handlePlay = () => {
     if (mode === 'daily') { setNavigating(true); onNavigate('/daily') }
-    else if (mode === 'levelup') { setNavigating(true); onNavigate('/levelup') }
+    else if (mode === 'levelup') { setComingSoonOpen(true) }
     else if (mode === 'practice') { onPracticeStart() }
   }
 
@@ -564,51 +566,69 @@ function ModeCard({
 
   // Non-compete card: icon-left, text-middle, play-right
   return (
-    <div className={styles['mode-card']}>
-      <div className={styles['card-bg']} style={{ background: gradient }}>
-        <div className={styles.cardInnerHorizontal}>
-          {/* Icon thumbnail on the LEFT */}
-          <div className={styles.cardIconThumb} aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={getIconSrc()} alt="" className={styles.cardIconThumbImg} draggable={false} />
-          </div>
+    <>
+      <div className={styles['mode-card']}>
+        <div className={styles['card-bg']} style={{ background: gradient }}>
+          <div className={styles.cardInnerHorizontal}>
+            {/* Icon thumbnail on the LEFT */}
+            <div className={styles.cardIconThumb} aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={getIconSrc()} alt="" className={styles.cardIconThumbImg} draggable={false} />
+            </div>
 
-          {/* Title + description in the MIDDLE */}
-          <div className={styles.cardTextCol}>
-            <h2 className={styles.cardTitleLeft}>{title}</h2>
-            <p className={styles.cardDescLeft}>
-              {desc.split('\n').map((line, i) => (
-                <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
-              ))}
-            </p>
-            {/* Daily card: timer inline below description */}
-            {mode === 'daily' && (
-              <DailyPanel onPlay={() => onNavigate('/daily')} />
-            )}
-          </div>
+            {/* Title + description in the MIDDLE */}
+            <div className={styles.cardTextCol}>
+              <h2 className={styles.cardTitleLeft}>{title}</h2>
+              <p className={styles.cardDescLeft}>
+                {desc.split('\n').map((line, i) => (
+                  <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
+                ))}
+              </p>
+              {/* Daily card: timer inline below description */}
+              {mode === 'daily' && (
+                <DailyPanel onPlay={() => onNavigate('/daily')} />
+              )}
+            </div>
 
-          {/* Play pill button on the RIGHT (triangle icon + i18n play label) */}
-          <button
-            type="button"
-            className={styles.playPill}
-            onClick={handlePlay}
-            disabled={navigating || (mode === 'practice' && practiceLoading)}
-            aria-label={t('home.play_mode_aria', { mode: title })}
-          >
-            {navigating || (mode === 'practice' && practiceLoading) ? (
-              <span className={styles.playPillSpinner} aria-hidden="true" />
-            ) : (
-              <>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M8 5v14l11-7z" fill="currentColor" />
-                </svg>
-                {t('home.compete_play')}
-              </>
-            )}
-          </button>
+            {/* Play pill button on the RIGHT (triangle icon + i18n play label) */}
+            <button
+              type="button"
+              className={styles.playPill}
+              onClick={handlePlay}
+              disabled={navigating || (mode === 'practice' && practiceLoading)}
+              aria-label={t('home.play_mode_aria', { mode: title })}
+            >
+              {navigating || (mode === 'practice' && practiceLoading) ? (
+                <span className={styles.playPillSpinner} aria-hidden="true" />
+              ) : (
+                <>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" fill="currentColor" />
+                  </svg>
+                  {t('home.compete_play')}
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {comingSoonOpen && (
+        <div className={authModalStyles.overlay} onClick={() => setComingSoonOpen(false)}>
+          <div className={authModalStyles.card} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className={authModalStyles.closeButton}
+              onClick={() => setComingSoonOpen(false)}
+              aria-label={t('nav.close')}
+            >
+              ×
+            </button>
+            <h2 className={authModalStyles.title}>Coming Up Soon</h2>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
