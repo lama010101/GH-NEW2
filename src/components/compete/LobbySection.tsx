@@ -564,269 +564,17 @@ export default function LobbySection({
             </span>
           </div>
         </div>
-        <h1 className={styles['lobby-title-h1']}>{t('lobby.game_lobby')}</h1>
+        <h1 className={styles['lobby-title-h1']}>{isHost ? t('lobby.create_game') : t('lobby.join_game')}</h1>
       </header>
 
       {/* Main Grid */}
       <div className={styles['lobby-grid']}>
 
-        {/* ── Invite + Roster Card (merged) ── */}
-        <div className={`${styles['lobby-card']} ${styles['lobby-roster-card']}`}>
-
-          {/* Sub-section A: Invite Players */}
-          {viewer?.isHost && (
-          <div className={styles['lobby-subsection']}>
-            <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-accent-bar-sm']} />
-              <span className={styles['lobby-subsection-title']}>{t('lobby.invite_players')}</span>
-              <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
-                {t('lobby.copy_link')}
-              </button>
-            </div>
-            {linkCopied && (
-              <span className={styles['lobbyCopiedToast']}>
-                {t('lobby.link_copied')}
-              </span>
-            )}
-            <div className={styles['lobbySearchWrap']}>
-              <svg className={styles['lobbySearchIcon']} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <circle cx="11" cy="11" r="7" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="text"
-                className={`${styles['lobbyInviteSearch']} ${searchQuery ? styles['lobbyInviteSearchWithClear'] : ''}`}
-                placeholder={t('lobby.search_players')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className={styles['lobbySearchClearBtn']}
-                  onClick={() => setSearchQuery('')}
-                  aria-label={t('lobby.clear_search')}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-            <div className={styles['lobbyRail']}>
-              {displayList.length === 0 ? (
-                <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
-                  <span className={styles['lobbyEmptyRailText']}>{t('lobby.no_players_found')}</span>
-                </div>
-              ) : (
-                displayList.map((player) => {
-                  const inviteState = inviteStates[player.id] ?? 'idle';
-                  const nameParts = player.displayName.split(' ');
-                  const firstName = nameParts[0];
-                  const lastName = nameParts.slice(1).join(' ');
-                  return (
-                    <div key={player.id} className={styles['lobbyPlayerCard']}>
-                      <div className={styles['lobbyAvatarWrap']}>
-                        <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
-                        <button
-                          className={styles['lobbyStarBtn']}
-                          onClick={() => toggleFollow(player.id)}
-                          aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
-                        >
-                          <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
-                            {followedIds.has(player.id) ? '★' : '☆'}
-                          </span>
-                        </button>
-                      </div>
-                      <div style={getUsernameGradientStyle(player.id)}>
-                        <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
-                        {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
-                      </div>
-                      <button
-                        type="button"
-                        className={styles['lobbyInviteBtn']}
-                        onClick={() => handleSendInvite(player)}
-                        disabled={inviteState !== 'idle'}
-                      >
-                        {inviteState === 'pending'
-                          ? t('lobby.invite_pending')
-                          : inviteState === 'sent'
-                          ? t('lobby.invite_sent')
-                          : inviteState === 'error'
-                          ? t('lobby.invite_failed')
-                          : t('lobby.invite')}
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-              {hasMore && (
-                <div
-                  className={`${styles['lobbyPlayerCard']} ${styles['lobbyViewAllCard']}`}
-                  onClick={() => setShowAllModal(true)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && setShowAllModal(true)}
-                >
-                  <span className={styles['lobbyViewAllText']}>{t('lobby.view_all', { count: priorityList.length })}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          )}
-
-          {/* All-players modal */}
-          {showAllModal && (
-            <div className={styles['lobbyAllModal']} onClick={() => setShowAllModal(false)}>
-              <div className={styles['lobbyAllModalInner']} onClick={(e) => e.stopPropagation()}>
-                <button type="button" className={styles['lobbyAllModalClose']} onClick={() => setShowAllModal(false)}>×</button>
-                <span className={styles['lobby-subsection-title']}>{t('lobby.all_players', { count: priorityList.length })}</span>
-                <div className={styles['lobbyAllModalSearchWrap']}>
-                  <input
-                    type="text"
-                    className={styles['lobbyAllModalSearch']}
-                    placeholder={t('lobby.search_players')}
-                    value={modalSearchQuery}
-                    onChange={(e) => setModalSearchQuery(e.target.value)}
-                    autoFocus
-                  />
-                  {modalSearchQuery && (
-                    <button
-                      type="button"
-                      className={styles['lobbySearchClearBtn']}
-                      onClick={() => setModalSearchQuery('')}
-                      aria-label={t('lobby.clear_search')}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-                <div className={styles['lobbyAllModalList']}>
-                  {modalFilteredList.length === 0 && (
-                    <span className={styles['lobbyAllModalEmpty']}>{t('lobby.no_players_found')}</span>
-                  )}
-                  {modalFilteredList.map((player) => {
-                    const inviteState = inviteStates[player.id] ?? 'idle';
-                    const nameParts = player.displayName.split(' ');
-                    const firstName = nameParts[0];
-                    const lastName = nameParts.slice(1).join(' ');
-                    return (
-                      <div key={player.id} className={styles['lobbyPlayerCard']}>
-                        <div className={styles['lobbyAvatarWrap']}>
-                          <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
-                          <button
-                            className={styles['lobbyStarBtn']}
-                            onClick={() => toggleFollow(player.id)}
-                            aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
-                          >
-                            <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
-                              {followedIds.has(player.id) ? '★' : '☆'}
-                            </span>
-                          </button>
-                        </div>
-                        <div style={getUsernameGradientStyle(player.id)}>
-                          <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
-                          {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
-                        </div>
-                        <button
-                          type="button"
-                          className={styles['lobbyInviteBtn']}
-                          onClick={() => handleSendInvite(player)}
-                          disabled={inviteState !== 'idle'}
-                        >
-                          {inviteState === 'pending'
-                            ? t('lobby.invite_pending')
-                            : inviteState === 'sent'
-                            ? t('lobby.invite_sent')
-                            : inviteState === 'error'
-                            ? t('lobby.invite_failed')
-                            : t('lobby.invite')}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Sub-section B: Players roster */}
-          <div className={styles['lobby-subsection']}>
-            <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>{t('lobby.players', { current: totalPlayers, total: totalPlayers + pendingInvites.length })}</span>
-              <span className={styles['lobbyReadyIndicator']}>
-                <span
-                  className={styles['lobbyReadyDot']}
-                  style={{ background: readyCount > 0 ? "var(--gh-success)" : "var(--gh-border-default)" }}
-                />
-                {t('lobby.ready_count', { count: readyCount })}
-              </span>
-            </div>
-            <div className={styles['lobbyRosterList']} data-testid="lobby-roster">
-              {activePlayers.map((p) => {
-                const displayName = p.displayName || p.playerId.slice(0, 8);
-                const isViewerPlayer = p.playerId === viewer?.playerId;
-                return (
-                  <div key={p.playerId} className={`${styles['lobbyRosterRow']} ${p.ready ? styles['lobbyRosterRowReady'] : ''}`} data-testid={`lobby-player-${p.playerId}`} data-ready={p.ready ? 'true' : 'false'} data-host={p.isHost ? 'true' : 'false'}>
-                    <div className={styles['lobbyAvatarWrap']}>
-                      <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
-                      {!isViewerPlayer && (
-                        <button
-                          className={styles['lobbyStarBtn']}
-                          onClick={() => toggleFollow(p.playerId)}
-                          aria-label={followedIds.has(p.playerId) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
-                        >
-                          <span style={{ color: followedIds.has(p.playerId) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
-                            {followedIds.has(p.playerId) ? '★' : '☆'}
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                    <div className={styles['lobbyRosterMeta']}>
-                      <span className={styles['lobbyRosterName']}>
-                        {displayName}
-                        {isViewerPlayer && <span className={styles['lobbyYouTag']}>{t('lobby.you')}</span>}
-                      </span>
-                      {p.isHost && <span className={styles['lobbyHostInline']}>♛ {t('lobby.host')}</span>}
-                    </div>
-                    <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
-                      {p.ready ? t('lobby.ready') : t('lobby.not_ready')}
-                    </span>
-                    {isHost && !p.isHost && (
-                      <button type="button" className={styles['lobby-kick-btn']} onClick={() => onKickPlayer?.(p.playerId)} disabled={busy} title={t('lobby.kick_player')} data-testid={`lobby-kick-${p.playerId}`}>×</button>
-                    )}
-                  </div>
-                );
-              })}
-              {pendingInvites.map((p) => (
-                <div key={p.id} className={styles['lobbyRosterRow']}>
-                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
-                  <div className={styles['lobbyRosterMeta']}>
-                    <span className={styles['lobbyRosterName']}>{p.displayName}</span>
-                  </div>
-                  <span className={styles['lobbyStatusPillAmber']}>{t('lobby.invited')}</span>
-                  {isHost && (
-                    <button
-                      type="button"
-                      className={styles['lobby-kick-btn']}
-                      onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))}
-                      title={t('lobby.remove_invite')}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
-              {activePlayers.length === 0 && pendingInvites.length === 0 && (
-                <div className={styles['lobbyRosterEmpty']}>{t('lobby.no_players_yet')}</div>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* ── Game Settings Card ── */}
         <div className={`${styles['lobby-card']} ${styles['lobby-settings']}`}>
           <div className={styles['lobby-card-header']}>
             <span className={styles['lobby-accent-bar']} />
-            <h3>{t('lobby.game_settings')}</h3>
+            <h3><span className={styles['lobby-section-number']}>1</span>{t('lobby.game_settings')}</h3>
           </div>
           <div className={styles['lobbyTabRow']}>
             <button
@@ -1216,6 +964,258 @@ export default function LobbySection({
               </div>
             </div>
             </>)}
+          </div>
+        </div>
+
+        {/* ── Invite + Roster Card (merged) ── */}
+        <div className={`${styles['lobby-card']} ${styles['lobby-roster-card']}`}>
+
+          {/* Sub-section A: Invite Players */}
+          {viewer?.isHost && (
+          <div className={styles['lobby-subsection']}>
+            <div className={styles['lobby-subsection-header']}>
+              <span className={styles['lobby-accent-bar-sm']} />
+              <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span>
+              <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
+                {t('lobby.copy_link')}
+              </button>
+            </div>
+            {linkCopied && (
+              <span className={styles['lobbyCopiedToast']}>
+                {t('lobby.link_copied')}
+              </span>
+            )}
+            <div className={styles['lobbySearchWrap']}>
+              <svg className={styles['lobbySearchIcon']} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                className={`${styles['lobbyInviteSearch']} ${searchQuery ? styles['lobbyInviteSearchWithClear'] : ''}`}
+                placeholder={t('lobby.search_players')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className={styles['lobbySearchClearBtn']}
+                  onClick={() => setSearchQuery('')}
+                  aria-label={t('lobby.clear_search')}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            <div className={styles['lobbyRail']}>
+              {displayList.length === 0 ? (
+                <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
+                  <span className={styles['lobbyEmptyRailText']}>{t('lobby.no_players_found')}</span>
+                </div>
+              ) : (
+                displayList.map((player) => {
+                  const inviteState = inviteStates[player.id] ?? 'idle';
+                  const nameParts = player.displayName.split(' ');
+                  const firstName = nameParts[0];
+                  const lastName = nameParts.slice(1).join(' ');
+                  return (
+                    <div key={player.id} className={styles['lobbyPlayerCard']}>
+                      <div className={styles['lobbyAvatarWrap']}>
+                        <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                        <button
+                          className={styles['lobbyStarBtn']}
+                          onClick={() => toggleFollow(player.id)}
+                          aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
+                        >
+                          <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
+                            {followedIds.has(player.id) ? '★' : '☆'}
+                          </span>
+                        </button>
+                      </div>
+                      <div style={getUsernameGradientStyle(player.id)}>
+                        <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
+                        {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                      </div>
+                      <button
+                        type="button"
+                        className={styles['lobbyInviteBtn']}
+                        onClick={() => handleSendInvite(player)}
+                        disabled={inviteState !== 'idle'}
+                      >
+                        {inviteState === 'pending'
+                          ? t('lobby.invite_pending')
+                          : inviteState === 'sent'
+                          ? t('lobby.invite_sent')
+                          : inviteState === 'error'
+                          ? t('lobby.invite_failed')
+                          : t('lobby.invite')}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+              {hasMore && (
+                <div
+                  className={`${styles['lobbyPlayerCard']} ${styles['lobbyViewAllCard']}`}
+                  onClick={() => setShowAllModal(true)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setShowAllModal(true)}
+                >
+                  <span className={styles['lobbyViewAllText']}>{t('lobby.view_all', { count: priorityList.length })}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          )}
+
+          {/* All-players modal */}
+          {showAllModal && (
+            <div className={styles['lobbyAllModal']} onClick={() => setShowAllModal(false)}>
+              <div className={styles['lobbyAllModalInner']} onClick={(e) => e.stopPropagation()}>
+                <button type="button" className={styles['lobbyAllModalClose']} onClick={() => setShowAllModal(false)}>×</button>
+                <span className={styles['lobby-subsection-title']}>{t('lobby.all_players', { count: priorityList.length })}</span>
+                <div className={styles['lobbyAllModalSearchWrap']}>
+                  <input
+                    type="text"
+                    className={styles['lobbyAllModalSearch']}
+                    placeholder={t('lobby.search_players')}
+                    value={modalSearchQuery}
+                    onChange={(e) => setModalSearchQuery(e.target.value)}
+                    autoFocus
+                  />
+                  {modalSearchQuery && (
+                    <button
+                      type="button"
+                      className={styles['lobbySearchClearBtn']}
+                      onClick={() => setModalSearchQuery('')}
+                      aria-label={t('lobby.clear_search')}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+                <div className={styles['lobbyAllModalList']}>
+                  {modalFilteredList.length === 0 && (
+                    <span className={styles['lobbyAllModalEmpty']}>{t('lobby.no_players_found')}</span>
+                  )}
+                  {modalFilteredList.map((player) => {
+                    const inviteState = inviteStates[player.id] ?? 'idle';
+                    const nameParts = player.displayName.split(' ');
+                    const firstName = nameParts[0];
+                    const lastName = nameParts.slice(1).join(' ');
+                    return (
+                      <div key={player.id} className={styles['lobbyPlayerCard']}>
+                        <div className={styles['lobbyAvatarWrap']}>
+                          <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                          <button
+                            className={styles['lobbyStarBtn']}
+                            onClick={() => toggleFollow(player.id)}
+                            aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
+                          >
+                            <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
+                              {followedIds.has(player.id) ? '★' : '☆'}
+                            </span>
+                          </button>
+                        </div>
+                        <div style={getUsernameGradientStyle(player.id)}>
+                          <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
+                          {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                        </div>
+                        <button
+                          type="button"
+                          className={styles['lobbyInviteBtn']}
+                          onClick={() => handleSendInvite(player)}
+                          disabled={inviteState !== 'idle'}
+                        >
+                          {inviteState === 'pending'
+                            ? t('lobby.invite_pending')
+                            : inviteState === 'sent'
+                            ? t('lobby.invite_sent')
+                            : inviteState === 'error'
+                            ? t('lobby.invite_failed')
+                            : t('lobby.invite')}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sub-section B: Players roster */}
+          <div className={styles['lobby-subsection']}>
+            <div className={styles['lobby-subsection-header']}>
+              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>{t('lobby.players', { current: totalPlayers, total: totalPlayers + pendingInvites.length })}</span>
+              <span className={styles['lobbyReadyIndicator']}>
+                <span
+                  className={styles['lobbyReadyDot']}
+                  style={{ background: readyCount > 0 ? "var(--gh-success)" : "var(--gh-border-default)" }}
+                />
+                {t('lobby.ready_count', { count: readyCount })}
+              </span>
+            </div>
+            <div className={styles['lobbyRosterList']} data-testid="lobby-roster">
+              {activePlayers.map((p) => {
+                const displayName = p.displayName || p.playerId.slice(0, 8);
+                const isViewerPlayer = p.playerId === viewer?.playerId;
+                return (
+                  <div key={p.playerId} className={`${styles['lobbyRosterRow']} ${p.ready ? styles['lobbyRosterRowReady'] : ''}`} data-testid={`lobby-player-${p.playerId}`} data-ready={p.ready ? 'true' : 'false'} data-host={p.isHost ? 'true' : 'false'}>
+                    <div className={styles['lobbyAvatarWrap']}>
+                      <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
+                      {!isViewerPlayer && (
+                        <button
+                          className={styles['lobbyStarBtn']}
+                          onClick={() => toggleFollow(p.playerId)}
+                          aria-label={followedIds.has(p.playerId) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
+                        >
+                          <span style={{ color: followedIds.has(p.playerId) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
+                            {followedIds.has(p.playerId) ? '★' : '☆'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles['lobbyRosterMeta']}>
+                      <span className={styles['lobbyRosterName']}>
+                        {displayName}
+                        {isViewerPlayer && <span className={styles['lobbyYouTag']}>{t('lobby.you')}</span>}
+                      </span>
+                      {p.isHost && <span className={styles['lobbyHostInline']}>♛ {t('lobby.host')}</span>}
+                    </div>
+                    <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
+                      {p.ready ? t('lobby.ready') : t('lobby.not_ready')}
+                    </span>
+                    {isHost && !p.isHost && (
+                      <button type="button" className={styles['lobby-kick-btn']} onClick={() => onKickPlayer?.(p.playerId)} disabled={busy} title={t('lobby.kick_player')} data-testid={`lobby-kick-${p.playerId}`}>×</button>
+                    )}
+                  </div>
+                );
+              })}
+              {pendingInvites.map((p) => (
+                <div key={p.id} className={styles['lobbyRosterRow']}>
+                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
+                  <div className={styles['lobbyRosterMeta']}>
+                    <span className={styles['lobbyRosterName']}>{p.displayName}</span>
+                  </div>
+                  <span className={styles['lobbyStatusPillAmber']}>{t('lobby.invited')}</span>
+                  {isHost && (
+                    <button
+                      type="button"
+                      className={styles['lobby-kick-btn']}
+                      onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))}
+                      title={t('lobby.remove_invite')}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              {activePlayers.length === 0 && pendingInvites.length === 0 && (
+                <div className={styles['lobbyRosterEmpty']}>{t('lobby.no_players_yet')}</div>
+              )}
+            </div>
           </div>
         </div>
 
