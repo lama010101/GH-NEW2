@@ -1122,3 +1122,78 @@
 .lobby-presets-chevron { flex-shrink: 0; color: var(--gh-text-secondary); transition: transform 0.2s ease; }
 .lobby-presets-chevron-open { transform: rotate(180deg); }
 .lobby-presets-content { display: flex; flex-direction: column; gap: 0; min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+
+/* ── Help button + modal ── */
+.lobbyHelpBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--gh-border-default);
+  border-radius: 50%;
+  color: var(--gh-text-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.lobbyHelpBtn:hover {
+  color: var(--gh-orange);
+  border-color: var(--gh-orange);
+}
+.lobbyHelpModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: var(--gh-modal-overlay);
+  backdrop-filter: var(--gh-modal-blur);
+  -webkit-backdrop-filter: var(--gh-modal-blur);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.lobbyHelpModal {
+  background: var(--gh-modal-bg);
+  border: var(--gh-modal-border);
+  box-shadow: var(--gh-modal-shadow);
+  border-radius: 18px;
+  padding: 20px;
+  width: min(90vw, 420px);
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  box-sizing: border-box;
+}
+.lobbyHelpModal h4 {
+  margin: 0;
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--gh-text-primary);
+}
+.lobbyHelpModal p {
+  margin: 0;
+  font-size: var(--font-sm);
+  color: var(--gh-text-secondary);
+  line-height: 1.5;
+}
+.lobbyHelpModalClose {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: var(--gh-text-muted);
+  font-size: var(--font-xl);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+.lobbyHelpModalClose:hover {
+  color: var(--gh-modal-text-primary);
+}
