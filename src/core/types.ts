@@ -68,6 +68,14 @@ export type PlayerRoundResult = {
   cumulativeScore: number;
   cumulativeAccuracy: number;
   didSubmit: boolean;
+  locationScore: number;
+  timeScore: number;
+  guessYear: number | null;
+  guessLat: number | null;
+  guessLng: number | null;
+  rank: number;
+  badges: Badge[];
+  nearMisses: Array<{ dimension: BadgeDimension; accuracy: number }>;
 };
 
 export type RoundEventContent = {
