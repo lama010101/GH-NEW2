@@ -900,9 +900,16 @@ async function ensurePlayerRoundStarted(
     currentRound = 0;
     currentPhase = "ROUND_STARTED";
   } else {
-    const state = derivePlayerStateFromEventStream(playerEvents);
-    currentRound = state.currentRound;
-    currentPhase = state.currentPhase;
+    try {
+      const state = derivePlayerStateFromEventStream(playerEvents);
+      currentRound = state.currentRound;
+      currentPhase = state.currentPhase;
+    } catch (err) {
+      console.error(
+        `[ensurePlayerRoundStarted] derivePlayerStateFromEventStream failed: gameId=${gameId} playerId=${playerId.slice(0, 8)} globalRoundStartedAt=${base.globalRoundStartedAt} events=${JSON.stringify(playerEvents.map(e => e.eventType))} error=${err instanceof Error ? err.message : String(err)}`
+      );
+      return false;
+    }
   }
 
   // Only backfill a missing ROUND_STARTED for the round the player is actively
@@ -4347,6 +4354,20 @@ export async function recordReadyNext(input: {
   const client = await getTransactionClient();
   try {
     await client.query("BEGIN");
+
+    // MP-BUILD-RELAX-BROADCAST-LEAK-002: in async (Relax) sessions there is no
+    // shared "READY_NEXT" phase; per-player advancement is handled by the
+    // /advance-player endpoint writing to player_round_events. Skip the global
+    // round_events write entirely for async so it cannot throw INVALID_TRANSITION.
+    const modeResult = await client.query<{ mode: string }>(
+      `SELECT mode FROM sessions WHERE game_id = $1`,
+      [input.gameId]
+    );
+    if (modeResult.rows[0]?.mode === "async") {
+      await client.query("COMMIT");
+      return;
+    }
+
     await appendEvent(
       client,
       input.gameId,
