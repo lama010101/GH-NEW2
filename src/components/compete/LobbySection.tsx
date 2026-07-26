@@ -36,6 +36,8 @@ const LS_MAX = 10;
 const ROUND_TIMER_DEFAULT_SEC = 120;
 const ROUND_TIMER_TICKS = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300];
 const ROUND_TIMER_MAJOR_TICKS = ROUND_TIMER_TICKS.filter((v) => v % 60 === 0);
+const RESULTS_TIMER_TICKS = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300];
+const RESULTS_TIMER_MAJOR_TICKS = RESULTS_TIMER_TICKS.filter((v) => v % 60 === 0);
 const DEADLINE_TICKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 function readLastInvited(): LastInvitedPlayer[] {
@@ -786,7 +788,7 @@ export default function LobbySection({
                           className={styles['lobby-timer-slider']}
                           min={TIMER_MIN_SEC}
                           max={TIMER_MAX_SEC}
-                          step={5}
+                          step={15}
                           value={resultsTimerValue}
                           disabled={busy}
                           onChange={(e) => {
@@ -797,6 +799,7 @@ export default function LobbySection({
                               onSetResultsTimer?.(val);
                             }, 400);
                           }}
+                          ticks={RESULTS_TIMER_MAJOR_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
