@@ -7,6 +7,7 @@
     "leaderboard": "ランキング",
     "profile_stats": "プロフィールと統計",
     "account": "アカウント",
+    "grow": "成長",
     "help": "ヘルプ",
     "sign_out": "ログアウト",
     "language": "言語",
@@ -288,6 +289,8 @@
     "timer_5s": "5秒",
     "timer_5m": "5分",
     "failed_lobby": "ロビー作成に失敗",
+    "invalid_server_response": "サーバーからの応答が無効",
+    "open_profile_menu": "プロフィールメニューを開く",
     "failed_lobby_retry": "ロビー作成に失敗、再試行してください"
   },
   "game": {
@@ -500,6 +503,7 @@
     "badge_dim_combo": "コンボ",
     "clear_session_restart": "セッションをクリアして再起動",
     "taking_too_long": "時間がかかりすぎていますか？",
+    "retry": "再試行",
     "col_accuracy": "精度",
     "best_round_pct": "ベストラウンド%",
     "avg_yrs_off_label": "平均オフ年数",

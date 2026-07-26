@@ -7,6 +7,7 @@
     "leaderboard": "لوحة المتصدرين",
     "profile_stats": "الملف والإحصائيات",
     "account": "الحساب",
+    "grow": "نمو",
     "help": "المساعدة",
     "sign_out": "تسجيل الخروج",
     "language": "اللغة",
@@ -288,6 +289,8 @@
     "timer_5s": "5ث",
     "timer_5m": "5د",
     "failed_lobby": "فشل إنشاء الردة",
+    "invalid_server_response": "استجابة غير صالحة من الخادم",
+    "open_profile_menu": "افتح قائمة الملف",
     "failed_lobby_retry": "فشل إنشاء الردة، حاول مرة أخرى"
   },
   "game": {
@@ -500,6 +503,7 @@
     "badge_dim_combo": "كومبو",
     "clear_session_restart": "مسح الجلسة وإعادة التشغيل",
     "taking_too_long": "هل يستغرق وقتًا طويلاً؟",
+    "retry": "إعادة المحاولة",
     "col_accuracy": "الدقة",
     "best_round_pct": "أفضل جولة %",
     "avg_yrs_off_label": "متوسط سنوات التوقف",

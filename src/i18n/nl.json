@@ -7,6 +7,7 @@
     "leaderboard": "Ranglijst",
     "profile_stats": "Profiel & Statistieken",
     "account": "Rekening",
+    "grow": "Groeien",
     "help": "Hulp",
     "sign_out": "Uitloggen",
     "language": "Taal",
@@ -288,6 +289,8 @@
     "timer_5s": "5 s",
     "timer_5m": "5 min",
     "failed_lobby": "Lobby maken mislukt",
+    "invalid_server_response": "Ongeldig antwoord van server",
+    "open_profile_menu": "Open profielmenu",
     "failed_lobby_retry": "Lobby maken mislukt, probeer opnieuw"
   },
   "game": {
@@ -500,6 +503,7 @@
     "badge_dim_combo": "Combinatie",
     "clear_session_restart": "Sessie wissen en herstarten",
     "taking_too_long": "Duurt het te lang?",
+    "retry": "Opnieuw proberen",
     "col_accuracy": "Nauwkeurigheid",
     "best_round_pct": "Beste ronde %",
     "avg_yrs_off_label": "Gem. jaar vrij",

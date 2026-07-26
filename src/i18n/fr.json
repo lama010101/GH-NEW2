@@ -7,6 +7,7 @@
     "leaderboard": "Classement",
     "profile_stats": "Profil & Stats",
     "account": "Compte",
+    "grow": "Grandir",
     "help": "Aide",
     "sign_out": "Se déconnecter",
     "language": "Langue",
@@ -288,6 +289,8 @@
     "timer_5s": "5 s",
     "timer_5m": "5 min",
     "failed_lobby": "Échec de création du salon",
+    "invalid_server_response": "Réponse invalide du serveur",
+    "open_profile_menu": "Ouvrir le menu profil",
     "failed_lobby_retry": "Échec de création du salon, réessayez"
   },
   "game": {
@@ -500,6 +503,7 @@
     "badge_dim_year": "Année",
     "badge_dim_combo": "Combo",
     "taking_too_long": "Trop long ?",
+    "retry": "Réessayer",
     "best_round_pct": "% du meilleur tour",
     "avg_yrs_off_label": "Années moyennes désactivées",
     "game_accuracy": "Précision du jeu (tous les tours)",

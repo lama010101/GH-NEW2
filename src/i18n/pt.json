@@ -7,6 +7,7 @@
     "leaderboard": "Ranking",
     "profile_stats": "Perfil e Estatísticas",
     "account": "Conta",
+    "grow": "Crescer",
     "help": "Ajuda",
     "sign_out": "Sair",
     "language": "Idioma",
@@ -288,6 +289,8 @@
     "timer_5s": "5 s",
     "timer_5m": "5 min",
     "failed_lobby": "Falha ao criar sala",
+    "invalid_server_response": "Resposta inválida do servidor",
+    "open_profile_menu": "Abrir menu de perfil",
     "failed_lobby_retry": "Falha ao criar sala, tente novamente"
   },
   "game": {
@@ -500,6 +503,7 @@
     "badge_dim_combo": "Combinação",
     "clear_session_restart": "Limpar sessão e reiniciar",
     "taking_too_long": "Demorando demais?",
+    "retry": "Tentar novamente",
     "col_accuracy": "Precisão",
     "best_round_pct": "Melhor Rodada%",
     "avg_yrs_off_label": "Média de anos de folga",

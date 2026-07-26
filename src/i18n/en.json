@@ -7,6 +7,7 @@
     "leaderboard": "Leaderboard",
     "profile_stats": "Profile & Stats",
     "account": "Account",
+    "grow": "Grow",
     "help": "Help",
     "sign_out": "Sign Out",
     "language": "Language",
@@ -288,6 +289,8 @@
     "timer_5s": "5s",
     "timer_5m": "5m",
     "failed_lobby": "Failed to create lobby",
+    "invalid_server_response": "Invalid response from server",
+    "open_profile_menu": "Open profile menu",
     "failed_lobby_retry": "Failed to create lobby, try again"
   },
   "game": {
@@ -507,6 +510,7 @@
     "badge_dim_combo": "Combo",
     "clear_session_restart": "Clear session & restart",
     "taking_too_long": "Taking too long?",
+    "retry": "Retry",
     "region_oceania_antarctica": "Oceania & Antarctica"
   },
   "auth": {
