@@ -265,7 +265,12 @@
     "back": "Voltar",
     "default_player_name": "Jogador",
     "create_game": "Criar jogo",
-    "join_game": "Junte-se ao jogo"
+    "join_game": "Junte-se ao jogo",
+    "filter_all": "Todos",
+    "filter_favorites": "Favoritos",
+    "no_favorites_yet": "Ainda não há favoritos — clique na estrela no avatar de um jogador para adicioná-lo aqui.",
+    "help_game_settings": "Escolha como esta sessão Compete será jogada.\n\nRELAX (No seu ritmo) — Assíncrono. Cada jogador joga as 5 rodadas de forma independente, no seu próprio ritmo — sem esperar por ninguém. A sessão permanece aberta até o prazo que você definir abaixo (1–14 dias). Você pode ativar opcionalmente um timer por rodada; se um jogador ficar sem tempo em uma rodada, apenas essa rodada será enviada automaticamente para ele — ninguém mais é afetado.\n\nRUSH (Desafio ao vivo) — Síncrono. Todos jogam a mesma rodada ao mesmo tempo. Cada rodada tem um timer opcional (15 segundos a 5 minutos). Depois que todos enviarem, os resultados são mostrados a todos os jogadores juntos, com um timer de avanço automático para a próxima rodada.\n\nTimer de rodada — Opcional. Quanto tempo cada jogador tem para enviar um palpite em uma rodada.\nTimer de resultados — O tempo máximo para visualizar os resultados da rodada antes de avançar automaticamente.\nTimer de jogo (apenas Relax) — O prazo geral para toda a partida, de 1 a 14 dias após iniciar o jogo.",
+    "help_invite_players": "Adicione 2 a 8 jogadores a este jogo.\n\nProcure jogadores pelo nome ou use o Link de compartilhamento para enviar um link de entrada para qualquer pessoa — eles não precisam ser amigos para entrar.\n\nComo anfitrião, você pode clicar na estrela no avatar de um jogador para marcá-lo como favorito, tornando-o mais fácil de encontrar na próxima vez.\n\nOs jogadores que você convidar aparecerão no lobby assim que aceitarem. Como anfitrião, você pode remover um jogador do lobby a qualquer momento antes do jogo começar."
   },
   "compete_page": {
     "title": "Partida síncrona multijogador",
