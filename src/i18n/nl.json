@@ -2,12 +2,12 @@
   "nav": {
     "notifications": "Meldingen",
     "profile": "Profiel",
-    "home": "Home",
+    "home": "Thuis",
     "friends": "Vrienden",
     "leaderboard": "Ranglijst",
     "profile_stats": "Profiel & Statistieken",
-    "account": "Account",
-    "help": "Help",
+    "account": "Rekening",
+    "help": "Hulp",
     "sign_out": "Uitloggen",
     "language": "Taal",
     "theme": "Thema",
@@ -74,11 +74,11 @@
     "same_events": "Dezelfde events voor iedereen",
     "gm_daily_desc": "Elke dag een nieuwe uitdaging. Dezelfde events voor iedereen. Beklim de wereldranglijst.",
     "gm_daily_features": "24-uurs venster, Wereldranglijst, Eén poging per dag, XP-vermenigvuldiger",
-    "level_up": "Level Up",
+    "level_up": "Niveau omhoog",
     "progressive_runs": "Progressieve runs",
     "gm_levelup_desc": "Versla levels en verdien XP om moeilijkere uitdagingen te ontgrendelen. Een ware vaardigheidstest.",
     "gm_levelup_features": "Progressieve moeilijkheid, Ontgrendelbare inhoud, Reeks-bonussen, Era per level",
-    "compete": "Compete",
+    "compete": "Concurreer",
     "play_with_friends": "Speel met vrienden",
     "gm_compete_desc": "Real-time Rush of beurt-gebaseerd Relax. Maak een lobby, nodig vrienden uit, compete.",
     "gm_compete_features": "Rush (getimed), Relax (asynchroon), Tot 8 spelers, Kamercodes",
@@ -124,19 +124,19 @@
     "ts_t4_solution": "Hints moeten worden gekocht voordat ze inhoud onthullen. Klik op de hintknop, bevestig de aankoop en de informatie verschijnt. Elke hint verlaagt je eindscore.",
     "ts_t5_problem": "Score lijkt lager dan verwacht",
     "ts_t5_solution": "Controleer of je hints hebt gebruikt: ze geven straf op zowel nauwkeurigheid als XP. Verifieer ook je afstand tot de werkelijke locatie en het jaarverschil. Het max per ronde is 200 XP (100 locatie + 100 jaar).",
-    "grow_cta": "Grow With Us"
+    "grow_cta": "Groei met ons mee"
   },
   "home": {
-    "logo_guess": "GUESS-",
-    "logo_his": "HIS",
+    "logo_guess": "RAAD-",
+    "logo_his": "ZIJN",
     "logo_tory": "TORY",
     "daily_name": "DAGELIJKS",
     "daily_subtitle": "DAGELIJKSE UITDAGING",
     "practice_name": "OEFENEN",
     "practice_subtitle": "SOLO WARMING-UP",
-    "levelup_name": "LEVEL UP",
+    "levelup_name": "NIVEAU OMHOOG",
     "levelup_subtitle": "PROGRESSIEVE RUNS",
-    "compete_name": "CHALLENGE",
+    "compete_name": "UITDAGING",
     "compete_subtitle": "DAG UIT VRIENDEN",
     "daily_cta": "Speel vandaag's uitdaging",
     "daily_results_cta": "Bekijk vandaag's resultaten",
@@ -144,7 +144,7 @@
     "practice_start": "Start Oefenen",
     "practice_timer_label": "Ronde-timer",
     "practice_year_range_label": "Jaarbereik",
-    "levelup_start": "Start Level {level}",
+    "levelup_start": "Startniveau {level}",
     "levelup_min_accuracy": "Min nauwkeurigheid om te slagen: {pct}%",
     "compete_create": "Maak lobby",
     "compete_join": "Treed toe met code",
@@ -185,21 +185,21 @@
     "next_round": "Volgende ronde",
     "submit": "Indienen",
     "play_again": "Speel opnieuw",
-    "home": "Home",
+    "home": "Thuis",
     "accuracy": "NAUWKEURIGHEID",
     "experience": "ERVARING",
     "where": "WAAR",
     "when": "WANNEER",
-    "correct": "Correct",
+    "correct": "Juist",
     "your_guess": "Jouw gok",
     "years_off": "{n} jaar ernaast",
     "km_away": "{n} km ervandaan",
     "round_label": "Ronde {current} / {total}",
     "loading": "Laden...",
     "no_description": "Geen beschrijving beschikbaar",
-    "timer_min_short": "{n}m {s}s",
-    "timer_sec_short": "{n}s",
-    "countdown_hm": "{h}u {m}m",
+    "timer_min_short": "{n}min {s}s",
+    "timer_sec_short": "{n} s",
+    "countdown_hm": "{h}u {m}min",
     "born_prefix": "Geboren:",
     "died_prefix": "Overleden:",
     "no_data_yet": "Nog geen gegevens",
@@ -218,11 +218,11 @@
     "results_timer": "Resultaten",
     "invite_friends": "Nodig vrienden uit",
     "invite": "Uitnodigen",
-    "host": "Host",
+    "host": "Gastheer",
     "you": "Jij",
     "connected": "Verbonden",
     "disconnected": "Verbroken",
-    "mode_challenge": "CHALLENGE",
+    "mode_challenge": "UITDAGING",
     "game_lobby": "Spel-lobby",
     "invite_players": "Nodig spelers uit",
     "copy_code": "Kopieer code",
@@ -241,9 +241,9 @@
     "no_players_yet": "Nog geen spelers",
     "game_settings": "Spelinstellingen",
     "realtime": "RUSH",
-    "realtime_sub": "(Live Challenge)",
+    "realtime_sub": "(Live-uitdaging)",
     "turn_by_turn": "RELAX",
-    "turn_by_turn_sub": "(Own Pace)",
+    "turn_by_turn_sub": "(Eigen tempo)",
     "max_time_per_turn": "Max tijd per spel",
     "1_day": "1 dag",
     "n_days": "{n} dagen",
@@ -262,12 +262,14 @@
     "timer_off": "UIT",
     "starting_soon": " · begint zo",
     "back": "Terug",
-    "default_player_name": "Speler"
+    "default_player_name": "Speler",
+    "create_game": "Spel maken",
+    "join_game": "Doe mee met het spel"
   },
   "compete_page": {
     "title": "Synchroon multiplayer spel",
     "description": "Maak een nieuwe synchrone sessie van 5 ronden of sluit aan bij een bestaande via spel-ID.",
-    "badge": "Compete",
+    "badge": "Concurreer",
     "create": "Maken",
     "join": "Toetreden",
     "round_timer": "Ronde-timer",
@@ -283,8 +285,8 @@
     "err_create": "Spel maken mislukt",
     "err_join": "Toetreden mislukt",
     "err_code_required": "Kamrcode is vereist",
-    "timer_5s": "5s",
-    "timer_5m": "5m",
+    "timer_5s": "5 s",
+    "timer_5m": "5 min",
     "failed_lobby": "Lobby maken mislukt",
     "failed_lobby_retry": "Lobby maken mislukt, probeer opnieuw"
   },
@@ -310,11 +312,11 @@
     "avg_yrs_off": "gem {n} jaar ernaast",
     "close_hints": "Sluit hints",
     "col_player": "Speler",
-    "col_score": "Score",
+    "col_score": "Scoren",
     "col_total": "Totaal",
     "experience": "ERVARING",
-    "correct_location": "Correct",
-    "correct_year": "Correct",
+    "correct_location": "Juist",
+    "correct_year": "Juist",
     "your_guess": "Jouw gok",
     "years_off": "{n} jaar ernaast",
     "km_away": "{n} km ervandaan",
@@ -335,7 +337,7 @@
     "final_scores": "Eindscores",
     "total_score": "Totaalscore",
     "winner": "Winnaar",
-    "home": "Home",
+    "home": "Thuis",
     "refresh": "Ronde-problemen? Tik om te herladen",
     "image_failed": "Afbeelding laden mislukt",
     "tap_retry": "Tik om opnieuw te proberen",
@@ -363,7 +365,7 @@
     "round_breakdown": "Ronde-overzicht",
     "achievements": "Prestaties",
     "badges_won": "Badges gewonnen",
-    "xp_per_era": "XP per Era",
+    "xp_per_era": "XP per tijdperk",
     "xp_per_region": "XP per Regio",
     "game_stats": "Spelstatistieken",
     "best_round": "Beste ronde",
@@ -374,7 +376,7 @@
     "gold_badges": "Goud",
     "silver_badges": "Zilver",
     "bronze_badges": "Brons",
-    "combo_badges": "Combo",
+    "combo_badges": "Combinatie",
     "when_badges": "Wanneer",
     "where_badges": "Waar",
     "no_badges": "Geen badges verdiend dit spel",
@@ -404,7 +406,7 @@
     "waiting_for_host": "Wachten op host…",
     "guess_history": "Gokgeschiedenis",
     "leaderboard": "Ranglijst",
-    "hints": "Hints",
+    "hints": "Tips",
     "no_guess": "Geen gok",
     "no_time_clues": "Geen tijdsaanknopingen beschikbaar voor dit event.",
     "no_location_clues": "Geen locatie-aanwijzingen beschikbaar voor dit event.",
@@ -442,8 +444,8 @@
     "hint_desc_nearby_landmark": "Een nabij landmark",
     "hint_desc_location_scene": "Scène-elementen die de locatie suggereren",
     "hint_desc_tap_reveal": "Tik om te onthullen",
-    "hint_label_default": "Hint",
-    "tier_n": "Tier {n}",
+    "hint_label_default": "Tip",
+    "tier_n": "Niveau {n}",
     "historical_event": "Historisch event",
     "zoom_in": "Inzoomen",
     "zoom_out": "Uitzoomen",
@@ -495,9 +497,17 @@
     "badge_tier_bronze": "Goed",
     "badge_dim_location": "Locatie",
     "badge_dim_year": "Jaar",
-    "badge_dim_combo": "Combo",
+    "badge_dim_combo": "Combinatie",
     "clear_session_restart": "Sessie wissen en herstarten",
-    "taking_too_long": "Duurt het te lang?"
+    "taking_too_long": "Duurt het te lang?",
+    "col_accuracy": "Nauwkeurigheid",
+    "best_round_pct": "Beste ronde %",
+    "avg_yrs_off_label": "Gem. jaar vrij",
+    "game_accuracy": "Spelnauwkeurigheid (alle rondes)",
+    "region_oceania": "Oceanië",
+    "region_antarctica": "Antarctica",
+    "best_round_xp": "Beste Ronde XP",
+    "avg_km_away_label": "Gem. km afstand"
   },
   "auth": {
     "sign_in": "Inloggen",
@@ -533,19 +543,21 @@
     "col_avg_accuracy": "Gem nauwkeurigheid",
     "col_total_xp": "Totaal XP",
     "col_games": "Spellen",
-    "col_level": "Level",
+    "col_level": "Niveau",
     "col_accuracy_at_level": "Nauwkeurigheid op level",
-    "lvl_prefix": "Lvl {n}",
+    "lvl_prefix": "Niveau {n}",
     "overall": "Algemeen",
     "daily": "Dagelijks",
-    "level_up": "Level Up",
+    "level_up": "Niveau omhoog",
     "today": "Vandaag",
-    "all_time": "All-time",
+    "all_time": "Altijd",
     "err_load_failed": "Gegevens laden mislukt. Probeer opnieuw.",
     "retry": "Opnieuw proberen",
     "no_results_today": "Nog geen resultaten vandaag.",
     "accuracy_pct": "Nauwkeurigheid %",
-    "unknown_player": "Onbekend"
+    "unknown_player": "Onbekend",
+    "clear_session_restart": "Sessie wissen en opnieuw opstarten",
+    "taking_too_long": "Te lang duren?"
   },
   "profile": {
     "accuracy_breakdown": "Nauwkeurigheid-overzicht",
@@ -555,15 +567,15 @@
     "score_distribution": "Score-verdeling",
     "history_collection": "Geschiedenis-collectie",
     "accuracy_by_century": "Nauwkeurigheid per eeuw",
-    "account": "Account",
+    "account": "Rekening",
     "email": "E-mail",
     "member_since": "Lid sinds",
     "events_seen": "Events gezien",
     "by_century": "Per eeuw",
     "coming_soon": "Binnenkort",
     "daily": "Dagelijks",
-    "level_up": "Level Up",
-    "compete": "Compete",
+    "level_up": "Niveau omhoog",
+    "compete": "Concurreer",
     "practice": "Oefenen",
     "back": "Terug",
     "avatar_alt": "Avatar",
@@ -575,7 +587,7 @@
     "sign_out": "Uitloggen",
     "experience": "Ervaring",
     "accuracy": "Nauwkeurigheid",
-    "era": "Era",
+    "era": "Tijdperk",
     "region": "Regio",
     "when": "Wanneer",
     "where": "Waar",
@@ -586,7 +598,7 @@
     "countries": "Landen"
   },
   "account": {
-    "title": "Account",
+    "title": "Rekening",
     "username": "Gebruikersnaam",
     "email": "E-mail",
     "member_since": "Lid sinds",
@@ -666,457 +678,457 @@
     "meta_title": "Grow With Us — Guess-History",
     "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
     "hero": {
-      "tagline": "TBD",
+      "tagline": "Nader te bepalen",
       "primary_cta": "Play Guess-History",
-      "secondary_cta": "Discover the Project"
+      "secondary_cta": "Ontdek het project"
     },
     "mission": {
-      "title": "Mission",
+      "title": "Missie",
       "topic_1": {
-        "title": "Why history matters",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Waarom geschiedenis ertoe doet",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "topic_2": {
-        "title": "Why current education fails",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Waarom het huidige onderwijs faalt",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "topic_3": {
-        "title": "Why games can teach",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Waarom games iets kunnen leren",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       }
     },
     "problem": {
-      "title": "The Problem",
+      "title": "Het probleem",
       "axis_1": {
-        "left_label": "Passive",
-        "right_label": "Discovery",
-        "detail": "TBD"
+        "left_label": "Passief",
+        "right_label": "Ontdekking",
+        "detail": "Nader te bepalen"
       },
       "axis_2": {
-        "left_label": "Memorization",
-        "right_label": "Curiosity",
-        "detail": "TBD"
+        "left_label": "Memoriseren",
+        "right_label": "Nieuwsgierigheid",
+        "detail": "Nader te bepalen"
       },
       "axis_3": {
-        "left_label": "Exams",
-        "right_label": "Exploration",
-        "detail": "TBD"
+        "left_label": "Examens",
+        "right_label": "Verkenning",
+        "detail": "Nader te bepalen"
       },
       "axis_4": {
         "left_label": "—",
-        "right_label": "Progression",
-        "detail": "TBD"
+        "right_label": "Vooruitgang",
+        "detail": "Nader te bepalen"
       }
     },
     "vision": {
-      "title": "Vision",
+      "title": "Visie",
       "node_1": {
-        "label": "Today",
-        "detail": "TBD"
+        "label": "Vandaag",
+        "detail": "Nader te bepalen"
       },
       "node_2": {
-        "label": "Daily history game",
-        "detail": "TBD"
+        "label": "Dagelijks geschiedenisspel",
+        "detail": "Nader te bepalen"
       },
       "node_3": {
-        "label": "Millions of players",
-        "detail": "TBD"
+        "label": "Miljoenen spelers",
+        "detail": "Nader te bepalen"
       },
       "node_4": {
-        "label": "Educational platform",
-        "detail": "TBD"
+        "label": "Educatief platform",
+        "detail": "Nader te bepalen"
       },
       "node_5": {
-        "label": "Multiple guessing games",
-        "detail": "TBD"
+        "label": "Meerdere raadspellen",
+        "detail": "Nader te bepalen"
       },
       "node_6": {
-        "label": "Immersive historical experiences",
-        "detail": "TBD"
+        "label": "Meeslepende historische ervaringen",
+        "detail": "Nader te bepalen"
       },
       "node_7": {
         "label": "VR History",
-        "detail": "TBD"
+        "detail": "Nader te bepalen"
       },
-      "vr_disclaimer": "Long-term vision. Not funded. No schedule."
+      "vr_disclaimer": "Langetermijnvisie. Niet gefinancierd. Geen schema."
     },
     "product": {
-      "title": "The Product",
-      "demo_label": "Try it",
+      "title": "Het product",
+      "demo_label": "Probeer het",
       "feature_1": {
-        "title": "Embedded playable demo",
-        "desc": "TBD"
+        "title": "Ingebouwde speelbare demo",
+        "desc": "Nader te bepalen"
       },
       "feature_2": {
-        "title": "Screenshots",
-        "desc": "TBD"
+        "title": "Schermafbeeldingen",
+        "desc": "Nader te bepalen"
       },
       "feature_3": {
-        "title": "Game modes",
-        "desc": "TBD"
+        "title": "Spelmodi",
+        "desc": "Nader te bepalen"
       },
       "feature_4": {
-        "title": "Progression",
-        "desc": "TBD"
+        "title": "Vooruitgang",
+        "desc": "Nader te bepalen"
       },
       "feature_5": {
-        "title": "Learning",
-        "desc": "TBD"
+        "title": "Leren",
+        "desc": "Nader te bepalen"
       },
       "feature_6": {
         "title": "Leaderboards",
-        "desc": "TBD"
+        "desc": "Nader te bepalen"
       },
       "feature_7": {
-        "title": "Machine vs Human",
-        "desc": "TBD"
+        "title": "Machine versus mens",
+        "desc": "Nader te bepalen"
       },
-      "roadmap_badge": "Roadmap"
+      "roadmap_badge": "Routekaart"
     },
     "why_it_works": {
-      "title": "Why It Works",
+      "title": "Waarom het werkt",
       "card_1": {
-        "title": "Daily habit",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Dagelijkse gewoonte",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "card_2": {
-        "title": "XP progression",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "XP-voortgang",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "card_3": {
-        "title": "Level Up",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Niveau omhoog",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "card_4": {
-        "title": "Competition",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Competitie",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "card_5": {
-        "title": "Learning loop",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Leerlus",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "card_6": {
-        "title": "Replayability",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Herspeelbaarheid",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "card_7": {
-        "title": "Reveal explanations",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Onthul verklaringen",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "card_8": {
-        "title": "Historical context",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Historische context",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       }
     },
     "market": {
-      "title": "Market Opportunity",
-      "intro": "TBD",
+      "title": "Marktkans",
+      "intro": "Nader te bepalen",
       "sector_1": {
-        "name": "Gaming",
-        "description": "TBD"
+        "name": "Gamen",
+        "description": "Nader te bepalen"
       },
       "sector_2": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "Onderwijs",
+        "description": "Nader te bepalen"
       },
       "sector_3": {
         "name": "AI",
-        "description": "TBD"
+        "description": "Nader te bepalen"
       },
       "sector_4": {
-        "name": "Culture",
-        "description": "TBD"
+        "name": "Cultuur",
+        "description": "Nader te bepalen"
       },
       "sector_5": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "Musea",
+        "description": "Nader te bepalen"
       },
       "sector_6": {
-        "name": "Corporate Learning",
-        "description": "TBD"
+        "name": "Bedrijfsmatig leren",
+        "description": "Nader te bepalen"
       },
       "center_label": "Guess-History"
     },
     "business_model": {
-      "title": "Business Model",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "Bedrijfsmodel",
+      "current_title": "Huidig",
+      "future_title": "Toekomst",
       "stream_1": {
-        "title": "Free Daily",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Gratis dagelijks",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "stream_2": {
-        "title": "Premium",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Premie",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "stream_3": {
-        "title": "Ads (non-intrusive)",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Advertenties (niet-opdringerig)",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "stream_4": {
-        "title": "Education",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Onderwijs",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "stream_5": {
-        "title": "AI partnerships",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "AI-partnerschappen",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "stream_6": {
-        "title": "Corporate learning",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Bedrijfsmatig leren",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
       "stream_7": {
-        "title": "White-label editions",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Whitelabel-edities",
+        "summary": "Nader te bepalen",
+        "detail": "Nader te bepalen"
       },
-      "badge_future": "Future"
+      "badge_future": "Toekomst"
     },
     "governance": {
-      "title": "Built for the Long Term",
-      "subtitle": "TBD",
-      "left_header": "Traditional startups optimize for",
-      "right_header": "Guess-History optimizes for",
-      "left_1": "Valuation",
-      "right_1": "Sustainability",
-      "left_2": "Funding",
-      "right_2": "Education",
-      "left_3": "Exit",
-      "right_3": "Innovation",
+      "title": "Gebouwd voor de lange termijn",
+      "subtitle": "Nader te bepalen",
+      "left_header": "Traditionele startups optimaliseren voor",
+      "right_header": "Guess-History optimaliseert voor",
+      "left_1": "Waardering",
+      "right_1": "Duurzaamheid",
+      "left_2": "Financiering",
+      "right_2": "Onderwijs",
+      "left_3": "Afsluiten",
+      "right_3": "Innovatie",
       "left_4": "—",
-      "right_4": "Contributors",
+      "right_4": "Bijdragers",
       "left_5": "—",
-      "right_5": "Reinvestment"
+      "right_5": "Herinvestering"
     },
     "financial": {
-      "title": "Financial Model",
+      "title": "Financieel model",
       "flow_1": {
-        "label": "Revenue",
-        "detail": "TBD"
+        "label": "Inkomsten",
+        "detail": "Nader te bepalen"
       },
       "flow_2": {
-        "label": "Operating costs",
-        "detail": "TBD"
+        "label": "Bedrijfskosten",
+        "detail": "Nader te bepalen"
       },
       "flow_3": {
-        "label": "Fair compensation",
-        "detail": "TBD"
+        "label": "Eerlijke compensatie",
+        "detail": "Nader te bepalen"
       },
       "flow_4": {
-        "label": "Investor returns (capped)",
-        "detail": "TBD"
+        "label": "Beleggersrendementen (beperkt)",
+        "detail": "Nader te bepalen"
       },
       "flow_5": {
-        "label": "Strategic reserve",
-        "detail": "TBD"
+        "label": "Strategische reserve",
+        "detail": "Nader te bepalen"
       },
       "flow_6": {
-        "label": "Reinvestment",
-        "detail": "TBD"
+        "label": "Herinvestering",
+        "detail": "Nader te bepalen"
       },
       "flow_7": {
-        "label": "Future projects",
-        "detail": "TBD"
+        "label": "Toekomstige projecten",
+        "detail": "Nader te bepalen"
       },
-      "future_projects_title": "Future projects",
+      "future_projects_title": "Toekomstige projecten",
       "future_project_1": "Guess-History",
       "future_project_2": "VR History",
-      "future_project_3": "Guess Science",
-      "future_project_4": "Guess Art",
-      "future_project_5": "Guess Geography",
+      "future_project_3": "Raad de wetenschap",
+      "future_project_4": "Raad eens kunst",
+      "future_project_5": "Raad aardrijkskunde",
       "capped": {
-        "title": "Capped-Profit Model",
-        "purpose_1": "Avoid pressure for endless extraction.",
-        "purpose_2": "Support long-term development.",
-        "purpose_3": "Reward everyone fairly.",
-        "purpose_4": "Avoid maximizing dividends forever.",
-        "principle_1": "Maximum compensation ratio.",
-        "principle_2": "Investor return cap.",
-        "principle_3": "Reinvestment policy.",
-        "principle_4": "Mission-first governance."
+        "title": "Model met beperkte winst",
+        "purpose_1": "Vermijd druk voor eindeloze extractie.",
+        "purpose_2": "Ondersteun de ontwikkeling op lange termijn.",
+        "purpose_3": "Beloon iedereen eerlijk.",
+        "purpose_4": "Vermijd voor altijd het maximaliseren van dividenden.",
+        "principle_1": "Maximale compensatieratio.",
+        "principle_2": "Retourlimiet voor beleggers.",
+        "principle_3": "Herinvesteringsbeleid.",
+        "principle_4": "Missie-eerst bestuur."
       }
     },
     "partnerships": {
-      "title": "Partnerships",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "Partnerschappen",
+      "current_title": "Huidig",
+      "future_title": "Toekomst",
       "opportunity_1": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "Onderwijs",
+        "description": "Nader te bepalen"
       },
       "opportunity_2": {
-        "name": "AI research",
-        "description": "TBD"
+        "name": "AI-onderzoek",
+        "description": "Nader te bepalen"
       },
       "opportunity_3": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "Musea",
+        "description": "Nader te bepalen"
       },
       "opportunity_4": {
-        "name": "Archives",
-        "description": "TBD"
+        "name": "Archief",
+        "description": "Nader te bepalen"
       },
       "opportunity_5": {
-        "name": "Corporate learning",
-        "description": "TBD"
+        "name": "Bedrijfsmatig leren",
+        "description": "Nader te bepalen"
       },
       "opportunity_6": {
-        "name": "Tourism",
-        "description": "TBD"
+        "name": "Toerisme",
+        "description": "Nader te bepalen"
       },
       "opportunity_7": {
-        "name": "Publishers",
-        "description": "TBD"
+        "name": "Uitgevers",
+        "description": "Nader te bepalen"
       },
-      "badge_future": "Future"
+      "badge_future": "Toekomst"
     },
     "contributors": {
-      "title": "Contributors",
+      "title": "Bijdragers",
       "role_1": {
-        "name": "Developer",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Developer"
+        "name": "Ontwikkelaar",
+        "why": "Nader te bepalen",
+        "what": "Nader te bepalen",
+        "receive": "Nader te bepalen",
+        "cta": "Solliciteer als Ontwikkelaar"
       },
       "role_2": {
-        "name": "Historian",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Historian"
+        "name": "Historicus",
+        "why": "Nader te bepalen",
+        "what": "Nader te bepalen",
+        "receive": "Nader te bepalen",
+        "cta": "Solliciteer als historicus"
       },
       "role_3": {
-        "name": "Creator",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Creator"
+        "name": "Schepper",
+        "why": "Nader te bepalen",
+        "what": "Nader te bepalen",
+        "receive": "Nader te bepalen",
+        "cta": "Solliciteer als Schepper"
       },
       "role_4": {
-        "name": "Investor",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as an Investor"
+        "name": "Investeerder",
+        "why": "Nader te bepalen",
+        "what": "Nader te bepalen",
+        "receive": "Nader te bepalen",
+        "cta": "Solliciteer als investeerder"
       },
-      "incentive_1": "Public recognition",
-      "incentive_2": "Portfolio",
-      "incentive_3": "Founding status",
-      "incentive_4": "Equity (where applicable)",
-      "incentive_5": "Profit sharing",
-      "incentive_6": "Fair compensation",
-      "incentive_7": "Long-term participation",
-      "incentive_8": "Learning",
-      "incentive_9": "Community"
+      "incentive_1": "Publieke erkenning",
+      "incentive_2": "Portefeuille",
+      "incentive_3": "Oprichtingsstatus",
+      "incentive_4": "Eigen vermogen (indien van toepassing)",
+      "incentive_5": "Winstdeling",
+      "incentive_6": "Eerlijke compensatie",
+      "incentive_7": "Participatie op lange termijn",
+      "incentive_8": "Leren",
+      "incentive_9": "Gemeenschap"
     },
     "roadmap": {
-      "title": "Roadmap",
-      "lane_1": "Completed",
-      "lane_2": "In progress",
-      "lane_3": "Next",
-      "lane_4": "Future",
+      "title": "Routekaart",
+      "lane_1": "Voltooid",
+      "lane_2": "In uitvoering",
+      "lane_3": "Volgende",
+      "lane_4": "Toekomst",
       "item_1": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Nader te bepalen",
+        "date": "Nader te bepalen",
+        "description": "Nader te bepalen"
       },
       "item_2": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Nader te bepalen",
+        "date": "Nader te bepalen",
+        "description": "Nader te bepalen"
       },
       "item_3": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Nader te bepalen",
+        "date": "Nader te bepalen",
+        "description": "Nader te bepalen"
       },
       "item_4": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Nader te bepalen",
+        "date": "Nader te bepalen",
+        "description": "Nader te bepalen"
       }
     },
     "risks": {
-      "title": "Risks",
+      "title": "Risico's",
       "risk_1": {
-        "title": "Competition",
-        "mitigation": "TBD"
+        "title": "Competitie",
+        "mitigation": "Nader te bepalen"
       },
       "risk_2": {
-        "title": "AI limitations",
-        "mitigation": "TBD"
+        "title": "AI-beperkingen",
+        "mitigation": "Nader te bepalen"
       },
       "risk_3": {
-        "title": "Funding",
-        "mitigation": "TBD"
+        "title": "Financiering",
+        "mitigation": "Nader te bepalen"
       },
       "risk_4": {
-        "title": "Small team",
-        "mitigation": "TBD"
+        "title": "Klein team",
+        "mitigation": "Nader te bepalen"
       },
       "risk_5": {
-        "title": "Execution risk",
-        "mitigation": "TBD"
+        "title": "Uitvoeringsrisico",
+        "mitigation": "Nader te bepalen"
       },
       "risk_6": {
-        "title": "Long development cycle",
-        "mitigation": "TBD"
+        "title": "Lange ontwikkelingscyclus",
+        "mitigation": "Nader te bepalen"
       }
     },
     "faq": {
-      "title": "Frequently Asked Questions",
-      "q_1": "Why AI?",
-      "a_1": "TBD",
-      "q_2": "Why not Kickstarter?",
-      "a_2": "TBD",
-      "q_3": "How will money be used?",
-      "a_3": "TBD",
-      "q_4": "Why capped profit?",
-      "a_4": "TBD",
-      "q_5": "How can I help?",
-      "a_5": "TBD",
-      "q_6": "Can museums participate?",
-      "a_6": "TBD",
-      "q_7": "How do investors work?",
-      "a_7": "TBD"
+      "title": "Veelgestelde vragen",
+      "q_1": "Waarom AI?",
+      "a_1": "Nader te bepalen",
+      "q_2": "Waarom geen Kickstarter?",
+      "a_2": "Nader te bepalen",
+      "q_3": "Hoe zal het geld gebruikt worden?",
+      "a_3": "Nader te bepalen",
+      "q_4": "Waarom een gelimiteerde winst?",
+      "a_4": "Nader te bepalen",
+      "q_5": "Hoe kan ik helpen?",
+      "a_5": "Nader te bepalen",
+      "q_6": "Kunnen musea meedoen?",
+      "a_6": "Nader te bepalen",
+      "q_7": "Hoe gaan beleggers te werk?",
+      "a_7": "Nader te bepalen"
     },
     "cta": {
-      "headline": "Join us in building the future of historical discovery.",
+      "headline": "Bouw met ons mee aan de toekomst van historische ontdekkingen.",
       "button_1": {
-        "label": "Play"
+        "label": "Spelen"
       },
       "button_2": {
-        "label": "Contribute"
+        "label": "Draag bij"
       },
       "button_3": {
         "label": "Partner"
       },
       "button_4": {
-        "label": "Register Interest"
+        "label": "Registreer interesse"
       }
     },
     "footer": {
-      "sources": "Sources",
-      "references": "References",
-      "legal": "Legal disclaimer",
+      "sources": "Bronnen",
+      "references": "Referenties",
+      "legal": "Juridische disclaimer",
       "privacy": "Privacy"
     }
   }

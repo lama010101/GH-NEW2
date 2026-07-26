@@ -124,12 +124,12 @@
     "ts_t4_solution": "يجب شراء التلميحات قبل أن تكشف محتواها. انقر زر التلميح، أكد الشراء، وستظهر المعلومات. كل تلميح يقلل نتيجتك النهائية.",
     "ts_t5_problem": "النتيجة تبدو أقل من المتوقع",
     "ts_t5_solution": "تحقق إن كنت استخدمت تلميحات — فهي تفرض عقوبات على الدقة ونقاط الخبرة. تحقق أيضاً من بعدك عن الموقع الفعلي وفرق السنة. الحد الأقصى لكل جولة 200 نقطة خبرة (100 موقع + 100 سنة).",
-    "grow_cta": "Grow With Us"
+    "grow_cta": "تنمو معنا"
   },
   "home": {
-    "logo_guess": "GUESS-",
-    "logo_his": "HIS",
-    "logo_tory": "TORY",
+    "logo_guess": "خمن-",
+    "logo_his": "له",
+    "logo_tory": "المحافظين",
     "daily_name": "يومي",
     "daily_subtitle": "مسابقة يومية",
     "practice_name": "تدريب",
@@ -162,8 +162,8 @@
     "compete_invite_sent": "أُرسلت {time}",
     "compete_round_label": "الجولة {current} / {total}",
     "compete_play": "العب",
-    "compete_mode_rush": "Rush",
-    "compete_mode_relax": "Relax",
+    "compete_mode_rush": "راش",
+    "compete_mode_relax": "استرخاء",
     "compete_completed": "مكتملة",
     "compete_win": "ف",
     "compete_loss": "خ",
@@ -197,9 +197,9 @@
     "round_label": "الجولة {current} / {total}",
     "loading": "جارٍ التحميل...",
     "no_description": "لا يوجد وصف متاح",
-    "timer_min_short": "{n}د {s}ث",
-    "timer_sec_short": "{n}ث",
-    "countdown_hm": "{h}س {m}د",
+    "timer_min_short": "{n} د {s} ث",
+    "timer_sec_short": "{n} ث",
+    "countdown_hm": "{h} س {m} د",
     "born_prefix": "وُلد:",
     "died_prefix": "توفي:",
     "no_data_yet": "لا توجد بيانات بعد",
@@ -240,10 +240,10 @@
     "invited": "مدعو",
     "no_players_yet": "لا لاعبين بعد",
     "game_settings": "إعدادات اللعبة",
-    "realtime": "RUSH",
-    "realtime_sub": "(Live Challenge)",
-    "turn_by_turn": "RELAX",
-    "turn_by_turn_sub": "(Own Pace)",
+    "realtime": "راش",
+    "realtime_sub": "(التحدي المباشر)",
+    "turn_by_turn": "استرخاء",
+    "turn_by_turn_sub": "(السرعة الخاصة)",
     "max_time_per_turn": "أقصى وقت لكل لعبة",
     "1_day": "يوم واحد",
     "n_days": "{n} أيام",
@@ -262,7 +262,9 @@
     "timer_off": "إيقاف",
     "starting_soon": " · تبدأ قريباً",
     "back": "رجوع",
-    "default_player_name": "لاعب"
+    "default_player_name": "لاعب",
+    "create_game": "إنشاء لعبة",
+    "join_game": "انضم للعبة"
   },
   "compete_page": {
     "title": "لعبة متزامنة متعددة اللاعبين",
@@ -497,7 +499,15 @@
     "badge_dim_year": "السنة",
     "badge_dim_combo": "كومبو",
     "clear_session_restart": "مسح الجلسة وإعادة التشغيل",
-    "taking_too_long": "هل يستغرق وقتًا طويلاً؟"
+    "taking_too_long": "هل يستغرق وقتًا طويلاً؟",
+    "col_accuracy": "الدقة",
+    "best_round_pct": "أفضل جولة %",
+    "avg_yrs_off_label": "متوسط سنوات التوقف",
+    "game_accuracy": "دقة اللعبة (جميع الجولات)",
+    "region_oceania": "أوقيانوسيا",
+    "region_antarctica": "القارة القطبية الجنوبية",
+    "best_round_xp": "أفضل جولة XP",
+    "avg_km_away_label": "متوسط كم بعيدا"
   },
   "auth": {
     "sign_in": "تسجيل الدخول",
@@ -545,7 +555,9 @@
     "retry": "إعادة المحاولة",
     "no_results_today": "لا توجد نتائج بعد لليوم.",
     "accuracy_pct": "نسبة الدقة",
-    "unknown_player": "غير معروف"
+    "unknown_player": "غير معروف",
+    "clear_session_restart": "مسح الجلسة وإعادة التشغيل",
+    "taking_too_long": "يستغرق وقتا طويلا؟"
   },
   "profile": {
     "accuracy_breakdown": "تفصيل الدقة",
@@ -666,458 +678,458 @@
     "meta_title": "Grow With Us — Guess-History",
     "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
     "hero": {
-      "tagline": "TBD",
+      "tagline": "سيتم تحديده",
       "primary_cta": "Play Guess-History",
-      "secondary_cta": "Discover the Project"
+      "secondary_cta": "اكتشف المشروع"
     },
     "mission": {
-      "title": "Mission",
+      "title": "المهمة",
       "topic_1": {
-        "title": "Why history matters",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "لماذا يهم التاريخ",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "topic_2": {
-        "title": "Why current education fails",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "لماذا يفشل التعليم الحالي",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "topic_3": {
-        "title": "Why games can teach",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "لماذا يمكن للألعاب أن تعلم",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       }
     },
     "problem": {
-      "title": "The Problem",
+      "title": "المشكلة",
       "axis_1": {
-        "left_label": "Passive",
-        "right_label": "Discovery",
-        "detail": "TBD"
+        "left_label": "سلبي",
+        "right_label": "اكتشاف",
+        "detail": "سيتم تحديده"
       },
       "axis_2": {
-        "left_label": "Memorization",
-        "right_label": "Curiosity",
-        "detail": "TBD"
+        "left_label": "الحفظ",
+        "right_label": "الفضول",
+        "detail": "سيتم تحديده"
       },
       "axis_3": {
-        "left_label": "Exams",
-        "right_label": "Exploration",
-        "detail": "TBD"
+        "left_label": "الامتحانات",
+        "right_label": "الاستكشاف",
+        "detail": "سيتم تحديده"
       },
       "axis_4": {
         "left_label": "—",
-        "right_label": "Progression",
-        "detail": "TBD"
+        "right_label": "التقدم",
+        "detail": "سيتم تحديده"
       }
     },
     "vision": {
-      "title": "Vision",
+      "title": "الرؤية",
       "node_1": {
-        "label": "Today",
-        "detail": "TBD"
+        "label": "اليوم",
+        "detail": "سيتم تحديده"
       },
       "node_2": {
-        "label": "Daily history game",
-        "detail": "TBD"
+        "label": "لعبة التاريخ اليومي",
+        "detail": "سيتم تحديده"
       },
       "node_3": {
-        "label": "Millions of players",
-        "detail": "TBD"
+        "label": "الملايين من اللاعبين",
+        "detail": "سيتم تحديده"
       },
       "node_4": {
-        "label": "Educational platform",
-        "detail": "TBD"
+        "label": "منصة تعليمية",
+        "detail": "سيتم تحديده"
       },
       "node_5": {
-        "label": "Multiple guessing games",
-        "detail": "TBD"
+        "label": "ألعاب التخمين المتعددة",
+        "detail": "سيتم تحديده"
       },
       "node_6": {
-        "label": "Immersive historical experiences",
-        "detail": "TBD"
+        "label": "تجارب تاريخية غامرة",
+        "detail": "سيتم تحديده"
       },
       "node_7": {
         "label": "VR History",
-        "detail": "TBD"
+        "detail": "سيتم تحديده"
       },
-      "vr_disclaimer": "Long-term vision. Not funded. No schedule."
+      "vr_disclaimer": "رؤية طويلة المدى. غير ممولة. لا يوجد جدول زمني."
     },
     "product": {
-      "title": "The Product",
-      "demo_label": "Try it",
+      "title": "المنتج",
+      "demo_label": "جربه",
       "feature_1": {
-        "title": "Embedded playable demo",
-        "desc": "TBD"
+        "title": "العرض التوضيحي المضمن القابل للتشغيل",
+        "desc": "سيتم تحديده"
       },
       "feature_2": {
-        "title": "Screenshots",
-        "desc": "TBD"
+        "title": "لقطات الشاشة",
+        "desc": "سيتم تحديده"
       },
       "feature_3": {
-        "title": "Game modes",
-        "desc": "TBD"
+        "title": "أوضاع اللعبة",
+        "desc": "سيتم تحديده"
       },
       "feature_4": {
-        "title": "Progression",
-        "desc": "TBD"
+        "title": "التقدم",
+        "desc": "سيتم تحديده"
       },
       "feature_5": {
-        "title": "Learning",
-        "desc": "TBD"
+        "title": "التعلم",
+        "desc": "سيتم تحديده"
       },
       "feature_6": {
-        "title": "Leaderboards",
-        "desc": "TBD"
+        "title": "المتصدرين",
+        "desc": "سيتم تحديده"
       },
       "feature_7": {
-        "title": "Machine vs Human",
-        "desc": "TBD"
+        "title": "آلة مقابل الإنسان",
+        "desc": "سيتم تحديده"
       },
-      "roadmap_badge": "Roadmap"
+      "roadmap_badge": "خريطة الطريق"
     },
     "why_it_works": {
-      "title": "Why It Works",
+      "title": "لماذا يعمل؟",
       "card_1": {
-        "title": "Daily habit",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "العادة اليومية",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "card_2": {
-        "title": "XP progression",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "تقدم XP",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "card_3": {
-        "title": "Level Up",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "المستوى الأعلى",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "card_4": {
-        "title": "Competition",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "المنافسة",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "card_5": {
-        "title": "Learning loop",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "حلقة التعلم",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "card_6": {
-        "title": "Replayability",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "إمكانية إعادة التشغيل",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "card_7": {
-        "title": "Reveal explanations",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "كشف التفسيرات",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "card_8": {
-        "title": "Historical context",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "السياق التاريخي",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       }
     },
     "market": {
-      "title": "Market Opportunity",
-      "intro": "TBD",
+      "title": "فرصة السوق",
+      "intro": "سيتم تحديده",
       "sector_1": {
-        "name": "Gaming",
-        "description": "TBD"
+        "name": "الألعاب",
+        "description": "سيتم تحديده"
       },
       "sector_2": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "التعليم",
+        "description": "سيتم تحديده"
       },
       "sector_3": {
         "name": "AI",
-        "description": "TBD"
+        "description": "سيتم تحديده"
       },
       "sector_4": {
-        "name": "Culture",
-        "description": "TBD"
+        "name": "الثقافة",
+        "description": "سيتم تحديده"
       },
       "sector_5": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "المتاحف",
+        "description": "سيتم تحديده"
       },
       "sector_6": {
-        "name": "Corporate Learning",
-        "description": "TBD"
+        "name": "التعلم المؤسسي",
+        "description": "سيتم تحديده"
       },
       "center_label": "Guess-History"
     },
     "business_model": {
-      "title": "Business Model",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "نموذج الأعمال",
+      "current_title": "الحالي",
+      "future_title": "المستقبل",
       "stream_1": {
-        "title": "Free Daily",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "يوميا مجانا",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "stream_2": {
-        "title": "Premium",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "قسط",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "stream_3": {
-        "title": "Ads (non-intrusive)",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "الإعلانات (غير التدخلية)",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "stream_4": {
-        "title": "Education",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "التعليم",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "stream_5": {
-        "title": "AI partnerships",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "شراكات الذكاء الاصطناعي",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "stream_6": {
-        "title": "Corporate learning",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "التعلم المؤسسي",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
       "stream_7": {
-        "title": "White-label editions",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "طبعات العلامة البيضاء",
+        "summary": "سيتم تحديده",
+        "detail": "سيتم تحديده"
       },
-      "badge_future": "Future"
+      "badge_future": "المستقبل"
     },
     "governance": {
-      "title": "Built for the Long Term",
-      "subtitle": "TBD",
-      "left_header": "Traditional startups optimize for",
-      "right_header": "Guess-History optimizes for",
-      "left_1": "Valuation",
-      "right_1": "Sustainability",
-      "left_2": "Funding",
-      "right_2": "Education",
-      "left_3": "Exit",
-      "right_3": "Innovation",
+      "title": "بنيت على المدى الطويل",
+      "subtitle": "سيتم تحديده",
+      "left_header": "الشركات الناشئة التقليدية تعمل على تحسين",
+      "right_header": "تم تحسين Guess-History لـ",
+      "left_1": "التقييم",
+      "right_1": "الاستدامة",
+      "left_2": "التمويل",
+      "right_2": "التعليم",
+      "left_3": "خروج",
+      "right_3": "الابتكار",
       "left_4": "—",
-      "right_4": "Contributors",
+      "right_4": "المساهمين",
       "left_5": "—",
-      "right_5": "Reinvestment"
+      "right_5": "إعادة الاستثمار"
     },
     "financial": {
-      "title": "Financial Model",
+      "title": "النموذج المالي",
       "flow_1": {
-        "label": "Revenue",
-        "detail": "TBD"
+        "label": "الإيرادات",
+        "detail": "سيتم تحديده"
       },
       "flow_2": {
-        "label": "Operating costs",
-        "detail": "TBD"
+        "label": "تكاليف التشغيل",
+        "detail": "سيتم تحديده"
       },
       "flow_3": {
-        "label": "Fair compensation",
-        "detail": "TBD"
+        "label": "التعويض العادل",
+        "detail": "سيتم تحديده"
       },
       "flow_4": {
-        "label": "Investor returns (capped)",
-        "detail": "TBD"
+        "label": "عوائد المستثمر (محددة)",
+        "detail": "سيتم تحديده"
       },
       "flow_5": {
-        "label": "Strategic reserve",
-        "detail": "TBD"
+        "label": "الاحتياطي الاستراتيجي",
+        "detail": "سيتم تحديده"
       },
       "flow_6": {
-        "label": "Reinvestment",
-        "detail": "TBD"
+        "label": "إعادة الاستثمار",
+        "detail": "سيتم تحديده"
       },
       "flow_7": {
-        "label": "Future projects",
-        "detail": "TBD"
+        "label": "المشاريع المستقبلية",
+        "detail": "سيتم تحديده"
       },
-      "future_projects_title": "Future projects",
+      "future_projects_title": "المشاريع المستقبلية",
       "future_project_1": "Guess-History",
       "future_project_2": "VR History",
-      "future_project_3": "Guess Science",
-      "future_project_4": "Guess Art",
-      "future_project_5": "Guess Geography",
+      "future_project_3": "تخمين العلوم",
+      "future_project_4": "تخمين الفن",
+      "future_project_5": "تخمين الجغرافيا",
       "capped": {
-        "title": "Capped-Profit Model",
-        "purpose_1": "Avoid pressure for endless extraction.",
-        "purpose_2": "Support long-term development.",
-        "purpose_3": "Reward everyone fairly.",
-        "purpose_4": "Avoid maximizing dividends forever.",
-        "principle_1": "Maximum compensation ratio.",
-        "principle_2": "Investor return cap.",
-        "principle_3": "Reinvestment policy.",
-        "principle_4": "Mission-first governance."
+        "title": "نموذج الحد الأقصى للربح",
+        "purpose_1": "تجنب الضغط لاستخراج لا نهاية لها.",
+        "purpose_2": "دعم التنمية على المدى الطويل.",
+        "purpose_3": "كافئ الجميع بإنصاف.",
+        "purpose_4": "تجنب تعظيم الأرباح إلى الأبد.",
+        "principle_1": "الحد الأقصى لنسبة التعويض.",
+        "principle_2": "سقف عائد المستثمر.",
+        "principle_3": "سياسة إعادة الاستثمار",
+        "principle_4": "مهمة الحكم أولا."
       }
     },
     "partnerships": {
-      "title": "Partnerships",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "الشراكات",
+      "current_title": "الحالي",
+      "future_title": "المستقبل",
       "opportunity_1": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "التعليم",
+        "description": "سيتم تحديده"
       },
       "opportunity_2": {
-        "name": "AI research",
-        "description": "TBD"
+        "name": "أبحاث الذكاء الاصطناعي",
+        "description": "سيتم تحديده"
       },
       "opportunity_3": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "المتاحف",
+        "description": "سيتم تحديده"
       },
       "opportunity_4": {
-        "name": "Archives",
-        "description": "TBD"
+        "name": "المحفوظات",
+        "description": "سيتم تحديده"
       },
       "opportunity_5": {
-        "name": "Corporate learning",
-        "description": "TBD"
+        "name": "التعلم المؤسسي",
+        "description": "سيتم تحديده"
       },
       "opportunity_6": {
-        "name": "Tourism",
-        "description": "TBD"
+        "name": "السياحة",
+        "description": "سيتم تحديده"
       },
       "opportunity_7": {
-        "name": "Publishers",
-        "description": "TBD"
+        "name": "الناشرين",
+        "description": "سيتم تحديده"
       },
-      "badge_future": "Future"
+      "badge_future": "المستقبل"
     },
     "contributors": {
-      "title": "Contributors",
+      "title": "المساهمين",
       "role_1": {
-        "name": "Developer",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Developer"
+        "name": "المطور",
+        "why": "سيتم تحديده",
+        "what": "سيتم تحديده",
+        "receive": "سيتم تحديده",
+        "cta": "تقدم بطلبك كمطور"
       },
       "role_2": {
-        "name": "Historian",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Historian"
+        "name": "مؤرخ",
+        "why": "سيتم تحديده",
+        "what": "سيتم تحديده",
+        "receive": "سيتم تحديده",
+        "cta": "تنطبق كمؤرخ"
       },
       "role_3": {
-        "name": "Creator",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Creator"
+        "name": "الخالق",
+        "why": "سيتم تحديده",
+        "what": "سيتم تحديده",
+        "receive": "سيتم تحديده",
+        "cta": "تقدم بطلبك كمنشئ"
       },
       "role_4": {
-        "name": "Investor",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as an Investor"
+        "name": "مستثمر",
+        "why": "سيتم تحديده",
+        "what": "سيتم تحديده",
+        "receive": "سيتم تحديده",
+        "cta": "تقدم كمستثمر"
       },
-      "incentive_1": "Public recognition",
-      "incentive_2": "Portfolio",
-      "incentive_3": "Founding status",
-      "incentive_4": "Equity (where applicable)",
-      "incentive_5": "Profit sharing",
-      "incentive_6": "Fair compensation",
-      "incentive_7": "Long-term participation",
-      "incentive_8": "Learning",
-      "incentive_9": "Community"
+      "incentive_1": "الاعتراف العام",
+      "incentive_2": "المحفظة",
+      "incentive_3": "حالة التأسيس",
+      "incentive_4": "حقوق الملكية (حيثما ينطبق ذلك)",
+      "incentive_5": "تقاسم الأرباح",
+      "incentive_6": "التعويض العادل",
+      "incentive_7": "مشاركة طويلة الأمد",
+      "incentive_8": "التعلم",
+      "incentive_9": "المجتمع"
     },
     "roadmap": {
-      "title": "Roadmap",
-      "lane_1": "Completed",
-      "lane_2": "In progress",
-      "lane_3": "Next",
-      "lane_4": "Future",
+      "title": "خريطة الطريق",
+      "lane_1": "مكتمل",
+      "lane_2": "قيد التقدم",
+      "lane_3": "التالي",
+      "lane_4": "المستقبل",
       "item_1": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "سيتم تحديده",
+        "date": "سيتم تحديده",
+        "description": "سيتم تحديده"
       },
       "item_2": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "سيتم تحديده",
+        "date": "سيتم تحديده",
+        "description": "سيتم تحديده"
       },
       "item_3": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "سيتم تحديده",
+        "date": "سيتم تحديده",
+        "description": "سيتم تحديده"
       },
       "item_4": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "سيتم تحديده",
+        "date": "سيتم تحديده",
+        "description": "سيتم تحديده"
       }
     },
     "risks": {
-      "title": "Risks",
+      "title": "المخاطر",
       "risk_1": {
-        "title": "Competition",
-        "mitigation": "TBD"
+        "title": "المنافسة",
+        "mitigation": "سيتم تحديده"
       },
       "risk_2": {
-        "title": "AI limitations",
-        "mitigation": "TBD"
+        "title": "قيود الذكاء الاصطناعي",
+        "mitigation": "سيتم تحديده"
       },
       "risk_3": {
-        "title": "Funding",
-        "mitigation": "TBD"
+        "title": "التمويل",
+        "mitigation": "سيتم تحديده"
       },
       "risk_4": {
-        "title": "Small team",
-        "mitigation": "TBD"
+        "title": "فريق صغير",
+        "mitigation": "سيتم تحديده"
       },
       "risk_5": {
-        "title": "Execution risk",
-        "mitigation": "TBD"
+        "title": "مخاطر التنفيذ",
+        "mitigation": "سيتم تحديده"
       },
       "risk_6": {
-        "title": "Long development cycle",
-        "mitigation": "TBD"
+        "title": "دورة تطوير طويلة",
+        "mitigation": "سيتم تحديده"
       }
     },
     "faq": {
-      "title": "Frequently Asked Questions",
-      "q_1": "Why AI?",
-      "a_1": "TBD",
-      "q_2": "Why not Kickstarter?",
-      "a_2": "TBD",
-      "q_3": "How will money be used?",
-      "a_3": "TBD",
-      "q_4": "Why capped profit?",
-      "a_4": "TBD",
-      "q_5": "How can I help?",
-      "a_5": "TBD",
-      "q_6": "Can museums participate?",
-      "a_6": "TBD",
-      "q_7": "How do investors work?",
-      "a_7": "TBD"
+      "title": "الأسئلة المتداولة",
+      "q_1": "لماذا الذكاء الاصطناعي؟",
+      "a_1": "سيتم تحديده",
+      "q_2": "لماذا لا كيك ستارتر؟",
+      "a_2": "سيتم تحديده",
+      "q_3": "كيف سيتم استخدام الأموال؟",
+      "a_3": "سيتم تحديده",
+      "q_4": "لماذا توج الربح؟",
+      "a_4": "سيتم تحديده",
+      "q_5": "كيف يمكنني المساعدة؟",
+      "a_5": "سيتم تحديده",
+      "q_6": "هل يمكن للمتاحف المشاركة؟",
+      "a_6": "سيتم تحديده",
+      "q_7": "كيف يعمل المستثمرون؟",
+      "a_7": "سيتم تحديده"
     },
     "cta": {
-      "headline": "Join us in building the future of historical discovery.",
+      "headline": "انضم إلينا في بناء مستقبل الاكتشافات التاريخية.",
       "button_1": {
-        "label": "Play"
+        "label": "العب"
       },
       "button_2": {
-        "label": "Contribute"
+        "label": "ساهم"
       },
       "button_3": {
-        "label": "Partner"
+        "label": "شريك"
       },
       "button_4": {
-        "label": "Register Interest"
+        "label": "تسجيل الاهتمام"
       }
     },
     "footer": {
-      "sources": "Sources",
-      "references": "References",
-      "legal": "Legal disclaimer",
-      "privacy": "Privacy"
+      "sources": "المصادر",
+      "references": "المراجع",
+      "legal": "إخلاء المسؤولية القانونية",
+      "privacy": "الخصوصية"
     }
   }
 }

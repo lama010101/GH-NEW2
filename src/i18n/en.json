@@ -504,7 +504,10 @@
     "badge_tier_bronze": "Great",
     "badge_dim_location": "Location",
     "badge_dim_year": "Year",
-    "badge_dim_combo": "Combo"
+    "badge_dim_combo": "Combo",
+    "clear_session_restart": "Clear session & restart",
+    "taking_too_long": "Taking too long?",
+    "region_oceania_antarctica": "Oceania & Antarctica"
   },
   "auth": {
     "sign_in": "Sign In",
@@ -591,7 +594,8 @@
     "best": "best",
     "rated": "Rated",
     "regions": "Regions",
-    "countries": "Countries"
+    "countries": "Countries",
+    "practice": "Practice"
   },
   "account": {
     "title": "Account",
