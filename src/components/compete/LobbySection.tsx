@@ -651,7 +651,7 @@ export default function LobbySection({
         {/* ── Game Settings Card ── */}
         <div className={`${styles['lobby-card']} ${styles['lobby-settings']}`}>
           <div className={styles['lobby-card-header']}>
-            <h3><span className={styles['lobby-section-number']}>1</span>{t('lobby.game_settings')}</h3><button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('settings')} aria-label={t('help')}><HelpCircle size={16} /></button>
+            <h3><span className={styles['lobby-section-number']}>1</span>{t('lobby.game_settings')}</h3><button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('settings')} aria-label={t('nav.help')}><HelpCircle size={16} /></button>
           </div>
           <div className={styles['lobbyTabRow']}>
             <button
@@ -1098,7 +1098,7 @@ export default function LobbySection({
           {viewer?.isHost && (
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span><button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('friends')} aria-label={t('help')}><HelpCircle size={16} /></button>
+              <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span><button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('friends')} aria-label={t('nav.help')}><HelpCircle size={16} /></button>
               <span className={styles['lobbyShareBtnGroup']}>
                 <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
                   {t('lobby.copy_link')}
@@ -1370,7 +1370,7 @@ export default function LobbySection({
       {helpModal && (
         <div className={styles['lobbyHelpModalBackdrop']} onClick={() => setHelpModal(null)}>
           <div className={styles['lobbyHelpModal']} onClick={(e) => e.stopPropagation()}>
-            <button type="button" className={styles['lobbyHelpModalClose']} onClick={() => setHelpModal(null)} aria-label={t('help')}>×</button>
+            <button type="button" className={styles['lobbyHelpModalClose']} onClick={() => setHelpModal(null)} aria-label={t('nav.help')}>×</button>
             <h4>{helpModal === 'settings' ? t('lobby.game_settings') : t('lobby.invite_players')}</h4>
             <p>{helpModal === 'settings' ? '[PLACEHOLDER: explain Rush vs Relax, round timer, session deadline, year range]' : '[PLACEHOLDER: explain invite link, player roster, ready-up flow]'}</p>
           </div>
