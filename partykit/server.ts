@@ -1149,6 +1149,29 @@ export default class GameServer {
       ? (snapshotRecord["playerSnapshots"] as Record<string, Record<string, unknown>> | undefined)
       : undefined;
 
+    // MP-BUILD-RELAX-BROADCAST-LEAK-002: If an async snapshot reaches broadcast
+    // without a playerSnapshots routing map, do NOT fall through to the sync branch
+    // and blast a single player's view to every socket. Per-socket fetch each player's
+    // own snapshot instead.
+    if (isAsync && !playerSnapshots) {
+      const socketCount = [...this.room.getConnections()].length;
+      console.error(`[ASYNC_BROADCAST_LEAK_REROUTE] async snapshot missing playerSnapshots; per-player fetching for ${socketCount} sockets`);
+      for (const connection of this.room.getConnections()) {
+        const socketPlayerId = this.connections.get(connection.id);
+        if (!socketPlayerId) continue;
+        void this.sendPerPlayerSnapshot(
+          connection,
+          socketPlayerId,
+          snapshotRecord["snapshotVersion"] as number,
+          (snapshotRecord["readyForNext"] as string[] | undefined) ?? [],
+          snapshotRecord["resultPhaseEndsAt"] as number | undefined,
+          snapshotRecord["allPlayersReady"] as boolean | undefined
+        );
+      }
+      this.pendingResults = null; // clear after broadcast attempt
+      return;
+    }
+
     for (const connection of this.room.getConnections()) {
       const socketPlayerId = this.connections.get(connection.id);
 
@@ -1192,35 +1215,70 @@ export default class GameServer {
   }
 
   /**
+   * Fetch and send a per-player snapshot to a single connection.
+   * Shared by the async cold-start path and the per-socket broadcast reroute.
+   * Includes one retry on transient fetch failure.
+   */
+  private async sendPerPlayerSnapshot(
+    connection: Connection,
+    playerId: string,
+    snapshotVersion: number,
+    readyForNext?: string[],
+    resultPhaseEndsAt?: number,
+    allPlayersReady?: boolean
+  ): Promise<void> {
+    const baseUrl = this.getNextJsBaseUrl();
+    const secret = (this.room.env.PARTYKIT_SECRET as string) ?? "";
+    const maxAttempts = 2;
+    const retryDelayMs = 300;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (attempt > 1) {
+        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+      }
+      try {
+        const response = await fetch(`${baseUrl}/api/compete/${encodeURIComponent(this.room.id)}`, {
+          headers: {
+            "x-partykit-secret": secret,
+            "x-viewer-player-id": playerId,
+          },
+        });
+        if (!response.ok) {
+          console.error(`[PartyKit] per-player snapshot fetch failed: status=${response.status} playerId=${playerId.slice(0, 8)} attempt=${attempt}`);
+          continue;
+        }
+        const snapshot = await response.json() as Record<string, unknown>;
+        const results = snapshot["results"];
+        const snapshotToSend: Record<string, unknown> = {
+          ...snapshot,
+          viewerPlayerId: playerId,
+          snapshotVersion,
+        };
+        delete snapshotToSend["results"];
+        if (readyForNext !== undefined) snapshotToSend["readyForNext"] = readyForNext;
+        if (resultPhaseEndsAt !== undefined) snapshotToSend["resultPhaseEndsAt"] = resultPhaseEndsAt;
+        if (allPlayersReady !== undefined) snapshotToSend["allPlayersReady"] = allPlayersReady;
+        connection.send(JSON.stringify({
+          type: "STATE_UPDATE",
+          snapshot: snapshotToSend,
+          results,
+        }));
+        return;
+      } catch (err) {
+        console.error(`[PartyKit] per-player snapshot fetch error: ${err instanceof Error ? err.message : String(err)} playerId=${playerId.slice(0, 8)} attempt=${attempt}`);
+      }
+    }
+    console.error(`[PER_PLAYER_FETCH_FAILED] playerId=${playerId.slice(0, 8)} socketId=${connection.id} attempt=2`);
+  }
+
+  /**
    * Fetch a per-player cold-start snapshot for a newly connected async socket.
    * This is the only allowed loadCompeteSessionSnapshot call for an async
    * socket before any write on that connection, mirroring the DO cold-start
    * pattern documented in MP-DO-AUTHORITATIVE-006.
    */
   private async sendPlayerSnapshot(connection: Connection, playerId: string): Promise<void> {
-    try {
-      this.broadcastVersionCounter += 1;
-      const snapshotVersion = this.broadcastVersionCounter;
-      const baseUrl = this.getNextJsBaseUrl();
-      const response = await fetch(`${baseUrl}/api/compete/${encodeURIComponent(this.room.id)}`, {
-        headers: {
-          "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? "",
-          "x-viewer-player-id": playerId,
-        },
-      });
-      if (!response.ok) {
-        console.error(`[PartyKit] sendPlayerSnapshot failed: ${response.status}`);
-        return;
-      }
-      const snapshot = await response.json();
-      connection.send(JSON.stringify({
-        type: "STATE_UPDATE",
-        snapshot: { ...snapshot as Record<string, unknown>, viewerPlayerId: playerId, snapshotVersion },
-        results: (snapshot as Record<string, unknown>).results ?? undefined,
-      }));
-    } catch (err) {
-      console.error("[PartyKit] sendPlayerSnapshot error:", err instanceof Error ? err.message : err);
-    }
+    this.broadcastVersionCounter += 1;
+    await this.sendPerPlayerSnapshot(connection, playerId, this.broadcastVersionCounter);
   }
 
   async onConnect(connection: Connection, ctx: { request: { headers: { get: (name: string) => string | null } } }): Promise<void> {
@@ -1726,26 +1784,48 @@ export default class GameServer {
         }
 
         case "READY_NEXT": {
+          const runtimeSnapshot = isRuntimeState(this.snapshot) ? this.snapshot : null;
+          if (!runtimeSnapshot) {
+            this.sendError(sender, "Game state not loaded");
+            break;
+          }
+          const readyNextConfig = runtimeSnapshot.config;
+          const readyNextMode = (readyNextConfig?.mode as string) ?? "sync";
+          const isAsyncReadyNext = readyNextMode === "async";
+
+          // For async (Relax) sessions the DO's this.snapshot may be the last
+          // acting player's per-player view. Validate the READY_NEXT request
+          // against the requesting player's own per-player snapshot from the
+          // playerSnapshots map when available, not the actor's view.
+          let validationSnapshot: unknown = this.snapshot;
+          if (isAsyncReadyNext) {
+            const playerSnapshots = (this.snapshot as Record<string, unknown> | null)?.["playerSnapshots"] as
+              Record<string, Record<string, unknown>> | undefined;
+            const requesterSnapshot = playerSnapshots?.[data.playerId];
+            if (requesterSnapshot) validationSnapshot = requesterSnapshot;
+          }
+
+          const validationRuntime = isRuntimeState(validationSnapshot) ? validationSnapshot : null;
           // Validate: current status must be ROUND_COMPLETE (result phase active)
-          console.log(`[READY_NEXT] snapshot status=${isRuntimeState(this.snapshot) ? this.snapshot.status : "NOT_RUNTIME_STATE"} isRuntimeState=${isRuntimeState(this.snapshot)}`);
-          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_COMPLETE") {
+          console.log(`[READY_NEXT] snapshot status=${validationRuntime?.status ?? "NOT_RUNTIME_STATE"} isRuntimeState=${validationRuntime !== null} mode=${readyNextMode}`);
+          if (!validationRuntime || validationRuntime.status !== "ROUND_COMPLETE") {
             this.sendError(sender, "READY_NEXT only allowed during ROUND_COMPLETE phase");
             break;
           }
           // Validate: roundIndex matches current round
-          if (this.snapshot.currentRoundIndex !== data.roundIndex) {
+          if (validationRuntime.currentRoundIndex !== data.roundIndex) {
             this.sendError(sender, "READY_NEXT roundIndex does not match current round");
             break;
           }
           // Validate: playerId is in active players list (left_at is null)
-          const player = this.snapshot.players.find(p => p.playerId === data.playerId);
+          const player = validationRuntime.players.find(p => p.playerId === data.playerId);
           if (!player || player.leftAt !== null) {
             this.sendError(sender, "Player not found or has left the session");
             break;
           }
           // Add playerId to readyForNext set
           this.readyForNext.add(data.playerId);
-          console.log(`[PartyKit] READY_NEXT: player ${data.playerId.slice(0, 8)} ready for next round, total ready: ${this.readyForNext.size}/${this.snapshot.players.filter(p => p.leftAt === null).length}`);
+          console.log(`[PartyKit] READY_NEXT: player ${data.playerId.slice(0, 8)} ready for next round, total ready: ${this.readyForNext.size}/${runtimeSnapshot.players.filter(p => p.leftAt === null).length}`);
           // Persist READY_NEXT event to DB
           try {
             const readyNextRes = await fetch(`${this.getNextJsBaseUrl()}/api/compete/${gameId}/ready-next`, {
@@ -1756,7 +1836,7 @@ export default class GameServer {
               },
               body: JSON.stringify({
                 playerId: data.playerId,
-                roundIndex: this.snapshot.currentRoundIndex,
+                roundIndex: runtimeSnapshot.currentRoundIndex,
                 _executionContext: "partykit"
               })
             });
@@ -1769,17 +1849,13 @@ export default class GameServer {
           }
           // Broadcast STATE_UPDATE with updated readyForNext array
           this.broadcastStateUpdate();
-          // Determine sub-mode from snapshot config (async = Relax, sync = Rush)
-          const readyNextConfig = (this.snapshot as Record<string, unknown>)?.config as Record<string, unknown> | undefined;
-          const readyNextMode = (readyNextConfig?.["mode"] as string) ?? "sync";
-          const isAsyncReadyNext = readyNextMode === "async";
           // Advance condition:
           // - async (Relax): ANY single player tapping "Next" advances the round
           //   immediately (spec §5.8: "Player taps Next Round immediately — does
           //   not wait for others"). Players who haven't submitted get absent rows
           //   via insertMissingCommits when the round completes.
           // - sync (Rush): ALL active players must tap "Next" (existing behavior).
-          const activePlayers = this.snapshot.players.filter(p => p.leftAt === null);
+          const activePlayers = runtimeSnapshot.players.filter(p => p.leftAt === null);
           const shouldAdvance = isAsyncReadyNext
             ? this.readyForNext.size >= 1
             : this.readyForNext.size === activePlayers.length;
