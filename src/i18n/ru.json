@@ -7,6 +7,7 @@
     "leaderboard": "Рейтинг",
     "profile_stats": "Профиль и статистика",
     "account": "Аккаунт",
+    "grow": "Расти",
     "help": "Помощь",
     "sign_out": "Выйти",
     "language": "Язык",
@@ -124,7 +125,7 @@
     "ts_t4_solution": "Подсказки нужно купить перед тем, как они раскроют содержание. Нажми кнопку подсказки, подтверди покупку, и информация появится.",
     "ts_t5_problem": "Счёт кажется ниже ожидаемого",
     "ts_t5_solution": "Проверь, использовал ли ты подсказки — они штрафуют точность и опыт. Также проверь расстояние и разницу в годах. Максимум за раунд — 200 XP.",
-    "grow_cta": "Grow With Us"
+    "grow_cta": "Растите вместе с нами"
   },
   "home": {
     "logo_guess": "УГАДАЙ-",
@@ -162,8 +163,8 @@
     "compete_invite_sent": "отправлено {time}",
     "compete_round_label": "Раунд {current} / {total}",
     "compete_play": "ИГРАТЬ",
-    "compete_mode_rush": "Rush",
-    "compete_mode_relax": "Relax",
+    "compete_mode_rush": "Раш",
+    "compete_mode_relax": "Релакс",
     "compete_completed": "Завершено",
     "compete_win": "П",
     "compete_loss": "В",
@@ -197,9 +198,9 @@
     "round_label": "Раунд {current} / {total}",
     "loading": "Загрузка...",
     "no_description": "Описание отсутствует",
-    "timer_min_short": "{n}м {s}с",
-    "timer_sec_short": "{n}с",
-    "countdown_hm": "{h}ч {m}м",
+    "timer_min_short": "{n} мин {s} с",
+    "timer_sec_short": "{n} с",
+    "countdown_hm": "{h} ч {m} мин",
     "born_prefix": "Родился:",
     "died_prefix": "Умер:",
     "no_data_yet": "Пока нет данных",
@@ -240,10 +241,10 @@
     "invited": "ПРИГЛАШЁН",
     "no_players_yet": "Игроков пока нет",
     "game_settings": "Настройки игры",
-    "realtime": "RUSH",
-    "realtime_sub": "(Live Challenge)",
-    "turn_by_turn": "RELAX",
-    "turn_by_turn_sub": "(Own Pace)",
+    "realtime": "РАШ",
+    "realtime_sub": "(Живой вызов)",
+    "turn_by_turn": "РЕЛАКС",
+    "turn_by_turn_sub": "(Свой темп)",
     "max_time_per_turn": "Макс. время на игру",
     "1_day": "1 день",
     "n_days": "{n} дней",
@@ -262,7 +263,9 @@
     "timer_off": "ВЫКЛ",
     "starting_soon": " · скоро начало",
     "back": "Назад",
-    "default_player_name": "Игрок"
+    "default_player_name": "Игрок",
+    "create_game": "Создать игру",
+    "join_game": "Присоединиться к игре"
   },
   "compete_page": {
     "title": "Синхронная многопользовательская игра",
@@ -286,6 +289,8 @@
     "timer_5s": "5с",
     "timer_5m": "5м",
     "failed_lobby": "Не удалось создать лобби",
+    "invalid_server_response": "Неверный ответ сервера",
+    "open_profile_menu": "Открыть меню профиля",
     "failed_lobby_retry": "Не удалось создать лобби, попробуй снова"
   },
   "game": {
@@ -341,7 +346,7 @@
     "tap_retry": "Нажми для повтора",
     "sign_in": "Войти",
     "sign_up": "Регистрация",
-    "email": "Email",
+    "email": "электронная почта",
     "password": "Пароль",
     "continue": "Продолжить",
     "or": "или",
@@ -497,12 +502,21 @@
     "badge_dim_year": "Год",
     "badge_dim_combo": "Комбо",
     "clear_session_restart": "Очистить сессию и перезапустить",
-    "taking_too_long": "Слишком долго?"
+    "taking_too_long": "Слишком долго?",
+    "retry": "Повторить",
+    "col_accuracy": "Точность",
+    "best_round_pct": "Лучший раунд %",
+    "avg_yrs_off_label": "Среднее количество лет выключено",
+    "game_accuracy": "Точность игры (все раунды)",
+    "region_oceania": "Океания",
+    "region_antarctica": "Антарктида",
+    "best_round_xp": "Лучший раунд опыта",
+    "avg_km_away_label": "Среднее расстояние в км"
   },
   "auth": {
     "sign_in": "Войти",
     "sign_up": "Регистрация",
-    "email": "Email",
+    "email": "электронная почта",
     "password": "Пароль",
     "continue": "Продолжить",
     "or": "или",
@@ -545,7 +559,9 @@
     "retry": "Повторить",
     "no_results_today": "Сегодня результатов нет.",
     "accuracy_pct": "Точность %",
-    "unknown_player": "Неизвестный"
+    "unknown_player": "Неизвестный",
+    "clear_session_restart": "Очистить сеанс и перезапустить",
+    "taking_too_long": "Слишком долго?"
   },
   "profile": {
     "accuracy_breakdown": "Разбивка точности",
@@ -556,7 +572,7 @@
     "history_collection": "Коллекция истории",
     "accuracy_by_century": "Точность по векам",
     "account": "Аккаунт",
-    "email": "Email",
+    "email": "электронная почта",
     "member_since": "Участник с",
     "events_seen": "Просмотрено событий",
     "by_century": "По векам",
@@ -588,7 +604,7 @@
   "account": {
     "title": "Аккаунт",
     "username": "Имя пользователя",
-    "email": "Email",
+    "email": "электронная почта",
     "member_since": "Участник с",
     "saving": "Сохранение…",
     "save": "Сохранить",
@@ -666,458 +682,458 @@
     "meta_title": "Grow With Us — Guess-History",
     "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
     "hero": {
-      "tagline": "TBD",
+      "tagline": "Будет определено",
       "primary_cta": "Play Guess-History",
-      "secondary_cta": "Discover the Project"
+      "secondary_cta": "Откройте для себя проект"
     },
     "mission": {
-      "title": "Mission",
+      "title": "Миссия",
       "topic_1": {
-        "title": "Why history matters",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Почему история имеет значение",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "topic_2": {
-        "title": "Why current education fails",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Почему нынешнее образование терпит неудачу",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "topic_3": {
-        "title": "Why games can teach",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Почему игры могут обучать",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       }
     },
     "problem": {
-      "title": "The Problem",
+      "title": "Проблема",
       "axis_1": {
-        "left_label": "Passive",
-        "right_label": "Discovery",
-        "detail": "TBD"
+        "left_label": "Пассивный",
+        "right_label": "Открытие",
+        "detail": "Будет определено"
       },
       "axis_2": {
-        "left_label": "Memorization",
-        "right_label": "Curiosity",
-        "detail": "TBD"
+        "left_label": "Запоминание",
+        "right_label": "Любопытство",
+        "detail": "Будет определено"
       },
       "axis_3": {
-        "left_label": "Exams",
-        "right_label": "Exploration",
-        "detail": "TBD"
+        "left_label": "Экзамены",
+        "right_label": "Разведка",
+        "detail": "Будет определено"
       },
       "axis_4": {
         "left_label": "—",
-        "right_label": "Progression",
-        "detail": "TBD"
+        "right_label": "Прогресс",
+        "detail": "Будет определено"
       }
     },
     "vision": {
-      "title": "Vision",
+      "title": "Видение",
       "node_1": {
-        "label": "Today",
-        "detail": "TBD"
+        "label": "Сегодня",
+        "detail": "Будет определено"
       },
       "node_2": {
-        "label": "Daily history game",
-        "detail": "TBD"
+        "label": "Ежедневная историческая игра",
+        "detail": "Будет определено"
       },
       "node_3": {
-        "label": "Millions of players",
-        "detail": "TBD"
+        "label": "Миллионы игроков",
+        "detail": "Будет определено"
       },
       "node_4": {
-        "label": "Educational platform",
-        "detail": "TBD"
+        "label": "Образовательная платформа",
+        "detail": "Будет определено"
       },
       "node_5": {
-        "label": "Multiple guessing games",
-        "detail": "TBD"
+        "label": "Несколько игр-угаданий",
+        "detail": "Будет определено"
       },
       "node_6": {
-        "label": "Immersive historical experiences",
-        "detail": "TBD"
+        "label": "Захватывающий исторический опыт",
+        "detail": "Будет определено"
       },
       "node_7": {
         "label": "VR History",
-        "detail": "TBD"
+        "detail": "Будет определено"
       },
-      "vr_disclaimer": "Long-term vision. Not funded. No schedule."
+      "vr_disclaimer": "Долгосрочное видение. Не финансируется. Нет расписания."
     },
     "product": {
-      "title": "The Product",
-      "demo_label": "Try it",
+      "title": "Продукт",
+      "demo_label": "Попробуйте это",
       "feature_1": {
-        "title": "Embedded playable demo",
-        "desc": "TBD"
+        "title": "Встроенная игровая демоверсия",
+        "desc": "Будет определено"
       },
       "feature_2": {
-        "title": "Screenshots",
-        "desc": "TBD"
+        "title": "Скриншоты",
+        "desc": "Будет определено"
       },
       "feature_3": {
-        "title": "Game modes",
-        "desc": "TBD"
+        "title": "Режимы игры",
+        "desc": "Будет определено"
       },
       "feature_4": {
-        "title": "Progression",
-        "desc": "TBD"
+        "title": "Прогресс",
+        "desc": "Будет определено"
       },
       "feature_5": {
-        "title": "Learning",
-        "desc": "TBD"
+        "title": "Обучение",
+        "desc": "Будет определено"
       },
       "feature_6": {
-        "title": "Leaderboards",
-        "desc": "TBD"
+        "title": "Таблицы лидеров",
+        "desc": "Будет определено"
       },
       "feature_7": {
-        "title": "Machine vs Human",
-        "desc": "TBD"
+        "title": "Машина против человека",
+        "desc": "Будет определено"
       },
-      "roadmap_badge": "Roadmap"
+      "roadmap_badge": "Дорожная карта"
     },
     "why_it_works": {
-      "title": "Why It Works",
+      "title": "Почему это работает",
       "card_1": {
-        "title": "Daily habit",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Ежедневная привычка",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "card_2": {
-        "title": "XP progression",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Прогресс опыта",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "card_3": {
-        "title": "Level Up",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Повышение уровня",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "card_4": {
-        "title": "Competition",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Конкуренция",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "card_5": {
-        "title": "Learning loop",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Цикл обучения",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "card_6": {
-        "title": "Replayability",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Реиграбельность",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "card_7": {
-        "title": "Reveal explanations",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Показать объяснения",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "card_8": {
-        "title": "Historical context",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Исторический контекст",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       }
     },
     "market": {
-      "title": "Market Opportunity",
-      "intro": "TBD",
+      "title": "Рыночные возможности",
+      "intro": "Будет определено",
       "sector_1": {
-        "name": "Gaming",
-        "description": "TBD"
+        "name": "Игры",
+        "description": "Будет определено"
       },
       "sector_2": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "Образование",
+        "description": "Будет определено"
       },
       "sector_3": {
         "name": "AI",
-        "description": "TBD"
+        "description": "Будет определено"
       },
       "sector_4": {
-        "name": "Culture",
-        "description": "TBD"
+        "name": "Культура",
+        "description": "Будет определено"
       },
       "sector_5": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "Музеи",
+        "description": "Будет определено"
       },
       "sector_6": {
-        "name": "Corporate Learning",
-        "description": "TBD"
+        "name": "Корпоративное обучение",
+        "description": "Будет определено"
       },
       "center_label": "Guess-History"
     },
     "business_model": {
-      "title": "Business Model",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "Бизнес-модель",
+      "current_title": "Текущий",
+      "future_title": "Будущее",
       "stream_1": {
-        "title": "Free Daily",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Бесплатно ежедневно",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "stream_2": {
-        "title": "Premium",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Премиум",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "stream_3": {
-        "title": "Ads (non-intrusive)",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Реклама (ненавязчивая)",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "stream_4": {
-        "title": "Education",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Образование",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "stream_5": {
-        "title": "AI partnerships",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Партнерство в сфере ИИ",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "stream_6": {
-        "title": "Corporate learning",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Корпоративное обучение",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
       "stream_7": {
-        "title": "White-label editions",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Белые издания",
+        "summary": "Будет определено",
+        "detail": "Будет определено"
       },
-      "badge_future": "Future"
+      "badge_future": "Будущее"
     },
     "governance": {
-      "title": "Built for the Long Term",
-      "subtitle": "TBD",
-      "left_header": "Traditional startups optimize for",
-      "right_header": "Guess-History optimizes for",
-      "left_1": "Valuation",
-      "right_1": "Sustainability",
-      "left_2": "Funding",
-      "right_2": "Education",
-      "left_3": "Exit",
-      "right_3": "Innovation",
+      "title": "Создан на долгосрочную перспективу",
+      "subtitle": "Будет определено",
+      "left_header": "Традиционные стартапы оптимизируют",
+      "right_header": "Guess-History оптимизирует",
+      "left_1": "Оценка",
+      "right_1": "Устойчивое развитие",
+      "left_2": "Финансирование",
+      "right_2": "Образование",
+      "left_3": "Выход",
+      "right_3": "Инновации",
       "left_4": "—",
-      "right_4": "Contributors",
+      "right_4": "Авторы",
       "left_5": "—",
-      "right_5": "Reinvestment"
+      "right_5": "Реинвестирование"
     },
     "financial": {
-      "title": "Financial Model",
+      "title": "Финансовая модель",
       "flow_1": {
-        "label": "Revenue",
-        "detail": "TBD"
+        "label": "Доход",
+        "detail": "Будет определено"
       },
       "flow_2": {
-        "label": "Operating costs",
-        "detail": "TBD"
+        "label": "Эксплуатационные расходы",
+        "detail": "Будет определено"
       },
       "flow_3": {
-        "label": "Fair compensation",
-        "detail": "TBD"
+        "label": "Справедливая компенсация",
+        "detail": "Будет определено"
       },
       "flow_4": {
-        "label": "Investor returns (capped)",
-        "detail": "TBD"
+        "label": "Доходы инвесторов (ограничены)",
+        "detail": "Будет определено"
       },
       "flow_5": {
-        "label": "Strategic reserve",
-        "detail": "TBD"
+        "label": "Стратегический резерв",
+        "detail": "Будет определено"
       },
       "flow_6": {
-        "label": "Reinvestment",
-        "detail": "TBD"
+        "label": "Реинвестирование",
+        "detail": "Будет определено"
       },
       "flow_7": {
-        "label": "Future projects",
-        "detail": "TBD"
+        "label": "Будущие проекты",
+        "detail": "Будет определено"
       },
-      "future_projects_title": "Future projects",
+      "future_projects_title": "Будущие проекты",
       "future_project_1": "Guess-History",
       "future_project_2": "VR History",
-      "future_project_3": "Guess Science",
-      "future_project_4": "Guess Art",
-      "future_project_5": "Guess Geography",
+      "future_project_3": "Угадай науку",
+      "future_project_4": "Угадай искусство",
+      "future_project_5": "Угадай географию",
       "capped": {
-        "title": "Capped-Profit Model",
-        "purpose_1": "Avoid pressure for endless extraction.",
-        "purpose_2": "Support long-term development.",
-        "purpose_3": "Reward everyone fairly.",
-        "purpose_4": "Avoid maximizing dividends forever.",
-        "principle_1": "Maximum compensation ratio.",
-        "principle_2": "Investor return cap.",
-        "principle_3": "Reinvestment policy.",
-        "principle_4": "Mission-first governance."
+        "title": "Модель ограниченной прибыли",
+        "purpose_1": "Избегайте давления для бесконечной экстракции.",
+        "purpose_2": "Поддержка долгосрочного развития.",
+        "purpose_3": "Вознаграждайте всех справедливо.",
+        "purpose_4": "Избегайте максимизации дивидендов навсегда.",
+        "principle_1": "Максимальный коэффициент компенсации.",
+        "principle_2": "Потолок доходности инвестора.",
+        "principle_3": "Реинвестиционная политика.",
+        "principle_4": "Управление, ориентированное на миссию."
       }
     },
     "partnerships": {
-      "title": "Partnerships",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "Партнерство",
+      "current_title": "Текущий",
+      "future_title": "Будущее",
       "opportunity_1": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "Образование",
+        "description": "Будет определено"
       },
       "opportunity_2": {
-        "name": "AI research",
-        "description": "TBD"
+        "name": "исследования искусственного интеллекта",
+        "description": "Будет определено"
       },
       "opportunity_3": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "Музеи",
+        "description": "Будет определено"
       },
       "opportunity_4": {
-        "name": "Archives",
-        "description": "TBD"
+        "name": "Архивы",
+        "description": "Будет определено"
       },
       "opportunity_5": {
-        "name": "Corporate learning",
-        "description": "TBD"
+        "name": "Корпоративное обучение",
+        "description": "Будет определено"
       },
       "opportunity_6": {
-        "name": "Tourism",
-        "description": "TBD"
+        "name": "Туризм",
+        "description": "Будет определено"
       },
       "opportunity_7": {
-        "name": "Publishers",
-        "description": "TBD"
+        "name": "Издатели",
+        "description": "Будет определено"
       },
-      "badge_future": "Future"
+      "badge_future": "Будущее"
     },
     "contributors": {
-      "title": "Contributors",
+      "title": "Авторы",
       "role_1": {
-        "name": "Developer",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Developer"
+        "name": "Разработчик",
+        "why": "Будет определено",
+        "what": "Будет определено",
+        "receive": "Будет определено",
+        "cta": "Подать заявку в качестве разработчика"
       },
       "role_2": {
-        "name": "Historian",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Historian"
+        "name": "Историк",
+        "why": "Будет определено",
+        "what": "Будет определено",
+        "receive": "Будет определено",
+        "cta": "Подать заявку в качестве историка"
       },
       "role_3": {
-        "name": "Creator",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Creator"
+        "name": "Создатель",
+        "why": "Будет определено",
+        "what": "Будет определено",
+        "receive": "Будет определено",
+        "cta": "Подать заявку в качестве автора"
       },
       "role_4": {
-        "name": "Investor",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as an Investor"
+        "name": "Инвестор",
+        "why": "Будет определено",
+        "what": "Будет определено",
+        "receive": "Будет определено",
+        "cta": "Подать заявку в качестве инвестора"
       },
-      "incentive_1": "Public recognition",
-      "incentive_2": "Portfolio",
-      "incentive_3": "Founding status",
-      "incentive_4": "Equity (where applicable)",
-      "incentive_5": "Profit sharing",
-      "incentive_6": "Fair compensation",
-      "incentive_7": "Long-term participation",
-      "incentive_8": "Learning",
-      "incentive_9": "Community"
+      "incentive_1": "Общественное признание",
+      "incentive_2": "Портфолио",
+      "incentive_3": "Статус основателя",
+      "incentive_4": "Капитал (где применимо)",
+      "incentive_5": "Распределение прибыли",
+      "incentive_6": "Справедливая компенсация",
+      "incentive_7": "Долгосрочное участие",
+      "incentive_8": "Обучение",
+      "incentive_9": "Сообщество"
     },
     "roadmap": {
-      "title": "Roadmap",
-      "lane_1": "Completed",
-      "lane_2": "In progress",
-      "lane_3": "Next",
-      "lane_4": "Future",
+      "title": "Дорожная карта",
+      "lane_1": "Завершено",
+      "lane_2": "В процессе",
+      "lane_3": "Далее",
+      "lane_4": "Будущее",
       "item_1": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Будет определено",
+        "date": "Будет определено",
+        "description": "Будет определено"
       },
       "item_2": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Будет определено",
+        "date": "Будет определено",
+        "description": "Будет определено"
       },
       "item_3": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Будет определено",
+        "date": "Будет определено",
+        "description": "Будет определено"
       },
       "item_4": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Будет определено",
+        "date": "Будет определено",
+        "description": "Будет определено"
       }
     },
     "risks": {
-      "title": "Risks",
+      "title": "Риски",
       "risk_1": {
-        "title": "Competition",
-        "mitigation": "TBD"
+        "title": "Конкуренция",
+        "mitigation": "Будет определено"
       },
       "risk_2": {
-        "title": "AI limitations",
-        "mitigation": "TBD"
+        "title": "Ограничения ИИ",
+        "mitigation": "Будет определено"
       },
       "risk_3": {
-        "title": "Funding",
-        "mitigation": "TBD"
+        "title": "Финансирование",
+        "mitigation": "Будет определено"
       },
       "risk_4": {
-        "title": "Small team",
-        "mitigation": "TBD"
+        "title": "Маленькая команда",
+        "mitigation": "Будет определено"
       },
       "risk_5": {
-        "title": "Execution risk",
-        "mitigation": "TBD"
+        "title": "Риск исполнения",
+        "mitigation": "Будет определено"
       },
       "risk_6": {
-        "title": "Long development cycle",
-        "mitigation": "TBD"
+        "title": "Длительный цикл разработки",
+        "mitigation": "Будет определено"
       }
     },
     "faq": {
-      "title": "Frequently Asked Questions",
-      "q_1": "Why AI?",
-      "a_1": "TBD",
-      "q_2": "Why not Kickstarter?",
-      "a_2": "TBD",
-      "q_3": "How will money be used?",
-      "a_3": "TBD",
-      "q_4": "Why capped profit?",
-      "a_4": "TBD",
-      "q_5": "How can I help?",
-      "a_5": "TBD",
-      "q_6": "Can museums participate?",
-      "a_6": "TBD",
-      "q_7": "How do investors work?",
-      "a_7": "TBD"
+      "title": "Часто задаваемые вопросы",
+      "q_1": "Почему ИИ?",
+      "a_1": "Будет определено",
+      "q_2": "Почему не Кикстартер?",
+      "a_2": "Будет определено",
+      "q_3": "Как будут использоваться деньги?",
+      "a_3": "Будет определено",
+      "q_4": "Почему ограничена прибыль?",
+      "a_4": "Будет определено",
+      "q_5": "Как я могу помочь?",
+      "a_5": "Будет определено",
+      "q_6": "Могут ли музеи участвовать?",
+      "a_6": "Будет определено",
+      "q_7": "Как работают инвесторы?",
+      "a_7": "Будет определено"
     },
     "cta": {
-      "headline": "Join us in building the future of historical discovery.",
+      "headline": "Присоединяйтесь к нам в построении будущего исторических открытий.",
       "button_1": {
-        "label": "Play"
+        "label": "Играть"
       },
       "button_2": {
-        "label": "Contribute"
+        "label": "Внести свой вклад"
       },
       "button_3": {
-        "label": "Partner"
+        "label": "Партнер"
       },
       "button_4": {
-        "label": "Register Interest"
+        "label": "Зарегистрировать интерес"
       }
     },
     "footer": {
-      "sources": "Sources",
-      "references": "References",
-      "legal": "Legal disclaimer",
-      "privacy": "Privacy"
+      "sources": "Источники",
+      "references": "Ссылки",
+      "legal": "Юридическая оговорка",
+      "privacy": "Конфиденциальность"
     }
   }
 }
