@@ -37,6 +37,7 @@ const LS_MAX = 10;
 const ROUND_TIMER_DEFAULT_SEC = 120;
 const ROUND_TIMER_TICKS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 300];
 const ROUND_TIMER_MAJOR_TICKS = ROUND_TIMER_TICKS.filter((v) => v % 60 === 0);
+const RUSH_ROUND_TIMER_TICKS = [60, 120, 180, 240, 300];
 const DEADLINE_TICKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 function readLastInvited(): LastInvitedPlayer[] {
@@ -637,7 +638,7 @@ export default function LobbySection({
           <div className={styles['lobby-header-meta']}>
             <span className={styles['lobby-status-chip']}>
               <span className={styles['lobby-status-dot']} />
-              {t('lobby.waiting')}
+              {'lobby '}
               <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--gh-text-primary)', letterSpacing: '1px' }}>{roomCode}</span>
             </span>
           </div>
@@ -660,7 +661,7 @@ export default function LobbySection({
               disabled={!isHost || busy}
             >
               <span className={styles['lobbyTabContent']}>
-                <Leaf size={18} className={styles['lobbyTabIcon']} />
+                <span className={styles['lobbyTabIconDisk']}><Leaf size={18} className={styles['lobbyTabIcon']} /></span>
                 <span className={styles['lobbyTabText']}>
                   <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
                   <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
@@ -673,7 +674,7 @@ export default function LobbySection({
               disabled={!isHost || busy}
             >
               <span className={styles['lobbyTabContent']}>
-                <Zap size={18} className={styles['lobbyTabIcon']} />
+                <span className={styles['lobbyTabIconDisk']}><Zap size={18} className={styles['lobbyTabIcon']} /></span>
                 <span className={styles['lobbyTabText']}>
                   <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
                   <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
@@ -684,7 +685,7 @@ export default function LobbySection({
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']} aria-label={t('lobby.round_timer')} role="img"><Timer size={18} /></span>
+              <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> Results</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
@@ -707,7 +708,7 @@ export default function LobbySection({
                   </button>
                   {sliderValue > 0 ? (
                     <span className={styles['lobbyRowLeft']}>
-                      <span className={styles['lobby-timer-slider-wrap']}>
+                      <span className={`${styles['lobby-timer-slider-wrap']} ${styles['lobbyRushTimerWrap']}`}>
                         <div className={styles['lobby-timer-slider-track']} />
                         <div
                           className={styles['lobby-timer-slider-fill']}
@@ -730,7 +731,7 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
-                          ticks={ROUND_TIMER_MAJOR_TICKS}
+                          ticks={RUSH_ROUND_TIMER_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
@@ -904,7 +905,7 @@ export default function LobbySection({
             </>)}
             {settingsTab === 'turnturn' && (<>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']} aria-label={t('lobby.round_timer')} role="img"><Timer size={18} /></span>
+              <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> Round</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
@@ -971,7 +972,7 @@ export default function LobbySection({
               )}
             </div>
               <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-                <span className={styles['lobby-setting-label']} aria-label={t('lobby.max_time_per_turn')} role="img"><Timer size={18} /></span>
+                <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> Game</span>
                 {isHost ? (
                 <span className={styles['lobbyRowLeft']}>
                   <span className={styles['lobby-timer-slider-wrap']}>
@@ -1098,12 +1099,13 @@ export default function LobbySection({
           {viewer?.isHost && (
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span><button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('friends')} aria-label={t('help')}><HelpCircle size={16} /></button>
+              <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span>
               <span className={styles['lobbyShareBtnGroup']}>
                 <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
                   {t('lobby.copy_link')}
                 </button>
               </span>
+              <button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('friends')} aria-label={t('help')}><HelpCircle size={16} /></button>
             </div>
             {linkCopied && (
               <span className={styles['lobbyCopiedToast']}>
@@ -1371,8 +1373,22 @@ export default function LobbySection({
         <div className={styles['lobbyHelpModalBackdrop']} onClick={() => setHelpModal(null)}>
           <div className={styles['lobbyHelpModal']} onClick={(e) => e.stopPropagation()}>
             <button type="button" className={styles['lobbyHelpModalClose']} onClick={() => setHelpModal(null)} aria-label={t('help')}>×</button>
-            <h4>{helpModal === 'settings' ? t('lobby.game_settings') : t('lobby.invite_players')}</h4>
-            <p>{helpModal === 'settings' ? '[PLACEHOLDER: explain Rush vs Relax, round timer, session deadline, year range]' : '[PLACEHOLDER: explain invite link, player roster, ready-up flow]'}</p>
+            <h4>{helpModal === 'settings' ? 'Game Settings' : 'Invite Players'}</h4>
+            {helpModal === 'settings' ? (
+              <>
+                <p>Choose how this Compete session plays out.</p>
+                <p><strong>RELAX (Own Pace) — Asynchronous.</strong> Each player plays all 5 rounds independently, at their own speed — no waiting on anyone else. The session stays open for the deadline you set below (1–14 days). You can optionally turn on a per-round timer; if a player runs out of time on a round, only that round auto-submits for them — nobody else is affected.</p>
+                <p><strong>RUSH (Live Challenge) — Synchronous.</strong> Everyone plays the same round at the same time. Each round has a countdown timer (10 seconds to 5 minutes). After everyone submits, results are shown to all players together, with an auto-advance timer to the next round.</p>
+                <p><strong>Round Timer</strong> — How long each player has to submit a guess for a round.</p>
+                <p><strong>Game Timer (Relax only)</strong> — The overall deadline for the whole session, from 1 to 14 days after you start the game.</p>
+              </>
+            ) : (
+              <>
+                <p>Add 2 to 8 players to this game.</p>
+                <p>Search for players by name, or use Share Link to send a join link to anyone — they don’t need to already be a friend to join.</p>
+                <p>Players you invite will appear in the lobby once they accept. As host, you can remove a player from the lobby at any time before the game starts.</p>
+              </>
+            )}
           </div>
         </div>
       )}
