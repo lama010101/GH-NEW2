@@ -1271,7 +1271,23 @@ export default class GameServer {
     if (this.snapshotLoaded && this.snapshot) {
       const isAsync = isRuntimeState(this.snapshot) && this.snapshot.config?.mode === "async";
       if (isAsync && verifiedUid) {
-        await this.sendPlayerSnapshot(connection, verifiedUid);
+        // Only send a per-player cold-start snapshot to active members. Unjoined
+        // viewers connecting to a started async game must not see a ROUND_ACTIVE
+        // state and must not have player_round_events created for them.
+        const activePlayer = isRuntimeState(this.snapshot) &&
+          this.snapshot.players.find(p => p.playerId === verifiedUid && p.leftAt === null);
+        if (activePlayer) {
+          await this.sendPlayerSnapshot(connection, verifiedUid);
+        } else if (isRuntimeState(this.snapshot) && this.snapshot.status !== "LOBBY") {
+          console.log("[PartyKit] Rejecting unjoined viewer for started async session:", verifiedUid);
+          this.sendError(connection, "Game already in progress");
+        } else {
+          connection.send(JSON.stringify({
+            type: "STATE_UPDATE",
+            snapshot: { ...this.snapshot as Record<string, unknown>, viewerPlayerId: null },
+            results: (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
+          }));
+        }
       } else {
         connection.send(JSON.stringify({
           type: "STATE_UPDATE",

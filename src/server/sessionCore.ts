@@ -949,6 +949,18 @@ async function buildAsyncPlayerSnapshotForViewer(
   executor: DbExecutor
 ): Promise<CompeteSessionSnapshot> {
   const base = await loadAsyncSnapshotBase(gameId, executor);
+  const isActiveMember = base.players.some(
+    (p) => p.player_id === viewerPlayerId && p.left_at === null && p.kicked !== true
+  );
+  if (!isActiveMember) {
+    // Non-member viewers must not receive per-player state and must not have
+    // player_round_events backfilled for them. Fall back to the base/LOBBY-shaped view.
+    const fallback = await loadCompeteSessionSnapshot(gameId, null);
+    if (!fallback) {
+      throw new Error(`Session not found: ${gameId}`);
+    }
+    return fallback;
+  }
   const inserted = await ensurePlayerRoundStarted(gameId, viewerPlayerId, base, executor);
   const refreshedBase = inserted ? await loadAsyncSnapshotBase(gameId, executor) : base;
   return buildAsyncPlayerSnapshotFromBase(gameId, viewerPlayerId, refreshedBase);
@@ -1267,6 +1279,21 @@ export async function assertParticipantOrPartyKit(
   }
 
   return { ok: true, playerId };
+}
+
+export async function isActiveSessionPlayer(
+  gameId: string,
+  playerId: string,
+  executor: DbExecutor = dbPool
+): Promise<boolean> {
+  const result = await executor.query<{ exists: boolean }>(
+    `SELECT EXISTS(
+       SELECT 1 FROM session_players
+       WHERE game_id = $1 AND player_id = $2 AND left_at IS NULL AND kicked IS NOT TRUE
+     ) AS exists`,
+    [gameId, playerId]
+  );
+  return result.rows[0]?.exists ?? false;
 }
 
 const RESULTS_AUTO_ADVANCE_DEFAULT = 90;
