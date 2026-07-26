@@ -262,7 +262,12 @@
     "timer_off": "UIT",
     "starting_soon": " · begint zo",
     "back": "Terug",
-    "default_player_name": "Speler"
+    "default_player_name": "Speler",
+    "filter_all": "Alle",
+    "filter_favorites": "Favorieten",
+    "no_favorites_yet": "Nog geen favorieten — klik op de ster op de avatar van een speler om hem hier toe te voegen.",
+    "help_game_settings": "Kies hoe deze Compete-sessie verloopt.\n\nRELAX (Eigen tempo) — Asynchroon. Elke speler speelt alle 5 ronden onafhankelijk, in eigen tempo — zonder op anderen te wachten. De sessie blijft open tot de deadline die je hieronder instelt (1–14 dagen). Je kunt optioneel een timer per ronde inschakelen; als een speler de tijd voor een ronde overschrijdt, wordt alleen die ronde automatisch voor hem ingediend — niemand anders wordt beïnvloed.\n\nRUSH (Live uitdaging) — Synchroon. Iedereen speelt dezelfde ronde tegelijk. Elke ronde heeft een optionele countdown-timer (15 seconden tot 5 minuten). Nadat iedereen heeft ingediend, worden de resultaten aan alle spelers tegelijk getoond, met een auto-advance-timer naar de volgende ronde.\n\nRonde-timer — Optioneel. Hoe lang elke speler heeft om een gok voor een ronde in te dienen.\nResultaten-timer — De maximale tijd om de ronderesultaten te bekijken voordat er automatisch wordt doorgaan.\nSpel-timer (alleen Relax) — De totale deadline voor het hele spel, 1 tot 14 dagen nadat je het spel start.",
+    "help_invite_players": "Voeg 2 tot 8 spelers toe aan dit spel.\n\nZoek spelers op naam, of gebruik de Deel-link om een deelname-link naar iemand te sturen — ze hoeven nog geen vriend te zijn om mee te doen.\n\nAls gastheer kun je op de ster op de avatar van een speler klikken om hem als favoriet te markeren, zodat je hem de volgende keer makkelijker kunt vinden.\n\nSpelers die je uitnodigt, verschijnen in de lobby zodra ze accepteren. Als gastheer kun je een speler op elk moment voor de start van het spel uit de lobby verwijderen."
   },
   "compete_page": {
     "title": "Synchroon multiplayer spel",

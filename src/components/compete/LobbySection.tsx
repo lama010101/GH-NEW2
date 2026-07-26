@@ -3,7 +3,6 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
-import { getUsernameGradientStyle } from "@/core/competeUtils";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import { ImageButton } from "@/components/shared/ImageButton";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
@@ -35,7 +34,7 @@ type PlayerPoolEntry = { id: string; displayName: string; avatarUrl: string | nu
 const LS_KEY = "gh_last_invited_players";
 const LS_MAX = 10;
 const ROUND_TIMER_DEFAULT_SEC = 120;
-const ROUND_TIMER_TICKS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 300];
+const ROUND_TIMER_TICKS = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300];
 const ROUND_TIMER_MAJOR_TICKS = ROUND_TIMER_TICKS.filter((v) => v % 60 === 0);
 const DEADLINE_TICKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
@@ -236,6 +235,7 @@ export default function LobbySection({
   const [inviteStates, setInviteStates] = useState<Record<string, 'idle' | 'pending' | 'sent' | 'error'>>({});
   const [playerPool, setPlayerPool] = useState<PlayerPoolEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [poolFilter, setPoolFilter] = useState<'all' | 'favorites'>('all');
   const [showAllModal, setShowAllModal] = useState(false);
   const [modalSearchQuery, setModalSearchQuery] = useState('');
   const [presetsExpanded, setPresetsExpanded] = useState(false);
@@ -545,17 +545,17 @@ export default function LobbySection({
 
   const trimmedQuery = searchQuery.trim().toLowerCase();
   const searchResults: PlayerPoolEntry[] = trimmedQuery.length >= 1
-    ? playerPool.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId).slice(0, 20)
+    ? playerPool.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId && (poolFilter === 'all' || followedIds.has(p.id))).slice(0, 20)
     : [];
   const displayList: PlayerPoolEntry[] = (trimmedQuery.length >= 1
     ? searchResults
-    : priorityList.slice(0, 10)
+    : priorityList.filter((p) => poolFilter === 'all' || followedIds.has(p.id)).slice(0, 10)
   ).sort((a, b) => {
     const aFav = followedIds.has(a.id) ? 0 : 1;
     const bFav = followedIds.has(b.id) ? 0 : 1;
     return aFav - bFav;
   });
-  const hasMore = trimmedQuery.length === 0 && priorityList.length > 10;
+  const hasMore = trimmedQuery.length === 0 && priorityList.filter((p) => poolFilter === 'all' || followedIds.has(p.id)).length > 10;
 
   // Client-side filter for the all-players modal
   const modalTrimmedQuery = modalSearchQuery.trim().toLowerCase();
@@ -719,7 +719,7 @@ export default function LobbySection({
                           className={styles['lobby-timer-slider']}
                           min={TIMER_MIN_SEC}
                           max={TIMER_MAX_SEC}
-                          step={5}
+                          step={15}
                           value={sliderValue}
                           disabled={busy}
                           onChange={(e) => {
@@ -939,7 +939,7 @@ export default function LobbySection({
                           className={styles['lobby-timer-slider']}
                           min={TIMER_MIN_SEC}
                           max={TIMER_MAX_SEC}
-                          step={5}
+                          step={15}
                           value={sliderValue}
                           disabled={busy}
                           onChange={(e) => {
@@ -1110,6 +1110,22 @@ export default function LobbySection({
                 {t('lobby.link_copied')}
               </span>
             )}
+            <div className={styles['lobbyFilterRow']}>
+              <button
+                type="button"
+                className={`${styles['lobbyFilterBtn']} ${poolFilter === 'all' ? styles['lobbyFilterBtnActive'] : ''}`}
+                onClick={() => setPoolFilter('all')}
+              >
+                {t('lobby.filter_all')}
+              </button>
+              <button
+                type="button"
+                className={`${styles['lobbyFilterBtn']} ${poolFilter === 'favorites' ? styles['lobbyFilterBtnActive'] : ''}`}
+                onClick={() => setPoolFilter('favorites')}
+              >
+                {t('lobby.filter_favorites')}
+              </button>
+            </div>
             <div className={styles['lobbySearchWrap']}>
               <svg className={styles['lobbySearchIcon']} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <circle cx="11" cy="11" r="7" />
@@ -1136,14 +1152,11 @@ export default function LobbySection({
             <div className={styles['lobbyRail']}>
               {displayList.length === 0 ? (
                 <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
-                  <span className={styles['lobbyEmptyRailText']}>{t('lobby.no_players_found')}</span>
+                  <span className={styles['lobbyEmptyRailText']}>{poolFilter === 'favorites' ? t('lobby.no_favorites_yet') : t('lobby.no_players_found')}</span>
                 </div>
               ) : (
                 displayList.map((player) => {
                   const inviteState = inviteStates[player.id] ?? 'idle';
-                  const nameParts = player.displayName.split(' ');
-                  const firstName = nameParts[0];
-                  const lastName = nameParts.slice(1).join(' ');
                   return (
                     <div key={player.id} className={styles['lobbyPlayerCard']}>
                       <div className={styles['lobbyAvatarWrap']}>
@@ -1158,9 +1171,8 @@ export default function LobbySection({
                           </span>
                         </button>
                       </div>
-                      <div style={getUsernameGradientStyle(player.id)}>
-                        <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
-                        {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                      <div className={styles['lobbyPlayerCardName']}>
+                        <span className={styles['lobbyPlayerCardNameText']}>{player.displayName}</span>
                       </div>
                       <button
                         type="button"
@@ -1227,9 +1239,6 @@ export default function LobbySection({
                   )}
                   {modalFilteredList.map((player) => {
                     const inviteState = inviteStates[player.id] ?? 'idle';
-                    const nameParts = player.displayName.split(' ');
-                    const firstName = nameParts[0];
-                    const lastName = nameParts.slice(1).join(' ');
                     return (
                       <div key={player.id} className={styles['lobbyPlayerCard']}>
                         <div className={styles['lobbyAvatarWrap']}>
@@ -1244,9 +1253,8 @@ export default function LobbySection({
                             </span>
                           </button>
                         </div>
-                        <div style={getUsernameGradientStyle(player.id)}>
-                          <span className={styles['lobbyCardNameFirst']}>{firstName}</span>
-                          {lastName && <span className={styles['lobbyCardNameLast']}>{lastName}</span>}
+                        <div className={styles['lobbyPlayerCardName']}>
+                          <span className={styles['lobbyPlayerCardNameText']}>{player.displayName}</span>
                         </div>
                         <button
                           type="button"
@@ -1372,7 +1380,7 @@ export default function LobbySection({
           <div className={styles['lobbyHelpModal']} onClick={(e) => e.stopPropagation()}>
             <button type="button" className={styles['lobbyHelpModalClose']} onClick={() => setHelpModal(null)} aria-label={t('help')}>×</button>
             <h4>{helpModal === 'settings' ? t('lobby.game_settings') : t('lobby.invite_players')}</h4>
-            <p>{helpModal === 'settings' ? '[PLACEHOLDER: explain Rush vs Relax, round timer, session deadline, year range]' : '[PLACEHOLDER: explain invite link, player roster, ready-up flow]'}</p>
+            <p>{helpModal === 'settings' ? t('lobby.help_game_settings') : t('lobby.help_invite_players')}</p>
           </div>
         </div>
       )}
