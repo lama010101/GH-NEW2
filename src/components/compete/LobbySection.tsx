@@ -9,7 +9,7 @@ import { ImageButton } from "@/components/shared/ImageButton";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import styles from './LobbySection.module.css';
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
-import { Zap, Leaf, ChevronDown } from 'lucide-react';
+import { Zap, Leaf, ChevronDown, Timer, HelpCircle } from 'lucide-react';
 
 interface LobbySectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -36,6 +36,7 @@ const LS_KEY = "gh_last_invited_players";
 const LS_MAX = 10;
 const ROUND_TIMER_DEFAULT_SEC = 120;
 const ROUND_TIMER_TICKS = [10, 15, 20, 30, 45, 60, 90, 120, 180, 300];
+const ROUND_TIMER_MAJOR_TICKS = ROUND_TIMER_TICKS.filter((v) => v % 60 === 0);
 const DEADLINE_TICKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 
 function readLastInvited(): LastInvitedPlayer[] {
@@ -238,6 +239,7 @@ export default function LobbySection({
   const [showAllModal, setShowAllModal] = useState(false);
   const [modalSearchQuery, setModalSearchQuery] = useState('');
   const [presetsExpanded, setPresetsExpanded] = useState(false);
+  const [helpModal, setHelpModal] = useState<'settings' | 'friends' | null>(null);
 
   /* ── Settings tab UI state ── */
   // Tab is derived from the authoritative snapshot.config.mode (single source of truth).
@@ -649,7 +651,7 @@ export default function LobbySection({
         {/* ── Game Settings Card ── */}
         <div className={`${styles['lobby-card']} ${styles['lobby-settings']}`}>
           <div className={styles['lobby-card-header']}>
-            <h3><span className={styles['lobby-section-number']}>1</span>{t('lobby.game_settings')}</h3>
+            <h3><span className={styles['lobby-section-number']}>1</span>{t('lobby.game_settings')}</h3><button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('settings')} aria-label={t('help')}><HelpCircle size={16} /></button>
           </div>
           <div className={styles['lobbyTabRow']}>
             <button
@@ -682,7 +684,7 @@ export default function LobbySection({
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}>{t('lobby.round_timer')}</span>
+              <span className={styles['lobby-setting-label']} aria-label={t('lobby.round_timer')} role="img"><Timer size={18} /></span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
@@ -728,7 +730,7 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
-                          ticks={ROUND_TIMER_TICKS}
+                          ticks={ROUND_TIMER_MAJOR_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
@@ -749,7 +751,7 @@ export default function LobbySection({
               )}
             </div>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}>{t('lobby.results_timer')}</span>
+              <span className={styles['lobby-setting-label']}><Timer size={16} aria-hidden="true" /> {t('lobby.results_timer')}</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
@@ -901,40 +903,8 @@ export default function LobbySection({
             </div>
             </>)}
             {settingsTab === 'turnturn' && (<>
-              <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-                <span className={styles['lobby-setting-label']}>{t('lobby.max_time_per_turn')}</span>
-                {isHost ? (
-                <span className={styles['lobbyRowLeft']}>
-                  <span className={styles['lobby-timer-slider-wrap']}>
-                    <div className={styles['lobby-timer-slider-track']} />
-                    <div className={styles['lobby-timer-slider-fill']} style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }} />
-                    <RangeSlider
-                      className={styles['lobby-timer-slider']}
-                      min={1}
-                      max={14}
-                      step={1}
-                      value={maxTurnDays}
-                      disabled={busy}
-                      onChange={(e) => {
-                        const val = Number(e.target.value);
-                        setMaxTurnDays(val);
-                        if (deadlineDebounceRef.current) clearTimeout(deadlineDebounceRef.current);
-                        deadlineDebounceRef.current = setTimeout(() => {
-                          onSetSubMode?.("async", val);
-                        }, 400);
-                      }}
-                      ticks={DEADLINE_TICKS}
-                      format={(v) => (v === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: v }))}
-                    />
-                  </span>
-                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
-                </span>
-                ) : (
-                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
-                )}
-              </div>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}>{t('lobby.round_timer')}</span>
+              <span className={styles['lobby-setting-label']} aria-label={t('lobby.round_timer')} role="img"><Timer size={18} /></span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
@@ -980,7 +950,7 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
-                          ticks={ROUND_TIMER_TICKS}
+                          ticks={ROUND_TIMER_MAJOR_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
@@ -1000,6 +970,38 @@ export default function LobbySection({
                 </span>
               )}
             </div>
+              <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
+                <span className={styles['lobby-setting-label']} aria-label={t('lobby.max_time_per_turn')} role="img"><Timer size={18} /></span>
+                {isHost ? (
+                <span className={styles['lobbyRowLeft']}>
+                  <span className={styles['lobby-timer-slider-wrap']}>
+                    <div className={styles['lobby-timer-slider-track']} />
+                    <div className={styles['lobby-timer-slider-fill']} style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }} />
+                    <RangeSlider
+                      className={styles['lobby-timer-slider']}
+                      min={1}
+                      max={14}
+                      step={1}
+                      value={maxTurnDays}
+                      disabled={busy}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setMaxTurnDays(val);
+                        if (deadlineDebounceRef.current) clearTimeout(deadlineDebounceRef.current);
+                        deadlineDebounceRef.current = setTimeout(() => {
+                          onSetSubMode?.("async", val);
+                        }, 400);
+                      }}
+                      ticks={DEADLINE_TICKS}
+                      format={(v) => (v === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: v }))}
+                    />
+                  </span>
+                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
+                </span>
+                ) : (
+                  <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
+                )}
+              </div>
             <div className={styles['lobby-presets-disclosure']}>
               <button
                 type="button"
@@ -1096,7 +1098,7 @@ export default function LobbySection({
           {viewer?.isHost && (
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span>
+              <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span><button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('friends')} aria-label={t('help')}><HelpCircle size={16} /></button>
               <span className={styles['lobbyShareBtnGroup']}>
                 <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
                   {t('lobby.copy_link')}
@@ -1365,6 +1367,15 @@ export default function LobbySection({
         </div>
       </div>
 
+      {helpModal && (
+        <div className={styles['lobbyHelpModalBackdrop']} onClick={() => setHelpModal(null)}>
+          <div className={styles['lobbyHelpModal']} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className={styles['lobbyHelpModalClose']} onClick={() => setHelpModal(null)} aria-label={t('help')}>×</button>
+            <h4>{helpModal === 'settings' ? t('lobby.game_settings') : t('lobby.invite_players')}</h4>
+            <p>{helpModal === 'settings' ? '[PLACEHOLDER: explain Rush vs Relax, round timer, session deadline, year range]' : '[PLACEHOLDER: explain invite link, player roster, ready-up flow]'}</p>
+          </div>
+        </div>
+      )}
       {error ? <p className={styles['lobbyError']}>{error}</p> : null}
     </div>
   );
