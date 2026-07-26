@@ -264,7 +264,12 @@
     "timer_off": "OFF",
     "starting_soon": " · starting soon",
     "back": "Back",
-    "default_player_name": "Player"
+    "default_player_name": "Player",
+    "filter_all": "All",
+    "filter_favorites": "Favorites",
+    "no_favorites_yet": "No favorites yet — click the star on a player's avatar to add them here.",
+    "help_game_settings": "Choose how this Compete session plays out.\n\nRELAX (Own Pace) — Asynchronous. Each player plays all 5 rounds independently, at their own speed — no waiting on anyone else. The session stays open for the deadline you set below (1–14 days). You can optionally turn on a per-round timer; if a player runs out of time on a round, only that round auto-submits for them — nobody else is affected.\n\nRUSH (Live Challenge) — Synchronous. Everyone plays the same round at the same time. Each round has an optional countdown timer (15 seconds to 5 minutes). After everyone submits, results are shown to all players together, with an auto-advance timer to the next round.\n\nRound Timer — Optional. How long each player has to submit a guess for a round.\nResults Timer — The maximum time available to view the round results before automatically advancing to the next round.\nGame Timer (Relax only) — The overall deadline for the whole session, from 1 to 14 days after you start the game.",
+    "help_invite_players": "Add 2 to 8 players to this game.\n\nSearch for players by name, or use Share Link to send a join link to anyone — they don't need to already be a friend to join.\n\nAs host, you can click the star on a player's avatar to mark them as a favorite, making them easier to find next time.\n\nPlayers you invite will appear in the lobby once they accept. As host, you can remove a player from the lobby at any time before the game starts."
   },
   "compete_page": {
     "title": "Multiplayer Sync Game",

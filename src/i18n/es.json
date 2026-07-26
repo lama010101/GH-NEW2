@@ -262,7 +262,12 @@
     "timer_off": "OFF",
     "starting_soon": " · comenzando pronto",
     "back": "Volver",
-    "default_player_name": "Jugador"
+    "default_player_name": "Jugador",
+    "filter_all": "Todos",
+    "filter_favorites": "Favoritos",
+    "no_favorites_yet": "Aún no hay favoritos — haz clic en la estrella del avatar de un jugador para añadirlo aquí.",
+    "help_game_settings": "Elige cómo se desarrolla esta sesión de Compite.\n\nRELAX (A tu ritmo) — Asíncrono. Cada jugador juega las 5 rondas de forma independiente, a su propio ritmo — sin esperar a nadie. La sesión permanece abierta hasta la fecha límite que configures abajo (1–14 días). Puedes activar opcionalmente un temporizador por ronda; si un jugador se queda sin tiempo en una ronda, solo esa ronda se envía automáticamente para él — nadie más se ve afectado.\n\nRUSH (Desafío en vivo) — Síncrono. Todos juegan la misma ronda al mismo tiempo. Cada ronda tiene un temporizador opcional (15 segundos a 5 minutos). Después de que todos envíen, los resultados se muestran a todos los jugadores juntos, con un temporizador de avance automático a la siguiente ronda.\n\nTemporizador de ronda — Opcional. Cuánto tiempo tiene cada jugador para enviar un intento en una ronda.\nTemporizador de resultados — El tiempo máximo disponible para ver los resultados de la ronda antes de avanzar automáticamente.\nTemporizador de partida (solo Relax) — El plazo general para toda la partida, de 1 a 14 días después de iniciarla.",
+    "help_invite_players": "Añade de 2 a 8 jugadores a esta partida.\n\nBusca jugadores por nombre, o usa el enlace de compartir para enviar un enlace de unión a cualquiera — no necesitan ser amigos para unirse.\n\nComo anfitrión, puedes hacer clic en la estrella del avatar de un jugador para marcarlo como favorito y encontrarlo más fácilmente la próxima vez.\n\nLos jugadores que invites aparecerán en el lobby una vez que acepten. Como anfitrión, puedes expulsar a un jugador del lobby en cualquier momento antes de que empiece la partida."
   },
   "compete_page": {
     "title": "Partida síncrona multijugador",

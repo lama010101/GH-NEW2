@@ -262,7 +262,12 @@
     "timer_off": "OFF",
     "starting_soon": " · début imminent",
     "back": "Retour",
-    "default_player_name": "Joueur"
+    "default_player_name": "Joueur",
+    "filter_all": "Tous",
+    "filter_favorites": "Favoris",
+    "no_favorites_yet": "Aucun favori pour l'instant — cliquez sur l'étoile sur l'avatar d'un joueur pour l'ajouter ici.",
+    "help_game_settings": "Choisissez comment se déroule cette session Compétition.\n\nRELAX (À votre rythme) — Asynchrone. Chaque joueur joue les 5 manches indépendamment, à son propre rythme — sans attendre qui que ce soit. La session reste ouverte jusqu'à l'échéance que vous définissez ci-dessous (1 à 14 jours). Vous pouvez optionnellement activer un chronomètre par manche ; si un joueur manque de temps sur une manche, seule cette manche est soumise automatiquement pour lui — personne d'autre n'est affecté.\n\nRUSH (Défi en direct) — Synchrone. Tout le monde joue la même manche en même temps. Chaque manche dispose d'un chronomètre optionnel (15 secondes à 5 minutes). Une fois que tout le monde a soumis, les résultats sont affichés à tous les joueurs ensemble, avec un chronomètre d'avancement automatique vers la manche suivante.\n\nChronomètre de manche — Optionnel. Temps dont dispose chaque joueur pour soumettre une réponse sur une manche.\nChronomètre de résultats — Temps maximum pour visualiser les résultats de la manche avant l'avancement automatique.\nChronomètre de partie (Relax uniquement) — Échéance globale de la partie, de 1 à 14 jours après le début.",
+    "help_invite_players": "Ajoutez 2 à 8 joueurs à cette partie.\n\nRecherchez des joueurs par nom, ou utilisez le lien de partage pour envoyer un lien de participation à n'importe qui — ils n'ont pas besoin d'être déjà votre ami pour rejoindre.\n\nEn tant qu'hôte, vous pouvez cliquer sur l'étoile sur l'avatar d'un joueur pour le marquer comme favori, afin de le retrouver plus facilement la prochaine fois.\n\nLes joueurs que vous invitez apparaîtront dans le salon une fois qu'ils auront accepté. En tant qu'hôte, vous pouvez retirer un joueur du salon à tout moment avant le début de la partie."
   },
   "compete_page": {
     "title": "Jeu multijoueur synchronisé",
