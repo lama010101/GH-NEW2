@@ -7,6 +7,7 @@
     "leaderboard": "Рейтинг",
     "profile_stats": "Профиль и статистика",
     "account": "Аккаунт",
+    "grow": "Расти",
     "help": "Помощь",
     "sign_out": "Выйти",
     "language": "Язык",
@@ -288,6 +289,8 @@
     "timer_5s": "5с",
     "timer_5m": "5м",
     "failed_lobby": "Не удалось создать лобби",
+    "invalid_server_response": "Неверный ответ сервера",
+    "open_profile_menu": "Открыть меню профиля",
     "failed_lobby_retry": "Не удалось создать лобби, попробуй снова"
   },
   "game": {
@@ -500,6 +503,7 @@
     "badge_dim_combo": "Комбо",
     "clear_session_restart": "Очистить сессию и перезапустить",
     "taking_too_long": "Слишком долго?",
+    "retry": "Повторить",
     "col_accuracy": "Точность",
     "best_round_pct": "Лучший раунд %",
     "avg_yrs_off_label": "Среднее количество лет выключено",

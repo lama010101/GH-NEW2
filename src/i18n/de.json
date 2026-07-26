@@ -7,6 +7,7 @@
     "leaderboard": "Bestenliste",
     "profile_stats": "Profil & Statistiken",
     "account": "Konto",
+    "grow": "Wachsen",
     "help": "Hilfe",
     "sign_out": "Abmelden",
     "language": "Sprache",
@@ -288,6 +289,8 @@
     "timer_5s": "5 s",
     "timer_5m": "5 Min.",
     "failed_lobby": "Lobby konnte nicht erstellt werden",
+    "invalid_server_response": "Ungültige Serverantwort",
+    "open_profile_menu": "Profilmenü öffnen",
     "failed_lobby_retry": "Lobby konnte nicht erstellt werden, versuche es erneut"
   },
   "game": {
@@ -500,6 +503,7 @@
     "badge_dim_combo": "Kombi",
     "clear_session_restart": "Sitzung löschen und neu starten",
     "taking_too_long": "Dauert es zu lange?",
+    "retry": "Erneut versuchen",
     "col_accuracy": "Genauigkeit",
     "best_round_pct": "Beste Runde %",
     "avg_yrs_off_label": "Durchschn. Jahre Rabatt",

@@ -7,6 +7,7 @@
     "leaderboard": "排行榜",
     "profile_stats": "资料与统计",
     "account": "账户",
+    "grow": "成长",
     "help": "帮助",
     "sign_out": "退出登录",
     "language": "语言",
@@ -288,6 +289,8 @@
     "timer_5s": "5秒",
     "timer_5m": "5分",
     "failed_lobby": "创建大厅失败",
+    "invalid_server_response": "服务器响应无效",
+    "open_profile_menu": "打开个人菜单",
     "failed_lobby_retry": "创建大厅失败，请重试"
   },
   "game": {
@@ -500,6 +503,7 @@
     "badge_dim_combo": "连击",
     "clear_session_restart": "清除会话并重启",
     "taking_too_long": "耗时太长？",
+    "retry": "重试",
     "col_accuracy": "准确度",
     "best_round_pct": "最佳回合百分比",
     "avg_yrs_off_label": "平均休息年数",
