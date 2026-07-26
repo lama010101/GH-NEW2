@@ -404,7 +404,7 @@ type PlayerRoundState = {
   submittedRounds: Set<number>;
 };
 
-type RoundResultDetail = { score: number; locationScore: number; timeScore: number; };
+type RoundResultDetail = { score: number; locationScore: number; timeScore: number; guessYear: number | null; guessLat: number | null; guessLng: number | null; };
 
 type AsyncSnapshotBase = {
   session: SessionRow;
@@ -492,10 +492,18 @@ async function loadRoundResultScoresForAsync(
     score: number | null;
     location_score: number | null;
     time_score: number | null;
+    year_guess: number | null;
+    location_lat: number | null;
+    location_lng: number | null;
   }>(
-    `SELECT player_id, round_index, score, location_score, time_score
-     FROM round_results
-     WHERE game_id = $1`,
+    `SELECT rr.player_id, rr.round_index, rr.score, rr.location_score, rr.time_score,
+            rc.year_guess, rc.location_lat, rc.location_lng
+     FROM round_results rr
+     LEFT JOIN round_commits rc
+       ON rc.game_id = rr.game_id
+      AND rc.round_index = rr.round_index
+      AND rc.player_id = rr.player_id
+     WHERE rr.game_id = $1`,
     [gameId]
   );
 
@@ -505,6 +513,9 @@ async function loadRoundResultScoresForAsync(
       score: row.score ?? 0,
       locationScore: row.location_score ?? 0,
       timeScore: row.time_score ?? 0,
+      guessYear: row.year_guess ?? null,
+      guessLat: row.location_lat ?? null,
+      guessLng: row.location_lng ?? null,
     });
   }
   return map;
@@ -736,7 +747,26 @@ function buildAsyncPlayerSnapshotFromBase(
       const accuracy = Math.round(accRaw);
       const cumulativeAccuracy = Math.round(cumulativeAccRawSum / (i + 1));
       const didSubmit = guessSubmittedSet.has(`${playerId}:${row.roundIndex}`);
-      byRound.set(row.roundIndex, { score: row.score, accuracy, cumulativeScore, cumulativeAccuracy, didSubmit });
+      const locationAccuracy = row.locationScore;
+      const yearAccuracy = row.timeScore;
+      const comboAccuracy = Math.min(locationAccuracy, yearAccuracy);
+      const badges = calculateBadges({ yearAccuracy, locationAccuracy, comboAccuracy });
+      const nearMisses = evaluateNearMisses(yearAccuracy, locationAccuracy, comboAccuracy, badges);
+      byRound.set(row.roundIndex, {
+        score: row.score,
+        accuracy,
+        cumulativeScore,
+        cumulativeAccuracy,
+        didSubmit,
+        locationScore: row.locationScore,
+        timeScore: row.timeScore,
+        guessYear: row.guessYear,
+        guessLat: row.guessLat,
+        guessLng: row.guessLng,
+        rank: 0,
+        badges,
+        nearMisses,
+      });
     }
     playerRoundResultsByRound.set(playerId, byRound);
   }
@@ -750,7 +780,21 @@ function buildAsyncPlayerSnapshotFromBase(
     const cumulativeScore = priorRows.reduce((sum, r) => sum + r.score, 0);
     const cumulativeAccRawSum = priorRows.reduce((sum, r) => sum + (r.locationScore + r.timeScore) / 2, 0);
     const cumulativeAccuracy = priorRows.length > 0 ? Math.round(cumulativeAccRawSum / priorRows.length) : 0;
-    return { score: 0, accuracy: 0, cumulativeScore, cumulativeAccuracy, didSubmit: false };
+    return {
+      score: 0,
+      accuracy: 0,
+      cumulativeScore,
+      cumulativeAccuracy,
+      didSubmit: false,
+      locationScore: 0,
+      timeScore: 0,
+      guessYear: null,
+      guessLat: null,
+      guessLng: null,
+      rank: 0,
+      badges: [],
+      nearMisses: [],
+    };
   };
 
   const hiddenAnswerValue = null as unknown as number;

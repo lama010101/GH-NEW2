@@ -202,8 +202,6 @@ export default function RoundCompleteSection({
       {(() => {
         const round = snapshot.rounds[snapshot.currentRoundIndex];
         if (!round) return null;
-        const myResult = roundResults?.find(r => r.playerId === playerId);
-        const accuracy = myResult?.accuracy ?? 0;
         const correctLat = round.latitude;
         const correctLng = round.longitude;
         const correctName = round.locationName;
@@ -212,6 +210,15 @@ export default function RoundCompleteSection({
           ? haversineKm(guessLat, guessLng, correctLat, correctLng)
           : null;
         const playerRoundResults = round.playerRoundResults ?? {};
+        const asyncRoundResults: RoundResult[] = isAsync
+          ? Object.entries(playerRoundResults).map(([pid, r]) => ({
+              ...r,
+              playerId: pid,
+            }))
+          : [];
+        const effectiveRoundResults = isAsync ? asyncRoundResults : roundResults;
+        const myResult = effectiveRoundResults?.find(r => r.playerId === playerId);
+        const accuracy = myResult?.accuracy ?? 0;
         const asyncBaseRows = isAsync
           ? Object.entries(playerRoundResults).map(([pid, r]) => {
               const p = snapshot.players.find(x => x.playerId === pid);
@@ -589,7 +596,7 @@ export default function RoundCompleteSection({
                 <div ref={whereCardRef}>
                   <WhereCard
                     bare
-                    roundResults={roundResults}
+                    roundResults={effectiveRoundResults}
                     playerId={playerId}
                     correctLat={correctLat}
                     correctLng={correctLng}
@@ -613,7 +620,7 @@ export default function RoundCompleteSection({
                 <div ref={whenCardRef}>
                   <WhenCard
                     bare
-                    roundResults={roundResults}
+                    roundResults={effectiveRoundResults}
                     playerId={playerId}
                     correctYear={correctYear}
                     whenAccPenalty={submittedHintPenaltyRef.current.whenAccPenalty}
