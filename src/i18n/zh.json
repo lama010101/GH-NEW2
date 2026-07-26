@@ -124,7 +124,7 @@
     "ts_t4_solution": "提示必须先购买才能揭示内容。点击提示按钮，确认购买，信息就会出现。每个提示会减少最终得分。",
     "ts_t5_problem": "分数似乎低于预期",
     "ts_t5_solution": "检查是否使用了提示——它们对准确度和经验值都有惩罚。同时验证你与实际位置的距离和年份差异。每回合最高200经验值（位置100+年份100）。",
-    "grow_cta": "Grow With Us"
+    "grow_cta": "与我们一起成长"
   },
   "home": {
     "logo_guess": "猜-",
@@ -162,8 +162,8 @@
     "compete_invite_sent": "发送于 {time}",
     "compete_round_label": "第 {current} / {total} 回合",
     "compete_play": "开始",
-    "compete_mode_rush": "Rush",
-    "compete_mode_relax": "Relax",
+    "compete_mode_rush": "冲刺",
+    "compete_mode_relax": "放松",
     "compete_completed": "已结束",
     "compete_win": "胜",
     "compete_loss": "负",
@@ -197,9 +197,9 @@
     "round_label": "第 {current} / {total} 回合",
     "loading": "加载中...",
     "no_description": "暂无描述",
-    "timer_min_short": "{n}分 {s}秒",
+    "timer_min_short": "{n}分{s}秒",
     "timer_sec_short": "{n}秒",
-    "countdown_hm": "{h}小时 {m}分",
+    "countdown_hm": "{h}小时{m}分钟",
     "born_prefix": "出生:",
     "died_prefix": "逝世:",
     "no_data_yet": "暂无数据",
@@ -240,10 +240,10 @@
     "invited": "已邀请",
     "no_players_yet": "暂无玩家",
     "game_settings": "游戏设置",
-    "realtime": "RUSH",
-    "realtime_sub": "(Live Challenge)",
-    "turn_by_turn": "RELAX",
-    "turn_by_turn_sub": "(Own Pace)",
+    "realtime": "冲刺",
+    "realtime_sub": "（现场挑战）",
+    "turn_by_turn": "放松",
+    "turn_by_turn_sub": "（自己的节奏）",
     "max_time_per_turn": "每局最长时间",
     "1_day": "1天",
     "n_days": "{n}天",
@@ -262,7 +262,9 @@
     "timer_off": "关闭",
     "starting_soon": " · 即将开始",
     "back": "返回",
-    "default_player_name": "玩家"
+    "default_player_name": "玩家",
+    "create_game": "创建游戏",
+    "join_game": "加入游戏"
   },
   "compete_page": {
     "title": "多人同步游戏",
@@ -497,7 +499,15 @@
     "badge_dim_year": "年份",
     "badge_dim_combo": "连击",
     "clear_session_restart": "清除会话并重启",
-    "taking_too_long": "耗时太长？"
+    "taking_too_long": "耗时太长？",
+    "col_accuracy": "准确度",
+    "best_round_pct": "最佳回合百分比",
+    "avg_yrs_off_label": "平均休息年数",
+    "game_accuracy": "游戏准确度（所有回合）",
+    "region_oceania": "大洋洲",
+    "region_antarctica": "南极洲",
+    "best_round_xp": "最佳回合经验值",
+    "avg_km_away_label": "平均公里数"
   },
   "auth": {
     "sign_in": "登录",
@@ -518,7 +528,7 @@
     "err_password_min_length": "密码至少需要6个字符",
     "err_enter_email_first": "请先输入邮箱地址，然后点击忘记密码。",
     "redirecting": "正在跳转…",
-    "email_placeholder": "you@example.com",
+    "email_placeholder": "你@example.com",
     "password_placeholder": "••••••••",
     "reset_email_sent": "密码重置邮件已发送。请查收邮箱。",
     "confirm_email_sent": "请查收邮件以确认你的账户。",
@@ -545,7 +555,9 @@
     "retry": "重试",
     "no_results_today": "今天暂无结果。",
     "accuracy_pct": "准确度 %",
-    "unknown_player": "未知玩家"
+    "unknown_player": "未知玩家",
+    "clear_session_restart": "清除会话并重新启动",
+    "taking_too_long": "时间太长？"
   },
   "profile": {
     "accuracy_breakdown": "准确度明细",
@@ -629,7 +641,7 @@
     "tagline": "它发生在哪里，何时？",
     "hero_description": "测试你的历史知识。观看真实事件，猜出确切的年份和地点。挑战好友，攀登排行榜，证明你了解历史。",
     "waitlist_prompt": "加入候补名单获取抢先体验：",
-    "waitlist_email_placeholder": "you@example.com",
+    "waitlist_email_placeholder": "你@example.com",
     "waitlist_submit": "加入候补",
     "waitlist_submitting": "加入中…",
     "waitlist_success": "你已在名单上！",
@@ -666,458 +678,458 @@
     "meta_title": "Grow With Us — Guess-History",
     "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
     "hero": {
-      "tagline": "TBD",
+      "tagline": "待定",
       "primary_cta": "Play Guess-History",
-      "secondary_cta": "Discover the Project"
+      "secondary_cta": "探索该项目"
     },
     "mission": {
-      "title": "Mission",
+      "title": "使命",
       "topic_1": {
-        "title": "Why history matters",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "为什么历史很重要",
+        "summary": "待定",
+        "detail": "待定"
       },
       "topic_2": {
-        "title": "Why current education fails",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "为什么现在的教育失败了",
+        "summary": "待定",
+        "detail": "待定"
       },
       "topic_3": {
-        "title": "Why games can teach",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "为什么游戏可以教学",
+        "summary": "待定",
+        "detail": "待定"
       }
     },
     "problem": {
-      "title": "The Problem",
+      "title": "问题",
       "axis_1": {
-        "left_label": "Passive",
-        "right_label": "Discovery",
-        "detail": "TBD"
+        "left_label": "被动",
+        "right_label": "发现",
+        "detail": "待定"
       },
       "axis_2": {
-        "left_label": "Memorization",
-        "right_label": "Curiosity",
-        "detail": "TBD"
+        "left_label": "记忆",
+        "right_label": "好奇心",
+        "detail": "待定"
       },
       "axis_3": {
-        "left_label": "Exams",
-        "right_label": "Exploration",
-        "detail": "TBD"
+        "left_label": "考试",
+        "right_label": "探索",
+        "detail": "待定"
       },
       "axis_4": {
         "left_label": "—",
-        "right_label": "Progression",
-        "detail": "TBD"
+        "right_label": "进展",
+        "detail": "待定"
       }
     },
     "vision": {
-      "title": "Vision",
+      "title": "愿景",
       "node_1": {
-        "label": "Today",
-        "detail": "TBD"
+        "label": "今天",
+        "detail": "待定"
       },
       "node_2": {
-        "label": "Daily history game",
-        "detail": "TBD"
+        "label": "每日历史游戏",
+        "detail": "待定"
       },
       "node_3": {
-        "label": "Millions of players",
-        "detail": "TBD"
+        "label": "数百万玩家",
+        "detail": "待定"
       },
       "node_4": {
-        "label": "Educational platform",
-        "detail": "TBD"
+        "label": "教育平台",
+        "detail": "待定"
       },
       "node_5": {
-        "label": "Multiple guessing games",
-        "detail": "TBD"
+        "label": "多种猜谜游戏",
+        "detail": "待定"
       },
       "node_6": {
-        "label": "Immersive historical experiences",
-        "detail": "TBD"
+        "label": "沉浸式历史体验",
+        "detail": "待定"
       },
       "node_7": {
         "label": "VR History",
-        "detail": "TBD"
+        "detail": "待定"
       },
-      "vr_disclaimer": "Long-term vision. Not funded. No schedule."
+      "vr_disclaimer": "长远眼光。没有资助。没有时间表。"
     },
     "product": {
-      "title": "The Product",
-      "demo_label": "Try it",
+      "title": "产品",
+      "demo_label": "尝试一下",
       "feature_1": {
-        "title": "Embedded playable demo",
-        "desc": "TBD"
+        "title": "嵌入式可玩演示",
+        "desc": "待定"
       },
       "feature_2": {
-        "title": "Screenshots",
-        "desc": "TBD"
+        "title": "截图",
+        "desc": "待定"
       },
       "feature_3": {
-        "title": "Game modes",
-        "desc": "TBD"
+        "title": "游戏模式",
+        "desc": "待定"
       },
       "feature_4": {
-        "title": "Progression",
-        "desc": "TBD"
+        "title": "进展",
+        "desc": "待定"
       },
       "feature_5": {
-        "title": "Learning",
-        "desc": "TBD"
+        "title": "学习",
+        "desc": "待定"
       },
       "feature_6": {
-        "title": "Leaderboards",
-        "desc": "TBD"
+        "title": "排行榜",
+        "desc": "待定"
       },
       "feature_7": {
-        "title": "Machine vs Human",
-        "desc": "TBD"
+        "title": "机器与人类",
+        "desc": "待定"
       },
-      "roadmap_badge": "Roadmap"
+      "roadmap_badge": "路线图"
     },
     "why_it_works": {
-      "title": "Why It Works",
+      "title": "为什么它有效",
       "card_1": {
-        "title": "Daily habit",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "日常习惯",
+        "summary": "待定",
+        "detail": "待定"
       },
       "card_2": {
-        "title": "XP progression",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "XP进展",
+        "summary": "待定",
+        "detail": "待定"
       },
       "card_3": {
-        "title": "Level Up",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "升级",
+        "summary": "待定",
+        "detail": "待定"
       },
       "card_4": {
-        "title": "Competition",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "竞争",
+        "summary": "待定",
+        "detail": "待定"
       },
       "card_5": {
-        "title": "Learning loop",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "学习循环",
+        "summary": "待定",
+        "detail": "待定"
       },
       "card_6": {
-        "title": "Replayability",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "重玩性",
+        "summary": "待定",
+        "detail": "待定"
       },
       "card_7": {
-        "title": "Reveal explanations",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "揭示解释",
+        "summary": "待定",
+        "detail": "待定"
       },
       "card_8": {
-        "title": "Historical context",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "历史背景",
+        "summary": "待定",
+        "detail": "待定"
       }
     },
     "market": {
-      "title": "Market Opportunity",
-      "intro": "TBD",
+      "title": "市场机会",
+      "intro": "待定",
       "sector_1": {
-        "name": "Gaming",
-        "description": "TBD"
+        "name": "游戏",
+        "description": "待定"
       },
       "sector_2": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "教育",
+        "description": "待定"
       },
       "sector_3": {
         "name": "AI",
-        "description": "TBD"
+        "description": "待定"
       },
       "sector_4": {
-        "name": "Culture",
-        "description": "TBD"
+        "name": "文化",
+        "description": "待定"
       },
       "sector_5": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "博物馆",
+        "description": "待定"
       },
       "sector_6": {
-        "name": "Corporate Learning",
-        "description": "TBD"
+        "name": "企业学习",
+        "description": "待定"
       },
       "center_label": "Guess-History"
     },
     "business_model": {
-      "title": "Business Model",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "商业模式",
+      "current_title": "当前",
+      "future_title": "未来",
       "stream_1": {
-        "title": "Free Daily",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "每日免费",
+        "summary": "待定",
+        "detail": "待定"
       },
       "stream_2": {
-        "title": "Premium",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "高级版",
+        "summary": "待定",
+        "detail": "待定"
       },
       "stream_3": {
-        "title": "Ads (non-intrusive)",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "广告（非侵入式）",
+        "summary": "待定",
+        "detail": "待定"
       },
       "stream_4": {
-        "title": "Education",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "教育",
+        "summary": "待定",
+        "detail": "待定"
       },
       "stream_5": {
-        "title": "AI partnerships",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "人工智能合作伙伴",
+        "summary": "待定",
+        "detail": "待定"
       },
       "stream_6": {
-        "title": "Corporate learning",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "企业学习",
+        "summary": "待定",
+        "detail": "待定"
       },
       "stream_7": {
-        "title": "White-label editions",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "白标版本",
+        "summary": "待定",
+        "detail": "待定"
       },
-      "badge_future": "Future"
+      "badge_future": "未来"
     },
     "governance": {
-      "title": "Built for the Long Term",
-      "subtitle": "TBD",
-      "left_header": "Traditional startups optimize for",
-      "right_header": "Guess-History optimizes for",
-      "left_1": "Valuation",
-      "right_1": "Sustainability",
-      "left_2": "Funding",
-      "right_2": "Education",
-      "left_3": "Exit",
-      "right_3": "Innovation",
+      "title": "专为长期发展而打造",
+      "subtitle": "待定",
+      "left_header": "传统初创公司优化",
+      "right_header": "猜测历史优化",
+      "left_1": "估值",
+      "right_1": "可持续发展",
+      "left_2": "资金",
+      "right_2": "教育",
+      "left_3": "退出",
+      "right_3": "创新",
       "left_4": "—",
-      "right_4": "Contributors",
+      "right_4": "贡献者",
       "left_5": "—",
-      "right_5": "Reinvestment"
+      "right_5": "再投资"
     },
     "financial": {
-      "title": "Financial Model",
+      "title": "财务模型",
       "flow_1": {
-        "label": "Revenue",
-        "detail": "TBD"
+        "label": "收入",
+        "detail": "待定"
       },
       "flow_2": {
-        "label": "Operating costs",
-        "detail": "TBD"
+        "label": "运营成本",
+        "detail": "待定"
       },
       "flow_3": {
-        "label": "Fair compensation",
-        "detail": "TBD"
+        "label": "公平的补偿",
+        "detail": "待定"
       },
       "flow_4": {
-        "label": "Investor returns (capped)",
-        "detail": "TBD"
+        "label": "投资者回报（上限）",
+        "detail": "待定"
       },
       "flow_5": {
-        "label": "Strategic reserve",
-        "detail": "TBD"
+        "label": "战略储备",
+        "detail": "待定"
       },
       "flow_6": {
-        "label": "Reinvestment",
-        "detail": "TBD"
+        "label": "再投资",
+        "detail": "待定"
       },
       "flow_7": {
-        "label": "Future projects",
-        "detail": "TBD"
+        "label": "未来的项目",
+        "detail": "待定"
       },
-      "future_projects_title": "Future projects",
+      "future_projects_title": "未来的项目",
       "future_project_1": "Guess-History",
       "future_project_2": "VR History",
-      "future_project_3": "Guess Science",
-      "future_project_4": "Guess Art",
-      "future_project_5": "Guess Geography",
+      "future_project_3": "猜猜科学",
+      "future_project_4": "猜猜艺术",
+      "future_project_5": "猜地理",
       "capped": {
-        "title": "Capped-Profit Model",
-        "purpose_1": "Avoid pressure for endless extraction.",
-        "purpose_2": "Support long-term development.",
-        "purpose_3": "Reward everyone fairly.",
-        "purpose_4": "Avoid maximizing dividends forever.",
-        "principle_1": "Maximum compensation ratio.",
-        "principle_2": "Investor return cap.",
-        "principle_3": "Reinvestment policy.",
-        "principle_4": "Mission-first governance."
+        "title": "利润上限模型",
+        "purpose_1": "避免无休止提取的压力。",
+        "purpose_2": "支持长远发展。",
+        "purpose_3": "公平地奖励每个人。",
+        "purpose_4": "避免永远最大化股息。",
+        "principle_1": "最大补偿比例。",
+        "principle_2": "投资者回报上限。",
+        "principle_3": "再投资政策。",
+        "principle_4": "使命第一的治理。"
       }
     },
     "partnerships": {
-      "title": "Partnerships",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "合作伙伴",
+      "current_title": "当前",
+      "future_title": "未来",
       "opportunity_1": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "教育",
+        "description": "待定"
       },
       "opportunity_2": {
-        "name": "AI research",
-        "description": "TBD"
+        "name": "人工智能研究",
+        "description": "待定"
       },
       "opportunity_3": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "博物馆",
+        "description": "待定"
       },
       "opportunity_4": {
-        "name": "Archives",
-        "description": "TBD"
+        "name": "档案",
+        "description": "待定"
       },
       "opportunity_5": {
-        "name": "Corporate learning",
-        "description": "TBD"
+        "name": "企业学习",
+        "description": "待定"
       },
       "opportunity_6": {
-        "name": "Tourism",
-        "description": "TBD"
+        "name": "旅游",
+        "description": "待定"
       },
       "opportunity_7": {
-        "name": "Publishers",
-        "description": "TBD"
+        "name": "出版商",
+        "description": "待定"
       },
-      "badge_future": "Future"
+      "badge_future": "未来"
     },
     "contributors": {
-      "title": "Contributors",
+      "title": "贡献者",
       "role_1": {
-        "name": "Developer",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Developer"
+        "name": "开发商",
+        "why": "待定",
+        "what": "待定",
+        "receive": "待定",
+        "cta": "申请成为开发者"
       },
       "role_2": {
-        "name": "Historian",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Historian"
+        "name": "历史学家",
+        "why": "待定",
+        "what": "待定",
+        "receive": "待定",
+        "cta": "申请成为历史学家"
       },
       "role_3": {
-        "name": "Creator",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Creator"
+        "name": "创作者",
+        "why": "待定",
+        "what": "待定",
+        "receive": "待定",
+        "cta": "申请成为创作者"
       },
       "role_4": {
-        "name": "Investor",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as an Investor"
+        "name": "投资者",
+        "why": "待定",
+        "what": "待定",
+        "receive": "待定",
+        "cta": "申请成为投资者"
       },
-      "incentive_1": "Public recognition",
-      "incentive_2": "Portfolio",
-      "incentive_3": "Founding status",
-      "incentive_4": "Equity (where applicable)",
-      "incentive_5": "Profit sharing",
-      "incentive_6": "Fair compensation",
-      "incentive_7": "Long-term participation",
-      "incentive_8": "Learning",
-      "incentive_9": "Community"
+      "incentive_1": "公众认可",
+      "incentive_2": "投资组合",
+      "incentive_3": "成立状况",
+      "incentive_4": "股权（如适用）",
+      "incentive_5": "利润分享",
+      "incentive_6": "公平的补偿",
+      "incentive_7": "长期参与",
+      "incentive_8": "学习",
+      "incentive_9": "社区"
     },
     "roadmap": {
-      "title": "Roadmap",
-      "lane_1": "Completed",
-      "lane_2": "In progress",
-      "lane_3": "Next",
-      "lane_4": "Future",
+      "title": "路线图",
+      "lane_1": "已完成",
+      "lane_2": "进行中",
+      "lane_3": "下一步",
+      "lane_4": "未来",
       "item_1": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "待定",
+        "date": "待定",
+        "description": "待定"
       },
       "item_2": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "待定",
+        "date": "待定",
+        "description": "待定"
       },
       "item_3": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "待定",
+        "date": "待定",
+        "description": "待定"
       },
       "item_4": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "待定",
+        "date": "待定",
+        "description": "待定"
       }
     },
     "risks": {
-      "title": "Risks",
+      "title": "风险",
       "risk_1": {
-        "title": "Competition",
-        "mitigation": "TBD"
+        "title": "竞争",
+        "mitigation": "待定"
       },
       "risk_2": {
-        "title": "AI limitations",
-        "mitigation": "TBD"
+        "title": "人工智能的局限性",
+        "mitigation": "待定"
       },
       "risk_3": {
-        "title": "Funding",
-        "mitigation": "TBD"
+        "title": "资金",
+        "mitigation": "待定"
       },
       "risk_4": {
-        "title": "Small team",
-        "mitigation": "TBD"
+        "title": "小团队",
+        "mitigation": "待定"
       },
       "risk_5": {
-        "title": "Execution risk",
-        "mitigation": "TBD"
+        "title": "执行风险",
+        "mitigation": "待定"
       },
       "risk_6": {
-        "title": "Long development cycle",
-        "mitigation": "TBD"
+        "title": "开发周期长",
+        "mitigation": "待定"
       }
     },
     "faq": {
-      "title": "Frequently Asked Questions",
-      "q_1": "Why AI?",
-      "a_1": "TBD",
-      "q_2": "Why not Kickstarter?",
-      "a_2": "TBD",
-      "q_3": "How will money be used?",
-      "a_3": "TBD",
-      "q_4": "Why capped profit?",
-      "a_4": "TBD",
-      "q_5": "How can I help?",
-      "a_5": "TBD",
-      "q_6": "Can museums participate?",
-      "a_6": "TBD",
-      "q_7": "How do investors work?",
-      "a_7": "TBD"
+      "title": "常见问题解答",
+      "q_1": "为什么是人工智能？",
+      "a_1": "待定",
+      "q_2": "为什么不Kickstarter？",
+      "a_2": "待定",
+      "q_3": "钱将如何使用？",
+      "a_3": "待定",
+      "q_4": "为何限制利润？",
+      "a_4": "待定",
+      "q_5": "我能提供什么帮助吗？",
+      "a_5": "待定",
+      "q_6": "博物馆可以参加吗？",
+      "a_6": "待定",
+      "q_7": "投资者如何运作？",
+      "a_7": "待定"
     },
     "cta": {
-      "headline": "Join us in building the future of historical discovery.",
+      "headline": "与我们一起建设历史发现的未来。",
       "button_1": {
-        "label": "Play"
+        "label": "玩"
       },
       "button_2": {
-        "label": "Contribute"
+        "label": "贡献"
       },
       "button_3": {
-        "label": "Partner"
+        "label": "合伙人"
       },
       "button_4": {
-        "label": "Register Interest"
+        "label": "登记兴趣"
       }
     },
     "footer": {
-      "sources": "Sources",
-      "references": "References",
-      "legal": "Legal disclaimer",
-      "privacy": "Privacy"
+      "sources": "来源",
+      "references": "参考文献",
+      "legal": "法律免责声明",
+      "privacy": "隐私"
     }
   }
 }

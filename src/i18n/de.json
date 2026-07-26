@@ -124,11 +124,11 @@
     "ts_t4_solution": "Hinweise müssen gekauft werden, bevor sie Inhalte enthüllen. Klicke den Hinweis-Button, bestätige den Kauf und die Information erscheint.",
     "ts_t5_problem": "Punktzahl scheint niedriger als erwartet",
     "ts_t5_solution": "Prüfe, ob du Hinweise verwendet hast — sie bestrafen Genauigkeit und XP. Überprüfe auch Entfernung und Jahresdifferenz. Maximal 200 XP pro Runde.",
-    "grow_cta": "Grow With Us"
+    "grow_cta": "Wachsen Sie mit uns"
   },
   "home": {
     "logo_guess": "RAT-",
-    "logo_his": "HIS",
+    "logo_his": "SEIN",
     "logo_tory": "TORIE",
     "daily_name": "TÄGLICH",
     "daily_subtitle": "TÄGLICHER WETTBEWERB",
@@ -197,9 +197,9 @@
     "round_label": "Runde {current} / {total}",
     "loading": "Laden...",
     "no_description": "Keine Beschreibung verfügbar",
-    "timer_min_short": "{n}m {s}s",
-    "timer_sec_short": "{n}s",
-    "countdown_hm": "{h}h {m}m",
+    "timer_min_short": "{n}min {s}s",
+    "timer_sec_short": "{n} s",
+    "countdown_hm": "{h}h {m}min",
     "born_prefix": "Geboren:",
     "died_prefix": "Gestorben:",
     "no_data_yet": "Noch keine Daten",
@@ -218,7 +218,7 @@
     "results_timer": "Ergebnisse",
     "invite_friends": "Freunde einladen",
     "invite": "Einladen",
-    "host": "Host",
+    "host": "Gastgeber",
     "you": "Du",
     "connected": "Verbunden",
     "disconnected": "Getrennt",
@@ -241,9 +241,9 @@
     "no_players_yet": "Noch keine Spieler",
     "game_settings": "Spieleinstellungen",
     "realtime": "RUSH",
-    "realtime_sub": "(Live Challenge)",
+    "realtime_sub": "(Live-Challenge)",
     "turn_by_turn": "RELAX",
-    "turn_by_turn_sub": "(Own Pace)",
+    "turn_by_turn_sub": "(Eigenes Tempo)",
     "max_time_per_turn": "Max. Zeit pro Spiel",
     "1_day": "1 Tag",
     "n_days": "{n} Tage",
@@ -262,7 +262,9 @@
     "timer_off": "AUS",
     "starting_soon": " · startet gleich",
     "back": "Zurück",
-    "default_player_name": "Spieler"
+    "default_player_name": "Spieler",
+    "create_game": "Spiel erstellen",
+    "join_game": "Dem Spiel beitreten"
   },
   "compete_page": {
     "title": "Synchrone Mehrspielerspiel",
@@ -283,8 +285,8 @@
     "err_create": "Spiel konnte nicht erstellt werden",
     "err_join": "Beitritt fehlgeschlagen",
     "err_code_required": "Raumcode erforderlich",
-    "timer_5s": "5s",
-    "timer_5m": "5m",
+    "timer_5s": "5 s",
+    "timer_5m": "5 Min.",
     "failed_lobby": "Lobby konnte nicht erstellt werden",
     "failed_lobby_retry": "Lobby konnte nicht erstellt werden, versuche es erneut"
   },
@@ -374,7 +376,7 @@
     "gold_badges": "Gold",
     "silver_badges": "Silber",
     "bronze_badges": "Bronze",
-    "combo_badges": "Combo",
+    "combo_badges": "Kombi",
     "when_badges": "Wann",
     "where_badges": "Wo",
     "no_badges": "Keine Abzeichen in diesem Spiel",
@@ -399,7 +401,7 @@
     "mvp_location": "Bester Ortsschätzer",
     "mvp_consistency": "Konsequentester",
     "mvp_you": "Du",
-    "mvp_and": " & ",
+    "mvp_and": " und ",
     "creating_lobby": "Lobby wird erstellt...",
     "waiting_for_host": "Warte auf Host…",
     "guess_history": "Antworthistorie",
@@ -495,9 +497,17 @@
     "badge_tier_bronze": "Großartig",
     "badge_dim_location": "Ort",
     "badge_dim_year": "Jahr",
-    "badge_dim_combo": "Combo",
+    "badge_dim_combo": "Kombi",
     "clear_session_restart": "Sitzung löschen und neu starten",
-    "taking_too_long": "Dauert es zu lange?"
+    "taking_too_long": "Dauert es zu lange?",
+    "col_accuracy": "Genauigkeit",
+    "best_round_pct": "Beste Runde %",
+    "avg_yrs_off_label": "Durchschn. Jahre Rabatt",
+    "game_accuracy": "Spielgenauigkeit (alle Runden)",
+    "region_oceania": "Ozeanien",
+    "region_antarctica": "Antarktis",
+    "best_round_xp": "Beste Runden-XP",
+    "avg_km_away_label": "Durchschnittliche km Entfernung"
   },
   "auth": {
     "sign_in": "Anmelden",
@@ -533,9 +543,9 @@
     "col_avg_accuracy": "Ø Genauigkeit",
     "col_total_xp": "Gesamt XP",
     "col_games": "Spiele",
-    "col_level": "Level",
+    "col_level": "Ebene",
     "col_accuracy_at_level": "Genauigkeit auf Level",
-    "lvl_prefix": "Lvl {n}",
+    "lvl_prefix": "Stufe {n}",
     "overall": "Gesamt",
     "daily": "Täglich",
     "level_up": "Level aufsteigen",
@@ -545,7 +555,9 @@
     "retry": "Erneut versuchen",
     "no_results_today": "Heute noch keine Ergebnisse.",
     "accuracy_pct": "Genauigkeit %",
-    "unknown_player": "Unbekannt"
+    "unknown_player": "Unbekannt",
+    "clear_session_restart": "Sitzung löschen und neu starten",
+    "taking_too_long": "Dauert es zu lange?"
   },
   "profile": {
     "accuracy_breakdown": "Genauigkeitsaufschlüsselung",
@@ -626,7 +638,7 @@
     "next_label": "Weiter",
     "rank_1": "Wanderer",
     "rank_2": "Pfadfinder",
-    "rank_3": "Trailblazer",
+    "rank_3": "Wegbereiter",
     "rank_4": "Kartograf",
     "rank_5": "Entdecker",
     "rank_6": "Navigator",
@@ -666,458 +678,458 @@
     "meta_title": "Grow With Us — Guess-History",
     "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
     "hero": {
-      "tagline": "TBD",
+      "tagline": "Wird noch festgelegt",
       "primary_cta": "Play Guess-History",
-      "secondary_cta": "Discover the Project"
+      "secondary_cta": "Entdecken Sie das Projekt"
     },
     "mission": {
       "title": "Mission",
       "topic_1": {
-        "title": "Why history matters",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Warum Geschichte wichtig ist",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "topic_2": {
-        "title": "Why current education fails",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Warum die aktuelle Bildung scheitert",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "topic_3": {
-        "title": "Why games can teach",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Warum Spiele lehren können",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       }
     },
     "problem": {
-      "title": "The Problem",
+      "title": "Das Problem",
       "axis_1": {
-        "left_label": "Passive",
-        "right_label": "Discovery",
-        "detail": "TBD"
+        "left_label": "Passiv",
+        "right_label": "Entdeckung",
+        "detail": "Wird noch festgelegt"
       },
       "axis_2": {
-        "left_label": "Memorization",
-        "right_label": "Curiosity",
-        "detail": "TBD"
+        "left_label": "Auswendiglernen",
+        "right_label": "Neugier",
+        "detail": "Wird noch festgelegt"
       },
       "axis_3": {
-        "left_label": "Exams",
-        "right_label": "Exploration",
-        "detail": "TBD"
+        "left_label": "Prüfungen",
+        "right_label": "Erkundung",
+        "detail": "Wird noch festgelegt"
       },
       "axis_4": {
         "left_label": "—",
-        "right_label": "Progression",
-        "detail": "TBD"
+        "right_label": "Fortschritt",
+        "detail": "Wird noch festgelegt"
       }
     },
     "vision": {
       "title": "Vision",
       "node_1": {
-        "label": "Today",
-        "detail": "TBD"
+        "label": "Heute",
+        "detail": "Wird noch festgelegt"
       },
       "node_2": {
-        "label": "Daily history game",
-        "detail": "TBD"
+        "label": "Tägliches Geschichtsspiel",
+        "detail": "Wird noch festgelegt"
       },
       "node_3": {
-        "label": "Millions of players",
-        "detail": "TBD"
+        "label": "Millionen von Spielern",
+        "detail": "Wird noch festgelegt"
       },
       "node_4": {
-        "label": "Educational platform",
-        "detail": "TBD"
+        "label": "Bildungsplattform",
+        "detail": "Wird noch festgelegt"
       },
       "node_5": {
-        "label": "Multiple guessing games",
-        "detail": "TBD"
+        "label": "Mehrere Ratespiele",
+        "detail": "Wird noch festgelegt"
       },
       "node_6": {
-        "label": "Immersive historical experiences",
-        "detail": "TBD"
+        "label": "Eindringliche historische Erlebnisse",
+        "detail": "Wird noch festgelegt"
       },
       "node_7": {
         "label": "VR History",
-        "detail": "TBD"
+        "detail": "Wird noch festgelegt"
       },
-      "vr_disclaimer": "Long-term vision. Not funded. No schedule."
+      "vr_disclaimer": "Langfristige Vision. Nicht finanziert. Kein Zeitplan."
     },
     "product": {
-      "title": "The Product",
-      "demo_label": "Try it",
+      "title": "Das Produkt",
+      "demo_label": "Probieren Sie es aus",
       "feature_1": {
-        "title": "Embedded playable demo",
-        "desc": "TBD"
+        "title": "Eingebettete spielbare Demo",
+        "desc": "Wird noch festgelegt"
       },
       "feature_2": {
         "title": "Screenshots",
-        "desc": "TBD"
+        "desc": "Wird noch festgelegt"
       },
       "feature_3": {
-        "title": "Game modes",
-        "desc": "TBD"
+        "title": "Spielmodi",
+        "desc": "Wird noch festgelegt"
       },
       "feature_4": {
-        "title": "Progression",
-        "desc": "TBD"
+        "title": "Fortschritt",
+        "desc": "Wird noch festgelegt"
       },
       "feature_5": {
-        "title": "Learning",
-        "desc": "TBD"
+        "title": "Lernen",
+        "desc": "Wird noch festgelegt"
       },
       "feature_6": {
-        "title": "Leaderboards",
-        "desc": "TBD"
+        "title": "Bestenlisten",
+        "desc": "Wird noch festgelegt"
       },
       "feature_7": {
-        "title": "Machine vs Human",
-        "desc": "TBD"
+        "title": "Maschine gegen Mensch",
+        "desc": "Wird noch festgelegt"
       },
       "roadmap_badge": "Roadmap"
     },
     "why_it_works": {
-      "title": "Why It Works",
+      "title": "Warum es funktioniert",
       "card_1": {
-        "title": "Daily habit",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Tägliche Gewohnheit",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "card_2": {
-        "title": "XP progression",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "XP-Fortschritt",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "card_3": {
-        "title": "Level Up",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Level aufsteigen",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "card_4": {
-        "title": "Competition",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Wettbewerb",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "card_5": {
-        "title": "Learning loop",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Lernschleife",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "card_6": {
-        "title": "Replayability",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Wiederspielbarkeit",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "card_7": {
-        "title": "Reveal explanations",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Erklärungen offenlegen",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "card_8": {
-        "title": "Historical context",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Historischer Kontext",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       }
     },
     "market": {
-      "title": "Market Opportunity",
-      "intro": "TBD",
+      "title": "Marktchance",
+      "intro": "Wird noch festgelegt",
       "sector_1": {
-        "name": "Gaming",
-        "description": "TBD"
+        "name": "Spielen",
+        "description": "Wird noch festgelegt"
       },
       "sector_2": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "Bildung",
+        "description": "Wird noch festgelegt"
       },
       "sector_3": {
         "name": "AI",
-        "description": "TBD"
+        "description": "Wird noch festgelegt"
       },
       "sector_4": {
-        "name": "Culture",
-        "description": "TBD"
+        "name": "Kultur",
+        "description": "Wird noch festgelegt"
       },
       "sector_5": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "Museen",
+        "description": "Wird noch festgelegt"
       },
       "sector_6": {
         "name": "Corporate Learning",
-        "description": "TBD"
+        "description": "Wird noch festgelegt"
       },
       "center_label": "Guess-History"
     },
     "business_model": {
-      "title": "Business Model",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "Geschäftsmodell",
+      "current_title": "Aktuell",
+      "future_title": "Zukunft",
       "stream_1": {
-        "title": "Free Daily",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Täglich kostenlos",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "stream_2": {
         "title": "Premium",
-        "summary": "TBD",
-        "detail": "TBD"
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "stream_3": {
-        "title": "Ads (non-intrusive)",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Werbung (nicht aufdringlich)",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "stream_4": {
-        "title": "Education",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Bildung",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "stream_5": {
-        "title": "AI partnerships",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "KI-Partnerschaften",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "stream_6": {
-        "title": "Corporate learning",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "Unternehmenslernen",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
       "stream_7": {
-        "title": "White-label editions",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "White-Label-Editionen",
+        "summary": "Wird noch festgelegt",
+        "detail": "Wird noch festgelegt"
       },
-      "badge_future": "Future"
+      "badge_future": "Zukunft"
     },
     "governance": {
-      "title": "Built for the Long Term",
-      "subtitle": "TBD",
-      "left_header": "Traditional startups optimize for",
-      "right_header": "Guess-History optimizes for",
-      "left_1": "Valuation",
-      "right_1": "Sustainability",
-      "left_2": "Funding",
-      "right_2": "Education",
-      "left_3": "Exit",
+      "title": "Auf Langfristigkeit ausgelegt",
+      "subtitle": "Wird noch festgelegt",
+      "left_header": "Traditionelle Startups optimieren für",
+      "right_header": "Guess-History optimiert für",
+      "left_1": "Bewertung",
+      "right_1": "Nachhaltigkeit",
+      "left_2": "Finanzierung",
+      "right_2": "Bildung",
+      "left_3": "Ausstieg",
       "right_3": "Innovation",
       "left_4": "—",
-      "right_4": "Contributors",
+      "right_4": "Mitwirkende",
       "left_5": "—",
-      "right_5": "Reinvestment"
+      "right_5": "Reinvestition"
     },
     "financial": {
-      "title": "Financial Model",
+      "title": "Finanzmodell",
       "flow_1": {
-        "label": "Revenue",
-        "detail": "TBD"
+        "label": "Einnahmen",
+        "detail": "Wird noch festgelegt"
       },
       "flow_2": {
-        "label": "Operating costs",
-        "detail": "TBD"
+        "label": "Betriebskosten",
+        "detail": "Wird noch festgelegt"
       },
       "flow_3": {
-        "label": "Fair compensation",
-        "detail": "TBD"
+        "label": "Gerechte Vergütung",
+        "detail": "Wird noch festgelegt"
       },
       "flow_4": {
-        "label": "Investor returns (capped)",
-        "detail": "TBD"
+        "label": "Anlegerrenditen (begrenzt)",
+        "detail": "Wird noch festgelegt"
       },
       "flow_5": {
-        "label": "Strategic reserve",
-        "detail": "TBD"
+        "label": "Strategische Reserve",
+        "detail": "Wird noch festgelegt"
       },
       "flow_6": {
-        "label": "Reinvestment",
-        "detail": "TBD"
+        "label": "Reinvestition",
+        "detail": "Wird noch festgelegt"
       },
       "flow_7": {
-        "label": "Future projects",
-        "detail": "TBD"
+        "label": "Zukünftige Projekte",
+        "detail": "Wird noch festgelegt"
       },
-      "future_projects_title": "Future projects",
+      "future_projects_title": "Zukünftige Projekte",
       "future_project_1": "Guess-History",
       "future_project_2": "VR History",
-      "future_project_3": "Guess Science",
-      "future_project_4": "Guess Art",
-      "future_project_5": "Guess Geography",
+      "future_project_3": "Ratet mal, Wissenschaft",
+      "future_project_4": "Raten Sie Kunst",
+      "future_project_5": "Erraten Sie Geographie",
       "capped": {
-        "title": "Capped-Profit Model",
-        "purpose_1": "Avoid pressure for endless extraction.",
-        "purpose_2": "Support long-term development.",
-        "purpose_3": "Reward everyone fairly.",
-        "purpose_4": "Avoid maximizing dividends forever.",
-        "principle_1": "Maximum compensation ratio.",
-        "principle_2": "Investor return cap.",
-        "principle_3": "Reinvestment policy.",
-        "principle_4": "Mission-first governance."
+        "title": "Capped-Profit-Modell",
+        "purpose_1": "Vermeiden Sie Druck für eine endlose Extraktion.",
+        "purpose_2": "Unterstützen Sie die langfristige Entwicklung.",
+        "purpose_3": "Belohnen Sie alle fair.",
+        "purpose_4": "Vermeiden Sie es, die Dividenden für immer zu maximieren.",
+        "principle_1": "Maximales Vergütungsverhältnis.",
+        "principle_2": "Obergrenze der Anlegerrendite.",
+        "principle_3": "Reinvestitionspolitik.",
+        "principle_4": "Mission-First-Governance."
       }
     },
     "partnerships": {
-      "title": "Partnerships",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "Partnerschaften",
+      "current_title": "Aktuell",
+      "future_title": "Zukunft",
       "opportunity_1": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "Bildung",
+        "description": "Wird noch festgelegt"
       },
       "opportunity_2": {
-        "name": "AI research",
-        "description": "TBD"
+        "name": "KI-Forschung",
+        "description": "Wird noch festgelegt"
       },
       "opportunity_3": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "Museen",
+        "description": "Wird noch festgelegt"
       },
       "opportunity_4": {
-        "name": "Archives",
-        "description": "TBD"
+        "name": "Archive",
+        "description": "Wird noch festgelegt"
       },
       "opportunity_5": {
-        "name": "Corporate learning",
-        "description": "TBD"
+        "name": "Unternehmenslernen",
+        "description": "Wird noch festgelegt"
       },
       "opportunity_6": {
-        "name": "Tourism",
-        "description": "TBD"
+        "name": "Tourismus",
+        "description": "Wird noch festgelegt"
       },
       "opportunity_7": {
-        "name": "Publishers",
-        "description": "TBD"
+        "name": "Verlage",
+        "description": "Wird noch festgelegt"
       },
-      "badge_future": "Future"
+      "badge_future": "Zukunft"
     },
     "contributors": {
-      "title": "Contributors",
+      "title": "Mitwirkende",
       "role_1": {
-        "name": "Developer",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Developer"
+        "name": "Entwickler",
+        "why": "Wird noch festgelegt",
+        "what": "Wird noch festgelegt",
+        "receive": "Wird noch festgelegt",
+        "cta": "Bewerben Sie sich als Entwickler"
       },
       "role_2": {
-        "name": "Historian",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Historian"
+        "name": "Historiker",
+        "why": "Wird noch festgelegt",
+        "what": "Wird noch festgelegt",
+        "receive": "Wird noch festgelegt",
+        "cta": "Bewerben Sie sich als Historiker"
       },
       "role_3": {
-        "name": "Creator",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Creator"
+        "name": "Schöpfer",
+        "why": "Wird noch festgelegt",
+        "what": "Wird noch festgelegt",
+        "receive": "Wird noch festgelegt",
+        "cta": "Bewerben Sie sich als Creator"
       },
       "role_4": {
         "name": "Investor",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as an Investor"
+        "why": "Wird noch festgelegt",
+        "what": "Wird noch festgelegt",
+        "receive": "Wird noch festgelegt",
+        "cta": "Bewerben Sie sich als Investor"
       },
-      "incentive_1": "Public recognition",
+      "incentive_1": "Öffentliche Anerkennung",
       "incentive_2": "Portfolio",
-      "incentive_3": "Founding status",
-      "incentive_4": "Equity (where applicable)",
-      "incentive_5": "Profit sharing",
-      "incentive_6": "Fair compensation",
-      "incentive_7": "Long-term participation",
-      "incentive_8": "Learning",
-      "incentive_9": "Community"
+      "incentive_3": "Gründungsstatus",
+      "incentive_4": "Eigenkapital (sofern zutreffend)",
+      "incentive_5": "Gewinnbeteiligung",
+      "incentive_6": "Gerechte Vergütung",
+      "incentive_7": "Langfristige Teilnahme",
+      "incentive_8": "Lernen",
+      "incentive_9": "Gemeinschaft"
     },
     "roadmap": {
       "title": "Roadmap",
-      "lane_1": "Completed",
-      "lane_2": "In progress",
-      "lane_3": "Next",
-      "lane_4": "Future",
+      "lane_1": "Abgeschlossen",
+      "lane_2": "In Bearbeitung",
+      "lane_3": "Als nächstes",
+      "lane_4": "Zukunft",
       "item_1": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Wird noch festgelegt",
+        "date": "Wird noch festgelegt",
+        "description": "Wird noch festgelegt"
       },
       "item_2": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Wird noch festgelegt",
+        "date": "Wird noch festgelegt",
+        "description": "Wird noch festgelegt"
       },
       "item_3": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Wird noch festgelegt",
+        "date": "Wird noch festgelegt",
+        "description": "Wird noch festgelegt"
       },
       "item_4": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "Wird noch festgelegt",
+        "date": "Wird noch festgelegt",
+        "description": "Wird noch festgelegt"
       }
     },
     "risks": {
-      "title": "Risks",
+      "title": "Risiken",
       "risk_1": {
-        "title": "Competition",
-        "mitigation": "TBD"
+        "title": "Wettbewerb",
+        "mitigation": "Wird noch festgelegt"
       },
       "risk_2": {
-        "title": "AI limitations",
-        "mitigation": "TBD"
+        "title": "KI-Einschränkungen",
+        "mitigation": "Wird noch festgelegt"
       },
       "risk_3": {
-        "title": "Funding",
-        "mitigation": "TBD"
+        "title": "Finanzierung",
+        "mitigation": "Wird noch festgelegt"
       },
       "risk_4": {
-        "title": "Small team",
-        "mitigation": "TBD"
+        "title": "Kleines Team",
+        "mitigation": "Wird noch festgelegt"
       },
       "risk_5": {
-        "title": "Execution risk",
-        "mitigation": "TBD"
+        "title": "Ausführungsrisiko",
+        "mitigation": "Wird noch festgelegt"
       },
       "risk_6": {
-        "title": "Long development cycle",
-        "mitigation": "TBD"
+        "title": "Langer Entwicklungszyklus",
+        "mitigation": "Wird noch festgelegt"
       }
     },
     "faq": {
-      "title": "Frequently Asked Questions",
-      "q_1": "Why AI?",
-      "a_1": "TBD",
-      "q_2": "Why not Kickstarter?",
-      "a_2": "TBD",
-      "q_3": "How will money be used?",
-      "a_3": "TBD",
-      "q_4": "Why capped profit?",
-      "a_4": "TBD",
-      "q_5": "How can I help?",
-      "a_5": "TBD",
-      "q_6": "Can museums participate?",
-      "a_6": "TBD",
-      "q_7": "How do investors work?",
-      "a_7": "TBD"
+      "title": "Häufig gestellte Fragen",
+      "q_1": "Warum KI?",
+      "a_1": "Wird noch festgelegt",
+      "q_2": "Warum nicht Kickstarter?",
+      "a_2": "Wird noch festgelegt",
+      "q_3": "Wie wird das Geld verwendet?",
+      "a_3": "Wird noch festgelegt",
+      "q_4": "Warum begrenzter Gewinn?",
+      "a_4": "Wird noch festgelegt",
+      "q_5": "Wie kann ich helfen?",
+      "a_5": "Wird noch festgelegt",
+      "q_6": "Können Museen teilnehmen?",
+      "a_6": "Wird noch festgelegt",
+      "q_7": "Wie arbeiten Anleger?",
+      "a_7": "Wird noch festgelegt"
     },
     "cta": {
-      "headline": "Join us in building the future of historical discovery.",
+      "headline": "Bauen Sie gemeinsam mit uns die Zukunft der historischen Entdeckungen auf.",
       "button_1": {
-        "label": "Play"
+        "label": "Spielen"
       },
       "button_2": {
-        "label": "Contribute"
+        "label": "Mitmachen"
       },
       "button_3": {
         "label": "Partner"
       },
       "button_4": {
-        "label": "Register Interest"
+        "label": "Registrieren Sie Interesse"
       }
     },
     "footer": {
-      "sources": "Sources",
-      "references": "References",
-      "legal": "Legal disclaimer",
-      "privacy": "Privacy"
+      "sources": "Quellen",
+      "references": "Referenzen",
+      "legal": "Haftungsausschluss",
+      "privacy": "Privatsphäre"
     }
   }
 }

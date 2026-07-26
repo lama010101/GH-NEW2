@@ -124,7 +124,7 @@
     "ts_t4_solution": "ヒントは購入後に内容が開示されます。ヒントボタンを押し、購入を確認すると情報が表示されます。",
     "ts_t5_problem": "スコアが予想より低い",
     "ts_t5_solution": "ヒントを使用したか確認——精度とXPにペナルティがあります。また、実際の場所からの距離と年の差を確認。1ラウンド最大200 XP。",
-    "grow_cta": "Grow With Us"
+    "grow_cta": "私たちと一緒に成長しましょう"
   },
   "home": {
     "logo_guess": "ゲス-",
@@ -162,8 +162,8 @@
     "compete_invite_sent": "送信 {time}",
     "compete_round_label": "ラウンド {current} / {total}",
     "compete_play": "プレイ",
-    "compete_mode_rush": "Rush",
-    "compete_mode_relax": "Relax",
+    "compete_mode_rush": "ラッシュ",
+    "compete_mode_relax": "リラックス",
     "compete_completed": "完了",
     "compete_win": "勝",
     "compete_loss": "負",
@@ -197,9 +197,9 @@
     "round_label": "ラウンド {current} / {total}",
     "loading": "読み込み中...",
     "no_description": "説明はありません",
-    "timer_min_short": "{n}分 {s}秒",
+    "timer_min_short": "{n}分{s}秒",
     "timer_sec_short": "{n}秒",
-    "countdown_hm": "{h}時間 {m}分",
+    "countdown_hm": "{h}時間{m}分",
     "born_prefix": "生年:",
     "died_prefix": "没年:",
     "no_data_yet": "データなし",
@@ -240,10 +240,10 @@
     "invited": "招待済み",
     "no_players_yet": "まだプレイヤーがいません",
     "game_settings": "ゲーム設定",
-    "realtime": "RUSH",
-    "realtime_sub": "(Live Challenge)",
-    "turn_by_turn": "RELAX",
-    "turn_by_turn_sub": "(Own Pace)",
+    "realtime": "ラッシュ",
+    "realtime_sub": "(ライブチャレンジ)",
+    "turn_by_turn": "リラックス",
+    "turn_by_turn_sub": "(マイペース)",
     "max_time_per_turn": "1ゲーム最大時間",
     "1_day": "1日",
     "n_days": "{n}日",
@@ -262,7 +262,9 @@
     "timer_off": "オフ",
     "starting_soon": " · 開始間近",
     "back": "戻る",
-    "default_player_name": "プレイヤー"
+    "default_player_name": "プレイヤー",
+    "create_game": "ゲームの作成",
+    "join_game": "ゲームに参加する"
   },
   "compete_page": {
     "title": "マルチプレイヤーシンクゲーム",
@@ -497,7 +499,15 @@
     "badge_dim_year": "年",
     "badge_dim_combo": "コンボ",
     "clear_session_restart": "セッションをクリアして再起動",
-    "taking_too_long": "時間がかかりすぎていますか？"
+    "taking_too_long": "時間がかかりすぎていますか？",
+    "col_accuracy": "精度",
+    "best_round_pct": "ベストラウンド%",
+    "avg_yrs_off_label": "平均オフ年数",
+    "game_accuracy": "ゲーム精度 (全ラウンド)",
+    "region_oceania": "オセアニア",
+    "region_antarctica": "南極大陸",
+    "best_round_xp": "ベストラウンドXP",
+    "avg_km_away_label": "平均距離キロメートル"
   },
   "rank": {
     "rank_label": "ランク",
@@ -561,7 +571,9 @@
     "retry": "再試行",
     "no_results_today": "今日の結果はまだありません。",
     "accuracy_pct": "精度 %",
-    "unknown_player": "不明"
+    "unknown_player": "不明",
+    "clear_session_restart": "セッションをクリアして再起動する",
+    "taking_too_long": "時間がかかりすぎますか？"
   },
   "profile": {
     "accuracy_breakdown": "精度の内訳",
@@ -666,458 +678,458 @@
     "meta_title": "Grow With Us — Guess-History",
     "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
     "hero": {
-      "tagline": "TBD",
+      "tagline": "未定",
       "primary_cta": "Play Guess-History",
-      "secondary_cta": "Discover the Project"
+      "secondary_cta": "プロジェクトを発見する"
     },
     "mission": {
-      "title": "Mission",
+      "title": "使命",
       "topic_1": {
-        "title": "Why history matters",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "なぜ歴史が重要なのか",
+        "summary": "未定",
+        "detail": "未定"
       },
       "topic_2": {
-        "title": "Why current education fails",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "なぜ現在の教育は失敗するのか",
+        "summary": "未定",
+        "detail": "未定"
       },
       "topic_3": {
-        "title": "Why games can teach",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "なぜゲームが教えることができるのか",
+        "summary": "未定",
+        "detail": "未定"
       }
     },
     "problem": {
-      "title": "The Problem",
+      "title": "問題",
       "axis_1": {
-        "left_label": "Passive",
-        "right_label": "Discovery",
-        "detail": "TBD"
+        "left_label": "パッシブ",
+        "right_label": "発見",
+        "detail": "未定"
       },
       "axis_2": {
-        "left_label": "Memorization",
-        "right_label": "Curiosity",
-        "detail": "TBD"
+        "left_label": "暗記",
+        "right_label": "好奇心",
+        "detail": "未定"
       },
       "axis_3": {
-        "left_label": "Exams",
-        "right_label": "Exploration",
-        "detail": "TBD"
+        "left_label": "試験",
+        "right_label": "探検",
+        "detail": "未定"
       },
       "axis_4": {
         "left_label": "—",
-        "right_label": "Progression",
-        "detail": "TBD"
+        "right_label": "進行状況",
+        "detail": "未定"
       }
     },
     "vision": {
-      "title": "Vision",
+      "title": "ビジョン",
       "node_1": {
-        "label": "Today",
-        "detail": "TBD"
+        "label": "今日",
+        "detail": "未定"
       },
       "node_2": {
-        "label": "Daily history game",
-        "detail": "TBD"
+        "label": "毎日の歴史ゲーム",
+        "detail": "未定"
       },
       "node_3": {
-        "label": "Millions of players",
-        "detail": "TBD"
+        "label": "数百万人のプレイヤー",
+        "detail": "未定"
       },
       "node_4": {
-        "label": "Educational platform",
-        "detail": "TBD"
+        "label": "教育プラットフォーム",
+        "detail": "未定"
       },
       "node_5": {
-        "label": "Multiple guessing games",
-        "detail": "TBD"
+        "label": "複数の推測ゲーム",
+        "detail": "未定"
       },
       "node_6": {
-        "label": "Immersive historical experiences",
-        "detail": "TBD"
+        "label": "没入型の歴史体験",
+        "detail": "未定"
       },
       "node_7": {
         "label": "VR History",
-        "detail": "TBD"
+        "detail": "未定"
       },
-      "vr_disclaimer": "Long-term vision. Not funded. No schedule."
+      "vr_disclaimer": "長期的なビジョン。資金提供されていない。スケジュールはありません。"
     },
     "product": {
-      "title": "The Product",
-      "demo_label": "Try it",
+      "title": "製品",
+      "demo_label": "試してみてください",
       "feature_1": {
-        "title": "Embedded playable demo",
-        "desc": "TBD"
+        "title": "埋め込み型のプレイ可能なデモ",
+        "desc": "未定"
       },
       "feature_2": {
-        "title": "Screenshots",
-        "desc": "TBD"
+        "title": "スクリーンショット",
+        "desc": "未定"
       },
       "feature_3": {
-        "title": "Game modes",
-        "desc": "TBD"
+        "title": "ゲームモード",
+        "desc": "未定"
       },
       "feature_4": {
-        "title": "Progression",
-        "desc": "TBD"
+        "title": "進行状況",
+        "desc": "未定"
       },
       "feature_5": {
-        "title": "Learning",
-        "desc": "TBD"
+        "title": "学習",
+        "desc": "未定"
       },
       "feature_6": {
-        "title": "Leaderboards",
-        "desc": "TBD"
+        "title": "リーダーボード",
+        "desc": "未定"
       },
       "feature_7": {
-        "title": "Machine vs Human",
-        "desc": "TBD"
+        "title": "機械 vs 人間",
+        "desc": "未定"
       },
-      "roadmap_badge": "Roadmap"
+      "roadmap_badge": "ロードマップ"
     },
     "why_it_works": {
-      "title": "Why It Works",
+      "title": "なぜ機能するのか",
       "card_1": {
-        "title": "Daily habit",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "日々の習慣",
+        "summary": "未定",
+        "detail": "未定"
       },
       "card_2": {
-        "title": "XP progression",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "XPの進行",
+        "summary": "未定",
+        "detail": "未定"
       },
       "card_3": {
-        "title": "Level Up",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "レベルアップ",
+        "summary": "未定",
+        "detail": "未定"
       },
       "card_4": {
-        "title": "Competition",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "競争",
+        "summary": "未定",
+        "detail": "未定"
       },
       "card_5": {
-        "title": "Learning loop",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "学習ループ",
+        "summary": "未定",
+        "detail": "未定"
       },
       "card_6": {
-        "title": "Replayability",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "リプレイ性",
+        "summary": "未定",
+        "detail": "未定"
       },
       "card_7": {
-        "title": "Reveal explanations",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "説明を明らかにする",
+        "summary": "未定",
+        "detail": "未定"
       },
       "card_8": {
-        "title": "Historical context",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "歴史的背景",
+        "summary": "未定",
+        "detail": "未定"
       }
     },
     "market": {
-      "title": "Market Opportunity",
-      "intro": "TBD",
+      "title": "市場機会",
+      "intro": "未定",
       "sector_1": {
-        "name": "Gaming",
-        "description": "TBD"
+        "name": "ゲーム",
+        "description": "未定"
       },
       "sector_2": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "教育",
+        "description": "未定"
       },
       "sector_3": {
         "name": "AI",
-        "description": "TBD"
+        "description": "未定"
       },
       "sector_4": {
-        "name": "Culture",
-        "description": "TBD"
+        "name": "文化",
+        "description": "未定"
       },
       "sector_5": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "美術館・博物館",
+        "description": "未定"
       },
       "sector_6": {
-        "name": "Corporate Learning",
-        "description": "TBD"
+        "name": "企業学習",
+        "description": "未定"
       },
       "center_label": "Guess-History"
     },
     "business_model": {
-      "title": "Business Model",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "ビジネスモデル",
+      "current_title": "現在",
+      "future_title": "未来",
       "stream_1": {
-        "title": "Free Daily",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "毎日無料",
+        "summary": "未定",
+        "detail": "未定"
       },
       "stream_2": {
-        "title": "Premium",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "プレミアム",
+        "summary": "未定",
+        "detail": "未定"
       },
       "stream_3": {
-        "title": "Ads (non-intrusive)",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "広告 (非侵入型)",
+        "summary": "未定",
+        "detail": "未定"
       },
       "stream_4": {
-        "title": "Education",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "教育",
+        "summary": "未定",
+        "detail": "未定"
       },
       "stream_5": {
-        "title": "AI partnerships",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "AI パートナーシップ",
+        "summary": "未定",
+        "detail": "未定"
       },
       "stream_6": {
-        "title": "Corporate learning",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "企業学習",
+        "summary": "未定",
+        "detail": "未定"
       },
       "stream_7": {
-        "title": "White-label editions",
-        "summary": "TBD",
-        "detail": "TBD"
+        "title": "ホワイトレーベル版",
+        "summary": "未定",
+        "detail": "未定"
       },
-      "badge_future": "Future"
+      "badge_future": "未来"
     },
     "governance": {
-      "title": "Built for the Long Term",
-      "subtitle": "TBD",
-      "left_header": "Traditional startups optimize for",
-      "right_header": "Guess-History optimizes for",
-      "left_1": "Valuation",
-      "right_1": "Sustainability",
-      "left_2": "Funding",
-      "right_2": "Education",
-      "left_3": "Exit",
-      "right_3": "Innovation",
+      "title": "長期的に使用できるように構築",
+      "subtitle": "未定",
+      "left_header": "従来のスタートアップ企業が最適化するのは、",
+      "right_header": "Guess-History の最適化",
+      "left_1": "評価",
+      "right_1": "持続可能性",
+      "left_2": "資金調達",
+      "right_2": "教育",
+      "left_3": "終了",
+      "right_3": "イノベーション",
       "left_4": "—",
-      "right_4": "Contributors",
+      "right_4": "貢献者",
       "left_5": "—",
-      "right_5": "Reinvestment"
+      "right_5": "再投資"
     },
     "financial": {
-      "title": "Financial Model",
+      "title": "財務モデル",
       "flow_1": {
-        "label": "Revenue",
-        "detail": "TBD"
+        "label": "収益",
+        "detail": "未定"
       },
       "flow_2": {
-        "label": "Operating costs",
-        "detail": "TBD"
+        "label": "運営費",
+        "detail": "未定"
       },
       "flow_3": {
-        "label": "Fair compensation",
-        "detail": "TBD"
+        "label": "公正な報酬",
+        "detail": "未定"
       },
       "flow_4": {
-        "label": "Investor returns (capped)",
-        "detail": "TBD"
+        "label": "投資家利益（上限あり）",
+        "detail": "未定"
       },
       "flow_5": {
-        "label": "Strategic reserve",
-        "detail": "TBD"
+        "label": "戦略的予備軍",
+        "detail": "未定"
       },
       "flow_6": {
-        "label": "Reinvestment",
-        "detail": "TBD"
+        "label": "再投資",
+        "detail": "未定"
       },
       "flow_7": {
-        "label": "Future projects",
-        "detail": "TBD"
+        "label": "今後のプロジェクト",
+        "detail": "未定"
       },
-      "future_projects_title": "Future projects",
+      "future_projects_title": "今後のプロジェクト",
       "future_project_1": "Guess-History",
       "future_project_2": "VR History",
-      "future_project_3": "Guess Science",
-      "future_project_4": "Guess Art",
-      "future_project_5": "Guess Geography",
+      "future_project_3": "科学を推測する",
+      "future_project_4": "アートを推測する",
+      "future_project_5": "地理を推測する",
       "capped": {
-        "title": "Capped-Profit Model",
-        "purpose_1": "Avoid pressure for endless extraction.",
-        "purpose_2": "Support long-term development.",
-        "purpose_3": "Reward everyone fairly.",
-        "purpose_4": "Avoid maximizing dividends forever.",
-        "principle_1": "Maximum compensation ratio.",
-        "principle_2": "Investor return cap.",
-        "principle_3": "Reinvestment policy.",
-        "principle_4": "Mission-first governance."
+        "title": "利益上限モデル",
+        "purpose_1": "際限なく抽出するための圧力を避けてください。",
+        "purpose_2": "長期的な開発をサポートします。",
+        "purpose_3": "全員に公平に報酬を与えます。",
+        "purpose_4": "永久に配当を最大化することは避けてください。",
+        "principle_1": "最大補償率。",
+        "principle_2": "投資家へのリターンの上限。",
+        "principle_3": "再投資政策。",
+        "principle_4": "ミッションファーストのガバナンス。"
       }
     },
     "partnerships": {
-      "title": "Partnerships",
-      "current_title": "Current",
-      "future_title": "Future",
+      "title": "パートナーシップ",
+      "current_title": "現在",
+      "future_title": "未来",
       "opportunity_1": {
-        "name": "Education",
-        "description": "TBD"
+        "name": "教育",
+        "description": "未定"
       },
       "opportunity_2": {
-        "name": "AI research",
-        "description": "TBD"
+        "name": "AI研究",
+        "description": "未定"
       },
       "opportunity_3": {
-        "name": "Museums",
-        "description": "TBD"
+        "name": "美術館・博物館",
+        "description": "未定"
       },
       "opportunity_4": {
-        "name": "Archives",
-        "description": "TBD"
+        "name": "アーカイブ",
+        "description": "未定"
       },
       "opportunity_5": {
-        "name": "Corporate learning",
-        "description": "TBD"
+        "name": "企業学習",
+        "description": "未定"
       },
       "opportunity_6": {
-        "name": "Tourism",
-        "description": "TBD"
+        "name": "観光",
+        "description": "未定"
       },
       "opportunity_7": {
-        "name": "Publishers",
-        "description": "TBD"
+        "name": "出版社",
+        "description": "未定"
       },
-      "badge_future": "Future"
+      "badge_future": "未来"
     },
     "contributors": {
-      "title": "Contributors",
+      "title": "貢献者",
       "role_1": {
-        "name": "Developer",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Developer"
+        "name": "開発者",
+        "why": "未定",
+        "what": "未定",
+        "receive": "未定",
+        "cta": "開発者として応募する"
       },
       "role_2": {
-        "name": "Historian",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Historian"
+        "name": "歴史家",
+        "why": "未定",
+        "what": "未定",
+        "receive": "未定",
+        "cta": "歴史家として応募する"
       },
       "role_3": {
-        "name": "Creator",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as a Creator"
+        "name": "クリエイター",
+        "why": "未定",
+        "what": "未定",
+        "receive": "未定",
+        "cta": "クリエイターとして応募する"
       },
       "role_4": {
-        "name": "Investor",
-        "why": "TBD",
-        "what": "TBD",
-        "receive": "TBD",
-        "cta": "Apply as an Investor"
+        "name": "投資家",
+        "why": "未定",
+        "what": "未定",
+        "receive": "未定",
+        "cta": "投資家として申し込む"
       },
-      "incentive_1": "Public recognition",
-      "incentive_2": "Portfolio",
-      "incentive_3": "Founding status",
-      "incentive_4": "Equity (where applicable)",
-      "incentive_5": "Profit sharing",
-      "incentive_6": "Fair compensation",
-      "incentive_7": "Long-term participation",
-      "incentive_8": "Learning",
-      "incentive_9": "Community"
+      "incentive_1": "世間の認知度",
+      "incentive_2": "ポートフォリオ",
+      "incentive_3": "創業状況",
+      "incentive_4": "資本 (該当する場合)",
+      "incentive_5": "利益分配",
+      "incentive_6": "公正な報酬",
+      "incentive_7": "長期参加",
+      "incentive_8": "学習",
+      "incentive_9": "コミュニティ"
     },
     "roadmap": {
-      "title": "Roadmap",
-      "lane_1": "Completed",
-      "lane_2": "In progress",
-      "lane_3": "Next",
-      "lane_4": "Future",
+      "title": "ロードマップ",
+      "lane_1": "完了",
+      "lane_2": "進行中",
+      "lane_3": "次へ",
+      "lane_4": "未来",
       "item_1": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "未定",
+        "date": "未定",
+        "description": "未定"
       },
       "item_2": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "未定",
+        "date": "未定",
+        "description": "未定"
       },
       "item_3": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "未定",
+        "date": "未定",
+        "description": "未定"
       },
       "item_4": {
-        "title": "TBD",
-        "date": "TBD",
-        "description": "TBD"
+        "title": "未定",
+        "date": "未定",
+        "description": "未定"
       }
     },
     "risks": {
-      "title": "Risks",
+      "title": "リスク",
       "risk_1": {
-        "title": "Competition",
-        "mitigation": "TBD"
+        "title": "競争",
+        "mitigation": "未定"
       },
       "risk_2": {
-        "title": "AI limitations",
-        "mitigation": "TBD"
+        "title": "AIの限界",
+        "mitigation": "未定"
       },
       "risk_3": {
-        "title": "Funding",
-        "mitigation": "TBD"
+        "title": "資金調達",
+        "mitigation": "未定"
       },
       "risk_4": {
-        "title": "Small team",
-        "mitigation": "TBD"
+        "title": "小さなチーム",
+        "mitigation": "未定"
       },
       "risk_5": {
-        "title": "Execution risk",
-        "mitigation": "TBD"
+        "title": "実行リスク",
+        "mitigation": "未定"
       },
       "risk_6": {
-        "title": "Long development cycle",
-        "mitigation": "TBD"
+        "title": "長い開発サイクル",
+        "mitigation": "未定"
       }
     },
     "faq": {
-      "title": "Frequently Asked Questions",
-      "q_1": "Why AI?",
-      "a_1": "TBD",
-      "q_2": "Why not Kickstarter?",
-      "a_2": "TBD",
-      "q_3": "How will money be used?",
-      "a_3": "TBD",
-      "q_4": "Why capped profit?",
-      "a_4": "TBD",
-      "q_5": "How can I help?",
-      "a_5": "TBD",
-      "q_6": "Can museums participate?",
-      "a_6": "TBD",
-      "q_7": "How do investors work?",
-      "a_7": "TBD"
+      "title": "よくある質問",
+      "q_1": "なぜ AI なのか?",
+      "a_1": "未定",
+      "q_2": "なぜキックスターターではないのでしょうか？",
+      "a_2": "未定",
+      "q_3": "お金はどのように使われるのでしょうか？",
+      "a_3": "未定",
+      "q_4": "なぜ利益に上限を設けるのか？",
+      "a_4": "未定",
+      "q_5": "どうすれば助けられますか?",
+      "a_5": "未定",
+      "q_6": "博物館も参加できますか？",
+      "a_6": "未定",
+      "q_7": "投資家はどのように働くのでしょうか？",
+      "a_7": "未定"
     },
     "cta": {
-      "headline": "Join us in building the future of historical discovery.",
+      "headline": "歴史発見の未来を構築することに参加してください。",
       "button_1": {
-        "label": "Play"
+        "label": "遊ぶ"
       },
       "button_2": {
-        "label": "Contribute"
+        "label": "貢献する"
       },
       "button_3": {
-        "label": "Partner"
+        "label": "パートナー"
       },
       "button_4": {
-        "label": "Register Interest"
+        "label": "興味を登録する"
       }
     },
     "footer": {
-      "sources": "Sources",
-      "references": "References",
-      "legal": "Legal disclaimer",
-      "privacy": "Privacy"
+      "sources": "情報源",
+      "references": "参考文献",
+      "legal": "法的免責事項",
+      "privacy": "プライバシー"
     }
   }
 }
