@@ -242,7 +242,7 @@
   height: 28px;
   border-radius: 14px;
   border: none;
-  background: var(--toggle-bg, rgba(255, 255, 255, 0.15));
+  background: var(--toggle-bg, var(--gh-bg-surface));
   cursor: pointer;
   position: relative;
   transition: background 0.2s;

@@ -14,7 +14,7 @@
 
 .primary {
   background: var(--gh-orange);
-  color: var(--gh-text-on-accent);
+  color: var(--gh-btn-text);
 }
 
 .secondary {

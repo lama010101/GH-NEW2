@@ -12,3 +12,22 @@
     background-image: url(/mobile-home_background.webp);
   }
 }
+
+.heroText {
+  color: var(--gh-text-primary);
+}
+
+.heroDescription {
+  color: var(--gh-text-secondary);
+}
+
+.heroMuted {
+  color: var(--gh-text-muted);
+}
+
+[data-theme="light"] .heroText,
+[data-theme="light"] .heroDescription,
+[data-theme="light"] .heroMuted {
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}

@@ -34,22 +34,21 @@ export default async function LandingPage() {
       {/* Hero */}
       <section className="flex flex-col items-center text-center max-w-2xl gap-6" style={{ position: 'relative', zIndex: 2 }}>
         <p
-          className="text-xl sm:text-2xl"
-          style={{ fontFamily: 'var(--font-sora), sans-serif', color: 'var(--gh-text-primary)' }}
+          className={`text-xl sm:text-2xl ${styles.heroText}`}
+          style={{ fontFamily: 'var(--font-sora), sans-serif' }}
         >
           {t('tagline')}
         </p>
 
         <p
-          className="text-base sm:text-lg max-w-xl"
-          style={{ color: 'var(--gh-text-secondary)' }}
+          className={`text-base sm:text-lg max-w-xl ${styles.heroDescription}`}
         >
           {t('hero_description')}
         </p>
 
         {/* Waitlist capture */}
         <div className="flex flex-col items-center gap-2 mt-4 w-full">
-          <p className="text-sm" style={{ color: 'var(--gh-text-muted)' }}>
+          <p className={`text-sm ${styles.heroMuted}`}>
             {t('waitlist_prompt')}
           </p>
           <WaitlistForm />

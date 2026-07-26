@@ -110,7 +110,7 @@ export default function CompeteEntryPage() {
           <div className="row">
             <button
               type="button"
-              className={mode === "create" ? "button" : "button secondary"}
+              className={`${btnStyles.btn} ${mode === "create" ? btnStyles.primary : btnStyles.secondary}`}
               onClick={() => {
                 setMode("create");
                 setError(null);
@@ -121,7 +121,7 @@ export default function CompeteEntryPage() {
             </button>
             <button
               type="button"
-              className={mode === "join" ? "button" : "button secondary"}
+              className={`${btnStyles.btn} ${mode === "join" ? btnStyles.primary : btnStyles.secondary}`}
               onClick={() => {
                 setMode("join");
                 setError(null);

@@ -55,3 +55,12 @@
   font-weight: 500;
   letter-spacing: 0.01em;
 }
+
+[data-theme="light"] .loadingLabel {
+  color: #ffffff;
+}
+
+[data-theme="light"] .loadingSpinner {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: var(--gh-teal);
+}

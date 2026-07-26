@@ -121,9 +121,9 @@ export default function DailyEntryPage() {
             onClick={() => router.push("/home")}
             style={{
               background: "transparent",
-              border: "1px solid rgba(255,255,255,0.3)",
+              border: "1px solid var(--gh-border-medium)",
               borderRadius: "8px",
-              color: "white",
+              color: "var(--gh-text-primary)",
               padding: "8px 16px",
               cursor: "pointer",
               fontSize: "var(--font-sm)",
@@ -137,14 +137,14 @@ export default function DailyEntryPage() {
             <button
               type="button"
               onClick={handleIdentityRetry}
-              style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.22)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
+              style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'var(--gh-bg-surface)', color: 'var(--gh-text-primary)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
             >
               {t('game.retry')}
             </button>
             <button
               type="button"
               onClick={handleForceClear}
-              style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,100,100,0.3)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
+              style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'var(--gh-bg-surface)', color: 'var(--gh-danger)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
             >
               {t('game.clear_session_restart')}
             </button>

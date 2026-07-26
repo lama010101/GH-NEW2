@@ -266,10 +266,12 @@
   color: #ffffff;
 }
 
-[data-theme="light"] .cardTitleLeft {
+[data-theme="light"] .loadingIndicator {
   color: #ffffff;
 }
 
+[data-theme="light"] .cardTitleLeft,
 [data-theme="light"] .cardDescLeft {
-  color: rgba(255, 255, 255, 0.75);
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }

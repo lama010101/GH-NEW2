@@ -607,7 +607,7 @@ export default function CompeteGamePage() {
               <button
                 type="button"
                 onClick={handleIdentityRetry}
-                className={btnStyles.button}
+                className={`${btnStyles.btn} ${btnStyles.primary}`}
                 style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999 }}
               >
                 {t('game.retry')}
@@ -615,8 +615,8 @@ export default function CompeteGamePage() {
               <button
                 type="button"
                 onClick={handleForceClear}
-                className={btnStyles.button}
-                style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, background: 'rgba(255,100,100,0.3)' }}
+                className={`${btnStyles.btn} ${btnStyles.primary}`}
+                style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, background: 'var(--gh-danger)' }}
               >
                 {t('game.clear_session_restart')}
               </button>
@@ -628,8 +628,8 @@ export default function CompeteGamePage() {
               <button
                 type="button"
                 onClick={handleForceClear}
-                className={btnStyles.button}
-                style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, background: 'rgba(255,100,100,0.3)' }}
+                className={`${btnStyles.btn} ${btnStyles.primary}`}
+                style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, background: 'var(--gh-danger)' }}
               >
                 {t('game.clear_session_restart')}
               </button>

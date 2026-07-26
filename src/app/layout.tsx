@@ -18,7 +18,7 @@ import "./globals.css";
  * no flash. localStorage is the client override source; cookie is the SSR
  * source of truth. Single write path for client mutation lives in useTheme.
  */
-const THEME_INIT_SCRIPT = `(function(){try{var k='gh_theme';var ls=localStorage.getItem(k);if(ls==='light'||ls==='dark'){document.documentElement.setAttribute('data-theme',ls);}}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var k='gh_theme';var ls=localStorage.getItem(k);if(ls==='light'||ls==='dark'){document.documentElement.setAttribute('data-theme',ls);document.documentElement.classList.toggle('dark',ls==='dark');}}catch(e){}})();`;
 
 const bebasNeue = Bebas_Neue({
   subsets: ['latin'],
@@ -74,7 +74,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       dir={rtlLocales.has(locale) ? 'rtl' : 'ltr'}
       data-theme={theme}
       suppressHydrationWarning
-      className={`${bebasNeue.variable} ${dmSans.variable} ${sora.variable}`}
+      className={`${bebasNeue.variable} ${dmSans.variable} ${sora.variable}${theme === 'dark' ? ' dark' : ''}`}
     >
       <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>

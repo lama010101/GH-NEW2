@@ -277,14 +277,14 @@ function HomePageInner() {
           <button
             type="button"
             onClick={handleRetry}
-            style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.22)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
+            style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'var(--gh-bg-surface)', color: 'var(--gh-text-primary)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
           >
             {t('game.retry')}
           </button>
           <button
             type="button"
             onClick={handleForceClear}
-            style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'rgba(255,100,100,0.3)', color: 'var(--gh-text-primary, #fff)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
+            style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, border: 'none', background: 'var(--gh-bg-surface)', color: 'var(--gh-danger)', fontSize: 'var(--font-base)', cursor: 'pointer' }}
           >
             {t('game.clear_session_restart')}
           </button>

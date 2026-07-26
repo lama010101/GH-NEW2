@@ -74,9 +74,9 @@ export function WaitlistForm() {
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="px-6 py-3 rounded-lg font-semibold text-[var(--gh-btn-text)] transition-opacity disabled:opacity-50"
+        className="px-6 py-3 rounded-lg font-semibold text-[var(--gh-btn-action-text)] transition-opacity disabled:opacity-50"
         style={{
-          background: 'linear-gradient(135deg, #0369a1 0%, #0891b2 40%, #22d3ee 100%)',
+          background: 'var(--gh-btn-action-bg)',
         }}
       >
         {status === 'submitting' ? t('waitlist_submitting') : t('waitlist_submit')}

@@ -32,6 +32,7 @@ function readLocalTheme(): Theme | null {
 function applyTheme(theme: Theme) {
   if (typeof document === 'undefined') return;
   document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.classList.toggle('dark', theme === 'dark');
 }
 
 function persistTheme(theme: Theme) {

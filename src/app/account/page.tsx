@@ -303,7 +303,7 @@ export default function AccountPage() {
               onClick={() => setSoundEnabled(!soundEnabled)}
               className={styles.toggle}
               style={{
-                '--toggle-bg': soundEnabled ? 'var(--gh-orange)' : 'rgba(255, 255, 255, 0.15)',
+                '--toggle-bg': soundEnabled ? 'var(--gh-orange)' : 'var(--gh-bg-surface)',
                 '--toggle-left': soundEnabled ? '22px' : '2px',
               } as React.CSSProperties}
             >
@@ -318,7 +318,7 @@ export default function AccountPage() {
               onClick={() => setVibrateEnabled(!vibrateEnabled)}
               className={styles.toggle}
               style={{
-                '--toggle-bg': vibrateEnabled ? 'var(--gh-orange)' : 'rgba(255, 255, 255, 0.15)',
+                '--toggle-bg': vibrateEnabled ? 'var(--gh-orange)' : 'var(--gh-text-muted)',
                 '--toggle-left': vibrateEnabled ? '22px' : '2px',
               } as React.CSSProperties}
             >

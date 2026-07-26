@@ -267,7 +267,7 @@ export default function ProfilePage() {
         {/* Avatar with gradient border */}
         <div className="relative mb-4">
           <div
-            className="w-[110px] h-[110px] rounded-full p-[3px] bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center cursor-pointer"
+            className="w-[110px] h-[110px] rounded-full p-[3px] bg-gradient-to-br from-[var(--gh-orange)] to-[var(--gh-gold)] flex items-center justify-center cursor-pointer"
             onClick={handleAvatarClick}
           >
             {profileData.avatarUrl ? (
@@ -293,7 +293,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Username */}
-        <h2 className={`font-bebas text-xl font-bold mb-1 bg-gradient-to-r from-pink-300 to-yellow-300 bg-clip-text text-transparent`}>
+        <h2 className={`font-bebas text-xl font-bold mb-1 bg-gradient-to-r from-[var(--gh-orange)] to-[var(--gh-gold)] bg-clip-text text-transparent`}>
           {profileData.displayName ?? ''}
         </h2>
 
@@ -510,7 +510,7 @@ export default function ProfilePage() {
             {/* Daily */}
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--gh-text-secondary)]">Daily (all-time)</span>
-              <span className={`font-bebas text-sm font-bold text-blue-400`}>
+              <span className={`font-bebas text-sm font-bold text-[var(--gh-blue)]`}>
                 {profileData.dailyAvgAccuracy === null
                   ? '—'
                   : `${Math.round(Number(profileData.dailyAvgAccuracy))} · ${profileData.dailyGamesPlayed ?? 0} games`}
