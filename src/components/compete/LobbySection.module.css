@@ -129,6 +129,7 @@
   justify-content: flex-start;
   gap: 8px;
 }
+.lobby-subsection-header .lobbyHelpBtn { margin-left: 0; }
 .lobby-subsection-title {
   font-size: var(--font-base);
   font-weight: 600;
@@ -710,7 +711,17 @@
 
 /* ── Utility classes (settings sliders) ── */
 .lobbyRowWrap {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+.lobbyRowWrap .lobby-setting-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.lobbyRowWrap .lobbyRowLeftWrap {
+  flex-wrap: nowrap;
 }
 .lobbyRowLeft {
   display: flex;
@@ -1034,10 +1045,10 @@
 .lobbyHostInline { font-size: 12px; /* layout-constrained — do not tokenize */ font-weight: 600; color: var(--gh-gold); }
 .lobbyRosterEmpty { padding: 20px; text-align: center; font-size: var(--font-xs); color: var(--gh-text-muted); }
 .lobbyTabRow { display: flex; gap: 6px; margin-bottom: 16px; background: var(--gh-glass-bg); border-radius: 12px; padding: 4px; }
-.lobbyTabBtn { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px 0; border-radius: 9px; border: none; cursor: pointer; color: var(--gh-text-secondary); background: transparent; transition: background 0.18s, color 0.18s; }
-.lobbyTabBtnActive { background: rgba(var(--gh-orange-rgb), 0.18); color: var(--gh-orange); border: 1px solid rgba(var(--gh-orange-rgb), 0.35); }
+.lobbyTabBtn { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px 0; border-radius: 9px; border: none; cursor: pointer; color: var(--gh-text-secondary); background: transparent; transition: background 0.18s, color 0.18s, box-shadow 0.18s; }
+.lobbyTabBtnActive { background: var(--gh-orange); color: var(--gh-text-primary); box-shadow: 0 6px 22px rgba(var(--gh-orange-rgb), 0.35); }
 .lobbyTabBtn:disabled { opacity: 0.45; cursor: not-allowed; }
-.lobbyTabContent { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; }
+.lobbyTabContent { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
 .lobbyTabIcon { flex-shrink: 0; color: currentColor; }
 .lobbyTabText { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; min-width: 0; }
 .lobbyTabMain { font-size: var(--font-xs); font-weight: 700; letter-spacing: 0.2px; color: currentColor; }
@@ -1103,6 +1114,11 @@
   background: var(--gh-border-medium);
   border-radius: 1px;
   transform: translate(-50%, -50%);
+}
+.lobbyRushTimerWrap .slider-tick {
+  background: var(--gh-text-primary);
+  opacity: 0.7;
+  height: 8px;
 }
 
 /* ── Collapsible era/region presets ── */
