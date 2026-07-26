@@ -661,7 +661,7 @@ export default function LobbySection({
               disabled={!isHost || busy}
             >
               <span className={styles['lobbyTabContent']}>
-                <span className={styles['lobbyTabIconDisk']}><Leaf size={18} className={styles['lobbyTabIcon']} /></span>
+                <Leaf size={18} className={styles['lobbyTabIcon']} />
                 <span className={styles['lobbyTabText']}>
                   <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
                   <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
@@ -674,7 +674,7 @@ export default function LobbySection({
               disabled={!isHost || busy}
             >
               <span className={styles['lobbyTabContent']}>
-                <span className={styles['lobbyTabIconDisk']}><Zap size={18} className={styles['lobbyTabIcon']} /></span>
+                <Zap size={18} className={styles['lobbyTabIcon']} />
                 <span className={styles['lobbyTabText']}>
                   <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
                   <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
@@ -685,7 +685,7 @@ export default function LobbySection({
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> Results</span>
+              <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> Round</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
