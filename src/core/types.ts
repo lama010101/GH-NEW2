@@ -73,6 +73,9 @@ export type PlayerRoundResult = {
   guessYear: number | null;
   guessLat: number | null;
   guessLng: number | null;
+  distanceKm: number | null;
+  yearDiff: number | null;
+  region: string | null;
   rank: number;
   badges: Badge[];
   nearMisses: Array<{ dimension: BadgeDimension; accuracy: number }>;
@@ -85,6 +88,7 @@ export type RoundEventContent = {
   latitude: number;
   longitude: number;
   locationName: string | null;
+  region?: string | null;
   imageUrl: string | null;
   description: string | null;
   hints: EventHint[];
