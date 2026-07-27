@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useState, useRef, useEffect, useCallback, useTransition, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from 'next-intl';
+import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit } from "@/lib/distance";
 import { YearPicker } from "@/components/YearPicker";
 import NotificationBell from "@/components/NotificationBell";
 import { setLocale } from "@/actions/setLocale";
@@ -91,6 +92,7 @@ export default function RoundActiveSection({
     }
     return true;
   });
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(() => getDistanceUnitPreference());
   const [submittedToasts, setSubmittedToasts] = useState<Record<string, boolean>>({});
   const toastTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [guessHint, setGuessHint] = useState<string | null>(null);
@@ -389,6 +391,10 @@ export default function RoundActiveSection({
   useEffect(() => {
     localStorage.setItem('gh_vibrate', String(vibrateEnabled));
   }, [vibrateEnabled]);
+
+  useEffect(() => {
+    setDistanceUnitPreference(distanceUnit);
+  }, [distanceUnit]);
 
   // Watch for opponent submissions and show toasts
   useEffect(() => {
@@ -1206,26 +1212,24 @@ export default function RoundActiveSection({
               <ThemeToggle />
             </div>
 
-            <div className={styles.settingsDivider} />
+            <div className={styles.settingsLanguageRow}>
+              <span className={styles.settingsLanguageLabel}>{t('distance_unit')}</span>
+              <div className={styles.settingsLanguageToggle} role="group" aria-label={t('distance_unit')}>
+                {(['km','mi'] as const).map((unit) => (
+                  <button
+                    key={unit}
+                    type="button"
+                    onClick={() => setDistanceUnit(unit)}
+                    className={`${styles.settingsLanguageOption} ${distanceUnit === unit ? styles.settingsLanguageOptionActive : ''}`}
+                    aria-pressed={distanceUnit === unit}
+                  >
+                    {unit}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setImgError(false);
-                setImgRetryKey((k) => k + 1);
-                setSettingsModalOpen(false);
-              }}
-              className={styles.settingsRefreshBtn}
-            >
-              <span className={styles.settingsRefreshIcon}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10" />
-                  <polyline points="1 20 1 14 7 14" />
-                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                </svg>
-              </span>
-              {t('refresh')}
-            </button>
+            <div className={styles.settingsDivider} />
 
             <button
               type="button"

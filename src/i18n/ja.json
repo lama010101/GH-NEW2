@@ -6,7 +6,7 @@
     "friends": "フレンド",
     "leaderboard": "ランキング",
     "profile_stats": "プロフィールと統計",
-    "account": "アカウント",
+    "account": "アカウントと設定",
     "grow": "成長",
     "help": "ヘルプ",
     "sign_out": "ログアウト",
@@ -301,6 +301,7 @@
   "game": {
     "sound": "サウンド",
     "vibrate": "バイブレーション",
+    "distance_unit": "距離の単位",
     "settings": "設定",
     "submit": "送信",
     "hint_select_both": "まず {where} と {when} を選択してください",

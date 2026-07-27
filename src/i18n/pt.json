@@ -6,7 +6,7 @@
     "friends": "Amigos",
     "leaderboard": "Ranking",
     "profile_stats": "Perfil e Estatísticas",
-    "account": "Conta",
+    "account": "Conta e Configurações",
     "grow": "Crescer",
     "help": "Ajuda",
     "sign_out": "Sair",
@@ -301,6 +301,7 @@
   "game": {
     "sound": "Som",
     "vibrate": "Vibração",
+    "distance_unit": "Unidade de distância",
     "settings": "Configurações",
     "submit": "Enviar",
     "hint_select_both": "Selecione {where} e {when} primeiro",
