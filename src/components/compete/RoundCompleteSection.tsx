@@ -16,6 +16,7 @@ import { setLocale } from "@/actions/setLocale";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
+import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
 
@@ -89,6 +90,7 @@ export default function RoundCompleteSection({
 }: RoundCompleteSectionProps) {
   const t = useTranslations('game');
   const tNav = useTranslations('nav');
+  const distanceUnit = getDistanceUnitPreference();
 
   const isPractice = snapshot.config.mode === "practice";
   const isAsync = snapshot.config.mode === "async";
@@ -583,7 +585,7 @@ export default function RoundCompleteSection({
                 }
                 if (whereWhenTab === 'where') {
                   return myDistanceKm != null
-                    ? <span className={styles.breakSub}>{t('km_away', { n: Math.round(myDistanceKm) })}</span>
+                    ? <span className={styles.breakSub}>{t('km_away', { distance: formatDistance(myDistanceKm, distanceUnit) })}</span>
                     : null;
                 }
                 const gy = myResult.guessYear;
@@ -651,7 +653,7 @@ export default function RoundCompleteSection({
                     const meta = hint.metadata as { km?: number; years?: number | string } | null;
                     let revealedText = hint.content;
                     if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
-                      revealedText = `${hint.content} — ${t('km_away_short', { n: meta.km })}`;
+                      revealedText = `${hint.content} — ${t('km_away_short', { distance: formatDistance(meta.km, distanceUnit) })}`;
                     } else if (hint.type === "when" && (hint.tier === 2 || hint.tier === 4) && meta?.years != null) {
                       revealedText = `${hint.content} — ${t('years_off_short', { n: meta.years })}`;
                     }

@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useTranslations } from 'next-intl';
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
+import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import InlineImageBadge from './InlineImageBadge';
@@ -65,6 +66,7 @@ export default function WhereCard({
   isPractice = false,
 }: WhereCardProps) {
   const t = useTranslations('game');
+  const distanceUnit = getDistanceUnitPreference();
   const myResult = roundResults?.find(r => r.playerId === playerId);
 
   return (
@@ -142,7 +144,7 @@ export default function WhereCard({
         if (myDistanceKm != null) {
           return (
             <div className={styles.distanceWrap}>
-              <span className={styles.distanceText}>{t('km_away', { n: Math.round(myDistanceKm) })}</span>
+              <span className={styles.distanceText}>{t('km_away', { distance: formatDistance(myDistanceKm, distanceUnit) })}</span>
             </div>
           );
         }
@@ -232,7 +234,7 @@ export default function WhereCard({
                       {r.playerId === playerId && <span className={styles.lbYouTag}>({t('you')})</span>}
                     </span>
                     <span className={styles.lbDistance}>
-                      {distanceKm != null ? t('km_away', { n: Math.round(distanceKm) }) : "—"}
+                      {distanceKm != null ? t('km_away', { distance: formatDistance(distanceKm, distanceUnit) }) : "—"}
                     </span>
                     {locationAcc != null && (
                       <span className={styles.lbAccPill}>

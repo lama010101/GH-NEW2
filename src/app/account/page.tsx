@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useIdentity } from '@/hooks/useIdentity'
 import { signOut, updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity'
+import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit } from '@/lib/distance'
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
@@ -56,6 +57,9 @@ export default function AccountPage() {
     }
     return true
   })
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(() => {
+    return typeof window !== 'undefined' ? getDistanceUnitPreference() : 'km'
+  })
 
   // Persist sound/vibrate settings to localStorage (same keys as in-game settings)
   useEffect(() => {
@@ -65,6 +69,10 @@ export default function AccountPage() {
   useEffect(() => {
     localStorage.setItem('gh_vibrate', String(vibrateEnabled))
   }, [vibrateEnabled])
+
+  useEffect(() => {
+    setDistanceUnitPreference(distanceUnit)
+  }, [distanceUnit])
 
   // Fetch email/createdAt directly from readSession()
   // independently of useIdentity's isLoading — under cross-user sign-in,
@@ -324,6 +332,31 @@ export default function AccountPage() {
             >
               <div className={styles.toggleKnob} />
             </button>
+          </div>
+
+          <div className={styles.toggleRow}>
+            <span className={styles.toggleLabel}>{t('distance_unit')}</span>
+            <div
+              className="flex rounded-lg border border-[var(--gh-border-default)] overflow-hidden"
+              role="group"
+              aria-label={t('distance_unit')}
+            >
+              {(['km', 'mi'] as DistanceUnit[]).map((unit) => (
+                <button
+                  key={unit}
+                  type="button"
+                  onClick={() => setDistanceUnit(unit)}
+                  aria-pressed={distanceUnit === unit}
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    distanceUnit === unit
+                      ? 'bg-[var(--gh-orange)] text-white'
+                      : 'bg-transparent text-[var(--gh-text-secondary)] hover:text-[var(--gh-text-primary)]'
+                  }`}
+                >
+                  {unit}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className={styles.toggleRow}>
