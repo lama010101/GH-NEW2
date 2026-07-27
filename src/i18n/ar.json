@@ -6,7 +6,7 @@
     "friends": "الأصدقاء",
     "leaderboard": "لوحة المتصدرين",
     "profile_stats": "الملف والإحصائيات",
-    "account": "الحساب",
+    "account": "الحساب والإعدادات",
     "grow": "نمو",
     "help": "المساعدة",
     "sign_out": "تسجيل الخروج",
@@ -301,6 +301,7 @@
   "game": {
     "sound": "الصوت",
     "vibrate": "الاهتزاز",
+    "distance_unit": "وحدة المسافة",
     "settings": "الإعدادات",
     "submit": "إرسال",
     "hint_select_both": "اختر {where} و{when} أولاً",

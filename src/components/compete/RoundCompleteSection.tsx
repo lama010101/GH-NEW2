@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from 'next-intl';
+import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit } from "@/lib/distance";
 import RainbowRing from "@/components/compete/RainbowRing";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereCard from "@/components/compete/WhereCard";
@@ -123,6 +124,7 @@ export default function RoundCompleteSection({
     }
     return true;
   });
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(() => getDistanceUnitPreference());
   const [localePending, startLocaleTransition] = useTransition();
 
   // Scroll round results to top whenever they become visible.
@@ -198,6 +200,10 @@ export default function RoundCompleteSection({
   useEffect(() => {
     localStorage.setItem('gh_vibrate', String(vibrateEnabled));
   }, [vibrateEnabled]);
+
+  useEffect(() => {
+    setDistanceUnitPreference(distanceUnit);
+  }, [distanceUnit]);
 
   return (
     <div className={styles.container} data-testid="round-complete-section" data-status={snapshot.status} data-round-index={snapshot.currentRoundIndex}>
@@ -831,6 +837,23 @@ export default function RoundCompleteSection({
             <div className={activeStyles.settingsLanguageRow}>
               <span className={activeStyles.settingsLanguageLabel}>{tNav('theme')}</span>
               <ThemeToggle />
+            </div>
+
+            <div className={activeStyles.settingsLanguageRow}>
+              <span className={activeStyles.settingsLanguageLabel}>{t('distance_unit')}</span>
+              <div className={activeStyles.settingsLanguageToggle} role="group" aria-label={t('distance_unit')}>
+                {(['km','mi'] as const).map((unit) => (
+                  <button
+                    key={unit}
+                    type="button"
+                    onClick={() => setDistanceUnit(unit)}
+                    className={`${activeStyles.settingsLanguageOption} ${distanceUnit === unit ? activeStyles.settingsLanguageOptionActive : ''}`}
+                    aria-pressed={distanceUnit === unit}
+                  >
+                    {unit}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className={activeStyles.settingsDivider} />
