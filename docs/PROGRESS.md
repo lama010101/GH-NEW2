@@ -1,4 +1,4 @@
-﻿# GUESS-HISTORY — Implementation Progress
+# GUESS-HISTORY — Implementation Progress
 
 ## Format
 
