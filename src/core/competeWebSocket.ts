@@ -41,6 +41,7 @@ export class CompeteWebSocket {
   private lastAppliedSnapshotVersion = -1;
   private pendingVersionReset = false;
   private lastPongReceived = 0;
+  private static activeSockets = new Map<string, CompeteWebSocket>();
 
   constructor(
     gameId: string,
@@ -76,6 +77,7 @@ export class CompeteWebSocket {
 
     this.ws.onopen = () => {
       console.log("[CompeteWebSocket] Connected");
+      CompeteWebSocket.activeSockets.set(this.gameId, this);
       this.reconnectAttempts = 0;
       this.manuallyDisconnected = false;
       this.lastPongReceived = Date.now();
@@ -130,6 +132,9 @@ export class CompeteWebSocket {
     if (this.ws) {
       this.ws.close();
       this.ws = null;
+    }
+    if (CompeteWebSocket.activeSockets.get(this.gameId) === this) {
+      CompeteWebSocket.activeSockets.delete(this.gameId);
     }
   }
 
@@ -303,6 +308,19 @@ export class CompeteWebSocket {
 
   cancelInvite(inviteeId: string): void {
     this.send({ type: "CANCEL_INVITE", playerId: this.playerId, inviteeId });
+  }
+
+  syncInvites(): void {
+    this.send({ type: "SYNC_INVITES", playerId: this.playerId });
+  }
+
+  static syncInvites(gameId: string): void {
+    const socket = CompeteWebSocket.activeSockets.get(gameId);
+    if (socket) {
+      socket.syncInvites();
+    } else {
+      console.warn("[CompeteWebSocket] No active socket for game, cannot sync invites:", gameId);
+    }
   }
 
   submitGuess(
