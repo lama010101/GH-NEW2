@@ -760,8 +760,6 @@ function buildAsyncPlayerSnapshotFromBase(
       const comboAccuracy = Math.min(locationAccuracy, yearAccuracy);
       const badges = calculateBadges({ yearAccuracy, locationAccuracy, comboAccuracy });
       const nearMisses = evaluateNearMisses(yearAccuracy, locationAccuracy, comboAccuracy, badges);
-      const eventId = eventIds[row.roundIndex];
-      const ev = eventId ? eventContentMap.get(eventId) : undefined;
       byRound.set(row.roundIndex, {
         score: row.score,
         accuracy,
@@ -775,7 +773,7 @@ function buildAsyncPlayerSnapshotFromBase(
         guessLng: row.guessLng,
         distanceKm: row.distanceKm,
         yearDiff: row.yearDiff,
-        region: ev?.region ?? null,
+        region: null,
         rank: 0,
         badges,
         nearMisses,
@@ -832,7 +830,7 @@ function buildAsyncPlayerSnapshotFromBase(
       latitude: revealAnswer ? ev?.latitude ?? 0 : hiddenAnswerValue,
       longitude: revealAnswer ? ev?.longitude ?? 0 : hiddenAnswerValue,
       locationName: revealAnswer ? ev?.locationName ?? null : null,
-      region: ev?.region ?? null,
+      region: revealAnswer ? ev?.region ?? null : null,
       imageUrl: revealContent ? (ev?.imageUrl ?? null) : null,
       description: revealContent ? (ev?.description ?? null) : null,
       hints: revealContent ? (ev?.hints ?? []) : [],
@@ -1055,6 +1053,7 @@ function buildAsyncBaseSnapshot(gameState: ReconstructedGameState): CompeteSessi
     latitude: hiddenAnswerValue,
     longitude: hiddenAnswerValue,
     locationName: null,
+    region: null,
     imageUrl: null,
     description: null,
     hints: [],
