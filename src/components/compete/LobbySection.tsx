@@ -1322,7 +1322,18 @@ export default function LobbySection({
               })}
               {(snapshot.pendingInvitees ?? []).map((p) => (
                 <div key={p.playerId} className={styles['lobbyRosterRow']}>
-                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
+                  <div className={styles['lobbyAvatarWrap']}>
+                    <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
+                    <button
+                      className={styles['lobbyStarBtn']}
+                      onClick={() => toggleFollow(p.playerId)}
+                      aria-label={followedIds.has(p.playerId) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
+                    >
+                      <span style={{ color: followedIds.has(p.playerId) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
+                        {followedIds.has(p.playerId) ? '★' : '☆'}
+                      </span>
+                    </button>
+                  </div>
                   <div className={styles['lobbyRosterMeta']}>
                     <span className={styles['lobbyRosterName']}>{p.displayName}</span>
                   </div>
