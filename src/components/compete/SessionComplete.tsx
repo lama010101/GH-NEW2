@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from 'next-intl';
 import RainbowRing from "@/components/compete/RainbowRing";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
@@ -43,12 +43,37 @@ export default function SessionComplete({
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [totalXp, setTotalXp] = useState<number | null>(null);
 
-  // Scroll final results to top once the round data is loaded.
+  // For async (Relax), derive final stats from the live snapshot rounds; for sync/
+  // daily/practice, keep the REST allRoundResults fallback unchanged.
+  const isAsyncResults = snapshot.config.mode === "async";
+  const effectiveResults = useMemo<AllRoundResult[]>(() => {
+    if (isAsyncResults) {
+      return snapshot.rounds.flatMap((round, roundIndex) =>
+        Object.entries(round.playerRoundResults ?? {})
+          .map(([playerId, r]) => ({
+            playerId,
+            roundIndex,
+            score: r.score,
+            rank: r.rank,
+            distanceKm: r.distanceKm,
+            yearDiff: r.yearDiff,
+            locationScore: r.locationScore,
+            timeScore: r.timeScore,
+            didSubmit: r.didSubmit,
+            region: r.region ?? round.region ?? null,
+          }))
+          .filter((r) => r.didSubmit)
+      );
+    }
+    return allRoundResults ?? [];
+  }, [isAsyncResults, snapshot.rounds, allRoundResults]);
+
+  // Scroll final results to top once the session reaches completion.
   useEffect(() => {
-    if (allRoundResults) {
+    if (snapshot?.status === "SESSION_COMPLETE") {
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
-  }, [allRoundResults]);
+  }, [snapshot?.status]);
 
   // Fetch viewer's global total XP for the rank title progress card
   // (single source of truth: player_global_stats.total_xp → rankForXp → RankCard)
@@ -113,8 +138,8 @@ export default function SessionComplete({
 
   // Helper: compute derived stats for a player
   const computePlayerStats = (pid: string) => {
-    if (!allRoundResults) return null;
-    const playerResults = allRoundResults.filter(r => r.playerId === pid);
+    if (!effectiveResults) return null;
+    const playerResults = effectiveResults.filter(r => r.playerId === pid);
     if (playerResults.length === 0) return null;
 
     const totalScore = playerResults.reduce((sum, r) => sum + r.score, 0);
@@ -130,8 +155,8 @@ export default function SessionComplete({
 
   // Helper: compute per-round stats for all players
   const computeRoundStats = (roundIndex: number) => {
-    if (!allRoundResults) return null;
-    const roundResults = allRoundResults.filter(r => r.roundIndex === roundIndex);
+    if (!effectiveResults) return null;
+    const roundResults = effectiveResults.filter(r => r.roundIndex === roundIndex);
     if (roundResults.length === 0) {
       return { avgAccuracy: 0, avgLocationScore: 0, avgTimeScore: 0, avgDistanceKm: 0, avgYearDiff: 0, totalScore: 0, bestPlayerId: null };
     }
@@ -152,7 +177,7 @@ export default function SessionComplete({
   return (
     <section className={styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
-        if (!playerId || !allRoundResults) return null;
+        if (!playerId || effectiveResults.length === 0) return null;
         const myStats = computePlayerStats(playerId);
         const overallAccuracy = myStats?.avgAccuracy ?? 0;
         const overallXP = myStats?.totalScore ?? 0;
@@ -166,7 +191,7 @@ export default function SessionComplete({
 
         const roundWinners = new Map<number, string[]>();
         for (let i = 0; i < snapshot.config.totalRounds; i++) {
-          const roundResults = (allRoundResults ?? []).filter(r => r.roundIndex === i);
+          const roundResults = effectiveResults.filter(r => r.roundIndex === i);
           const maxScore = Math.max(...roundResults.map(r => r.score));
           if (maxScore > 0) {
             const winners = roundResults.filter(r => r.score === maxScore).map(r => r.playerId);
@@ -212,7 +237,7 @@ export default function SessionComplete({
 
         const mvpPlayers: MvpPlayer[] = snapshot.players
           .map((p) => {
-            const playerResults = allRoundResults.filter((r) => r.playerId === p.playerId);
+            const playerResults = effectiveResults.filter((r) => r.playerId === p.playerId);
             const stats = computePlayerStats(p.playerId);
             if (!stats) return null;
             return {
@@ -264,7 +289,7 @@ export default function SessionComplete({
           .filter((award): award is MvpCategory & { winners: MvpPlayer[] } => award !== null);
 
         // ── Achievements: badges, XP per era/region, stats ──
-        const myRoundResults = (allRoundResults ?? []).filter(r => r.playerId === playerId);
+        const myRoundResults = effectiveResults.filter(r => r.playerId === playerId);
         const eraForYear = (year: number): string => {
           if (year < 476) return 'era_ancient';
           if (year < 1492) return 'era_medieval';
@@ -636,7 +661,7 @@ export default function SessionComplete({
                   };
                   const bestPlayerName = roundStats.bestPlayerId ? playerLabel(snapshot.players, roundStats.bestPlayerId) : null;
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
-                  const myRoundResult = allRoundResults?.find(r => r.roundIndex === i && r.playerId === playerId);
+                  const myRoundResult = effectiveResults.find(r => r.roundIndex === i && r.playerId === playerId);
                   const myRoundAcc = myRoundResult ? Math.round(((myRoundResult.locationScore ?? 0) + (myRoundResult.timeScore ?? 0)) / 2) : null;
                   const open = openRounds.has(i);
                   return (
