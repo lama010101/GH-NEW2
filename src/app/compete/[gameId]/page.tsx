@@ -681,7 +681,7 @@ export default function CompeteGamePage() {
       )}
       {/* In-app text broadcast — async (Relax) only, spec §5.8 */}
       {playerSubmittedToast && (
-        <div className={pageStyles.playerSubmittedToast}>
+        <div data-testid="player-submitted-toast" className={pageStyles.playerSubmittedToast}>
           {playerSubmittedToast}
         </div>
       )}

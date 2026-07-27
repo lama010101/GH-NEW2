@@ -479,7 +479,11 @@ export default function SessionComplete({
                   const displayName = playerLabel(snapshot.players, player.playerId);
                   const firstLetter = displayName ? displayName.charAt(0).toUpperCase() : "?";
                   return (
-                    <div key={player.playerId} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`}>
+                    <div
+                      key={player.playerId}
+                      data-testid={`session-rank-${player.playerId}`}
+                      className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`}
+                    >
                       <span className={`${styles.medal} ${index === 0 ? styles.medalGold : index === 1 ? styles.medalSilver : index === 2 ? styles.medalBronze : ""}`}>
                         {index + 1}
                       </span>
