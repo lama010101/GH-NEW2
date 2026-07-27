@@ -2,7 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from 'next-intl';
-import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit } from "@/lib/distance";
+import {
+  formatDistance,
+  getDistanceUnitPreference,
+  setDistanceUnitPreference,
+  type DistanceUnit,
+} from "@/lib/distance";
 import RainbowRing from "@/components/compete/RainbowRing";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereCard from "@/components/compete/WhereCard";
@@ -17,7 +22,6 @@ import { setLocale } from "@/actions/setLocale";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
-import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
 
@@ -91,7 +95,6 @@ export default function RoundCompleteSection({
 }: RoundCompleteSectionProps) {
   const t = useTranslations('game');
   const tNav = useTranslations('nav');
-  const distanceUnit = getDistanceUnitPreference();
 
   const isPractice = snapshot.config.mode === "practice";
   const isAsync = snapshot.config.mode === "async";
