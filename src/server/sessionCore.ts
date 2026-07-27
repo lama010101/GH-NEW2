@@ -762,6 +762,7 @@ function buildAsyncPlayerSnapshotFromBase(
       const nearMisses = evaluateNearMisses(yearAccuracy, locationAccuracy, comboAccuracy, badges);
       const eventId = eventIds[row.roundIndex];
       const ev = eventId ? eventContentMap.get(eventId) : undefined;
+      const revealAnswer = playerState.completedRounds.has(row.roundIndex);
       byRound.set(row.roundIndex, {
         score: row.score,
         accuracy,
@@ -775,7 +776,7 @@ function buildAsyncPlayerSnapshotFromBase(
         guessLng: row.guessLng,
         distanceKm: row.distanceKm,
         yearDiff: row.yearDiff,
-        region: playerState.completedRounds.has(row.roundIndex) ? ev?.region ?? null : null,
+        region: revealAnswer ? ev?.region ?? null : null,
         rank: 0,
         badges,
         nearMisses,
