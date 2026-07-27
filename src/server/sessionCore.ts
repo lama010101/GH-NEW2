@@ -404,7 +404,7 @@ type PlayerRoundState = {
   submittedRounds: Set<number>;
 };
 
-type RoundResultDetail = { score: number; locationScore: number; timeScore: number; guessYear: number | null; guessLat: number | null; guessLng: number | null; };
+type RoundResultDetail = { score: number; locationScore: number; timeScore: number; guessYear: number | null; guessLat: number | null; guessLng: number | null; distanceKm: number | null; yearDiff: number | null; };
 
 type AsyncSnapshotBase = {
   session: SessionRow;
@@ -495,8 +495,11 @@ async function loadRoundResultScoresForAsync(
     year_guess: number | null;
     location_lat: number | null;
     location_lng: number | null;
+    distance_km: number | null;
+    year_diff: number | null;
   }>(
     `SELECT rr.player_id, rr.round_index, rr.score, rr.location_score, rr.time_score,
+            rr.distance_km, rr.year_diff,
             rc.year_guess, rc.location_lat, rc.location_lng
      FROM round_results rr
      LEFT JOIN round_commits rc
@@ -516,6 +519,8 @@ async function loadRoundResultScoresForAsync(
       guessYear: row.year_guess ?? null,
       guessLat: row.location_lat ?? null,
       guessLng: row.location_lng ?? null,
+      distanceKm: row.distance_km ?? null,
+      yearDiff: row.year_diff ?? null,
     });
   }
   return map;
@@ -537,6 +542,7 @@ async function loadRoundEventContentForAsync(
     latitude: number | null;
     longitude: number | null;
     display_name: string | null;
+    continent: string | null;
     image_url: string | null;
   }>(
     `SELECT
@@ -547,6 +553,7 @@ async function loadRoundEventContentForAsync(
       l.latitude,
       l.longitude,
       l.display_name,
+      l.continent,
       (
         SELECT i.url
         FROM images i
@@ -609,6 +616,7 @@ async function loadRoundEventContentForAsync(
       latitude: ev?.latitude ?? (null as unknown as number),
       longitude: ev?.longitude ?? (null as unknown as number),
       locationName: ev?.display_name ?? null,
+      region: ev?.continent ?? null,
       imageUrl: ev?.image_url ?? null,
       description: ev?.description ?? null,
       hints: hintsByEventId.get(id) ?? [],
@@ -752,6 +760,8 @@ function buildAsyncPlayerSnapshotFromBase(
       const comboAccuracy = Math.min(locationAccuracy, yearAccuracy);
       const badges = calculateBadges({ yearAccuracy, locationAccuracy, comboAccuracy });
       const nearMisses = evaluateNearMisses(yearAccuracy, locationAccuracy, comboAccuracy, badges);
+      const eventId = eventIds[row.roundIndex];
+      const ev = eventId ? eventContentMap.get(eventId) : undefined;
       byRound.set(row.roundIndex, {
         score: row.score,
         accuracy,
@@ -763,6 +773,9 @@ function buildAsyncPlayerSnapshotFromBase(
         guessYear: row.guessYear,
         guessLat: row.guessLat,
         guessLng: row.guessLng,
+        distanceKm: row.distanceKm,
+        yearDiff: row.yearDiff,
+        region: ev?.region ?? null,
         rank: 0,
         badges,
         nearMisses,
@@ -791,6 +804,9 @@ function buildAsyncPlayerSnapshotFromBase(
       guessYear: null,
       guessLat: null,
       guessLng: null,
+      distanceKm: null,
+      yearDiff: null,
+      region: null,
       rank: 0,
       badges: [],
       nearMisses: [],
@@ -816,6 +832,7 @@ function buildAsyncPlayerSnapshotFromBase(
       latitude: revealAnswer ? ev?.latitude ?? 0 : hiddenAnswerValue,
       longitude: revealAnswer ? ev?.longitude ?? 0 : hiddenAnswerValue,
       locationName: revealAnswer ? ev?.locationName ?? null : null,
+      region: ev?.region ?? null,
       imageUrl: revealContent ? (ev?.imageUrl ?? null) : null,
       description: revealContent ? (ev?.description ?? null) : null,
       hints: revealContent ? (ev?.hints ?? []) : [],
