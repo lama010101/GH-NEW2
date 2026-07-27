@@ -141,7 +141,19 @@ async function createReadonlyWS(
 }
 
 async function assertViewerSees(page: Page, snapshot: CompeteSnapshot, label: string): Promise<string[]> {
-  const observed = await observeState(page, { pollTimeoutMs: 30000 });
+  // Poll until the browser DOM converges to the WS snapshot.
+  // `observeState` returns the first visible section, so during a phase
+  // transition the old shell (e.g. LOBBY) can still be present for a few
+  // hundred ms while the new one renders. We wait for the DOM to catch up
+  // rather than failing on the transient race.
+  const deadline = Date.now() + 30000;
+  while (Date.now() < deadline) {
+    const observed = await observeState(page, { pollTimeoutMs: 5000 });
+    const failures = assertStateMatches(observed, snapshot, label);
+    if (failures.length === 0) return [];
+    await page.waitForTimeout(200);
+  }
+  const observed = await observeState(page, { pollTimeoutMs: 5000 });
   return assertStateMatches(observed, snapshot, label);
 }
 
