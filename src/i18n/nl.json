@@ -6,7 +6,7 @@
     "friends": "Vrienden",
     "leaderboard": "Ranglijst",
     "profile_stats": "Profiel & Statistieken",
-    "account": "Rekening",
+    "account": "Account & Instellingen",
     "grow": "Groeien",
     "help": "Hulp",
     "sign_out": "Uitloggen",
@@ -301,6 +301,7 @@
   "game": {
     "sound": "Geluid",
     "vibrate": "Trillen",
+    "distance_unit": "Afstandseenheid",
     "settings": "Instellingen",
     "submit": "Indienen",
     "hint_select_both": "Selecteer eerst {where} en {when}",
