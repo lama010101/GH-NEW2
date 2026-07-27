@@ -160,6 +160,11 @@ const CancelInviteSchema = z.object({
   inviteeId: z.string().uuid()
 });
 
+const SyncInvitesSchema = z.object({
+  type: z.literal("SYNC_INVITES"),
+  playerId: z.string().uuid()
+});
+
 const PlayAgainSchema = z.object({
   type: z.literal("PLAY_AGAIN"),
   playerId: z.string().uuid(),
@@ -185,6 +190,7 @@ const ServerMessageSchema = z.discriminatedUnion("type", [
   SetSubModeSchema,
   KickPlayerSchema,
   CancelInviteSchema,
+  SyncInvitesSchema,
   PlayAgainSchema,
   PingSchema
 ]);
@@ -229,6 +235,7 @@ export type ServerMessage =
   | { type: "SET_REGION_SELECTION"; playerId: string; selectedRegions: string[] }
   | { type: "KICK_PLAYER"; playerId: string; targetPlayerId: string }
   | { type: "CANCEL_INVITE"; playerId: string; inviteeId: string }
+  | { type: "SYNC_INVITES"; playerId: string }
   | { type: "PLAY_AGAIN"; playerId: string; newGameId: string }
   | { type: "PING" };
 
@@ -2167,6 +2174,29 @@ export default class GameServer {
           }
           const snapshot = await response.json();
           this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "SYNC_INVITES": {
+          // Only the host should trigger a roster refresh. If the sender cannot be
+          // identified or the snapshot is not loaded yet, allow the cold-start load
+          // to proceed — the client only sends this after a successful invite POST.
+          const senderPlayerId = this.connections.get(sender.id);
+          if (isRuntimeState(this.snapshot) && senderPlayerId) {
+            const senderPlayer = this.snapshot.players.find(p => p.playerId === senderPlayerId);
+            if (senderPlayer && !senderPlayer.isHost) {
+              this.sendError(sender, "Only the host can sync invites");
+              break;
+            }
+          }
+          console.log("[PartyKit] SYNC_INVITES: reloading snapshot to refresh pending invitees");
+          try {
+            await this.loadFromDB();
+            this.broadcastStateUpdate();
+          } catch (err) {
+            console.error("[PartyKit] SYNC_INVITES loadFromDB failed:", err instanceof Error ? err.message : err);
+            this.sendError(sender, "Failed to sync invites");
+          }
           break;
         }
 
