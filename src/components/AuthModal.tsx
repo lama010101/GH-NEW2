@@ -105,47 +105,45 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
     signInSubscriptionRef.current = subscription;
 
     let result;
-    try {
-      if (mode === "signin") {
-        result = await supabaseBrowser.auth.signInWithPassword({ email, password });
-      } else {
-        const next = searchParams.get("next") || "/home";
-        result = await supabaseBrowser.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-          },
-        });
-      }
+    if (mode === "signin") {
+      result = await supabaseBrowser.auth.signInWithPassword({ email, password });
+    } else {
+      const next = searchParams.get("next") || "/home";
+      result = await supabaseBrowser.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      });
+    }
 
-      if (result.error) {
-        subscription.unsubscribe();
-        signInSubscriptionRef.current = null;
-        setError(result.error.message);
-        return;
-      }
-
-      // signUp returns a session when email confirmation is disabled — close
-      // the modal immediately. The onAuthStateChange subscription above also
-      // handles SIGNED_IN, but it may not fire reliably for signUp.
-      if (mode === "signup" && result.data.session) {
-        subscription.unsubscribe();
-        signInSubscriptionRef.current = null;
-        onClose();
-        return;
-      }
-
-      // signUp with no session means email confirmation is enabled — tell the
-      // user to check their inbox instead of leaving the modal with no feedback.
-      if (mode === "signup" && !result.data.session) {
-        subscription.unsubscribe();
-        signInSubscriptionRef.current = null;
-        setSignUpSent(true);
-        return;
-      }
-    } finally {
+    if (result.error) {
+      subscription.unsubscribe();
+      signInSubscriptionRef.current = null;
       setLoading(false);
+      setError(result.error.message);
+      return;
+    }
+
+    // signUp returns a session when email confirmation is disabled — close
+    // the modal immediately. The onAuthStateChange subscription above also
+    // handles SIGNED_IN, but it may not fire reliably for signUp.
+    if (mode === "signup" && result.data.session) {
+      subscription.unsubscribe();
+      signInSubscriptionRef.current = null;
+      onClose();
+      return;
+    }
+
+    // signUp with no session means email confirmation is enabled — tell the
+    // user to check their inbox instead of leaving the modal with no feedback.
+    if (mode === "signup" && !result.data.session) {
+      subscription.unsubscribe();
+      signInSubscriptionRef.current = null;
+      setLoading(false);
+      setSignUpSent(true);
+      return;
     }
   }
 
