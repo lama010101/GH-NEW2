@@ -232,6 +232,13 @@ export default function useCompeteSocket({
     wsRef.current.kickPlayer(targetPlayerId);
   };
 
+  const cancelInvite = (inviteeId: string) => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    // Client → DO → DB: send CANCEL_INVITE action signal via WS
+    wsRef.current.cancelInvite(inviteeId);
+  };
+
   const playAgain = (newGameId: string) => {
     if (!playerId || !wsRef.current) return;
     wsRef.current.playAgain(newGameId);
@@ -248,6 +255,7 @@ export default function useCompeteSocket({
     setResultsTimer,
     setSubMode,
     kickPlayer,
+    cancelInvite,
     playAgain,
   };
 }

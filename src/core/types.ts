@@ -139,6 +139,13 @@ export type PreflightResult = {
   issues: string[];
 };
 
+export type PendingInvitee = {
+  playerId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  invitedAt: string;
+};
+
 export type SessionPlayer = {
   playerId: string;
   displayName: string;
@@ -217,6 +224,7 @@ export type CompeteSessionSnapshot = {
   resultPhaseEndsAt?: number; // epoch ms — when result phase auto-advances
   resultPhaseStartedAt?: string | null; // ISO string — when result phase started, from ROUND_COMPLETE payload
   roomCode: string;
+  pendingInvitees: PendingInvitee[];
 };
 
 export type CreateCompeteSessionInput = {
@@ -273,6 +281,12 @@ export type KickCompetePlayerInput = {
   gameId: string;
   playerId: string;
   targetPlayerId: string;
+};
+
+export type CancelCompeteInviteInput = {
+  gameId: string;
+  playerId: string;
+  inviteeId: string;
 };
 
 export type StartCompeteSessionInput = {

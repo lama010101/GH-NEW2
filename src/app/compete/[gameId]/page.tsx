@@ -285,6 +285,7 @@ export default function CompeteGamePage() {
     setResultsTimer,
     setSubMode,
     kickPlayer,
+    cancelInvite,
     playAgain,
   } = useCompeteSocket({
     gameId,
@@ -562,6 +563,14 @@ export default function CompeteGamePage() {
     kickPlayer(targetPlayerId);
   }, [playerId, kickPlayer]);
 
+  const handleCancelInvite = useCallback((inviteeId: string) => {
+    if (!playerId) return;
+    setBusy(true);
+    setError(null);
+    // Client → DO → DB: send CANCEL_INVITE action signal via WS
+    cancelInvite(inviteeId);
+  }, [playerId, cancelInvite]);
+
   const handleSubmitGuess = useCallback(() => {
     if (!snapshot || snapshot.status !== 'ROUND_ACTIVE') return;
     if (!playerId) return;
@@ -766,6 +775,7 @@ export default function CompeteGamePage() {
               onSetResultsTimer={handleSetResultsTimer}
               onSetSubMode={handleSetSubMode}
               onKickPlayer={handleKickPlayer}
+              onCancelInvite={handleCancelInvite}
               onSetEraSelection={handleSetEraSelection}
               onSetRegionSelection={handleSetRegionSelection}
             />

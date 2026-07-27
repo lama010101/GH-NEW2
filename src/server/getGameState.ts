@@ -16,7 +16,7 @@ import {
   deriveStateFromEventStream,
   type RoundEvent
 } from "./eventStream";
-import type { RoundEventContent, EventHint } from "@/core/types";
+import type { RoundEventContent, EventHint, PendingInvitee } from "@/core/types";
 import { calculateBadges, evaluateNearMisses } from "@/core/rules";
 
 // Re-export for backwards compatibility
@@ -115,6 +115,7 @@ export type ReconstructedGameState = {
   events: RoundEvent[];
   roundEventContent: RoundEventContent[];
   roundResultsForClient?: RoundResultForClient[];
+  pendingInvitees: PendingInvitee[];
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -156,6 +157,39 @@ async function loadRoundEvents(
     eventType: row.event_type,
     payload: row.payload,
     createdAt: row.created_at.toISOString()
+  }));
+}
+
+/**
+ * Load pending game_invitations for a session, joined to profiles for display.
+ *
+ * Only status='pending' rows that have not expired are returned.
+ */
+export async function loadPendingInvitees(
+  gameId: string,
+  executor: DbExecutor = dbPool
+): Promise<PendingInvitee[]> {
+  const result = await executor.query<{
+    invitee_id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    created_at: Date;
+  }>(
+    `SELECT gi.invitee_id, p.display_name, p.avatar_url, gi.created_at
+     FROM game_invitations gi
+     LEFT JOIN profiles p ON p.id = gi.invitee_id
+     WHERE gi.game_id = $1
+       AND gi.status = 'pending'
+       AND gi.expires_at > now()
+     ORDER BY gi.created_at ASC, gi.invitee_id ASC`,
+    [gameId]
+  );
+
+  return result.rows.map(row => ({
+    playerId: row.invitee_id,
+    displayName: (row.display_name ?? row.invitee_id.slice(0, 8)).trim(),
+    avatarUrl: row.avatar_url ?? null,
+    invitedAt: row.created_at.toISOString()
   }));
 }
 
@@ -520,6 +554,11 @@ export async function getGameState(
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // LOAD PENDING INVITEES (lobby roster visibility)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const pendingInvitees = await loadPendingInvitees(sessionId);
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // RETURN FULLY RECONSTRUCTED STATE
   // ─────────────────────────────────────────────────────────────────────────────
   return {
@@ -529,7 +568,8 @@ export async function getGameState(
     phase,
     rounds,
     events,
-    roundEventContent
+    roundEventContent,
+    pendingInvitees
   };
 }
 
