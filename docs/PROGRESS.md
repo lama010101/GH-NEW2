@@ -1,5 +1,7 @@
 # GUESS-HISTORY — Implementation Progress
 
+|| MP-BUILD-RELAX-REGION-REVEAL-GATE-001 | DONE | src/server/sessionCore.ts, docs/PROGRESS.md | Gated async `RoundEventContent.region` and `PlayerRoundResult.region` behind the viewer's round reveal state, and forced `region: null` in `buildAsyncBaseSnapshot` hidden-field overwrite. `region` in `PlayerRoundResult` uses `playerState.completedRounds.has(row.roundIndex)` because `revealAnswer` is not in scope at that build site. `npm run typecheck`: 0 errors; `npm run lint`: 0 errors (pre-existing warnings only). (2026-07-27)
+
 ## Format
 
 | MP-FIX-NOTIFBELL-MODAL-OFFSCREEN-001 | DONE | src/components/NotificationBell.module.css, docs/PROGRESS.md | Fixed round-page notification bell dropdown opening off-screen to the left. The `.drawer` default `right: 0` anchor is kept for right-side usages (TopBar, `notificationWrap`); a `:global([class*="settingsBellWrap"]) .drawer` override flips it to `left: 0; right: auto` only inside the round page's left-positioned bell wrapper. `npm run typecheck`: 0 errors; `npx next lint`: 0 errors (pre-existing warnings only); Playwright visual checks at 390x844 and 1280x800 confirmed the drawer opens fully within the viewport, and the right-side placement remains anchored at the bell's right edge. (2026-07-27)
