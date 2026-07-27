@@ -1770,6 +1770,15 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
       [gameId, playerId, joinDisplayName, joiningAvatarUrl]
     );
 
+    // Mark any pending invitation for this player as accepted. This is a no-op
+    // for players who joined without a prior invite (self-serve room-code joins).
+    await client.query(
+      `UPDATE game_invitations
+       SET status = 'accepted'
+       WHERE game_id = $1 AND invitee_id = $2 AND status = 'pending'`,
+      [gameId, playerId]
+    );
+
     // Host self-heal: if the rejoining player is still marked is_host but host
     // was concurrently reassigned away, we leave the current host alone (the
     // partial unique index `uq_session_players_one_host_per_game` guarantees at
