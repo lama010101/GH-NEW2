@@ -6,7 +6,7 @@
     "friends": "Друзья",
     "leaderboard": "Рейтинг",
     "profile_stats": "Профиль и статистика",
-    "account": "Аккаунт",
+    "account": "Аккаунт и настройки",
     "grow": "Расти",
     "help": "Помощь",
     "sign_out": "Выйти",
@@ -301,6 +301,7 @@
   "game": {
     "sound": "Звук",
     "vibrate": "Вибрация",
+    "distance_unit": "Единица расстояния",
     "settings": "Настройки",
     "submit": "Отправить",
     "hint_select_both": "Сначала выбери {where} и {when}",

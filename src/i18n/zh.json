@@ -6,7 +6,7 @@
     "friends": "好友",
     "leaderboard": "排行榜",
     "profile_stats": "资料与统计",
-    "account": "账户",
+    "account": "账户与设置",
     "grow": "成长",
     "help": "帮助",
     "sign_out": "退出登录",
@@ -301,6 +301,7 @@
   "game": {
     "sound": "声音",
     "vibrate": "振动",
+    "distance_unit": "距离单位",
     "settings": "设置",
     "submit": "提交",
     "hint_select_both": "请先选择 {where} 和 {when}",
