@@ -10,6 +10,7 @@ import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
 import { calculateBadges } from "@/core/rules";
+import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import { NavModal } from "@/components/NavModal";
 import ExperienceAccuracy from "@/components/ExperienceAccuracy";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
@@ -34,6 +35,7 @@ export default function SessionComplete({
   const router = useRouter();
   const t = useTranslations('compete_page');
   const tGame = useTranslations('game');
+  const distanceUnit = getDistanceUnitPreference();
   const isPractice = snapshot.config.mode === "practice";
   const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
@@ -582,7 +584,7 @@ export default function SessionComplete({
                   {/* Game stats grid */}
                   <div className={styles.gameStatsGrid}>
                     <div className={styles.gameStatTile}>
-                      <span className={styles.gameStatVal}>{Math.round(avgDistanceKm)}</span>
+                      <span className={styles.gameStatVal}>{formatDistance(avgDistanceKm, distanceUnit)}</span>
                       <span className={styles.gameStatLabel}>{tGame('avg_km_away_label')}</span>
                     </div>
                     <div className={styles.gameStatTile}>
@@ -683,7 +685,7 @@ export default function SessionComplete({
                             <div className={styles.miniTile}>
                               <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgLocationScore}</span>
                               <span className={styles.miniLabelWhere}>{tGame('where')}</span>
-                              <span className={styles.miniSub}>{tGame('distance_label', { km: Math.round(roundStats.avgDistanceKm) })}</span>
+                              <span className={styles.miniSub}>{tGame('distance_label', { distance: formatDistance(roundStats.avgDistanceKm, distanceUnit) })}</span>
                             </div>
                             <div className={styles.miniTile}>
                               <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{roundStats.avgTimeScore}</span>
