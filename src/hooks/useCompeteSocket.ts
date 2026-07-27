@@ -239,6 +239,12 @@ export default function useCompeteSocket({
     wsRef.current.cancelInvite(inviteeId);
   };
 
+  const syncInvites = () => {
+    if (!playerId || !wsRef.current) return;
+    // Client → DO: ask DO to reload pending invitees and broadcast updated roster
+    wsRef.current.syncInvites();
+  };
+
   const playAgain = (newGameId: string) => {
     if (!playerId || !wsRef.current) return;
     wsRef.current.playAgain(newGameId);
@@ -256,6 +262,7 @@ export default function useCompeteSocket({
     setSubMode,
     kickPlayer,
     cancelInvite,
+    syncInvites,
     playAgain,
   };
 }
