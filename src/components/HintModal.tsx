@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from 'next-intl';
+import { formatDistance, getDistanceUnitPreference, type DistanceUnit } from "@/lib/distance";
 import type { EventHint } from "@/core/types";
 import styles from "./HintModal.module.css";
 
@@ -71,7 +72,7 @@ function penaltyBorderColor(pct: number): string {
   return "rgba(var(--gh-danger-rgb), 0.4)";
 }
 
-function getHintDescription(hint: EventHint, t: (key: string, params?: Record<string, string | number | Date>) => string): string {
+function getHintDescription(hint: EventHint, t: (key: string, params?: Record<string, string | number | Date>) => string, unit: DistanceUnit): string {
   if (hint.type === "when") {
     if (hint.tier === 1) return t('hint_desc_broad_era');
     if (hint.tier === 2) return t('hint_desc_nearby_event');
@@ -83,12 +84,12 @@ function getHintDescription(hint: EventHint, t: (key: string, params?: Record<st
     if (hint.tier === 1) return t('hint_desc_broad_region');
     if (hint.tier === 2) {
       const km = (hint.metadata as { km?: number } | null)?.km;
-      return km != null ? t('hint_desc_distant_landmark_km', { km }) : t('hint_desc_distant_landmark');
+      return km != null ? t('hint_desc_distant_landmark_km', { distance: formatDistance(km, unit) }) : t('hint_desc_distant_landmark');
     }
     if (hint.tier === 3) return t('hint_desc_admin_region');
     if (hint.tier === 4) {
       const km = (hint.metadata as { km?: number } | null)?.km;
-      return km != null ? t('hint_desc_nearby_landmark_km', { km }) : t('hint_desc_nearby_landmark');
+      return km != null ? t('hint_desc_nearby_landmark_km', { distance: formatDistance(km, unit) }) : t('hint_desc_nearby_landmark');
     }
     if (hint.tier === 5) return t('hint_desc_location_scene');
   }
@@ -113,12 +114,12 @@ function getIcon(hint: EventHint): string {
   return ICONS.calendar;
 }
 
-function getRevealedText(hint: EventHint, t: (key: string, values?: Record<string, string | number | Date>) => string): string {
+function getRevealedText(hint: EventHint, t: (key: string, values?: Record<string, string | number | Date>) => string, unit: DistanceUnit): string {
   const meta = hint.metadata as { km?: number; years?: number | string } | null;
 
   if (hint.type === "where") {
     if ((hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
-      return `${hint.content} — ${t('km_away_short', { n: meta.km })}`;
+      return `${hint.content} — ${t('km_away_short', { distance: formatDistance(meta.km, unit) })}`;
     }
   }
 
@@ -133,6 +134,7 @@ function getRevealedText(hint: EventHint, t: (key: string, values?: Record<strin
 
 export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalProps) {
   const t = useTranslations('game');
+  const distanceUnit = getDistanceUnitPreference();
   const [purchased, setPurchased] = useState<Set<string>>(new Set(purchasedIds));
   const [activeTab, setActiveTab] = useState<TabType>("when");
 
@@ -336,9 +338,9 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
                   <div className={styles.hintBody}>
                     <div className={styles.hintName}>{getHintLabel(hint, t)}</div>
                     {owned ? (
-                      <div className={styles.hintAnswer}>{getRevealedText(hint, t)}</div>
+                      <div className={styles.hintAnswer}>{getRevealedText(hint, t, distanceUnit)}</div>
                     ) : (
-                      <div className={styles.hintSub}>{getHintDescription(hint, t)}</div>
+                      <div className={styles.hintSub}>{getHintDescription(hint, t, distanceUnit)}</div>
                     )}
                   </div>
 
