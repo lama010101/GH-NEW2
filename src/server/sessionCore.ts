@@ -14,12 +14,14 @@ import {
   CreateCompeteSessionInput,
   EventHint,
   LatLng,
+  PendingInvitee,
   PlayerRoundResult,
   RoundEventContent,
   SessionConfig,
   SessionPlayer,
   SessionStatus,
   KickCompetePlayerInput,
+  CancelCompeteInviteInput,
   SetCompeteReadyInput,
   SetCompeteResultsTimerInput,
   SetCompeteSubModeInput,
@@ -41,7 +43,7 @@ import {
 import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { dailySeed } from "@/core/dailySeed";
-import { getGameState, deriveStateFromEventStream, type ReconstructedGameState } from "@/server/getGameState";
+import { getGameState, deriveStateFromEventStream, loadPendingInvitees, type ReconstructedGameState } from "@/server/getGameState";
 import {
   derivePlayerStateFromEventStream,
   type PlayerRoundEvent
@@ -417,6 +419,7 @@ type AsyncSnapshotBase = {
   roundEventContent: RoundEventContent[];
   eventContentMap: Map<string, RoundEventContent>;
   roundEventsForViewer: (viewerPlayerId: string) => PlayerRoundEvent[];
+  pendingInvitees: PendingInvitee[];
 };
 
 async function loadGlobalRoundEventsForAsync(
@@ -865,6 +868,7 @@ function buildAsyncPlayerSnapshotFromBase(
     readyForNext: [],
     resultPhaseStartedAt: playerState.resultPhaseStartedAt,
     roomCode: session.room_code,
+    pendingInvitees: base.pendingInvitees,
   };
 }
 
@@ -873,12 +877,13 @@ async function loadAsyncSnapshotBase(
   executor: DbExecutor
 ): Promise<AsyncSnapshotBase> {
   const globalEvents = await loadGlobalRoundEventsForAsync(gameId, executor);
-  const [session, players, allPlayerEvents, roundResultScores, roundEventContent] = await Promise.all([
+  const [session, players, allPlayerEvents, roundResultScores, roundEventContent, pendingInvitees] = await Promise.all([
     loadSessionRow(gameId, executor),
     loadSessionPlayerRows(gameId, executor),
     loadPlayerRoundEventsForAsync(gameId, executor),
     loadRoundResultScoresForAsync(gameId, executor),
     loadRoundEventContentForAsync(globalEvents.eventIds, executor),
+    loadPendingInvitees(gameId, executor),
   ]);
 
   if (!session) {
@@ -898,6 +903,7 @@ async function loadAsyncSnapshotBase(
     roundEventContent,
     eventContentMap,
     roundEventsForViewer: (viewerPlayerId: string) => allPlayerEvents.get(viewerPlayerId) ?? [],
+    pendingInvitees,
   };
 }
 
@@ -1092,6 +1098,7 @@ function buildAsyncBaseSnapshot(gameState: ReconstructedGameState): CompeteSessi
     readyForNext: [],
     resultPhaseStartedAt,
     roomCode: session.roomCode,
+    pendingInvitees: gameState.pendingInvitees,
   };
 }
 
@@ -1213,7 +1220,8 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     readyForNext: [],
     resultPhaseEndsAt: undefined,
     resultPhaseStartedAt,
-    roomCode: gameState.session.roomCode
+    roomCode: gameState.session.roomCode,
+    pendingInvitees: gameState.pendingInvitees,
   };
 
   // ═════════════════════════════════════════════════════════════════════════════
@@ -2297,6 +2305,62 @@ export async function kickCompetePlayer(input: KickCompetePlayerInput): Promise<
       `DELETE FROM public.player_follows
        WHERE follower_id = $1 AND followed_id = $2`,
       [playerId, targetPlayerId]
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
+  if (!snapshot) {
+    throw new Error("Session not found");
+  }
+
+  return snapshot;
+}
+
+export async function cancelCompeteInvite(input: CancelCompeteInviteInput): Promise<CompeteSessionSnapshot> {
+  const gameId = input.gameId.trim();
+  const playerId = input.playerId.trim();
+  const inviteeId = input.inviteeId.trim();
+
+  if (gameId.length === 0) {
+    throw new Error("gameId is required");
+  }
+
+  if (playerId.length === 0) {
+    throw new Error("playerId is required");
+  }
+
+  if (inviteeId.length === 0) {
+    throw new Error("inviteeId is required");
+  }
+
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+
+    // Verify host authority
+    const hostCheck = await client.query<{ player_id: string }>(
+      `SELECT player_id FROM session_players
+       WHERE game_id = $1 AND player_id = $2 AND is_host = true AND left_at IS NULL`,
+      [gameId, playerId]
+    );
+
+    if (hostCheck.rows.length === 0) {
+      throw new Error("Only the host can cancel invites");
+    }
+
+    // Cancel pending invitation for the target invitee
+    await client.query(
+      `UPDATE game_invitations
+       SET status = 'cancelled'
+       WHERE game_id = $1 AND invitee_id = $2 AND status = 'pending'`,
+      [gameId, inviteeId]
     );
 
     await client.query("COMMIT");

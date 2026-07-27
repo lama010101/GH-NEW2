@@ -301,6 +301,10 @@ export class CompeteWebSocket {
     this.send({ type: "KICK_PLAYER", playerId: this.playerId, targetPlayerId });
   }
 
+  cancelInvite(inviteeId: string): void {
+    this.send({ type: "CANCEL_INVITE", playerId: this.playerId, inviteeId });
+  }
+
   submitGuess(
     roundIndex: number,
     year: number | null,

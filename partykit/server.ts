@@ -154,6 +154,12 @@ const KickPlayerSchema = z.object({
   targetPlayerId: z.string().uuid()
 });
 
+const CancelInviteSchema = z.object({
+  type: z.literal("CANCEL_INVITE"),
+  playerId: z.string().uuid(),
+  inviteeId: z.string().uuid()
+});
+
 const PlayAgainSchema = z.object({
   type: z.literal("PLAY_AGAIN"),
   playerId: z.string().uuid(),
@@ -178,6 +184,7 @@ const ServerMessageSchema = z.discriminatedUnion("type", [
   SetResultsTimerSchema,
   SetSubModeSchema,
   KickPlayerSchema,
+  CancelInviteSchema,
   PlayAgainSchema,
   PingSchema
 ]);
@@ -197,6 +204,7 @@ type RuntimeState = {
   resultPhaseEndsAt?: number;
   resultPhaseStartedAt?: string | null;
   config?: { mode?: string };
+  pendingInvitees?: Array<{ playerId: string; displayName: string; avatarUrl: string | null; invitedAt: string }>;
 };
 
 function isRuntimeState(value: unknown): value is RuntimeState {
@@ -220,6 +228,7 @@ export type ServerMessage =
   | { type: "SET_ERA_SELECTION"; playerId: string; selectedEras: string[]; yearMin: number; yearMax: number }
   | { type: "SET_REGION_SELECTION"; playerId: string; selectedRegions: string[] }
   | { type: "KICK_PLAYER"; playerId: string; targetPlayerId: string }
+  | { type: "CANCEL_INVITE"; playerId: string; inviteeId: string }
   | { type: "PLAY_AGAIN"; playerId: string; newGameId: string }
   | { type: "PING" };
 
@@ -2129,6 +2138,34 @@ export default class GameServer {
             }
           }
 
+          this.applySnapshotAndBroadcast(snapshot);
+          break;
+        }
+
+        case "CANCEL_INVITE": {
+          // Validate: only allowed in LOBBY phase
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "CANCEL_INVITE only allowed in LOBBY phase");
+            break;
+          }
+          const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/cancel-invite`;
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+            },
+            body: JSON.stringify({
+              playerId: data.playerId,
+              inviteeId: data.inviteeId
+            })
+          });
+          if (!response.ok) {
+            const text = await response.text();
+            console.error(`[CANCEL_INVITE] API error ${response.status}: ${text}`);
+            break;
+          }
+          const snapshot = await response.json();
           this.applySnapshotAndBroadcast(snapshot);
           break;
         }

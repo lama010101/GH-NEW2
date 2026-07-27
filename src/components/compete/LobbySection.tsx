@@ -23,12 +23,12 @@ interface LobbySectionProps {
   onSetResultsTimer?: (resultsAutoAdvanceSec: number) => void;
   onSetSubMode?: (mode: "sync" | "async", sessionDeadlineDays: number) => void;
   onKickPlayer?: (targetPlayerId: string) => void;
+  onCancelInvite?: (inviteeId: string) => void;
   onSetEraSelection?: (selectedEras: string[], yearMin: number, yearMax: number) => void;
   onSetRegionSelection?: (selectedRegions: string[]) => void;
 }
 
 type LastInvitedPlayer = { id: string; displayName: string; avatarUrl: string | null };
-type PendingInvite = { id: string; displayName: string; avatarUrl: string | null };
 type PlayerPoolEntry = { id: string; displayName: string; avatarUrl: string | null };
 
 const LS_KEY = "gh_last_invited_players";
@@ -163,6 +163,7 @@ export default function LobbySection({
   onSetResultsTimer,
   onSetSubMode,
   onKickPlayer,
+  onCancelInvite,
   onSetEraSelection,
   onSetRegionSelection,
 }: LobbySectionProps) {
@@ -460,9 +461,6 @@ export default function LobbySection({
     };
   }, [searchQuery]);
 
-  /* ── Pending invites (invited but not yet joined) ── */
-  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
-
   /* ── Follow state ── */
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
 
@@ -528,15 +526,10 @@ export default function LobbySection({
     }
   };
 
-  // Remove pending invites for players who have now joined
-  useEffect(() => {
-    const joinedIds = new Set(snapshot.players.map((p) => p.playerId));
-    setPendingInvites((prev) => prev.filter((p) => !joinedIds.has(p.id)));
-  }, [snapshot.players]);
-
   // Build priority display list. Only active players should block re-invitation;
   // kicked/left players remain in snapshot.players but are inviteable again.
   const inLobbyIds = new Set(snapshot.players.filter((p) => p.leftAt === null).map((p) => p.playerId));
+  const pendingInviteeIds = new Set((snapshot.pendingInvitees ?? []).map((p) => p.playerId));
   const viewerId = viewer?.playerId ?? null;
   const lastInvitedFiltered = lastInvited.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId);
   const lastInvitedIds = new Set(lastInvitedFiltered.map((p) => p.id));
@@ -544,7 +537,7 @@ export default function LobbySection({
   const priorityList: PlayerPoolEntry[] = [
     ...lastInvitedFiltered.map((p) => ({ id: p.id, displayName: p.displayName, avatarUrl: p.avatarUrl })),
     ...poolRemainder,
-  ].filter(p => !pendingInvites.some(pi => pi.id === p.id));
+  ].filter(p => !pendingInviteeIds.has(p.id));
 
   const trimmedQuery = searchQuery.trim().toLowerCase();
   const searchResults: PlayerPoolEntry[] = trimmedQuery.length >= 1
@@ -582,10 +575,6 @@ export default function LobbySection({
         setInviteStates(prev => ({ ...prev, [player.id]: 'sent' }));
         writeLastInvited(player);
         setLastInvited(readLastInvited());
-        setPendingInvites((prev) => {
-          if (prev.some((p) => p.id === player.id)) return prev;
-          return [...prev, { id: player.id, displayName: player.displayName, avatarUrl: player.avatarUrl }];
-        });
         setTimeout(() => {
           setInviteStates(prev => ({ ...prev, [player.id]: 'idle' }));
         }, 3000);
@@ -1286,7 +1275,7 @@ export default function LobbySection({
           {/* Sub-section B: Players roster */}
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>{t('lobby.players', { current: totalPlayers, total: totalPlayers + pendingInvites.length })}</span>
+              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>{t('lobby.players', { current: totalPlayers, total: totalPlayers + (snapshot.pendingInvitees ?? []).length })}</span>
               <span className={styles['lobbyReadyIndicator']}>
                 <span
                   className={styles['lobbyReadyDot']}
@@ -1331,8 +1320,8 @@ export default function LobbySection({
                   </div>
                 );
               })}
-              {pendingInvites.map((p) => (
-                <div key={p.id} className={styles['lobbyRosterRow']}>
+              {(snapshot.pendingInvitees ?? []).map((p) => (
+                <div key={p.playerId} className={styles['lobbyRosterRow']}>
                   <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
                   <div className={styles['lobbyRosterMeta']}>
                     <span className={styles['lobbyRosterName']}>{p.displayName}</span>
@@ -1342,7 +1331,8 @@ export default function LobbySection({
                     <button
                       type="button"
                       className={styles['lobby-kick-btn']}
-                      onClick={() => setPendingInvites((prev) => prev.filter((invite) => invite.id !== p.id))}
+                      onClick={() => onCancelInvite?.(p.playerId)}
+                      disabled={busy}
                       title={t('lobby.remove_invite')}
                     >
                       ×
@@ -1350,7 +1340,7 @@ export default function LobbySection({
                   )}
                 </div>
               ))}
-              {activePlayers.length === 0 && pendingInvites.length === 0 && (
+              {activePlayers.length === 0 && (snapshot.pendingInvitees ?? []).length === 0 && (
                 <div className={styles['lobbyRosterEmpty']}>{t('lobby.no_players_yet')}</div>
               )}
             </div>
