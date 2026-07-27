@@ -9,6 +9,7 @@ import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages
 import styles from './LobbySection.module.css';
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
 import { Zap, Leaf, ChevronDown, Timer, HelpCircle } from 'lucide-react';
+import { CompeteWebSocket } from "@/core/competeWebSocket";
 
 interface LobbySectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -575,6 +576,7 @@ export default function LobbySection({
         setInviteStates(prev => ({ ...prev, [player.id]: 'sent' }));
         writeLastInvited(player);
         setLastInvited(readLastInvited());
+        CompeteWebSocket.syncInvites(snapshot.gameId);
         setTimeout(() => {
           setInviteStates(prev => ({ ...prev, [player.id]: 'idle' }));
         }, 3000);
