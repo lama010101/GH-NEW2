@@ -346,6 +346,24 @@
   max-width: 120px;
 }
 
+.playerInfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.playerSubtitle {
+  color: var(--gh-text-muted);
+  font-size: var(--font-2xs);
+  line-height: 1.2;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
 /* Value Cells */
 .accuracyCell {
   white-space: nowrap;
