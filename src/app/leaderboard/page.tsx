@@ -36,6 +36,7 @@ type OverallRow = {
   player_id: string;
   avg_accuracy: number;
   rounds_played: number;
+  rounds_won: number;
   games_played: number;
 };
 
@@ -53,6 +54,7 @@ type LeaderboardEntry = {
   avg_accuracy?: number;
   games_played?: number;
   rounds_played?: number;
+  rounds_won?: number;
   current_level?: number;
   best_accuracy?: number;
 };
@@ -231,7 +233,7 @@ function LeaderboardPageInner() {
   const fetchOverallData = useCallback(async () => {
     const { data: overallRows, error: overallError } = await supabaseBrowser
       .from('player_global_stats')
-      .select('player_id, avg_accuracy, rounds_played, games_played')
+      .select('player_id, avg_accuracy, rounds_played, rounds_won, games_played')
       .order('avg_accuracy', { ascending: false })
       .order('total_xp', { ascending: false })
       .limit(50);
@@ -250,6 +252,7 @@ function LeaderboardPageInner() {
         avatar_url: profile?.avatar_url ?? null,
         avg_accuracy: row.avg_accuracy,
         rounds_played: row.rounds_played,
+        rounds_won: row.rounds_won,
         games_played: row.games_played,
       };
     });
@@ -439,6 +442,20 @@ function LeaderboardPageInner() {
   };
 
   const renderPlayerCell = (entry: LeaderboardEntry) => {
+    let subtitle: string;
+    if (activeTab === 'overall') {
+      const roundsWon = entry.rounds_won ?? 0;
+      const gamesPlayed = entry.games_played ?? 0;
+      subtitle = `${t('rounds_won', { n: roundsWon })} · ${t('games_played_subtitle', { n: gamesPlayed })}`;
+    } else if (activeTab === 'daily') {
+      const gamesPlayed = entry.games_played ?? 1;
+      subtitle = t('games_played_subtitle', { n: gamesPlayed });
+    } else if (activeTab === 'levelup') {
+      subtitle = t('level_subtitle', { n: entry.current_level ?? 0 });
+    } else {
+      subtitle = '';
+    }
+
     return (
       <div className={styles.playerCell}>
         {entry.avatar_url ? (
@@ -454,7 +471,10 @@ function LeaderboardPageInner() {
             {getInitials(entry.display_name)}
           </div>
         )}
-        <span className={styles.playerName}>{entry.display_name ?? t('unknown_player')}</span>
+        <div className={styles.playerInfo}>
+          <span className={styles.playerName}>{entry.display_name ?? t('unknown_player')}</span>
+          <span className={styles.playerSubtitle}>{subtitle}</span>
+        </div>
       </div>
     );
   };
