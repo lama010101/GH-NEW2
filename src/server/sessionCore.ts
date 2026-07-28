@@ -2720,7 +2720,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
     whenPenaltyRate  = Math.min(whenPenaltyRate,  100);
     wherePenaltyRate = Math.min(wherePenaltyRate, 100);
 
-    const referenceYear = guard.scoring_reference_year ?? 2025;
+    const referenceYear = guard.scoring_reference_year;
 
     const result = evaluateRound(
       event,
@@ -3218,7 +3218,7 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
     whenPenaltyRate = Math.min(whenPenaltyRate, 100);
     wherePenaltyRate = Math.min(wherePenaltyRate, 100);
 
-    const referenceYear = guard.scoring_reference_year ?? 2025;
+    const referenceYear = guard.scoring_reference_year;
 
     const result = evaluateRound(
       event,
@@ -3504,7 +3504,7 @@ export async function markPlayerRoundAbsent(
     const event = await fetchEventById(eventIds[roundIndex], client);
     if (!event) throw new Error("Could not load event");
 
-    const referenceYear = guard.scoring_reference_year ?? 2025;
+    const referenceYear = guard.scoring_reference_year;
     const result = evaluateRound(
       event,
       { year: null, location: null },
@@ -3631,7 +3631,7 @@ export async function finalizeAsyncSessionDeadline(
     return 0;
   }
 
-  const referenceYear = session.scoring_reference_year ?? 2025;
+  const referenceYear = session.scoring_reference_year;
   const sessionDeadline = session.session_deadline;
   const totalRounds = session.total_rounds;
 
@@ -4673,7 +4673,10 @@ async function computeAndWriteRoundResults(
     `SELECT scoring_reference_year FROM sessions WHERE game_id = $1`,
     [gameId]
   );
-  const referenceYear = sessionMeta.rows[0]?.scoring_reference_year ?? 2025;
+  if (!sessionMeta.rows[0]) {
+    throw new Error(`[SCORING] missing scoring_reference_year for game ${gameId}`);
+  }
+  const referenceYear = sessionMeta.rows[0].scoring_reference_year;
 
   const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
   if (!Array.isArray(eventIds) || roundIndex >= eventIds.length) return roundResultsToken;

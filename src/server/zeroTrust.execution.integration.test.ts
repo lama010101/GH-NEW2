@@ -244,7 +244,7 @@ async function createTestRoundCommit(
     false,
     0,
     0
-  );
+  , 2025);
 
   const client = await getNewPoolConnection();
 
@@ -325,7 +325,7 @@ async function createTestRoundResults(
         false,
         0,
         0
-      );
+      , 2025);
 
       await client.query(
         `INSERT INTO round_results
@@ -1015,7 +1015,7 @@ describe.skipIf(skipIntegration)("MP-CORE-LOOP-004: Real DB Execution Proof Harn
         false,
         0,
         0
-      );
+      , 2025);
 
       return {
         playerId: row.player_id,
