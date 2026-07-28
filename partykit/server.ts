@@ -410,25 +410,21 @@ export default class GameServer {
     return (this.room.env.NEXTJS_BASE_URL as string | undefined) ?? "http://localhost:3000";
   }
 
-  // A snapshot is ACCEPTED if every component of `incoming` is >= the
-  // corresponding component of `last` (i.e. incoming is not older than
-  // last in any dimension). This means an EQUAL vector is accepted
-  // (e.g. a re-broadcast where nothing changed for this player) — it is
-  // NOT treated as stale. A snapshot is REJECTED only if at least one
-  // component of `incoming` is STRICTLY LESS than `last`.
-  private isAtLeastAsNew(incoming: DbVersion, last?: DbVersion): boolean {
+  // A per-player snapshot is ACCEPTED for playerId if the incoming vector
+  // is at least as fresh as `last` for that specific player's own event
+  // stream AND for the global roundEventVersion. Equal values are accepted
+  // (e.g. a re-broadcast where nothing changed for this player). A snapshot
+  // is REJECTED for playerId if roundEventVersion regressed OR if
+  // playerEventVersions[playerId] is strictly less than the last accepted
+  // value for that same player. Other players' values are intentionally NOT
+  // compared because each per-player snapshot may carry a transaction-local
+  // view of the other players' state.
+  private isAtLeastAsNewForPlayer(playerId: string, incoming: DbVersion, last?: DbVersion): boolean {
     if (!last) return true;
     if (incoming.roundEventVersion < last.roundEventVersion) return false;
-    const allPlayerIds = new Set<string>([
-      ...Object.keys(incoming.playerEventVersions),
-      ...Object.keys(last.playerEventVersions),
-    ]);
-    for (const playerId of allPlayerIds) {
-      const incomingVersion = incoming.playerEventVersions[playerId] ?? 0;
-      const lastVersion = last.playerEventVersions[playerId] ?? 0;
-      if (incomingVersion < lastVersion) return false;
-    }
-    return true;
+    const incomingVersion = incoming.playerEventVersions[playerId] ?? 0;
+    const lastVersion = last.playerEventVersions[playerId] ?? 0;
+    return incomingVersion >= lastVersion;
   }
 
   /**
@@ -619,7 +615,7 @@ export default class GameServer {
           const psDbVersion = ps["dbVersion"] as DbVersion | undefined;
           if (!psDbVersion) continue;
           const last = this.lastDbVersionByPlayer.get(pid);
-          if (!this.isAtLeastAsNew(psDbVersion, last)) {
+          if (!this.isAtLeastAsNewForPlayer(pid, psDbVersion, last)) {
             console.log(`[STALE_SNAPSHOT_REJECTED] playerId=${pid.slice(0, 8)}`);
             continue;
           }
@@ -1383,7 +1379,7 @@ export default class GameServer {
         const dbVersion = snapshot["dbVersion"] as DbVersion | undefined;
         if (dbVersion) {
           const last = this.lastDbVersionByPlayer.get(playerId);
-          if (!this.isAtLeastAsNew(dbVersion, last)) {
+          if (!this.isAtLeastAsNewForPlayer(playerId, dbVersion, last)) {
             console.log(`[STALE_SNAPSHOT_REJECTED] playerId=${playerId.slice(0, 8)} (sendPerPlayerSnapshot)`);
             continue;
           }
