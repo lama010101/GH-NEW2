@@ -19,7 +19,13 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   useEffect(() => {
-    if (value <= 0) return;
+    if (value <= 0) {
+      if (!hasCompletedRef.current) {
+        hasCompletedRef.current = true;
+        onCompleteRef.current?.();
+      }
+      return;
+    }
     if (hasAnimatedRef.current) return;
     hasAnimatedRef.current = true;
 
