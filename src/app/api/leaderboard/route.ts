@@ -81,7 +81,7 @@ export async function GET(request: Request) {
 
     switch (tab) {
       case "overall": {
-        const rows = await dbPool.query<OverallRow>(
+        const result = await dbPool.query<OverallRow>(
           `WITH ranked AS (
             SELECT
               player_id,
@@ -92,64 +92,59 @@ export async function GET(request: Request) {
               rounds_won,
               RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
             FROM player_global_stats
-          )
-          SELECT
-            r.rank,
-            r.player_id,
-            r.avg_accuracy::float AS avg_accuracy,
-            r.total_xp,
-            r.games_played,
-            r.rounds_played,
-            r.rounds_won,
-            p.display_name,
-            p.avatar_url
-          FROM ranked r
-          LEFT JOIN profiles p ON p.id = r.player_id
-          WHERE (
-            $2 = 'all'
-            OR r.player_id = $1
-            OR r.player_id IN (
-              SELECT followed_id FROM player_follows WHERE follower_id = $1
+          ),
+          visible AS (
+            SELECT
+              r.rank::int AS rank,
+              r.player_id,
+              r.avg_accuracy::float AS avg_accuracy,
+              r.total_xp,
+              r.games_played,
+              r.rounds_played,
+              r.rounds_won,
+              p.display_name,
+              p.avatar_url
+            FROM ranked r
+            LEFT JOIN profiles p ON p.id = r.player_id
+            WHERE (
+              $2 = 'all'
+              OR r.player_id IN (
+                SELECT followed_id FROM player_follows WHERE follower_id = $1
+              )
             )
+              AND r.player_id <> $1
+            ORDER BY r.rank
+            LIMIT 50
+          ),
+          own AS (
+            SELECT
+              r.rank::int AS rank,
+              r.player_id,
+              r.avg_accuracy::float AS avg_accuracy,
+              r.total_xp,
+              r.games_played,
+              r.rounds_played,
+              r.rounds_won,
+              p.display_name,
+              p.avatar_url
+            FROM ranked r
+            LEFT JOIN profiles p ON p.id = r.player_id
+            WHERE r.player_id = $1
           )
-          ORDER BY r.rank
-          LIMIT 50`,
+          SELECT * FROM visible
+          UNION
+          SELECT * FROM own
+          ORDER BY rank`,
           [userId, filter]
         );
 
-        const own = await dbPool.query<OverallRow>(
-          `WITH ranked AS (
-            SELECT
-              player_id,
-              avg_accuracy,
-              total_xp,
-              games_played,
-              rounds_played,
-              rounds_won,
-              RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
-            FROM player_global_stats
-          )
-          SELECT
-            r.rank,
-            r.player_id,
-            r.avg_accuracy::float AS avg_accuracy,
-            r.total_xp,
-            r.games_played,
-            r.rounds_played,
-            r.rounds_won,
-            p.display_name,
-            p.avatar_url
-          FROM ranked r
-          LEFT JOIN profiles p ON p.id = r.player_id
-          WHERE r.player_id = $1`,
-          [userId]
-        );
+        const ownEntry = result.rows.find((r) => r.player_id === userId) ?? null;
 
         return NextResponse.json({
           tab,
           filter,
-          rows: rows.rows,
-          ownEntry: own.rows[0] ?? null,
+          rows: result.rows,
+          ownEntry,
         });
       }
 
@@ -162,7 +157,7 @@ export async function GET(request: Request) {
           return formatError("Invalid date format. Use YYYY-MM-DD.", 400);
         }
 
-        const rows = await dbPool.query<DailyTodayRow>(
+        const result = await dbPool.query<DailyTodayRow>(
           `WITH ranked AS (
             SELECT
               player_id,
@@ -172,65 +167,61 @@ export async function GET(request: Request) {
               RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
             FROM leaderboard_daily
             WHERE date = $3
-          )
-          SELECT
-            r.rank,
-            r.player_id,
-            r.avg_accuracy::float AS avg_accuracy,
-            r.total_xp,
-            r.completed_at::text AS completed_at,
-            p.display_name,
-            p.avatar_url
-          FROM ranked r
-          LEFT JOIN profiles p ON p.id = r.player_id
-          WHERE (
-            $2 = 'all'
-            OR r.player_id = $1
-            OR r.player_id IN (
-              SELECT followed_id FROM player_follows WHERE follower_id = $1
+          ),
+          visible AS (
+            SELECT
+              r.rank::int AS rank,
+              r.player_id,
+              r.avg_accuracy::float AS avg_accuracy,
+              r.total_xp,
+              r.completed_at::text AS completed_at,
+              p.display_name,
+              p.avatar_url
+            FROM ranked r
+            LEFT JOIN profiles p ON p.id = r.player_id
+            WHERE (
+              $2 = 'all'
+              OR r.player_id IN (
+                SELECT followed_id FROM player_follows WHERE follower_id = $1
+              )
             )
+              AND r.player_id <> $1
+            ORDER BY r.rank
+            LIMIT 50
+          ),
+          own AS (
+            SELECT
+              r.rank::int AS rank,
+              r.player_id,
+              r.avg_accuracy::float AS avg_accuracy,
+              r.total_xp,
+              r.completed_at::text AS completed_at,
+              p.display_name,
+              p.avatar_url
+            FROM ranked r
+            LEFT JOIN profiles p ON p.id = r.player_id
+            WHERE r.player_id = $1
           )
-          ORDER BY r.rank
-          LIMIT 50`,
+          SELECT * FROM visible
+          UNION
+          SELECT * FROM own
+          ORDER BY rank`,
           [userId, filter, targetDate]
         );
 
-        const own = await dbPool.query<DailyTodayRow>(
-          `WITH ranked AS (
-            SELECT
-              player_id,
-              avg_accuracy,
-              total_xp,
-              completed_at,
-              RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
-            FROM leaderboard_daily
-            WHERE date = $2
-          )
-          SELECT
-            r.rank,
-            r.player_id,
-            r.avg_accuracy::float AS avg_accuracy,
-            r.total_xp,
-            r.completed_at::text AS completed_at,
-            p.display_name,
-            p.avatar_url
-          FROM ranked r
-          LEFT JOIN profiles p ON p.id = r.player_id
-          WHERE r.player_id = $1`,
-          [userId, targetDate]
-        );
+        const ownEntry = result.rows.find((r) => r.player_id === userId) ?? null;
 
         return NextResponse.json({
           tab,
           filter,
           date: targetDate,
-          rows: rows.rows,
-          ownEntry: own.rows[0] ?? null,
+          rows: result.rows,
+          ownEntry,
         });
       }
 
       case "daily_alltime": {
-        const rows = await dbPool.query<DailyAlltimeRow>(
+        const result = await dbPool.query<DailyAlltimeRow>(
           `WITH ranked AS (
             SELECT
               player_id,
@@ -239,63 +230,60 @@ export async function GET(request: Request) {
               games_played,
               RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
             FROM leaderboard_daily_alltime
-          )
-          SELECT
-            r.rank,
-            r.player_id,
-            r.avg_accuracy::float AS avg_accuracy,
-            r.total_xp,
-            r.games_played,
-            p.display_name,
-            p.avatar_url
-          FROM ranked r
-          LEFT JOIN profiles p ON p.id = r.player_id
-          WHERE (
-            $2 = 'all'
-            OR r.player_id = $1
-            OR r.player_id IN (
-              SELECT followed_id FROM player_follows WHERE follower_id = $1
+          ),
+          visible AS (
+            SELECT
+              r.rank::int AS rank,
+              r.player_id,
+              r.avg_accuracy::float AS avg_accuracy,
+              r.total_xp,
+              r.games_played,
+              p.display_name,
+              p.avatar_url
+            FROM ranked r
+            LEFT JOIN profiles p ON p.id = r.player_id
+            WHERE (
+              $2 = 'all'
+              OR r.player_id IN (
+                SELECT followed_id FROM player_follows WHERE follower_id = $1
+              )
             )
+              AND r.player_id <> $1
+            ORDER BY r.rank
+            LIMIT 50
+          ),
+          own AS (
+            SELECT
+              r.rank::int AS rank,
+              r.player_id,
+              r.avg_accuracy::float AS avg_accuracy,
+              r.total_xp,
+              r.games_played,
+              p.display_name,
+              p.avatar_url
+            FROM ranked r
+            LEFT JOIN profiles p ON p.id = r.player_id
+            WHERE r.player_id = $1
           )
-          ORDER BY r.rank
-          LIMIT 50`,
+          SELECT * FROM visible
+          UNION
+          SELECT * FROM own
+          ORDER BY rank`,
           [userId, filter]
         );
 
-        const own = await dbPool.query<DailyAlltimeRow>(
-          `WITH ranked AS (
-            SELECT
-              player_id,
-              avg_accuracy,
-              total_xp,
-              games_played,
-              RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
-            FROM leaderboard_daily_alltime
-          )
-          SELECT
-            r.rank,
-            r.player_id,
-            r.avg_accuracy::float AS avg_accuracy,
-            r.total_xp,
-            r.games_played,
-            p.display_name,
-            p.avatar_url
-          FROM ranked r
-          LEFT JOIN profiles p ON p.id = r.player_id
-          WHERE r.player_id = $1`,
-          [userId]
-        );
+        const ownEntry = result.rows.find((r) => r.player_id === userId) ?? null;
 
         return NextResponse.json({
           tab,
           filter,
-          rows: rows.rows,
-          ownEntry: own.rows[0] ?? null,
+          rows: result.rows,
+          ownEntry,
         });
       }
 
       case "levelup": {
-        const rows = await dbPool.query<LevelupRow>(
+        const result = await dbPool.query<LevelupRow>(
           `WITH ranked AS (
             SELECT
               player_id,
@@ -303,55 +291,53 @@ export async function GET(request: Request) {
               best_accuracy,
               RANK() OVER (ORDER BY current_level DESC, best_accuracy DESC) AS rank
             FROM leaderboard_levelup
-          )
-          SELECT
-            r.rank,
-            r.player_id,
-            r.current_level,
-            r.best_accuracy,
-            p.display_name,
-            p.avatar_url
-          FROM ranked r
-          LEFT JOIN profiles p ON p.id = r.player_id
-          WHERE (
-            $2 = 'all'
-            OR r.player_id = $1
-            OR r.player_id IN (
-              SELECT followed_id FROM player_follows WHERE follower_id = $1
+          ),
+          visible AS (
+            SELECT
+              r.rank::int AS rank,
+              r.player_id,
+              r.current_level,
+              r.best_accuracy,
+              p.display_name,
+              p.avatar_url
+            FROM ranked r
+            LEFT JOIN profiles p ON p.id = r.player_id
+            WHERE (
+              $2 = 'all'
+              OR r.player_id IN (
+                SELECT followed_id FROM player_follows WHERE follower_id = $1
+              )
             )
+              AND r.player_id <> $1
+            ORDER BY r.rank
+            LIMIT 50
+          ),
+          own AS (
+            SELECT
+              r.rank::int AS rank,
+              r.player_id,
+              r.current_level,
+              r.best_accuracy,
+              p.display_name,
+              p.avatar_url
+            FROM ranked r
+            LEFT JOIN profiles p ON p.id = r.player_id
+            WHERE r.player_id = $1
           )
-          ORDER BY r.rank
-          LIMIT 50`,
+          SELECT * FROM visible
+          UNION
+          SELECT * FROM own
+          ORDER BY rank`,
           [userId, filter]
         );
 
-        const own = await dbPool.query<LevelupRow>(
-          `WITH ranked AS (
-            SELECT
-              player_id,
-              current_level,
-              best_accuracy,
-              RANK() OVER (ORDER BY current_level DESC, best_accuracy DESC) AS rank
-            FROM leaderboard_levelup
-          )
-          SELECT
-            r.rank,
-            r.player_id,
-            r.current_level,
-            r.best_accuracy,
-            p.display_name,
-            p.avatar_url
-          FROM ranked r
-          LEFT JOIN profiles p ON p.id = r.player_id
-          WHERE r.player_id = $1`,
-          [userId]
-        );
+        const ownEntry = result.rows.find((r) => r.player_id === userId) ?? null;
 
         return NextResponse.json({
           tab,
           filter,
-          rows: rows.rows,
-          ownEntry: own.rows[0] ?? null,
+          rows: result.rows,
+          ownEntry,
         });
       }
 
