@@ -566,6 +566,12 @@
     "no_results_today": "Heute noch keine Ergebnisse.",
     "accuracy_pct": "Genauigkeit %",
     "unknown_player": "Unbekannt",
+    "summary_line": "Du bist {rank}{suffix} in {tab}",
+    "rank_suffix_one": ".",
+    "rank_suffix_two": ".",
+    "rank_suffix_few": ".",
+    "rank_suffix_many": ".",
+    "rank_suffix_other": ".",
     "clear_session_restart": "Sitzung löschen und neu starten",
     "taking_too_long": "Dauert es zu lange?"
   },

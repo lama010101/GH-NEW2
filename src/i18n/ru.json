@@ -566,6 +566,12 @@
     "no_results_today": "Сегодня результатов нет.",
     "accuracy_pct": "Точность %",
     "unknown_player": "Неизвестный",
+    "summary_line": "Вы на {rank}{suffix} месте в {tab}",
+    "rank_suffix_one": "-й",
+    "rank_suffix_two": "-й",
+    "rank_suffix_few": "-й",
+    "rank_suffix_many": "-й",
+    "rank_suffix_other": "-й",
     "clear_session_restart": "Очистить сеанс и перезапустить",
     "taking_too_long": "Слишком долго?"
   },
