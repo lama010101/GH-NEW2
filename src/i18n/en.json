@@ -567,7 +567,13 @@
     "taking_too_long": "Taking too long?",
     "no_results_today": "No results yet for today.",
     "accuracy_pct": "Accuracy %",
-    "unknown_player": "Unknown"
+    "unknown_player": "Unknown",
+    "summary_line": "You are {rank}{suffix} in {tab}",
+    "rank_suffix_one": "st",
+    "rank_suffix_two": "nd",
+    "rank_suffix_few": "rd",
+    "rank_suffix_many": "th",
+    "rank_suffix_other": "th"
   },
   "profile": {
     "accuracy_breakdown": "Accuracy breakdown",
