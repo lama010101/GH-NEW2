@@ -96,7 +96,6 @@ export default function RoundCompleteSection({
   busy,
   connectionState,
 }: RoundCompleteSectionProps) {
-  void connectionState;
   const t = useTranslations('game');
   const tNav = useTranslations('nav');
 
@@ -747,7 +746,7 @@ export default function RoundCompleteSection({
                 <button
                   className={`${styles.nextButton} ${!isAsync && effectiveReadyForNext.includes(playerId ?? "") ? styles.nextButtonDisabled : ""}`}
                   onClick={handleNextClick}
-                  disabled={(!isAsync && effectiveReadyForNext.includes(playerId ?? "")) || busy}
+                  disabled={(!isAsync && effectiveReadyForNext.includes(playerId ?? "")) || busy || connectionState !== "OPEN" || snapshot.status !== "ROUND_COMPLETE"}
                   data-testid="round-next-btn"
                   data-ready={effectiveReadyForNext.includes(playerId ?? "") ? 'true' : 'false'}
                 >
