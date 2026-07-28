@@ -2,8 +2,8 @@
 
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
@@ -83,6 +83,9 @@ function LeaderboardPageInner() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [initials, setInitials] = useState('PL');
   const [showNavModal, setShowNavModal] = useState(false);
+  const locale = useLocale();
+  const [ownRank, setOwnRank] = useState<number | null>(null);
+  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
   useEffect(() => {
     if (!playerId) {
@@ -337,6 +340,78 @@ function LeaderboardPageInner() {
     return levelupData;
   };
 
+  const fetchOwnRank = useCallback(async (): Promise<number | null> => {
+    if (!playerId) return null;
+    try {
+      let rows: { player_id: string }[] = [];
+      if (activeTab === 'overall') {
+        const { data } = await supabaseBrowser
+          .from('player_global_stats')
+          .select('player_id, avg_accuracy, total_xp, rounds_played, games_played')
+          .order('avg_accuracy', { ascending: false })
+          .order('total_xp', { ascending: false });
+        rows = (data || []) as { player_id: string }[];
+      } else if (activeTab === 'daily' && activeSubTab === 'today') {
+        const today = new Date().toISOString().split('T')[0];
+        const { data } = await supabaseBrowser
+          .from('leaderboard_daily')
+          .select('player_id, avg_accuracy, total_xp, completed_at')
+          .eq('date', today)
+          .order('avg_accuracy', { ascending: false })
+          .order('total_xp', { ascending: false });
+        rows = (data || []) as { player_id: string }[];
+      } else if (activeTab === 'daily' && activeSubTab === 'alltime') {
+        const { data } = await supabaseBrowser
+          .from('leaderboard_daily_alltime')
+          .select('player_id, avg_accuracy, total_xp, games_played')
+          .order('avg_accuracy', { ascending: false })
+          .order('total_xp', { ascending: false });
+        rows = (data || []) as { player_id: string }[];
+      } else {
+        const { data } = await supabaseBrowser
+          .from('leaderboard_levelup')
+          .select('player_id, current_level, best_accuracy')
+          .order('current_level', { ascending: false })
+          .order('best_accuracy', { ascending: false });
+        rows = (data || []) as { player_id: string }[];
+      }
+      const index = rows.findIndex((r) => r.player_id === playerId);
+      return index === -1 ? null : index + 1;
+    } catch {
+      return null;
+    }
+  }, [playerId, activeTab, activeSubTab]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setOwnRank(null);
+    if (!playerId) return;
+    (async () => {
+      const rank = await fetchOwnRank();
+      if (!cancelled) setOwnRank(rank);
+    })();
+    return () => { cancelled = true; };
+  }, [playerId, activeTab, activeSubTab, fetchOwnRank]);
+
+  const getOrdinalSuffix = (n: number): string => {
+    const category = new Intl.PluralRules(locale, { type: 'ordinal' }).select(n);
+    const suffixKey = `rank_suffix_${category}` as 'rank_suffix_one' | 'rank_suffix_two' | 'rank_suffix_few' | 'rank_suffix_many' | 'rank_suffix_other';
+    return (t(suffixKey) as string) ?? '';
+  };
+
+  const getSummaryTabLabel = (): string => {
+    if (activeTab === 'daily') {
+      return `${t('daily')} ${t(activeSubTab === 'today' ? 'today' : 'all_time')}`;
+    }
+    if (activeTab === 'levelup') return t('level_up');
+    return t('overall');
+  };
+
+  const handleSummaryClick = () => {
+    const row = playerId ? rowRefs.current.get(playerId) : undefined;
+    if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  };
+
   const formatNumber = (num: number | undefined): string => {
     if (num === undefined || num === null) return '—';
     return num.toLocaleString();
@@ -348,6 +423,19 @@ function LeaderboardPageInner() {
   };
 
   const currentData = getCurrentData();
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  rowRefs.current = useMemo(() => new Map<string, HTMLTableRowElement>(), [currentData]);
+
+  const podiumSlots = useMemo(() => {
+    const data = currentData ?? [];
+    if (data.length < 3) return [];
+    return [
+      { entry: data[1], place: 2, className: styles.podiumSilver, height: '85%' },
+      { entry: data[0], place: 1, className: styles.podiumGold, height: '100%' },
+      { entry: data[2], place: 3, className: styles.podiumBronze, height: '85%' },
+    ];
+  }, [currentData]);
 
   const renderRank = (rank: number) => {
     if (rank === 1) return <span className={styles.medalGold}>🥇</span>;
@@ -437,6 +525,52 @@ function LeaderboardPageInner() {
         </div>
       )}
 
+      {/* Summary */}
+      {!loading && !error && ownRank !== null && ownRank > 0 && (
+        <div
+          className={styles.summaryLine}
+          onClick={handleSummaryClick}
+          role="button"
+          tabIndex={0}
+        >
+          {t('summary_line', { rank: ownRank, suffix: getOrdinalSuffix(ownRank), tab: getSummaryTabLabel() })}
+        </div>
+      )}
+
+      {/* Podium */}
+      {!loading && !error && podiumSlots.length === 3 && (
+        <div className={styles.podium}>
+          {podiumSlots.map((slot) => (
+            <div
+              key={slot.entry.player_id}
+              className={`${styles.podiumItem} ${slot.className}`}
+              style={{ height: slot.height }}
+            >
+              <span className={styles.podiumRank}>{slot.place}</span>
+              {slot.entry.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={slot.entry.avatar_url}
+                  alt=""
+                  className={styles.podiumAvatar}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <div className={styles.podiumAvatarInitials}>
+                  {getInitials(slot.entry.display_name)}
+                </div>
+              )}
+              <span className={styles.podiumName}>{slot.entry.display_name ?? t('unknown_player')}</span>
+              <span className={styles.podiumValue}>
+                {activeTab === 'levelup'
+                  ? (slot.entry.current_level ?? '—')
+                  : formatAccuracy(slot.entry.avg_accuracy)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Content */}
       <div className={styles.content}>
         {loading && (
@@ -501,6 +635,7 @@ function LeaderboardPageInner() {
                   return (
                     <tr
                       key={entry.player_id}
+                      ref={(el) => { if (el) rowRefs.current.set(entry.player_id, el); }}
                       className={`${styles.row} ${isCurrentPlayer ? styles.rowHighlight : ''}`}
                     >
                       <td className={styles.rankCell}>{renderRank(entry.rank)}</td>
