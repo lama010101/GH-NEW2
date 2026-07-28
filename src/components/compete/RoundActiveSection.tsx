@@ -12,6 +12,7 @@ import { setLocale } from "@/actions/setLocale";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import styles from "./RoundActiveSection.module.css";
+import type { ConnectionState } from "@/core/competeWebSocket";
 
 const GameMap = dynamic(
   () => import("@/components/GameMap").then((m) => m.GameMap),
@@ -27,6 +28,7 @@ interface RoundActiveSectionProps {
   hasSubmitted: boolean;
   localSubmitted: boolean;
   busy: boolean;
+  connectionState?: ConnectionState;
   onSetLocation: (location: { lat: number; lng: number }) => void;
   onSetYear: (year: number | null) => void;
   onSubmit: () => void;
@@ -49,6 +51,7 @@ export default function RoundActiveSection({
   hasSubmitted,
   localSubmitted,
   busy,
+  connectionState,
   onSetLocation,
   onSetYear,
   onSubmit,
@@ -59,6 +62,7 @@ export default function RoundActiveSection({
   localPlayerAvatarUrl,
   locationName,
 }: RoundActiveSectionProps) {
+  void connectionState;
   const t = useTranslations('game');
   const tNav = useTranslations('nav');
   const currentEvent = snapshot.rounds?.[snapshot.currentRoundIndex];

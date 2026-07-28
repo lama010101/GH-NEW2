@@ -24,6 +24,7 @@ import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
+import type { ConnectionState } from "@/core/competeWebSocket";
 
 interface RoundCompleteSectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -49,6 +50,7 @@ interface RoundCompleteSectionProps {
   resultSecsLeft: number | null;
   onAdvanceRound: () => void;
   busy?: boolean;
+  connectionState?: ConnectionState;
 }
 
 // Small % ring for Where/When mini cards — colored stroke + value text.
@@ -92,7 +94,9 @@ export default function RoundCompleteSection({
   resultSecsLeft,
   onAdvanceRound,
   busy,
+  connectionState,
 }: RoundCompleteSectionProps) {
+  void connectionState;
   const t = useTranslations('game');
   const tNav = useTranslations('nav');
 
