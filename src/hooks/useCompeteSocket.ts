@@ -168,6 +168,11 @@ export default function useCompeteSocket({
 
   const toggleReady = () => {
     if (!playerId || !wsRef.current) return;
+    if (connectionState !== "OPEN") {
+      onSetBusy(false);
+      onError("Connection not ready — please wait");
+      return;
+    }
     onSetBusy(true);
     // Client → DO → DB: send action signal via WS
     wsRef.current.toggleReady(true);

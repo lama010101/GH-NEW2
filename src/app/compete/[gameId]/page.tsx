@@ -382,12 +382,16 @@ export default function CompeteGamePage() {
   const handleAdvanceRound = useCallback(() => {
     if (!snapshot) return;
     if (!playerId) return;
+    if (connectionState !== "OPEN" || snapshot.status !== "ROUND_COMPLETE") {
+      setError("Connection not ready — please wait");
+      return;
+    }
     setBusy(true);
     setError(null);
     // Client → DO → DB: send READY_NEXT action signal via WS.
     // Server validates phase — client must NOT silently no-op on stale snapshot.status.
     readyNext(snapshot.currentRoundIndex);
-  }, [snapshot, playerId, readyNext]);
+  }, [snapshot, playerId, connectionState, readyNext]);
 
   function ConnectionStatus({ state, error: connectionError, onReconnect }: { state: ConnectionState; error: string | null; onReconnect: () => void }) {
     if (state === "OPEN" && !connectionError) return null;
