@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateRound } from "./rules";
+import { evaluateRound, applyHintPenalty } from "./rules";
 
 const MOON_LANDING_EVENT = {
   id: "moon-landing",
@@ -331,5 +331,54 @@ describe("scoring calibration", () => {
       );
       expect(result.yearAccuracy).toBe(0);
     });
+  });
+});
+
+describe("applyHintPenalty", () => {
+  it("no penalty returns raw inputs and derived aggregates", () => {
+    expect(applyHintPenalty(100, 100, 1969, 2025, 0, 0)).toEqual({
+      yearAccuracy: 100,
+      locationAccuracy: 100,
+      comboAccuracy: 100,
+      roundAccuracy: 100,
+      roundXp: 200,
+    });
+    expect(applyHintPenalty(50, 50, 1969, 2025, 0, 0)).toEqual({
+      yearAccuracy: 50,
+      locationAccuracy: 50,
+      comboAccuracy: 50,
+      roundAccuracy: 50,
+      roundXp: 100,
+    });
+  });
+
+  it("era scale reduces effective when penalty for older events", () => {
+    const old = applyHintPenalty(100, 100, 500, 2025, 50, 0);
+    const recent = applyHintPenalty(100, 100, 2020, 2025, 50, 0);
+    expect(old.yearAccuracy).toBeGreaterThan(recent.yearAccuracy);
+    expect(recent.yearAccuracy).toBe(50);
+    expect(old.locationAccuracy).toBe(100);
+    expect(recent.locationAccuracy).toBe(100);
+  });
+
+  it("clamps penalty rates to full axis loss", () => {
+    const result = applyHintPenalty(100, 100, 2020, 2025, 200, 200);
+    expect(result.yearAccuracy).toBe(0);
+    expect(result.locationAccuracy).toBe(0);
+    expect(result.comboAccuracy).toBe(0);
+    expect(result.roundAccuracy).toBe(0);
+    expect(result.roundXp).toBe(0);
+  });
+
+  it("matches evaluateRound for a sample case", () => {
+    const guess = { year: 1969, location: { lat: 0.67408, lng: 23.47297 } };
+    const raw = evaluateRound(MOON_LANDING_EVENT, guess, 0, false, 0, 0, 2025);
+    const preview = applyHintPenalty(raw.yearAccuracy, raw.locationAccuracy, MOON_LANDING_EVENT.year, 2025, 30, 20);
+    const actual = evaluateRound(MOON_LANDING_EVENT, guess, 0, false, 30, 20, 2025);
+    expect(actual.yearAccuracy).toBe(preview.yearAccuracy);
+    expect(actual.locationAccuracy).toBe(preview.locationAccuracy);
+    expect(actual.comboAccuracy).toBe(preview.comboAccuracy);
+    expect(actual.roundAccuracy).toBe(preview.roundAccuracy);
+    expect(actual.roundXp).toBe(preview.roundXp);
   });
 });

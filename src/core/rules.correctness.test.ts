@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateRound,
+  applyHintPenalty,
+  calculateYearAccuracy,
+  calculateLocationAccuracy,
+  haversineDistanceKm,
   calculateBadges,
   evaluateNearMisses,
 } from "./rules";
@@ -488,6 +492,80 @@ describe("breadth correctness tests", () => {
       // Check near-miss via evaluateNearMisses
       const nearMisses = evaluateNearMisses(result.yearAccuracy, result.locationAccuracy, result.comboAccuracy, result.badges);
       expect(nearMisses.find(n => n.dimension === "year")?.accuracy).toBe(88);
+    });
+  });
+});
+
+describe("applyHintPenalty equivalence with evaluateRound", () => {
+  function findYearGuess(eventYear: number, referenceYear: number, target: number): number {
+    if (target === 100) return eventYear;
+    for (let diff = 0; diff <= 5000; diff++) {
+      if (calculateYearAccuracy(diff, eventYear, referenceYear) === target) {
+        return eventYear + diff;
+      }
+    }
+    throw new Error(`No year guess found for target ${target}`);
+  }
+
+  function findLocationGuess(
+    event: typeof MOON_LANDING_EVENT,
+    target: number
+  ): { lat: number; lng: number } {
+    if (target === 100) {
+      return { lat: event.location.lat, lng: event.location.lng };
+    }
+    if (target === 0) {
+      return {
+        lat: -event.location.lat,
+        lng: event.location.lng + (event.location.lng > 0 ? -180 : 180),
+      };
+    }
+    for (let offsetDeg = 0; offsetDeg <= 180; offsetDeg += 0.01) {
+      const loc = { lat: event.location.lat + offsetDeg, lng: event.location.lng };
+      const distance = haversineDistanceKm(event.location, loc);
+      if (calculateLocationAccuracy(distance) === target) {
+        return loc;
+      }
+    }
+    throw new Error(`No location guess found for target ${target}`);
+  }
+
+  const cases = [
+    { eventYear: 2020, rawYear: 100, rawLoc: 100, whenRate: 0, whereRate: 0 },
+    { eventYear: 500, rawYear: 100, rawLoc: 100, whenRate: 50, whereRate: 0 },
+    { eventYear: 1400, rawYear: 50, rawLoc: 50, whenRate: 0, whereRate: 50 },
+    { eventYear: 2020, rawYear: 100, rawLoc: 0, whenRate: 100, whereRate: 100 },
+    { eventYear: 500, rawYear: 0, rawLoc: 100, whenRate: 150, whereRate: 200 },
+    { eventYear: 1400, rawYear: 50, rawLoc: 100, whenRate: 10, whereRate: 40 },
+  ];
+
+  cases.forEach(({ eventYear, rawYear, rawLoc, whenRate, whereRate }) => {
+    it(`equivalence for rawYear=${rawYear} rawLoc=${rawLoc} eventYear=${eventYear} when=${whenRate} where=${whereRate}`, () => {
+      const event = { ...MOON_LANDING_EVENT, year: eventYear };
+      const guess = {
+        year: findYearGuess(eventYear, 2025, rawYear),
+        location: findLocationGuess(event, rawLoc),
+      };
+
+      const raw = evaluateRound(event, guess, 0, false, 0, 0, 2025);
+      expect(raw.yearAccuracy).toBe(rawYear);
+      expect(raw.locationAccuracy).toBe(rawLoc);
+
+      const preview = applyHintPenalty(
+        raw.yearAccuracy,
+        raw.locationAccuracy,
+        event.year,
+        2025,
+        whenRate,
+        whereRate
+      );
+      const actual = evaluateRound(event, guess, 0, false, whenRate, whereRate, 2025);
+
+      expect(actual.yearAccuracy).toBe(preview.yearAccuracy);
+      expect(actual.locationAccuracy).toBe(preview.locationAccuracy);
+      expect(actual.comboAccuracy).toBe(preview.comboAccuracy);
+      expect(actual.roundAccuracy).toBe(preview.roundAccuracy);
+      expect(actual.roundXp).toBe(preview.roundXp);
     });
   });
 });
