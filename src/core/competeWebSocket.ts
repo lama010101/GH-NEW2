@@ -17,12 +17,15 @@ export type WebSocketMessage =
   | { type: "PLAY_AGAIN"; newGameId: string }
   | { type: "PONG" };
 
+export type ConnectionState = "CONNECTING" | "OPEN" | "RECONNECTING" | "FAILED";
+
 export type CompeteWebSocketCallbacks = {
   onStateUpdate?: (snapshot: unknown) => void;
   onError?: (message: string, code?: string) => void;
   onKicked?: () => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
+  onConnectionStateChange?: (state: ConnectionState) => void;
   onPlayerSubmitted?: (playerId: string, playerName: string) => void;
   onTimerClamped?: (newPhaseEndsAt: string, clampedToSec: number) => void;
   onPlayAgain?: (newGameId: string) => void;
@@ -41,6 +44,11 @@ export class CompeteWebSocket {
   private lastAppliedSnapshotVersion = -1;
   private pendingVersionReset = false;
   private lastPongReceived = 0;
+  private connectionState: ConnectionState = "CONNECTING";
+  private sendQueue: Array<{ id: number; message: unknown; expiresAt: number; onFailure?: () => void }> = [];
+  private queueTimer: ReturnType<typeof setInterval> | null = null;
+  private nextQueueId = 0;
+  private readonly messageTtlMs = 5000;
   private static activeSockets = new Map<string, CompeteWebSocket>();
 
   constructor(
@@ -66,6 +74,7 @@ export class CompeteWebSocket {
       this.ws = null;
     }
 
+    this.setConnectionState("CONNECTING");
     const isLocalhost =
       this.partyKitHost.includes("localhost") || this.partyKitHost.includes("127.0.0.1");
     const protocol = isLocalhost ? "ws" : "wss";
@@ -82,7 +91,9 @@ export class CompeteWebSocket {
       this.manuallyDisconnected = false;
       this.lastPongReceived = Date.now();
       this.pendingVersionReset = true;
+      this.setConnectionState("OPEN");
       this.callbacks.onConnect?.();
+      this.flushSendQueue();
       this.heartbeatInterval = setInterval(() => {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           // Force reconnect if no PONG received within 45s (missed 2+ heartbeats).
@@ -114,7 +125,12 @@ export class CompeteWebSocket {
 
     this.ws.onclose = (event: CloseEvent) => {
       this.clearHeartbeat();
+      this.stopQueueTimer();
       console.log("[CompeteWebSocket] Disconnected — code:", event.code, "reason:", event.reason || "(none)");
+      if (this.manuallyDisconnected) {
+        return;
+      }
+      this.setConnectionState("RECONNECTING");
       this.callbacks.onDisconnect?.();
       this.attemptReconnect();
     };
@@ -128,7 +144,10 @@ export class CompeteWebSocket {
 
   disconnect(): void {
     this.clearHeartbeat();
+    this.stopQueueTimer();
     this.manuallyDisconnected = true;
+    const dropped = this.sendQueue.splice(0);
+    dropped.forEach((item) => item.onFailure?.());
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -222,11 +241,13 @@ export class CompeteWebSocket {
     if (this.manuallyDisconnected) return;
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error("[CompeteWebSocket] Max reconnect attempts reached");
+      this.setConnectionState("FAILED");
       this.callbacks.onError?.("Failed to reconnect after multiple attempts");
       return;
     }
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    this.setConnectionState("RECONNECTING");
     setTimeout(() => this.connectWithFreshToken(), delay);
   }
 
@@ -238,6 +259,7 @@ export class CompeteWebSocket {
    */
   private async connectWithFreshToken(): Promise<void> {
     if (this.manuallyDisconnected) return;
+    this.setConnectionState("CONNECTING");
     if (this.tokenProvider) {
       try {
         const freshToken = await this.tokenProvider();
@@ -253,12 +275,91 @@ export class CompeteWebSocket {
     this.connect();
   }
 
-  private send(message: unknown): void {
+  private send(message: unknown, onFailure?: () => void): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
-    } else {
-      console.warn("[CompeteWebSocket] Cannot send, websocket not open");
+      try {
+        this.ws.send(JSON.stringify(message));
+      } catch (err) {
+        console.error("[CompeteWebSocket] Send failed while OPEN:", err);
+        onFailure?.();
+      }
+      return;
     }
+    if (this.manuallyDisconnected || this.connectionState === "FAILED") {
+      onFailure?.();
+      return;
+    }
+    const id = ++this.nextQueueId;
+    this.sendQueue.push({ id, message, expiresAt: Date.now() + this.messageTtlMs, onFailure });
+    this.startQueueTimer();
+    console.warn(
+      "[CompeteWebSocket] Queued message (socket not open):",
+      (message as Record<string, unknown>).type,
+      "queue length:",
+      this.sendQueue.length
+    );
+  }
+
+  private sendAction(message: unknown): void {
+    this.send(message, () => {
+      this.callbacks.onError?.("Connection lost — action failed. Please retry.");
+    });
+  }
+
+  private startQueueTimer(): void {
+    if (this.queueTimer) return;
+    this.queueTimer = setInterval(() => this.processQueue(), 250);
+  }
+
+  private stopQueueTimer(): void {
+    if (this.queueTimer) {
+      clearInterval(this.queueTimer);
+      this.queueTimer = null;
+    }
+  }
+
+  private processQueue(): void {
+    const now = Date.now();
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      while (this.sendQueue.length > 0) {
+        const item = this.sendQueue[0];
+        if (item.expiresAt <= now) {
+          item.onFailure?.();
+          this.sendQueue.shift();
+          continue;
+        }
+        try {
+          this.ws.send(JSON.stringify(item.message));
+          this.sendQueue.shift();
+        } catch (err) {
+          console.error("[CompeteWebSocket] Failed to flush queued message:", err);
+          item.onFailure?.();
+          this.sendQueue.shift();
+        }
+      }
+    } else {
+      for (let i = this.sendQueue.length - 1; i >= 0; i--) {
+        const item = this.sendQueue[i];
+        if (item.expiresAt <= now) {
+          item.onFailure?.();
+          this.sendQueue.splice(i, 1);
+        }
+      }
+    }
+    if (this.sendQueue.length === 0) {
+      this.stopQueueTimer();
+    }
+  }
+
+  private flushSendQueue(): void {
+    this.processQueue();
+  }
+
+  private setConnectionState(state: ConnectionState): void {
+    if (this.connectionState === state) return;
+    this.connectionState = state;
+    console.log("[CompeteWebSocket] Connection state:", state);
+    this.callbacks.onConnectionStateChange?.(state);
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -271,43 +372,43 @@ export class CompeteWebSocket {
   }
 
   toggleReady(ready: boolean): void {
-    this.send({ type: "TOGGLE_READY", playerId: this.playerId, ready });
+    this.sendAction({ type: "TOGGLE_READY", playerId: this.playerId, ready });
   }
 
   startGame(): void {
-    this.send({ type: "START_GAME", playerId: this.playerId });
+    this.sendAction({ type: "START_GAME", playerId: this.playerId });
   }
 
   setTimer(roundTimerSec: number): void {
-    this.send({ type: "SET_TIMER", playerId: this.playerId, roundTimerSec });
+    this.sendAction({ type: "SET_TIMER", playerId: this.playerId, roundTimerSec });
   }
 
   setYearRange(yearMin: number, yearMax: number): void {
-    this.send({ type: "SET_YEAR_RANGE", playerId: this.playerId, yearMin, yearMax });
+    this.sendAction({ type: "SET_YEAR_RANGE", playerId: this.playerId, yearMin, yearMax });
   }
 
   setEraSelection(selectedEras: string[], yearMin: number, yearMax: number): void {
-    this.send({ type: "SET_ERA_SELECTION", playerId: this.playerId, selectedEras, yearMin, yearMax });
+    this.sendAction({ type: "SET_ERA_SELECTION", playerId: this.playerId, selectedEras, yearMin, yearMax });
   }
 
   setRegionSelection(selectedRegions: string[]): void {
-    this.send({ type: "SET_REGION_SELECTION", playerId: this.playerId, selectedRegions });
+    this.sendAction({ type: "SET_REGION_SELECTION", playerId: this.playerId, selectedRegions });
   }
 
   setResultsTimer(resultsAutoAdvanceSec: number): void {
-    this.send({ type: "SET_RESULTS_TIMER", playerId: this.playerId, resultsAutoAdvanceSec });
+    this.sendAction({ type: "SET_RESULTS_TIMER", playerId: this.playerId, resultsAutoAdvanceSec });
   }
 
   setSubMode(mode: "sync" | "async", sessionDeadlineDays: number): void {
-    this.send({ type: "SET_SUB_MODE", playerId: this.playerId, mode, sessionDeadlineDays });
+    this.sendAction({ type: "SET_SUB_MODE", playerId: this.playerId, mode, sessionDeadlineDays });
   }
 
   kickPlayer(targetPlayerId: string): void {
-    this.send({ type: "KICK_PLAYER", playerId: this.playerId, targetPlayerId });
+    this.sendAction({ type: "KICK_PLAYER", playerId: this.playerId, targetPlayerId });
   }
 
   cancelInvite(inviteeId: string): void {
-    this.send({ type: "CANCEL_INVITE", playerId: this.playerId, inviteeId });
+    this.sendAction({ type: "CANCEL_INVITE", playerId: this.playerId, inviteeId });
   }
 
   syncInvites(): void {
@@ -330,7 +431,7 @@ export class CompeteWebSocket {
     lng: number | null,
     hintsUsed: string[] = []
   ): void {
-    this.send({
+    this.sendAction({
       type: "SUBMIT_GUESS",
       playerId: this.playerId,
       roundIndex,
@@ -342,20 +443,21 @@ export class CompeteWebSocket {
   }
 
   advanceRound(roundIndex: number): void {
-    this.send({ type: "ADVANCE_ROUND", playerId: this.playerId, roundIndex });
+    this.sendAction({ type: "ADVANCE_ROUND", playerId: this.playerId, roundIndex });
   }
 
   readyNext(roundIndex: number): void {
-    this.send({ type: "READY_NEXT", playerId: this.playerId, roundIndex });
+    this.sendAction({ type: "READY_NEXT", playerId: this.playerId, roundIndex });
   }
 
   playAgain(newGameId: string): void {
-    this.send({ type: "PLAY_AGAIN", playerId: this.playerId, newGameId });
+    this.sendAction({ type: "PLAY_AGAIN", playerId: this.playerId, newGameId });
   }
 
   reconnect(): void {
     this.manuallyDisconnected = false;
     this.reconnectAttempts = 0;
+    this.setConnectionState("CONNECTING");
     this.connectWithFreshToken();
   }
 }

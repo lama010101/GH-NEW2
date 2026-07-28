@@ -9,14 +9,13 @@ import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages
 import styles from './LobbySection.module.css';
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
 import { Zap, Leaf, ChevronDown, Timer, HelpCircle } from 'lucide-react';
-import { CompeteWebSocket } from "@/core/competeWebSocket";
+import { CompeteWebSocket, type ConnectionState } from "@/core/competeWebSocket";
 
 interface LobbySectionProps {
   snapshot: CompeteSessionSnapshot;
   viewer: SessionPlayer | null;
   busy: boolean;
-  error: string | null;
-  isConnected?: boolean;
+  connectionState?: ConnectionState;
   onToggleReady: () => void;
   onStartGame: () => void;
   onSetTimer?: (roundTimerSec: number) => void;
@@ -155,8 +154,7 @@ export default function LobbySection({
   snapshot,
   viewer,
   busy,
-  error,
-  // isConnected kept in props interface for future use
+  connectionState,
   onToggleReady,
   onStartGame,
   onSetTimer,
@@ -170,6 +168,7 @@ export default function LobbySection({
 }: LobbySectionProps) {
   void onSetYearRange;
   void onStartGame;
+  void connectionState;
   const router = useRouter();
   const t = useTranslations();
   const tGame = useTranslations('game');
@@ -1381,7 +1380,6 @@ export default function LobbySection({
           </div>
         </div>
       )}
-      {error ? <p className={styles['lobbyError']}>{error}</p> : null}
     </div>
   );
 }

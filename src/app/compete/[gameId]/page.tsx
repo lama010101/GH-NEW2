@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import type { CompeteSessionSnapshot } from "@/core/types";
+import type { ConnectionState } from "@/core/competeWebSocket";
 import { useIdentity } from "@/hooks/useIdentity";
 import { HintModal } from "@/components/HintModal";
 import type { HintPurchaseResult } from "@/components/HintModal";
@@ -46,6 +47,7 @@ export default function CompeteGamePage() {
 
   const t = useTranslations('game');
   const tLobby = useTranslations('lobby');
+  const tCommon = useTranslations('common');
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
@@ -72,7 +74,6 @@ export default function CompeteGamePage() {
   const [whenLbExpanded, setWhenLbExpanded] = useState(true);
   const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
-  const [wsDisconnected, setWsDisconnected] = useState(false);
   const [locationName, setLocationName] = useState<string | null>(null);
   // Lobby TopBar data (mirrors home page sourcing)
   const [showNavModal, setShowNavModal] = useState(false);
@@ -187,7 +188,6 @@ export default function CompeteGamePage() {
     setError(null);
     setBusy(false);
     setLocalSubmitted(false);
-    setWsDisconnected(false);
   }, [gameId]);
 
   // Reset card expansion when round changes
@@ -276,6 +276,7 @@ export default function CompeteGamePage() {
 
   const {
     wsRef,
+    connectionState,
     toggleReady,
     startGame,
     submitGuess,
@@ -295,6 +296,7 @@ export default function CompeteGamePage() {
     roundResults,
     onStateUpdate: (newSnapshot) => {
       setBusy(false);
+      setError(null);
       console.log("[CLIENT_STATE_UPDATE]", {
         roundEndsAt: newSnapshot.roundEndsAt,
         status: newSnapshot.status,
@@ -310,7 +312,6 @@ export default function CompeteGamePage() {
       console.log("[CLIENT_WS_MESSAGE_APPLIED]", {
         totalPlayers: newSnapshot.players.length,
       });
-      setWsDisconnected(false);
       setSnapshot(newSnapshot);
     },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -369,9 +370,6 @@ export default function CompeteGamePage() {
       setError(tLobby('kicked_toast'));
       router.push("/home?kicked=1");
     },
-    onDisconnect: () => {
-      setWsDisconnected(true);
-    },
     onRoundResults: setRoundResults,
     onSetBusy: setBusy,
     onSetLocalSubmitted: setLocalSubmitted,
@@ -389,8 +387,40 @@ export default function CompeteGamePage() {
     // Client → DO → DB: send READY_NEXT action signal via WS.
     // Server validates phase — client must NOT silently no-op on stale snapshot.status.
     readyNext(snapshot.currentRoundIndex);
-    setTimeout(() => setBusy(false), 5000);
   }, [snapshot, playerId, readyNext]);
+
+  function ConnectionStatus({ state, error: connectionError, onReconnect }: { state: ConnectionState; error: string | null; onReconnect: () => void }) {
+    if (state === "OPEN" && !connectionError) return null;
+    return (
+      <div
+        className={`${pageStyles.connectionStatus} ${state === "FAILED" ? pageStyles.connectionStatusFailed : ""} ${state === "RECONNECTING" ? pageStyles.connectionStatusReconnecting : ""}`}
+        role="status"
+        aria-live="polite"
+        data-testid="connection-status"
+      >
+        {state === "CONNECTING" && (
+          <>
+            <span className={pageStyles.connectionSpinner} />
+            <span>{tCommon('loading')}</span>
+          </>
+        )}
+        {state !== "CONNECTING" && (
+          <>
+            <span>{connectionError || t('connection_lost')}</span>
+            {(state === "RECONNECTING" || state === "FAILED") && (
+              <button
+                type="button"
+                className={`${btnStyles.btn} ${btnStyles.primary}`}
+                onClick={onReconnect}
+              >
+                {t('reconnect')}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
 
   const { timeRemaining, resultSecsLeft } = useCompeteTimer({
     snapshot,
@@ -552,7 +582,6 @@ export default function CompeteGamePage() {
     setError(null);
     // Client → DO → DB: send SET_SUB_MODE action signal via WS
     setSubMode(mode, sessionDeadlineDays);
-    setTimeout(() => setBusy(false), 5000);
   }, [playerId, setSubMode]);
 
   const handleKickPlayer = useCallback((targetPlayerId: string) => {
@@ -735,6 +764,7 @@ export default function CompeteGamePage() {
         </div>
       )}
       <div className={pageStyles.pageContent}>
+        <ConnectionStatus state={connectionState} error={error} onReconnect={() => wsRef.current?.reconnect()} />
         <div className="shell-grid">
         {/* Toast stack - top-center (hidden during ROUND_COMPLETE) */}
         {/* REMOVED: Duplicate notification - avatar-side toasts in RoundActiveSection.tsx handle this */}
@@ -743,31 +773,11 @@ export default function CompeteGamePage() {
         {snapshot.status === "LOBBY" ? (
           <>
             <div className={pageStyles.lobbyTopBarSpacer} style={{ height: 40 }} />
-            {wsDisconnected && (
-              <section
-                className={`card ${pageStyles.connectionLostCard}`}
-              >
-                <p className={pageStyles.connectionLostText}>
-                  {t('connection_lost')}
-                </p>
-                <button
-                  type="button"
-                  className={`${btnStyles.btn} ${btnStyles.primary}`}
-                  onClick={() => {
-                    setWsDisconnected(false);
-                    wsRef.current?.reconnect();
-                  }}
-                >
-                  {t('reconnect')}
-                </button>
-              </section>
-            )}
             <LobbySection
               snapshot={snapshot}
               viewer={viewer}
               busy={busy}
-              error={error}
-              isConnected={!wsDisconnected}
+              connectionState={connectionState}
               onToggleReady={handleReady}
               onStartGame={handleStart}
               onSetTimer={handleSetTimer}
@@ -793,6 +803,7 @@ export default function CompeteGamePage() {
             hasSubmitted={hasSubmitted}
             localSubmitted={localSubmitted}
             busy={busy}
+            connectionState={connectionState}
             onSetLocation={handleSetLocation}
             onSetYear={handleSetYear}
             onSubmit={handleSubmitGuess}
@@ -824,6 +835,7 @@ export default function CompeteGamePage() {
             resultSecsLeft={resultSecsLeft}
             onAdvanceRound={handleAdvanceRound}
             busy={busy}
+            connectionState={connectionState}
           />
         ) : null}
 
