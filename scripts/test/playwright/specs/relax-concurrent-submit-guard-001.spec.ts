@@ -46,19 +46,12 @@ type DbVersion = {
   playerEventVersions: Record<string, number>;
 };
 
-function isAtLeastAsNew(incoming: DbVersion, last: DbVersion | undefined): boolean {
+function isAtLeastAsNewForPlayer(playerId: string, incoming: DbVersion, last: DbVersion | undefined): boolean {
   if (!last) return true;
   if (incoming.roundEventVersion < last.roundEventVersion) return false;
-  const allPlayerIds = new Set<string>([
-    ...Object.keys(incoming.playerEventVersions),
-    ...Object.keys(last.playerEventVersions),
-  ]);
-  for (const playerId of allPlayerIds) {
-    const incomingVersion = incoming.playerEventVersions[playerId] ?? 0;
-    const lastVersion = last.playerEventVersions[playerId] ?? 0;
-    if (incomingVersion < lastVersion) return false;
-  }
-  return true;
+  const incomingVersion = incoming.playerEventVersions[playerId] ?? 0;
+  const lastVersion = last.playerEventVersions[playerId] ?? 0;
+  return incomingVersion >= lastVersion;
 }
 
 function createObserver(label: string, playerId: string, violations: Violation[]) {
@@ -103,7 +96,7 @@ function createObserver(label: string, playerId: string, violations: Violation[]
           }
         }
         if (prev.dbVersion && snapshot.dbVersion) {
-          if (!isAtLeastAsNew(snapshot.dbVersion, prev.dbVersion)) {
+          if (!isAtLeastAsNewForPlayer(playerId, snapshot.dbVersion, prev.dbVersion)) {
             violations.push(
               `${label} dbVersion regressed at snapshot #${history.length} (round=${round})`,
             );
