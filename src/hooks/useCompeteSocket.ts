@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { CompeteWebSocket } from "@/core/competeWebSocket";
+import { useEffect, useRef, useState } from "react";
+import { CompeteWebSocket, type ConnectionState } from "@/core/competeWebSocket";
 import { isCompeteSessionSnapshot } from "@/core/competeApi";
 import { getValidAccessToken } from "@/core/supabaseBrowser";
 import type { CompeteSessionSnapshot } from "@/core/types";
@@ -43,6 +43,7 @@ export default function useCompeteSocket({
   onPlayAgain,
 }: UseCompeteSocketParams) {
   const wsRef = useRef<CompeteWebSocket | null>(null);
+  const [connectionState, setConnectionState] = useState<ConnectionState>("CONNECTING");
   const lastRoundIndexRef = useRef<number | undefined>(undefined);
 
   // Connect WebSocket — BLOCKED until Supabase identity is ready.
@@ -62,6 +63,7 @@ export default function useCompeteSocket({
       }
 
       const socket = new CompeteWebSocket(gameId, playerId, {
+        onConnectionStateChange: setConnectionState,
         onConnect: () => {
           // Signal intent to join (PartyKit → API → DB → broadcast STATE_UPDATE).
           socket.joinRoom(displayName);
@@ -110,6 +112,7 @@ export default function useCompeteSocket({
         onError: (message, code) => {
           onError(message, code);
           onSetBusy(false); // Action failed — clear busy flag
+          onSetLocalSubmitted(false); // Release optimistic submit overlay on action failure
         },
         onKicked: () => {
           onKicked?.();
@@ -252,6 +255,7 @@ export default function useCompeteSocket({
 
   return {
     wsRef,
+    connectionState,
     toggleReady,
     startGame,
     submitGuess,

@@ -158,10 +158,10 @@
   100% { opacity: 1; transform: translate(-50%, 0); }
 }
 
-.connectionLostCard {
+.connectionStatus {
   margin-bottom: 1rem;
-  background: rgba(var(--gh-teal-rgb), 0.06);
-  border: 1px solid rgba(var(--gh-teal-rgb), 0.35);
+  background: rgba(var(--gh-teal-rgb), 0.08);
+  border: 1px solid rgba(var(--gh-teal-rgb), 0.45);
   border-radius: 16px;
   padding: 14px 18px;
   display: flex;
@@ -169,13 +169,30 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-.connectionLostText {
   color: var(--gh-teal);
-  margin: 0;
   font-size: 14px;
   font-weight: 500;
+}
+
+.connectionStatusFailed {
+  background: rgba(220, 80, 80, 0.08);
+  border-color: rgba(220, 80, 80, 0.45);
+  color: #ff5555;
+}
+
+.connectionStatusReconnecting {
+  background: rgba(240, 180, 60, 0.08);
+  border-color: rgba(240, 180, 60, 0.45);
+  color: #f0b43c;
+}
+
+.connectionSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(var(--gh-teal-rgb), 0.25);
+  border-top-color: var(--gh-teal);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 .fullscreenOverlay {
