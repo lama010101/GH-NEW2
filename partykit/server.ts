@@ -213,6 +213,11 @@ type RuntimeState = {
   pendingInvitees?: Array<{ playerId: string; displayName: string; avatarUrl: string | null; invitedAt: string }>;
 };
 
+type DbVersion = {
+  roundEventVersion: number;
+  playerEventVersions: Record<string, number>;
+};
+
 function isRuntimeState(value: unknown): value is RuntimeState {
   if (typeof value !== "object" || value === null) return false;
   const obj = value as Record<string, unknown>;
@@ -342,6 +347,9 @@ export default class GameServer {
   // Loading lock to prevent concurrent loadFromDB calls on cold start.
   private snapshotLoading = false;
 
+  // Last accepted DB version vector per player. Used to reject stale snapshots.
+  private lastDbVersionByPlayer = new Map<string, DbVersion>();
+
   // ─────────────────────────────────────────────────────────────────────
   // WS AUTH GATE (MP-FIX-COMPETE-LIFECYCLE-BATCH-001 M1)
   // Verifies the Supabase access token from the WS URL ?token= query param
@@ -402,6 +410,27 @@ export default class GameServer {
     return (this.room.env.NEXTJS_BASE_URL as string | undefined) ?? "http://localhost:3000";
   }
 
+  // A snapshot is ACCEPTED if every component of `incoming` is >= the
+  // corresponding component of `last` (i.e. incoming is not older than
+  // last in any dimension). This means an EQUAL vector is accepted
+  // (e.g. a re-broadcast where nothing changed for this player) — it is
+  // NOT treated as stale. A snapshot is REJECTED only if at least one
+  // component of `incoming` is STRICTLY LESS than `last`.
+  private isAtLeastAsNew(incoming: DbVersion, last?: DbVersion): boolean {
+    if (!last) return true;
+    if (incoming.roundEventVersion < last.roundEventVersion) return false;
+    const allPlayerIds = new Set<string>([
+      ...Object.keys(incoming.playerEventVersions),
+      ...Object.keys(last.playerEventVersions),
+    ]);
+    for (const playerId of allPlayerIds) {
+      const incomingVersion = incoming.playerEventVersions[playerId] ?? 0;
+      const lastVersion = last.playerEventVersions[playerId] ?? 0;
+      if (incomingVersion < lastVersion) return false;
+    }
+    return true;
+  }
+
   /**
    * Load snapshot from DB (cold start / reconnect only).
    * This is the ONLY path that reads from DB.
@@ -445,6 +474,26 @@ export default class GameServer {
     this.snapshot = snapshot;
     console.timeEnd("[PERF] loadFromDB:apiFetch");
     this.snapshotLoaded = true;
+
+    // Seed per-player dbVersion map from cold-loaded snapshot if it carries one.
+    const loadedSnapshot = this.snapshot as Record<string, unknown> | null;
+    if (loadedSnapshot && loadedSnapshot["dbVersion"]) {
+      const loadedDbVersion = loadedSnapshot["dbVersion"] as DbVersion;
+      const loadedViewer = loadedSnapshot["viewerPlayerId"] as string | undefined;
+      if (loadedViewer) {
+        this.lastDbVersionByPlayer.set(loadedViewer, loadedDbVersion);
+      }
+      const loadedPlayerSnapshots = loadedSnapshot["playerSnapshots"] as Record<string, Record<string, unknown>> | undefined;
+      if (loadedPlayerSnapshots) {
+        for (const [pid, ps] of Object.entries(loadedPlayerSnapshots)) {
+          const psDbVersion = ps["dbVersion"] as DbVersion | undefined;
+          if (psDbVersion) {
+            this.lastDbVersionByPlayer.set(pid, psDbVersion);
+          }
+        }
+      }
+    }
+
     // Rebuild readyForNext from READY_NEXT events for the current round only
     if (isRuntimeState(this.snapshot) && this.snapshot.status === "ROUND_COMPLETE") {
       const currentRound = this.snapshot.currentRoundIndex;
@@ -545,6 +594,63 @@ export default class GameServer {
         s["selectedEras"] = configRecord["selectedEras"];
       }
     }
+
+    // DB freshness gate: reject stale per-player snapshots that arrive out of order.
+    if (snapshot && typeof snapshot === "object") {
+      const snapshotRecord = snapshot as Record<string, unknown>;
+      const dbVersion = snapshotRecord["dbVersion"] as DbVersion | undefined;
+      if (dbVersion) {
+        const playerSnapshots = snapshotRecord["playerSnapshots"] as Record<string, Record<string, unknown>> | undefined;
+        const viewerPlayerId = snapshotRecord["viewerPlayerId"] as string | undefined;
+
+        const candidates: Record<string, Record<string, unknown>> = {};
+        if (playerSnapshots) {
+          for (const [pid, ps] of Object.entries(playerSnapshots)) {
+            candidates[pid] = ps;
+          }
+        }
+        if (viewerPlayerId) {
+          candidates[viewerPlayerId] = snapshotRecord;
+        }
+
+        let anyAccepted = false;
+        const accepted: Record<string, Record<string, unknown>> = {};
+        for (const [pid, ps] of Object.entries(candidates)) {
+          const psDbVersion = ps["dbVersion"] as DbVersion | undefined;
+          if (!psDbVersion) continue;
+          const last = this.lastDbVersionByPlayer.get(pid);
+          if (!this.isAtLeastAsNew(psDbVersion, last)) {
+            console.log(`[STALE_SNAPSHOT_REJECTED] playerId=${pid.slice(0, 8)}`);
+            continue;
+          }
+          this.lastDbVersionByPlayer.set(pid, psDbVersion);
+          accepted[pid] = ps;
+          anyAccepted = true;
+        }
+
+        if (!anyAccepted) {
+          console.log("[APPLY_SNAPSHOT_REJECTED] all per-player snapshots stale");
+          return;
+        }
+
+        const current = this.snapshot as Record<string, unknown> | null;
+        const mergedPlayerSnapshots = {
+          ...((current?.["playerSnapshots"] as Record<string, Record<string, unknown>> | undefined) ?? {}),
+          ...accepted,
+        };
+
+        let finalSnapshot: Record<string, unknown>;
+        if (viewerPlayerId && accepted[viewerPlayerId]) {
+          finalSnapshot = { ...snapshotRecord, playerSnapshots: mergedPlayerSnapshots };
+        } else if (current) {
+          finalSnapshot = { ...current, playerSnapshots: mergedPlayerSnapshots };
+        } else {
+          finalSnapshot = { ...snapshotRecord, playerSnapshots: mergedPlayerSnapshots };
+        }
+        snapshot = finalSnapshot;
+      }
+    }
+
     this.snapshot = snapshot;
     this.snapshotLoaded = true;
     void this.scheduleRoundTimer();
@@ -1165,6 +1271,16 @@ export default class GameServer {
       ? (snapshotRecord["playerSnapshots"] as Record<string, Record<string, unknown>> | undefined)
       : undefined;
 
+    // Observability: dump dbVersion for every outgoing per-player snapshot.
+    if (isAsync && playerSnapshots) {
+      const dbVersionDump: Record<string, unknown> = {};
+      for (const [pid, ps] of Object.entries(playerSnapshots)) {
+        const psDbVersion = ps["dbVersion"] as DbVersion | undefined;
+        dbVersionDump[pid.slice(0, 8)] = psDbVersion ?? null;
+      }
+      console.log("[BROADCAST_DBVERSION_DUMP]", dbVersionDump);
+    }
+
     // MP-BUILD-RELAX-BROADCAST-LEAK-002: If an async snapshot reaches broadcast
     // without a playerSnapshots routing map, do NOT fall through to the sync branch
     // and blast a single player's view to every socket. Per-socket fetch each player's
@@ -1263,6 +1379,17 @@ export default class GameServer {
           continue;
         }
         const snapshot = await response.json() as Record<string, unknown>;
+
+        const dbVersion = snapshot["dbVersion"] as DbVersion | undefined;
+        if (dbVersion) {
+          const last = this.lastDbVersionByPlayer.get(playerId);
+          if (!this.isAtLeastAsNew(dbVersion, last)) {
+            console.log(`[STALE_SNAPSHOT_REJECTED] playerId=${playerId.slice(0, 8)} (sendPerPlayerSnapshot)`);
+            continue;
+          }
+          this.lastDbVersionByPlayer.set(playerId, dbVersion);
+        }
+
         const results = snapshot["results"];
         const snapshotToSend: Record<string, unknown> = {
           ...snapshot,
