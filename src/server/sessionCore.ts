@@ -4012,8 +4012,9 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
       player_id: string;
       location_score: number;
       time_score: number;
+      rank: number;
     }>(
-      `SELECT player_id, location_score, time_score
+      `SELECT player_id, location_score, time_score, rank
        FROM round_results
        WHERE game_id = $1`,
       [gameId]
@@ -4024,6 +4025,7 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
       rounds_in_session: number;
       session_total_xp: number;
       session_accuracy_per_round: number[];
+      rounds_won_in_session: number;
     }>();
 
     for (const row of roundResults.rows) {
@@ -4035,7 +4037,8 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
         playerMap.set(playerId, {
           rounds_in_session: 0,
           session_total_xp: 0,
-          session_accuracy_per_round: []
+          session_accuracy_per_round: [],
+          rounds_won_in_session: 0
         });
       }
 
@@ -4043,6 +4046,9 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
       data.rounds_in_session += 1;
       data.session_total_xp += xp;
       data.session_accuracy_per_round.push(accuracy);
+      if (row.rank === 1) {
+        data.rounds_won_in_session += 1;
+      }
     }
 
     const isPractice = mode === "practice";
@@ -4060,12 +4066,13 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
           [playerId, data.session_total_xp]
         );
       } else {
-        // Non-practice: update avg_accuracy (running average), rounds_played, games_played, and total_xp
+        // Non-practice: update avg_accuracy (running average), rounds_played, games_played, rounds_won, and total_xp
         const existing = await dbPool.query<{
           rounds_played: number;
           avg_accuracy: number;
+          rounds_won: number;
         }>(
-          `SELECT rounds_played, avg_accuracy
+          `SELECT rounds_played, avg_accuracy, rounds_won
            FROM player_global_stats
            WHERE player_id = $1`,
           [playerId]
@@ -4084,15 +4091,16 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
 
         // Upsert
         await dbPool.query(
-          `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, updated_at)
-           VALUES ($1, $2, 1, $3, $4, now())
+          `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, rounds_won, updated_at)
+           VALUES ($1, $2, 1, $3, $4, $5, now())
            ON CONFLICT (player_id) DO UPDATE SET
              avg_accuracy = $3,
              total_xp = player_global_stats.total_xp + $4,
              rounds_played = $2,
              games_played = player_global_stats.games_played + 1,
+             rounds_won = player_global_stats.rounds_won + $5,
              updated_at = now()`,
-          [playerId, runningCount, runningAvg, data.session_total_xp]
+          [playerId, runningCount, runningAvg, data.session_total_xp, data.rounds_won_in_session]
         );
       }
     }
