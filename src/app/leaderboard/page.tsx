@@ -17,14 +17,12 @@ type DailySubTab = 'today' | 'alltime';
 type TodayRow = {
   player_id: string;
   avg_accuracy: number;
-  total_xp: number;
   completed_at: string;
 };
 
 type AlltimeRow = {
   player_id: string;
   avg_accuracy: number;
-  total_xp: number;
   games_played: number;
 };
 
@@ -37,7 +35,6 @@ type LevelupRow = {
 type OverallRow = {
   player_id: string;
   avg_accuracy: number;
-  total_xp: number;
   rounds_played: number;
   games_played: number;
 };
@@ -54,7 +51,6 @@ type LeaderboardEntry = {
   display_name: string | null;
   avatar_url: string | null;
   avg_accuracy?: number;
-  total_xp?: number;
   games_played?: number;
   rounds_played?: number;
   current_level?: number;
@@ -150,7 +146,7 @@ function LeaderboardPageInner() {
     
     const { data: todayRows, error: todayError } = await supabaseBrowser
       .from('leaderboard_daily')
-      .select('player_id, avg_accuracy, total_xp, completed_at')
+      .select('player_id, avg_accuracy')
       .eq('date', today)
       .order('avg_accuracy', { ascending: false })
       .order('total_xp', { ascending: false })
@@ -169,7 +165,7 @@ function LeaderboardPageInner() {
         display_name: profile?.display_name ?? null,
         avatar_url: profile?.avatar_url ?? null,
         avg_accuracy: row.avg_accuracy,
-        total_xp: row.total_xp,
+        games_played: 1,
       };
     });
     
@@ -179,7 +175,7 @@ function LeaderboardPageInner() {
   const fetchAlltimeData = useCallback(async () => {
     const { data: alltimeRows, error: alltimeError } = await supabaseBrowser
       .from('leaderboard_daily_alltime')
-      .select('player_id, avg_accuracy, total_xp, games_played')
+      .select('player_id, avg_accuracy, games_played')
       .order('avg_accuracy', { ascending: false })
       .order('total_xp', { ascending: false })
       .limit(50);
@@ -197,7 +193,6 @@ function LeaderboardPageInner() {
         display_name: profile?.display_name ?? null,
         avatar_url: profile?.avatar_url ?? null,
         avg_accuracy: row.avg_accuracy,
-        total_xp: row.total_xp,
         games_played: row.games_played,
       };
     });
@@ -236,7 +231,7 @@ function LeaderboardPageInner() {
   const fetchOverallData = useCallback(async () => {
     const { data: overallRows, error: overallError } = await supabaseBrowser
       .from('player_global_stats')
-      .select('player_id, avg_accuracy, total_xp, rounds_played, games_played')
+      .select('player_id, avg_accuracy, rounds_played, games_played')
       .order('avg_accuracy', { ascending: false })
       .order('total_xp', { ascending: false })
       .limit(50);
@@ -254,7 +249,6 @@ function LeaderboardPageInner() {
         display_name: profile?.display_name ?? null,
         avatar_url: profile?.avatar_url ?? null,
         avg_accuracy: row.avg_accuracy,
-        total_xp: row.total_xp,
         rounds_played: row.rounds_played,
         games_played: row.games_played,
       };
@@ -347,7 +341,7 @@ function LeaderboardPageInner() {
       if (activeTab === 'overall') {
         const { data } = await supabaseBrowser
           .from('player_global_stats')
-          .select('player_id, avg_accuracy, total_xp, rounds_played, games_played')
+          .select('player_id')
           .order('avg_accuracy', { ascending: false })
           .order('total_xp', { ascending: false });
         rows = (data || []) as { player_id: string }[];
@@ -355,7 +349,7 @@ function LeaderboardPageInner() {
         const today = new Date().toISOString().split('T')[0];
         const { data } = await supabaseBrowser
           .from('leaderboard_daily')
-          .select('player_id, avg_accuracy, total_xp, completed_at')
+          .select('player_id')
           .eq('date', today)
           .order('avg_accuracy', { ascending: false })
           .order('total_xp', { ascending: false });
@@ -363,7 +357,7 @@ function LeaderboardPageInner() {
       } else if (activeTab === 'daily' && activeSubTab === 'alltime') {
         const { data } = await supabaseBrowser
           .from('leaderboard_daily_alltime')
-          .select('player_id, avg_accuracy, total_xp, games_played')
+          .select('player_id')
           .order('avg_accuracy', { ascending: false })
           .order('total_xp', { ascending: false });
         rows = (data || []) as { player_id: string }[];
@@ -604,26 +598,24 @@ function LeaderboardPageInner() {
                   {activeTab === 'daily' && activeSubTab === 'today' && (
                     <>
                       <th className={styles.th}>{t('accuracy_pct')}</th>
-                      <th className={styles.th}>{t('col_xp_today')}</th>
+                      <th className={styles.th}>{t('col_games')}</th>
                     </>
                   )}
                   {activeTab === 'daily' && activeSubTab === 'alltime' && (
                     <>
-                      <th className={styles.th}>{t('col_avg_accuracy')}</th>
-                      <th className={styles.th}>{t('col_total_xp')}</th>
+                      <th className={styles.th}>{t('accuracy_pct')}</th>
                       <th className={`${styles.th} ${styles.thGames}`}>{t('col_games')}</th>
                     </>
                   )}
                   {activeTab === 'levelup' && (
                     <>
+                      <th className={styles.th}>{t('accuracy_pct')}</th>
                       <th className={styles.th}>{t('col_level')}</th>
-                      <th className={styles.th}>{t('col_accuracy_at_level')}</th>
                     </>
                   )}
                   {activeTab === 'overall' && (
                     <>
-                      <th className={styles.th}>{t('col_avg_accuracy')}</th>
-                      <th className={styles.th}>{t('col_total_xp')}</th>
+                      <th className={styles.th}>{t('accuracy_pct')}</th>
                       <th className={`${styles.th} ${styles.thGames}`}>{t('col_games')}</th>
                     </>
                   )}
@@ -646,8 +638,8 @@ function LeaderboardPageInner() {
                           <td className={styles.accuracyCell}>
                             <span className={styles.accuracyValue}>{formatAccuracy(entry.avg_accuracy)}</span>
                           </td>
-                          <td className={styles.xpCell}>
-                            {formatNumber(entry.total_xp)} XP
+                          <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
+                            {formatNumber(entry.games_played ?? 1)}
                           </td>
                         </>
                       )}
@@ -657,9 +649,6 @@ function LeaderboardPageInner() {
                           <td className={styles.accuracyCell}>
                             <span className={styles.accuracyValue}>{formatAccuracy(entry.avg_accuracy)}</span>
                           </td>
-                          <td className={styles.xpCell}>
-                            {formatNumber(entry.total_xp)} XP
-                          </td>
                           <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
                             {formatNumber(entry.games_played)}
                           </td>
@@ -668,11 +657,11 @@ function LeaderboardPageInner() {
                       
                       {activeTab === 'levelup' && (
                         <>
-                          <td className={styles.levelCell}>
-                            <span className={styles.levelValue}>{t('lvl_prefix', { n: entry.current_level ?? 0 })}</span>
-                          </td>
                           <td className={styles.accuracyCell}>
                             {formatAccuracy(entry.best_accuracy)}
+                          </td>
+                          <td className={styles.levelCell}>
+                            <span className={styles.levelValue}>{t('lvl_prefix', { n: entry.current_level ?? 0 })}</span>
                           </td>
                         </>
                       )}
@@ -680,9 +669,6 @@ function LeaderboardPageInner() {
                         <>
                           <td className={styles.accuracyCell}>
                             <span className={styles.accuracyValue}>{formatAccuracy(entry.avg_accuracy)}</span>
-                          </td>
-                          <td className={styles.xpCell}>
-                            {formatNumber(entry.total_xp)} XP
                           </td>
                           <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
                             {formatNumber(entry.games_played)}
