@@ -24,7 +24,11 @@ describe("scoring calibration", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0, lng: 0 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(100);
     });
@@ -33,7 +37,11 @@ describe("scoring calibration", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1900, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.locationAccuracy).toBe(100);
     });
@@ -42,7 +50,11 @@ describe("scoring calibration", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.comboAccuracy).toBe(100);
       expect(result.roundAccuracy).toBe(100);
@@ -56,7 +68,11 @@ describe("scoring calibration", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: null, location: { lat: 0, lng: 0 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(0);
     });
@@ -65,7 +81,11 @@ describe("scoring calibration", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: null },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.locationAccuracy).toBe(0);
     });
@@ -75,7 +95,10 @@ describe("scoring calibration", () => {
         MOON_LANDING_EVENT,
         { year: null, location: null },
         0,
-        true
+        true,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(0);
       expect(result.locationAccuracy).toBe(0);
@@ -100,7 +123,7 @@ describe("scoring calibration", () => {
         false,
         30,  // penaltyWhenRate: tier-3 WHEN hint (30% rate)
         0    // penaltyWhereRate: none
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(71);
       expect(result.locationAccuracy).toBe(100);
       expect(result.roundAccuracy).toBe(86);
@@ -117,7 +140,7 @@ describe("scoring calibration", () => {
         false,
         0,   // penaltyWhenRate: none
         20   // penaltyWhereRate: tier-2 WHERE hint (20% rate)
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(100);
       expect(result.locationAccuracy).toBe(80);
       expect(result.roundAccuracy).toBe(90);
@@ -135,7 +158,7 @@ describe("scoring calibration", () => {
         false,
         10,  // penaltyWhenRate: tier-1 WHEN hint
         40   // penaltyWhereRate: tier-4 WHERE hint
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(90);
       expect(result.locationAccuracy).toBe(60);
       expect(result.roundAccuracy).toBe(75);
@@ -152,7 +175,7 @@ describe("scoring calibration", () => {
         false,
         150,  // penaltyWhenRate: exceeds 100
         200   // penaltyWhereRate: exceeds 100
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(0);
       expect(result.locationAccuracy).toBe(0);
       expect(result.roundAccuracy).toBe(0);
@@ -171,22 +194,22 @@ describe("scoring calibration", () => {
         MOON_LANDING_EVENT,
         { year: 1970, location: { lat: 0.67408, lng: 23.47297 } },
         0, false, 0, 0
-      );
+      , 2025);
       const weakRaw = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1989, location: { lat: 0.67408, lng: 23.47297 } },
         0, false, 0, 0
-      );
+      , 2025);
       const strong = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1970, location: { lat: 0.67408, lng: 23.47297 } },
         0, false, 30, 0
-      );
+      , 2025);
       const weak = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1989, location: { lat: 0.67408, lng: 23.47297 } },
         0, false, 30, 0
-      );
+      , 2025);
       const strongLossPct = (strongRaw.yearAccuracy - strong.yearAccuracy) / strongRaw.yearAccuracy;
       const weakLossPct = (weakRaw.yearAccuracy - weak.yearAccuracy) / weakRaw.yearAccuracy;
       // Both should lose approximately the same proportion (within 2 percentage points)
@@ -200,7 +223,7 @@ describe("scoring calibration", () => {
         MOON_LANDING_EVENT,
         { year: 1969 + 40, location: { lat: 0.67408, lng: 23.47297 } }, // 40 years off
         0, false, 50, 0  // tier-5 WHEN hint
-      );
+      , 2025);
       expect(result.yearAccuracy).toBeGreaterThan(0);
     });
   });
@@ -218,12 +241,12 @@ describe("scoring calibration", () => {
         recentEvent,
         { year: 2020, location: { lat: 0.67408, lng: 23.47297 } },
         0, false, 50, 0
-      );
+      , 2025);
       const old = evaluateRound(
         oldEvent,
         { year: 1500, location: { lat: 0.67408, lng: 23.47297 } },
         0, false, 50, 0
-      );
+      , 2025);
       // Old event retains more accuracy after same penalty (age-discount proven)
       expect(old.yearAccuracy).toBeGreaterThan(recent.yearAccuracy);
       expect(recent.yearAccuracy).toBe(50);
@@ -236,7 +259,11 @@ describe("scoring calibration", () => {
       const perfect = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(perfect.roundAccuracy).toBe(100);
       expect(perfect.roundXp).toBe(200);
@@ -246,7 +273,11 @@ describe("scoring calibration", () => {
       const halfCorrect = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 40.7128, lng: -74.006 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(halfCorrect.yearAccuracy).toBe(100);
       expect(halfCorrect.locationAccuracy).toBe(0);
@@ -262,7 +293,11 @@ describe("scoring calibration", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1970, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(97);
     });
@@ -273,7 +308,11 @@ describe("scoring calibration", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1869, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(9);
     });
@@ -284,7 +323,11 @@ describe("scoring calibration", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1769, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(0);
     });

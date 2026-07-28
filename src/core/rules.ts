@@ -103,7 +103,7 @@ export function evaluateRound(
   didTimeout = false,
   penaltyWhenRate: number = 0,
   penaltyWhereRate: number = 0,
-  referenceYear: number = 2025
+  referenceYear: number
 ) {
   const fallbackGuess: GuessState = {
     year: guess.year,

@@ -30,7 +30,11 @@ describe("breadth correctness tests", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(100);
       expect(result.locationAccuracy).toBe(100);
@@ -42,7 +46,11 @@ describe("breadth correctness tests", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: -0.67408, lng: -156.52703 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.locationAccuracy).toBe(0);
     });
@@ -59,7 +67,11 @@ describe("breadth correctness tests", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1769, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(0);
     });
@@ -69,7 +81,11 @@ describe("breadth correctness tests", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: null, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(0);
       expect(result.locationAccuracy).toBe(100);
@@ -81,7 +97,11 @@ describe("breadth correctness tests", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: null },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(100);
       expect(result.locationAccuracy).toBe(0);
@@ -91,7 +111,11 @@ describe("breadth correctness tests", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: null, location: null },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(0);
       expect(result.locationAccuracy).toBe(0);
@@ -196,7 +220,11 @@ describe("breadth correctness tests", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1969, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(100);
       expect(result.locationAccuracy).toBe(100);
@@ -208,7 +236,11 @@ describe("breadth correctness tests", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: 1970, location: { lat: 0.67408, lng: 23.47297 } },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       // year: 1 year off → 97% (actual implementation output)
       // location: perfect → 100%
@@ -219,8 +251,13 @@ describe("breadth correctness tests", () => {
       // Use a guess that gives perfect year but lower location accuracy
       const result = evaluateRound(
         MOON_LANDING_EVENT,
-        { year: 1969, location: { lat: 40.7128, lng: -74.006 } }, // NYC
-        0
+        { year: 1969, location: { lat: 40.7128, lng: -74.006 } },
+        // NYC
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       // year: perfect → 100%
       // location: far → 0% (per existing test)
@@ -231,7 +268,11 @@ describe("breadth correctness tests", () => {
       const result = evaluateRound(
         MOON_LANDING_EVENT,
         { year: null, location: null },
-        0
+        0,
+        false,
+        0,
+        0,
+        2025
       );
       expect(result.yearAccuracy).toBe(0);
       expect(result.locationAccuracy).toBe(0);
@@ -255,7 +296,7 @@ describe("breadth correctness tests", () => {
         false,
         30,  // penaltyWhenRate
         0    // penaltyWhereRate
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(71);
       expect(result.locationAccuracy).toBe(100);
       expect(result.roundAccuracy).toBe(86);
@@ -275,7 +316,7 @@ describe("breadth correctness tests", () => {
         false,
         0,   // penaltyWhenRate
         20   // penaltyWhereRate
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(100);
       expect(result.locationAccuracy).toBe(80);
       expect(result.roundAccuracy).toBe(90);
@@ -296,7 +337,7 @@ describe("breadth correctness tests", () => {
         false,
         10,  // penaltyWhenRate
         40   // penaltyWhereRate
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(90);
       expect(result.locationAccuracy).toBe(60);
       expect(result.roundAccuracy).toBe(75);
@@ -317,7 +358,7 @@ describe("breadth correctness tests", () => {
         false,
         150,  // penaltyWhenRate
         200   // penaltyWhereRate
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(0);
       expect(result.locationAccuracy).toBe(0);
       expect(result.roundAccuracy).toBe(0);
@@ -405,7 +446,7 @@ describe("breadth correctness tests", () => {
         false,
         5,   // penaltyWhenRate
         0    // penaltyWhereRate
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(95);
       expect(result.locationAccuracy).toBe(100);
       expect(result.badges.find(b => b.dimension === "year")?.tier).toBe("silver");
@@ -424,7 +465,7 @@ describe("breadth correctness tests", () => {
         false,
         7,   // penaltyWhenRate
         0    // penaltyWhereRate
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(90);
       expect(result.badges.find(b => b.dimension === "year")?.tier).toBe("bronze");
     });
@@ -441,7 +482,7 @@ describe("breadth correctness tests", () => {
         false,
         9,   // penaltyWhenRate
         0    // penaltyWhereRate
-      );
+      , 2025);
       expect(result.yearAccuracy).toBe(88);
       expect(result.badges.find(b => b.dimension === "year")).toBeUndefined();
       // Check near-miss via evaluateNearMisses
