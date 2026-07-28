@@ -107,10 +107,7 @@ function PodiumCard({
       <Avatar id={player.id} name={player.name} size={rank === 1 ? 64 : 48} />
       <span className="lb-podium-name">{player.name}</span>
       {player.isMe && <span className="lb-you-tag">you</span>}
-      <span className="lb-podium-score">{player.score.toLocaleString()}</span>
-      <span className="lb-podium-acc" style={{ color: accColor(player.accuracy) }}>
-        {player.accuracy}%
-      </span>
+      <span className="lb-podium-score">{player.accuracy}%</span>
     </div>
   );
 }
@@ -133,7 +130,6 @@ function LeaderboardRow({ player, rank }: { player: Player; rank: number }) {
         </span>
       </div>
       <div className="lb-score-col">
-        <span className="lb-score">{player.score.toLocaleString()} XP</span>
         <span className="lb-acc" style={{ color: accColor(player.accuracy) }}>
           {player.accuracy}%
         </span>
@@ -146,7 +142,7 @@ export default function LeaderboardPrototypePage() {
   const [tab, setTab] = useState<Tab>("session");
 
   const ranked = useMemo(() => {
-    return [...DATA[tab]].sort((a, b) => b.score - a.score);
+    return [...DATA[tab]].sort((a, b) => b.accuracy - a.accuracy);
   }, [tab]);
 
   const myRank = useMemo(() => ranked.findIndex((p) => p.isMe) + 1, [ranked]);
@@ -154,9 +150,9 @@ export default function LeaderboardPrototypePage() {
   const podium = useMemo(() => {
     if (ranked.length < 3) return [];
     return [
-      { player: ranked[1], rank: 2, placeClass: "lb-silver", height: "88%" },
+      { player: ranked[1], rank: 2, placeClass: "lb-silver", height: "80%" },
       { player: ranked[0], rank: 1, placeClass: "lb-gold", height: "100%" },
-      { player: ranked[2], rank: 3, placeClass: "lb-bronze", height: "78%" },
+      { player: ranked[2], rank: 3, placeClass: "lb-bronze", height: "68%" },
     ];
   }, [ranked]);
 
@@ -327,7 +323,7 @@ export default function LeaderboardPrototypePage() {
           align-items: flex-end;
           justify-content: center;
           gap: 10px;
-          min-height: 240px;
+          height: 260px;
         }
 
         .lb-podium-item {
@@ -336,12 +332,13 @@ export default function LeaderboardPrototypePage() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: flex-end;
+          justify-content: flex-start;
           gap: 8px;
           padding: 14px 8px;
           border-radius: var(--gh-general-card-radius);
           border: 1px solid var(--gh-glass-border);
           background: rgba(255, 255, 255, 0.04);
+          box-sizing: border-box;
           transition: transform 0.2s ease;
         }
 
@@ -406,11 +403,6 @@ export default function LeaderboardPrototypePage() {
           font-size: var(--font-base);
           font-weight: 800;
           color: var(--gh-gold);
-        }
-
-        .lb-podium-acc {
-          font-size: var(--font-xs);
-          font-weight: 700;
         }
 
         .lb-list {
@@ -507,12 +499,6 @@ export default function LeaderboardPrototypePage() {
           flex-direction: column;
           align-items: flex-end;
           gap: 2px;
-        }
-
-        .lb-score {
-          font-size: var(--font-sm);
-          font-weight: 800;
-          color: var(--gh-gold);
         }
 
         .lb-acc {
