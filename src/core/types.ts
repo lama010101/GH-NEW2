@@ -225,6 +225,14 @@ export type CompeteSessionSnapshot = {
   resultPhaseStartedAt?: string | null; // ISO string — when result phase started, from ROUND_COMPLETE payload
   roomCode: string;
   pendingInvitees: PendingInvitee[];
+  /**
+   * Monotonic DB version vector captured inside the same transaction as the
+   * snapshot data. Used by the DO to reject stale out-of-order snapshots.
+   */
+  dbVersion?: {
+    roundEventVersion: number;
+    playerEventVersions: Record<string, number>;
+  };
 };
 
 export type CreateCompeteSessionInput = {
