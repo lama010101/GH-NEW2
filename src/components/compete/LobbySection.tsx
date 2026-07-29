@@ -167,7 +167,6 @@ export default function LobbySection({
   onSetRegionSelection,
 }: LobbySectionProps) {
   void onSetYearRange;
-  void onStartGame;
   const router = useRouter();
   const t = useTranslations();
   const tGame = useTranslations('game');
@@ -615,6 +614,7 @@ export default function LobbySection({
   const readyCount      = activePlayers.filter((p) => p.ready).length;
   const isReady         = viewer?.ready ?? false;
   const isHost          = viewer?.isHost ?? false;
+  const isAsync         = snapshot.config.mode === "async";
 
   return (
     <div className={styles['lobby-shell']} data-testid="lobby-shell">
@@ -1311,9 +1311,26 @@ export default function LobbySection({
                       </span>
                       {p.isHost && <span className={styles['lobbyHostInline']}>♛ {t('lobby.host')}</span>}
                     </div>
-                    <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
-                      {p.ready ? t('lobby.ready') : t('lobby.not_ready')}
-                    </span>
+                    {isAsync ? (
+                      (() => {
+                        switch (p.roundStatus) {
+                          case 'finished':
+                            return <span className={styles['lobbyStatusPillGreen']}>{t('lobby.relax_finished')}</span>;
+                          case 'playing':
+                            return <span className={styles['lobbyStatusPillAmber']} style={{ background: 'rgba(var(--gh-blue-rgb), 0.18)', color: 'var(--gh-blue)' }}>{t('lobby.relax_playing')}</span>;
+                          case 'ready':
+                            return <span className={styles['lobbyStatusPillGreen']}>{t('lobby.ready')}</span>;
+                          case 'joined':
+                            return <span className={styles['lobbyStatusPillGrey']}>{t('lobby.relax_joined')}</span>;
+                          default:
+                            return <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>{p.ready ? t('lobby.ready') : t('lobby.not_ready')}</span>;
+                        }
+                      })()
+                    ) : (
+                      <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
+                        {p.ready ? t('lobby.ready') : t('lobby.not_ready')}
+                      </span>
+                    )}
                     {isHost && !p.isHost && (
                       <button type="button" className={styles['lobby-kick-btn']} onClick={() => onKickPlayer?.(p.playerId)} disabled={busy} title={t('lobby.kick_player')} data-testid={`lobby-kick-${p.playerId}`}>×</button>
                     )}
@@ -1352,21 +1369,38 @@ export default function LobbySection({
       {/* Bottom Dock — single READY CTA */}
       <div className={styles['lobby-dock']} data-testid="lobby-dock">
         <div className={styles['lobby-dock-content']}>
-          <button
-            type="button"
-            className={isReady ? styles['lobbyReadyBtnIsReady'] : styles['lobbyReadyBtnNotReady']}
-            onClick={onToggleReady}
-            disabled={busy || connectionState !== "OPEN"}
-            data-testid="lobby-ready-btn"
-          >
-            {isReady ? t('lobby.ready_waiting') : t('lobby.im_ready')}
-          </button>
-          <span className={styles['lobby-ready-count']} data-testid="lobby-ready-count">
-            {t('lobby.players_ready', { ready: readyCount ?? 0, total: totalPlayers ?? 0 })}
-            {snapshot.allPlayersReady && totalPlayers > 0 && (
-              <span className={styles['lobbyAllReadyTag']}>{t('lobby.starting_soon')}</span>
-            )}
-          </span>
+          {isAsync ? (
+            <button
+              type="button"
+              className={styles['lobbyReadyBtnNotReady']}
+              onClick={() => {
+                onToggleReady();
+                onStartGame();
+              }}
+              disabled={busy || connectionState !== "OPEN"}
+              data-testid="lobby-ready-btn"
+            >
+              {t('lobby.relax_start_my_game')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={isReady ? styles['lobbyReadyBtnIsReady'] : styles['lobbyReadyBtnNotReady']}
+              onClick={onToggleReady}
+              disabled={busy || connectionState !== "OPEN"}
+              data-testid="lobby-ready-btn"
+            >
+              {isReady ? t('lobby.ready_waiting') : t('lobby.im_ready')}
+            </button>
+          )}
+          {!isAsync && (
+            <span className={styles['lobby-ready-count']} data-testid="lobby-ready-count">
+              {t('lobby.players_ready', { ready: readyCount ?? 0, total: totalPlayers ?? 0 })}
+              {snapshot.allPlayersReady && totalPlayers > 0 && (
+                <span className={styles['lobbyAllReadyTag']}>{t('lobby.starting_soon')}</span>
+              )}
+            </span>
+          )}
         </div>
       </div>
 
