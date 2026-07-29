@@ -1311,9 +1311,26 @@ export default function LobbySection({
                       </span>
                       {p.isHost && <span className={styles['lobbyHostInline']}>♛ {t('lobby.host')}</span>}
                     </div>
-                    <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
-                      {p.ready ? t('lobby.ready') : t('lobby.not_ready')}
-                    </span>
+                    {isAsync ? (
+                      (() => {
+                        switch (p.roundStatus) {
+                          case 'finished':
+                            return <span className={styles['lobbyStatusPillGreen']}>{t('lobby.relax_finished')}</span>;
+                          case 'playing':
+                            return <span className={styles['lobbyStatusPillAmber']} style={{ background: 'rgba(var(--gh-blue-rgb), 0.18)', color: 'var(--gh-blue)' }}>{t('lobby.relax_playing')}</span>;
+                          case 'ready':
+                            return <span className={styles['lobbyStatusPillGreen']}>{t('lobby.ready')}</span>;
+                          case 'joined':
+                            return <span className={styles['lobbyStatusPillGrey']}>{t('lobby.relax_joined')}</span>;
+                          default:
+                            return <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>{p.ready ? t('lobby.ready') : t('lobby.not_ready')}</span>;
+                        }
+                      })()
+                    ) : (
+                      <span className={p.ready ? styles['lobbyStatusPillGreen'] : styles['lobbyStatusPillGrey']}>
+                        {p.ready ? t('lobby.ready') : t('lobby.not_ready')}
+                      </span>
+                    )}
                     {isHost && !p.isHost && (
                       <button type="button" className={styles['lobby-kick-btn']} onClick={() => onKickPlayer?.(p.playerId)} disabled={busy} title={t('lobby.kick_player')} data-testid={`lobby-kick-${p.playerId}`}>×</button>
                     )}
