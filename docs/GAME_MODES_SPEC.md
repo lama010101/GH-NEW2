@@ -230,7 +230,7 @@ Evaluated server-side at the end of every RESULT_PHASE in every mode. Never pers
 - When a player submits, in-app broadcast sent to all connected players: "Player X has submitted" (score not revealed)
 
 **Compete Relax (async):**
-- Session deadline governs overall expiry (1–14 days, host-configurable). Host may additionally enable an optional per-round timer (see §5.3); if enabled, timer expiry auto-submits for that player only per §1.7 — it has no effect on any other player.
+- Session deadline governs overall expiry (1–14 days, host-configurable; anchored when the first player starts their own round sequence — see §5.3). Host may additionally enable an optional per-round timer (see §5.3); if enabled, timer expiry auto-submits for that player only per §1.7 — it has no effect on any other player.
 - Each player plays all 5 rounds fully independently, at their own pace. A player never waits on any other player, at any round.
 - On submission: submitting player's RESULT_PHASE shown immediately, for that player only.
 - In-app broadcast + push notification sent to all other session players ONLY when a player completes their final (5th) round. Per-round submissions by other players do NOT trigger a notification.
@@ -525,7 +525,7 @@ Set by the host in the lobby. Other players cannot modify settings.
 
 **Relax Round Timer:** Optional per-player countdown. Host may toggle it OFF (default). When enabled, each player's GUESS_PHASE is independently bounded by the per-round countdown; the session deadline still bounds the whole session. Timer expiry auto-submits that player's current inputs (per §1.6 / §7 shared rules) and has zero effect on any other player. Pressure clamp (first-submission → 30s) does NOT apply in Relax — it is Rush-only (see §5.2).
 
-**Relax deadline slider:** 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 days. Displayed as "X days". The duration is anchored at START_GAME: `session_deadline = startedAt + X days`. Before the game starts, only the duration is stored; the absolute deadline is computed when the host starts the session.
+**Relax deadline slider:** 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 days. Displayed as "X days". The duration is anchored at the moment the first player starts their own round sequence: `session_deadline = firstPlayerStartedAt + X days`. This single global deadline applies identically to every player in the session regardless of when they personally join or start. A late joiner does not get a fresh individual window — they inherit whatever time remains on the global clock.
 
 ### 5.4 Event Deduplication
 
@@ -535,18 +535,40 @@ Events deduplicated using the **host** as reference. Server excludes the last 50
 
 ### 5.5 Lobby Flow
 
+Compete Rush and Compete Relax share the room creation and invite mechanics, but the start gate is completely different.
+
+#### 5.5.1 Rush Lobby Flow
+
 ```
 Host creates room → Room code generated → Players join by code or link
 → All players in lobby roster → Each player toggles Ready
 → All Ready: host clicks Start (or auto-start if configured)
-→ Game begins
+→ Game begins for everyone at the same time
 ```
 
-**Host controls:** Sub-mode, all parameters, kick a player, toggle auto-start.
+- Start is **group-gated**: the game cannot begin until every player in the roster has toggled Ready.
+- The host click (or auto-start) emits a single `START_GAME` / `ROUND_STARTED` event that begins round 1 for all players simultaneously.
+- `session_deadline` is not used in Rush.
+
+#### 5.5.2 Relax Lobby Flow
+
+```
+Host creates room → Room code generated → Players join by code or link
+→ All players appear in the lobby roster
+→ Host sets session parameters (round timer on/off, session deadline, year range)
+→ Each player, including the host, starts their own 5-round timeline whenever they personally are ready
+```
+
+- **There is no group ready-gate and no host "Start Game" moment.** Each player readies up and starts independently. A player's ready state is visible in the roster but does not unlock or block anything for anyone else.
+- The host still configures session-level settings before players start, because those parameters are shared once and apply to everyone (round timer, deadline, year range). Configuring settings is not "starting the game" for everyone.
+- It is normal and expected for one player to be on round 4 while another has not joined and a third has finished all 5 rounds. This is not an edge case — it is the mode's normal operating condition at any moment.
+- **"Waiting for others" must never appear in the Relax lobby or at any later phase.**
+
+**Host controls (both sub-modes):** Sub-mode, all parameters, kick a player. Auto-start is a Rush-only option.
 
 **Room code:** 6-character alphanumeric uppercase (e.g. `HWGONB`). One-tap copy. Shareable as full URL.
 
-**Host migration:** Host disconnects before game starts → role passes to next player by `session_players.joined_at`. During a game the host has no authority.
+**Host migration:** Host disconnects before their own round sequence starts → role passes to the next joined player by `session_players.joined_at`. During their own game the host has no authority over other players' timelines.
 
 ### 5.6 Real-Time Architecture
 
@@ -576,13 +598,25 @@ LOBBY → STARTING → QUESTION → ANSWER → LOCKED → RESULT → SCOREBOARD
 
 ### 5.8 Relax Round Flow
 
-- Session deadline governs overall expiry (1–14 days, anchored at START_GAME). Host may optionally enable a per-round timer (§5.3); if set, it auto-submits for that player only on expiry and has zero effect on other players.
-- Each player plays all 5 rounds fully independently at their own pace — never waiting on any other player, at any round.
-- On submission: RESULT_PHASE shown to that player immediately, for that player alone.
-- Player taps "Next Round" manually — no auto-advance under any circumstance in Relax.
-- Round and final leaderboards are always visible to all session players, showing every player's row: pending (no score) if they haven't reached/submitted that round yet, scored if they have. Never gated on full-round completion.
-- In-app + push notification sent to all other session players only when a player finishes all 5 rounds.
-- Deadline passed with unsubmitted rounds for a given player: that player's remaining rounds score zero. Other players are unaffected and continue independently.
+- Session deadline governs overall expiry (1–14 days, anchored when the first player starts their own round sequence — see §5.3). Host may optionally enable a per-round timer (§5.3); if set, it auto-submits for that player only on expiry and has zero effect on any other player.
+- Each player plays all 5 rounds fully independently, at their own pace, from their own start point.
+- A player's submission, round-advance, or round-completion must have zero observable effect on any other player's screen, phase, or state.
+- On submission: that player's own RESULT_PHASE (§1.2) is shown to them immediately, and to them alone.
+- After viewing their result, the player taps "Next Round" manually. No auto-advance under any circumstance in Relax — not on a timer, not because another player did something, not ever.
+- Round and final leaderboards are always visible to all session players and always show every player's row:
+  - No score yet reached/submitted that round: shown as pending.
+  - Submitted: shown with score.
+  - Never gated on group/round completion by anyone else.
+- In-app + push notification sent to all other session players only when a player completes their final (5th) round. Per-round submissions by other players do NOT trigger a notification.
+- Deadline passed with unsubmitted rounds for a given player: that player's remaining rounds score zero. This affects only that player — every other player continues completely unaffected, independently, on their own remaining rounds/timeline.
+
+### 5.8.1 Relax Per-Round Ranking
+
+In Relax, `round_results.rank` for a round is computed **only among players who have completed that round** (submitted, marked absent, or finalized by deadline). The highest `score` for the round receives `rank = 1`; remaining completed players receive `rank = 2, 3, ...` ordered by descending score. Ties are broken by `player_id` ascending to keep ranking deterministic.
+
+Ranking is **retroactive**: every time a new player completes the round, all existing `round_results` rows for that `(game_id, round_index)` are recomputed and updated. A player who previously held `rank = 1` can therefore be displaced by a later, better-scoring submission. Round and final leaderboards always reflect the current ranks.
+
+This per-round ranking rule is **Relax-only**. Rush computes rank once per round after all active players have submitted or the timer expires. Practice, Daily, and Level Up have no per-round ranking.
 
 ### 5.9 Badge System in Compete
 
@@ -599,6 +633,14 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 - Most consistent (highest average `min(year_accuracy, location_accuracy)`)
 
 **Actions:** Play Again (all return to lobby, same settings, re-ready required), Home (individual).
+
+### 5.10.1 Rounds Won
+
+`player_global_stats.rounds_won` counts a round as won **only when the player's `round_results.rank` for that round equals `1`**.
+
+- In **Rush**, rank is computed once per round when all active players have submitted or the round timer expires.
+- In **Relax**, rank is retroactively recomputed every time a player completes the round. A round win is therefore only finalized once the session deadline has passed or all players have completed that round, because no further retroactive rank flips are possible after that point.
+- **Practice**, **Daily**, and **Level Up** do not contribute to `rounds_won`.
 
 ### 5.11 Disconnection and Reconnect
 
@@ -644,8 +686,12 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 | Replay passed levels | N/A | N/A | Yes (no demotion) | N/A | N/A |
 | History Collection | Yes | Yes | Yes | Yes | Yes |
 | Deduplication | Last 500 (player) | N/A (fixed) | None (pool ≥ 100) | Last 500 (host) | Last 500 (host) |
-| Submission broadcast | N/A | N/A | N/A | In-app | In-app + push |
+| Submission broadcast | N/A | N/A | N/A | In-app, every submission | In-app + push, only on final round |
 | Round advance | Manual | Manual | Manual | All Next + Rush round-advance timeout (30s) | Individual, independent |
+| Group ready-gate | N/A | N/A | N/A | Required (all players ready) | None; ready state is informational |
+| Group start | N/A | N/A | N/A | Host / auto-start starts all players | None; each player starts independently |
+| Per-round ranking | N/A | N/A | N/A | Computed once per round | Retroactive on each completion |
+| Rounds won (player_global_stats.rounds_won) | N/A | N/A | N/A | Counts rank = 1 per round | Counts final rank = 1 per round |
 | Level degradation | N/A | N/A | Never | N/A | N/A |
 | Stack | Direct API | Direct API | Direct API | PartyKit + WS | PartyKit + WS |
 
