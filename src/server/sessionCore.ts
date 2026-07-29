@@ -3342,6 +3342,8 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
       ]
     );
 
+    await tryFinalizeAsyncRound(gameId, roundIndex, client);
+
     const completeToken = generateVerificationToken();
     await client.query(
       `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
@@ -3351,12 +3353,15 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
 
     if (roundIndex === guard.total_rounds - 1) {
       const sessionCompleteToken = generateVerificationToken();
-      await client.query(
+      const sessionCompleteResult = await client.query(
         `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
          VALUES ($1, $2, $3, 'PLAYER_SESSION_COMPLETE', $4::jsonb, now(), $5)
          ON CONFLICT DO NOTHING`,
         [gameId, playerId, roundIndex, JSON.stringify({ totalRounds: guard.total_rounds }), sessionCompleteToken]
       );
+      if ((sessionCompleteResult as unknown as { rowCount: number | null }).rowCount === 1) {
+        await updatePlayerGlobalStats(gameId, guard.mode as "practice" | "sync" | "async", playerId, client);
+      }
     }
 
     const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
@@ -3566,6 +3571,8 @@ export async function markPlayerRoundAbsent(
       [gameId, roundIndex, playerId, 0, result.distanceKm, result.yearDiff, result.locationAccuracy, result.yearAccuracy, resultToken]
     );
 
+    await tryFinalizeAsyncRound(gameId, roundIndex, client);
+
     const completeToken = generateVerificationToken();
     await client.query(
       `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
@@ -3576,12 +3583,15 @@ export async function markPlayerRoundAbsent(
 
     if (roundIndex === guard.total_rounds - 1) {
       const sessionCompleteToken = generateVerificationToken();
-      await client.query(
+      const sessionCompleteResult = await client.query(
         `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
          VALUES ($1, $2, $3, 'PLAYER_SESSION_COMPLETE', $4::jsonb, now(), $5)
          ON CONFLICT DO NOTHING`,
         [gameId, playerId, roundIndex, JSON.stringify({ totalRounds: guard.total_rounds }), sessionCompleteToken]
       );
+      if ((sessionCompleteResult as unknown as { rowCount: number | null }).rowCount === 1) {
+        await updatePlayerGlobalStats(gameId, guard.mode as "practice" | "sync" | "async", playerId, client);
+      }
     }
 
     const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
@@ -3665,14 +3675,19 @@ export async function finalizeAsyncSessionDeadline(
   const totalRounds = session.total_rounds;
 
   let finalizedCount = 0;
+  const touchedRounds = new Set<number>();
+  const affectedPlayers: string[] = [];
+
+  // Ruling 2: acquire per-player locks for the entire active roster in player_id order before the sweep
+  for (const row of activePlayersResult.rows) {
+    await executor.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':async'))`,
+      [gameId, row.player_id]
+    );
+  }
 
   for (const row of activePlayersResult.rows) {
     const playerId = row.player_id;
-
-    await executor.query(
-      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':async'))`,
-      [gameId, playerId]
-    );
 
     const completedCheck = await executor.query<{ exists: boolean }>(
       `SELECT EXISTS (
@@ -3693,6 +3708,8 @@ export async function finalizeAsyncSessionDeadline(
     const lastCompleteRound = lastCompleteResult.rows[0]?.round_index ?? -1;
 
     for (let roundIndex = lastCompleteRound + 1; roundIndex < totalRounds; roundIndex++) {
+      touchedRounds.add(roundIndex);
+
       // For rounds the player never reached, we still need a ROUND_STARTED event
       // in their per-player stream so the snapshot builder can reveal the round
       // content and mark it reached/completed. `occurred_at = session_deadline`
@@ -3777,7 +3794,7 @@ export async function finalizeAsyncSessionDeadline(
     }
 
     const sessionCompleteToken = generateVerificationToken();
-    await executor.query(
+    const sessionCompleteResult = await executor.query(
       `INSERT INTO player_round_events
          (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
        VALUES ($1, $2, $3, 'PLAYER_SESSION_COMPLETE', $4::jsonb, $5, $6)
@@ -3792,7 +3809,21 @@ export async function finalizeAsyncSessionDeadline(
       ]
     );
 
-    finalizedCount++;
+    if ((sessionCompleteResult as unknown as { rowCount: number | null }).rowCount === 1) {
+      affectedPlayers.push(playerId);
+      finalizedCount++;
+    }
+  }
+
+  // (c) finalize ranks for every touched round, taking per-round locks in round_index order
+  const sortedTouchedRounds = Array.from(touchedRounds).sort((a, b) => a - b);
+  for (const roundIndex of sortedTouchedRounds) {
+    await tryFinalizeAsyncRound(gameId, roundIndex, executor);
+  }
+
+  // (d) update per-player global stats for each affected player
+  for (const playerId of affectedPlayers) {
+    await updatePlayerGlobalStats(gameId, session.mode as "practice" | "sync" | "async", playerId, executor);
   }
 
   return finalizedCount;
@@ -4034,19 +4065,46 @@ async function dailyGameEndTransaction(
   }
 }
 
-async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync" | "async"): Promise<void> {
+function buildAsyncRoundClosureCheckSql(gameIdRef: string, roundIndexRef: string): string {
+  return `NOT EXISTS (
+    SELECT 1 FROM session_players sp
+    WHERE sp.game_id = ${gameIdRef} AND sp.left_at IS NULL AND sp.kicked IS NOT TRUE
+    AND NOT EXISTS (
+      SELECT 1 FROM round_results rrc
+      WHERE rrc.game_id = ${gameIdRef} AND rrc.round_index = ${roundIndexRef} AND rrc.player_id = sp.player_id
+    )
+  )`;
+}
+
+async function updatePlayerGlobalStats(
+  gameId: string,
+  mode: "practice" | "sync" | "async",
+  playerId?: string,
+  executor?: DbTransactionClient
+): Promise<void> {
+  const savepointId = executor ? `sp_${generateVerificationToken().replace(/-/g, '_')}` : null;
   try {
-    // Fetch all round_results for this game
-    const roundResults = await dbPool.query<{
+    if (executor) {
+      await executor.query(`SAVEPOINT ${savepointId}`);
+    }
+
+    const db = executor ?? dbPool;
+    const closureSql = buildAsyncRoundClosureCheckSql('$1', 'rr.round_index');
+    const playerFilter = playerId ? 'AND rr.player_id = $2' : '';
+    const params = playerId ? [gameId, playerId] : [gameId];
+
+    // Fetch round_results for this game (optionally scoped to one player)
+    const roundResults = await db.query<{
       player_id: string;
       location_score: number;
       time_score: number;
-      rank: number;
+      rank: number | null;
+      rank_is_final: boolean;
     }>(
-      `SELECT player_id, location_score, time_score, rank
-       FROM round_results
-       WHERE game_id = $1`,
-      [gameId]
+      `SELECT rr.player_id, rr.location_score, rr.time_score, rr.rank, (${closureSql}) AS rank_is_final
+       FROM round_results rr
+       WHERE rr.game_id = $1 ${playerFilter}`,
+      params
     );
 
     // Group by player_id
@@ -4058,12 +4116,12 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
     }>();
 
     for (const row of roundResults.rows) {
-      const playerId = row.player_id;
+      const pId = row.player_id;
       const xp = row.location_score + row.time_score;
       const accuracy = (row.location_score + row.time_score) / 2;
 
-      if (!playerMap.has(playerId)) {
-        playerMap.set(playerId, {
+      if (!playerMap.has(pId)) {
+        playerMap.set(pId, {
           rounds_in_session: 0,
           session_total_xp: 0,
           session_accuracy_per_round: [],
@@ -4071,11 +4129,11 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
         });
       }
 
-      const data = playerMap.get(playerId)!;
+      const data = playerMap.get(pId)!;
       data.rounds_in_session += 1;
       data.session_total_xp += xp;
       data.session_accuracy_per_round.push(accuracy);
-      if (row.rank === 1) {
+      if (row.rank === 1 && row.rank_is_final) {
         data.rounds_won_in_session += 1;
       }
     }
@@ -4083,20 +4141,20 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
     const isPractice = mode === "practice";
 
     // For each player, upsert player_global_stats
-    for (const [playerId, data] of playerMap.entries()) {
+    for (const [statsPlayerId, data] of playerMap.entries()) {
       if (isPractice) {
         // Practice mode: only add XP, do NOT touch avg_accuracy / rounds_played / games_played
-        await dbPool.query(
+        await db.query(
           `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, updated_at)
            VALUES ($1, 0, 0, 0, $2, now())
            ON CONFLICT (player_id) DO UPDATE SET
              total_xp = player_global_stats.total_xp + $2,
              updated_at = now()`,
-          [playerId, data.session_total_xp]
+          [statsPlayerId, data.session_total_xp]
         );
       } else {
         // Non-practice: update avg_accuracy (running average), rounds_played, games_played, rounds_won, and total_xp
-        const existing = await dbPool.query<{
+        const existing = await db.query<{
           rounds_played: number;
           avg_accuracy: number;
           rounds_won: number;
@@ -4104,7 +4162,7 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
           `SELECT rounds_played, avg_accuracy, rounds_won
            FROM player_global_stats
            WHERE player_id = $1`,
-          [playerId]
+          [statsPlayerId]
         );
 
         const existingRounds = existing.rows[0]?.rounds_played ?? 0;
@@ -4119,7 +4177,7 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
         }
 
         // Upsert
-        await dbPool.query(
+        await db.query(
           `INSERT INTO player_global_stats (player_id, rounds_played, games_played, avg_accuracy, total_xp, rounds_won, updated_at)
            VALUES ($1, $2, 1, $3, $4, $5, now())
            ON CONFLICT (player_id) DO UPDATE SET
@@ -4129,11 +4187,18 @@ async function updatePlayerGlobalStats(gameId: string, mode: "practice" | "sync"
              games_played = player_global_stats.games_played + 1,
              rounds_won = player_global_stats.rounds_won + $5,
              updated_at = now()`,
-          [playerId, runningCount, runningAvg, data.session_total_xp, data.rounds_won_in_session]
+          [statsPlayerId, runningCount, runningAvg, data.session_total_xp, data.rounds_won_in_session]
         );
       }
     }
+
+    if (executor) {
+      await executor.query(`RELEASE SAVEPOINT ${savepointId}`);
+    }
   } catch (error) {
+    if (executor) {
+      await executor.query(`ROLLBACK TO SAVEPOINT ${savepointId}`).catch(() => {});
+    }
     console.error('[updatePlayerGlobalStats]', error);
     // Do NOT throw — stats write failure must not crash the session
   }
@@ -4656,6 +4721,54 @@ async function appendPressureAppliedIfNotExists(
     [gameId, roundIndex, JSON.stringify(payload)]
   );
   return result.rows.length > 0;
+}
+
+async function tryFinalizeAsyncRound(
+  gameId: string,
+  roundIndex: number,
+  executor: DbTransactionClient
+): Promise<boolean> {
+  await executor.query(
+    `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2::text || ':async-rank'))`,
+    [gameId, roundIndex]
+  );
+
+  await executor.query(
+    `SELECT player_id
+     FROM session_players
+     WHERE game_id = $1 AND left_at IS NULL AND kicked IS NOT TRUE
+     ORDER BY player_id
+     FOR UPDATE`,
+    [gameId]
+  );
+
+  const closureSql = buildAsyncRoundClosureCheckSql('$1', '$2');
+  const closureResult = await executor.query<{ is_closed: boolean }>(
+    `SELECT ${closureSql} AS is_closed`,
+    [gameId, roundIndex]
+  );
+  const isClosed = closureResult.rows[0]?.is_closed ?? false;
+
+  if (isClosed) {
+    await executor.query(
+      `UPDATE round_results rr
+       SET rank = ranked.rank
+       FROM (
+         SELECT player_id, RANK() OVER (ORDER BY score DESC NULLS LAST) AS rank
+         FROM round_results
+         WHERE game_id = $1 AND round_index = $2
+       ) ranked
+       WHERE rr.game_id = $1 AND rr.round_index = $2 AND rr.player_id = ranked.player_id`,
+      [gameId, roundIndex]
+    );
+  } else {
+    await executor.query(
+      `UPDATE round_results SET rank = NULL WHERE game_id = $1 AND round_index = $2`,
+      [gameId, roundIndex]
+    );
+  }
+
+  return isClosed;
 }
 
 async function computeAndWriteRoundResults(
