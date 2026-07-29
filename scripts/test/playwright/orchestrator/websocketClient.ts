@@ -72,6 +72,11 @@ export interface CompeteSnapshot {
   resultPhaseEndsAt?: number;
   roomCode: string;
   results?: unknown[];
+  snapshotVersion?: number;
+  dbVersion?: {
+    roundEventVersion: number;
+    playerEventVersions: Record<string, number>;
+  };
 }
 
 export interface CompeteWSClientOptions {
