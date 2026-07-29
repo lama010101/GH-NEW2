@@ -92,8 +92,10 @@ export default function WhereCard({
           return (
             <div className={styles.scoreCol}>
               <div className={styles.scoreRow}>
-                <span style={{ fontSize: 25, fontWeight: 700, color: locColor }}>{locScore}</span>
-                <span className={styles.scoreSuffix}>%</span>
+                <span style={{ fontSize: 25, fontWeight: 700, color: locColor }}>
+                  {locScore}
+                  <span className={styles.scoreSuffix}>%</span>
+                </span>
               </div>
               {/* LOCATION BADGE CHIP — dimension = 'location' */}
               {(() => {
@@ -238,8 +240,10 @@ export default function WhereCard({
                     </span>
                     {locationAcc != null && (
                       <span className={styles.lbAccPill}>
-                        <span style={{ color: locAccColor, fontSize: "var(--font-base)" }}>{locationAcc}</span>
-                        <span className={styles.lbAccSuffix}>%</span>
+                        <span style={{ color: locAccColor, fontSize: "var(--font-base)" }}>
+                          {locationAcc}
+                          <span className={styles.lbAccSuffix}>%</span>
+                        </span>
                       </span>
                     )}
                   </div>
