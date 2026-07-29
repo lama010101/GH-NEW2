@@ -71,6 +71,14 @@ Then `globalSetup` can create fresh users.
 5. In the incognito guest window, log in as `gh-test-player-2` and navigate to the same `/compete/<gameId>` URL.
 6. Both windows should show `Players (2/2)` within 10–20 seconds.
 
+**Note for Devin/Cascade coders without functioning manual input control:**
+If `computer`/`xdotool`-style manual keystrokes fail to enter form fields in an incognito browser window (known limitation, not a stack bug), substitute the following method instead of reporting FAIL:
+
+- Write a one-off Playwright script (in `scripts/test/_scratch/`, delete when done) that connects over CDP to the same Devin-controlled Chrome instance, opens a second incognito context programmatically, and drives the full host-creates/guest-joins flow through Playwright's API (not manual input).
+- Measure time from guest page load to roster showing both players present — this is a valid substitute for the manual roster-join measurement.
+- In your verdict table, label this result "CDP-substituted" — do NOT label it "manual" or "PASS" without qualification. It is real evidence of stack health but not equivalent to the literal manual-input method this section originally describes.
+- A single CDP-substituted timing sample should NOT be treated as re-establishing or re-verifying the KC-009 baseline range (currently 10-20s on local dev stack, per 2026-07-25 investigation) — it's a spot-check, not a new baseline measurement. Only a dedicated timing investigation task re-establishes that range.
+
 If you need test users to skip the welcome modal, set `welcome_completed = true` on `profiles` for the two fixture users after creating them.
 
 ## Playwright sync golden-path
