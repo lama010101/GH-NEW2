@@ -1260,6 +1260,7 @@ export default class GameServer {
       sessionDeadline: (configRecord?.["sessionDeadline"] as string | null) ?? null,
       startedAt: (configRecord?.["startedAt"] as string | null) ?? null,
       completedAt: (configRecord?.["completedAt"] as string | null) ?? null,
+      referenceYear: (configRecord?.["referenceYear"] as number) ?? (snapshotRecord["referenceYear"] as number) ?? 2025,
     };
 
     const isAsync = config.mode === "async";

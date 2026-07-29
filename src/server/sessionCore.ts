@@ -112,6 +112,7 @@ export type SessionRow = {
   created_at: Date;
   seed: bigint;
   room_code: string;
+  scoring_reference_year: number;
 };
 
 // Exactly matches public.session_players columns (spec DDL, Section 3.3)
@@ -280,7 +281,8 @@ export function mapSessionRowToConfig(row: SessionRow): SessionConfig {
     sessionDeadline: toIsoString(row.session_deadline),
     sessionDeadlineDays: row.session_deadline_days,
     startedAt: null,
-    completedAt: null
+    completedAt: null,
+    referenceYear: row.scoring_reference_year
   };
 }
 
@@ -333,7 +335,8 @@ export async function loadSessionRow(gameId: string, executor: DbExecutor = dbPo
         seed,
         room_code,
         selected_eras,
-        selected_regions
+        selected_regions,
+        scoring_reference_year
       FROM sessions
       WHERE game_id = $1
       LIMIT 1
@@ -1105,6 +1108,7 @@ function buildAsyncBaseSnapshot(gameState: ReconstructedGameState): CompeteSessi
     sessionDeadlineDays: session.sessionDeadlineDays,
     startedAt: null,
     completedAt: null,
+    referenceYear: session.referenceYear,
   };
   return {
     gameId: session.gameId,
@@ -1226,7 +1230,8 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
       sessionDeadline: gameState.session.sessionDeadline,
       sessionDeadlineDays: gameState.session.sessionDeadlineDays,
       startedAt: null,
-      completedAt: null
+      completedAt: null,
+      referenceYear: gameState.session.referenceYear
     },
     players,
     currentRoundIndex: currentRound,
