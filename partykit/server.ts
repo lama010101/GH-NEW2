@@ -664,7 +664,9 @@ export default class GameServer {
    * explicit START_GAME handler. Guarded by startInFlight mutex.
    */
   private async attemptAutoStart(gameId: string): Promise<void> {
-    if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") return;
+    if (!isRuntimeState(this.snapshot)) return;
+    if (this.snapshot.config?.mode === "async") return;
+    if (this.snapshot.status !== "LOBBY") return;
     const activePlayers = this.snapshot.players.filter(p => p.leftAt === null);
     const allReady = activePlayers.length >= this.minPlayersToStart(this.snapshot.config?.mode ?? "sync") &&
       activePlayers.every(p => p.ready === true);
@@ -1705,6 +1707,9 @@ export default class GameServer {
           this.applySnapshotAndBroadcast(snapshot);
           // Server-authoritative auto-start: re-derive condition from DO state.
           // No client message required — server checks on every ready-state change.
+          // attemptAutoStart is kept unconditional because it no-ops for async
+          // (Relax has no all-ready auto-start trigger; per-player start is handled
+          // by startRelaxPlayer). Removing this call would break that guard.
           await this.attemptAutoStart(gameId);
           break;
         }

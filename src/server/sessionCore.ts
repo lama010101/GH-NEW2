@@ -2408,6 +2408,131 @@ export async function cancelCompeteInvite(input: CancelCompeteInviteInput): Prom
   return snapshot;
 }
 
+async function startRelaxPlayer(input: { gameId: string; playerId: string; cause: TransitionCause }): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
+  const { gameId, playerId, cause } = input;
+  const client = await getTransactionClient();
+  let clientReleased = false;
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':async-start'))`,
+      [gameId, playerId]
+    );
+
+    const sessionResult = await client.query<Pick<SessionRow, "mode" | "round_timer_sec" | "session_deadline_days">>(
+      `SELECT mode, round_timer_sec, session_deadline_days
+       FROM sessions
+       WHERE game_id = $1
+       FOR UPDATE`,
+      [gameId]
+    );
+    if (sessionResult.rows.length === 0) {
+      throw new Error("Session not found");
+    }
+    const session = sessionResult.rows[0];
+    if (session.mode !== "async") {
+      throw new Error("startRelaxPlayer can only be used in async sessions");
+    }
+
+    const membershipResult = await client.query<Pick<SessionPlayerRow, "left_at" | "kicked">>(
+      `SELECT left_at, kicked
+       FROM session_players
+       WHERE game_id = $1 AND player_id = $2
+       LIMIT 1`,
+      [gameId, playerId]
+    );
+    if (
+      membershipResult.rows.length === 0 ||
+      membershipResult.rows[0].left_at !== null ||
+      membershipResult.rows[0].kicked
+    ) {
+      throw new Error("Player is not an active member of this session");
+    }
+
+    const existingStart = await client.query<{ id: string }>(
+      `SELECT id FROM player_round_events
+       WHERE game_id = $1 AND player_id = $2 AND round_index = 0 AND event_type = 'ROUND_STARTED'
+       LIMIT 1`,
+      [gameId, playerId]
+    );
+    if (existingStart.rows.length > 0) {
+      await client.query("COMMIT");
+      clientReleased = true;
+      client.release();
+      const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, dbPool);
+      const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
+      const actingPlayerSnapshot = playerSnapshots[playerId];
+      if (!actingPlayerSnapshot) throw new Error("Session not found");
+      return { ...actingPlayerSnapshot, playerSnapshots };
+    }
+
+    const firstStartResult = await client.query<{ exists: boolean }>(
+      `SELECT EXISTS(
+         SELECT 1
+         FROM player_round_events pre
+         JOIN session_players sp ON pre.game_id = sp.game_id AND pre.player_id = sp.player_id
+         WHERE pre.game_id = $1
+           AND pre.round_index = 0
+           AND pre.event_type = 'ROUND_STARTED'
+           AND sp.left_at IS NULL
+       ) AS exists`,
+      [gameId]
+    );
+    if (!firstStartResult.rows[0].exists && session.session_deadline_days !== null) {
+      const startNow = new Date();
+      const deadlineMs = startNow.getTime() + session.session_deadline_days * MS_PER_DAY;
+      await client.query(
+        `UPDATE sessions SET session_deadline = $2 WHERE game_id = $1`,
+        [gameId, new Date(deadlineMs)]
+      );
+    }
+
+    const startNow = new Date();
+    const startStartedAt = startNow.toISOString();
+    const startPhaseEndsAt = session.round_timer_sec > 0
+      ? new Date(startNow.getTime() + session.round_timer_sec * 1000).toISOString()
+      : null;
+
+    const playerToken = generateVerificationToken();
+    await client.query(
+      `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at, verification_token)
+       VALUES ($1, $2, 0, 'ROUND_STARTED', $3::jsonb, $4, $5, $6)
+       ON CONFLICT DO NOTHING`,
+      [
+        gameId,
+        playerId,
+        JSON.stringify({ startedAt: startStartedAt, cause }),
+        startNow,
+        startPhaseEndsAt ? new Date(startPhaseEndsAt) : null,
+        playerToken,
+      ]
+    );
+
+    await client.query("COMMIT");
+    clientReleased = true;
+    client.release();
+
+    const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, dbPool);
+    const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
+    const actingPlayerSnapshot = playerSnapshots[playerId];
+    if (!actingPlayerSnapshot) throw new Error("Session not found");
+    return { ...actingPlayerSnapshot, playerSnapshots };
+  } catch (error) {
+    if (!clientReleased) {
+      await client.query("ROLLBACK").catch(() => {});
+      client.release();
+      clientReleased = true;
+    }
+    throw error;
+  } finally {
+    if (!clientReleased) {
+      client.release();
+    }
+  }
+}
+
 export async function startCompeteSession(input: StartCompeteSessionInput): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   const gameId = input.gameId.trim();
   const playerId = input.playerId.trim();
@@ -2420,6 +2545,11 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
     const session = await loadSessionRow(gameId, client);
     if (!session) {
       throw new Error("Session not found");
+    }
+
+    if (session.mode === "async") {
+      await client.query("ROLLBACK");
+      return startRelaxPlayer({ gameId, playerId, cause });
     }
 
     const playerRows = await loadSessionPlayerRows(gameId, client);
@@ -2471,18 +2601,6 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
       ? null
       : new Date(startNow.getTime() + session.round_timer_sec * 1000).toISOString();
 
-    // Relax (async) deadline anchoring (GAME_MODES_SPEC.md v1.4 §5.3):
-    // session_deadline_days stores the host-configured duration; the absolute
-    // session_deadline is computed here at START_GAME = startedAt + days.
-    // Sync sessions have session_deadline_days = NULL → no deadline written.
-    if (session.mode === "async" && session.session_deadline_days !== null) {
-      const deadlineMs = startNow.getTime() + session.session_deadline_days * MS_PER_DAY;
-      await client.query(
-        `UPDATE sessions SET session_deadline = $2 WHERE game_id = $1`,
-        [gameId, new Date(deadlineMs)]
-      );
-    }
-
     await appendEvent(client, gameId, "ROUND_STARTED", {
       roundIndex: 0,
       eventId: startEventIds[0],
@@ -2490,28 +2608,6 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
       phaseEndsAt: startPhaseEndsAt,
       cause
     }, 0);
-
-    // Per-player round-0 start for async (Relax): each active player gets their
-    // own ROUND_STARTED event with an independent phase_ends_at. Late joiners are
-    // backfilled lazily by buildAsyncPlayerSnapshotsForActivePlayers.
-    if (session.mode === "async") {
-      for (const player of activePlayers) {
-        const playerToken = generateVerificationToken();
-        await client.query(
-          `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at, verification_token)
-           VALUES ($1, $2, 0, 'ROUND_STARTED', $3::jsonb, $4, $5, $6)
-           ON CONFLICT DO NOTHING`,
-          [
-            gameId,
-            player.player_id,
-            JSON.stringify({ startedAt: startStartedAt }),
-            startNow,
-            startPhaseEndsAt ? new Date(startPhaseEndsAt) : null,
-            playerToken,
-          ]
-        );
-      }
-    }
 
     await client.query("COMMIT");
   } catch (error) {
@@ -2524,11 +2620,6 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
   if (!snapshot) {
     throw new Error("Session not found");
-  }
-
-  if (snapshot.config.mode === "async") {
-    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
-    return { ...snapshot, playerSnapshots };
   }
 
   return snapshot;
