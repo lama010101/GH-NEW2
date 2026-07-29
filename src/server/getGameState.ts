@@ -103,6 +103,7 @@ export type SessionState = {
   sessionDeadlineDays: number | null;
   createdAt: string;
   roomCode: string;
+  referenceYear: number;
 };
 
 /** Fully reconstructed game state — deterministic from DB only */
@@ -265,7 +266,7 @@ export async function getGameState(
       session_data AS (
         SELECT game_id, mode, round_timer_sec, total_rounds, year_min, year_max,
                results_auto_advance_sec, session_deadline, session_deadline_days, created_at, seed, room_code,
-               selected_eras, selected_regions
+               selected_eras, selected_regions, scoring_reference_year
         FROM sessions
         WHERE game_id = $1
       ),
@@ -336,7 +337,8 @@ export async function getGameState(
     sessionDeadline: sessionJson.session_deadline ? new Date(sessionJson.session_deadline as string).toISOString() : null,
     sessionDeadlineDays: (sessionJson.session_deadline_days as number | null) ?? null,
     createdAt: new Date(sessionJson.created_at as string).toISOString(),
-    roomCode: sessionJson.room_code as string
+    roomCode: sessionJson.room_code as string,
+    referenceYear: sessionJson.scoring_reference_year as number
   };
 
   // ───────────────────────────────────────────────────────────────────────────

@@ -175,6 +175,7 @@ export type SessionConfig = {
   sessionDeadlineDays: number | null;
   startedAt: string | null;
   completedAt: string | null;
+  referenceYear: number;
 };
 
 export type RoundLockMeta = {
