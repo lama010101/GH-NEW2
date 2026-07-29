@@ -250,6 +250,7 @@
     "n_days": "{n}天",
     "ready_waiting": "已准备 — 等待其他人",
     "im_ready": "我准备好了",
+    "relax_start_my_game": "Start my game",
     "players_ready": "（{ready}/{total} 玩家已准备）",
     "select_all": "全选",
     "deselect_all": "取消全选",
