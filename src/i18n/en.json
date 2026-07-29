@@ -252,6 +252,7 @@
     "n_days": "{n} days",
     "ready_waiting": "Ready — waiting for others",
     "im_ready": "I'm ready",
+    "relax_start_my_game": "Start my game",
     "players_ready": "({ready}/{total} players ready)",
     "select_all": "Select all",
     "deselect_all": "Deselect all",
