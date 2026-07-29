@@ -52,6 +52,33 @@ export function calculateYearAccuracy(yearDiff: number, eventYear: number, refer
   return effectiveDiff === 0 ? 100 : Math.floor(clamp(100 * Math.exp(-effectiveDiff / 40), 0, 100));
 }
 
+export type HintPenaltyResult = {
+  yearAccuracy: number;
+  locationAccuracy: number;
+  comboAccuracy: number;
+  roundAccuracy: number;
+  roundXp: number;
+};
+
+export function applyHintPenalty(
+  rawYearAccuracy: number,
+  rawLocationAccuracy: number,
+  eventYear: number,
+  referenceYear: number,
+  penaltyWhenRate: number,
+  penaltyWhereRate: number
+): HintPenaltyResult {
+  const eraScale = getEraScale(eventYear, referenceYear);
+  const whenRate = clamp(penaltyWhenRate / eraScale, 0, 100) / 100;
+  const whereRate = clamp(penaltyWhereRate, 0, 100) / 100;
+  const yearAccuracy = Math.floor(rawYearAccuracy * (1 - whenRate));
+  const locationAccuracy = Math.floor(rawLocationAccuracy * (1 - whereRate));
+  const comboAccuracy = Math.min(yearAccuracy, locationAccuracy);
+  const roundAccuracy = Math.round((yearAccuracy + locationAccuracy) / 2);
+  const roundXp = yearAccuracy + locationAccuracy;
+  return { yearAccuracy, locationAccuracy, comboAccuracy, roundAccuracy, roundXp };
+}
+
 export function calculateBadges(round: Pick<import("./types").RoundResult, "yearAccuracy" | "locationAccuracy" | "comboAccuracy">): Badge[] {
   const getTier = (accuracy: number) => {
     if (accuracy === 100) return "gold" as const;
@@ -103,7 +130,7 @@ export function evaluateRound(
   didTimeout = false,
   penaltyWhenRate: number = 0,
   penaltyWhereRate: number = 0,
-  referenceYear: number = 2025
+  referenceYear: number
 ) {
   const fallbackGuess: GuessState = {
     year: guess.year,
@@ -143,14 +170,13 @@ export function evaluateRound(
   // WHEN (year) penalties are age-discounted by eraScale: older events are harder
   // to guess the year for, so the same hint costs less. WHERE (location) penalties
   // are not age-discounted (location difficulty does not track event age).
-  const eraScale = getEraScale(event.year, referenceYear);
-  const whenRate  = clamp(penaltyWhenRate  / eraScale, 0, 100) / 100;
-  const whereRate = clamp(penaltyWhereRate, 0, 100) / 100;
-  const yearAccuracyFinal     = Math.floor(yearAccuracy     * (1 - whenRate));
-  const locationAccuracyFinal = Math.floor(locationAccuracy * (1 - whereRate));
-  const comboAccuracy = Math.min(yearAccuracyFinal, locationAccuracyFinal);
-  const roundAccuracy = Math.round((yearAccuracyFinal + locationAccuracyFinal) / 2);
-  const roundXp       = yearAccuracyFinal + locationAccuracyFinal;
+  const {
+    yearAccuracy: yearAccuracyFinal,
+    locationAccuracy: locationAccuracyFinal,
+    comboAccuracy,
+    roundAccuracy,
+    roundXp
+  } = applyHintPenalty(yearAccuracy, locationAccuracy, event.year, referenceYear, penaltyWhenRate, penaltyWhereRate);
 
   const result = {
     roundIndex,

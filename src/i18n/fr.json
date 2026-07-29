@@ -567,7 +567,13 @@
     "taking_too_long": "Trop long ?",
     "no_results_today": "Aucun résultat pour aujourd'hui.",
     "accuracy_pct": "Précision %",
-    "unknown_player": "Inconnu"
+    "unknown_player": "Inconnu",
+    "summary_line": "Vous êtes {rank}{suffix} en {tab}",
+    "rank_suffix_one": "er",
+    "rank_suffix_two": "e",
+    "rank_suffix_few": "e",
+    "rank_suffix_many": "e",
+    "rank_suffix_other": "e"
   },
   "profile": {
     "accuracy_breakdown": "Répartition de la précision",
