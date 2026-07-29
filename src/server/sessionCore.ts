@@ -420,18 +420,24 @@ type AsyncSnapshotBase = {
   eventContentMap: Map<string, RoundEventContent>;
   roundEventsForViewer: (viewerPlayerId: string) => PlayerRoundEvent[];
   pendingInvitees: PendingInvitee[];
+  dbVersion: {
+    roundEventVersion: number;
+    playerEventVersions: Record<string, number>;
+  };
 };
 
 async function loadGlobalRoundEventsForAsync(
   gameId: string,
   executor: DbExecutor
-): Promise<{ eventIds: string[]; globalRoundStartedAt: string | null; globalPhaseEndsAt: string | null }> {
+): Promise<{ eventIds: string[]; globalRoundStartedAt: string | null; globalPhaseEndsAt: string | null; maxRoundEventId: number }> {
   const result = await executor.query<{
     event_type: string;
     round_index: number | null;
     payload: Record<string, unknown>;
+    max_round_event_id: number;
   }>(
-    `SELECT event_type, round_index, payload
+    `SELECT event_type, round_index, payload,
+            COALESCE((SELECT MAX(id) FROM round_events WHERE game_id = $1), 0)::float8 AS max_round_event_id
      FROM round_events
      WHERE game_id = $1
        AND event_type IN ('SESSION_CREATED', 'ROUND_STARTED')
@@ -445,7 +451,8 @@ async function loadGlobalRoundEventsForAsync(
   const eventIds = ((sessionCreated?.payload as Record<string, unknown>)?.eventIds as string[]) ?? [];
   const globalRoundStartedAt = (roundStarted?.payload?.startedAt as string) ?? null;
   const globalPhaseEndsAt = (roundStarted?.payload?.phaseEndsAt as string) ?? null;
-  return { eventIds, globalRoundStartedAt, globalPhaseEndsAt };
+  const maxRoundEventId = result.rows[0]?.max_round_event_id ?? 0;
+  return { eventIds, globalRoundStartedAt, globalPhaseEndsAt, maxRoundEventId };
 }
 
 async function loadPlayerRoundEventsForAsync(
@@ -687,10 +694,8 @@ function derivePlayerRoundState(
     } else if (ev.eventType === "ROUND_COMPLETE") {
       resultPhaseStartedAt = (ev.payload?.resultPhaseStartedAt as string) ?? null;
       completed.add(roundIndex);
-      submitted.add(roundIndex);
     } else if (ev.eventType === "PLAYER_SESSION_COMPLETE") {
       completed.add(roundIndex);
-      submitted.add(roundIndex);
     }
   }
 
@@ -869,6 +874,7 @@ function buildAsyncPlayerSnapshotFromBase(
     resultPhaseStartedAt: playerState.resultPhaseStartedAt,
     roomCode: session.room_code,
     pendingInvitees: base.pendingInvitees,
+    dbVersion: base.dbVersion,
   };
 }
 
@@ -892,6 +898,23 @@ async function loadAsyncSnapshotBase(
 
   const eventContentMap = new Map(roundEventContent.map(r => [r.eventId, r]));
 
+  const playerEventVersions: Record<string, number> = {};
+  for (const [playerId, events] of allPlayerEvents.entries()) {
+    playerEventVersions[playerId] = events.length > 0 ? Math.max(...events.map((e) => e.id)) : 0;
+  }
+  for (const player of players) {
+    // 0 is a safe floor — a new/late-joining player's first real event will have
+    // id > 0 and will correctly be treated as newer than this baseline.
+    if (!(player.player_id in playerEventVersions)) {
+      playerEventVersions[player.player_id] = 0;
+    }
+  }
+
+  const dbVersion = {
+    roundEventVersion: globalEvents.maxRoundEventId,
+    playerEventVersions,
+  };
+
   return {
     session,
     players,
@@ -904,6 +927,7 @@ async function loadAsyncSnapshotBase(
     eventContentMap,
     roundEventsForViewer: (viewerPlayerId: string) => allPlayerEvents.get(viewerPlayerId) ?? [],
     pendingInvitees,
+    dbVersion,
   };
 }
 
