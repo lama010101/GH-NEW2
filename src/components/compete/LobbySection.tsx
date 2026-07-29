@@ -168,7 +168,6 @@ export default function LobbySection({
 }: LobbySectionProps) {
   void onSetYearRange;
   void onStartGame;
-  void connectionState;
   const router = useRouter();
   const t = useTranslations();
   const tGame = useTranslations('game');
@@ -1357,7 +1356,7 @@ export default function LobbySection({
             type="button"
             className={isReady ? styles['lobbyReadyBtnIsReady'] : styles['lobbyReadyBtnNotReady']}
             onClick={onToggleReady}
-            disabled={busy}
+            disabled={busy || connectionState !== "OPEN"}
             data-testid="lobby-ready-btn"
           >
             {isReady ? t('lobby.ready_waiting') : t('lobby.im_ready')}

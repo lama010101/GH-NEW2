@@ -397,3 +397,114 @@
     display: none;
   }
 }
+
+/* Summary line */
+.summaryLine {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-border-subtle);
+  border-radius: 12px;
+  color: var(--gh-text-secondary);
+  font-size: var(--font-sm);
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.summaryLine:hover {
+  background: var(--gh-glass-bg-hover);
+  border-color: var(--gh-border-medium);
+}
+
+/* Podium */
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.podiumItem {
+  flex: 1;
+  max-width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px 8px;
+  border-radius: 14px;
+  text-align: center;
+  gap: 6px;
+  border: 1px solid var(--gh-border-subtle);
+}
+
+.podiumGold {
+  background: linear-gradient(180deg, rgba(255, 185, 0, 0.22), rgba(255, 185, 0, 0.06));
+  border-color: rgba(255, 185, 0, 0.35);
+}
+
+.podiumSilver {
+  background: linear-gradient(180deg, rgba(190, 190, 190, 0.2), rgba(190, 190, 190, 0.05));
+  border-color: rgba(190, 190, 190, 0.3);
+}
+
+.podiumBronze {
+  background: linear-gradient(180deg, rgba(205, 127, 50, 0.22), rgba(205, 127, 50, 0.06));
+  border-color: rgba(205, 127, 50, 0.35);
+}
+
+.podiumRank {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--gh-glass-bg);
+  color: var(--gh-text-primary);
+  font-family: var(--font-bebas), sans-serif;
+  font-size: var(--font-base);
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.podiumAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--gh-border-default);
+}
+
+.podiumAvatarInitials {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(var(--gh-orange-rgb), 0.35), var(--gh-glass-bg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-bebas), sans-serif;
+  font-size: var(--font-2xs);
+  font-weight: bold;
+  color: var(--gh-text-primary);
+}
+
+.podiumName {
+  color: var(--gh-text-primary);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  max-width: 90px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.podiumValue {
+  color: var(--gh-orange);
+  font-size: var(--font-sm);
+  font-weight: 600;
+}

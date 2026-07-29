@@ -60,32 +60,126 @@ Validation:
 Both location AND year must be selected (unless timed out)
 Game session must be committed
 Scoring Calculation:
+Source of truth: docs/backend/scoring_spec.md — see that file if this section and the code ever disagree.
+
+Location Score
+Exponential decay (NOT linear):
+
+locationAccuracy = floor(clamp(100 * exp(-distanceKm / DISTANCE_DECAY_KM), 0, 100))
+
+- 0 km → 100%
+- ~1500 km → ~37%
+- ~20000 km (antipodal) → 0%
+
+locationScore = locationAccuracy
+
+Time Score
+yearDiff = abs(guess_year - actual_year)
+
+Era scaling: older events are harder to guess the year for, so the effective
+year difference is divided by eraScale (>= 1). referenceYear is frozen at
+session creation (sessions.scoring_reference_year) to guarantee recomputability
+from DB — never use wall-clock time.
+
+eraScale = sqrt(max(ERA_SCALE_FLOOR, referenceYear - eventYear) / ERA_SCALE_FLOOR)
+
+effectiveDiff = yearDiff / eraScale
+
+yearAccuracy = floor(clamp(100 * exp(-effectiveDiff / YEAR_DECAY), 0, 100))
+
+- exact match → 100%
+- 1 year off on recent event (eraScale=1) → 97%
+- 100 years off on 1969 event (eraScale≈1.06) → 9%
+- 100 years off on 1500 event (eraScale≈3.24) → 46% (forgiveness for old event)
+
+timeScore = yearAccuracy
+
+Hint Penalty (proportional + age-discounted)
+Definition:
+- hints reduce score deterministically
+- penalties are RATES (0-100 integer = 0%-100%), NOT flat point subtraction
+- applied PROPORTIONALLY to raw accuracy (fair to both strong and weak players)
+- WHEN (year) penalties are age-discounted by eraScale (older events → smaller
+  effective penalty, since year-guessing is harder)
+- WHERE (location) penalties are NOT age-discounted (location difficulty does
+  not track event age)
+
+Tier penalty rates (fixed per hint at content creation time):
+
+| Tier | Rate | Typical hint type |
+|---|---|---|
+| 1 | 10% | Vague — era, broad continent |
+| 2 | 20% | Moderate — decade, region |
+| 3 | 30% | Strong — country, approximate year |
+| 4 | 40% | Near-definitive — city, specific era |
+| 5 | 50% | Definitive — exact location or year |
+
+Rates are additive per axis, capped at 100.
+
+penaltyWhenRate  = sum of tier rates for 'when' hints,  capped 100
+penaltyWhereRate = sum of tier rates for 'where' hints, capped 100
+
+Final Score
+eraScale = sqrt(max(ERA_SCALE_FLOOR, referenceYear - eventYear) / ERA_SCALE_FLOOR)
+
+whenRate  = clamp(penaltyWhenRate  / eraScale, 0, 100) / 100   // age-discounted
+whereRate = clamp(penaltyWhereRate, 0, 100) / 100              // no age discount
+
+yearAccuracyFinal     = floor(yearAccuracy     * (1 - whenRate))
+locationAccuracyFinal = floor(locationAccuracy * (1 - whereRate))
+
+rawScore = yearAccuracyFinal + locationAccuracyFinal   // 0 → 200
+
+finalScore = rawScore
+
+accuracy = round((yearAccuracyFinal + locationAccuracyFinal) / 2)
+
+Note: proportional application guarantees a hint can never make you worse than 0
+(you always keep (1 - rate) of your raw accuracy). This fixes the regressive
+punishment of the old flat-subtraction model.
 typescript
-// Location Score (0-100 XP)
-const distance = haversine(guessLat, guessLng, actualLat, actualLng);
-const locationXP = calculateLocationXP(distance);  // 100 XP at 0km, decay to 0
- 
-// Time Score (0-100 XP)  
+const MAX_DISTANCE_KM = 20000;
+const MAX_YEAR_DIFF = 200;
+const DISTANCE_DECAY_KM = 1500;
+const YEAR_DECAY = 40;
+const ERA_SCALE_FLOOR = 50;
+
+const locationAccuracy = Math.floor(
+  clamp(100 * Math.exp(-distanceKm / DISTANCE_DECAY_KM), 0, 100)
+);
+
 const yearDiff = Math.abs(guessYear - actualYear);
-const timeXP = calculateTimeXP(guessYear, actualYear);  // 100 XP at same year
- 
-// Hint Penalties
-const roundXPBeforePenalty = timeXP + locationXP;  // 0-200
-const roundXP = Math.max(0, roundXPBeforePenalty - xpDebt);
-const roundPercent = Math.max(0, Math.round((roundXPBeforePenalty / 200) * 100 - accDebt));
+const eraScale = Math.sqrt(
+  Math.max(ERA_SCALE_FLOOR, referenceYear - eventYear) / ERA_SCALE_FLOOR
+);
+const effectiveDiff = yearDiff / eraScale;
+const yearAccuracy = Math.floor(
+  clamp(100 * Math.exp(-effectiveDiff / YEAR_DECAY), 0, 100)
+);
+
+// penaltyWhenRate / penaltyWhereRate: sum of tier rates per axis, capped 100
+const whenRate = clamp(penaltyWhenRate / eraScale, 0, 100) / 100; // age-discounted
+const whereRate = clamp(penaltyWhereRate, 0, 100) / 100;          // no age discount
+
+const yearAccuracyFinal = Math.floor(yearAccuracy * (1 - whenRate));
+const locationAccuracyFinal = Math.floor(locationAccuracy * (1 - whereRate));
+const rawScore = yearAccuracyFinal + locationAccuracyFinal;        // 0-200
+const accuracy = Math.round((yearAccuracyFinal + locationAccuracyFinal) / 2);
+const finalXP = yearAccuracyFinal + locationAccuracyFinal;
 Result Data Stored:
 typescript
 {
-  guessCoordinates: { lat, lng },
-  distanceKm: 245.3,           // Distance from actual location
-  guessYear: 1954,
-  xpLocation: 85,              // Location accuracy (0-100)
-  xpYear: 92,                  // Time accuracy (0-100)
-  score: 177,                  // Total XP after hint penalty
-  accuracy: 88,                // Percentage after hint penalty
-  xpDebt: 0,                   // XP penalty from hints
-  accDebt: 0,                  // Accuracy penalty from hints
-  hintsUsed: 0,
+  roundIndex: 2,
+  event: { /* EventRecord: id, title, year, location, ... */ },
+  guess: { year: 1954, location: { lat: 48.8566, lng: 2.3522 } },
+  distanceKm: 245.3,
+  yearDiff: 7,
+  yearAccuracy: 85,
+  locationAccuracy: 92,
+  comboAccuracy: 85,
+  roundAccuracy: 89,
+  roundXp: 177,
+  badges: [{ dimension: 'combo', tier: 'silver', accuracy: 85 }],
   didTimeout: false
 }
 Navigation to Results:

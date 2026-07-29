@@ -1051,7 +1051,10 @@ export async function verifyFullReplay(
       `SELECT scoring_reference_year FROM sessions WHERE game_id = $1`,
       [gameId]
     );
-    const referenceYear = sessionMeta.rows[0]?.scoring_reference_year ?? 2025;
+    if (!sessionMeta.rows[0]) {
+      throw new Error(`[SCORING] missing scoring_reference_year for game ${gameId}`);
+    }
+    const referenceYear = sessionMeta.rows[0].scoring_reference_year;
 
     // 3. Recompute for each player and compare
     for (const commit of commitsResult.rows) {
