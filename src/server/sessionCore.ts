@@ -725,12 +725,21 @@ function buildAsyncPlayerSnapshotFromBase(
 
   const activePlayerRows = playerRows.filter(p => p.left_at === null && p.kicked !== true);
   const allPlayersReady = activePlayerRows.length >= 1 && activePlayerRows.every(p => p.ready);
+  const finalRoundIndex = session.total_rounds - 1;
 
   const players: SessionPlayer[] = playerRows.map(row => {
     const events = allPlayerEvents.get(row.player_id) ?? [];
     const state = derivePlayerRoundState(events, globalRoundStartedAt, globalPhaseEndsAt, gameId, row.player_id);
     const hasSubmitted = state.submittedRounds.has(state.currentRound);
-    return mapSessionPlayerRowToPlayer(row, hasSubmitted);
+    const player = mapSessionPlayerRowToPlayer(row, hasSubmitted);
+
+    if (state.reachedRounds.size === 0) {
+      return { ...player, roundStatus: row.ready ? 'ready' : 'joined', currentRoundIndex: null };
+    }
+    if (state.completedRounds.has(finalRoundIndex) || state.phase === 'PLAYER_SESSION_COMPLETE') {
+      return { ...player, roundStatus: 'finished', currentRoundIndex: state.currentRound };
+    }
+    return { ...player, roundStatus: 'playing', currentRoundIndex: state.currentRound };
   });
 
   const guessSubmittedSet = new Set<string>();
