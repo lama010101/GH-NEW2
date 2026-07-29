@@ -24,6 +24,7 @@ import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
+import AccuracySuffix from "@/components/AccuracySuffix";
 import type { ConnectionState } from "@/core/competeWebSocket";
 
 interface RoundCompleteSectionProps {
@@ -71,7 +72,10 @@ function MiniRing({ value, color }: { value: number; color: string }) {
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
-      <span className={styles.miniRingVal} style={{ color }}>{Math.round(value)}</span>
+      <span className={styles.miniRingVal} style={{ color }}>
+        {Math.round(value)}
+        <AccuracySuffix />
+      </span>
     </div>
   );
 }
@@ -496,7 +500,6 @@ export default function RoundCompleteSection({
                 const accColor = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
                 const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
                 const displayValue = leaderboardTab === 'thisRound' ? Math.round(row.accuracy) : Math.round(row.cumulativeAccuracy);
-                const displaySuffix = '%';
                 return (
                   <div key={row.rank} className={`${styles.lbRow} ${row.isMe ? styles.lbRowSelfAccent : ""}`}>
                     <span className={`${styles.lbRank} ${!isThisRoundNoGuess && row.rank === 1 ? styles.lbRankGold : ""}`}>
@@ -516,8 +519,10 @@ export default function RoundCompleteSection({
                       <span className={styles.lbAccEmpty}>—</span>
                     ) : (
                       <span className={styles.lbAccPill}>
-                        <span style={{ color: accColor, fontSize: "var(--font-base)" }}>{displayValue}</span>
-                        <span className={styles.lbAccSuffix}>{displaySuffix}</span>
+                        <span style={{ color: accColor, fontSize: "var(--font-base)" }}>
+                          {displayValue}
+                          <span className={styles.lbAccSuffix}>%</span>
+                        </span>
                       </span>
                     )}
                   </div>
@@ -585,7 +590,10 @@ export default function RoundCompleteSection({
                       <span className={styles.breakCorrectLabel}>{t('correct_answer')}</span>
                       <span className={`${styles.breakCorrectValue} ${isWhere ? styles.breakCorrectValueWhere : styles.breakCorrectValueWhen}`}>{correctValue}</span>
                     </div>
-                    <span className={styles.breakScore} style={{ color: scoreColor }}>{Math.round(scoreVal)}</span>
+                    <span className={styles.breakScore} style={{ color: scoreColor }}>
+                      {Math.round(scoreVal)}
+                      <AccuracySuffix />
+                    </span>
                   </div>
                 );
               })()}

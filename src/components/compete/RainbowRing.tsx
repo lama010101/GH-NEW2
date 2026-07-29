@@ -84,7 +84,8 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
         transform={`rotate(-90 ${cx} ${cy})`}
       />
       <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="var(--gh-text-primary)" fontSize={52} fontWeight="bold">
-        {clamped}
+        <tspan>{clamped}</tspan>
+        <tspan style={{ fontSize: '0.75em', opacity: 0.7 }} dx="1">%</tspan>
       </text>
     </svg>
   );

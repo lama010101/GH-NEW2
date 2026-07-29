@@ -277,8 +277,9 @@
 }
 
 .lbAccSuffix {
-  color: var(--gh-text-secondary);
-  font-size: var(--font-xs);
+  font-size: 0.75em;
+  opacity: 0.7;
+  margin-left: 1px;
 }
 
 /* ── Hints ── */
@@ -384,9 +385,9 @@
 }
 
 .scoreSuffix {
-  font-size: 12px; /* layout-constrained — do not tokenize */
-  font-weight: 600;
-  color: var(--gh-text-secondary);
+  font-size: 0.75em;
+  opacity: 0.7;
+  margin-left: 1px;
 }
 
 .noScore {
