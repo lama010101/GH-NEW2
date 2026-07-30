@@ -1715,14 +1715,61 @@ export default class GameServer {
         }
 
         case "START_GAME": {
-          // Validate: only allowed in LOBBY phase
-          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+          if (!isRuntimeState(this.snapshot)) {
             this.sendError(sender, "START_GAME only allowed in LOBBY phase");
             break;
           }
 
-          // Validate: only the host can manually force-start
           const senderPlayerId = this.connections.get(sender.id);
+
+          // For async (Relax) the DO snapshot is the last-acting player's view;
+          // validate start against the sending player's own per-player snapshot.
+          const isAsync = this.snapshot.config?.mode === "async";
+          let senderStatus = this.snapshot.status;
+          if (isAsync && senderPlayerId) {
+            const playerSnapshots = (this.snapshot as { playerSnapshots?: Record<string, { status?: string }> }).playerSnapshots;
+            senderStatus = playerSnapshots?.[senderPlayerId]?.status ?? this.snapshot.status;
+          }
+          if (senderStatus !== "LOBBY") {
+            this.sendError(sender, "START_GAME only allowed in LOBBY phase");
+            break;
+          }
+
+          // For async (Relax), every player starts their own round sequence
+          // independently. Use the per-player start endpoint and skip the host
+          // and all-ready checks that apply to sync/practice/daily.
+          if (isAsync) {
+            if (this.startInFlight) {
+              console.log("[PartyKit] START_GAME ignored — start already in flight");
+              break;
+            }
+            this.startInFlight = true;
+            try {
+              const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/start-player`;
+              const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+                },
+                body: JSON.stringify({
+                  playerId: senderPlayerId
+                })
+              });
+              if (!response.ok) {
+                const text = await response.text();
+                console.error(`[START_GAME] start-player API error ${response.status}: ${text}`);
+                break;
+              }
+              const snapshot = await response.json();
+              this.applySnapshotAndBroadcast(snapshot);
+            } finally {
+              this.startInFlight = false;
+            }
+            break;
+          }
+
+          // Validate: only the host can manually force-start (sync/practice/daily)
           const senderPlayer = this.snapshot.players.find(p => p.playerId === senderPlayerId);
           if (!senderPlayer || !senderPlayer.isHost) {
             console.log(`[PartyKit] START_GAME ignored — sender ${senderPlayerId?.slice(0, 8)} is not the host`);

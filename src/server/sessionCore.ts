@@ -724,13 +724,22 @@ function buildAsyncPlayerSnapshotFromBase(
   const playerState = derivePlayerRoundState(viewerEvents, globalRoundStartedAt, globalPhaseEndsAt, gameId, viewerPlayerId);
 
   const activePlayerRows = playerRows.filter(p => p.left_at === null && p.kicked !== true);
-  const allPlayersReady = activePlayerRows.length >= 1 && activePlayerRows.every(p => p.ready);
+  const allPlayersReady = false;
+  const finalRoundIndex = session.total_rounds - 1;
 
   const players: SessionPlayer[] = playerRows.map(row => {
     const events = allPlayerEvents.get(row.player_id) ?? [];
     const state = derivePlayerRoundState(events, globalRoundStartedAt, globalPhaseEndsAt, gameId, row.player_id);
     const hasSubmitted = state.submittedRounds.has(state.currentRound);
-    return mapSessionPlayerRowToPlayer(row, hasSubmitted);
+    const player = mapSessionPlayerRowToPlayer(row, hasSubmitted);
+
+    if (state.reachedRounds.size === 0) {
+      return { ...player, roundStatus: row.ready ? 'ready' : 'joined', currentRoundIndex: null };
+    }
+    if (state.completedRounds.has(finalRoundIndex) || state.phase === 'PLAYER_SESSION_COMPLETE') {
+      return { ...player, roundStatus: 'finished', currentRoundIndex: state.currentRound };
+    }
+    return { ...player, roundStatus: 'playing', currentRoundIndex: state.currentRound };
   });
 
   const guessSubmittedSet = new Set<string>();
@@ -1116,7 +1125,7 @@ function buildAsyncBaseSnapshot(gameState: ReconstructedGameState): CompeteSessi
     config,
     players,
     currentRoundIndex: currentRound,
-    allPlayersReady: activePlayers.length >= 1 && activePlayers.every((p) => p.ready),
+    allPlayersReady: false,
     roundStartsAt,
     roundEndsAt: null,
     viewerPlayerId: null,
@@ -1757,17 +1766,11 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
 
     const isActiveRejoiner = playerRow !== undefined && playerRow.left_at === null;
 
-    // Late join guard: if the game is no longer in the lobby, only active
-    // reconnecting players are allowed through.
-    if (currentSnapshot && currentSnapshot.status !== "LOBBY") {
-      if (!isActiveRejoiner) {
-        await client.query("ROLLBACK");
-        throw new Error("Game already in progress");
-      }
-    }
-
     // 8-player cap per GAME_MODES_SPEC.md Section 5.13. Active rejoiners are
     // already counted in the active set and therefore bypass the check.
+    // Computed before the late-join guard so async (Relax) late joins can be
+    // validated against the cap at the same time.
+    let activeCount = 0;
     if (!isActiveRejoiner) {
       // Row-level FOR UPDATE on the actual active rows (no aggregate), then
       // count in application code. Postgres rejects `SELECT COUNT(*) FOR UPDATE`;
@@ -1777,10 +1780,25 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
         `SELECT player_id FROM session_players WHERE game_id = $1 AND left_at IS NULL FOR UPDATE`,
         [gameId]
       );
-      const activeCount = activeCountResult.rows.length;
+      activeCount = activeCountResult.rows.length;
       if (activeCount >= 8) {
         await client.query("ROLLBACK");
         throw new Error("Session is full (8 players max)");
+      }
+    }
+
+    // Late join guard: if the game is no longer in the lobby, only active
+    // reconnecting players are allowed through — except in async (Relax),
+    // where players may join any time before the session deadline and player cap.
+    if (currentSnapshot && currentSnapshot.status !== "LOBBY" && !isActiveRejoiner) {
+      if (session.mode === "async") {
+        if (session.session_deadline !== null && session.session_deadline < new Date()) {
+          await client.query("ROLLBACK");
+          throw new Error("Session deadline has passed");
+        }
+      } else {
+        await client.query("ROLLBACK");
+        throw new Error("Game already in progress");
       }
     }
 
