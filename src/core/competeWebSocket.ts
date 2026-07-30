@@ -379,6 +379,10 @@ export class CompeteWebSocket {
     this.sendAction({ type: "START_GAME", playerId: this.playerId });
   }
 
+  startPlayer(): void {
+    this.sendAction({ type: "START_PLAYER", playerId: this.playerId });
+  }
+
   setTimer(roundTimerSec: number): void {
     this.sendAction({ type: "SET_TIMER", playerId: this.playerId, roundTimerSec });
   }

@@ -2643,6 +2643,118 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
   return snapshot;
 }
 
+export async function startPlayerRoundSequence(input: {
+  gameId: string;
+  playerId: string;
+}): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
+  const gameId = input.gameId.trim();
+  const playerId = input.playerId.trim();
+
+  const client = await getTransactionClient();
+  let clientReleased = false;
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':async'))`,
+      [gameId, playerId]
+    );
+
+    const session = await loadSessionRow(gameId, client);
+    if (!session) throw new Error("Session not found");
+    if (session.mode !== "async") {
+      throw new Error("startPlayerRoundSequence can only be used in async sessions");
+    }
+
+    const playerRowResult = await client.query<{ kicked: boolean; left_at: Date | null }>(
+      `SELECT kicked, left_at FROM session_players WHERE game_id = $1 AND player_id = $2 FOR UPDATE`,
+      [gameId, playerId]
+    );
+    if (playerRowResult.rows.length === 0) {
+      throw new Error("Player not found in session");
+    }
+    if (playerRowResult.rows[0].left_at !== null || playerRowResult.rows[0].kicked === true) {
+      throw new Error("Player has left or been kicked");
+    }
+
+    if (session.session_deadline_days !== null) {
+      const deadlineMs = Date.now() + session.session_deadline_days * MS_PER_DAY;
+      await client.query(
+        `UPDATE sessions SET session_deadline = $2 WHERE game_id = $1 AND session_deadline IS NULL`,
+        [gameId, new Date(deadlineMs)]
+      );
+    }
+
+    const sessionCreatedEvent = await client.query<{ payload: { eventIds: string[] } }>(
+      `SELECT payload FROM round_events
+       WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+       ORDER BY id ASC LIMIT 1`,
+      [gameId]
+    );
+    if (sessionCreatedEvent.rows.length === 0) {
+      throw new Error("Session event not found");
+    }
+    const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
+    if (!Array.isArray(eventIds) || eventIds.length === 0) {
+      throw new Error("Event ID not found for round 0");
+    }
+
+    const startNow = new Date();
+    const startPhaseEndsAt = session.round_timer_sec === 0
+      ? null
+      : new Date(startNow.getTime() + session.round_timer_sec * 1000).toISOString();
+
+    await client.query(
+      `INSERT INTO round_events (game_id, round_index, event_type, payload)
+       VALUES ($1, 0, 'ROUND_STARTED', $2::jsonb)
+       ON CONFLICT (game_id, round_index) WHERE event_type = 'ROUND_STARTED' DO NOTHING`,
+      [
+        gameId,
+        JSON.stringify({
+          roundIndex: 0,
+          eventId: eventIds[0],
+          startedAt: startNow.toISOString(),
+          phaseEndsAt: startPhaseEndsAt,
+          cause: TransitionCause.PLAYER
+        })
+      ]
+    );
+
+    const token = generateVerificationToken();
+    await client.query(
+      `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, phase_ends_at, verification_token)
+       VALUES ($1, $2, 0, 'ROUND_STARTED', $3::jsonb, $4, $5, $6)
+       ON CONFLICT DO NOTHING`,
+      [
+        gameId,
+        playerId,
+        JSON.stringify({ startedAt: startNow.toISOString() }),
+        startNow,
+        startPhaseEndsAt ? new Date(startPhaseEndsAt) : null,
+        token
+      ]
+    );
+
+    const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
+    await client.query("COMMIT");
+    clientReleased = true;
+
+    const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
+    const actingPlayerSnapshot = playerSnapshots[playerId];
+    if (!actingPlayerSnapshot) throw new Error("Session not found");
+    return { ...actingPlayerSnapshot, playerSnapshots };
+  } catch (error) {
+    if (!clientReleased) {
+      await client.query("ROLLBACK");
+    }
+    throw error;
+  } finally {
+    if (!clientReleased) {
+      client.release();
+    }
+  }
+}
+
 export type SubmitGuessInput = {
   gameId: string;
   playerId: string;
