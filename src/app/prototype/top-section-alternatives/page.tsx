@@ -43,7 +43,7 @@ function Ring({ value, size = 110, strokeWidth = 10 }: { value: number; size?: n
       </svg>
       <div className="ringCenter">
         <span className="ringValue" style={{ color: accColor(value) }}>
-          {Math.round(value)}<span className="ringPct">%</span>
+          {Math.round(value)}
         </span>
       </div>
     </div>

@@ -105,7 +105,7 @@ function AccuracyRing({ value }: { value: number }) {
         />
       </svg>
       <div className="ringCenter">
-        <span className="ringValue">{value}<span className="ringPct">%</span></span>
+        <span className="ringValue">{value}</span>
         <span className="ringLabel">overall</span>
       </div>
     </div>
