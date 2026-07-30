@@ -4070,7 +4070,10 @@ export async function completeRound(input: {
 // DAILY MODE — Game-end transaction (DAILY_MODE_SPEC.md §8)
 // Runs inside the caller's transaction (passed DbTransactionClient).
 // All-or-nothing. Uses challengeDate from daily_attempts (fixes C1 — not now()).
-// Steps 4–6 + streak (§9) are NO-OP stubs: "BLOCKED: stats tables missing" (R3).
+// Step 4 (§9 streak): real write to player_daily_streak. Steps 4-6 scope from
+// DAILY_MODE_SPEC.md §8 is intentionally reduced per CTO ruling 2026-07-30:
+// player_progression_stats, player_accuracy_history, and player_era_stats are
+// NOT built (single-stats-system rule; only player_daily_streak is added).
 // ═════════════════════════════════════════════════════════════════════════════
 async function dailyGameEndTransaction(
   client: DbTransactionClient,
@@ -4159,8 +4162,52 @@ async function dailyGameEndTransaction(
       [playerId, runningCount, runningAvg, data.total_xp]
     );
 
-    // Steps 4–6 + §9 streak: BLOCKED — stats tables do not exist yet (R3 ruling)
-    console.log("[dailyGameEndTransaction] BLOCKED: stats tables missing — player_progression_stats, player_accuracy_history, player_era_stats (steps 4–6, §9 streak) skipped for gameId=" + gameId);
+    // Step 4 (scope reduction): per-CTO ruling 2026-07-30, steps 4-6 of
+    // DAILY_MODE_SPEC.md §8 are collapsed to streak-only. player_progression_stats,
+    // player_accuracy_history, and player_era_stats are intentionally not built.
+
+    // Daily streak evaluation (§9)
+    const challengeDateMidnight = new Date(challengeDate + "T00:00:00Z");
+    const yesterdayDate = new Date(challengeDateMidnight);
+    yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
+    const yesterdayIso = yesterdayDate.toISOString().slice(0, 10);
+
+    const streakRow = await client.query<{
+      daily_streak_current: number;
+      daily_streak_best: number;
+      last_attempt_date: string | null;
+    }>(
+      `SELECT daily_streak_current, daily_streak_best, last_attempt_date::text
+       FROM player_daily_streak
+       WHERE player_id = $1`,
+      [playerId]
+    );
+
+    const existingStreak = streakRow.rows[0];
+    const lastAttemptDate = existingStreak?.last_attempt_date ?? null;
+
+    if (lastAttemptDate !== challengeDate) {
+      let newStreakCurrent = 1;
+      if (lastAttemptDate === yesterdayIso) {
+        newStreakCurrent = (existingStreak?.daily_streak_current ?? 0) + 1;
+      }
+
+      const newStreakBest = Math.max(
+        existingStreak?.daily_streak_best ?? 0,
+        newStreakCurrent
+      );
+
+      await client.query(
+        `INSERT INTO player_daily_streak (player_id, daily_streak_current, daily_streak_best, last_attempt_date, updated_at)
+         VALUES ($1, $2, $3, $4, now())
+         ON CONFLICT (player_id) DO UPDATE SET
+           daily_streak_current = EXCLUDED.daily_streak_current,
+           daily_streak_best = EXCLUDED.daily_streak_best,
+           last_attempt_date = EXCLUDED.last_attempt_date,
+           updated_at = now()`,
+        [playerId, newStreakCurrent, newStreakBest, challengeDate]
+      );
+    }
 
     // Step 7: Badge aggregates — evaluated per round, aggregated here, never
     // persisted standalone. No standalone write needed (badges are derived).
