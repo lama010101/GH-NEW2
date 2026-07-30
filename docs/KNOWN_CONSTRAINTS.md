@@ -291,3 +291,41 @@ list's async status logic separately; it must not be reported as a new bug
 without referencing this constraint.
 
 ---
+
+### [KC-012] PartyKit / Next.js dev-server PARTYKIT_SECRET mismatch guard
+**Affected files:** `scripts/dev/check-partykit-secret.sh`, `package.json`
+**Affected command:** `npm run dev`
+
+**Constraint:**
+`partykit dev` loads secrets from `.dev.vars`, while `next dev` loads them from
+`process.env` / `.env.local` / `.env`. If `PARTYKIT_SECRET` differs between the
+two runtimes, server-to-server calls from the PartyKit Durable Object to
+Next.js API routes fail with 401/403 and the game state becomes broken/stale.
+This is a recurring local-dev foot-gun (see `.dev.vars` vs blueprint
+`local-dev-secret` mismatches).
+
+`npm run dev` now runs `scripts/dev/check-partykit-secret.sh` as a `predev`
+step. The script:
+1. Resolves the Next.js-effective `PARTYKIT_SECRET` (env → `.env.local` → `.env`).
+2. Reads `PARTYKIT_SECRET` from `.dev.vars`.
+3. Fails loudly if either is missing, unexpanded (contains a literal `$`),
+   or mismatched.
+
+**History:** This guard was added after two separate incidents where the only
+symptom was runtime auth failures and stale state during Relax-mode tests; the
+root cause was a secret mismatch, not a code defect.
+
+**Regression guard (include in ALL prompts touching dev startup or .dev.vars):**
+  grep -A1 '"predev"' package.json | grep 'check-partykit-secret'
+  # Must return a match. If empty = guard removed from npm lifecycle = FAIL.
+
+  test -f scripts/dev/check-partykit-secret.sh
+  # Must exit 0. If missing = guard deleted = FAIL.
+
+  PARTYKIT_SECRET=wrong scripts/dev/check-partykit-secret.sh
+  # Must exit non-zero and print "ERROR: PARTYKIT_SECRET mismatch".
+
+  PARTYKIT_SECRET="$(grep '^PARTYKIT_SECRET=' .dev.vars | cut -d= -f2-)" scripts/dev/check-partykit-secret.sh
+  # Must exit 0 and print "PARTYKIT_SECRET is aligned".
+
+---
