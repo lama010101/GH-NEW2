@@ -11,6 +11,7 @@ import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
 import { AvatarPickerModal } from '@/components/AvatarPickerModal';
 import ExperienceAccuracy from '@/components/ExperienceAccuracy';
+import AccuracySuffix from '@/components/AccuracySuffix';
 import RankCard from '@/components/RankCard';
 
 
@@ -341,6 +342,7 @@ export default function ProfilePage() {
               : profileData.avgAccuracy !== null
                 ? String(Math.round(Number(profileData.avgAccuracy)))
                 : '—',
+            suffix: '%',
             label: t('avg_accuracy'),
             color: styles.statColorOrange
           },
@@ -376,6 +378,7 @@ export default function ProfilePage() {
           >
             <div className={`font-bebas text-2xl font-extrabold ${stat.color ?? ''}`}>
               {stat.value}
+              {stat.suffix && <AccuracySuffix />}
             </div>
             <div className="text-xs mt-1 text-[var(--gh-text-muted)]">
               {stat.label}
@@ -445,7 +448,12 @@ export default function ProfilePage() {
                 className={styles.modeAcc}
                 style={{ color: profileData.dailyAvgAccuracy !== null ? accColor(profileData.dailyAvgAccuracy) : 'var(--gh-text-muted)' }}
               >
-                {profileData.dailyAvgAccuracy !== null ? `${Math.round(profileData.dailyAvgAccuracy)}` : '—'}
+                {profileData.dailyAvgAccuracy !== null ? (
+                  <>
+                    {Math.round(profileData.dailyAvgAccuracy)}
+                    <AccuracySuffix />
+                  </>
+                ) : '—'}
               </span>
               <span className={styles.modeGames}>
                 {profileData.dailyGamesPlayed !== null ? `${profileData.dailyGamesPlayed} ${t('games')}` : t('coming_soon')}
@@ -463,7 +471,12 @@ export default function ProfilePage() {
                 className={styles.modeAcc}
                 style={{ color: profileData.levelUpBestAccuracy !== null ? accColor(profileData.levelUpBestAccuracy) : 'var(--gh-text-muted)' }}
               >
-                {profileData.levelUpBestAccuracy !== null ? `${Math.round(profileData.levelUpBestAccuracy)}` : '—'}
+                {profileData.levelUpBestAccuracy !== null ? (
+                  <>
+                    {Math.round(profileData.levelUpBestAccuracy)}
+                    <AccuracySuffix />
+                  </>
+                ) : '—'}
               </span>
               <span className={styles.modeGames}>
                 {profileData.levelUpCurrentLevel !== null ? `${t('level_up')} ${profileData.levelUpCurrentLevel}` : t('coming_soon')}
@@ -481,7 +494,12 @@ export default function ProfilePage() {
                 className={styles.modeAcc}
                 style={{ color: progressData?.practice?.avgAccuracy != null ? accColor(progressData.practice.avgAccuracy) : 'var(--gh-text-muted)' }}
               >
-                {progressData?.practice?.avgAccuracy != null ? `${Math.round(progressData.practice.avgAccuracy)}` : '—'}
+                {progressData?.practice?.avgAccuracy != null ? (
+                  <>
+                    {Math.round(progressData.practice.avgAccuracy)}
+                    <AccuracySuffix />
+                  </>
+                ) : '—'}
               </span>
               <span className={styles.modeGames}>
                 {progressData?.practice?.gamesPlayed != null ? `${progressData.practice.gamesPlayed} ${t('games')}` : '—'}
@@ -511,18 +529,25 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--gh-text-secondary)]">Daily (all-time)</span>
               <span className={`font-bebas text-sm font-bold text-blue-400`}>
-                {profileData.dailyAvgAccuracy === null
-                  ? '—'
-                  : `${Math.round(Number(profileData.dailyAvgAccuracy))} · ${profileData.dailyGamesPlayed ?? 0} games`}
+                {profileData.dailyAvgAccuracy === null ? '—' : (
+                  <>
+                    {Math.round(Number(profileData.dailyAvgAccuracy))}
+                    <AccuracySuffix />
+                    {' · '}{profileData.dailyGamesPlayed ?? 0} games
+                  </>
+                )}
               </span>
             </div>
             {/* Level Up */}
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--gh-text-secondary)]">{t('level_up')}</span>
               <span className={`font-bebas text-sm font-bold ${styles.leaderboardViolet}`}>
-                {profileData.levelUpCurrentLevel === null
-                  ? '—'
-                  : `Level ${profileData.levelUpCurrentLevel} · ${profileData.levelUpBestAccuracy ?? 0} best`}
+                {profileData.levelUpCurrentLevel === null ? '—' : (
+                  <>
+                    Level {profileData.levelUpCurrentLevel} · {profileData.levelUpBestAccuracy ?? 0}
+                    <AccuracySuffix /> best
+                  </>
+                )}
               </span>
             </div>
           </div>
