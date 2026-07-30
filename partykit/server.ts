@@ -85,6 +85,11 @@ const StartGameSchema = z.object({
   playerId: z.string().uuid()
 });
 
+const StartPlayerSchema = z.object({
+  type: z.literal("START_PLAYER"),
+  playerId: z.string().uuid()
+});
+
 const SubmitGuessSchema = z.object({
   type: z.literal("SUBMIT_GUESS"),
   playerId: z.string().uuid(),
@@ -179,6 +184,7 @@ const ServerMessageSchema = z.discriminatedUnion("type", [
   JoinRoomSchema,
   ToggleReadySchema,
   StartGameSchema,
+  StartPlayerSchema,
   SubmitGuessSchema,
   AdvanceRoundSchema,
   ReadyNextSchema,
@@ -229,6 +235,7 @@ export type ServerMessage =
   | { type: "JOIN_ROOM"; playerId: string; displayName: string }
   | { type: "TOGGLE_READY"; playerId: string; ready: boolean }
   | { type: "START_GAME"; playerId: string }
+  | { type: "START_PLAYER"; playerId: string }
   | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: string[]; accPenalty?: number; xpPenalty?: number }
   | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number; cause?: string }
   | { type: "READY_NEXT"; playerId: string; roundIndex: number }
@@ -1807,6 +1814,39 @@ export default class GameServer {
             this.applySnapshotAndBroadcast(snapshot);
           } finally {
             this.startInFlight = false;
+          }
+          break;
+        }
+
+        case "START_PLAYER": {
+          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+            this.sendError(sender, "START_PLAYER only allowed in LOBBY phase");
+            break;
+          }
+          const senderPlayerId = this.connections.get(sender.id);
+          if (senderPlayerId !== data.playerId) {
+            this.sendError(sender, "Player ID mismatch");
+            break;
+          }
+          try {
+            const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/start-player`;
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+              },
+              body: JSON.stringify({ playerId: data.playerId })
+            });
+            if (response.ok) {
+              const snapshot = await response.json();
+              this.applySnapshotAndBroadcast(snapshot);
+            } else {
+              const text = await response.text();
+              this.sendError(sender, `Start failed: ${text}`);
+            }
+          } catch (err) {
+            this.sendError(sender, "Start request failed");
           }
           break;
         }

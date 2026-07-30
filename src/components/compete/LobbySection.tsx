@@ -1366,7 +1366,7 @@ export default function LobbySection({
 
       </div>
 
-      {/* Bottom Dock — single READY CTA */}
+      {/* Bottom Dock — READY CTA (sync) or START MY GAME (async) */}
       <div className={styles['lobby-dock']} data-testid="lobby-dock">
         <div className={styles['lobby-dock-content']}>
           {isAsync ? (

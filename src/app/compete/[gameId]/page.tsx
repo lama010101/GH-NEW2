@@ -279,6 +279,7 @@ export default function CompeteGamePage() {
     connectionState,
     toggleReady,
     startGame,
+    startPlayer,
     submitGuess,
     readyNext,
     setTimer,
@@ -542,9 +543,12 @@ export default function CompeteGamePage() {
     if (!playerId) return;
     setBusy(true);
     setError(null);
-    // Client → DO → DB: send action signal via WS
-    startGame();
-  }, [playerId, startGame]);
+    if (snapshot?.config?.mode === "async") {
+      startPlayer();
+    } else {
+      startGame();
+    }
+  }, [playerId, startGame, startPlayer, snapshot?.config?.mode]);
 
   const handleSetTimer = useCallback((roundTimerSec: number) => {
     if (!playerId) return;

@@ -187,6 +187,12 @@ export default function useCompeteSocket({
     wsRef.current.startGame();
   };
 
+  const startPlayer = () => {
+    if (!playerId || !wsRef.current) return;
+    onSetBusy(true);
+    wsRef.current.startPlayer();
+  };
+
   const submitGuess = (
     roundIndex: number,
     year: number | null,
@@ -263,6 +269,7 @@ export default function useCompeteSocket({
     connectionState,
     toggleReady,
     startGame,
+    startPlayer,
     submitGuess,
     readyNext,
     setTimer,
