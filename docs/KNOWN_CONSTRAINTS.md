@@ -291,3 +291,28 @@ list's async status logic separately; it must not be reported as a new bug
 without referencing this constraint.
 
 ---
+
+### [KC-012] PARTYKIT_SECRET must match between Next.js and PartyKit dev servers
+**Affected files:** `scripts/dev/check-partykit-secret.sh`, `package.json`, `.dev.vars`, `.env.local`
+
+**Constraint:**
+`partykit dev` does not inherit the shell environment the way `next dev` does.
+Next.js reads `PARTYKIT_SECRET` from `.env.local` (or the shell), while
+`partykit dev` reads it from `.dev.vars`. A mismatch causes all server-to-server
+`x-partykit-secret` checks to fail 401, producing broken or stale game state
+that looks like a code regression.
+
+Before `npm run dev` starts, `scripts/dev/check-partykit-secret.sh` (wired via
+`predev`) compares the two values. It fails loudly if either value is missing,
+empty, or an unexpanded `${...}` placeholder (the same failure pattern as the
+documented `SUPABASE_URL` unexpanded-in-`partykit dev` 401).
+
+**Fix when guard fails:**
+Align `.env.local` (Next.js) and `.dev.vars` (PartyKit) to the same literal
+secret. Do not change the secret in committed files; only detect and report
+mismatches.
+
+**Regression guard:**
+  bash scripts/dev/check-partykit-secret.sh
+  # Must exit 0 before `npm run dev` starts. A non-zero exit means the secret
+  # sources are missing, unexpanded, or mismatched.
