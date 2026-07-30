@@ -60,10 +60,9 @@
 }
 
 .xpPillSuffix {
-  font-size: var(--font-2xs);
-  color: var(--gh-text-muted);
+  font-size: 0.75em;
+  opacity: 0.7;
   margin-left: 1px;
-  opacity: 0.8;
 }
 
 .topbarRight {

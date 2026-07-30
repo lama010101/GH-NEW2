@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
@@ -9,6 +9,7 @@ import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity'
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
+import AccuracySuffix from '@/components/AccuracySuffix';
 import styles from './leaderboard.module.css';
 
 type LeaderboardTab = 'daily' | 'levelup' | 'overall';
@@ -414,10 +415,15 @@ function LeaderboardPageInner() {
     return num.toLocaleString();
   };
 
-  const formatAccuracy = (acc: number | undefined): string => {
+  function AccuracyValue({ acc }: { acc: number | undefined }): ReactNode {
     if (acc === undefined || acc === null) return '—';
-    return Math.round(acc) + '%';
-  };
+    return (
+      <>
+        {Math.round(acc)}
+        <AccuracySuffix />
+      </>
+    );
+  }
 
   const currentData = getCurrentData();
 
@@ -578,7 +584,7 @@ function LeaderboardPageInner() {
               <span className={styles.podiumValue}>
                 {activeTab === 'levelup'
                   ? (slot.entry.current_level ?? '—')
-                  : formatAccuracy(slot.entry.avg_accuracy)}
+                  : <AccuracyValue acc={slot.entry.avg_accuracy} />}
               </span>
             </div>
           ))}
@@ -656,7 +662,7 @@ function LeaderboardPageInner() {
                       {activeTab === 'daily' && activeSubTab === 'today' && (
                         <>
                           <td className={styles.accuracyCell}>
-                            <span className={styles.accuracyValue}>{formatAccuracy(entry.avg_accuracy)}</span>
+                            <span className={styles.accuracyValue}><AccuracyValue acc={entry.avg_accuracy} /></span>
                           </td>
                           <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
                             {formatNumber(entry.games_played ?? 1)}
@@ -667,7 +673,7 @@ function LeaderboardPageInner() {
                       {activeTab === 'daily' && activeSubTab === 'alltime' && (
                         <>
                           <td className={styles.accuracyCell}>
-                            <span className={styles.accuracyValue}>{formatAccuracy(entry.avg_accuracy)}</span>
+                            <span className={styles.accuracyValue}><AccuracyValue acc={entry.avg_accuracy} /></span>
                           </td>
                           <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
                             {formatNumber(entry.games_played)}
@@ -678,7 +684,7 @@ function LeaderboardPageInner() {
                       {activeTab === 'levelup' && (
                         <>
                           <td className={styles.accuracyCell}>
-                            {formatAccuracy(entry.best_accuracy)}
+                            <AccuracyValue acc={entry.best_accuracy} />
                           </td>
                           <td className={styles.levelCell}>
                             <span className={styles.levelValue}>{t('lvl_prefix', { n: entry.current_level ?? 0 })}</span>
@@ -688,7 +694,7 @@ function LeaderboardPageInner() {
                       {activeTab === 'overall' && (
                         <>
                           <td className={styles.accuracyCell}>
-                            <span className={styles.accuracyValue}>{formatAccuracy(entry.avg_accuracy)}</span>
+                            <span className={styles.accuracyValue}><AccuracyValue acc={entry.avg_accuracy} /></span>
                           </td>
                           <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
                             {formatNumber(entry.games_played)}

@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import AccuracySuffix from '@/components/AccuracySuffix';
 import styles from './ExperienceAccuracy.module.css';
 
 export interface ExperienceAccuracyData {
@@ -196,7 +197,10 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhen}`} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>
                     </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}</span>
+                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>
+                      {item.avgAccuracy}
+                      <AccuracySuffix />
+                    </span>
                     <span className={styles.regionCount}>{item.roundCount}</span>
                   </div>
                 ))
@@ -222,7 +226,10 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhere}`} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>
                     </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>{item.avgAccuracy}</span>
+                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>
+                      {item.avgAccuracy}
+                      <AccuracySuffix />
+                    </span>
                     <span className={styles.regionCount}>{item.roundCount}</span>
                   </div>
                 ))
