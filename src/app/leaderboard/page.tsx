@@ -10,6 +10,7 @@ import { supabaseBrowser } from '@/core/supabaseBrowser';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
 import AccuracySuffix from '@/components/AccuracySuffix';
+import { getAccuracyColor } from '@/core/accuracyColor';
 import styles from './leaderboard.module.css';
 
 type LeaderboardTab = 'daily' | 'levelup' | 'overall';
@@ -418,10 +419,10 @@ function LeaderboardPageInner() {
   function AccuracyValue({ acc }: { acc: number | undefined }): ReactNode {
     if (acc === undefined || acc === null) return '—';
     return (
-      <>
+      <span style={{ color: getAccuracyColor(acc) }}>
         {Math.round(acc)}
         <AccuracySuffix />
-      </>
+      </span>
     );
   }
 

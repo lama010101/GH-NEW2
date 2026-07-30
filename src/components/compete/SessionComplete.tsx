@@ -16,6 +16,7 @@ import ExperienceAccuracy from "@/components/ExperienceAccuracy";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import AccuracySuffix from "@/components/AccuracySuffix";
+import { getAccuracyColor } from "@/core/accuracyColor";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
@@ -457,14 +458,14 @@ export default function SessionComplete({
                 <div className={styles.statPair}>
                   <div className={styles.statTile}>
                     <span className={styles.statTileLabelWhere}>{tGame('where')}</span>
-                    <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whereAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>
+                    <span className={styles.statTileVal} style={{ color: getAccuracyColor(whereAccuracy) }}>
                       {whereAccuracy}
                       <AccuracySuffix />
                     </span>
                   </div>
                   <div className={styles.statTile}>
                     <span className={styles.statTileLabelWhen}>{tGame('when')}</span>
-                    <span className={styles.statTileVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, whenAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>
+                    <span className={styles.statTileVal} style={{ color: getAccuracyColor(whenAccuracy) }}>
                       {whenAccuracy}
                       <AccuracySuffix />
                     </span>
@@ -523,7 +524,7 @@ export default function SessionComplete({
                         </div>
                       </div>
                       <div className={styles.rankScore}>
-                        <span className={styles.rankAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, player.avgAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
+                        <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avgAccuracy) }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
                       </div>
                     </div>
                   );
@@ -691,7 +692,7 @@ export default function SessionComplete({
                           <span className={styles.roundMeta}>{round.year} · {round.locationName || (round.latitude != null && round.longitude != null ? `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}` : '—')}</span>
                         </div>
                         {myRoundAcc != null && (
-                          <span className={styles.roundMyAcc} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, myRoundAcc)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>
+                          <span className={styles.roundMyAcc} style={{ color: getAccuracyColor(myRoundAcc) }}>
                             {myRoundAcc}
                             <AccuracySuffix />
                           </span>
@@ -713,7 +714,7 @@ export default function SessionComplete({
                           )}
                           <div className={styles.miniGrid}>
                             <div className={styles.miniTile}>
-                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgAccuracy)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>
+                              <span className={styles.miniVal} style={{ color: getAccuracyColor(roundStats.avgAccuracy) }}>
                                 {roundStats.avgAccuracy}
                                 <AccuracySuffix />
                               </span>
@@ -721,7 +722,7 @@ export default function SessionComplete({
                               <span className={styles.miniSub}>{roundStats.totalScore.toLocaleString()} {tGame('xp_unit')}</span>
                             </div>
                             <div className={styles.miniTile}>
-                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgLocationScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>
+                              <span className={styles.miniVal} style={{ color: getAccuracyColor(roundStats.avgLocationScore) }}>
                                 {roundStats.avgLocationScore}
                                 <AccuracySuffix />
                               </span>
@@ -729,7 +730,7 @@ export default function SessionComplete({
                               <span className={styles.miniSub}>{tGame('distance_label', { distance: formatDistance(roundStats.avgDistanceKm, distanceUnit) })}</span>
                             </div>
                             <div className={styles.miniTile}>
-                              <span className={styles.miniVal} style={{ color: `hsl(${Math.round((Math.max(0, Math.min(100, roundStats.avgTimeScore)) / 100) * 120)}, 100%, var(--gh-acc-lightness, 50%))` }}>
+                              <span className={styles.miniVal} style={{ color: getAccuracyColor(roundStats.avgTimeScore) }}>
                                 {roundStats.avgTimeScore}
                                 <AccuracySuffix />
                               </span>

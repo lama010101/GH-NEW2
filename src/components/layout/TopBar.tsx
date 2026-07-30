@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { rankForXp } from '@/core/rank'
+import { getAccuracyColor } from '@/core/accuracyColor'
 import NotificationBell from '@/components/NotificationBell'
 import styles from './TopBar.module.css'
 
@@ -30,12 +31,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
       <div className={styles.xpPillCol}>
         <div className={styles.xpPill}>
           <span className={styles.xpPillBadge}>{t('rank_label')} {tier}</span>
-          <span className={styles.xpPillAccuracy} style={(() => {
-            const n = Number(accuracy)
-            if (!Number.isFinite(n)) return undefined
-            const hue = Math.round((Math.max(0, Math.min(100, n)) / 100) * 120)
-            return { color: `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))` }
-          })()}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
+          <span className={styles.xpPillAccuracy} style={{ color: getAccuracyColor(Number(accuracy)) }}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
         </div>
       </div>
       <div className={styles.topbarRight}>

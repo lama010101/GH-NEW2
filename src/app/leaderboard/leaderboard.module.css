@@ -370,7 +370,6 @@
 }
 
 .accuracyValue {
-  color: var(--gh-orange);
   font-weight: 600;
 }
 
@@ -522,7 +521,6 @@
 }
 
 .podiumValue {
-  color: var(--gh-orange);
   font-size: var(--font-sm);
   font-weight: 600;
 }
