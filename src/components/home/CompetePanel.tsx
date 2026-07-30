@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser'
+import { getAccuracyColor } from '@/core/accuracyColor'
 import cpStyles from "./CompetePanel.module.css";
 
 type ActiveGame = {
@@ -19,13 +20,6 @@ type ActiveGame = {
   accuracy_you?: number
   completed_at?: string
   leaderboard_rank?: number
-}
-
-function getAccuracyColor(pct: number): string {
-  if (pct >= 85) return 'var(--gh-success)'
-  if (pct >= 60) return 'var(--gh-gold)'
-  if (pct >= 40) return 'var(--gh-orange)'
-  return 'var(--gh-danger)'
 }
 
 function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) => string): string {

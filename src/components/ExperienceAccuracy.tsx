@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import AccuracySuffix from '@/components/AccuracySuffix';
+import { getAccuracyColor } from '@/core/accuracyColor';
 import styles from './ExperienceAccuracy.module.css';
 
 export interface ExperienceAccuracyData {
@@ -11,11 +12,6 @@ export interface ExperienceAccuracyData {
   eventsSeenCount: number;
   countriesCount: number;
   roundsPlayed: number | null;
-}
-
-function accColor(acc: number): string {
-  const hue = Math.round((Math.max(0, Math.min(100, acc)) / 100) * 120);
-  return `hsl(${hue}, 90%, var(--gh-acc-lightness, 52%))`;
 }
 
 export default function ExperienceAccuracy({ data, hideAccuracy = false, hideStatsRow = false, embedded = false, rankCard }: { data: ExperienceAccuracyData; hideAccuracy?: boolean; hideStatsRow?: boolean; embedded?: boolean; rankCard?: ReactNode }) {
@@ -197,7 +193,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhen}`} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>
                     </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>
+                    <span className={styles.regionPct} style={{ color: getAccuracyColor(item.avgAccuracy) }}>
                       {item.avgAccuracy}
                       <AccuracySuffix />
                     </span>
@@ -226,7 +222,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhere}`} style={{ width: `${item.avgAccuracy}%` }} />
                       </div>
                     </div>
-                    <span className={styles.regionPct} style={{ color: accColor(item.avgAccuracy) }}>
+                    <span className={styles.regionPct} style={{ color: getAccuracyColor(item.avgAccuracy) }}>
                       {item.avgAccuracy}
                       <AccuracySuffix />
                     </span>
