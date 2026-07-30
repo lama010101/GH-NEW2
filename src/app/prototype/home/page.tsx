@@ -111,7 +111,6 @@ function AccuracyRing({ value }: { value: number }) {
       <div className={styles.ringCenter}>
         <span className={styles.ringValue}>
           {value}
-          <span className={styles.ringPct}>%</span>
         </span>
         <span className={styles.ringLabel}>overall</span>
       </div>
