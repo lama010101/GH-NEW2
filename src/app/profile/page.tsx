@@ -12,6 +12,7 @@ import { NavModal } from '@/components/NavModal';
 import { AvatarPickerModal } from '@/components/AvatarPickerModal';
 import ExperienceAccuracy from '@/components/ExperienceAccuracy';
 import AccuracySuffix from '@/components/AccuracySuffix';
+import { getAccuracyColor } from '@/core/accuracyColor';
 import RankCard from '@/components/RankCard';
 
 
@@ -22,11 +23,6 @@ type ProfileHistoricalAvatar = {
   diedLabel: string;
   avatarImageUrl: string;
 };
-
-function accColor(acc: number): string {
-  const hue = Math.round((Math.max(0, Math.min(100, acc)) / 100) * 120);
-  return `hsl(${hue}, 90%, var(--gh-acc-lightness, 52%))`;
-}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -446,7 +442,7 @@ export default function ProfilePage() {
               <span className={styles.modeName}>{t('daily')}</span>
               <span
                 className={styles.modeAcc}
-                style={{ color: profileData.dailyAvgAccuracy !== null ? accColor(profileData.dailyAvgAccuracy) : 'var(--gh-text-muted)' }}
+                style={{ color: profileData.dailyAvgAccuracy !== null ? getAccuracyColor(profileData.dailyAvgAccuracy) : 'var(--gh-text-muted)' }}
               >
                 {profileData.dailyAvgAccuracy !== null ? (
                   <>
@@ -469,7 +465,7 @@ export default function ProfilePage() {
               <span className={styles.modeName}>{t('level_up')}</span>
               <span
                 className={styles.modeAcc}
-                style={{ color: profileData.levelUpBestAccuracy !== null ? accColor(profileData.levelUpBestAccuracy) : 'var(--gh-text-muted)' }}
+                style={{ color: profileData.levelUpBestAccuracy !== null ? getAccuracyColor(profileData.levelUpBestAccuracy) : 'var(--gh-text-muted)' }}
               >
                 {profileData.levelUpBestAccuracy !== null ? (
                   <>
@@ -492,7 +488,7 @@ export default function ProfilePage() {
               <span className={styles.modeName}>{t('practice') ?? 'Practice'}</span>
               <span
                 className={styles.modeAcc}
-                style={{ color: progressData?.practice?.avgAccuracy != null ? accColor(progressData.practice.avgAccuracy) : 'var(--gh-text-muted)' }}
+                style={{ color: progressData?.practice?.avgAccuracy != null ? getAccuracyColor(progressData.practice.avgAccuracy) : 'var(--gh-text-muted)' }}
               >
                 {progressData?.practice?.avgAccuracy != null ? (
                   <>
