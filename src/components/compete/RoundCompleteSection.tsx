@@ -75,7 +75,6 @@ function MiniRing({ value, color }: { value: number; color: string }) {
       </svg>
       <span className={styles.miniRingVal} style={{ color }}>
         {Math.round(value)}
-        <AccuracySuffix />
       </span>
     </div>
   );
