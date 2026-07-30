@@ -85,7 +85,6 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
       />
       <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="var(--gh-text-primary)" fontSize={52} fontWeight="bold">
         <tspan>{clamped}</tspan>
-        <tspan style={{ fontSize: '0.75em', opacity: 0.7 }} dx="1">%</tspan>
       </text>
     </svg>
   );
