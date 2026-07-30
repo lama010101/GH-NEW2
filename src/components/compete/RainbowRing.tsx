@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getAccuracyColor } from "@/core/accuracyColor";
 
 interface RainbowRingProps {
   value: number;
@@ -71,8 +72,7 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
 
   const clamped = Math.max(0, Math.min(100, displayed));
   const offset = circumference * (1 - clamped / 100);
-  const hue = Math.round((clamped / 100) * 120);
-  const color = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
+  const color = getAccuracyColor(value);
 
   return (
     <svg viewBox="0 0 200 200" style={{ width: 170, height: 170, display: "block", margin: "0 auto" }}>

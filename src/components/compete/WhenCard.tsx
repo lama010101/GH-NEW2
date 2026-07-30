@@ -6,6 +6,7 @@ import { getUsernameGradientStyle } from "@/core/competeUtils";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import InlineImageBadge from './InlineImageBadge';
+import { getAccuracyColor } from "@/core/accuracyColor";
 import styles from "./WhenCard.module.css";
 
 interface Hint {
@@ -113,8 +114,7 @@ export default function WhenCard({
           }
           return myWhenAcc != null ? (() => {
             const whenScore = Math.round(myWhenAcc);
-            const whenHue = Math.round((Math.max(0, Math.min(100, whenScore)) / 100) * 120);
-            const whenColor = `hsl(${whenHue}, 100%, var(--gh-acc-lightness, 50%))`;
+            const whenColor = getAccuracyColor(whenScore);
             return (
               <div className={styles.scoreColFlex}>
                 <div className={styles.scoreGroup}>
@@ -249,8 +249,7 @@ export default function WhenCard({
         {whenLbExpanded && (
           <div className={styles.lbList}>
             {whenRows.map((row, idx) => {
-              const hue = row.acc != null ? Math.round((row.acc / 100) * 120) : null;
-              const accColor = hue != null ? `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))` : "var(--gh-text-muted)";
+              const accColor = getAccuracyColor(row.acc ?? NaN);
               const avatarUrl = snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
               const isLast = idx === whenRows.length - 1;
               return (

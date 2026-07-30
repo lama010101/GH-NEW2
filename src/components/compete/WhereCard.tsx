@@ -8,6 +8,7 @@ import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import InlineImageBadge from './InlineImageBadge';
 import PlayerAvatar from './PlayerAvatar';
+import { getAccuracyColor } from "@/core/accuracyColor";
 import styles from "./WhereCard.module.css";
 
 const StaticResultMap = dynamic(
@@ -87,8 +88,7 @@ export default function WhereCard({
             );
           }
           const locScore = Math.round(myResult.locationScore);
-          const locHue = Math.round((Math.max(0, Math.min(100, locScore)) / 100) * 120);
-          const locColor = `hsl(${locHue}, 100%, var(--gh-acc-lightness, 50%))`;
+          const locColor = getAccuracyColor(locScore);
           return (
             <div className={styles.scoreCol}>
               <div className={styles.scoreRow}>
@@ -213,9 +213,6 @@ export default function WhereCard({
                 const distanceKm = r.guessLat != null && r.guessLng != null && correctLat != null && correctLng != null
                   ? haversineKm(r.guessLat, r.guessLng, correctLat, correctLng)
                   : null;
-                const locationAcc = r.locationScore;
-                const locHue = locationAcc != null ? Math.round((locationAcc / 100) * 120) : null;
-                const locAccColor = locHue != null ? `hsl(${locHue}, 100%, var(--gh-acc-lightness, 50%))` : "var(--gh-text-muted)";
                 return (
                   <div key={r.playerId} className={styles.lbRow} style={{
                     background: r.playerId === playerId ? "var(--gh-row-self-bg)" : "transparent",
@@ -238,10 +235,10 @@ export default function WhereCard({
                     <span className={styles.lbDistance}>
                       {distanceKm != null ? t('km_away', { distance: formatDistance(distanceKm, distanceUnit) }) : "—"}
                     </span>
-                    {locationAcc != null && (
+                    {r.locationScore != null && (
                       <span className={styles.lbAccPill}>
-                        <span style={{ color: locAccColor, fontSize: "var(--font-base)" }}>
-                          {locationAcc}
+                        <span style={{ color: getAccuracyColor(r.locationScore), fontSize: "var(--font-base)" }}>
+                          {Math.round(r.locationScore)}
                           <span className={styles.lbAccSuffix}>%</span>
                         </span>
                       </span>

@@ -12,6 +12,7 @@ import { setLocale } from "@/actions/setLocale";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import AccuracySuffix from "@/components/AccuracySuffix";
+import { getAccuracyColor } from "@/core/accuracyColor";
 import styles from "./RoundActiveSection.module.css";
 import type { ConnectionState } from "@/core/competeWebSocket";
 
@@ -759,14 +760,11 @@ export default function RoundActiveSection({
             </svg>
           </button>
           <span>{snapshot.currentRoundIndex + 1} / {snapshot.config.totalRounds}</span>
-          {runningAccuracy !== null && (() => {
-            const hue = Math.round((Math.max(0, Math.min(100, runningAccuracy)) / 100) * 120);
-            return (
-              <span style={{ color: `hsl(${hue}, 100%, 50%)` }}>
-                · {runningAccuracy}<AccuracySuffix />
-              </span>
-            );
-          })()}
+          {runningAccuracy !== null && (
+            <span style={{ color: getAccuracyColor(runningAccuracy) }}>
+              · {runningAccuracy}<AccuracySuffix />
+            </span>
+          )}
         </div>
       )}
 

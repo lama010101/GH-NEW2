@@ -25,6 +25,7 @@ import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
 import AccuracySuffix from "@/components/AccuracySuffix";
+import { getAccuracyColor } from "@/core/accuracyColor";
 import type { ConnectionState } from "@/core/competeWebSocket";
 
 interface RoundCompleteSectionProps {
@@ -403,8 +404,7 @@ export default function RoundCompleteSection({
                   </div>
                   {(() => {
                     const locScore = myResult?.locationScore ?? 0;
-                    const hue = Math.round((Math.max(0, Math.min(100, locScore)) / 100) * 120);
-                    const color = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
+                    const color = getAccuracyColor(locScore);
                     return <MiniRing value={locScore} color={color} />;
                   })()}
                   <div className={styles.miniXp}>
@@ -434,8 +434,7 @@ export default function RoundCompleteSection({
                   </div>
                   {(() => {
                     const timeScore = myResult?.timeScore ?? 0;
-                    const hue = Math.round((Math.max(0, Math.min(100, timeScore)) / 100) * 120);
-                    const color = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
+                    const color = getAccuracyColor(timeScore);
                     return <MiniRing value={timeScore} color={color} />;
                   })()}
                   <div className={styles.miniXp}>
@@ -496,8 +495,7 @@ export default function RoundCompleteSection({
               {(leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows).map(row => {
                 const isThisRoundNoGuess = leaderboardTab === 'thisRound' && !row.didSubmit;
                 const accForHue = leaderboardTab === 'thisRound' ? row.accuracy : row.cumulativeAccuracy;
-                const hue = Math.round((Math.max(0, Math.min(100, accForHue)) / 100) * 120);
-                const accColor = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
+                const accColor = getAccuracyColor(accForHue);
                 const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
                 const displayValue = leaderboardTab === 'thisRound' ? Math.round(row.accuracy) : Math.round(row.cumulativeAccuracy);
                 return (
@@ -582,8 +580,7 @@ export default function RoundCompleteSection({
                 const isWhere = whereWhenTab === 'where';
                 const correctValue = isWhere ? correctName : correctYear;
                 const scoreVal = isWhere ? (myResult?.locationScore ?? 0) : (myResult?.timeScore ?? 0);
-                const hue = Math.round((Math.max(0, Math.min(100, scoreVal)) / 100) * 120);
-                const scoreColor = `hsl(${hue}, 100%, var(--gh-acc-lightness, 50%))`;
+                const scoreColor = getAccuracyColor(scoreVal);
                 return (
                   <div className={styles.breakHead}>
                     <div className={styles.breakCorrectCol}>
