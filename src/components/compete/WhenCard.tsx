@@ -118,8 +118,10 @@ export default function WhenCard({
             return (
               <div className={styles.scoreColFlex}>
                 <div className={styles.scoreGroup}>
-                  <span style={{ fontSize: 25, fontWeight: 700, color: whenColor }}>{whenScore}</span>
-                  <span className={styles.scoreSuffix}>%</span>
+                  <span style={{ fontSize: 25, fontWeight: 700, color: whenColor }}>
+                    {whenScore}
+                    <span className={styles.scoreSuffix}>%</span>
+                  </span>
                 </div>
                 {/* YEAR BADGE CHIP — dimension = 'year' */}
                 {(() => {
@@ -269,10 +271,10 @@ export default function WhenCard({
                   </span>
                   <span className={styles.lbAccPill}>
                     {row.acc != null ? (
-                      <>
-                        <span style={{ color: accColor, fontSize: "var(--font-base)" }}>{row.acc}</span>
+                      <span style={{ color: accColor, fontSize: "var(--font-base)" }}>
+                        {row.acc}
                         <span className={styles.lbAccSuffix}>%</span>
-                      </>
+                      </span>
                     ) : "—"}
                   </span>
                 </div>

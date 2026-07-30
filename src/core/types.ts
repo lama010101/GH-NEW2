@@ -159,6 +159,16 @@ export type SessionPlayer = {
    * (game_id, player_id, currentRoundIndex). NOT stored in session_players.
    */
   hasSubmitted: boolean;
+  /**
+   * Async-only coarse roster state per RELAX_MODE_SPEC §2.1.
+   * Undefined for sync/practice/daily.
+   */
+  roundStatus?: 'invited' | 'joined' | 'ready' | 'playing' | 'finished';
+  /**
+   * Async-only: the player's own current round index; null before they start.
+   * Undefined for sync/practice/daily.
+   */
+  currentRoundIndex?: number | null;
 };
 
 export type SessionConfig = {
