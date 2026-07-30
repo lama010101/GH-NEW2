@@ -6,6 +6,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "predev": "bash scripts/dev/check-partykit-secret.sh",
     "dev": "npx kill-port 3000 1999 && concurrently -n next,party -c cyan,magenta \"next dev\" \"partykit dev\"",
     "build": "next build",
     "start": "next start",
