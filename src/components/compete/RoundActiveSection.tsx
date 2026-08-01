@@ -1108,11 +1108,29 @@ export default function RoundActiveSection({
             className={styles.settingsCloseBtn}
           >
             <svg viewBox="0 0 10 10" fill="none" width="12" height="12">
-              <path d="M2 2l6 6M8 2L2 8" stroke="var(--gh-text-secondary)" strokeWidth="1.4" strokeLinecap="round" />
+              <path d="M2 2l6 6M8 2L2 8" stroke="var(--gh-orange)" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </button>
 
           <div className={styles.settingsCard} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => { setHomeNavigating(true); window.location.href = '/home'; }}
+              disabled={homeNavigating}
+              className={styles.settingsHomeBtn}
+            >
+              {homeNavigating ? (
+                <span className={styles.settingsHomeSpinner} aria-hidden="true" />
+              ) : (
+                <span className={styles.settingsHomeIcon}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+                    <polyline points="9 21 9 12 15 12 15 21" />
+                  </svg>
+                </span>
+              )}
+              {tNav('home')}
+            </button>
             <div className={styles.settingsTitle}>{t('settings')}</div>
 
             <div className={styles.settingsRow}>
@@ -1177,24 +1195,6 @@ export default function RoundActiveSection({
 
             <div className={styles.settingsDivider} />
 
-            <button
-              type="button"
-              onClick={() => { setHomeNavigating(true); window.location.href = '/home'; }}
-              disabled={homeNavigating}
-              className={styles.settingsHomeBtn}
-            >
-              {homeNavigating ? (
-                <span className={styles.settingsHomeSpinner} aria-hidden="true" />
-              ) : (
-                <span className={styles.settingsHomeIcon}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
-                    <polyline points="9 21 9 12 15 12 15 21" />
-                  </svg>
-                </span>
-              )}
-              {tNav('home')}
-            </button>
           </div>
         </div>
       )}
