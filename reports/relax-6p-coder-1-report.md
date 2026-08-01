@@ -63,3 +63,4 @@ No snapshot invariant violations were recorded.
 
 - The user-specified `docs/RELAX_6_PLAYER_QA_TEST_PLAN.md` and `docs/RELAX_6_PLAYER_CODER_PROMPTS.md` were not present in the repo, so coverage was mapped from `docs/RELAX_MODE_SPEC.md` and the existing Relax Playwright specs.
 - Small harness reliability fixes were required in `scripts/test/playwright/fixtures/auth.ts`, `scripts/test/playwright/helpers/auth-ui.ts`, and `scripts/test/playwright/orchestrator/websocketClient.ts` to resolve TypeScript errors and Supabase/PartyKit login flakiness under 6-browser load.
+- `tests/helpers/relaxRoom.ts` forwards the Supabase auth cookie explicitly on the `/api/compete/create` call because `page.request` in WebKit does not include context cookies in this Playwright build.

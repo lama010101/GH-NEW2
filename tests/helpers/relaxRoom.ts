@@ -119,7 +119,13 @@ export async function create6PlayerRelaxRoom(
   const hostIndex = 0;
   const hostUser = users[hostIndex];
   const hostPage = pages[hostIndex];
+  // WebKit's page.request may not include the context's auth cookies in this
+  // Playwright build, so explicitly forward the Supabase cookie on the
+  // create request to avoid 403 "playerId must match authenticated user".
+  const cookies = await hostPage.context().cookies();
+  const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
   const createRes = await hostPage.request.post(`${BASE_URL}/api/compete/create`, {
+    headers: { cookie: cookieHeader },
     data: {
       displayName: hostUser.displayName,
       playerId: hostUser.id,
