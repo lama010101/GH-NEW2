@@ -235,7 +235,8 @@ Evaluated server-side at the end of every RESULT_PHASE in every mode. Never pers
 - On submission: submitting player's RESULT_PHASE shown immediately, for that player only.
 - In-app broadcast + push notification sent to all other session players ONLY when a player completes their final (5th) round. Per-round submissions by other players do NOT trigger a notification.
 - After viewing result, player taps "Next Round" manually — no auto-advance, ever, in Relax.
-- Round and final leaderboards are ALWAYS visible to all session players and always show every player: players who have not yet reached/submitted that round appear as pending (no score); players who have submitted show their score. Never gated on other players' completion.
+- Scores and ranks are HIDDEN during an in-progress round — Relax shows NO visible in-round partial leaderboard. Per-round and final rankings are revealed only at round-complete and session-complete.
+- The final leaderboard (and any per-round ranking) ranks players by accuracy% only, never by XP/total score. Total score may be used solely as a deterministic tiebreaker when two players have exactly equal accuracy%.
 - Players may leave and resume at any time via Home → Challenges → "YOUR TURN" tab (in-progress) or "COMPLETED" tab (once they've finished all 5 rounds).
 - If the session deadline passes with unsubmitted rounds for a given player, those rounds score zero for that player only — it has no effect on other players' progress.
 
@@ -624,7 +625,7 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 
 ### 5.10 End Screen
 
-**Final leaderboard:** All players ranked by total score. Per-round breakdown per player.
+**Final leaderboard:** All players ranked by accuracy% (total score used only as a tiebreaker for exactly equal accuracy). Per-round breakdown per player.
 
 **MVP awards:**
 - Most accurate overall
