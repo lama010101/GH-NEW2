@@ -318,28 +318,32 @@ export default function CompeteGamePage() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onPlayerSubmitted: (submittedPlayerId, playerName) => {
       if (submittedPlayerId !== playerId) {
-        // Red flash for other players
-        setTimerClamped(true);
-        setTimeout(() => setTimerClamped(false), 600);
-        // Haptic: short double pulse
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-          navigator.vibrate([60, 40, 60]);
+        // Pressure/urgency cues (red flash + haptic + audio alarm) are sync (Rush) only.
+        // Relax (async) has no time pressure, so these cues are noise there.
+        if (snapshot?.config?.mode === 'sync') {
+          // Red flash for other players
+          setTimerClamped(true);
+          setTimeout(() => setTimerClamped(false), 600);
+          // Haptic: short double pulse
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate([60, 40, 60]);
+          }
+          // Alarm sound: short sharp beep via Web Audio API
+          try {
+            const ctx = new (window.AudioContext ||
+            (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = 660;
+            osc.type = 'square';
+            gain.gain.value = 0.18;
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.25);
+          } catch { /* audio not available */ }
         }
-        // Alarm sound: short sharp beep via Web Audio API
-        try {
-          const ctx = new (window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.frequency.value = 660;
-          osc.type = 'square';
-          gain.gain.value = 0.18;
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.25);
-        } catch { /* audio not available */ }
         // In-app text broadcast — spec §5.8: "Player X submitted round N."
         // Only shown in async (Relax) mode; in sync (Rush) the round completes
         // immediately when all submit, so a persistent text toast is noise.
