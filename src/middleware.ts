@@ -6,7 +6,10 @@ import { verifyPartyKitSecret } from "@/server/partykitAuth";
  * Routes that do NOT require authentication.
  * Everything else redirects to /login if no Supabase session is present.
  */
-const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help"];
+// /sw.js is a self-unregistering kill-switch service worker served as a static
+// file from public/. It must be reachable without auth so stale SWs from prior
+// deployments can update/unregister instead of receiving a /login HTML redirect.
+const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/sw.js"];
 
 // Public API routes that must remain reachable without authentication.
 // All other /api/* routes are required to pass the middleware auth check.
