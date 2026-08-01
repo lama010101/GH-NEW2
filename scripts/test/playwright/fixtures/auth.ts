@@ -24,7 +24,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     persistSession: false,
   },
   realtime: {
-    transport: WebSocket,
+    transport: WebSocket as any,
   },
 });
 
@@ -45,7 +45,7 @@ export interface TestUser {
  * Uses the anon key (NEXT_PUBLIC_SUPABASE_ANON_KEY) which is the same key
  * the browser client uses for signInWithPassword.
  */
-export async function fetchAccessToken(user: TestUser): Promise<string> {
+export async function fetchAccessToken(user: TestUser, attempt = 1): Promise<string> {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   if (!anonKey) throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY not set');
 
@@ -59,6 +59,11 @@ export async function fetchAccessToken(user: TestUser): Promise<string> {
   });
 
   if (!res.ok) {
+    if (attempt < 3 && (res.status === 504 || res.status === 429 || res.status >= 500)) {
+      console.log(`[AUTH] fetchAccessToken ${user.email} got ${res.status}, retrying (${attempt}/2)...`);
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+      return fetchAccessToken(user, attempt + 1);
+    }
     const body = await res.text().catch(() => '');
     throw new Error(`fetchAccessToken: ${res.status} ${res.statusText} — ${body}`);
   }
@@ -152,7 +157,7 @@ async function globalSetup() {
       // from a prior run is reusable: recover its ID via a password-grant sign-in
       // (anon-key REST, same pattern as fetchAccessToken) and continue without
       // recreating — robust against the degraded listUsers API.
-      const alreadyRegistered = /already registered/i.test(error.message || '') || error.code === 'user_already_exists';
+      const alreadyRegistered = /already.*registered/i.test(error.message || '') || error.code === 'user_already_exists';
       if (alreadyRegistered) {
         console.log(`[PLAYWRIGHT SETUP] User ${user.email} already registered (listUsers likely degraded); recovering ID via password sign-in...`);
         const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
