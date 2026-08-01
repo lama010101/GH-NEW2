@@ -83,6 +83,23 @@ export async function startDailyAttempt(
 
   if (existing.rows.length > 0) {
     const row = existing.rows[0];
+
+    // Resume: if the session never reached ROUND_ACTIVE, start it now.
+    if (row.status === "in_progress") {
+      const { getTransactionClient, ensureDailyRoundStarted } = await import("./sessionCore");
+      const client = await getTransactionClient();
+      try {
+        await client.query("BEGIN");
+        await ensureDailyRoundStarted(client, row.game_id, playerId);
+        await client.query("COMMIT");
+      } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+
     const status: "resume" | "completed" =
       row.status === "in_progress" ? "resume" : "completed";
     return { status, gameId: row.game_id };
@@ -109,6 +126,22 @@ export async function startDailyAttempt(
     );
     if (raceCheck.rows.length > 0) {
       const row = raceCheck.rows[0];
+
+      if (row.status === "in_progress") {
+        const { getTransactionClient, ensureDailyRoundStarted } = await import("./sessionCore");
+        const client = await getTransactionClient();
+        try {
+          await client.query("BEGIN");
+          await ensureDailyRoundStarted(client, row.game_id, playerId);
+          await client.query("COMMIT");
+        } catch (err) {
+          await client.query("ROLLBACK");
+          throw err;
+        } finally {
+          client.release();
+        }
+      }
+
       const status: "resume" | "completed" =
         row.status === "in_progress" ? "resume" : "completed";
       return { status, gameId: row.game_id };

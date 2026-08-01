@@ -1577,11 +1577,73 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
 // ═════════════════════════════════════════════════════════════════════════════
 // DAILY MODE — Session creation (DAILY_MODE_SPEC.md §6)
 // Creates a sessions row with mode='daily', pinned event_ids from
-// daily_challenges (§4), and a session_players host row. Does NOT call
-// startCompeteSession — the caller (start endpoint) does that separately.
+// daily_challenges (§4), and a session_players host row. Auto-starts round 0
+// via ensureDailyRoundStarted so Daily never lands in a permanent LOBBY.
 // room_code: per-session random seed (A1 ruling — NOT daily seed, NOT date),
 // with the same collision-retry loop as createCompeteSession.
 // ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Idempotently ensure a Daily session has a ROUND_STARTED event for round 0.
+ * Must be called inside an existing transaction.
+ */
+export async function ensureDailyRoundStarted(
+  client: DbTransactionClient,
+  gameId: string,
+  playerId: string
+): Promise<void> {
+  const started = await client.query<{ exists: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1 FROM round_events
+       WHERE game_id = $1 AND event_type = 'ROUND_STARTED' AND round_index = 0
+     ) AS exists`,
+    [gameId]
+  );
+  if (started.rows[0]?.exists) {
+    return;
+  }
+
+  const session = await loadSessionRow(gameId, client);
+  if (!session) {
+    throw new Error("Session not found");
+  }
+
+  const playerRows = await loadSessionPlayerRows(gameId, client);
+  const activePlayers = playerRows.filter((p) => p.left_at === null);
+  const host = activePlayers.find((p) => p.is_host);
+  if (host?.player_id !== playerId) {
+    throw new Error("Only the host can start the game");
+  }
+
+  const sessionCreatedEvent = await client.query<{ payload: { eventIds: string[] } }>(
+    `SELECT payload FROM round_events
+     WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+     ORDER BY id ASC LIMIT 1`,
+    [gameId]
+  );
+  if (sessionCreatedEvent.rows.length === 0) {
+    throw new Error("Session event not found");
+  }
+  const eventIds = sessionCreatedEvent.rows[0].payload?.eventIds;
+  if (!Array.isArray(eventIds) || eventIds.length === 0) {
+    throw new Error("Event ID not found for round 0");
+  }
+
+  const startNow = new Date();
+  const startStartedAt = startNow.toISOString();
+  const startPhaseEndsAt = session.round_timer_sec === 0
+    ? null
+    : new Date(startNow.getTime() + session.round_timer_sec * 1000).toISOString();
+
+  await appendEvent(client, gameId, "ROUND_STARTED", {
+    roundIndex: 0,
+    eventId: eventIds[0],
+    startedAt: startStartedAt,
+    phaseEndsAt: startPhaseEndsAt,
+    cause: TransitionCause.PLAYER,
+  }, 0);
+}
+
 export async function createDailySession(input: {
   playerId: string;
   displayName?: string;
@@ -1678,6 +1740,9 @@ export async function createDailySession(input: {
       seed: dailySeedValue.toString(),
       eventIds: challenge.event_ids,
     }, null);
+
+    // Auto-start round 0 so the session is ROUND_ACTIVE, not stuck in LOBBY
+    await ensureDailyRoundStarted(client, gameId, playerId);
 
     await client.query("COMMIT");
   } catch (error) {
