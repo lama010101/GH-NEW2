@@ -145,6 +145,48 @@ async function globalSetup() {
     });
 
     if (error) {
+      // Supabase auth admin listUsers() can intermittently 500 (degraded API),
+      // which causes the delete-existing-user step above to be skipped because
+      // its error is unchecked. createUser then fails with "already registered".
+      // Test users always use the same constant password, so an existing user
+      // from a prior run is reusable: recover its ID via a password-grant sign-in
+      // (anon-key REST, same pattern as fetchAccessToken) and continue without
+      // recreating — robust against the degraded listUsers API.
+      const alreadyRegistered = /already registered/i.test(error.message || '') || error.code === 'user_already_exists';
+      if (alreadyRegistered) {
+        console.log(`[PLAYWRIGHT SETUP] User ${user.email} already registered (listUsers likely degraded); recovering ID via password sign-in...`);
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+        if (!anonKey) throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY not set; cannot recover existing test user ID');
+        const signInRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email, password: user.password }),
+        });
+        if (!signInRes.ok) {
+          const signInBody = await signInRes.text().catch(() => '');
+          console.error(`[PLAYWRIGHT SETUP] Password sign-in recovery failed for ${user.email}: ${signInRes.status} ${signInBody}`);
+          throw error;
+        }
+        const signInData = (await signInRes.json()) as { user?: { id?: string } };
+        const recoveredId = signInData?.user?.id;
+        if (!recoveredId) {
+          console.error(`[PLAYWRIGHT SETUP] Password sign-in response missing user.id for ${user.email}`);
+          throw error;
+        }
+        TEST_USERS[i].id = recoveredId;
+        createdUserIds.push(recoveredId);
+        console.log(`[PLAYWRIGHT SETUP] Reusing existing user ${user.email} with ID ${recoveredId}`);
+        // Ensure profile exists (upsert is idempotent)
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: recoveredId,
+          display_name: user.displayName,
+          avatar_url: null,
+        });
+        if (profileError) {
+          console.error(`[PLAYWRIGHT SETUP] Failed to upsert profile for ${user.email}:`, profileError.message);
+        }
+        continue;
+      }
       console.error(`[PLAYWRIGHT SETUP] Failed to create user ${user.email}:`, error.message);
       throw error;
     }
