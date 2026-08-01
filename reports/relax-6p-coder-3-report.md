@@ -22,6 +22,10 @@ npx playwright test \
 - `npm run lint` — passed (only pre-existing warnings)
 - Playwright three-spec command — **8/8 passed** in Chromium, worker 1
 
+### Reproducibility note
+
+The initial clean run produced `8/8` passing tests and the screenshots below. A follow-up end-to-end run by the testing agent could not reproduce the clean sweep because the Supabase Auth REST API (`createUser` and `/auth/v1/token`) began returning `504 Gateway Timeout` / `AuthRetryableFetchError` under the burst of six-player logins. The failures are in the test auth harness, not in the game logic, but they make the suite environment-sensitive. The screenshots and invariants were captured from the successful run.
+
 ## Results summary
 
 | Test ID(s) | Spec | Focus | Result |
