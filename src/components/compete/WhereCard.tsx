@@ -235,14 +235,16 @@ export default function WhereCard({
                     <span className={styles.lbDistance}>
                       {distanceKm != null ? t('km_away', { distance: formatDistance(distanceKm, distanceUnit) }) : "—"}
                     </span>
-                    {r.locationScore != null && (
+                    {!r.didSubmit ? (
+                      <span className={styles.lbAccPill}>—</span>
+                    ) : r.locationScore != null ? (
                       <span className={styles.lbAccPill}>
                         <span style={{ color: getAccuracyColor(r.locationScore), fontSize: "var(--font-base)" }}>
                           {Math.round(r.locationScore)}
                           <span className={styles.lbAccSuffix}>%</span>
                         </span>
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 );
               })}

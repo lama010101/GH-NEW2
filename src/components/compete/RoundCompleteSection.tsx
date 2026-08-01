@@ -492,7 +492,7 @@ export default function RoundCompleteSection({
                 <span className={styles.leaderboardHeaderScore}>{leaderboardTab === 'thisRound' ? t('col_score') : t('col_accuracy')}</span>
               </div>
               {(leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows).map(row => {
-                const isThisRoundNoGuess = leaderboardTab === 'thisRound' && !row.didSubmit;
+                const isThisRoundNoGuess = !row.didSubmit;
                 const accForHue = leaderboardTab === 'thisRound' ? row.accuracy : row.cumulativeAccuracy;
                 const accColor = getAccuracyColor(accForHue);
                 const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;

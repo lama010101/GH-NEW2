@@ -215,6 +215,7 @@ export default function SessionComplete({
               displayName: p.displayName,
               totalScore: stats?.totalScore ?? 0,
               avgAccuracy: stats?.avgAccuracy ?? 0,
+              hasPlayed: stats != null,
               wonRounds,
             };
           })
@@ -517,14 +518,20 @@ export default function SessionComplete({
                           {player.wonRounds.length > 0 && <span className={styles.winTag}>🏆 {player.wonRounds.length}</span>}
                         </div>
                         <div className={styles.bar}>
-                          <div
-                            className={styles.barFill}
-                            style={{ width: `${Math.max(0, Math.min(100, player.avgAccuracy))}%` }}
-                          />
+                          {player.hasPlayed ? (
+                            <div
+                              className={styles.barFill}
+                              style={{ width: `${Math.max(0, Math.min(100, player.avgAccuracy))}%` }}
+                            />
+                          ) : null}
                         </div>
                       </div>
                       <div className={styles.rankScore}>
-                        <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avgAccuracy) }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
+                        {player.hasPlayed ? (
+                          <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avgAccuracy) }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
+                        ) : (
+                          <span className={styles.rankAcc}>{tGame('not_started')}</span>
+                        )}
                       </div>
                     </div>
                   );
