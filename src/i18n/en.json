@@ -429,6 +429,8 @@
     "hints": "Hints",
     "no_guess": "No guess",
     "not_started": "Not started",
+    "invited": "Invited",
+    "on_round": "On round {current} / {total}",
     "no_time_clues": "No time clues available for this event.",
     "no_location_clues": "No location clues available for this event.",
     "near_miss": "Near miss",

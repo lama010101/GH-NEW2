@@ -217,11 +217,27 @@ export default function SessionComplete({
               avgAccuracy: stats?.avgAccuracy ?? 0,
               hasPlayed: stats != null,
               wonRounds,
+              roundStatus: p.roundStatus,
+              currentRoundIndex: p.currentRoundIndex,
             };
           })
+          // Relax (async): append pending invitees so they render as "Invited".
+          // They carry no results → avgAccuracy 0 → sort to the bottom naturally.
+          .concat(isAsyncResults ? snapshot.pendingInvitees.map(pi => ({
+            playerId: pi.playerId,
+            displayName: pi.displayName,
+            totalScore: 0,
+            avgAccuracy: 0,
+            hasPlayed: false,
+            wonRounds: [] as number[],
+            roundStatus: 'invited' as const,
+            currentRoundIndex: null,
+          })) : [])
+          // Rank by accuracy% only (desc). totalScore is a deterministic tiebreaker
+          // for exactly equal accuracy (spec §5.10 / GAME_MODES_SPEC amendment).
           .sort((a, b) => {
-            if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-            return b.avgAccuracy - a.avgAccuracy;
+            if (b.avgAccuracy !== a.avgAccuracy) return b.avgAccuracy - a.avgAccuracy;
+            return b.totalScore - a.totalScore;
           });
 
         const myRank = leaderboard.findIndex(p => p.playerId === playerId) + 1;
@@ -485,8 +501,25 @@ export default function SessionComplete({
                 {leaderboard.map((player, index) => {
                   const isCurrentPlayer = player.playerId === playerId;
                   const playerData = snapshot.players.find(p => p.playerId === player.playerId);
-                  const displayName = playerLabel(snapshot.players, player.playerId);
+                  const displayName = player.displayName || playerLabel(snapshot.players, player.playerId);
                   const firstLetter = displayName ? displayName.charAt(0).toUpperCase() : "?";
+                  // Relax (async) player status. Sync (Rush) keeps hasPlayed-only behavior:
+                  // roundStatus/currentRoundIndex are undefined there per types.ts.
+                  let showAccuracy = player.hasPlayed;
+                  let statusLabel: string | null = null;
+                  if (isAsyncResults) {
+                    const rs = player.roundStatus;
+                    if (rs === 'invited') {
+                      showAccuracy = false;
+                      statusLabel = tGame('invited');
+                    } else if (rs === 'playing') {
+                      showAccuracy = false;
+                      statusLabel = tGame('on_round', { current: (player.currentRoundIndex ?? 0) + 1, total: snapshot.config.totalRounds });
+                    } else if ((rs === 'joined' || rs === 'ready') && !player.hasPlayed) {
+                      showAccuracy = false;
+                      statusLabel = tGame('not_started');
+                    }
+                  }
                   return (
                     <div key={player.playerId} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`}>
                       <span className={`${styles.medal} ${index === 0 ? styles.medalGold : index === 1 ? styles.medalSilver : index === 2 ? styles.medalBronze : ""}`}>
@@ -518,7 +551,7 @@ export default function SessionComplete({
                           {player.wonRounds.length > 0 && <span className={styles.winTag}>🏆 {player.wonRounds.length}</span>}
                         </div>
                         <div className={styles.bar}>
-                          {player.hasPlayed ? (
+                          {showAccuracy ? (
                             <div
                               className={styles.barFill}
                               style={{ width: `${Math.max(0, Math.min(100, player.avgAccuracy))}%` }}
@@ -527,10 +560,10 @@ export default function SessionComplete({
                         </div>
                       </div>
                       <div className={styles.rankScore}>
-                        {player.hasPlayed ? (
+                        {showAccuracy ? (
                           <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avgAccuracy) }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
                         ) : (
-                          <span className={styles.rankAcc}>{tGame('not_started')}</span>
+                          <span className={styles.rankAcc}>{statusLabel ?? tGame('not_started')}</span>
                         )}
                       </div>
                     </div>

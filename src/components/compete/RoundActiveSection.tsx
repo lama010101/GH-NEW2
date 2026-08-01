@@ -2,7 +2,7 @@
 
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import dynamic from "next/dynamic";
-import { useState, useRef, useEffect, useCallback, useTransition, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from 'next-intl';
 import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit } from "@/lib/distance";
@@ -172,39 +172,6 @@ export default function RoundActiveSection({
 
   const isLocked = busy || hasSubmitted || localSubmitted;
   const canSubmit = !isLocked && guessYear !== null && guessLocation !== null;
-
-  // Partial leaderboard for async (Relax) mode — spec §5.8:
-  // "Partial leaderboard builds per round as players submit."
-  // In async per-player snapshots, snapshot.events only contains the viewer's own
-  // player_round_events. The server populates rounds[currentRound].playerRoundResults
-  // with per-player results once each player has a round_results row.
-  // Every player in snapshot.players must appear — submitted rows show the score,
-  // pending rows mirror the no-guess treatment from RoundCompleteSection.
-  const isAsync = snapshot.config?.mode === "async";
-  const partialLeaderboard = useMemo(() => {
-    if (!isAsync || snapshot.status !== "ROUND_ACTIVE") return [];
-    const currentRound = snapshot.rounds?.[snapshot.currentRoundIndex];
-    const playerRoundResults = currentRound?.playerRoundResults ?? {};
-    const roster = snapshot.players ?? [];
-    return roster
-      .map((p) => {
-        const result = playerRoundResults[p.playerId];
-        const score = result?.didSubmit ? result.score : null;
-        return {
-          playerId: p.playerId,
-          displayName: p.displayName || p.playerId.slice(0, 8),
-          avatarUrl: p.avatarUrl ?? null,
-          score,
-          isMe: p.playerId === playerId,
-        };
-      })
-      .sort((a, b) => {
-        if (a.score === null && b.score === null) return 0;
-        if (a.score === null) return 1;
-        if (b.score === null) return -1;
-        return b.score - a.score;
-      });
-  }, [isAsync, snapshot.status, snapshot.currentRoundIndex, snapshot.rounds, snapshot.players, playerId]);
 
   // Cinematic auto-pan on mount
   useEffect(() => {
@@ -815,34 +782,6 @@ export default function RoundActiveSection({
                 </div>
               );
             })}
-        </div>
-      )}
-
-      {/* PARTIAL LEADERBOARD — async (Relax) only, spec §5.8 */}
-      {isAsync && partialLeaderboard.length > 0 && (
-        <div className={styles.partialLeaderboard}>
-          <div className={styles.partialLeaderboardTitle}>
-            <span className={styles.partialLeaderboardAccentBar} />
-            {t('round_leaderboard')}
-          </div>
-          {partialLeaderboard.map((row, idx) => {
-            const isSubmitted = row.score !== null;
-            return (
-              <div
-                key={row.playerId}
-                className={`${styles.partialLeaderboardRow} ${row.isMe ? styles.partialLeaderboardRowMe : ""}`}
-              >
-                <span className={styles.partialLeaderboardRank}>{isSubmitted ? idx + 1 : "—"}</span>
-                <span className={styles.partialLeaderboardName}>
-                  {row.displayName}
-                  {!isSubmitted && <span className={styles.partialLeaderboardNoGuessTag}>{t('no_guess')}</span>}
-                </span>
-                <span className={`${styles.partialLeaderboardScore} ${row.score === null ? styles.partialLeaderboardScoreEmpty : ""}`}>
-                  {row.score !== null ? Math.round(row.score) : "—"}
-                </span>
-              </div>
-            );
-          })}
         </div>
       )}
 
