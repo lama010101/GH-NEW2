@@ -15,6 +15,7 @@ import AccuracySuffix from "@/components/AccuracySuffix";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import styles from "./RoundActiveSection.module.css";
 import type { ConnectionState } from "@/core/competeWebSocket";
+import { Lightbulb } from "lucide-react";
 
 const GameMap = dynamic(
   () => import("@/components/GameMap").then((m) => m.GameMap),
@@ -834,9 +835,7 @@ export default function RoundActiveSection({
             data-testid="round-hints-btn"
           >
             <span className={styles.hintsCount}>{hintsUsedCount ?? 0}</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gh-text-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9.663 17h4.673M12 3v1m0 16v1M4.22 4.22l.707.707M19.778 19.778l-.707-.707M3 12h1m16 0h1M4.22 19.778l.707-.707M19.778 4.22l-.707.707M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
-            </svg>
+            <Lightbulb size={18} color="var(--gh-text-primary)" strokeWidth={2} />
           </button>
 
           {/* WHEN — left of WHERE */}
