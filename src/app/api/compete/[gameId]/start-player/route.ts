@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyPartyKitSecret } from "@/server/partykitAuth";
-import { startPlayerRoundSequence } from "@/server/sessionCore";
+import { startCompeteSession } from "@/server/sessionCore";
+import { TransitionCause } from "@/core/transitionCause";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,15 +25,16 @@ export async function POST(
       return NextResponse.json({ error: "playerId is required" }, { status: 400 });
     }
 
-    const snapshot = await startPlayerRoundSequence({
+    const snapshot = await startCompeteSession({
       gameId,
-      playerId: body.playerId
+      playerId: body.playerId,
+      cause: TransitionCause.PLAYER
     });
 
     return NextResponse.json(snapshot);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to start player round sequence";
-    const status = message.includes("Session not found") || message.includes("Player not found") ? 404 : 400;
+    const message = error instanceof Error ? error.message : "Unable to start compete session";
+    const status = message.includes("Session not found") ? 404 : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }

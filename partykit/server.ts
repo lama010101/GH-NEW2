@@ -1819,15 +1819,34 @@ export default class GameServer {
         }
 
         case "START_PLAYER": {
-          if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "LOBBY") {
+          if (!isRuntimeState(this.snapshot)) {
             this.sendError(sender, "START_PLAYER only allowed in LOBBY phase");
             break;
           }
+
           const senderPlayerId = this.connections.get(sender.id);
+
+          const isAsync = this.snapshot.config?.mode === "async";
+          let senderStatus = this.snapshot.status;
+          if (isAsync && senderPlayerId) {
+            const playerSnapshots = (this.snapshot as { playerSnapshots?: Record<string, { status?: string }> }).playerSnapshots;
+            senderStatus = playerSnapshots?.[senderPlayerId]?.status ?? this.snapshot.status;
+          }
+          if (senderStatus !== "LOBBY") {
+            this.sendError(sender, "START_PLAYER only allowed in LOBBY phase");
+            break;
+          }
+
           if (senderPlayerId !== data.playerId) {
             this.sendError(sender, "Player ID mismatch");
             break;
           }
+
+          if (this.startInFlight) {
+            console.log("[PartyKit] START_PLAYER ignored — start already in flight");
+            break;
+          }
+          this.startInFlight = true;
           try {
             const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(gameId)}/start-player`;
             const response = await fetch(apiUrl, {
@@ -1847,6 +1866,8 @@ export default class GameServer {
             }
           } catch (err) {
             this.sendError(sender, "Start request failed");
+          } finally {
+            this.startInFlight = false;
           }
           break;
         }
