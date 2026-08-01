@@ -1006,9 +1006,9 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--gh-glass-bg-hover);
-  border: 1px solid var(--gh-border-default);
-  color: var(--gh-text-secondary);
+  background: var(--gh-orange);
+  border: 1px solid var(--gh-orange);
+  color: var(--gh-orange);
   font-size: var(--font-base);
   display: flex;
   align-items: center;
