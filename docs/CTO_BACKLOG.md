@@ -139,6 +139,8 @@ Defects found in the harness itself (not app bugs). Plan: `docs/MP-PLAN-TESTHARN
 
 - **MP-BUILD-MVPAWARDS-001** (2026-07-22): Added the four Compete session-level MVP award categories (Most Accurate, Best Year Guesser, Best Location Guesser, Most Consistent) from GAME_MODES_SPEC.md §5.10 to `SessionComplete.tsx` using existing `computePlayerStats` aggregation; icons are trophy emoji for overall/consistency and existing `/badges/when.webp`/`/where.webp` for year/location. Merged PR #42 into `main` at commit `0da6c25`. **Status: DONE.** CI checks on PR #42 (Typecheck, Next.js build, Auth unit tests) failed with `BlobNotFound` log retrieval; merge authorized after independent local verification per MP-INV-PR42-CIFAILURE-001. Post-merge `npx tsc --noEmit` 0 errors, `npx next lint` 0 errors (pre-existing warnings only), sync golden-path Playwright spec passed.
 
+- **MP-MERGE-SETTINGSMODAL-007** (2026-08-01): Merged PR #91 (settings modal UI tweaks, branch `devin/1785573325-settings-modal-tweaks`, HEAD `a7e9facb`) into `main` at commit `3d64b518`. **Status: DONE.** Post-merge `git diff main~1 main -- src/components/compete/RoundActiveSection.module.css` shows exactly the 3 settings-modal hunks (`.settingsCloseBtn svg path`, `.settingsHomeBtn:first-child`, `.settingsDivider:last-child`) and nothing else; `sync-compete-golden-path.spec.ts` passed on post-merge main (`1 passed`, `All scenarios S1-S9 passed`). KC-001 z-index guard intact and untouched.
+
 ### WAITLIST LANDING PAGE INITIATIVE — E2E VERIFICATION (MP-VERIFY-WAITLIST-E2E-001, 2026-06-26)
 **Status: CLOSED — confirmed by direct manual verification (Lolo), 2026-06-27.**
 
