@@ -135,7 +135,7 @@ export class CompeteWSClient {
   }
 
   get isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
+    return this.ws?.readyState === WebSocket.WebSocket.OPEN;
   }
 
   /** Returns the last received snapshot (or null if none received yet). */
@@ -184,7 +184,7 @@ export class CompeteWSClient {
         // Start heartbeat
         const hb = this.opts.heartbeatMs ?? 20000;
         this.heartbeat = setInterval(() => {
-          if (this.ws?.readyState === WebSocket.OPEN) {
+          if (this.ws && this.ws.readyState === WebSocket.WebSocket.OPEN) {
             this.ws.send(JSON.stringify({ type: 'PING' }));
           }
         }, hb);
@@ -265,7 +265,7 @@ export class CompeteWSClient {
   }
 
   private send(msg: ServerMessage): void {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    if (!this.ws || this.ws.readyState !== WebSocket.WebSocket.OPEN) {
       console.warn(`[WS:${this.opts.user.displayName}] Cannot send — socket not open`);
       return;
     }

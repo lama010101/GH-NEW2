@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 import { TestUser } from '../fixtures/auth';
 
 // Timeouts raised from 20s/10s to 60s/30s to accommodate slow dev-server
@@ -58,8 +58,10 @@ export async function loginViaAuthModal(page: Page, user: TestUser): Promise<voi
   // but React hydration may still be in progress. Wait for the submit button
   // to be enabled (loading=false) as a hydration proxy.
   const submitBtn = modal.getByTestId('auth-submit-btn').first();
-  await submitBtn.waitFor({ state: 'attached', timeout: AUTH_TIMEOUT });
-  await page.waitForTimeout(2000);
+  await submitBtn.waitFor({ state: 'visible', timeout: AUTH_TIMEOUT });
+  await expect(submitBtn, '[AUTH] submit button should be enabled').toBeEnabled({
+    timeout: AUTH_TIMEOUT,
+  });
 
   const emailInput = modal.getByTestId('auth-email-input').first();
   const passwordInput = modal.getByTestId('auth-password-input').first();
