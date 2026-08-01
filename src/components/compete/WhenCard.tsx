@@ -53,7 +53,7 @@ export default function WhenCard({
     .map(p => {
       const resultRow = roundResults?.find(r => r.playerId === p.playerId);
       const theirGuessYear = resultRow?.guessYear ?? null;
-      const acc = resultRow?.timeScore ?? null;
+      const acc = resultRow?.didSubmit ? (resultRow.timeScore ?? null) : null;
       const diff = theirGuessYear != null && correctYear != null
         ? Math.abs(theirGuessYear - correctYear)
         : null;

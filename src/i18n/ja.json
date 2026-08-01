@@ -422,6 +422,7 @@
     "leaderboard": "ランキング",
     "hints": "ヒント",
     "no_guess": "未回答",
+    "not_started": "未開始",
     "no_time_clues": "このイベントには時間の手がかりがありません。",
     "no_location_clues": "このイベントには位置の手がかりがありません。",
     "near_miss": "惜しい",
