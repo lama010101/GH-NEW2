@@ -511,6 +511,8 @@ export default function DailyRoundPage() {
               resultSecsLeft={null}
               onAdvanceRound={handleAdvanceRound}
               busy={busy}
+              // Daily has no WebSocket connection — always treated as "OPEN" so the connection guard (added for Compete/Relax) never blocks Daily's Next button.
+              connectionState="OPEN"
             />
           ) : null}
 
