@@ -52,7 +52,7 @@ interface RoundCompleteSectionProps {
   resultSecsLeft: number | null;
   onAdvanceRound: () => void;
   busy?: boolean;
-  connectionState?: ConnectionState;
+  connectionState: ConnectionState;
 }
 
 // Small % ring for Where/When mini cards — colored stroke + value text.

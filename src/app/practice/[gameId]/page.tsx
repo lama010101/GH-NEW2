@@ -675,6 +675,8 @@ export default function PracticeGamePage() {
               resultSecsLeft={null}
               onAdvanceRound={handleAdvanceRound}
               busy={busy}
+              // Practice has no WebSocket connection — always treated as "OPEN" so the connection guard (added for Compete/Relax) never blocks Practice's Next button.
+              connectionState="OPEN"
             />
           ) : null}
 
