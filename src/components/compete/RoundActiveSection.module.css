@@ -1018,6 +1018,10 @@
   flex-shrink: 0;
 }
 
+.settingsCloseBtn svg path {
+  stroke: var(--gh-text-primary);
+}
+
 .settingsCard {
   background: var(--gh-modal-bg);
   border-radius: 20px;
@@ -1103,6 +1107,10 @@
   opacity: 0.6;
 }
 
+.settingsHomeBtn:first-child {
+  margin-bottom: 20px;
+}
+
 @keyframes ghSettingsHomeSpin {
   to { transform: rotate(360deg); }
 }
@@ -1165,6 +1173,10 @@
   background: var(--gh-border-subtle);
   height: 1px;
   margin-bottom: 20px;
+}
+
+.settingsDivider:last-child {
+  display: none;
 }
 
 .settingsLanguageLabel {
