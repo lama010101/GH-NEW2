@@ -56,6 +56,13 @@ export default defineConfig({
       timeout: 300000, // 5-min cap — manual burn-in; mirror sync-golden budget
       retries: 1, // switch to retries:0 once wired to pre-push
     },
+    {
+      name: 'practice-golden',
+      testMatch: /practice-golden-path\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+      timeout: 300000, // 5-min cap — manual burn-in
+      retries: 1, // switch to retries:0 once wired to pre-push
+    },
   ],
   globalSetup: require.resolve('./fixtures/auth'),
   // globalSetup returns the teardown function; do not set a separate globalTeardown path
