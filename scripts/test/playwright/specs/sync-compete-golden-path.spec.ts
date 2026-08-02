@@ -465,6 +465,15 @@ test.describe('Sync Compete Golden Path', () => {
         guestPage.locator('[data-testid="lobby-shell"]').first().waitFor({ state: 'visible', timeout: STATE_TIMEOUT }),
       ]);
 
+      // Deterministic wait for both page-level sockets to have joined the new
+      // lobby. Fast cookie auth lets the read-only WS observers connect early,
+      // so wait until the DOM on both pages reflects both players before
+      // attaching the observers and reading the authoritative snapshot.
+      await Promise.all([
+        expect(hostPage.locator('[data-testid^="lobby-player-"]')).toHaveCount(2, { timeout: 15000 }),
+        expect(guestPage.locator('[data-testid^="lobby-player-"]')).toHaveCount(2, { timeout: 15000 }),
+      ]);
+
       const newHostWS = await createReadonlyWS(newGameId, TEST_USERS[0], errors, playerSubmittedEvents);
       const newGuestWS = await createReadonlyWS(newGameId, TEST_USERS[1], errors, playerSubmittedEvents);
 
