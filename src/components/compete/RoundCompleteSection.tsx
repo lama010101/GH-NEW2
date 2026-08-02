@@ -21,7 +21,7 @@ import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import { setLocale } from "@/actions/setLocale";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
-import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
+import { getUsernameGradientStyle, haversineKm, hasSubmitted } from "@/core/competeUtils";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
 import AccuracySuffix from "@/components/AccuracySuffix";
@@ -232,10 +232,12 @@ export default function RoundCompleteSection({
           ? Object.entries(playerRoundResults).map(([pid, r]) => ({
               ...r,
               playerId: pid,
+              didSubmit: hasSubmitted(r),
             }))
           : [];
         const effectiveRoundResults = isAsync ? asyncRoundResults : roundResults;
         const myResult = effectiveRoundResults?.find(r => r.playerId === playerId);
+        const mySubmitted = hasSubmitted(myResult);
         const accuracy = myResult?.accuracy ?? 0;
         const asyncBaseRows = isAsync
           ? Object.entries(playerRoundResults).map(([pid, r]) => {
@@ -249,19 +251,23 @@ export default function RoundCompleteSection({
                 score: r.score,
                 cumulativeScore: r.cumulativeScore,
                 cumulativeAccuracy: r.cumulativeAccuracy,
-                didSubmit: r.didSubmit,
+                didSubmit: hasSubmitted(r),
               };
             })
           : [];
 
         const sortByScoreThenPlayer = (a: typeof asyncBaseRows[number], b: typeof asyncBaseRows[number]) => {
-          if (a.didSubmit !== b.didSubmit) return a.didSubmit ? -1 : 1;
+          const aSub = hasSubmitted(a);
+          const bSub = hasSubmitted(b);
+          if (aSub !== bSub) return aSub ? -1 : 1;
           if (b.score !== a.score) return b.score - a.score;
           return a.playerId.localeCompare(b.playerId);
         };
 
         const sortByCumulativeThenPlayer = (a: typeof asyncBaseRows[number], b: typeof asyncBaseRows[number]) => {
-          if (a.didSubmit !== b.didSubmit) return a.didSubmit ? -1 : 1;
+          const aSub = hasSubmitted(a);
+          const bSub = hasSubmitted(b);
+          if (aSub !== bSub) return aSub ? -1 : 1;
           if (b.cumulativeAccuracy !== a.cumulativeAccuracy) return b.cumulativeAccuracy - a.cumulativeAccuracy;
           return a.playerId.localeCompare(b.playerId);
         };
@@ -363,10 +369,16 @@ export default function RoundCompleteSection({
             <div ref={accuracyCardRef} className={styles.heroCard}>
               <div className={styles.heroTop}>
                 <div className={styles.accuracyRingWrap}>
-                  <RainbowRing value={accuracy} onComplete={() => setIsRingDone(true)} />
+                  {mySubmitted ? (
+                    <RainbowRing value={accuracy} onComplete={() => setIsRingDone(true)} />
+                  ) : (
+                    <span style={{ fontSize: 32, fontWeight: 700, color: 'var(--gh-text-muted)' }}>—</span>
+                  )}
                 </div>
                 <div className={styles.totalXpRow}>
-                  <span className={styles.totalXpVal}>{(myResult?.score ?? 0).toLocaleString()} {t('xp_unit')}</span>
+                  <span className={styles.totalXpVal}>
+                    {mySubmitted ? `${(myResult?.score ?? 0).toLocaleString()} ${t('xp_unit')}` : '—'}
+                  </span>
                   {(() => {
                     const badge = myResult?.badges?.find(b => b.dimension === 'combo');
                     const near  = myResult?.nearMisses?.find(n => n.dimension === 'combo');
@@ -404,10 +416,14 @@ export default function RoundCompleteSection({
                   {(() => {
                     const locScore = myResult?.locationScore ?? 0;
                     const color = getAccuracyColor(locScore);
-                    return <MiniRing value={locScore} color={color} />;
+                    return mySubmitted ? (
+                      <MiniRing value={locScore} color={color} />
+                    ) : (
+                      <span className={styles.miniRingVal} style={{ color: 'var(--gh-text-muted)' }}>—</span>
+                    );
                   })()}
                   <div className={styles.miniXp}>
-                    <span className={styles.miniXpVal}>+{Math.round(myResult?.locationScore ?? 0)}</span>
+                    <span className={styles.miniXpVal}>{mySubmitted ? `+${Math.round(myResult?.locationScore ?? 0)}` : '—'}</span>
                     <span className={styles.miniXpLabel}>XP</span>
                   </div>
                   <div className={styles.miniBadges}>
@@ -434,10 +450,14 @@ export default function RoundCompleteSection({
                   {(() => {
                     const timeScore = myResult?.timeScore ?? 0;
                     const color = getAccuracyColor(timeScore);
-                    return <MiniRing value={timeScore} color={color} />;
+                    return mySubmitted ? (
+                      <MiniRing value={timeScore} color={color} />
+                    ) : (
+                      <span className={styles.miniRingVal} style={{ color: 'var(--gh-text-muted)' }}>—</span>
+                    );
                   })()}
                   <div className={styles.miniXp}>
-                    <span className={styles.miniXpVal}>+{Math.round(myResult?.timeScore ?? 0)}</span>
+                    <span className={styles.miniXpVal}>{mySubmitted ? `+${Math.round(myResult?.timeScore ?? 0)}` : '—'}</span>
                     <span className={styles.miniXpLabel}>XP</span>
                   </div>
                   <div className={styles.miniBadges}>
@@ -467,7 +487,7 @@ export default function RoundCompleteSection({
                 {(() => {
                   const rows = leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows;
                   const myRank = rows.find(r => r.isMe)?.rank;
-                  return myRank != null ? <span className={styles.cardHeadRank}>#{myRank}</span> : null;
+                  return myRank != null && mySubmitted ? <span className={styles.cardHeadRank}>#{myRank}</span> : null;
                 })()}
               </div>
               <div className={styles.leaderboardTabs}>
@@ -492,7 +512,7 @@ export default function RoundCompleteSection({
                 <span className={styles.leaderboardHeaderScore}>{leaderboardTab === 'thisRound' ? t('col_score') : t('col_accuracy')}</span>
               </div>
               {(leaderboardTab === 'thisRound' ? leaderboardRows : allRoundsLeaderboardRows).map(row => {
-                const isThisRoundNoGuess = !row.didSubmit;
+                const isThisRoundNoGuess = !hasSubmitted(row);
                 const accForHue = leaderboardTab === 'thisRound' ? row.accuracy : row.cumulativeAccuracy;
                 const accColor = getAccuracyColor(accForHue);
                 const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
@@ -586,9 +606,8 @@ export default function RoundCompleteSection({
                       <span className={styles.breakCorrectLabel}>{t('correct_answer')}</span>
                       <span className={`${styles.breakCorrectValue} ${isWhere ? styles.breakCorrectValueWhere : styles.breakCorrectValueWhen}`}>{correctValue}</span>
                     </div>
-                    <span className={styles.breakScore} style={{ color: scoreColor }}>
-                      {Math.round(scoreVal)}
-                      <AccuracySuffix />
+                    <span className={styles.breakScore} style={{ color: mySubmitted ? scoreColor : 'var(--gh-text-muted)' }}>
+                      {mySubmitted ? <>{Math.round(scoreVal)}<AccuracySuffix /></> : '—'}
                     </span>
                   </div>
                 );
@@ -596,7 +615,7 @@ export default function RoundCompleteSection({
 
               {/* breakSub: distance / year-off (proto-style) */}
               {(() => {
-                if (myResult == null || !myResult.didSubmit) {
+                if (!mySubmitted) {
                   return <span className={styles.breakSub}>{t('no_guess')}</span>;
                 }
                 if (whereWhenTab === 'where') {
@@ -604,7 +623,7 @@ export default function RoundCompleteSection({
                     ? <span className={styles.breakSub}>{t('km_away', { distance: formatDistance(myDistanceKm, distanceUnit) })}</span>
                     : null;
                 }
-                const gy = myResult.guessYear;
+                const gy = myResult?.guessYear;
                 return gy != null
                   ? <span className={styles.breakSub}>{t('you_guessed_off', { year: gy, n: Math.abs(gy - correctYear) })}</span>
                   : <span className={styles.breakSub}>{t('no_guess')}</span>;
@@ -620,8 +639,8 @@ export default function RoundCompleteSection({
                     correctLng={correctLng}
                     correctName={correctName}
                     whereAccPenalty={submittedHintPenaltyRef.current.whereAccPenalty}
-                    guessLat={guessLat}
-                    guessLng={guessLng}
+                    guessLat={mySubmitted ? guessLat : null}
+                    guessLng={mySubmitted ? guessLng : null}
                     myDistanceKm={myDistanceKm}
                     whereLbExpanded={whereLbExpanded}
                     setWhereLbExpanded={setWhereLbExpanded}

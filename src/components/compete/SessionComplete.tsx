@@ -8,7 +8,7 @@ import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import RankCard from "@/components/RankCard";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
-import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
+import { getUsernameGradientStyle, playerLabel, hasSubmitted } from "@/core/competeUtils";
 import { calculateBadges } from "@/core/rules";
 import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import { NavModal } from "@/components/NavModal";
@@ -23,6 +23,8 @@ interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
   playerId: string | null;
   allRoundResults: AllRoundResult[] | null;
+  allRoundResultsError?: string | null;
+  onRetryAllResults?: () => void;
   sendMessage: (msg: object) => void;
   onPlayAgain?: () => void;
 }
@@ -31,6 +33,8 @@ export default function SessionComplete({
   snapshot,
   playerId,
   allRoundResults,
+  allRoundResultsError,
+  onRetryAllResults,
   sendMessage,
   onPlayAgain,
 }: SessionCompleteProps) {
@@ -63,13 +67,13 @@ export default function SessionComplete({
             yearDiff: r.yearDiff,
             locationScore: r.locationScore,
             timeScore: r.timeScore,
-            didSubmit: r.didSubmit,
+            didSubmit: hasSubmitted(r),
             region: r.region ?? round.region ?? null,
           }))
           .filter((r) => r.didSubmit)
       );
     }
-    return allRoundResults ?? [];
+    return (allRoundResults ?? []).filter((r) => hasSubmitted(r));
   }, [isAsyncResults, snapshot.rounds, allRoundResults]);
 
   // Scroll final results to top once the session reaches completion.
@@ -143,7 +147,7 @@ export default function SessionComplete({
   // Helper: compute derived stats for a player
   const computePlayerStats = (pid: string) => {
     if (!effectiveResults) return null;
-    const playerResults = effectiveResults.filter(r => r.playerId === pid);
+    const playerResults = effectiveResults.filter(r => r.playerId === pid).filter(r => hasSubmitted(r));
     if (playerResults.length === 0) return null;
 
     const totalScore = playerResults.reduce((sum, r) => sum + r.score, 0);
@@ -160,7 +164,7 @@ export default function SessionComplete({
   // Helper: compute per-round stats for all players
   const computeRoundStats = (roundIndex: number) => {
     if (!effectiveResults) return null;
-    const roundResults = effectiveResults.filter(r => r.roundIndex === roundIndex);
+    const roundResults = effectiveResults.filter(r => r.roundIndex === roundIndex).filter(r => hasSubmitted(r));
     if (roundResults.length === 0) {
       return { avgAccuracy: 0, avgLocationScore: 0, avgTimeScore: 0, avgDistanceKm: 0, avgYearDiff: 0, totalScore: 0, bestPlayerId: null };
     }
@@ -181,7 +185,34 @@ export default function SessionComplete({
   return (
     <section className={styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
-        if (!playerId || effectiveResults.length === 0) return null;
+        if (!playerId) return null;
+        if (effectiveResults.length === 0) {
+          if (allRoundResultsError) {
+            return (
+              <div className={styles.content}>
+                <div className={styles.card}>
+                  <p className={styles.lobbyError}>{allRoundResultsError}</p>
+                  {onRetryAllResults && (
+                    <button
+                      type="button"
+                      className={styles.playBtn}
+                      onClick={onRetryAllResults}
+                    >
+                      {tGame('retry')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div className={styles.content}>
+              <div className={styles.card}>
+                <p>{tGame('loading')}</p>
+              </div>
+            </div>
+          );
+        }
         const myStats = computePlayerStats(playerId);
         const overallAccuracy = myStats?.avgAccuracy ?? 0;
         const overallXP = myStats?.totalScore ?? 0;
@@ -471,20 +502,24 @@ export default function SessionComplete({
 
               {/* HERO ACCURACY CARD — ring + Where/When stat tiles */}
               <section className={`${styles.card} ${styles.heroCard}`}>
-                <RainbowRing value={overallAccuracy} />
+                {myStats ? (
+                  <RainbowRing value={overallAccuracy} />
+                ) : (
+                  <span className={styles.statTileVal} style={{ fontSize: 28, color: 'var(--gh-text-muted)' }}>
+                    {tGame('not_started')}
+                  </span>
+                )}
                 <div className={styles.statPair}>
                   <div className={styles.statTile}>
                     <span className={styles.statTileLabelWhere}>{tGame('where')}</span>
-                    <span className={styles.statTileVal} style={{ color: getAccuracyColor(whereAccuracy) }}>
-                      {whereAccuracy}
-                      <AccuracySuffix />
+                    <span className={styles.statTileVal} style={{ color: myStats ? getAccuracyColor(whereAccuracy) : 'var(--gh-text-muted)' }}>
+                      {myStats ? <>{whereAccuracy}<AccuracySuffix /></> : tGame('not_started')}
                     </span>
                   </div>
                   <div className={styles.statTile}>
                     <span className={styles.statTileLabelWhen}>{tGame('when')}</span>
-                    <span className={styles.statTileVal} style={{ color: getAccuracyColor(whenAccuracy) }}>
-                      {whenAccuracy}
-                      <AccuracySuffix />
+                    <span className={styles.statTileVal} style={{ color: myStats ? getAccuracyColor(whenAccuracy) : 'var(--gh-text-muted)' }}>
+                      {myStats ? <>{whenAccuracy}<AccuracySuffix /></> : tGame('not_started')}
                     </span>
                   </div>
                 </div>
@@ -712,7 +747,7 @@ export default function SessionComplete({
                   const bestPlayerName = roundStats.bestPlayerId ? playerLabel(snapshot.players, roundStats.bestPlayerId) : null;
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
                   const myRoundResult = effectiveResults.find(r => r.roundIndex === i && r.playerId === playerId);
-                  const myRoundAcc = myRoundResult ? Math.round(((myRoundResult.locationScore ?? 0) + (myRoundResult.timeScore ?? 0)) / 2) : null;
+                  const myRoundAcc = myRoundResult && hasSubmitted(myRoundResult) ? Math.round(((myRoundResult.locationScore ?? 0) + (myRoundResult.timeScore ?? 0)) / 2) : null;
                   const open = openRounds.has(i);
                   return (
                     <div key={i} className={`${styles.roundItem} ${open ? styles.roundItemOpen : ""}`}>

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from 'next-intl';
-import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
+import { getUsernameGradientStyle, haversineKm, hasSubmitted } from "@/core/competeUtils";
 import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
@@ -80,14 +80,14 @@ export default function WhereCard({
           <span className={styles.titleText}>{t('where')}</span>
         </div>
         {(() => {
-          if (myResult == null || !myResult.didSubmit) {
+          if (!hasSubmitted(myResult)) {
             return (
               <div className={styles.noSubmit}>
                 <span className={styles.noSubmitDash}>—</span>
               </div>
             );
           }
-          const locScore = Math.round(myResult.locationScore);
+          const locScore = Math.round(myResult?.locationScore ?? 0);
           const locColor = getAccuracyColor(locScore);
           return (
             <div className={styles.scoreCol}>
@@ -136,7 +136,7 @@ export default function WhereCard({
       </div>
       )}
       {!bare && (() => {
-        if (myResult == null || !myResult.didSubmit) {
+        if (!hasSubmitted(myResult)) {
           return (
             <div className={styles.noGuessWrap}>
               <span className={styles.noGuessText}>{t('no_guess')}</span>
@@ -197,7 +197,7 @@ export default function WhereCard({
               .slice()
               .sort((a, b) => b.locationScore - a.locationScore);
             const myRank = whereSorted.findIndex(r => r.playerId === playerId) + 1;
-            return myRank > 0 ? (
+            return myRank > 0 && hasSubmitted(myResult) ? (
               <span className={styles.expandRank}>
                 #{myRank}
               </span>
@@ -235,7 +235,7 @@ export default function WhereCard({
                     <span className={styles.lbDistance}>
                       {distanceKm != null ? t('km_away', { distance: formatDistance(distanceKm, distanceUnit) }) : "—"}
                     </span>
-                    {!r.didSubmit ? (
+                    {!hasSubmitted(r) ? (
                       <span className={styles.lbAccPill}>—</span>
                     ) : r.locationScore != null ? (
                       <span className={styles.lbAccPill}>

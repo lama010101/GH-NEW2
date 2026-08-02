@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
-import { getUsernameGradientStyle } from "@/core/competeUtils";
+import { getUsernameGradientStyle, hasSubmitted } from "@/core/competeUtils";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import InlineImageBadge from './InlineImageBadge';
@@ -53,7 +53,7 @@ export default function WhenCard({
     .map(p => {
       const resultRow = roundResults?.find(r => r.playerId === p.playerId);
       const theirGuessYear = resultRow?.guessYear ?? null;
-      const acc = resultRow?.didSubmit ? (resultRow.timeScore ?? null) : null;
+      const acc = hasSubmitted(resultRow) ? (resultRow?.timeScore ?? null) : null;
       const diff = theirGuessYear != null && correctYear != null
         ? Math.abs(theirGuessYear - correctYear)
         : null;
@@ -109,7 +109,7 @@ export default function WhenCard({
           const myWhenRow = whenRows.find(r => r.isMe);
           const myWhenAcc = myWhenRow?.acc ?? null;
           const myResult = roundResults?.find(r => r.playerId === playerId);
-          if (myResult == null || !myResult.didSubmit) {
+          if (!hasSubmitted(myResult)) {
             return <span className={styles.noScore}>—</span>;
           }
           return myWhenAcc != null ? (() => {
@@ -198,7 +198,8 @@ export default function WhenCard({
 
         {/* Player markers */}
         {whenRows.map((row) => {
-          if (row.guessYear == null) return null;
+          const resultRow = roundResults?.find(r => r.playerId === row.playerId);
+          if (row.guessYear == null || !hasSubmitted(resultRow)) return null;
           const xPercent = ((row.guessYear - timelineMin) / timelineRange) * 100;
           const clampedXPercent = Math.max(4, Math.min(96, xPercent));
           const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
@@ -243,7 +244,8 @@ export default function WhenCard({
           </div>
           {(() => {
             const myRank = whenRows.findIndex(r => r.isMe) + 1;
-            return myRank > 0 ? <span className={styles.expandRank}>#{myRank}</span> : null;
+            const myWhenRow = whenRows.find(r => r.isMe);
+            return myRank > 0 && myWhenRow?.acc != null ? <span className={styles.expandRank}>#{myRank}</span> : null;
           })()}
         </div>
         {whenLbExpanded && (

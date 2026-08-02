@@ -41,6 +41,14 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
+export function hasSubmitted(
+  result: { didSubmit?: boolean; guessYear?: number | null } | null | undefined
+): boolean {
+  if (!result) return false;
+  if (result.didSubmit === true) return true;
+  return result.guessYear !== null && result.guessYear !== undefined;
+}
+
 export function getBadgeSoundPath(tier: string, dimension: string): string {
   if (dimension === 'combo') {
     if (tier === 'gold') return '/sounds/badges/perfect-combo.mp3';
