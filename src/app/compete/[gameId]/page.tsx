@@ -54,6 +54,7 @@ export default function CompeteGamePage() {
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
   const [allRoundResults, setAllRoundResults] = useState<AllRoundResult[] | null>(null);
   const [allRoundResultsError, setAllRoundResultsError] = useState<string | null>(null);
+  const [allResultsRetryKey, setAllResultsRetryKey] = useState(0);
   const [guessYear, setGuessYear] = useState<number | null>(null);
   const [guessLat, setGuessLat] = useState<number | null>(null);
   const [guessLng, setGuessLng] = useState<number | null>(null);
@@ -188,6 +189,7 @@ export default function CompeteGamePage() {
     setRoundResults(null);
     setAllRoundResults(null);
     setAllRoundResultsError(null);
+    setAllResultsRetryKey(0);
     setError(null);
     setBusy(false);
     setLocalSubmitted(false);
@@ -257,11 +259,12 @@ export default function CompeteGamePage() {
     };
     fetchResults();
     return () => { cancelled = true; };
-  }, [snapshot?.status, gameId, allRoundResults, playerId, tLeaderboard]);
+  }, [snapshot?.status, gameId, allRoundResults, allResultsRetryKey, playerId, tLeaderboard]);
 
   const onRetryAllResults = useCallback(() => {
     setAllRoundResults(null);
     setAllRoundResultsError(null);
+    setAllResultsRetryKey((k) => k + 1);
   }, []);
 
   // Navigation guard: prevent refresh and back button during active game phases
