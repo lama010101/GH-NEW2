@@ -61,6 +61,36 @@ export async function getOrCreateDailyChallenge(dateIso: string): Promise<DailyC
  * but returns only IDs (no join to images/hints).
  */
 /**
+ * Finalize any stale in-progress Daily attempts for a player whose date is
+ * strictly before `beforeDate` (defaults to today UTC). Processes rows in
+ * chronological order (oldest first) so streak math is correct. Reuses
+ * `finalizeDailyStaleAttempt` from sessionCore.
+ */
+export async function finalizeStaleDailyAttempts(
+  playerId: string,
+  beforeDate: string = new Date().toISOString().slice(0, 10)
+): Promise<void> {
+  const { finalizeDailyStaleAttempt, getTransactionClient } = await import("./sessionCore");
+  const stale = await dbPool.query<{ game_id: string; date: string }>(
+    `SELECT game_id, date::text FROM daily_attempts WHERE player_id = $1 AND date < $2 AND status = 'in_progress' ORDER BY date ASC`,
+    [playerId, beforeDate]
+  );
+  for (const staleRow of stale.rows) {
+    const client = await getTransactionClient();
+    try {
+      await client.query("BEGIN");
+      await finalizeDailyStaleAttempt(client, staleRow.game_id, playerId, staleRow.date);
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+}
+
+/**
  * startDailyAttempt — entry point for POST /api/daily/start.
  * Enforces one attempt per player per UTC date via daily_attempts PK.
  * Returns { status, gameId }:
@@ -76,24 +106,7 @@ export async function startDailyAttempt(
   const todayIso = new Date().toISOString().slice(0, 10);
 
   // Finalize any stale in-progress attempts from past dates (D2 lazy finalization)
-  const { finalizeDailyStaleAttempt, getTransactionClient } = await import("./sessionCore");
-  const stale = await dbPool.query<{ game_id: string; date: string }>(
-    `SELECT game_id, date::text FROM daily_attempts WHERE player_id = $1 AND date < $2 AND status = 'in_progress' ORDER BY date ASC`,
-    [playerId, todayIso]
-  );
-  for (const staleRow of stale.rows) {
-    const client = await getTransactionClient();
-    try {
-      await client.query("BEGIN");
-      await finalizeDailyStaleAttempt(client, staleRow.game_id, playerId, staleRow.date);
-      await client.query("COMMIT");
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    } finally {
-      client.release();
-    }
-  }
+  await finalizeStaleDailyAttempts(playerId, todayIso);
 
   // Check for existing attempt today
   const existing = await dbPool.query<{ game_id: string; status: string }>(
