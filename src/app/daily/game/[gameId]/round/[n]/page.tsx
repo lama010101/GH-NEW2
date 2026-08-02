@@ -191,7 +191,8 @@ export default function DailyRoundPage() {
     const capturedLat = guessLatRef.current;
     const capturedLng = guessLngRef.current;
 
-    if (capturedYear === null && capturedLat === null && capturedLng === null) return;
+    // Timer expiry must always submit — even with null values (no guess placed),
+    // per GAME_MODES_SPEC.md §1: "Timer expiry auto-submits with whatever is placed."
 
     autoSubmitFiredRef.current = true;
     submittedHintPenaltyRef.current = {
