@@ -345,13 +345,16 @@ export default function CompeteGamePage() {
           } catch { /* audio not available */ }
         }
         // In-app text broadcast — spec §5.8: "Player X submitted round N."
-        // Only shown in async (Relax) mode; in sync (Rush) the round completes
-        // immediately when all submit, so a persistent text toast is noise.
+        // Only shown in async (Relax) mode on the final round; in sync (Rush) the round
+        // completes immediately when all submit, so a persistent text toast is noise.
         if (snapshot?.config?.mode === 'async' && snapshot?.status === 'ROUND_ACTIVE') {
-          const roundNum = (snapshot.currentRoundIndex ?? 0) + 1;
-          setPlayerSubmittedToast(t('player_submitted_round', { name: playerName, n: roundNum }));
-          if (playerSubmittedToastTimer.current) clearTimeout(playerSubmittedToastTimer.current);
-          playerSubmittedToastTimer.current = setTimeout(() => setPlayerSubmittedToast(null), 3500);
+          const isFinalRound = snapshot.currentRoundIndex === (snapshot.rounds?.length ?? 0) - 1;
+          if (isFinalRound) {
+            const roundNum = (snapshot.currentRoundIndex ?? 0) + 1;
+            setPlayerSubmittedToast(t('player_submitted_round', { name: playerName, n: roundNum }));
+            if (playerSubmittedToastTimer.current) clearTimeout(playerSubmittedToastTimer.current);
+            playerSubmittedToastTimer.current = setTimeout(() => setPlayerSubmittedToast(null), 3500);
+          }
         }
       }
       // Self-submission overlay is driven by localSubmitted state — no action needed here
