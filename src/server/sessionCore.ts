@@ -1644,6 +1644,109 @@ export async function ensureDailyRoundStarted(
   }, 0);
 }
 
+/**
+ * Finalize a stale in-progress Daily attempt by zero-filling unsubmitted rounds
+ * and running the canonical daily game-end transaction. Idempotent.
+ * Must be called inside an existing transaction.
+ */
+export async function finalizeDailyStaleAttempt(
+  client: DbTransactionClient,
+  gameId: string,
+  playerId: string,
+  challengeDate: string
+): Promise<void> {
+  const attempt = await client.query<{ status: string; player_id: string }>(
+    `SELECT status, player_id FROM daily_attempts WHERE game_id = $1`,
+    [gameId]
+  );
+  if (attempt.rows.length === 0) {
+    throw new Error(`No daily_attempts row for gameId=${gameId}`);
+  }
+  const attemptRow = attempt.rows[0];
+  if (attemptRow.player_id !== playerId) {
+    throw new Error("Stale Daily attempt does not belong to this player");
+  }
+  if (attemptRow.status === "completed" || attemptRow.status === "expired") {
+    return;
+  }
+
+  const session = await loadSessionRow(gameId, client);
+  if (!session || session.mode !== "daily") {
+    throw new Error("Daily session not found for stale finalization");
+  }
+
+  const challenge = await client.query<{ event_ids: string[] }>(
+    `SELECT event_ids FROM daily_challenges WHERE date = $1`,
+    [challengeDate]
+  );
+  if (challenge.rows.length === 0) {
+    throw new Error(`daily_challenges row not found for date=${challengeDate}`);
+  }
+  const eventIds = challenge.rows[0].event_ids;
+  const totalRounds = eventIds.length;
+  if (totalRounds === 0) {
+    throw new Error("daily_challenges has no event_ids");
+  }
+
+  const existingResults = await client.query<{ round_index: number }>(
+    `SELECT round_index FROM round_results WHERE game_id = $1 AND player_id = $2`,
+    [gameId, playerId]
+  );
+  const existingRounds = new Set(existingResults.rows.map((r) => r.round_index));
+
+  const referenceYear = session.scoring_reference_year;
+  for (let roundIndex = 0; roundIndex < totalRounds; roundIndex++) {
+    if (existingRounds.has(roundIndex)) continue;
+
+    const event = await fetchEventById(eventIds[roundIndex], client);
+    if (!event) {
+      throw new Error(`Event not found for round ${roundIndex} (gameId=${gameId})`);
+    }
+    const evaluation = evaluateRound(
+      event,
+      { year: null, location: null },
+      roundIndex,
+      false,
+      0,
+      0,
+      referenceYear
+    );
+
+    await client.query(
+      `INSERT INTO round_results
+        (game_id, round_index, player_id, score, rank, distance_km, year_diff, location_score, time_score, verification_token)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       ON CONFLICT (game_id, round_index, player_id) DO NOTHING`,
+      [
+        gameId,
+        roundIndex,
+        playerId,
+        0,
+        1,
+        evaluation.distanceKm,
+        evaluation.yearDiff,
+        evaluation.locationAccuracy,
+        evaluation.yearAccuracy,
+        generateVerificationToken()
+      ]
+    );
+  }
+
+  await dailyGameEndTransaction(client, gameId, challengeDate);
+
+  const after = await client.query<{ status: string }>(
+    `SELECT status FROM daily_attempts WHERE game_id = $1`,
+    [gameId]
+  );
+  const terminal = after.rows[0]?.status;
+  if (terminal !== "completed" && terminal !== "expired") {
+    await client.query(
+      `UPDATE daily_attempts SET status = 'expired', completed_at = now() WHERE game_id = $1`,
+      [gameId]
+    );
+  }
+}
+
 export async function createDailySession(input: {
   playerId: string;
   displayName?: string;

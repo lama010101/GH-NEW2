@@ -75,6 +75,26 @@ export async function startDailyAttempt(
 ): Promise<{ status: "new" | "resume" | "completed"; gameId: string }> {
   const todayIso = new Date().toISOString().slice(0, 10);
 
+  // Finalize any stale in-progress attempts from past dates (D2 lazy finalization)
+  const { finalizeDailyStaleAttempt, getTransactionClient } = await import("./sessionCore");
+  const stale = await dbPool.query<{ game_id: string; date: string }>(
+    `SELECT game_id, date::text FROM daily_attempts WHERE player_id = $1 AND date < $2 AND status = 'in_progress'`,
+    [playerId, todayIso]
+  );
+  for (const staleRow of stale.rows) {
+    const client = await getTransactionClient();
+    try {
+      await client.query("BEGIN");
+      await finalizeDailyStaleAttempt(client, staleRow.game_id, playerId, staleRow.date);
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   // Check for existing attempt today
   const existing = await dbPool.query<{ game_id: string; status: string }>(
     `SELECT game_id, status FROM daily_attempts WHERE date = $1 AND player_id = $2`,
