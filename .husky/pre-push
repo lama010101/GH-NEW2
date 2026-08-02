@@ -13,19 +13,20 @@ if [ ! -f "$PROTECTED_FILE" ]; then
   exit 0
 fi
 
-# Determine the diff base: prefer @{push} (the remote-tracking ref for the
-# current branch). On first push of a new branch, @{push} may not resolve —
-# fall back to origin/main and echo which base was used so a false negative
-# (no protected file matched because the wrong range was compared) is
-# diagnosable rather than silent.
-DIFF_BASE=""
-if git rev-parse --verify '@{push}' >/dev/null 2>&1; then
-  DIFF_BASE="@{push}"
-  echo "PRE-PUSH: comparing against @{push}"
-else
-  DIFF_BASE="origin/main"
-  echo "PRE-PUSH: no upstream — comparing against origin/main"
+# Keep the merge target current. A stale origin/main could let protected files
+# already merged upstream appear as "changed" in this branch.
+if ! git fetch --quiet origin main; then
+  echo "PRE-PUSH: failed to fetch origin/main — cannot safely verify protected-file diff, aborting push"
+  exit 1
 fi
+echo "PRE-PUSH: fetched origin/main"
+
+# Determine the diff base: the actual merge target (origin/main). Compare
+# HEAD against the branch's merge target, not the incremental push delta, so
+# every push of a long-lived branch still sees protected files introduced in
+# earlier pushes.
+DIFF_BASE="origin/main"
+echo "PRE-PUSH: comparing against $DIFF_BASE"
 
 PUSHED_FILES=$(git diff --name-only "$DIFF_BASE"..HEAD 2>/dev/null)
 if [ -z "$PUSHED_FILES" ]; then
