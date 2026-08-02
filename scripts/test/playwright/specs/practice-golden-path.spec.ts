@@ -1,11 +1,142 @@
+// MP-FIX-PRACTICEGOLDEN-AUTHFLAKE-006
+// Practice golden-path Playwright spec.
+// Isolated scenarios, cookie-based auth, explicit timeouts, stable selectors.
+
 import { test, expect, Page } from '@playwright/test';
-import { TEST_USERS } from '../fixtures/auth';
-import { ensureLoggedIn } from '../helpers/auth-ui';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+import { TEST_USERS, type TestUser } from '../fixtures/auth';
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Missing required Supabase URL/anon key for practice golden-path spec');
+}
+
 const LONG_TIMEOUT = 120_000;
 const NAV_TIMEOUT = 300_000; // practice session creation can be slow under dev load
 const ROUNDS = 5;
+
+const projectRef = new URL(SUPABASE_URL).hostname.split('.')[0];
+const AUTH_COOKIE_NAME = `sb-${projectRef}-auth-token`;
+
+interface SessionBundle {
+  cookieName: string;
+  cookieValue: string;
+  cookie: string;
+  userId: string;
+}
+
+const sessionCache = new Map<string, SessionBundle>();
+const TEST_USER = TEST_USERS[0];
+
+function storageKey(playerId: string): string {
+  return `gh_practice_game_${playerId}`;
+}
+
+async function getSession(user: TestUser): Promise<SessionBundle> {
+  const cached = sessionCache.get(user.email);
+  if (cached) return cached;
+
+  let lastError: Error | undefined;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
+    }
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: user.email, password: user.password }),
+    });
+
+    if (res.ok) {
+      const data = (await res.json()) as {
+        access_token: string;
+        refresh_token: string;
+        expires_in: number;
+        expires_at: number;
+        token_type: string;
+        user: { id: string };
+      };
+
+      const session = {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_in: data.expires_in,
+        expires_at: data.expires_at,
+        token_type: data.token_type,
+        user: data.user,
+      };
+      const cookieValue = JSON.stringify(session);
+      const bundle: SessionBundle = {
+        cookieName: AUTH_COOKIE_NAME,
+        cookieValue,
+        cookie: `${AUTH_COOKIE_NAME}=${cookieValue}`,
+        userId: data.user.id,
+      };
+      sessionCache.set(user.email, bundle);
+      return bundle;
+    }
+
+    const body = await res.text().catch(() => '');
+    lastError = new Error(`Auth token fetch failed: ${res.status} ${body}`);
+    if (res.status >= 500) {
+      // Auth service degradation is transient; retry.
+      continue;
+    }
+    // 4xx may be a propagation race after createUser; one retry is often enough.
+    if (res.status >= 400 && attempt < 2) {
+      continue;
+    }
+    break;
+  }
+  throw lastError ?? new Error('Auth token fetch failed');
+}
+
+async function authenticatePage(page: Page, user: TestUser): Promise<SessionBundle> {
+  const bundle = await getSession(user);
+  await page.context().addCookies([
+    {
+      name: bundle.cookieName,
+      value: bundle.cookieValue,
+      domain: 'localhost',
+      path: '/',
+      httpOnly: false,
+      sameSite: 'Lax',
+    },
+  ]);
+  return bundle;
+}
+
+async function markWelcomeCompleted(page: Page) {
+  // The test account is always a new user after globalSetup. Mark onboarding as
+  // complete up-front so the WelcomeModal cannot intercept the PRACTICE play pill.
+  await page.request.patch(`${BASE}/api/user/update-username`, {
+    data: { display_name: TEST_USER.displayName, welcome_completed: true },
+  }).catch(() => undefined);
+}
+
+test.beforeAll(async ({ browser }) => {
+  // Prime the auth token once per worker so each scenario can reuse it.
+  // This avoids hammering Supabase Auth with repeated password grants.
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await authenticatePage(page, TEST_USER);
+  await markWelcomeCompleted(page);
+  await context.close();
+});
+
+test.beforeEach(async ({ page }) => {
+  await authenticatePage(page, TEST_USER);
+  await markWelcomeCompleted(page);
+});
 
 async function waitForTestId(page: Page, testId: string, timeout = LONG_TIMEOUT) {
   const loc = page.getByTestId(testId).first();
@@ -14,12 +145,12 @@ async function waitForTestId(page: Page, testId: string, timeout = LONG_TIMEOUT)
 }
 
 function gameIdFromUrl(page: Page): string | null {
-  const m = page.url().match(/\/practice\/([a-zA-Z0-9-]+)/);
+  const m = new URL(page.url()).pathname.match(/\/practice\/([a-zA-Z0-9-]+)/);
   return m ? m[1] : null;
 }
 
 function practicePlayPill(page: Page) {
-  return page.locator('button[class*="playPill"]').nth(2);
+  return page.getByTestId('home-practice-play-btn');
 }
 
 function settingsModal(page: Page) {
@@ -27,19 +158,27 @@ function settingsModal(page: Page) {
 }
 
 function settingsStartButton(page: Page) {
-  return settingsModal(page).locator('button[class*="startBtn"]').first();
+  return page.getByTestId('practice-settings-start-btn');
 }
 
 async function dismissWelcomeModal(page: Page) {
-  const save = page.locator('div[class*="WelcomeModal_overlay"] button[class*="saveButton"]').first();
-  const visible = await save.isVisible().catch(() => false);
-  if (!visible) return;
+  // The welcome modal may render after the home UI has already appeared. Wait for
+  // its primary action button instead of relying on CSS-module class hashes.
+  const save = page.getByRole('button', { name: /let's play!/i }).first();
+  // The welcome modal is rendered after the async /api/user/assign-avatar call; it can
+  // appear a few seconds after the home cards. BeforeEach now pre-completes onboarding,
+  // but keep a short guard for any test that bypasses that helper.
+  const appeared = await save.waitFor({ state: 'visible', timeout: 3000 }).then(() => true).catch(() => false);
+  if (!appeared) return;
   await Promise.all([
     page.waitForResponse((r) => r.url().includes('/api/user/update-username'), { timeout: 12000 }).catch(() => undefined),
     save.click({ force: true }),
   ]);
-  const overlay = page.locator('div[class*="WelcomeModal_overlay"]');
-  await overlay.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+  await save.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+}
+
+function isPracticeGameUrl(url: URL): boolean {
+  return url.pathname.startsWith('/practice/') && /^\/practice\/[a-zA-Z0-9-]+$/.test(url.pathname);
 }
 
 async function openPracticeSettingsFromHome(page: Page) {
@@ -59,17 +198,28 @@ async function startFromSettingsModal(page: Page) {
   // can race and stall before it redirects; fall back to a direct /practice load
   // (which uses the same localStorage settings) so the golden path stays robust.
   try {
-    await page.waitForURL(/\/practice\/[a-zA-Z0-9-]+/, { timeout: 15_000 });
+    await page.waitForURL((url) => isPracticeGameUrl(url), { timeout: 15_000 });
   } catch {
-    if (!page.url().includes('/practice/')) {
+    if (!new URL(page.url()).pathname.startsWith('/practice/')) {
       await page.goto(`${BASE}/practice`, { waitUntil: 'domcontentloaded' });
     }
-    await page.waitForURL(/\/practice\/[a-zA-Z0-9-]+/, { timeout: NAV_TIMEOUT });
+    await page.waitForURL((url) => isPracticeGameUrl(url), { timeout: NAV_TIMEOUT });
   }
 
   await waitForTestId(page, 'round-active-section', NAV_TIMEOUT);
   const section = page.getByTestId('round-active-section').first();
   await expect(section).toHaveAttribute('data-status', 'ROUND_ACTIVE');
+}
+
+async function startPracticeFromHome(page: Page): Promise<string | null> {
+  await openPracticeSettingsFromHome(page);
+  // Default settings: timer toggle (OFF) and at least one era chip visible.
+  await expect(settingsModal(page).locator('button[class*="lobbyToggleBtn"]').first()).toBeVisible();
+  await expect(settingsModal(page).locator('button[class*="lobbySelectAllBtn"]').first()).toBeVisible();
+  await startFromSettingsModal(page);
+  const gameId = gameIdFromUrl(page);
+  expect(gameId, 'created practice game').not.toBeNull();
+  return gameId;
 }
 
 async function setYearViaWhenSheet(page: Page) {
@@ -144,29 +294,19 @@ async function advanceRound(page: Page) {
   await next.click({ force: true });
 }
 
-test('Practice golden path P0–P8', async ({ page, browser }) => {
-  test.setTimeout(900_000);
-  const playerId = TEST_USERS[0]?.id || '';
-  const storageKey = `gh_practice_game_${playerId}`;
-  const user = TEST_USERS[0];
+test('P0-P3/P8: authenticated entry, settings start, full solo flow, play-again settings persistence', async ({ page }) => {
+  // 5 rounds + settings interactions can exceed the 5-minute project default under dev load.
+  test.setTimeout(600_000);
 
   // P0 — Auth / entry: protected /home route renders for a logged-in player.
   await page.goto(`${BASE}/home`, { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('networkidle').catch(() => undefined);
-  await ensureLoggedIn(page, user);
-  await page.waitForURL(/\/home/, { timeout: LONG_TIMEOUT });
   await dismissWelcomeModal(page);
   await expect(practicePlayPill(page)).toBeVisible({ timeout: LONG_TIMEOUT });
   console.log('[PRACTICE-GOLDEN] P0 passed: authenticated entry');
 
   // P1 — Home → settings → start.
-  await openPracticeSettingsFromHome(page);
-  // Default settings: timer toggle (OFF) and at least one era chip visible.
-  await expect(settingsModal(page).locator('button[class*="lobbyToggleBtn"]').first()).toBeVisible();
-  await expect(settingsModal(page).locator('button[class*="lobbySelectAllBtn"]').first()).toBeVisible();
-  await startFromSettingsModal(page);
-  const gameIdA = gameIdFromUrl(page);
-  expect(gameIdA, 'P1: created practice game').not.toBeNull();
+  const gameIdA = await startPracticeFromHome(page);
   console.log('[PRACTICE-GOLDEN] P1 passed: home → settings → start', gameIdA);
 
   // P2 — Full 5-round solo flow. P6 is asserted inside every ROUND_COMPLETE.
@@ -213,7 +353,7 @@ test('Practice golden path P0–P8', async ({ page, browser }) => {
 
   const start = settingsStartButton(page);
   await start.click({ force: true });
-  await page.waitForURL(/\/practice\/[a-zA-Z0-9-]+/, { timeout: NAV_TIMEOUT });
+  await page.waitForURL((url) => isPracticeGameUrl(url), { timeout: NAV_TIMEOUT });
   await waitForTestId(page, 'round-active-section', NAV_TIMEOUT);
 
   const gameIdB = gameIdFromUrl(page);
@@ -230,30 +370,49 @@ test('Practice golden path P0–P8', async ({ page, browser }) => {
   expect(typeof parsed.yearMax, 'P8: yearMax persisted').toBe('number');
   console.log('[PRACTICE-GOLDEN] P3 passed: play-again new game');
   console.log('[PRACTICE-GOLDEN] P8 passed: settings persistence');
+});
 
-  // P4 — Resume vs new-game modal.
+test('P4: resume vs new-game modal', async ({ page }) => {
+  // Each isolated scenario must create its own in-progress game.
+  await page.goto(`${BASE}/home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForLoadState('networkidle').catch(() => undefined);
+  await dismissWelcomeModal(page);
+  const gameIdB = await startPracticeFromHome(page);
+  expect(gameIdB, 'P4: created practice game for resume').not.toBeNull();
+
   await page.goto(`${BASE}/home`, { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('networkidle').catch(() => undefined);
   await dismissWelcomeModal(page);
   const pill = practicePlayPill(page);
   await expect(pill).toBeVisible({ timeout: LONG_TIMEOUT });
   await pill.click({ force: true });
-  // Resume modal should appear because localStorage still has the in-progress game B.
-  const resumeBtn = page.locator('button[class*="resumeBtn"]').first();
-  const newBtn = page.locator('button[class*="newBtn"]').first();
+
+  const resumeBtn = page.getByTestId('practice-resume-btn');
+  const newBtn = page.getByTestId('practice-new-game-btn');
   await expect(resumeBtn).toBeVisible({ timeout: LONG_TIMEOUT });
   await expect(newBtn).toBeVisible({ timeout: LONG_TIMEOUT });
-  // Click Resume and verify we return to the same in-progress game.
+
   await resumeBtn.click({ force: true });
-  await page.waitForURL(/\/practice\/[a-zA-Z0-9-]+/, { timeout: NAV_TIMEOUT });
+  await page.waitForURL((url) => isPracticeGameUrl(url), { timeout: NAV_TIMEOUT });
   expect(gameIdFromUrl(page), 'P4: resume navigates to stored game').toBe(gameIdB);
   await waitForTestId(page, 'round-active-section', NAV_TIMEOUT);
   console.log('[PRACTICE-GOLDEN] P4 passed: resume vs new-game modal (resume path)');
+});
 
-  // P5 — Direct-URL navigation to /practice creates a new game.
-  await page.evaluate((key) => { localStorage.removeItem(key); }, storageKey);
+test('P5: direct-URL navigation creates a new game distinct from in-progress', async ({ page }) => {
+  const playerId = TEST_USER.id;
+  const key = storageKey(playerId);
+
+  await page.goto(`${BASE}/home`, { waitUntil: 'domcontentloaded' });
+  await page.waitForLoadState('networkidle').catch(() => undefined);
+  await dismissWelcomeModal(page);
+  const gameIdB = await startPracticeFromHome(page);
+  expect(gameIdB, 'P5: created practice game').not.toBeNull();
+
+  // Remove stored game and navigate directly to /practice.
+  await page.evaluate((k) => localStorage.removeItem(k), key);
   await page.goto(`${BASE}/practice`, { waitUntil: 'domcontentloaded' });
-  await page.waitForURL(/\/practice\/[a-zA-Z0-9-]+/, { timeout: NAV_TIMEOUT });
+  await page.waitForURL((url) => isPracticeGameUrl(url), { timeout: NAV_TIMEOUT });
   const gameIdC = gameIdFromUrl(page);
   expect(gameIdC, 'P5: direct /practice created a game').not.toBeNull();
   expect(gameIdC, 'P5: direct URL game differs from resume target').not.toBe(gameIdB);
@@ -261,20 +420,27 @@ test('Practice golden path P0–P8', async ({ page, browser }) => {
   const activeC = page.getByTestId('round-active-section').first();
   await expect(activeC).toHaveAttribute('data-status', 'ROUND_ACTIVE');
   console.log('[PRACTICE-GOLDEN] P5 passed: direct URL navigation', gameIdC);
+});
 
-  // P7 — Network failure during resume.
+test('P7: network failure during resume falls back to settings modal', async ({ page }) => {
+  const playerId = TEST_USER.id;
+  const key = storageKey(playerId);
+
   await page.goto(`${BASE}/home`, { waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('networkidle').catch(() => undefined);
-  await page.evaluate((key) => { localStorage.setItem(key, 'does-not-exist-0000-0000-000000000000'); }, storageKey);
+  await dismissWelcomeModal(page);
+
+  // Seed localStorage with a non-existent game so the home Practice click attempts a resume.
+  await page.evaluate((k) => localStorage.setItem(k, 'does-not-exist-0000-0000-000000000000'), key);
   await page.route('**/api/compete/**', (route) => route.abort('internetdisconnected'));
-  const pill2 = practicePlayPill(page);
-  await expect(pill2).toBeVisible({ timeout: LONG_TIMEOUT });
-  await pill2.click({ force: true });
+
+  const pill = practicePlayPill(page);
+  await expect(pill).toBeVisible({ timeout: LONG_TIMEOUT });
+  await pill.click({ force: true });
+
   // With the resume fetch failing, home falls through and opens the settings modal.
   await expect(settingsModal(page)).toBeVisible({ timeout: LONG_TIMEOUT });
   await page.unroute('**/api/compete/**');
-  await page.evaluate((key) => { localStorage.removeItem(key); }, storageKey);
+  await page.evaluate((k) => localStorage.removeItem(k), key);
   console.log('[PRACTICE-GOLDEN] P7 passed: network failure during resume falls back to settings');
-
-  console.log('[PRACTICE-GOLDEN] All scenarios P0–P8 passed');
 });
