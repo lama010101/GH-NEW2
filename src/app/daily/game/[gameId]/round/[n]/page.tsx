@@ -28,6 +28,8 @@ export default function DailyRoundPage() {
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
   const [allRoundResults, setAllRoundResults] = useState<AllRoundResult[] | null>(null);
+  const [allRoundResultsLoading, setAllRoundResultsLoading] = useState<boolean>(true);
+  const [allRoundResultsError, setAllRoundResultsError] = useState<string | null>(null);
   const [guessYear, setGuessYear] = useState<number | null>(null);
   const [guessLat, setGuessLat] = useState<number | null>(null);
   const [guessLng, setGuessLng] = useState<number | null>(null);
@@ -150,16 +152,33 @@ export default function DailyRoundPage() {
   }, [snapshot?.currentRoundIndex]);
 
   // Fetch all round results when session completes
-  useEffect(() => {
-    if (snapshot?.status === "SESSION_COMPLETE" && gameId && playerId && !allRoundResults) {
-      fetch(`/api/compete/${gameId}/all-results?playerId=${playerId}`)
-        .then(r => r.json())
-        .then(data => setAllRoundResults(data.results ?? []))
-        .catch(err => {
-          console.error("[DailyRoundPage] Failed to fetch all round results:", err);
-        });
+  const refetchAllRoundResults = useCallback(async () => {
+    if (!gameId || !playerId) return;
+    setAllRoundResultsLoading(true);
+    setAllRoundResultsError(null);
+    try {
+      const response = await fetch(`/api/compete/${gameId}/all-results?playerId=${playerId}`);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || t('failed_load_session'));
+      }
+      const data = await response.json();
+      setAllRoundResults(data.results ?? []);
+    } catch (err) {
+      setAllRoundResultsError(err instanceof Error ? err.message : t('failed_load_session'));
+      setAllRoundResults(null);
+    } finally {
+      setAllRoundResultsLoading(false);
     }
-  }, [snapshot?.status, gameId, playerId, allRoundResults]);
+  }, [gameId, playerId, t]);
+
+  const sessionStatus = snapshot?.status;
+  useEffect(() => {
+    if (sessionStatus !== "SESSION_COMPLETE") return;
+    if (allRoundResults !== null) return;
+    if (!gameId || !playerId) return;
+    refetchAllRoundResults();
+  }, [sessionStatus, allRoundResults, gameId, playerId, refetchAllRoundResults]);
 
   // Local UI-only timer derived from snapshot.roundEndsAt
   useEffect(() => {
@@ -521,6 +540,9 @@ export default function DailyRoundPage() {
               snapshot={snapshot}
               playerId={playerId}
               allRoundResults={allRoundResults}
+              allRoundResultsLoading={allRoundResultsLoading}
+              allRoundResultsError={allRoundResultsError}
+              onRetryAllRoundResults={refetchAllRoundResults}
               onPlayAgain={() => router.push('/home')}
               sendMessage={() => router.push('/home')}
             />

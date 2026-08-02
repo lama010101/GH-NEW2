@@ -52,6 +52,8 @@ export default function CompeteGamePage() {
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
   const [allRoundResults, setAllRoundResults] = useState<AllRoundResult[] | null>(null);
+  const [allRoundResultsLoading, setAllRoundResultsLoading] = useState<boolean>(true);
+  const [allRoundResultsError, setAllRoundResultsError] = useState<string | null>(null);
   const [guessYear, setGuessYear] = useState<number | null>(null);
   const [guessLat, setGuessLat] = useState<number | null>(null);
   const [guessLng, setGuessLng] = useState<number | null>(null);
@@ -185,6 +187,8 @@ export default function CompeteGamePage() {
     setSnapshot(null);
     setRoundResults(null);
     setAllRoundResults(null);
+    setAllRoundResultsLoading(true);
+    setAllRoundResultsError(null);
     setError(null);
     setBusy(false);
     setLocalSubmitted(false);
@@ -219,16 +223,33 @@ export default function CompeteGamePage() {
   }, [snapshot?.currentRoundIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch all round results when session completes
-  useEffect(() => {
-    if (snapshot?.status === "SESSION_COMPLETE" && gameId && !allRoundResults) {
-      fetch(`/api/compete/${gameId}/all-results?playerId=${playerId}`)
-        .then(r => r.json())
-        .then(data => setAllRoundResults(data.results ?? []))
-        .catch(err => {
-          console.error("[CompeteGamePage] Failed to fetch all round results:", err);
-        });
+  const refetchAllRoundResults = useCallback(async () => {
+    if (!gameId || !playerId) return;
+    setAllRoundResultsLoading(true);
+    setAllRoundResultsError(null);
+    try {
+      const response = await fetch(`/api/compete/${gameId}/all-results?playerId=${playerId}`);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || t('failed_load_session'));
+      }
+      const data = await response.json();
+      setAllRoundResults(data.results ?? []);
+    } catch (err) {
+      setAllRoundResultsError(err instanceof Error ? err.message : t('failed_load_session'));
+      setAllRoundResults(null);
+    } finally {
+      setAllRoundResultsLoading(false);
     }
-  }, [snapshot?.status, gameId, allRoundResults, playerId]);
+  }, [gameId, playerId, t]);
+
+  const sessionStatus = snapshot?.status;
+  useEffect(() => {
+    if (sessionStatus !== "SESSION_COMPLETE") return;
+    if (allRoundResults !== null) return;
+    if (!gameId || !playerId) return;
+    refetchAllRoundResults();
+  }, [sessionStatus, allRoundResults, gameId, playerId, refetchAllRoundResults]);
 
   // Navigation guard: prevent refresh and back button during active game phases
   // Only applies to LOBBY, ROUND_ACTIVE, and ROUND_COMPLETE (not SESSION_COMPLETE)
@@ -859,6 +880,9 @@ export default function CompeteGamePage() {
             snapshot={snapshot}
             playerId={playerId}
             allRoundResults={allRoundResults}
+            allRoundResultsLoading={allRoundResultsLoading}
+            allRoundResultsError={allRoundResultsError}
+            onRetryAllRoundResults={refetchAllRoundResults}
             sendMessage={(msg) => playAgain((msg as { newGameId: string }).newGameId)}
           />
         ) : null}

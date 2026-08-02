@@ -373,6 +373,14 @@ test.describe.serial('Daily fresh start, resume, completion and idempotency', ()
     expect(streak.rows[0].daily_streak_current).toBe(1);
     expect(streak.rows[0].daily_streak_best).toBe(1);
     expect(streak.rows[0].last_attempt_date).toBe(today);
+
+    // Open the results page and assert the session-complete section is visible
+    // with real accuracy/score, not blank.
+    await page.goto(`/daily/game/${gameId}/results`, { waitUntil: 'domcontentloaded' });
+    const sessionComplete = page.getByTestId('session-complete-section').first();
+    await expect(sessionComplete).toBeVisible({ timeout: 10000 });
+    await expect(sessionComplete).toContainText('XP');
+    await expect(sessionComplete).toContainText('%');
   });
 
   test('S6: one-attempt-per-day is idempotent', async ({ page }) => {

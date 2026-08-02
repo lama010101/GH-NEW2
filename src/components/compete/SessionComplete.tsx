@@ -19,10 +19,44 @@ import AccuracySuffix from "@/components/AccuracySuffix";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import styles from "./SessionComplete.module.css";
 
+function ErrorState({ message, onRetry, retryLabel }: { message: string; onRetry?: () => void; retryLabel?: string }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+      <p style={{ color: 'var(--gh-danger, #ff6b6b)', marginBottom: '1rem' }}>{message}</p>
+      {onRetry && (
+        <button type="button" className={styles.playBtn} onClick={onRetry}>
+          {retryLabel ?? 'Retry'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function LoadingSpinner() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '3rem 1rem' }}>
+      <style>{`@keyframes sessionCompleteSpin { to { transform: rotate(360deg); } }`}</style>
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          border: '4px solid rgba(255,255,255,0.2)',
+          borderTop: '4px solid #fff',
+          borderRadius: '50%',
+          animation: 'sessionCompleteSpin 1s linear infinite',
+        }}
+      />
+    </div>
+  );
+}
+
 interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
   playerId: string | null;
   allRoundResults: AllRoundResult[] | null;
+  allRoundResultsLoading: boolean;
+  allRoundResultsError: string | null;
+  onRetryAllRoundResults: () => void;
   sendMessage: (msg: object) => void;
   onPlayAgain?: () => void;
 }
@@ -31,6 +65,9 @@ export default function SessionComplete({
   snapshot,
   playerId,
   allRoundResults,
+  allRoundResultsLoading,
+  allRoundResultsError,
+  onRetryAllRoundResults,
   sendMessage,
   onPlayAgain,
 }: SessionCompleteProps) {
@@ -66,11 +103,19 @@ export default function SessionComplete({
             didSubmit: r.didSubmit,
             region: r.region ?? round.region ?? null,
           }))
-          .filter((r) => r.didSubmit)
       );
     }
     return allRoundResults ?? [];
   }, [isAsyncResults, snapshot.rounds, allRoundResults]);
+
+  const submittedAnyByPlayer = useMemo(() => {
+    const map = new Map<string, boolean>();
+    if (!isAsyncResults) return map;
+    for (const r of effectiveResults) {
+      if (r.didSubmit && r.playerId) map.set(r.playerId, true);
+    }
+    return map;
+  }, [isAsyncResults, effectiveResults]);
 
   // Scroll final results to top once the session reaches completion.
   useEffect(() => {
@@ -181,7 +226,15 @@ export default function SessionComplete({
   return (
     <section className={styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
-        if (!playerId || effectiveResults.length === 0) return null;
+        if (!playerId) {
+          return <ErrorState message={tGame('not_authenticated')} />;
+        }
+        if (!isAsyncResults && allRoundResultsLoading) {
+          return <LoadingSpinner />;
+        }
+        if (!isAsyncResults && allRoundResultsError) {
+          return <ErrorState message={allRoundResultsError} onRetry={onRetryAllRoundResults} retryLabel={tGame('retry')} />;
+        }
         const myStats = computePlayerStats(playerId);
         const overallAccuracy = myStats?.avgAccuracy ?? 0;
         const overallXP = myStats?.totalScore ?? 0;
@@ -210,12 +263,17 @@ export default function SessionComplete({
               const winners = roundWinners.get(i);
               if (winners?.includes(p.playerId)) wonRounds.push(i);
             }
+            const hasResults = stats != null;
+            const hasSubmittedAny = isAsyncResults
+              ? (submittedAnyByPlayer.get(p.playerId) ?? false)
+              : (hasResults || effectiveResults.length === 0);
             return {
               playerId: p.playerId,
               displayName: p.displayName,
               totalScore: stats?.totalScore ?? 0,
               avgAccuracy: stats?.avgAccuracy ?? 0,
-              hasPlayed: stats != null,
+              hasPlayed: hasResults || effectiveResults.length === 0,
+              hasSubmittedAny,
               wonRounds,
               roundStatus: p.roundStatus,
               currentRoundIndex: p.currentRoundIndex,
@@ -229,6 +287,7 @@ export default function SessionComplete({
             totalScore: 0,
             avgAccuracy: 0,
             hasPlayed: false,
+            hasSubmittedAny: false,
             wonRounds: [] as number[],
             roundStatus: 'invited' as const,
             currentRoundIndex: null,
@@ -503,9 +562,7 @@ export default function SessionComplete({
                   const playerData = snapshot.players.find(p => p.playerId === player.playerId);
                   const displayName = player.displayName || playerLabel(snapshot.players, player.playerId);
                   const firstLetter = displayName ? displayName.charAt(0).toUpperCase() : "?";
-                  // Relax (async) player status. Sync (Rush) keeps hasPlayed-only behavior:
-                  // roundStatus/currentRoundIndex are undefined there per types.ts.
-                  let showAccuracy = player.hasPlayed;
+                  let showAccuracy = player.hasPlayed && player.hasSubmittedAny;
                   let statusLabel: string | null = null;
                   if (isAsyncResults) {
                     const rs = player.roundStatus;
@@ -515,9 +572,12 @@ export default function SessionComplete({
                     } else if (rs === 'playing') {
                       showAccuracy = false;
                       statusLabel = tGame('on_round', { current: (player.currentRoundIndex ?? 0) + 1, total: snapshot.config.totalRounds });
-                    } else if ((rs === 'joined' || rs === 'ready') && !player.hasPlayed) {
+                    } else if ((rs === 'joined' || rs === 'ready') && !player.hasSubmittedAny) {
                       showAccuracy = false;
                       statusLabel = tGame('not_started');
+                    } else if (rs === 'finished' && !player.hasSubmittedAny) {
+                      showAccuracy = false;
+                      statusLabel = tGame('no_guess');
                     }
                   }
                   return (

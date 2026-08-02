@@ -422,6 +422,17 @@ test.describe('Sync Compete Golden Path', () => {
 
       // ── S8: Assert SESSION_COMPLETE ──
       await assertBothSeeStatus('SESSION_COMPLETE', hostPage, guestPage, hostWS, guestWS);
+
+      // Session-complete section visible with real accuracy/score, not blank.
+      const hostSession = hostPage.getByTestId('session-complete-section').first();
+      const guestSession = guestPage.getByTestId('session-complete-section').first();
+      await expect(hostSession).toBeVisible({ timeout: 10000 });
+      await expect(guestSession).toBeVisible({ timeout: 10000 });
+      await expect(hostSession).toContainText('XP');
+      await expect(hostSession).toContainText('%');
+      await expect(guestSession).toContainText('XP');
+      await expect(guestSession).toContainText('%');
+
       // Play-again button visible
       await expect(hostPage.getByTestId('session-play-again-btn').first()).toBeVisible({
         timeout: 10000,

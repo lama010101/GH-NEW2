@@ -474,3 +474,46 @@ test('Relax golden path A0–A11', async () => {
     await browser.close();
   }
 });
+
+test('Async session-complete: one player finishes and sees session-complete-section', async ({ page }) => {
+  const user = HOST_USER;
+
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
+  await ensureLoggedIn(page, user);
+
+  const createRes = await page.request.post(`${BASE_URL}/api/compete/create`, {
+    data: {
+      displayName: user.displayName,
+      playerId: user.id,
+      mode: 'async',
+      totalRounds: 5,
+      roundTimerSec: 0,
+      resultsAutoAdvanceSec: 0,
+    },
+    timeout: NAV_TIMEOUT,
+  });
+  expect(createRes.ok(), `Create async game failed: ${createRes.status()}`).toBeTruthy();
+  const sessionData = await createRes.json();
+  const gameId = sessionData.gameId || sessionData.id;
+  expect(gameId, 'Create async game returned no gameId').toBeTruthy();
+
+  await page.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
+  await waitForSection(page, 'lobby-shell');
+  await page.getByTestId('lobby-ready-btn').first().click();
+  await waitForSection(page, 'round-active-section', { roundIndex: 0 });
+
+  const accessToken = await fetchAccessToken(user);
+  const errors: string[] = [];
+  const ws = createWS(gameId, user, accessToken, errors, []);
+  await ws.connect();
+  await ws.waitForState((s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === 0, STATE_TIMEOUT, true);
+
+  await playRounds(ws, 0, 4);
+  expect(ws.getLastSnapshot()!.status, 'Player finished all rounds').toBe('SESSION_COMPLETE');
+
+  const sessionComplete = page.getByTestId('session-complete-section').first();
+  await expect(sessionComplete).toBeVisible({ timeout: STATE_TIMEOUT });
+  await expect(sessionComplete).toContainText('XP');
+  await expect(sessionComplete).toContainText('%');
+  ws.close();
+});

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import type { CompeteSessionSnapshot } from "@/core/types";
@@ -21,6 +21,8 @@ export default function DailyResultsPage() {
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [allRoundResults, setAllRoundResults] = useState<AllRoundResult[] | null>(null);
+  const [allRoundResultsLoading, setAllRoundResultsLoading] = useState<boolean>(true);
+  const [allRoundResultsError, setAllRoundResultsError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showNavModal, setShowNavModal] = useState(false);
   const [topbarAccuracy, setTopbarAccuracy] = useState("--");
@@ -56,24 +58,32 @@ export default function DailyResultsPage() {
   }, [gameId, playerId]);
 
   // Fetch all round results
-  useEffect(() => {
-    if (!gameId || !playerId || !snapshot || snapshot.status !== "SESSION_COMPLETE") return;
-    let cancelled = false;
-
-    ;(async () => {
-      try {
-        const response = await fetch(`/api/compete/${gameId}/all-results?playerId=${playerId}`);
-        if (!response.ok) return;
-        const data = await response.json();
-        if (cancelled) return;
-        setAllRoundResults(data.results ?? []);
-      } catch (err) {
-        console.error("[DailyResultsPage] Failed to fetch all round results:", err);
+  const refetchAllRoundResults = useCallback(async () => {
+    if (!gameId || !playerId) return;
+    setAllRoundResultsLoading(true);
+    setAllRoundResultsError(null);
+    try {
+      const response = await fetch(`/api/compete/${gameId}/all-results?playerId=${playerId}`);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || t('failed_load_session'));
       }
-    })();
+      const data = await response.json();
+      setAllRoundResults(data.results ?? []);
+    } catch (err) {
+      setAllRoundResultsError(err instanceof Error ? err.message : t('failed_load_session'));
+      setAllRoundResults(null);
+    } finally {
+      setAllRoundResultsLoading(false);
+    }
+  }, [gameId, playerId, t]);
 
-    return () => { cancelled = true };
-  }, [gameId, playerId, snapshot?.status]);
+  const sessionStatus = snapshot?.status;
+  useEffect(() => {
+    if (!gameId || !playerId || sessionStatus !== "SESSION_COMPLETE") return;
+    if (allRoundResults !== null) return;
+    refetchAllRoundResults();
+  }, [gameId, playerId, sessionStatus, allRoundResults, refetchAllRoundResults]);
 
   // TopBar: fetch viewer stats + profile
   useEffect(() => {
@@ -150,6 +160,9 @@ export default function DailyResultsPage() {
             snapshot={snapshot}
             playerId={playerId}
             allRoundResults={allRoundResults}
+            allRoundResultsLoading={allRoundResultsLoading}
+            allRoundResultsError={allRoundResultsError}
+            onRetryAllRoundResults={refetchAllRoundResults}
             onPlayAgain={() => router.push('/home')}
             sendMessage={() => router.push('/home')}
           />

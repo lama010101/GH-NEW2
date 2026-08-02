@@ -369,6 +369,9 @@ test.describe.serial('Practice golden path', () => {
     await waitForTestId(page, 'session-complete-section', LONG_TIMEOUT);
     const sessionComplete = page.getByTestId('session-complete-section').first();
     await expect(sessionComplete).toHaveAttribute('data-status', 'SESSION_COMPLETE');
+    await expect(sessionComplete).toBeVisible();
+    await expect(sessionComplete).toContainText('XP');
+    await expect(sessionComplete).toContainText('%');
     console.log('[PRACTICE-GOLDEN] P2 passed: full 5-round solo flow');
 
     // P3 — Play Again (and P8 — settings persistence in the same flow).
