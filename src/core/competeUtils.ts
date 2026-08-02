@@ -22,6 +22,14 @@ export function playerLabel(players: SessionPlayer[], playerId: string): string 
   return shortId(playerId);
 }
 
+export function hasSubmitted(
+  result: { didSubmit?: boolean; guessYear?: number | null } | null | undefined
+): boolean {
+  if (!result) return false;
+  if (result.didSubmit === true) return true;
+  return result.guessYear !== null && result.guessYear !== undefined;
+}
+
 export function computeTimeRemaining(roundEndsAt: string | null): number | null {
   if (!roundEndsAt) return null;
   const endMs = new Date(roundEndsAt).getTime();
