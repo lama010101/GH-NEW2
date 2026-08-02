@@ -468,10 +468,13 @@ test.describe('Sync Compete Golden Path', () => {
       const newHostWS = await createReadonlyWS(newGameId, TEST_USERS[0], errors, playerSubmittedEvents);
       const newGuestWS = await createReadonlyWS(newGameId, TEST_USERS[1], errors, playerSubmittedEvents);
 
-      // Wait for LOBBY on both new WS clients
+      // Wait for LOBBY on both new WS clients. With cookie-injection auth the
+      // test reaches this point before the guest's page-level socket has finished
+      // joining the new game, so the read-only WS snapshot can temporarily show
+      // 1 player. Poll until we see 2 players.
       await Promise.all([
-        newHostWS.waitForState((s) => s.status === 'LOBBY', STATE_TIMEOUT),
-        newGuestWS.waitForState((s) => s.status === 'LOBBY', STATE_TIMEOUT),
+        newHostWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 2, STATE_TIMEOUT),
+        newGuestWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 2, STATE_TIMEOUT),
       ]);
 
       // ── S9: Assert new LOBBY with different gameId, 2 players, both ready=false ──
