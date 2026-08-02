@@ -30,7 +30,7 @@ export async function GET(request: Request) {
         `SELECT player_id, avg_accuracy, total_xp
          FROM leaderboard_daily
          WHERE date = $1
-         ORDER BY avg_accuracy DESC, total_xp DESC
+         ORDER BY avg_accuracy DESC, best_round_accuracy DESC NULLS LAST
          LIMIT 50`,
         [targetDate]
       );
@@ -38,21 +38,23 @@ export async function GET(request: Request) {
       // Requesting player's own rank
       const ownRow = await dbPool.query<{
         avg_accuracy: number;
+        best_round_accuracy: number | null;
         total_xp: number;
       }>(
-        `SELECT avg_accuracy, total_xp FROM leaderboard_daily
+        `SELECT avg_accuracy, best_round_accuracy, total_xp FROM leaderboard_daily
          WHERE date = $1 AND player_id = $2`,
         [targetDate, user.id]
       );
 
       let ownRank = null;
       if (ownRow.rows.length > 0) {
+        const own = ownRow.rows[0];
         const rankResult = await dbPool.query<{ rank: number }>(
           `SELECT COUNT(*)::int + 1 AS rank
            FROM leaderboard_daily
            WHERE date = $1
-             AND (avg_accuracy, total_xp) > ($2, $3)`,
-          [targetDate, ownRow.rows[0].avg_accuracy, ownRow.rows[0].total_xp]
+             AND (avg_accuracy, COALESCE(best_round_accuracy, -1.0)) > ($2, COALESCE($3, -1.0))`,
+          [targetDate, own.avg_accuracy, own.best_round_accuracy]
         );
         ownRank = rankResult.rows[0]?.rank ?? null;
       }
