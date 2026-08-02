@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { getDbPool } from "@/server/db";
+import { deriveAsyncPlayerHomeState } from "@/server/sessionCore";
 
 export const dynamic = "force-dynamic";
 
@@ -77,54 +78,60 @@ export async function GET(_request: NextRequest) {
 
       const opponent = opponentResult.rows[0];
 
-      // Step 3: Get latest event to determine status
-      const latestEventResult = await pool.query<{
-        event_type: string;
-      }>(
-        `SELECT event_type FROM round_events
-         WHERE game_id = $1
-         ORDER BY id DESC
-         LIMIT 1`,
-        [gameId]
-      );
-
-      const latestEventType = latestEventResult.rows[0]?.event_type ?? null;
-
-      // Step 4: Derive current round index
-      const roundCountResult = await pool.query<{ count: string }>(
-        `SELECT COUNT(DISTINCT round_index) AS count FROM round_events
-         WHERE game_id = $1 AND event_type = 'ROUND_STARTED'`,
-        [gameId]
-      );
-      const roundStartedCount = parseInt(roundCountResult.rows[0]?.count ?? "0", 10);
-      const currentRoundIndex = roundStartedCount > 0 ? roundStartedCount - 1 : 0;
-
-      // Step 5: Map event_type to frontend status
+      // Step 3: Derive current round index and status
       let status: "your_turn" | "waiting" | "completed";
+      let currentRoundIndex = 0;
 
-      if (latestEventType === "SESSION_COMPLETE") {
-        status = "completed";
-      } else if (
-        latestEventType === null ||
-        latestEventType === "SESSION_CREATED"
-      ) {
-        status = "waiting";
-      } else if (
-        latestEventType === "ROUND_STARTED" ||
-        latestEventType === "GUESS_SUBMITTED" ||
-        latestEventType === "PRESSURE_APPLIED"
-      ) {
-        // Check if current player has submitted for this round
-        const commitResult = await pool.query<{ player_id: string }>(
-          `SELECT player_id FROM round_commits
-           WHERE game_id = $1 AND player_id = $2 AND round_index = $3
-           LIMIT 1`,
-          [gameId, playerId, currentRoundIndex]
-        );
-        status = commitResult.rows.length === 0 ? "your_turn" : "waiting";
+      if (session.mode === "async") {
+        const homeState = await deriveAsyncPlayerHomeState(gameId, playerId, pool);
+        status = homeState.status;
+        currentRoundIndex = homeState.currentRoundIndex;
       } else {
-        // ROUND_COMPLETE, READY_NEXT, RESULT_STARTED
-        status = "waiting";
+        // Sync path: existing logic unchanged.
+        const latestEventResult = await pool.query<{
+          event_type: string;
+        }>(
+          `SELECT event_type FROM round_events
+           WHERE game_id = $1
+           ORDER BY id DESC
+           LIMIT 1`,
+          [gameId]
+        );
+
+        const latestEventType = latestEventResult.rows[0]?.event_type ?? null;
+
+        const roundCountResult = await pool.query<{ count: string }>(
+          `SELECT COUNT(DISTINCT round_index) AS count FROM round_events
+           WHERE game_id = $1 AND event_type = 'ROUND_STARTED'`,
+          [gameId]
+        );
+        const roundStartedCount = parseInt(roundCountResult.rows[0]?.count ?? "0", 10);
+        currentRoundIndex = roundStartedCount > 0 ? roundStartedCount - 1 : 0;
+
+        if (latestEventType === "SESSION_COMPLETE") {
+          status = "completed";
+        } else if (
+          latestEventType === null ||
+          latestEventType === "SESSION_CREATED"
+        ) {
+          status = "waiting";
+        } else if (
+          latestEventType === "ROUND_STARTED" ||
+          latestEventType === "GUESS_SUBMITTED" ||
+          latestEventType === "PRESSURE_APPLIED"
+        ) {
+          // Check if current player has submitted for this round
+          const commitResult = await pool.query<{ player_id: string }>(
+            `SELECT player_id FROM round_commits
+             WHERE game_id = $1 AND player_id = $2 AND round_index = $3
+             LIMIT 1`,
+            [gameId, playerId, currentRoundIndex]
+          );
+          status = commitResult.rows.length === 0 ? "your_turn" : "waiting";
+        } else {
+          // ROUND_COMPLETE, READY_NEXT, RESULT_STARTED
+          status = "waiting";
+        }
       }
 
       // Step 6: Fetch scores and accuracy

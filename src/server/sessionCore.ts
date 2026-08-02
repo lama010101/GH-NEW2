@@ -361,6 +361,60 @@ export async function loadSessionPlayerRows(gameId: string, executor: DbExecutor
   return result.rows;
 }
 
+export type AsyncPlayerHomeState = {
+  status: "your_turn" | "waiting" | "completed";
+  currentRoundIndex: number;
+};
+
+export async function deriveAsyncPlayerHomeState(
+  gameId: string,
+  playerId: string,
+  executor: DbExecutor
+): Promise<AsyncPlayerHomeState> {
+  const eventResult = await executor.query<{
+    id: number;
+    round_index: number;
+    event_type: string;
+    payload: Record<string, unknown>;
+    occurred_at: Date;
+    phase_ends_at: Date | null;
+  }>(
+    `SELECT id, round_index, event_type, payload, occurred_at, phase_ends_at
+     FROM player_round_events
+     WHERE game_id = $1 AND player_id = $2
+     ORDER BY id ASC`,
+    [gameId, playerId]
+  );
+
+  const playerEvents: PlayerRoundEvent[] = eventResult.rows.map((row) => ({
+    id: row.id,
+    roundIndex: row.round_index,
+    eventType: row.event_type,
+    payload: row.payload,
+    createdAt: row.occurred_at.toISOString(),
+    phaseEndsAt: row.phase_ends_at ? row.phase_ends_at.toISOString() : null,
+  }));
+
+  const state = derivePlayerStateFromEventStream(playerEvents);
+
+  const sessionResult = await executor.query<{ session_deadline: Date | null }>(
+    `SELECT session_deadline FROM sessions WHERE game_id = $1`,
+    [gameId]
+  );
+  const sessionDeadline = sessionResult.rows[0]?.session_deadline ?? null;
+  const deadlinePassed = sessionDeadline !== null && sessionDeadline.getTime() < Date.now();
+
+  const isCompleted =
+    state.currentPhase === "PLAYER_SESSION_COMPLETE" ||
+    state.currentPhase === "SESSION_COMPLETE" ||
+    deadlinePassed;
+
+  return {
+    status: isCompleted ? "completed" : "your_turn",
+    currentRoundIndex: state.currentRound,
+  };
+}
+
 // NOTE: deriveSessionStatus REMOVED - Shadow phase derivation eliminated.
 // Phase is now derived EXCLUSIVELY from round_events via deriveStateFromEventStream().
 //
