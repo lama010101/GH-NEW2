@@ -61,7 +61,7 @@ export async function GET() {
         `SELECT COUNT(*)::int + 1 AS rank
          FROM leaderboard_daily
          WHERE date = $1
-           AND (avg_accuracy, COALESCE(best_round_accuracy, -1)) > ($2, COALESCE($3, -1))`,
+           AND (avg_accuracy, COALESCE(best_round_accuracy, -1.0)) > ($2, COALESCE($3, -1.0))`,
         [todayIso, row.avg_accuracy, row.best_round_accuracy]
       );
       rank = rankResult.rows[0]?.rank ?? null;
