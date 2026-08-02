@@ -164,7 +164,7 @@ export async function GET(request: Request) {
               avg_accuracy,
               total_xp,
               completed_at,
-              RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
+              RANK() OVER (ORDER BY avg_accuracy DESC, best_round_accuracy DESC NULLS LAST) AS rank
             FROM leaderboard_daily
             WHERE date = $3
           ),
