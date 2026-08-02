@@ -105,7 +105,6 @@ beforeEach(async () => {
   // Set up env vars that middleware reads.
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-  process.env.ADMIN_BYPASS_TOKEN = undefined;
 
   // Default: getUser returns no user.
   const createServerClient = await getMockCreateServerClient();
@@ -219,7 +218,7 @@ describe("middleware redirect logic — KC-007", () => {
 
       expect(redirectCalls).toHaveLength(1);
       expect(redirectCalls[0].url).toContain("/home");
-      expect(redirectCalls[0].status).toBe(302);
+      expect(redirectCalls[0].status).toBe(307);
     });
   });
 
@@ -344,35 +343,32 @@ describe("middleware redirect logic — KC-007", () => {
     });
   });
 
-  describe("admin bypass", () => {
-    it("redirects to /home when valid admin bypass token is provided", async () => {
+  describe("root path unconditional redirect", () => {
+    it("redirects to /home for an unauthenticated visitor", async () => {
       const middleware = await loadMiddleware();
-      process.env.ADMIN_BYPASS_TOKEN = "secret-admin-token";
+
+      const req = createMockRequest("/");
+      await middleware(req);
+
+      expect(redirectCalls).toHaveLength(1);
+      expect(redirectCalls[0].url).toContain("/home");
+      expect(redirectCalls[0].status).toBe(307);
+    });
+
+    it("redirects to /home even with a stale admin query param", async () => {
+      const middleware = await loadMiddleware();
 
       const req = createMockRequest("/", {
-        searchParams: { admin: "secret-admin-token" },
+        searchParams: { admin: "any-token" },
       });
       await middleware(req);
 
       expect(redirectCalls).toHaveLength(1);
       expect(redirectCalls[0].url).toContain("/home");
+      expect(redirectCalls[0].status).toBe(307);
     });
 
-    it("does not redirect when admin param is wrong", async () => {
-      const middleware = await loadMiddleware();
-      process.env.ADMIN_BYPASS_TOKEN = "secret-admin-token";
-
-      const req = createMockRequest("/", {
-        searchParams: { admin: "wrong-token" },
-      });
-      await middleware(req);
-
-      // Should fall through to normal landing page (no redirect for
-      // unauthenticated user with wrong admin token).
-      expect(redirectCalls).toHaveLength(0);
-    });
-
-    it("redirects to /home when gh_admin_bypass cookie is set", async () => {
+    it("redirects to /home even with a stale gh_admin_bypass cookie", async () => {
       const middleware = await loadMiddleware();
 
       const req = createMockRequest("/", {
@@ -382,6 +378,7 @@ describe("middleware redirect logic — KC-007", () => {
 
       expect(redirectCalls).toHaveLength(1);
       expect(redirectCalls[0].url).toContain("/home");
+      expect(redirectCalls[0].status).toBe(307);
     });
   });
 
