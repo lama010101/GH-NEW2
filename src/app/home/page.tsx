@@ -599,6 +599,7 @@ function ModeCard({
             <button
               type="button"
               className={styles.playPill}
+              data-testid={mode === 'practice' ? 'home-practice-play-btn' : undefined}
               onClick={handlePlay}
               disabled={navigating || (mode === 'practice' && practiceLoading)}
               aria-label={t('home.play_mode_aria', { mode: title })}

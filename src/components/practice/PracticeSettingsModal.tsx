@@ -345,7 +345,7 @@ export function PracticeSettingsModal({
           </div>
         </div>
 
-        <button type="button" className={modalStyles.startBtn} onClick={handleStart} disabled={busy || starting}>
+        <button type="button" className={modalStyles.startBtn} data-testid="practice-settings-start-btn" onClick={handleStart} disabled={busy || starting}>
           {starting && <span className={modalStyles.startBtnSpinner} aria-hidden="true" />}
           {t("home.practice_start")}
         </button>

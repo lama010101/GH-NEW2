@@ -31,10 +31,10 @@ export function PracticeResumeModal({ isOpen, onClose, onResume, onCreateNew }: 
         </div>
         <p className={styles.message}>You have an unfinished Practice game. What would you like to do?</p>
         <div className={styles.actions}>
-          <button type="button" className={`${modalStyles.startBtn} ${styles.resumeBtn}`} onClick={onResume}>
+          <button type="button" className={`${modalStyles.startBtn} ${styles.resumeBtn}`} data-testid="practice-resume-btn" onClick={onResume}>
             Resume game in progress
           </button>
-          <button type="button" className={`${modalStyles.startBtn} ${styles.newBtn}`} onClick={onCreateNew}>
+          <button type="button" className={`${modalStyles.startBtn} ${styles.newBtn}`} data-testid="practice-new-game-btn" onClick={onCreateNew}>
             Create new game
           </button>
         </div>
