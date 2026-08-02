@@ -4321,14 +4321,17 @@ async function dailyGameEndTransaction(
   }
 
   // Group by player_id (solo — exactly one, but follow the existing pattern)
-  const playerMap = new Map<string, { total_xp: number; accuracy_sum: number; round_count: number }>();
+  const playerMap = new Map<string, { total_xp: number; accuracy_sum: number; round_count: number; best_round_accuracy: number }>();
   for (const row of roundResults.rows) {
     const xp = row.location_score + row.time_score;
-    const accuracy = (row.location_score + row.time_score) / 2;
-    const entry = playerMap.get(row.player_id) ?? { total_xp: 0, accuracy_sum: 0, round_count: 0 };
+    const accuracy = Math.round(((row.location_score + row.time_score) / 2) * 100) / 100;
+    const entry = playerMap.get(row.player_id) ?? { total_xp: 0, accuracy_sum: 0, round_count: 0, best_round_accuracy: 0 };
     entry.total_xp += xp;
     entry.accuracy_sum += accuracy;
     entry.round_count += 1;
+    if (accuracy > entry.best_round_accuracy) {
+      entry.best_round_accuracy = accuracy;
+    }
     playerMap.set(row.player_id, entry);
   }
 
@@ -4339,10 +4342,10 @@ async function dailyGameEndTransaction(
 
     // Step 1: leaderboard_daily INSERT (date=challengeDate) ON CONFLICT DO NOTHING
     const insertResult = await client.query(
-      `INSERT INTO leaderboard_daily (date, player_id, avg_accuracy, total_xp, completed_at)
-       VALUES ($1, $2, $3, $4, now())
+      `INSERT INTO leaderboard_daily (date, player_id, avg_accuracy, total_xp, best_round_accuracy, completed_at)
+       VALUES ($1, $2, $3, $4, $5, now())
        ON CONFLICT (date, player_id) DO NOTHING`,
-      [challengeDate, playerId, avgAccuracy, totalXp]
+      [challengeDate, playerId, avgAccuracy, totalXp, data.best_round_accuracy]
     );
 
     // Step 2: IF rows_inserted = 1 → leaderboard_daily_alltime UPSERT
@@ -4580,70 +4583,6 @@ async function updatePlayerGlobalStats(
     }
     console.error('[updatePlayerGlobalStats]', error);
     // Do NOT throw — stats write failure must not crash the session
-  }
-}
-
-async function updateLeaderboardDaily(gameId: string, mode: string): Promise<void> {
-  // Only runs for daily mode
-  if (mode !== 'daily') return;
-
-  try {
-    // Fetch all round_results for this game grouped by player
-    const roundResults = await dbPool.query<{
-      player_id: string;
-      location_score: number;
-      time_score: number;
-    }>(
-      `SELECT player_id, location_score, time_score
-       FROM round_results
-       WHERE game_id = $1`,
-      [gameId]
-    );
-
-    // Group by player_id
-    const playerMap = new Map<string, { total_xp: number; accuracy_sum: number; round_count: number }>();
-    for (const row of roundResults.rows) {
-      const xp = row.location_score + row.time_score;
-      const accuracy = (row.location_score + row.time_score) / 2;
-      const entry = playerMap.get(row.player_id) ?? { total_xp: 0, accuracy_sum: 0, round_count: 0 };
-      entry.total_xp += xp;
-      entry.accuracy_sum += accuracy;
-      entry.round_count += 1;
-      playerMap.set(row.player_id, entry);
-    }
-
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-
-    for (const [playerId, data] of playerMap.entries()) {
-      if (data.round_count === 0) continue;
-      const avgAccuracy = data.accuracy_sum / data.round_count;
-      const totalXp = Math.min(data.total_xp, 1000);
-
-      // Step 1: Insert today's record (no-op on duplicate — one attempt per day)
-      const insertResult = await dbPool.query(
-        `INSERT INTO leaderboard_daily (date, player_id, avg_accuracy, total_xp, completed_at)
-         VALUES ($1, $2, $3, $4, now())
-         ON CONFLICT (date, player_id) DO NOTHING`,
-        [today, playerId, avgAccuracy, totalXp]
-      );
-
-      // Step 2: Only update all-time if today's insert succeeded (rowCount === 1)
-      if (((insertResult as unknown as { rowCount: number | null }).rowCount ?? 0) === 1) {
-        await dbPool.query(
-          `INSERT INTO leaderboard_daily_alltime (player_id, games_played, avg_accuracy, total_xp, updated_at)
-           VALUES ($1, 1, $2, $3, now())
-           ON CONFLICT (player_id) DO UPDATE SET
-             avg_accuracy = (leaderboard_daily_alltime.avg_accuracy * leaderboard_daily_alltime.games_played + EXCLUDED.avg_accuracy) / (leaderboard_daily_alltime.games_played + 1),
-             total_xp     = leaderboard_daily_alltime.total_xp + EXCLUDED.total_xp,
-             games_played = leaderboard_daily_alltime.games_played + 1,
-             updated_at   = now()`,
-          [playerId, avgAccuracy, totalXp]
-        );
-      }
-    }
-  } catch (error) {
-    console.error('[updateLeaderboardDaily]', error);
-    // Do NOT throw — leaderboard write failure must not crash the session
   }
 }
 
@@ -4892,9 +4831,6 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     if (session!.mode !== "daily") {
       updatePlayerGlobalStats(gameId, session!.mode as "practice" | "sync" | "async").catch((err) =>
         console.error('[advanceRound] updatePlayerGlobalStats fire-and-forget error:', err)
-      );
-      updateLeaderboardDaily(gameId, session!.mode).catch((err) =>
-        console.error('[advanceRound] updateLeaderboardDaily fire-and-forget error:', err)
       );
     }
     updateLeaderboardLevelUp(gameId, session!.mode).catch((err) =>

@@ -47,9 +47,10 @@ export async function GET() {
     // completed or expired — build result payload from leaderboard_daily
     const leaderboard = await dbPool.query<{
       avg_accuracy: number;
+      best_round_accuracy: number | null;
       total_xp: number;
     }>(
-      `SELECT avg_accuracy, total_xp FROM leaderboard_daily WHERE date = $1 AND player_id = $2`,
+      `SELECT avg_accuracy, best_round_accuracy, total_xp FROM leaderboard_daily WHERE date = $1 AND player_id = $2`,
       [todayIso, playerId]
     );
 
@@ -60,8 +61,8 @@ export async function GET() {
         `SELECT COUNT(*)::int + 1 AS rank
          FROM leaderboard_daily
          WHERE date = $1
-           AND (avg_accuracy, total_xp) > ($2, $3)`,
-        [todayIso, row.avg_accuracy, row.total_xp]
+           AND (avg_accuracy, COALESCE(best_round_accuracy, -1.0)) > ($2, COALESCE($3, -1.0))`,
+        [todayIso, row.avg_accuracy, row.best_round_accuracy]
       );
       rank = rankResult.rows[0]?.rank ?? null;
     }
