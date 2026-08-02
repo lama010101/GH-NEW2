@@ -95,6 +95,57 @@ function leaderboardRow(page: Page, name: string) {
   return page.locator('[class*="lbRow"]').filter({ hasText: name });
 }
 
+async function dismissWelcomeModal(page: Page) {
+  const letsPlay = page.getByRole('button', { name: "Let's play!" });
+  try {
+    await letsPlay.click({ timeout: 5000 });
+  } catch {
+    // Modal not present; continue.
+  }
+}
+
+async function openYourTurnTab(page: Page) {
+  await page.getByRole('button', { name: /YOUR TURN/i }).click();
+}
+
+async function openCompletedTab(page: Page) {
+  await page.getByRole('button', { name: /COMPLETED/i }).click();
+}
+
+async function fetchActiveGames(page: Page) {
+  const res = await page.request.get(`${BASE_URL}/api/compete/active-games`);
+  expect(res.ok(), 'active-games API failed').toBeTruthy();
+  const data = await res.json();
+  return (data.games ?? []) as Array<{
+    id: string;
+    game_id: string;
+    opponent_name: string;
+    round_current: number;
+    round_total: number;
+    status: 'your_turn' | 'waiting' | 'completed';
+    mode: 'sync' | 'async';
+  }>;
+}
+
+async function expectCompeteCardGame(page: Page, gameId: string, expectedRound: number) {
+  const games = await fetchActiveGames(page);
+  const game = games.find((g) => g.game_id === gameId);
+  expect(game, `game ${gameId} not found in active-games`).toBeTruthy();
+  expect(game!.round_current, 'round_current matches per-player state').toBe(expectedRound);
+  expect(game!.status, 'status is your_turn').toBe('your_turn');
+  // Confirm the row is visible under the Your Turn tab.
+  await expect(page.getByText(new RegExp(`Round ${expectedRound} / 5`)).first()).toBeVisible({ timeout: 10000 });
+}
+
+async function expectCompletedGame(page: Page, gameId: string) {
+  const games = await fetchActiveGames(page);
+  const game = games.find((g) => g.game_id === gameId);
+  expect(game, `game ${gameId} not found in active-games`).toBeTruthy();
+  expect(game!.status, 'status is completed').toBe('completed');
+  // Confirm the completed row is visible under the Completed tab.
+  await expect(page.locator('[class*="gameRow"]').filter({ hasText: new RegExp(game!.opponent_name) }).first()).toBeVisible({ timeout: 10000 });
+}
+
 function sendStartPlayer(ws: CompeteWSClient, playerId: string) {
   (ws as any)['send']({ type: 'START_PLAYER', playerId });
 }
@@ -120,7 +171,7 @@ async function playRounds(ws: CompeteWSClient, startRound: number, lastRound: nu
   }
 }
 
-test('Relax golden path A0–A11', async () => {
+test('Relax golden path A0–A13', async () => {
   const errors: string[] = [];
   const playerSubmittedEvents: { playerId: string; playerName: string }[] = [];
 
@@ -293,6 +344,33 @@ test('Relax golden path A0–A11', async () => {
     console.log('[RELAX-GOLDEN] A3 passed: guestB independently started (no pull-in)');
 
     // ═════════════════════════════════════════════════════════════════
+    // A12 — Home Compete card round_current matches per-player state
+    // Host is on round 1 (currentRoundIndex = 1, round_current = 2);
+    // Guest B is on round 0 (currentRoundIndex = 0, round_current = 1).
+    // ═════════════════════════════════════════════════════════════════
+    await Promise.all([
+      hostPage.goto(`${BASE_URL}/home`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+      guestBPage.goto(`${BASE_URL}/home`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+    ]);
+    await dismissWelcomeModal(hostPage);
+    await dismissWelcomeModal(guestBPage);
+    await openYourTurnTab(hostPage);
+    await openYourTurnTab(guestBPage);
+    await expectCompeteCardGame(hostPage, gameId, 2);
+    await expectCompeteCardGame(guestBPage, gameId, 1);
+    console.log('[RELAX-GOLDEN] A12 passed: home Compete card shows per-player round_current');
+
+    // Return to compete pages for subsequent assertions.
+    await Promise.all([
+      hostPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+      guestBPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+    ]);
+    await Promise.all([
+      waitForSection(hostPage, 'round-active-section', { roundIndex: 1 }),
+      waitForSection(guestBPage, 'round-active-section', { roundIndex: 0 }),
+    ]);
+
+    // ═════════════════════════════════════════════════════════════════
     // A4 — Double-start guard
     // ═════════════════════════════════════════════════════════════════
     const preDoubleStatus = hostWS.getLastSnapshot()!.status;
@@ -400,6 +478,19 @@ test('Relax golden path A0–A11', async () => {
     await expectRosterStatus(guestCPage, GUEST_B_USER.id, 'playing');
     await expectRosterStatus(guestCPage, GUEST_C_USER.id, 'joined');
     console.log('[RELAX-GOLDEN] A6 passed: finished/playing/joined simultaneously');
+
+    // ═════════════════════════════════════════════════════════════════
+    // A13 — Host completed game appears under Completed on /home
+    // ═════════════════════════════════════════════════════════════════
+    await hostPage.goto(`${BASE_URL}/home`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
+    await dismissWelcomeModal(hostPage);
+    await openCompletedTab(hostPage);
+    await expectCompletedGame(hostPage, gameId);
+    console.log('[RELAX-GOLDEN] A13 passed: host completed game appears under Completed');
+
+    // Return host page to compete session-complete view for A9.
+    await hostPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
+    await waitForSection(hostPage, 'session-complete-section');
 
     // ═════════════════════════════════════════════════════════════════
     // A7 — Late joiner after first player finished
