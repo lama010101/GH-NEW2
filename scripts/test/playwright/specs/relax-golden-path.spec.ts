@@ -143,7 +143,7 @@ async function expectCompletedGame(page: Page, gameId: string) {
   expect(game, `game ${gameId} not found in active-games`).toBeTruthy();
   expect(game!.status, 'status is completed').toBe('completed');
   // Confirm the completed row is visible under the Completed tab.
-  await expect(page.locator('[class*="gameRow"]').filter({ hasText: new RegExp(game!.opponent_name) })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('[class*="gameRow"]').filter({ hasText: new RegExp(game!.opponent_name) }).first()).toBeVisible({ timeout: 10000 });
 }
 
 function sendStartPlayer(ws: CompeteWSClient, playerId: string) {
