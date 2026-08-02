@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useIdentity } from "@/hooks/useIdentity";
@@ -14,7 +14,7 @@ export default function DailyEntryPage() {
   const tCommon = useTranslations("common");
   const { playerId, isLoading: identityLoading, error: identityError } = useIdentity();
   const [error, setError] = useState<string | null>(null);
-  const [starting, setStarting] = useState(false);
+  const startingRef = useRef(false);
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' });
 
@@ -54,10 +54,11 @@ export default function DailyEntryPage() {
   }, [identity.status])
 
   useEffect(() => {
-    if (identityLoading || identityError || !playerId || starting) return;
+    if (identityLoading || identityError || !playerId) return;
+    if (startingRef.current) return;
 
+    startingRef.current = true;
     let cancelled = false;
-    setStarting(true);
 
     (async () => {
       try {
@@ -98,14 +99,14 @@ export default function DailyEntryPage() {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : t("failed_start_practice"));
       } finally {
-        if (!cancelled) setStarting(false);
+        if (!cancelled) startingRef.current = false;
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [playerId, identityLoading, identityError, router, starting, t]);
+  }, [playerId, identityLoading, identityError, router, t]);
 
   return (
     <div className={pageStyles.loadingScreen}>
