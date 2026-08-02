@@ -153,7 +153,7 @@ function LeaderboardPageInner() {
       .select('player_id, avg_accuracy')
       .eq('date', today)
       .order('avg_accuracy', { ascending: false })
-      .order('total_xp', { ascending: false })
+      .order('best_round_accuracy', { ascending: false, nullsFirst: false })
       .limit(50);
     
     if (todayError) throw todayError;
@@ -357,7 +357,7 @@ function LeaderboardPageInner() {
           .select('player_id')
           .eq('date', today)
           .order('avg_accuracy', { ascending: false })
-          .order('total_xp', { ascending: false });
+          .order('best_round_accuracy', { ascending: false, nullsFirst: false });
         rows = (data || []) as { player_id: string }[];
       } else if (activeTab === 'daily' && activeSubTab === 'alltime') {
         const { data } = await supabaseBrowser
