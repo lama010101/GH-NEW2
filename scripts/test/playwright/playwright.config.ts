@@ -49,6 +49,13 @@ export default defineConfig({
       timeout: 300000, // 5-min cap — under heavy dev load, login + 2 rounds + play-again needs headroom
       retries: 0, // no retries — a slow gate gets bypassed; fix flakiness, don't retry past it
     },
+    {
+      name: 'relax-golden',
+      testMatch: /relax-golden-path\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+      timeout: 300000, // 5-min cap — manual burn-in; mirror sync-golden budget
+      retries: 1, // switch to retries:0 once wired to pre-push
+    },
   ],
   globalSetup: require.resolve('./fixtures/auth'),
   // globalSetup returns the teardown function; do not set a separate globalTeardown path
