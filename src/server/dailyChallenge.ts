@@ -78,7 +78,7 @@ export async function startDailyAttempt(
   // Finalize any stale in-progress attempts from past dates (D2 lazy finalization)
   const { finalizeDailyStaleAttempt, getTransactionClient } = await import("./sessionCore");
   const stale = await dbPool.query<{ game_id: string; date: string }>(
-    `SELECT game_id, date::text FROM daily_attempts WHERE player_id = $1 AND date < $2 AND status = 'in_progress'`,
+    `SELECT game_id, date::text FROM daily_attempts WHERE player_id = $1 AND date < $2 AND status = 'in_progress' ORDER BY date ASC`,
     [playerId, todayIso]
   );
   for (const staleRow of stale.rows) {
