@@ -152,7 +152,7 @@ async function globalSetup() {
       // from a prior run is reusable: recover its ID via a password-grant sign-in
       // (anon-key REST, same pattern as fetchAccessToken) and continue without
       // recreating — robust against the degraded listUsers API.
-      const alreadyRegistered = /already registered/i.test(error.message || '') || error.code === 'user_already_exists';
+      const alreadyRegistered = /already.*registered/i.test(error.message || '') || error.code === 'user_already_exists' || error.code === 'email_exists';
       if (alreadyRegistered) {
         console.log(`[PLAYWRIGHT SETUP] User ${user.email} already registered (listUsers likely degraded); recovering ID via password sign-in...`);
         const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
