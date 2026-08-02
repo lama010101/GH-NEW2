@@ -2,8 +2,8 @@ import { test, expect, chromium } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { TEST_USERS, fetchAccessToken } from '../fixtures/auth';
-import { ensureLoggedIn } from '../helpers/auth-ui';
+import { TEST_USERS } from '../fixtures/auth';
+import { authenticatePage, getSession } from '../helpers/auth-cookie';
 import { CompeteWSClient, CompeteSnapshot, SnapshotStatus } from '../orchestrator/websocketClient';
 import { observeState, assertStateMatches } from '../orchestrator/observer';
 import { submitGuessViaUI } from '../helpers/compete-ui';
@@ -149,7 +149,7 @@ test.describe('Sync Compete Golden Path', () => {
     errors: string[],
     playerSubmittedEvents: { playerId: string; playerName: string }[],
   ): Promise<CompeteWSClient> {
-    const accessToken = await fetchAccessToken(user);
+    const { accessToken } = await getSession(user);
     const client = new CompeteWSClient({
       partyKitHost: PARTYKIT_HOST,
       gameId,
@@ -191,22 +191,12 @@ test.describe('Sync Compete Golden Path', () => {
         guestCtx.newPage(),
       ]);
 
-      // Navigate to /login directly (triggers AuthModal without /home cold-compile)
+      // Authenticate both contexts directly via Supabase cookie injection.
+      // This avoids the flaky AuthModal UI login path while using the same
+      // access token the UI would set.
       await Promise.all([
-        hostPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
-        guestPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
-      ]);
-
-      // Login both in parallel (saves ~20s vs sequential)
-      await Promise.all([
-        ensureLoggedIn(hostPage, TEST_USERS[0]),
-        ensureLoggedIn(guestPage, TEST_USERS[1]),
-      ]);
-
-      // Wait for identity bootstrap after login
-      await Promise.all([
-        hostPage.waitForLoadState('domcontentloaded').catch(() => undefined),
-        guestPage.waitForLoadState('domcontentloaded').catch(() => undefined),
+        authenticatePage(hostPage, TEST_USERS[0]),
+        authenticatePage(guestPage, TEST_USERS[1]),
       ]);
 
       // ── S2: Host creates game via API ──
