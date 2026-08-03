@@ -45,7 +45,9 @@ async function ensureAiPlayer(pool: Awaited<ReturnType<typeof getDbPool>>): Prom
 function isTransientFailure(stderr: string, stdout: string): boolean {
   const output = `${stderr}\n${stdout}`;
 
-  // Explicit non-transient errors (do not retry these).
+  // Known non-transient errors. The default posture is "do not retry unless
+  // explicitly recognized as transient" — an unrecognized error pattern is
+  // surfaced immediately rather than retried.
   const nonTransientPatterns = [
     /OPENROUTER_API_KEY is missing/,
     /No validated event found/,
@@ -88,8 +90,11 @@ function isTransientFailure(stderr: string, stdout: string): boolean {
     }
   }
 
-  // Unknown failures: conservatively treat as transient for API calls.
-  return true;
+  // Unknown/unclassified failures: do NOT retry. An unrecognized error
+  // pattern may indicate a real bug in the worker rather than a transient
+  // API issue — retrying would mask it behind "retrying..." logs and waste
+  // API calls. Surface it as an error immediately for investigation.
+  return false;
 }
 
 function runWorker(eventId: string): Promise<WorkerResult> {
