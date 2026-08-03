@@ -799,6 +799,21 @@
   white-space: nowrap;
 }
 
+.mvpWinner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.mvpValue {
+  font-size: 11px; /* layout-constrained — do not tokenize */
+  font-weight: 700;
+  color: var(--gh-text-muted);
+  white-space: nowrap;
+  line-height: 1;
+}
+
 /* ── Dock spacer ── */
 
 .dockSpacer {
