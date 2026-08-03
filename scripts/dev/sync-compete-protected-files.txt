@@ -14,3 +14,11 @@ src/core/competeWebSocket.ts
 src/core/rules.ts
 src/core/identity.ts
 src/core/supabaseBrowser.ts
+scripts/test/playwright/specs/sync-compete-golden-path.spec.ts
+# Shared test infrastructure directly used by sync-compete-golden-path.spec.ts.
+# Changes here can silently break the golden-path gate, so run the gate when they change.
+scripts/test/playwright/helpers/auth-cookie.ts
+scripts/test/playwright/helpers/compete-ui.ts
+scripts/test/playwright/orchestrator/websocketClient.ts
+scripts/test/playwright/orchestrator/observer.ts
+scripts/test/playwright/fixtures/auth.ts
