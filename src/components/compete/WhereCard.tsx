@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from 'next-intl';
-import { getUsernameGradientStyle, haversineKm } from "@/core/competeUtils";
+import { getUsernameGradientStyle, haversineKm, hasSubmitted } from "@/core/competeUtils";
 import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
@@ -80,7 +80,7 @@ export default function WhereCard({
           <span className={styles.titleText}>{t('where')}</span>
         </div>
         {(() => {
-          if (myResult == null || !myResult.didSubmit) {
+          if (myResult == null || !hasSubmitted(myResult)) {
             return (
               <div className={styles.noSubmit}>
                 <span className={styles.noSubmitDash}>—</span>
@@ -136,7 +136,7 @@ export default function WhereCard({
       </div>
       )}
       {!bare && (() => {
-        if (myResult == null || !myResult.didSubmit) {
+        if (myResult == null || !hasSubmitted(myResult)) {
           return (
             <div className={styles.noGuessWrap}>
               <span className={styles.noGuessText}>{t('no_guess')}</span>
@@ -161,7 +161,7 @@ export default function WhereCard({
             guessLat={guessLat}
             guessLng={guessLng}
             playerGuesses={roundResults
-              ?.filter(r => r.didSubmit && r.guessLat != null && r.guessLng != null && r.playerId !== playerId)
+              ?.filter(r => hasSubmitted(r) && r.guessLat != null && r.guessLng != null && r.playerId !== playerId)
               .map(r => {
                 const player = snapshotPlayers.find(p => p.playerId === r.playerId);
                 return {
@@ -196,7 +196,7 @@ export default function WhereCard({
             const whereSorted = (roundResults ?? [])
               .slice()
               .sort((a, b) => b.locationScore - a.locationScore);
-            const myRank = whereSorted.findIndex(r => r.playerId === playerId) + 1;
+            const myRank = whereSorted.findIndex(r => r.playerId === playerId && hasSubmitted(r)) + 1;
             return myRank > 0 ? (
               <span className={styles.expandRank}>
                 #{myRank}
@@ -235,7 +235,7 @@ export default function WhereCard({
                     <span className={styles.lbDistance}>
                       {distanceKm != null ? t('km_away', { distance: formatDistance(distanceKm, distanceUnit) }) : "—"}
                     </span>
-                    {!r.didSubmit ? (
+                    {!hasSubmitted(r) ? (
                       <span className={styles.lbAccPill}>—</span>
                     ) : r.locationScore != null ? (
                       <span className={styles.lbAccPill}>
