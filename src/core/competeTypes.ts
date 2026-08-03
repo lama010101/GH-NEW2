@@ -26,4 +26,5 @@ export type AllRoundResult = {
   timeScore: number | null;
   didSubmit: boolean;
   region: string | null;
+  absent?: boolean;
 };

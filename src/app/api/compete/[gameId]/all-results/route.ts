@@ -34,6 +34,7 @@ export async function GET(
       location_lat: number | null;
       location_lng: number | null;
       region: string | null;
+      absent: boolean | null;
     }>(
       `SELECT
         rr.player_id,
@@ -47,6 +48,7 @@ export async function GET(
         rc.year_guess,
         rc.location_lat,
         rc.location_lng,
+        COALESCE(rc.absent, FALSE) AS absent,
         l.continent AS region
       FROM round_results rr
       LEFT JOIN round_commits rc
@@ -76,6 +78,7 @@ export async function GET(
       timeScore: row.time_score,
       didSubmit: row.year_guess !== null,
       region: row.region,
+      absent: row.absent ?? false,
     }));
 
     return NextResponse.json({ results });

@@ -463,7 +463,7 @@ type PlayerRoundState = {
   submittedRounds: Set<number>;
 };
 
-type RoundResultDetail = { score: number; locationScore: number; timeScore: number; guessYear: number | null; guessLat: number | null; guessLng: number | null; distanceKm: number | null; yearDiff: number | null; };
+type RoundResultDetail = { score: number; locationScore: number; timeScore: number; guessYear: number | null; guessLat: number | null; guessLng: number | null; distanceKm: number | null; yearDiff: number | null; absent: boolean; };
 
 type AsyncSnapshotBase = {
   session: SessionRow;
@@ -564,10 +564,12 @@ async function loadRoundResultScoresForAsync(
     location_lng: number | null;
     distance_km: number | null;
     year_diff: number | null;
+    absent: boolean | null;
   }>(
     `SELECT rr.player_id, rr.round_index, rr.score, rr.location_score, rr.time_score,
             rr.distance_km, rr.year_diff,
-            rc.year_guess, rc.location_lat, rc.location_lng
+            rc.year_guess, rc.location_lat, rc.location_lng,
+            COALESCE(rc.absent, FALSE) AS absent
      FROM round_results rr
      LEFT JOIN round_commits rc
        ON rc.game_id = rr.game_id
@@ -588,6 +590,7 @@ async function loadRoundResultScoresForAsync(
       guessLng: row.location_lng ?? null,
       distanceKm: row.distance_km ?? null,
       yearDiff: row.year_diff ?? null,
+      absent: row.absent ?? false,
     });
   }
   return map;
@@ -851,6 +854,7 @@ function buildAsyncPlayerSnapshotFromBase(
         distanceKm: row.distanceKm,
         yearDiff: row.yearDiff,
         region: revealAnswer ? ev?.region ?? null : null,
+        absent: row.absent,
         rank: 0,
         badges,
         nearMisses,
@@ -882,6 +886,7 @@ function buildAsyncPlayerSnapshotFromBase(
       distanceKm: null,
       yearDiff: null,
       region: null,
+      absent: false,
       rank: 0,
       badges: [],
       nearMisses: [],
