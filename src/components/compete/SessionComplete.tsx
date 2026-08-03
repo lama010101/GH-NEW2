@@ -17,6 +17,7 @@ import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import AccuracySuffix from "@/components/AccuracySuffix";
 import { getAccuracyColor } from "@/core/accuracyColor";
+import { Target, TrendingUp, type LucideIcon } from "lucide-react";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
@@ -314,16 +315,18 @@ export default function SessionComplete({
         type MvpCategory = {
           key: string;
           label: string;
-          icon: string;
+          icon: string | LucideIcon;
           getValue: (stats: MvpPlayer['stats']) => number;
         };
 
-        const mvpAwards = [
-          { key: 'overall', label: tGame('mvp_overall'), icon: '🏆', getValue: (s: MvpPlayer['stats']) => s.avgAccuracy },
+        const mvpCategories: MvpCategory[] = [
+          { key: 'overall', label: tGame('mvp_overall'), icon: Target, getValue: (s: MvpPlayer['stats']) => s.avgAccuracy },
           { key: 'year', label: tGame('mvp_year'), icon: '/badges/when.webp', getValue: (s: MvpPlayer['stats']) => s.avgYearAccuracy },
           { key: 'location', label: tGame('mvp_location'), icon: '/badges/where.webp', getValue: (s: MvpPlayer['stats']) => s.avgLocationAccuracy },
-          { key: 'consistency', label: tGame('mvp_consistency'), icon: '🏆', getValue: (s: MvpPlayer['stats']) => s.avgConsistency },
-        ]
+          { key: 'consistency', label: tGame('mvp_consistency'), icon: TrendingUp, getValue: (s: MvpPlayer['stats']) => s.avgConsistency },
+        ];
+
+        const mvpAwards = mvpCategories
           .map((cat) => {
             if (mvpPlayers.length === 0) return null;
             const sorted = [...mvpPlayers].sort((a, b) => {
@@ -624,25 +627,32 @@ export default function SessionComplete({
                   {mvpAwards.map((award) => (
                     <div key={award.key} className={styles.mvpRow}>
                       <span className={styles.mvpIcon}>
-                        {award.icon.startsWith('/') ? (
+                        {typeof award.icon === 'string' && award.icon.startsWith('/') ? (
                           <>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={award.icon} alt="" width={24} height={24} />
                           </>
-                        ) : (
+                        ) : typeof award.icon === 'string' ? (
                           award.icon
+                        ) : (
+                          <award.icon size={22} />
                         )}
                       </span>
                       <span className={styles.mvpLabel}>{award.label}</span>
                       <span className={styles.mvpNames}>
                         {award.winners.map((w, i) => (
-                          <span key={w.playerId}>
-                            <span className={`${styles.mvpName} ${w.isMe ? styles.mvpNameMe : ''}`}>
-                              {w.isMe ? tGame('mvp_you') : w.displayName}
+                          <span key={w.playerId} className={styles.mvpWinner}>
+                            <span>
+                              <span className={`${styles.mvpName} ${w.isMe ? styles.mvpNameMe : ''}`}>
+                                {w.isMe ? tGame('mvp_you') : w.displayName}
+                              </span>
+                              {i < award.winners.length - 1 && (
+                                <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
+                              )}
                             </span>
-                            {i < award.winners.length - 1 && (
-                              <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
-                            )}
+                            <span className={styles.mvpValue} style={{ color: getAccuracyColor(award.getValue(w.stats)) }}>
+                              {award.getValue(w.stats)}<AccuracySuffix />
+                            </span>
                           </span>
                         ))}
                       </span>
