@@ -2111,7 +2111,7 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
   return snapshot;
 }
 
-export async function setCompetePlayerReady(input: SetCompeteReadyInput): Promise<CompeteSessionSnapshot> {
+export async function setCompetePlayerReady(input: SetCompeteReadyInput): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   const gameId = input.gameId.trim();
   const playerId = input.playerId.trim();
 
@@ -2139,6 +2139,11 @@ export async function setCompetePlayerReady(input: SetCompeteReadyInput): Promis
   const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
   if (!snapshot) {
     throw new Error("Session not found");
+  }
+
+  if (snapshot.config?.mode === "async") {
+    const playerSnapshots = await buildAsyncPlayerSnapshotsForActivePlayers(gameId, dbPool);
+    return { ...snapshot, playerSnapshots };
   }
 
   return snapshot;
