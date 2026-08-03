@@ -2,8 +2,8 @@ import { test, expect, chromium } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { TEST_USERS, fetchAccessToken } from '../fixtures/auth';
-import { ensureLoggedIn } from '../helpers/auth-ui';
+import { TEST_USERS } from '../fixtures/auth';
+import { authenticatePage, getSession } from '../helpers/auth-cookie';
 import { CompeteWSClient, CompeteSnapshot, SnapshotStatus } from '../orchestrator/websocketClient';
 import { observeState, assertStateMatches } from '../orchestrator/observer';
 import { submitGuessViaUI } from '../helpers/compete-ui';
@@ -149,7 +149,7 @@ test.describe('Sync Compete Golden Path', () => {
     errors: string[],
     playerSubmittedEvents: { playerId: string; playerName: string }[],
   ): Promise<CompeteWSClient> {
-    const accessToken = await fetchAccessToken(user);
+    const { accessToken } = await getSession(user);
     const client = new CompeteWSClient({
       partyKitHost: PARTYKIT_HOST,
       gameId,
@@ -191,22 +191,12 @@ test.describe('Sync Compete Golden Path', () => {
         guestCtx.newPage(),
       ]);
 
-      // Navigate to /login directly (triggers AuthModal without /home cold-compile)
+      // Authenticate both contexts directly via Supabase cookie injection.
+      // This avoids the flaky AuthModal UI login path while using the same
+      // access token the UI would set.
       await Promise.all([
-        hostPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
-        guestPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
-      ]);
-
-      // Login both in parallel (saves ~20s vs sequential)
-      await Promise.all([
-        ensureLoggedIn(hostPage, TEST_USERS[0]),
-        ensureLoggedIn(guestPage, TEST_USERS[1]),
-      ]);
-
-      // Wait for identity bootstrap after login
-      await Promise.all([
-        hostPage.waitForLoadState('domcontentloaded').catch(() => undefined),
-        guestPage.waitForLoadState('domcontentloaded').catch(() => undefined),
+        authenticatePage(hostPage, TEST_USERS[0]),
+        authenticatePage(guestPage, TEST_USERS[1]),
       ]);
 
       // ── S2: Host creates game via API ──
@@ -244,10 +234,17 @@ test.describe('Sync Compete Golden Path', () => {
       const hostWS = await createReadonlyWS(gameId, TEST_USERS[0], errors, playerSubmittedEvents);
       const guestWS = await createReadonlyWS(gameId, TEST_USERS[1], errors, playerSubmittedEvents);
 
-      // Wait for LOBBY on both WS clients
+      // Wait for LOBBY on both WS clients. Cookie-injection auth reaches this
+      // point quickly, so poll until both players are in the snapshot.
       await Promise.all([
-        hostWS.waitForState((s) => s.status === 'LOBBY', STATE_TIMEOUT),
-        guestWS.waitForState((s) => s.status === 'LOBBY', STATE_TIMEOUT),
+        hostWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 2, STATE_TIMEOUT),
+        guestWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 2, STATE_TIMEOUT),
+      ]);
+
+      // Both DOMs show 2 players in roster before cross-assertion.
+      await Promise.all([
+        expect(hostPage.locator('[data-testid^="lobby-player-"]')).toHaveCount(2, { timeout: STATE_TIMEOUT }),
+        expect(guestPage.locator('[data-testid^="lobby-player-"]')).toHaveCount(2, { timeout: STATE_TIMEOUT }),
       ]);
 
       // ── S3: Assert LOBBY with 2 players ──
@@ -255,12 +252,6 @@ test.describe('Sync Compete Golden Path', () => {
       const lobbySnap = hostWS.getLastSnapshot()!;
       expect(lobbySnap.players.length, 'Lobby should have 2 players').toBe(2);
       expect(lobbySnap.allPlayersReady, 'Lobby: should not be all-ready yet').toBe(false);
-
-      // Both DOMs show 2 players in roster
-      const hostRosterCount = await hostPage.locator('[data-testid^="lobby-player-"]').count();
-      const guestRosterCount = await guestPage.locator('[data-testid^="lobby-player-"]').count();
-      expect(hostRosterCount, 'Host roster should show 2 players').toBe(2);
-      expect(guestRosterCount, 'Guest roster should show 2 players').toBe(2);
 
       // ── S4: Both ready → auto-start ──
       await Promise.all([
@@ -475,13 +466,31 @@ test.describe('Sync Compete Golden Path', () => {
         guestPage.locator('[data-testid="lobby-shell"]').first().waitFor({ state: 'visible', timeout: STATE_TIMEOUT }),
       ]);
 
+      // Deterministic wait for both page-level sockets to have joined the new
+      // lobby. Fast cookie auth lets the read-only WS observers connect early,
+      // so wait until the DOM on both pages reflects both players before
+      // attaching the observers and reading the authoritative snapshot.
+      await Promise.all([
+        expect(hostPage.locator('[data-testid^="lobby-player-"]')).toHaveCount(2, { timeout: 15000 }),
+        expect(guestPage.locator('[data-testid^="lobby-player-"]')).toHaveCount(2, { timeout: 15000 }),
+      ]);
+
       const newHostWS = await createReadonlyWS(newGameId, TEST_USERS[0], errors, playerSubmittedEvents);
       const newGuestWS = await createReadonlyWS(newGameId, TEST_USERS[1], errors, playerSubmittedEvents);
 
-      // Wait for LOBBY on both new WS clients
+      // Wait for LOBBY on both new WS clients. With cookie-injection auth the
+      // test reaches this point before the guest's page-level socket has finished
+      // joining the new game, so the read-only WS snapshot can temporarily show
+      // 1 player. Poll until we see 2 players.
       await Promise.all([
-        newHostWS.waitForState((s) => s.status === 'LOBBY', STATE_TIMEOUT),
-        newGuestWS.waitForState((s) => s.status === 'LOBBY', STATE_TIMEOUT),
+        newHostWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 2, STATE_TIMEOUT),
+        newGuestWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 2, STATE_TIMEOUT),
+      ]);
+
+      // Both DOMs show 2 players in new roster before cross-assertion.
+      await Promise.all([
+        expect(hostPage.locator('[data-testid^="lobby-player-"]')).toHaveCount(2, { timeout: STATE_TIMEOUT }),
+        expect(guestPage.locator('[data-testid^="lobby-player-"]')).toHaveCount(2, { timeout: STATE_TIMEOUT }),
       ]);
 
       // ── S9: Assert new LOBBY with different gameId, 2 players, both ready=false ──
@@ -494,12 +503,6 @@ test.describe('Sync Compete Golden Path', () => {
         newLobbySnap.players.every((p) => !p.ready),
         'New lobby: both players should be not-ready',
       ).toBe(true);
-
-      // Both DOMs show 2 players in new roster
-      const newHostRosterCount = await hostPage.locator('[data-testid^="lobby-player-"]').count();
-      const newGuestRosterCount = await guestPage.locator('[data-testid^="lobby-player-"]').count();
-      expect(newHostRosterCount, 'New lobby host roster should show 2 players').toBe(2);
-      expect(newGuestRosterCount, 'New lobby guest roster should show 2 players').toBe(2);
 
       // Cleanup WS clients
       newHostWS.close();
