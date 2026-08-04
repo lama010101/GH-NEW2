@@ -369,12 +369,9 @@ export default function RoundActiveSection({
     setDistanceUnitPreference(distanceUnit);
   }, [distanceUnit]);
 
-  // Watch for opponent submissions and show toasts only on the final round
+  // Watch for opponent submissions and show toasts/status on every round
   useEffect(() => {
     if (!snapshot.players || !playerId) return;
-
-    const isFinalRound = snapshot.currentRoundIndex === (snapshot.rounds?.length ?? 0) - 1;
-    if (!isFinalRound) return;
 
     snapshot.players.forEach((p) => {
       if (p.hasSubmitted && p.playerId !== playerId && !submittedToasts[p.playerId]) {
@@ -391,7 +388,7 @@ export default function RoundActiveSection({
         toastTimeoutsRef.current[p.playerId] = timeoutId;
       }
     });
-  }, [snapshot.players, snapshot.currentRoundIndex, snapshot.rounds, playerId, submittedToasts]);
+  }, [snapshot.players, playerId, submittedToasts]);
 
   const handleMapSetLocation = (location: { lat: number; lng: number }) => {
     if (!isLocked) {

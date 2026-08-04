@@ -11,14 +11,14 @@ import { submitGuessViaUI } from '../helpers/compete-ui';
 // ─────────────────────────────────────────────────────────────────────
 // MP-GUARD-SYNC-REGRESSION-001 — Sync Compete Golden-Path Regression Guard
 //
-// Two-context Playwright spec: 2 players, 2 rounds, PLAY_AGAIN.
+// Two-context Playwright spec: 2 players, MAX_ROUNDS (5) rounds, PLAY_AGAIN.
 // UI-driven (real button clicks) with per-context read-only WS observers
 // for DOM ↔ snapshot cross-assertion at every phase transition.
 //
 // Architecture:
 //   - Host  = TEST_USERS[0], context[0], page[0], wsClient[0] (read-only)
 //   - Guest = TEST_USERS[1], context[1], page[1], wsClient[1] (read-only)
-//   - Game config: mode sync, totalRounds 2, roundTimerSec 120
+//   - Game config: mode sync, roundTimerSec 120 (totalRounds is always MAX_ROUNDS server-side)
 //
 // The WS clients are READ-ONLY: connect + getLastSnapshot + waitForState.
 // Zero mutating calls (no toggleReady, submitGuess, readyNext, playAgain)
@@ -175,7 +175,7 @@ test.describe('Sync Compete Golden Path', () => {
   // ───────────────────────────────────────────────────────────────────
   // Main test: S1–S9 golden path
   // ───────────────────────────────────────────────────────────────────
-  test('2 players, 2 rounds, play-again — UI-driven with WS cross-assertion', async () => {
+  test('2 players, 5 rounds, play-again — UI-driven with WS cross-assertion', async () => {
     const errors: string[] = [];
     const playerSubmittedEvents: { playerId: string; playerName: string }[] = [];
 
@@ -205,7 +205,6 @@ test.describe('Sync Compete Golden Path', () => {
           displayName: TEST_USERS[0].displayName,
           playerId: TEST_USERS[0].id,
           mode: 'sync',
-          totalRounds: 2,
           roundTimerSec: 120,
         },
         timeout: NAV_TIMEOUT,
@@ -213,8 +212,9 @@ test.describe('Sync Compete Golden Path', () => {
       expect(createRes.ok(), `Create game failed: ${createRes.status()}`).toBeTruthy();
       const sessionData = await createRes.json();
       const gameId = sessionData.gameId || sessionData.id;
+      const totalRounds: number = sessionData.config?.totalRounds ?? 5;
       expect(gameId, 'Create game returned no gameId').toBeTruthy();
-      console.log(`[GOLDEN] Game created: ${gameId}`);
+      console.log(`[GOLDEN] Game created: ${gameId} (totalRounds=${totalRounds})`);
 
       // ── S2/S3: Both navigate to the game, attach read-only WS observers ──
       await Promise.all([
@@ -399,21 +399,104 @@ test.describe('Sync Compete Golden Path', () => {
       // ── S7: Assert ROUND_COMPLETE round 1 ──
       await assertBothSeeStatus('ROUND_COMPLETE', hostPage, guestPage, hostWS, guestWS);
 
-      // ── S8: Round 1 — both ready-next (final) → SESSION_COMPLETE ──
-      await Promise.all([
-        hostPage.getByTestId('round-next-btn').first().click(),
-        guestPage.getByTestId('round-next-btn').first().click(),
-      ]);
+      // ── S8: Rounds 1–final — play remaining rounds until SESSION_COMPLETE ──
+      for (let round = 1; round < totalRounds; round++) {
+        const nextRound = round + 1;
+        const isFinalRound = round === totalRounds - 1;
 
-      // Wait for SESSION_COMPLETE (last round → session ends)
-      await Promise.all([
-        hostWS.waitForState((s) => s.status === 'SESSION_COMPLETE', STATE_TIMEOUT),
-        guestWS.waitForState((s) => s.status === 'SESSION_COMPLETE', STATE_TIMEOUT),
-      ]);
+        await Promise.all([
+          hostPage.getByTestId('round-next-btn').first().click(),
+          guestPage.getByTestId('round-next-btn').first().click(),
+        ]);
 
-      // ── S8: Assert SESSION_COMPLETE ──
+        if (isFinalRound) {
+          // Wait for SESSION_COMPLETE (last round → session ends)
+          await Promise.all([
+            hostWS.waitForState((s) => s.status === 'SESSION_COMPLETE', STATE_TIMEOUT),
+            guestWS.waitForState((s) => s.status === 'SESSION_COMPLETE', STATE_TIMEOUT),
+          ]);
+          break;
+        }
+
+        // Wait for ROUND_ACTIVE nextRound (sync: both must ready-next → advance)
+        await Promise.all([
+          hostWS.waitForState(
+            (s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === nextRound,
+            STATE_TIMEOUT,
+          ),
+          guestWS.waitForState(
+            (s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === nextRound,
+            STATE_TIMEOUT,
+          ),
+        ]);
+
+        // Assert ROUND_ACTIVE nextRound
+        await assertBothSeeStatus('ROUND_ACTIVE', hostPage, guestPage, hostWS, guestWS);
+        const roundSnap = hostWS.getLastSnapshot()!;
+        expect(roundSnap.currentRoundIndex, `Round ${nextRound}: currentRoundIndex should be ${nextRound}`).toBe(nextRound);
+        // Wait for round-active section to be fully rendered before submitting
+        await expect(hostPage.getByTestId('round-image-container').first()).toBeVisible({ timeout: 15000 });
+        await expect(guestPage.getByTestId('round-image-container').first()).toBeVisible({ timeout: 15000 });
+
+        // Submit via UI for round nextRound
+        const submittedBefore = playerSubmittedEvents.length;
+        await Promise.all([
+          submitGuessViaUI(hostPage, { year: 1950 + nextRound * 10, lat: 40 + nextRound, lng: nextRound }),
+          submitGuessViaUI(guestPage, { year: 1960 + nextRound * 10, lat: 41 + nextRound, lng: 1 + nextRound }),
+        ]);
+
+        // Wait for both submissions to be acknowledged
+        await Promise.all([
+          hostWS.waitForState(
+            (s) => s.players.find((p) => p.playerId === TEST_USERS[0].id)?.hasSubmitted === true,
+            STATE_TIMEOUT,
+            true,
+          ),
+          guestWS.waitForState(
+            (s) => s.players.find((p) => p.playerId === TEST_USERS[1].id)?.hasSubmitted === true,
+            STATE_TIMEOUT,
+            true,
+          ),
+        ]);
+
+        // PLAYER_SUBMITTED events received for both players this round
+        await expect
+          .poll(
+            async () =>
+              playerSubmittedEvents
+                .slice(submittedBefore)
+                .filter((e) => e.playerId === TEST_USERS[0].id).length,
+            { timeout: STATE_TIMEOUT },
+          )
+          .toBeGreaterThanOrEqual(1);
+        await expect
+          .poll(
+            async () =>
+              playerSubmittedEvents
+                .slice(submittedBefore)
+                .filter((e) => e.playerId === TEST_USERS[1].id).length,
+            { timeout: STATE_TIMEOUT },
+          )
+          .toBeGreaterThanOrEqual(1);
+
+        // Wait for ROUND_COMPLETE nextRound
+        await Promise.all([
+          hostWS.waitForState(
+            (s) => s.status === 'ROUND_COMPLETE' && s.currentRoundIndex === nextRound,
+            STATE_TIMEOUT,
+          ),
+          guestWS.waitForState(
+            (s) => s.status === 'ROUND_COMPLETE' && s.currentRoundIndex === nextRound,
+            STATE_TIMEOUT,
+          ),
+        ]);
+
+        // Assert ROUND_COMPLETE nextRound
+        await assertBothSeeStatus('ROUND_COMPLETE', hostPage, guestPage, hostWS, guestWS);
+      }
+
+      // Assert SESSION_COMPLETE and play-again button visible
       await assertBothSeeStatus('SESSION_COMPLETE', hostPage, guestPage, hostWS, guestWS);
-      // Play-again button visible
       await expect(hostPage.getByTestId('session-play-again-btn').first()).toBeVisible({
         timeout: 10000,
       });
