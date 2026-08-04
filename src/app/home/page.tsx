@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, updateCachedAvatarUrl, type IdentityState } from '@/core/identity'
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
-import { DailyPanel } from '@/components/home/DailyPanel'
+import { DailyPanel, type DailyStatusPayload } from '@/components/home/DailyPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
 import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
@@ -465,6 +465,7 @@ function ModeCard({
   const [competeLoading, setCompeteLoading] = useState(false)
   const [competeError, setCompeteError] = useState<string | null>(null)
   const [comingSoonOpen, setComingSoonOpen] = useState(false)
+  const [dailyStatus, setDailyStatus] = useState<DailyStatusPayload | null>(null)
 
   const handleCompeteCreate = async () => {
     if (!playerId) { onRequireAuth(); return }
@@ -590,30 +591,54 @@ function ModeCard({
               </p>
               {/* Daily card: timer inline below description */}
               {mode === 'daily' && (
-                <DailyPanel onPlay={() => onNavigate('/daily')} />
+                <DailyPanel onStatusChange={setDailyStatus} />
               )}
             </div>
 
             {/* Play pill button on the RIGHT (triangle icon + i18n play label) */}
-            <button
-              type="button"
-              className={styles.playPill}
-              data-testid={mode === 'practice' ? 'home-practice-play-btn' : undefined}
-              onClick={handlePlay}
-              disabled={navigating || (mode === 'practice' && practiceLoading)}
-              aria-label={t('home.play_mode_aria', { mode: title })}
-            >
-              {navigating || (mode === 'practice' && practiceLoading) ? (
-                <span className={styles.playPillSpinner} aria-hidden="true" />
-              ) : (
-                <>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M8 5v14l11-7z" fill="currentColor" />
-                  </svg>
-                  {t('home.compete_play')}
-                </>
-              )}
-            </button>
+            {mode === 'daily' && (dailyStatus?.status === 'completed' || dailyStatus?.status === 'expired') ? (
+              <button
+                type="button"
+                className={styles.playPill}
+                onClick={() => {
+                  setNavigating(true)
+                  onNavigate(`/daily/game/${dailyStatus?.gameId}/results`)
+                }}
+                disabled={navigating}
+                aria-label={t('home.daily_view')}
+              >
+                {navigating ? (
+                  <span className={styles.playPillSpinner} aria-hidden="true" />
+                ) : (
+                  <>
+                    <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      {t('home.daily_finished')}
+                    </span>
+                    {t('home.daily_view')}
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={styles.playPill}
+                data-testid={mode === 'practice' ? 'home-practice-play-btn' : undefined}
+                onClick={handlePlay}
+                disabled={navigating || (mode === 'practice' && practiceLoading)}
+                aria-label={t('home.play_mode_aria', { mode: title })}
+              >
+                {navigating || (mode === 'practice' && practiceLoading) ? (
+                  <span className={styles.playPillSpinner} aria-hidden="true" />
+                ) : (
+                  <>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M8 5v14l11-7z" fill="currentColor" />
+                    </svg>
+                    {t('home.compete_play')}
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

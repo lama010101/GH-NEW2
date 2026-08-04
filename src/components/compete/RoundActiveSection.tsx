@@ -1117,6 +1117,9 @@ export default function RoundActiveSection({
               )}
               {tNav('home')}
             </button>
+            <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--gh-text-secondary)', textAlign: 'center' }}>
+              {t('settings_resume_hint')}
+            </p>
             <div className={styles.settingsTitle}>{t('settings')}</div>
 
             <div className={styles.settingsRow}>
