@@ -38,6 +38,7 @@ import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { forceClearAuthStorage, bootstrapIdentity, subscribeToIdentityChanges, updateCachedDisplayName, updateCachedAvatarUrl, type IdentityState } from '@/core/identity';
 import useCompeteTimer from "@/hooks/useCompeteTimer";
 import useCompeteSocket from "@/hooks/useCompeteSocket";
+import { useLeaveGuard } from "@/hooks/useLeaveGuard";
 import btnStyles from "@/components/ui/Button.module.css";
 import pageStyles from './page.module.css';
 
@@ -254,40 +255,7 @@ export default function CompeteGamePage() {
   }, []);
 
   // Navigation guard: prevent refresh and back button during active game phases
-  // Only applies to LOBBY, ROUND_ACTIVE, and ROUND_COMPLETE (not SESSION_COMPLETE)
-  useEffect(() => {
-    const isInGamePhase = snapshot?.status === "LOBBY" || 
-                         snapshot?.status === "ROUND_ACTIVE" || 
-                         snapshot?.status === "ROUND_COMPLETE";
-    
-    if (!isInGamePhase) return;
-
-    // beforeunload: warn on refresh/close (shows native browser confirmation)
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-      return "";
-    };
-
-    // popstate: trap back button by re-pushing history state
-    const handlePopState = (e: PopStateEvent) => {
-      if (e.state === null) {
-        // User pressed back button - push state back to trap them
-        window.history.pushState({ gameId }, "", window.location.href);
-      }
-    };
-
-    // Set up initial history state for back-button trap
-    window.history.pushState({ gameId }, "", window.location.href);
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, [snapshot?.status, gameId]);
+  useLeaveGuard(snapshot?.status, gameId, ["LOBBY", "ROUND_ACTIVE", "ROUND_COMPLETE"]);
 
   // Redirect to home if JOIN_ROOM fails before any snapshot is received
   useEffect(() => {

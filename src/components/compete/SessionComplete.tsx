@@ -8,7 +8,7 @@ import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import RankCard from "@/components/RankCard";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
-import { getUsernameGradientStyle, playerLabel, hasSubmitted } from "@/core/competeUtils";
+import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
 import { calculateBadges } from "@/core/rules";
 import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import { NavModal } from "@/components/NavModal";
@@ -52,6 +52,11 @@ export default function SessionComplete({
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [totalXp, setTotalXp] = useState<number | null>(null);
 
+  // A round "counts" for final stats if the player actually submitted a guess
+  // or if the round was deadline-finalized while they were absent (score 0).
+  // Truly "not started" players have no round result rows at all.
+  const hasResult = (r?: AllRoundResult | null) => !!r && (r.didSubmit || r.absent);
+
   // For async (Relax), derive final stats from the live snapshot rounds; for sync/
   // daily/practice, keep the REST allRoundResults fallback unchanged.
   const isAsyncResults = snapshot.config.mode === "async";
@@ -68,13 +73,14 @@ export default function SessionComplete({
             yearDiff: r.yearDiff,
             locationScore: r.locationScore,
             timeScore: r.timeScore,
-            didSubmit: hasSubmitted(r),
+            didSubmit: r.didSubmit,
             region: r.region ?? round.region ?? null,
+            absent: r.absent ?? false,
           }))
-          .filter((r) => r.didSubmit)
+          .filter((r) => hasResult(r))
       );
     }
-    return (allRoundResults ?? []).filter((r) => hasSubmitted(r));
+    return (allRoundResults ?? []).filter((r) => hasResult(r));
   }, [isAsyncResults, snapshot.rounds, allRoundResults]);
 
   // Scroll final results to top once the session reaches completion.
@@ -147,7 +153,7 @@ export default function SessionComplete({
   // Helper: compute derived stats for a player
   const computePlayerStats = (pid: string) => {
     if (!effectiveResults) return null;
-    const playerResults = effectiveResults.filter(r => r.playerId === pid && hasSubmitted(r));
+    const playerResults = effectiveResults.filter(r => r.playerId === pid && hasResult(r));
     if (playerResults.length === 0) return null;
 
     const totalScore = playerResults.reduce((sum, r) => sum + r.score, 0);
@@ -164,7 +170,7 @@ export default function SessionComplete({
   // Helper: compute per-round stats for all players
   const computeRoundStats = (roundIndex: number) => {
     if (!effectiveResults) return null;
-    const roundResults = effectiveResults.filter(r => r.roundIndex === roundIndex && hasSubmitted(r));
+    const roundResults = effectiveResults.filter(r => r.roundIndex === roundIndex && hasResult(r));
     if (roundResults.length === 0) {
       return { avgAccuracy: 0, avgLocationScore: 0, avgTimeScore: 0, avgDistanceKm: 0, avgYearDiff: 0, totalScore: 0, bestPlayerId: null };
     }
@@ -762,7 +768,7 @@ export default function SessionComplete({
                   const bestPlayerName = roundStats.bestPlayerId ? playerLabel(snapshot.players, roundStats.bestPlayerId) : null;
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
                   const myRoundResult = effectiveResults.find(r => r.roundIndex === i && r.playerId === playerId);
-                  const myRoundAcc = hasSubmitted(myRoundResult)
+                  const myRoundAcc = hasResult(myRoundResult)
                     ? Math.round(((myRoundResult!.locationScore ?? 0) + (myRoundResult!.timeScore ?? 0)) / 2)
                     : null;
                   const open = openRounds.has(i);
