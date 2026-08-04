@@ -175,18 +175,6 @@ function clampRoundTimer(roundTimerSec: number | undefined): number {
   return Math.max(TIMER_MIN_SEC, Math.min(TIMER_MAX_SEC, roundTimerSec));
 }
 
-function normalizeTotalRounds(totalRounds: number | undefined): number {
-  if (totalRounds === undefined) {
-    return MAX_ROUNDS;
-  }
-
-  if (!Number.isInteger(totalRounds) || totalRounds < 1 || totalRounds > MAX_ROUNDS) {
-    throw new Error(`totalRounds must be an integer between 1 and ${MAX_ROUNDS}`);
-  }
-
-  return totalRounds;
-}
-
 function normalizeYearBoundary(value: number | undefined, fallback: number, label: string): number {
   if (value === undefined) {
     return fallback;
@@ -1454,8 +1442,8 @@ export async function createCompeteSession(input: CreateCompeteSessionInput): Pr
   const roundTimerSec = clampRoundTimer(
     input.roundTimerSec === undefined && mode === "async" ? 0 : input.roundTimerSec
   );
-  // Relax is always 5 rounds; no host selector (GAME_MODES_SPEC.md v1.5 §5.3).
-  const totalRounds = mode === "async" ? MAX_ROUNDS : normalizeTotalRounds(input.totalRounds);
+  // All compete/practice/daily sessions are always MAX_ROUNDS (5) by product decision.
+  const totalRounds = MAX_ROUNDS;
   const yearMin = normalizeYearBoundary(input.yearMin, -400, "yearMin");
   const yearMax = normalizeYearBoundary(input.yearMax, 2026, "yearMax");
   const resultsAutoAdvanceSec = clampResultsAutoAdvanceSec(input.resultsAutoAdvanceSec);

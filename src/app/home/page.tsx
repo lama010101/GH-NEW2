@@ -478,7 +478,6 @@ function ModeCard({
           playerId,
           displayName,
           mode: 'async',
-          totalRounds: 5,
           yearMin: -400,
           yearMax: 2025,
         }),

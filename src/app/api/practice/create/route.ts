@@ -30,7 +30,6 @@ export async function POST(request: Request) {
       playerId: body.playerId,
       mode: "practice",
       roundTimerSec: body.roundTimerSec,
-      totalRounds: 5,
       yearMin: body.yearMin,
       yearMax: body.yearMax,
       selectedRegions: Array.isArray(body.selectedRegions) ? body.selectedRegions : undefined,

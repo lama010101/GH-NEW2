@@ -208,7 +208,6 @@ test('Relax golden path A0–A13', async () => {
         displayName: HOST_USER.displayName,
         playerId: HOST_USER.id,
         mode: 'async',
-        totalRounds: 5,
         roundTimerSec: 0,
         resultsAutoAdvanceSec: 0,
       },

@@ -136,7 +136,6 @@ const SCENARIOS: ScenarioConfig[] = [
 const GAME_CONFIG = {
   mode: "sync" as const,
   roundTimerSec: 60,
-  totalRounds: TOTAL_ROUNDS,
   yearMin: 1900,
   yearMax: 2024
 };
