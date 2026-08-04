@@ -8,7 +8,6 @@ import { loginViaAuthModal } from '../helpers/auth-ui';
 export interface GameOrchestratorOptions {
   browserPool: BrowserPool;
   partyKitHost: string;
-  totalRounds: number;
   totalGames: number;
   edgeCaseEngine?: EdgeCaseEngine;
   onStep?: (step: string) => void;
@@ -103,7 +102,7 @@ export class GameOrchestrator {
    * Run the full 3-game sequence.
    */
   async run(): Promise<GameResult[]> {
-    console.log(`[ORCHESTRATOR] Starting ${this.opts.totalGames} games of ${this.opts.totalRounds} rounds each...`);
+    console.log(`[ORCHESTRATOR] Starting ${this.opts.totalGames} games...`);
 
     for (let gameIndex = 0; gameIndex < this.opts.totalGames; gameIndex++) {
       this.opts.onStep?.(`Game ${gameIndex + 1}/${this.opts.totalGames}`);
@@ -143,7 +142,6 @@ export class GameOrchestrator {
             displayName: host.user.displayName,
             playerId: host.user.id,
             mode: 'sync',
-            totalRounds: this.opts.totalRounds,
             roundTimerSec: 120,
           },
           timeout: 30000,
@@ -162,7 +160,8 @@ export class GameOrchestrator {
 
     const sessionData = await createResponse.json();
     const gameId = sessionData.gameId || sessionData.id;
-    console.log(`[ORCHESTRATOR] Game ${gameIndex + 1} created: ${gameId}`);
+    const totalRounds: number = sessionData.config?.totalRounds ?? 5;
+    console.log(`[ORCHESTRATOR] Game ${gameIndex + 1} created: ${gameId} (totalRounds=${totalRounds})`);
 
     // Navigate all browsers to the game
     this.opts.onStep?.('Navigating all browsers to game...');
@@ -213,9 +212,9 @@ export class GameOrchestrator {
     );
 
     // Play all rounds
-    for (let roundIndex = 0; roundIndex < this.opts.totalRounds; roundIndex++) {
-      this.opts.onStep?.(`Round ${roundIndex + 1}/${this.opts.totalRounds}`);
-      await this.runRound(gameId, roundIndex, errors);
+    for (let roundIndex = 0; roundIndex < totalRounds; roundIndex++) {
+      this.opts.onStep?.(`Round ${roundIndex + 1}/${totalRounds}`);
+      await this.runRound(gameId, roundIndex, totalRounds, errors);
     }
 
     // Wait for SESSION_COMPLETE
@@ -237,7 +236,7 @@ export class GameOrchestrator {
     return {
       gameId,
       players: this.browserPool.all.map((p) => p.user.id),
-      rounds: this.opts.totalRounds,
+      rounds: totalRounds,
       completed: errors.length === 0,
       errors,
     };
@@ -246,7 +245,7 @@ export class GameOrchestrator {
   /**
    * Run a single round from ROUND_ACTIVE to ROUND_COMPLETE.
    */
-  private async runRound(gameId: string, roundIndex: number, errors: string[]): Promise<void> {
+  private async runRound(gameId: string, roundIndex: number, totalRounds: number, errors: string[]): Promise<void> {
     const hostClient = this.wsClients[0];
 
     // Clear any skip-submission flags from prior rounds
@@ -361,7 +360,7 @@ export class GameOrchestrator {
     }
 
     // Skip advancing on the last round — server auto-transitions to SESSION_COMPLETE
-    if (roundIndex < this.opts.totalRounds - 1) {
+    if (roundIndex < totalRounds - 1) {
       // Wait for the server to auto-advance to the next round. The server's
       // READY_NEXT auto-advance triggers when all active players send READY_NEXT.
       // For the only-one-next edge case (where 5 of 6 players skip READY_NEXT),
@@ -413,7 +412,6 @@ export class GameOrchestrator {
             displayName: host.user.displayName,
             playerId: host.user.id,
             mode: 'sync',
-            totalRounds: this.opts.totalRounds,
             roundTimerSec: 120,
           },
           timeout: 30000,

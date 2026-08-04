@@ -122,7 +122,6 @@ export default function SessionComplete({
           displayName: currentDisplayName,
           mode: snapshot.config.mode,
           roundTimerSec: snapshot.config.roundTimerSec,
-          totalRounds: snapshot.config.totalRounds,
           yearMin: snapshot.config.yearMin,
           yearMax: snapshot.config.yearMax,
           resultsAutoAdvanceSec: snapshot.config.resultsAutoAdvanceSec,
