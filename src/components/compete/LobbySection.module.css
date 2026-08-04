@@ -881,6 +881,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   padding: 6px 0;
   border-radius: 7px;
   border: none;
@@ -895,6 +896,11 @@
   background: rgba(var(--gh-orange-rgb), 0.18);
   color: var(--gh-orange);
   border: 1px solid rgba(var(--gh-orange-rgb), 0.35);
+}
+
+.lobbyFilterStar {
+  color: var(--gh-gold);
+  font-size: var(--font-sm);
 }
 
 /* ── Invite search wrapper with inset icon ── */
