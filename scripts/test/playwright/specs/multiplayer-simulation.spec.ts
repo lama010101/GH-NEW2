@@ -48,7 +48,6 @@ test.describe('Multiplayer Simulation', () => {
       orchestrator = new GameOrchestrator({
         browserPool,
         partyKitHost: PARTYKIT_HOST,
-        totalRounds: 2,
         totalGames: 2,
         edgeCaseEngine,
         onStep: (step) => {
@@ -122,7 +121,6 @@ test.describe('Multiplayer Simulation', () => {
       orchestrator = new GameOrchestrator({
         browserPool,
         partyKitHost: PARTYKIT_HOST,
-        totalRounds: 2, // Shorter game for focused test
         totalGames: 1,
         edgeCaseEngine,
         onStep: (step) => {
