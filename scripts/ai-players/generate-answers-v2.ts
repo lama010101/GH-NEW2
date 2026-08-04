@@ -15,6 +15,17 @@ const AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
 const DAILY_TIMER_SECONDS = 90;
 const DAILY_TIMER_MS = DAILY_TIMER_SECONDS * 1000;
 
+// Test-only override: if set, use this as the cumulative timer deadline (ms).
+// If unset, behavior is identical to current (90s). Stored timeout rows still
+// record DAILY_TIMER_MS as the canonical timer maximum, not the override.
+const DEADLINE_MS = (() => {
+  const override = process.env.AI_V2_TIMER_OVERRIDE_MS;
+  if (!override) return DAILY_TIMER_MS;
+  const parsed = Number(override);
+  if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  return DAILY_TIMER_MS;
+})();
+
 // Hint tier penalty RATES copied verbatim from src/server/sessionCore.ts:93.
 // Applied proportionally in evaluateRound (not flat point subtraction).
 // WHEN (year) rates are age-discounted by eraScale inside evaluateRound.
@@ -182,7 +193,7 @@ async function main(): Promise<void> {
   } else {
     // Turn 2: supply requested hint content and get final guess.
     const elapsedAfterTurn1 = Date.now() - turnStart;
-    if (elapsedAfterTurn1 >= DAILY_TIMER_MS) {
+    if (elapsedAfterTurn1 >= DEADLINE_MS) {
       timedOut = true;
       console.log(`Timeout after turn 1 at ${elapsedAfterTurn1}ms`);
     } else {
@@ -221,7 +232,7 @@ async function main(): Promise<void> {
 
   if (!timedOut && finalGuess) {
     const elapsed = timeToGuessMs ?? Date.now() - turnStart;
-    if (elapsed > DAILY_TIMER_MS) {
+    if (elapsed > DEADLINE_MS) {
       timedOut = true;
       console.log(`Timeout after final guess at ${elapsed}ms`);
     }
