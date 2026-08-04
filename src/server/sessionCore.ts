@@ -90,7 +90,7 @@ export const PRESSURE_CLAMP_SECONDS = 30;
 // Hint tier penalty RATES (0-100 integer = 0%-100% of raw accuracy).
 // Applied proportionally in evaluateRound (not flat point subtraction).
 // WHEN (year) rates are age-discounted by eraScale inside evaluateRound.
-const TIER_PENALTY_RATE: Record<number, number> = { 1: 10, 2: 20, 3: 30, 4: 40, 5: 50 };
+const TIER_PENALTY_RATE: Record<number, number> = { 1: 30, 2: 20, 3: 50, 4: 40, 5: 50 };
 
 export type DbExecutor = Pick<Pool, "query">;
 export type DbTransactionClient = DbExecutor & { release(): void };

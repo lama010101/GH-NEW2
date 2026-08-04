@@ -691,13 +691,19 @@ export default function RoundCompleteSection({
             {submittedHintPenaltyRef.current.purchasedIds.length > 0 && (() => {
               const usedHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
                 .filter(h => submittedHintPenaltyRef.current.purchasedIds.includes(h.id))
-                .sort((a, b) => a.tier - b.tier);
+                .sort((a, b) => {
+                  const rate = (t: number) => [0, 30, 20, 50, 40, 50][t] ?? 0;
+                  const aRate = rate(a.tier);
+                  const bRate = rate(b.tier);
+                  if (aRate !== bRate) return aRate - bRate;
+                  return a.tier - b.tier;
+                });
               if (usedHints.length === 0) return null;
               return (
                 <div className={styles.hintsCard}>
                   <div className={styles.hintsTitle}>{t('hints_used')}</div>
                   {usedHints.map((hint, idx) => {
-                    const tierPenaltyAcc = [0,10,20,30,40,50][hint.tier] ?? 0;
+                    const tierPenaltyAcc = [0,30,20,50,40,50][hint.tier] ?? 0;
                     const meta = hint.metadata as { km?: number; years?: number | string } | null;
                     let revealedText = hint.content;
                     if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
