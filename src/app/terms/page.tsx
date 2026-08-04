@@ -75,7 +75,7 @@ export default function TermsPage() {
 
         <h2 className="text-xl font-semibold mt-8 mb-3">10. Contact Us</h2>
         <p className="leading-relaxed">
-          For questions about these Terms, contact us at: [INSERT CONTACT EMAIL]
+          For questions about these Terms, contact us at: appymanya@gmail.com
         </p>
       </article>
     </main>
