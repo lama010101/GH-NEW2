@@ -123,6 +123,7 @@ export default function RoundCompleteSection({
   const [leaderboardTab, setLeaderboardTab] = useState<'thisRound' | 'allRounds'>('thisRound');
   const [whereWhenTab, setWhereWhenTab] = useState<'where' | 'when'>('where');
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [homeNavigating, setHomeNavigating] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('gh_sound');
@@ -838,11 +839,32 @@ export default function RoundCompleteSection({
             className={activeStyles.settingsCloseBtn}
           >
             <svg viewBox="0 0 10 10" fill="none" width="12" height="12">
-              <path d="M2 2l6 6M8 2L2 8" stroke="var(--gh-text-secondary)" strokeWidth="1.4" strokeLinecap="round" />
+              <path d="M2 2l6 6M8 2L2 8" stroke="var(--gh-orange)" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </button>
 
           <div className={activeStyles.settingsCard} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => { setHomeNavigating(true); window.location.href = '/home'; }}
+              disabled={homeNavigating}
+              className={activeStyles.settingsHomeBtn}
+            >
+              {homeNavigating ? (
+                <span className={activeStyles.settingsHomeSpinner} aria-hidden="true" />
+              ) : (
+                <span className={activeStyles.settingsHomeIcon}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+                    <polyline points="9 21 9 12 15 12 15 21" />
+                  </svg>
+                </span>
+              )}
+              {tNav('home')}
+            </button>
+            <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--gh-text-secondary)', textAlign: 'center' }}>
+              {t('settings_resume_hint')}
+            </p>
             <div className={activeStyles.settingsTitle}>{t('settings')}</div>
 
             <div className={activeStyles.settingsRow}>
@@ -906,20 +928,6 @@ export default function RoundCompleteSection({
             </div>
 
             <div className={activeStyles.settingsDivider} />
-
-            <button
-              type="button"
-              onClick={() => window.location.href = '/home'}
-              className={activeStyles.settingsHomeBtn}
-            >
-              <span className={activeStyles.settingsHomeIcon}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
-                  <polyline points="9 21 9 12 15 12 15 21" />
-                </svg>
-              </span>
-              {tNav('home')}
-            </button>
           </div>
         </div>
       )}

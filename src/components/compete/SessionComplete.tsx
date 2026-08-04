@@ -48,6 +48,7 @@ export default function SessionComplete({
   const tGame = useTranslations('game');
   const distanceUnit = getDistanceUnitPreference();
   const isPractice = snapshot.config.mode === "practice";
+  const isDaily = snapshot.config.mode === "daily";
   const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
@@ -864,7 +865,7 @@ export default function SessionComplete({
                 >
                   {tGame('home')}
                 </button>
-                {isHost ? (
+                {!isDaily && (isHost ? (
                   <button
                     type="button"
                     className={styles.playBtn}
@@ -876,7 +877,7 @@ export default function SessionComplete({
                   </button>
                 ) : (
                   <GuestPlayAgainButton styles={styles} />
-                )}
+                ))}
                 {lobbyError && (
                   <div className={styles.lobbyError}>{lobbyError}</div>
                 )}
