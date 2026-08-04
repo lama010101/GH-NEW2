@@ -156,7 +156,7 @@
 }
 
 .playerAvatarRing {
-  border: 2px solid var(--gh-text-primary);
+  border: none;
   border-radius: 50%;
 }
 

@@ -675,12 +675,11 @@
 }
 .whenBtnGlow::after { animation-delay: 1s; }
 
-/* ── Button icon image ── */
+/* ── Button icon ── */
 .btnIcon {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
+  display: block;
 }
 
 /* ── Circle wrap (overlay tag container) ── */

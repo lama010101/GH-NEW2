@@ -6,6 +6,7 @@ import { getUsernameGradientStyle, hasSubmitted } from "@/core/competeUtils";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import InlineImageBadge from './InlineImageBadge';
+import WhenIcon from "@/components/icons/WhenIcon";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import styles from "./WhenCard.module.css";
 
@@ -101,8 +102,7 @@ export default function WhenCard({
       {!bare && (
       <div className={styles.header}>
         <div className={styles.titleGroup}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/badges/when.webp" alt={t('when')} width={36} height={36} className={styles.titleIcon} />
+          <WhenIcon className={styles.titleIcon} size={36} style={{ color: 'var(--gh-violet)' }} />
           <span className={styles.titleText}>{t('when')}</span>
         </div>
         {(() => {
@@ -217,6 +217,7 @@ export default function WhenCard({
                 <PlayerAvatar
                   avatarUrl={snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null}
                   displayName={snapshotPlayers.find(p => p.playerId === row.playerId)?.displayName ?? row.playerId.slice(0, 2)}
+                  playerId={row.playerId}
                   size={22}
                 />
               </div>
@@ -259,7 +260,7 @@ export default function WhenCard({
                 >
                   <span className={styles.lbRank}>{idx + 1}</span>
                   <span className={styles.lbNameGroup}>
-                    <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} size={40} />
+                    <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} playerId={row.playerId} size={40} />
                     <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
                       {row.displayName}
                     </span>

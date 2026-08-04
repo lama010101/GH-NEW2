@@ -237,13 +237,15 @@
 }
 
 .tabBtnWhen.active {
-  border-bottom: 3px solid var(--gh-where-solid);
+  border-bottom: 3px solid var(--gh-when-solid);
   background: rgba(var(--modal-when-rgb), 0.08);
+  color: var(--gh-when-solid);
 }
 
 .tabBtnWhere.active {
-  border-bottom: 3px solid var(--gh-success);
+  border-bottom: 3px solid var(--gh-where-solid);
   background: rgba(var(--modal-where-rgb), 0.08);
+  color: var(--gh-where-solid);
 }
 
 .tabLbl {
@@ -253,29 +255,31 @@
 }
 
 .tabBtnWhen.active .tabLbl {
-  color: var(--gh-where-solid);
+  color: var(--gh-when-solid);
   font-weight: 700;
 }
 
 .tabBtnWhere.active .tabLbl {
-  color: var(--gh-success);
+  color: var(--gh-where-solid);
   font-weight: 700;
 }
 
 .tabIcon {
   width: 22px;
   height: 22px;
-  object-fit: contain;
+  color: var(--gh-modal-text-secondary);
   opacity: 0.70;
   transition: opacity 0.15s, filter 0.15s;
 }
 
 .tabBtnWhen.active .tabIcon {
+  color: var(--gh-when-solid);
   opacity: 1;
   filter: drop-shadow(0 0 3px rgba(var(--modal-when-rgb), 0.5));
 }
 
 .tabBtnWhere.active .tabIcon {
+  color: var(--gh-where-solid);
   opacity: 1;
   filter: drop-shadow(0 0 3px rgba(var(--modal-where-rgb), 0.5));
 }
