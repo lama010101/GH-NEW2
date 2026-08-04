@@ -23,6 +23,7 @@
     "test:simulation": "playwright test --config=scripts/test/playwright/playwright.config.ts specs/multiplayer-simulation.spec.ts",
     "test:simulation:report": "playwright show-report",
     "ai:poc": "tsx scripts/ai-players/generate-answers.ts",
+    "ai:batch-v2": "tsx scripts/ai-players/run-batch.ts --worker=scripts/ai-players/generate-answers-v2.ts",
     "prepare": "husky"
   },
   "dependencies": {

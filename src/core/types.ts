@@ -251,7 +251,6 @@ export type CreateCompeteSessionInput = {
   playerId: string;
   mode?: SessionMode;
   roundTimerSec?: number;
-  totalRounds?: number;
   yearMin?: number;
   yearMax?: number;
   resultsAutoAdvanceSec?: number;

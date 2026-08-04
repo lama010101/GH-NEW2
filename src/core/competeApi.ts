@@ -124,7 +124,7 @@ export async function createCompeteSessionRequest(input: CreateCompeteSessionInp
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ displayName: input.displayName ?? "", playerId: input.playerId, mode: input.mode, roundTimerSec: input.roundTimerSec, totalRounds: input.totalRounds, yearMin: input.yearMin, yearMax: input.yearMax })
+    body: JSON.stringify({ displayName: input.displayName ?? "", playerId: input.playerId, mode: input.mode, roundTimerSec: input.roundTimerSec, yearMin: input.yearMin, yearMax: input.yearMax })
   });
 
   if (!response.ok) {
