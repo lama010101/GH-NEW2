@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, useMapEvents, Marker, useMap } from "react-lea
 import { useTranslations } from "next-intl";
 import L from "leaflet";
 import type { LatLng } from "@/core/types";
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import "leaflet/dist/leaflet.css";
 
 interface GameMapProps {
@@ -159,7 +160,7 @@ class GameMapInner extends Component<GameMapProps, GameMapState> {
                 icon={L.divIcon({
                   className: "",
                   html: this.props.localPlayerAvatarUrl
-                    ? `<img src="${this.props.localPlayerAvatarUrl}" style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);object-fit:cover;" />`
+                    ? `<img src="${toProxiedImageUrl(this.props.localPlayerAvatarUrl) ?? ''}" style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);object-fit:cover;" />`
                     : '<div style="width:12px;height:12px;background:#888;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
                   iconSize: this.props.localPlayerAvatarUrl ? [32, 32] : [12, 12],
                   iconAnchor: this.props.localPlayerAvatarUrl ? [16, 16] : [6, 6],
@@ -174,7 +175,7 @@ class GameMapInner extends Component<GameMapProps, GameMapState> {
                   icon={L.divIcon({
                     className: "",
                     html: marker.avatarUrl
-                      ? `<img src="${marker.avatarUrl}" style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);object-fit:cover;" />`
+                      ? `<img src="${toProxiedImageUrl(marker.avatarUrl) ?? ''}" style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);object-fit:cover;" />`
                       : '<div style="width:12px;height:12px;background:#888;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>',
                     iconSize: marker.avatarUrl ? [32, 32] : [12, 12],
                     iconAnchor: marker.avatarUrl ? [16, 16] : [6, 6],

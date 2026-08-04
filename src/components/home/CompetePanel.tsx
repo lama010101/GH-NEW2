@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser'
 import { getAccuracyColor } from '@/core/accuracyColor'
+import { toProxiedImageUrl } from '@/lib/imageProxy'
 import cpStyles from "./CompetePanel.module.css";
 
 type ActiveGame = {
@@ -228,7 +229,7 @@ export function CompetePanel({ onLobby, playerId }: {
                 >
                   {invite.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={invite.avatar_url} alt="" className={cpStyles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
+                    <img src={toProxiedImageUrl(invite.avatar_url) ?? ''} alt="" className={cpStyles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
                   ) : null}
                   <div className={cpStyles.avatarFallback} style={{ display: invite.avatar_url ? "none" : "flex" }}>
                     {(invite.inviter_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}
@@ -279,7 +280,7 @@ export function CompetePanel({ onLobby, playerId }: {
                 >
                   {game.opponent_avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={game.opponent_avatar} alt="" className={cpStyles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
+                    <img src={toProxiedImageUrl(game.opponent_avatar) ?? ''} alt="" className={cpStyles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
                   ) : null}
                   <div className={cpStyles.avatarFallback} style={{ display: game.opponent_avatar ? "none" : "flex" }}>
                     {(game.opponent_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}
@@ -324,7 +325,7 @@ export function CompetePanel({ onLobby, playerId }: {
                 >
                   {game.opponent_avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={game.opponent_avatar} alt="" className={cpStyles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
+                    <img src={toProxiedImageUrl(game.opponent_avatar) ?? ''} alt="" className={cpStyles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
                   ) : null}
                   <div className={cpStyles.avatarFallback} style={{ display: game.opponent_avatar ? "none" : "flex" }}>
                     {(game.opponent_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}

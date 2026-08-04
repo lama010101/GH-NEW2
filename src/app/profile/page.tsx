@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity';
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser';
+import { toProxiedImageUrl } from '@/lib/imageProxy';
 import styles from './profile.module.css';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
@@ -270,7 +271,7 @@ export default function ProfilePage() {
             {profileData.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={profileData.avatarUrl}
+                src={toProxiedImageUrl(profileData.avatarUrl) ?? ''}
                 alt={t('avatar_alt')}
                 className="w-full h-full object-cover rounded-full"
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
