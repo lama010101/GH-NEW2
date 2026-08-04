@@ -45,7 +45,6 @@ export default function CompeteEntryPage() {
     try {
       const snapshot = await createCompeteSessionRequest({
         mode: "sync",
-        totalRounds: 5,
         roundTimerSec,
         playerId
       });
