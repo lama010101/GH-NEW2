@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
+import { usePlayerFilter } from '@/hooks/usePlayerFilter';
 import type { CompeteSessionSnapshot, SessionPlayer } from "@/core/types";
 import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
@@ -29,7 +30,7 @@ interface LobbySectionProps {
 }
 
 type LastInvitedPlayer = { id: string; displayName: string; avatarUrl: string | null };
-type PlayerPoolEntry = { id: string; displayName: string; avatarUrl: string | null };
+type PlayerPoolEntry = { id: string; displayName: string; avatarUrl: string | null; is_ai: boolean };
 
 const LS_KEY = "gh_last_invited_players";
 const LS_MAX = 10;
@@ -170,6 +171,7 @@ export default function LobbySection({
   const router = useRouter();
   const t = useTranslations();
   const tGame = useTranslations('game');
+  const { filter, toggleHumans, toggleAi, toggleFriends } = usePlayerFilter();
 
   /* Timer slider transient state — synced from snapshot on every update.
      Local value is ONLY for drag feedback; authority stays in snapshot. */
@@ -236,8 +238,8 @@ export default function LobbySection({
   const [lastInvited, setLastInvited] = useState<LastInvitedPlayer[]>([]);
   const [inviteStates, setInviteStates] = useState<Record<string, 'idle' | 'pending' | 'sent' | 'error'>>({});
   const [playerPool, setPlayerPool] = useState<PlayerPoolEntry[]>([]);
+  const [aiPlayerPool, setAiPlayerPool] = useState<PlayerPoolEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [poolFilter, setPoolFilter] = useState<'all' | 'favorites'>('all');
   const [showAllModal, setShowAllModal] = useState(false);
   const [modalSearchQuery, setModalSearchQuery] = useState('');
   const [presetsExpanded, setPresetsExpanded] = useState(false);
@@ -418,6 +420,7 @@ export default function LobbySection({
         id: p.id,
         displayName: p.display_name?.trim() || 'Player',
         avatarUrl: p.avatar_url,
+        is_ai: false,
       })
     );
     setPlayerPool(players);
@@ -450,6 +453,7 @@ export default function LobbySection({
           id: p.id,
           displayName: p.display_name?.trim() || 'Player',
           avatarUrl: p.avatar_url,
+          is_ai: false,
         })
       );
       setPlayerPool(players);
@@ -458,6 +462,38 @@ export default function LobbySection({
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     };
   }, [searchQuery]);
+
+  // Load active AI players through the leaderboard endpoint, which already
+  // resolves display identity (including is_ai) via resolvePlayerIdentities.
+  // This keeps identity resolution in one place while the UI filter is built.
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAIPlayers() {
+      try {
+        const res = await fetch('/api/leaderboard?tab=overall&ai=true&humans=false');
+        if (!res.ok) return;
+        const json = await res.json() as {
+          rows: Array<{
+            player_id: string;
+            display_name: string | null;
+            avatar_url: string | null;
+            is_ai: boolean;
+          }>;
+        };
+        const aiPlayers: PlayerPoolEntry[] = (json.rows ?? []).map((p) => ({
+          id: p.player_id,
+          displayName: p.display_name?.trim() || t('leaderboard.unknown_player'),
+          avatarUrl: p.avatar_url,
+          is_ai: p.is_ai,
+        }));
+        if (!cancelled) setAiPlayerPool(aiPlayers);
+      } catch {
+        // ignore — AI list is optional for the filter
+      }
+    }
+    loadAIPlayers();
+    return () => { cancelled = true; };
+  }, [t]);
 
   /* ── Follow state ── */
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
@@ -529,35 +565,62 @@ export default function LobbySection({
   const inLobbyIds = new Set(snapshot.players.filter((p) => p.leftAt === null).map((p) => p.playerId));
   const pendingInviteeIds = new Set((snapshot.pendingInvitees ?? []).map((p) => p.playerId));
   const viewerId = viewer?.playerId ?? null;
-  const lastInvitedFiltered = lastInvited.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId);
+
+  // Combine human pool (recent/search) with AI players returned by the leaderboard
+  // endpoint. Both share the same identity resolution path via playerIdentity.
+  const allPool: PlayerPoolEntry[] = [];
+  const allPoolIds = new Set<string>();
+  for (const p of [...playerPool, ...aiPlayerPool]) {
+    if (!allPoolIds.has(p.id)) {
+      allPoolIds.add(p.id);
+      allPool.push(p);
+    }
+  }
+
+  const matchesFilter = (p: PlayerPoolEntry): boolean => {
+    const identitySelected = filter.humans || filter.ai;
+    const identityMatch = !identitySelected || (filter.humans && !p.is_ai) || (filter.ai && p.is_ai);
+    const friendsMatch = !filter.friends || followedIds.has(p.id);
+    return identityMatch && friendsMatch;
+  };
+
+  const lastInvitedFiltered = lastInvited
+    .filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId)
+    .map((p) => ({ id: p.id, displayName: p.displayName, avatarUrl: p.avatarUrl, is_ai: false }));
   const lastInvitedIds = new Set(lastInvitedFiltered.map((p) => p.id));
-  const poolRemainder = playerPool.filter((p) => !lastInvitedIds.has(p.id) && !inLobbyIds.has(p.id) && p.id !== viewerId);
+  const poolRemainder = allPool.filter((p) => !lastInvitedIds.has(p.id) && !inLobbyIds.has(p.id) && p.id !== viewerId);
   const priorityList: PlayerPoolEntry[] = [
-    ...lastInvitedFiltered.map((p) => ({ id: p.id, displayName: p.displayName, avatarUrl: p.avatarUrl })),
+    ...lastInvitedFiltered,
     ...poolRemainder,
   ].filter(p => !pendingInviteeIds.has(p.id));
 
   const trimmedQuery = searchQuery.trim().toLowerCase();
-  const searchResults: PlayerPoolEntry[] = trimmedQuery.length >= 1
-    ? playerPool.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId && (poolFilter === 'all' || followedIds.has(p.id))).slice(0, 20)
+  const searchedHumanPool: PlayerPoolEntry[] = trimmedQuery.length >= 1
+    ? playerPool.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId)
     : [];
+  const searchedAIPool: PlayerPoolEntry[] = trimmedQuery.length >= 1
+    ? aiPlayerPool.filter((p) => !inLobbyIds.has(p.id) && p.id !== viewerId && p.displayName.toLowerCase().includes(trimmedQuery))
+    : [];
+  const searchResults: PlayerPoolEntry[] = [...searchedHumanPool, ...searchedAIPool].slice(0, 20);
   const displayList: PlayerPoolEntry[] = (trimmedQuery.length >= 1
     ? searchResults
-    : priorityList.filter((p) => poolFilter === 'all' || followedIds.has(p.id)).slice(0, 10)
-  ).sort((a, b) => {
+    : priorityList
+  ).filter(matchesFilter).sort((a, b) => {
     const aFav = followedIds.has(a.id) ? 0 : 1;
     const bFav = followedIds.has(b.id) ? 0 : 1;
     return aFav - bFav;
-  });
-  const hasMore = trimmedQuery.length === 0 && priorityList.filter((p) => poolFilter === 'all' || followedIds.has(p.id)).length > 10;
+  }).slice(0, trimmedQuery.length >= 1 ? 20 : 10);
+  const hasMore = trimmedQuery.length === 0 && priorityList.filter(matchesFilter).length > 10;
 
   // Client-side filter for the all-players modal
   const modalTrimmedQuery = modalSearchQuery.trim().toLowerCase();
-  const modalFilteredList: PlayerPoolEntry[] = modalTrimmedQuery.length >= 1
+  const modalFilteredList: PlayerPoolEntry[] = (modalTrimmedQuery.length >= 1
     ? priorityList.filter((p) => p.displayName.toLowerCase().includes(modalTrimmedQuery))
-    : priorityList;
+    : priorityList
+  ).filter(matchesFilter);
 
   const handleSendInvite = async (player: PlayerPoolEntry) => {
+    if (player.is_ai) return;
     setInviteStates(prev => ({ ...prev, [player.id]: 'pending' }));
     try {
       const token = await getValidAccessToken();
@@ -1107,17 +1170,27 @@ export default function LobbySection({
             <div className={styles['lobbyFilterRow']}>
               <button
                 type="button"
-                className={`${styles['lobbyFilterBtn']} ${poolFilter === 'all' ? styles['lobbyFilterBtnActive'] : ''}`}
-                onClick={() => setPoolFilter('all')}
+                className={`${styles['lobbyFilterBtn']} ${filter.humans ? styles['lobbyFilterBtnActive'] : ''}`}
+                onClick={toggleHumans}
+                aria-pressed={filter.humans}
               >
-                {t('lobby.filter_all')}
+                {t('leaderboard.filter_humans')}
               </button>
               <button
                 type="button"
-                className={`${styles['lobbyFilterBtn']} ${poolFilter === 'favorites' ? styles['lobbyFilterBtnActive'] : ''}`}
-                onClick={() => setPoolFilter('favorites')}
+                className={`${styles['lobbyFilterBtn']} ${filter.ai ? styles['lobbyFilterBtnActive'] : ''}`}
+                onClick={toggleAi}
+                aria-pressed={filter.ai}
               >
-                {t('lobby.filter_favorites')}
+                {t('leaderboard.filter_ai')}
+              </button>
+              <button
+                type="button"
+                className={`${styles['lobbyFilterBtn']} ${filter.friends ? styles['lobbyFilterBtnActive'] : ''}`}
+                onClick={toggleFriends}
+                aria-pressed={filter.friends}
+              >
+                {t('leaderboard.filter_friends')}
               </button>
             </div>
             <div className={styles['lobbySearchWrap']}>
@@ -1146,7 +1219,7 @@ export default function LobbySection({
             <div className={styles['lobbyRail']}>
               {displayList.length === 0 ? (
                 <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
-                  <span className={styles['lobbyEmptyRailText']}>{poolFilter === 'favorites' ? t('lobby.no_favorites_yet') : t('lobby.no_players_found')}</span>
+                  <span className={styles['lobbyEmptyRailText']}>{filter.friends ? t('lobby.no_favorites_yet') : t('lobby.no_players_found')}</span>
                 </div>
               ) : (
                 displayList.map((player) => {
@@ -1155,15 +1228,17 @@ export default function LobbySection({
                     <div key={player.id} className={styles['lobbyPlayerCard']}>
                       <div className={styles['lobbyAvatarWrap']}>
                         <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
-                        <button
-                          className={styles['lobbyStarBtn']}
-                          onClick={() => toggleFollow(player.id)}
-                          aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
-                        >
-                          <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
-                            {followedIds.has(player.id) ? '★' : '☆'}
-                          </span>
-                        </button>
+                        {!player.is_ai && (
+                          <button
+                            className={styles['lobbyStarBtn']}
+                            onClick={() => toggleFollow(player.id)}
+                            aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
+                          >
+                            <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
+                              {followedIds.has(player.id) ? '★' : '☆'}
+                            </span>
+                          </button>
+                        )}
                       </div>
                       <div className={styles['lobbyPlayerCardName']}>
                         <span className={styles['lobbyPlayerCardNameText']}>{player.displayName}</span>
@@ -1172,15 +1247,17 @@ export default function LobbySection({
                         type="button"
                         className={styles['lobbyInviteBtn']}
                         onClick={() => handleSendInvite(player)}
-                        disabled={inviteState !== 'idle'}
+                        disabled={player.is_ai || inviteState !== 'idle'}
                       >
-                        {inviteState === 'pending'
-                          ? t('lobby.invite_pending')
-                          : inviteState === 'sent'
-                          ? t('lobby.invite_sent')
-                          : inviteState === 'error'
-                          ? t('lobby.invite_failed')
-                          : t('lobby.invite')}
+                        {player.is_ai
+                          ? t('leaderboard.filter_ai')
+                          : inviteState === 'pending'
+                            ? t('lobby.invite_pending')
+                            : inviteState === 'sent'
+                              ? t('lobby.invite_sent')
+                              : inviteState === 'error'
+                                ? t('lobby.invite_failed')
+                                : t('lobby.invite')}
                       </button>
                     </div>
                   );
@@ -1237,15 +1314,17 @@ export default function LobbySection({
                       <div key={player.id} className={styles['lobbyPlayerCard']}>
                         <div className={styles['lobbyAvatarWrap']}>
                           <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
-                          <button
-                            className={styles['lobbyStarBtn']}
-                            onClick={() => toggleFollow(player.id)}
-                            aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
-                          >
-                            <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
-                              {followedIds.has(player.id) ? '★' : '☆'}
-                            </span>
-                          </button>
+                          {!player.is_ai && (
+                            <button
+                              className={styles['lobbyStarBtn']}
+                              onClick={() => toggleFollow(player.id)}
+                              aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
+                            >
+                              <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
+                                {followedIds.has(player.id) ? '★' : '☆'}
+                              </span>
+                            </button>
+                          )}
                         </div>
                         <div className={styles['lobbyPlayerCardName']}>
                           <span className={styles['lobbyPlayerCardNameText']}>{player.displayName}</span>
@@ -1254,15 +1333,17 @@ export default function LobbySection({
                           type="button"
                           className={styles['lobbyInviteBtn']}
                           onClick={() => handleSendInvite(player)}
-                          disabled={inviteState !== 'idle'}
+                          disabled={player.is_ai || inviteState !== 'idle'}
                         >
-                          {inviteState === 'pending'
-                            ? t('lobby.invite_pending')
-                            : inviteState === 'sent'
-                            ? t('lobby.invite_sent')
-                            : inviteState === 'error'
-                            ? t('lobby.invite_failed')
-                            : t('lobby.invite')}
+                          {player.is_ai
+                            ? t('leaderboard.filter_ai')
+                            : inviteState === 'pending'
+                              ? t('lobby.invite_pending')
+                              : inviteState === 'sent'
+                                ? t('lobby.invite_sent')
+                                : inviteState === 'error'
+                                  ? t('lobby.invite_failed')
+                                  : t('lobby.invite')}
                         </button>
                       </div>
                     );
