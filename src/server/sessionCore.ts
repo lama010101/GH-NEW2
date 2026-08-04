@@ -2051,6 +2051,17 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
       [gameId, playerId]
     );
 
+    // Mark any pending invitation for this player as accepted, so the player
+    // is not duplicated in the roster as both an active player and a pending invitee.
+    await client.query(
+      `UPDATE public.game_invitations
+       SET status = 'accepted'
+       WHERE game_id = $1
+         AND invitee_id = $2
+         AND status = 'pending'`,
+      [gameId, playerId]
+    );
+
     await client.query("COMMIT");
   } catch (error) {
     await client?.query("ROLLBACK").catch(() => undefined);
