@@ -1,5 +1,28 @@
 import type { SessionPlayer } from "./types";
 
+const FRAME_COLOR_PALETTE = [
+  '#ef4444',
+  '#f97316',
+  '#f59e0b',
+  '#84cc16',
+  '#22c55e',
+  '#14b8a6',
+  '#06b6d4',
+  '#3b82f6',
+  '#8b5cf6',
+  '#d946ef',
+  '#f43f5e',
+  '#78716c',
+] as const;
+
+export function getPlayerFrameColor(playerId: string): string {
+  let hash = 0;
+  for (let i = 0; i < playerId.length; i++) {
+    hash = Math.imul(hash, 31) + playerId.charCodeAt(i);
+  }
+  return FRAME_COLOR_PALETTE[Math.abs(hash) % FRAME_COLOR_PALETTE.length];
+}
+
 // KC-009 gate live-fire test
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getUsernameGradientStyle(_playerId: string): React.CSSProperties {

@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from 'next-intl';
 import { formatDistance, getDistanceUnitPreference, type DistanceUnit } from "@/lib/distance";
 import type { EventHint } from "@/core/types";
+import WhereIcon from "@/components/icons/WhereIcon";
+import WhenIcon from "@/components/icons/WhenIcon";
 import styles from "./HintModal.module.css";
 
 export type HintPurchaseResult = {
@@ -297,8 +299,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
               className={`${styles.tabBtn} ${styles.tabBtnWhen} ${activeTab === "when" ? styles.active : ""}`}
               onClick={() => setActiveTab("when")}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/when.webp" alt="" className={styles.tabIcon} />
+              <WhenIcon className={styles.tabIcon} size={22} />
               <span className={styles.tabLbl}>When</span>
               {getPurchasedCount("when") > 0 && (
                 <div className={styles.tabBadge}>{getPurchasedCount("when")}</div>
@@ -308,8 +309,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
               className={`${styles.tabBtn} ${styles.tabBtnWhere} ${activeTab === "where" ? styles.active : ""}`}
               onClick={() => setActiveTab("where")}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/where.webp" alt="" className={styles.tabIcon} />
+              <WhereIcon className={styles.tabIcon} size={22} />
               <span className={styles.tabLbl}>Where</span>
               {getPurchasedCount("where") > 0 && (
                 <div className={styles.tabBadge}>{getPurchasedCount("where")}</div>

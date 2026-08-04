@@ -1190,6 +1190,9 @@ export default function LobbySection({
                 onClick={toggleFriends}
                 aria-pressed={filter.friends}
               >
+                <span className={styles['lobbyFilterStar']}>
+                  {filter.friends ? '★' : '☆'}
+                </span>
                 {t('leaderboard.filter_friends')}
               </button>
             </div>
@@ -1227,7 +1230,7 @@ export default function LobbySection({
                   return (
                     <div key={player.id} className={styles['lobbyPlayerCard']}>
                       <div className={styles['lobbyAvatarWrap']}>
-                        <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                        <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} playerId={player.id} size={40} />
                         {!player.is_ai && (
                           <button
                             className={styles['lobbyStarBtn']}
@@ -1313,7 +1316,7 @@ export default function LobbySection({
                     return (
                       <div key={player.id} className={styles['lobbyPlayerCard']}>
                         <div className={styles['lobbyAvatarWrap']}>
-                          <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} size={40} />
+                          <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} playerId={player.id} size={40} />
                           {!player.is_ai && (
                             <button
                               className={styles['lobbyStarBtn']}
@@ -1372,7 +1375,7 @@ export default function LobbySection({
                 return (
                   <div key={p.playerId} className={`${styles['lobbyRosterRow']} ${p.ready ? styles['lobbyRosterRowReady'] : ''}`} data-testid={`lobby-player-${p.playerId}`} data-ready={p.ready ? 'true' : 'false'} data-host={p.isHost ? 'true' : 'false'}>
                     <div className={styles['lobbyAvatarWrap']}>
-                      <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} size={40} />
+                      <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} playerId={p.playerId} size={40} />
                       {!isViewerPlayer && (
                         <button
                           className={styles['lobbyStarBtn']}
@@ -1420,7 +1423,7 @@ export default function LobbySection({
               })}
               {(snapshot.pendingInvitees ?? []).map((p) => (
                 <div key={p.playerId} className={styles['lobbyRosterRow']}>
-                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} size={40} />
+                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} playerId={p.playerId} size={40} />
                   <div className={styles['lobbyRosterMeta']}>
                     <span className={styles['lobbyRosterName']}>{p.displayName}</span>
                   </div>
