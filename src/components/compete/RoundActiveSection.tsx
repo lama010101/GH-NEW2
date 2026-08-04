@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useState, useRef, useEffect, useCallback, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from 'next-intl';
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit } from "@/lib/distance";
 import { YearPicker } from "@/components/YearPicker";
 import NotificationBell from "@/components/NotificationBell";
@@ -614,7 +615,7 @@ export default function RoundActiveSection({
             <img
               key={imgRetryKey}
               ref={imgRef}
-              src={currentEvent.imageUrl}
+              src={toProxiedImageUrl(currentEvent.imageUrl) ?? ''}
               alt="Historical event"
               draggable={false}
               className={styles.eventImg}

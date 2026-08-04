@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from 'next-intl';
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import {
   formatDistance,
   getDistanceUnitPreference,
@@ -322,7 +323,7 @@ export default function RoundCompleteSection({
                 <div className={styles.eventImageWrap} onClick={() => { setViewerSrc(round.imageUrl); setViewerAlt(round.title); }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={round.imageUrl}
+                    src={toProxiedImageUrl(round.imageUrl) ?? ''}
                     alt={round.title}
                     className={styles.eventImage}
                   />
