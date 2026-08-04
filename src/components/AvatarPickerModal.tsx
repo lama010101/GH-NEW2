@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
+import { toProxiedImageUrl } from '@/lib/imageProxy';
 import avatarPickerStyles from '@/app/profile/avatarPicker.module.css';
 
 type Avatar = {
@@ -131,7 +132,7 @@ export function AvatarPickerModal({
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={url}
+                      src={toProxiedImageUrl(url) ?? ''}
                       alt={name}
                       className={avatarPickerStyles.avatarImage}
                     />

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMap } from "react-leaflet";
 import * as L from "leaflet";
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import "leaflet/dist/leaflet.css";
 
 interface PlayerGuess {
@@ -46,7 +47,7 @@ const correctIcon = createIcon("#22C55E"); // Green
 const createAvatarIcon = (avatarUrl: string | null | undefined, label: string | undefined): L.DivIcon => {
   const initial = label ? label.charAt(0).toUpperCase() : "?";
   const circleContent = avatarUrl
-    ? `<img src="${avatarUrl}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); object-fit: cover; display: block;" />`
+    ? `<img src="${toProxiedImageUrl(avatarUrl) ?? ''}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); object-fit: cover; display: block;" />`
     : `<div style="width: 36px; height: 36px; border-radius: 50%; background: #4b5563; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">${initial}</div>`;
 
   const html = `
