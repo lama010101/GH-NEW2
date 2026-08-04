@@ -23,9 +23,9 @@ export type HintModalProps = {
 
 // Tier penalty mapping (spec-authoritative)
 const TIER_PENALTIES = {
-  1: { acc: 10, xp: 20 },
+  1: { acc: 30, xp: 60 },
   2: { acc: 20, xp: 40 },
-  3: { acc: 30, xp: 60 },
+  3: { acc: 50, xp: 100 },
   4: { acc: 40, xp: 80 },
   5: { acc: 50, xp: 100 },
 } as const;
@@ -146,11 +146,11 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
     }
   }, [isOpen, purchasedIds]);
 
-  // Get cost pill CSS module class
-  const getCostClass = (tier: number): string => {
-    if (tier === 1) return styles.costG;
-    if (tier === 2) return styles.costY;
-    if (tier <= 4) return styles.costO;
+  // Get cost pill CSS module class based on actual penalty rate
+  const getCostClass = (rate: number): string => {
+    if (rate <= 10) return styles.costG;
+    if (rate <= 20) return styles.costY;
+    if (rate <= 40) return styles.costO;
     return styles.costR;
   };
 
@@ -192,12 +192,14 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
     };
   }, [hints, purchased]);
 
-  // Get hints for active tab, sorted by display_order then tier
+  // Get hints for active tab, sorted by rate ascending, then tier ascending
   const activeHints = useMemo(() => {
     return hints
       .filter((h) => h.type === activeTab)
       .sort((a, b) => {
-        if (a.display_order !== b.display_order) return a.display_order - b.display_order;
+        const aRate = TIER_PENALTIES[a.tier as keyof typeof TIER_PENALTIES].acc;
+        const bRate = TIER_PENALTIES[b.tier as keyof typeof TIER_PENALTIES].acc;
+        if (aRate !== bRate) return aRate - bRate;
         return a.tier - b.tier;
       });
   }, [hints, activeTab]);
@@ -349,7 +351,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
                     {owned ? (
                       <div className={styles.checkDot} dangerouslySetInnerHTML={{ __html: ICONS.check }} />
                     ) : (
-                      <div className={`${styles.costPill} ${getCostClass(hint.tier)}`}>
+                      <div className={`${styles.costPill} ${getCostClass(tierPenalty.acc)}`}>
                         −{tierPenalty.acc}%
                       </div>
                     )}
