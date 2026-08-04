@@ -4,24 +4,58 @@ import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import styles from './DailyPanel.module.css'
 
-export function DailyPanel({ onPlay }: { onPlay: () => void }) {
+export type DailyStatusPayload = {
+  status: 'not_started' | 'in_progress' | 'completed' | 'expired' | null
+  gameId?: string
+}
+
+export function DailyPanel({
+  onStatusChange,
+}: {
+  onStatusChange?: (payload: DailyStatusPayload) => void
+}) {
   const t = useTranslations()
-  void onPlay
-  const getCountdown = () => {
-    const now = new Date()
-    const midnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
-    const diff = midnight.getTime() - now.getTime()
-    const h = Math.floor(diff / 3600000)
-    const m = Math.floor((diff % 3600000) / 60000)
-    return t('common.countdown_hm', { h, m })
-  }
+  const [status, setStatus] = useState<DailyStatusPayload['status']>(null)
   const [countdown, setCountdown] = useState<string>('')
+
   useEffect(() => {
-    setCountdown(getCountdown())
-    const t = setInterval(() => setCountdown(getCountdown()), 60000)
-    return () => clearInterval(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    let mounted = true
+    fetch('/api/daily/status')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!mounted || !data) return
+        const payload: DailyStatusPayload = {
+          status: data.status ?? null,
+          gameId: data.gameId,
+        }
+        setStatus(payload.status)
+        onStatusChange?.(payload)
+      })
+      .catch(() => {})
+    return () => {
+      mounted = false
+    }
+  }, [onStatusChange])
+
+  useEffect(() => {
+    const compute = () => {
+      const now = new Date()
+      const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
+      const tomorrowMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 2))
+      const target = status === 'in_progress' ? todayMidnight : tomorrowMidnight
+      const diff = Math.max(0, target.getTime() - now.getTime())
+      const h = Math.floor(diff / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      return t('common.countdown_hm', { h, m })
+    }
+    setCountdown(compute())
+    const id = setInterval(() => setCountdown(compute()), 60000)
+    return () => clearInterval(id)
+  }, [status, t])
+
+  if (status == null) return null
+
+  const label = status === 'in_progress' ? t('home.daily_ends_in') : t('home.daily_next_in')
 
   return (
     <div className={styles.dailyPanel}>
@@ -31,7 +65,7 @@ export function DailyPanel({ onPlay }: { onPlay: () => void }) {
           <path d="M12 7v5l3 3" stroke="var(--gh-text-secondary)" strokeWidth="1.8" strokeLinecap="round"/>
         </svg>
         <span className={styles.timerLabel}>
-          {t('home.daily_new_challenge')} <span className={styles.timerCountdown}>{countdown}</span>
+          {label} <span className={styles.timerCountdown}>{countdown}</span>
         </span>
       </div>
     </div>
