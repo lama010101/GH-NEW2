@@ -261,7 +261,10 @@
 
 .medal {
   width: 22px;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   font-size: 15px; /* layout-constrained — do not tokenize */
   font-weight: 800;
   color: var(--gh-text-muted);
