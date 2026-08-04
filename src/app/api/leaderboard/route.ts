@@ -269,7 +269,7 @@ function rowMatchesFilter(
   followedIds: Set<string>,
   userId: string
 ): boolean {
-  if (row.player_id === userId) return true;
+  if (friendsOnly && row.player_id === userId) return false;
   if (friendsOnly && !followedIds.has(row.player_id)) return false;
   if (identity?.is_ai && !flags.includeAi) return false;
   if (!identity?.is_ai && !flags.includeHumans) return false;
@@ -342,8 +342,6 @@ export async function GET(request: Request) {
     const visibleRows: LeaderboardRow[] = [];
 
     for (const row of rankedRows) {
-      if (row.player_id === userId) continue;
-
       const identity = identityMap.get(row.player_id);
       if (!rowMatchesFilter(row, identity, { includeHumans, includeAi }, friendsOnly, followedIds, userId)) {
         continue;
@@ -412,9 +410,6 @@ export async function GET(request: Request) {
         ownEntry = { ...base, avg_accuracy: ownRow.avg_accuracy ?? 0, total_xp: ownRow.total_xp ?? 0, games_played: ownRow.games_played ?? 0, rounds_played: ownRow.rounds_played ?? 0, rounds_won: ownRow.rounds_won ?? 0 } as OverallRow;
       }
 
-      if (!visibleRows.some((r) => r.player_id === ownEntry!.player_id)) {
-        visibleRows.push(ownEntry);
-      }
     }
 
     return NextResponse.json({

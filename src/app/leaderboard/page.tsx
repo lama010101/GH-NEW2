@@ -51,6 +51,7 @@ function LeaderboardPageInner() {
   const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
 
   const [currentData, setCurrentData] = useState<LeaderboardEntry[] | null>(null);
+  const [ownEntry, setOwnEntry] = useState<LeaderboardEntry | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,6 +139,7 @@ function LeaderboardPageInner() {
       }
       const data = (await res.json()) as LeaderboardResponse;
       setCurrentData(data.rows);
+      setOwnEntry(data.ownEntry);
     } catch {
       setError(t('err_load_failed'));
     } finally {
@@ -175,9 +177,9 @@ function LeaderboardPageInner() {
   };
 
   const ownRow = useMemo(() => {
-    if (!playerId || !currentData) return null;
-    return currentData.find((r) => r.player_id === playerId) ?? null;
-  }, [playerId, currentData]);
+    if (!playerId) return null;
+    return currentData?.find((r) => r.player_id === playerId) ?? ownEntry ?? null;
+  }, [playerId, currentData, ownEntry]);
 
   const ownRank = ownRow?.rank ?? null;
 
