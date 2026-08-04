@@ -24,7 +24,14 @@ export default function FooterSection() {
             onClick={() => router.push('/privacy')}
             className="text-left underline hover:text-[var(--gh-text-primary)]"
           >
-            {t('privacy')}
+            Privacy Policy
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push('/terms')}
+            className="text-left underline hover:text-[var(--gh-text-primary)]"
+          >
+            Terms of Service
           </button>
         </div>
       </div>
