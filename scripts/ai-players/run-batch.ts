@@ -14,8 +14,17 @@ const MODEL_ID = "anthropic/claude-sonnet-4.6";
 const AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
 const PROVIDER = "openrouter";
 
-const WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers.ts");
+const DEFAULT_WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers.ts");
 const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
+
+function getWorkerScript(): string {
+  const arg = process.argv.find((a) => a.startsWith("--worker="));
+  if (!arg) return DEFAULT_WORKER_SCRIPT;
+  const path = arg.slice("--worker=".length);
+  // Allow relative paths from repo root and absolute paths.
+  if (path.startsWith("/")) return path;
+  return resolve(process.cwd(), path);
+}
 
 interface WorkerResult {
   code: number | null;
@@ -99,7 +108,7 @@ function isTransientFailure(stderr: string, stdout: string): boolean {
 
 function runWorker(eventId: string): Promise<WorkerResult> {
   return new Promise((resolve) => {
-    const child = spawn(TSX_BIN, [WORKER_SCRIPT, eventId], {
+    const child = spawn(TSX_BIN, [getWorkerScript(), eventId], {
       cwd: process.cwd(),
       env: process.env,
       stdio: "pipe",

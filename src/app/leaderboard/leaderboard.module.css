@@ -131,6 +131,59 @@
   color: var(--gh-orange);
 }
 
+/* Filter chips */
+.filterRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filterChip,
+.friendsToggle {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  padding: 8px 14px;
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 20px;
+  color: var(--gh-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterChip:hover,
+.friendsToggle:hover {
+  background: var(--gh-glass-bg-hover);
+  color: var(--gh-text-primary);
+}
+
+.filterChipActive,
+.friendsToggleActive {
+  background: rgba(var(--gh-orange-rgb), 0.15);
+  border-color: rgba(var(--gh-orange-rgb), 0.3);
+  color: var(--gh-orange);
+}
+
+.friendsToggle {
+  margin-left: auto;
+}
+
+.avatarAi {
+  border-radius: 8px;
+}
+
+.aiBadge {
+  margin-left: 6px;
+  padding: 2px 6px;
+  background: rgba(var(--gh-orange-rgb), 0.15);
+  border-radius: 4px;
+  color: var(--gh-orange);
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 /* Content */
 .content {
   flex: 1;

@@ -34,7 +34,6 @@ export async function POST(request: Request) {
       playerId: body.playerId,
       mode: body.mode,
       roundTimerSec: body.roundTimerSec,
-      totalRounds: body.totalRounds,
       yearMin: body.yearMin,
       yearMax: body.yearMax,
       resultsAutoAdvanceSec: body.resultsAutoAdvanceSec,
