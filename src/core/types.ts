@@ -76,6 +76,7 @@ export type PlayerRoundResult = {
   distanceKm: number | null;
   yearDiff: number | null;
   region: string | null;
+  absent?: boolean;
   rank: number;
   badges: Badge[];
   nearMisses: Array<{ dimension: BadgeDimension; accuracy: number }>;

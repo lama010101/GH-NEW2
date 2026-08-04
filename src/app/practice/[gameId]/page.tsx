@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import type { CompeteSessionSnapshot } from "@/core/types";
 import { useIdentity } from "@/hooks/useIdentity";
+import { useLeaveGuard } from "@/hooks/useLeaveGuard";
 import { HintModal } from "@/components/HintModal";
 import type { HintPurchaseResult } from "@/components/HintModal";
 import { RoundResult, AllRoundResult } from "@/core/competeTypes";
@@ -74,6 +75,9 @@ export default function PracticeGamePage() {
   const guessLatRef = useRef<number | null>(null);
   const guessLngRef = useRef<number | null>(null);
   const autoSubmitFiredRef = useRef(false);
+
+  // Navigation guard: prevent refresh and back button during active game phases
+  useLeaveGuard(snapshot?.status, gameId, ["LOBBY", "ROUND_ACTIVE", "ROUND_COMPLETE"]);
 
   // Fetch initial snapshot
   useEffect(() => {
