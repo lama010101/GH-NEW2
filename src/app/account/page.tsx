@@ -8,6 +8,7 @@ import { useIdentity } from '@/hooks/useIdentity'
 import { signOut, updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity'
 import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit } from '@/lib/distance'
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
+import { toProxiedImageUrl } from '@/lib/imageProxy'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
@@ -228,7 +229,7 @@ export default function AccountPage() {
             {avatarInfo.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={avatarInfo.imageUrl}
+                src={toProxiedImageUrl(avatarInfo.imageUrl) ?? ''}
                 alt={avatarInfo.name}
                 className={styles.avatarImg}
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}

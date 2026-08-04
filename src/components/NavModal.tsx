@@ -4,6 +4,7 @@ import React, { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import styles from './NavModal.module.css'
+import { toProxiedImageUrl } from '@/lib/imageProxy'
 import { ThemeToggle } from './layout/ThemeToggle'
 import { LanguageDropdown } from './layout/LanguageDropdown'
 
@@ -57,7 +58,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
           <div className={styles.avatarRing}>
             {avatarUrl
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={avatarUrl} alt="" className={styles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
+              ? <img src={toProxiedImageUrl(avatarUrl) ?? ''} alt="" className={styles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
               : null
             }
             <span className={styles.avatarInitials} style={{ display: avatarUrl ? "none" : "inline" }}>{initials.slice(0, 2)}</span>
