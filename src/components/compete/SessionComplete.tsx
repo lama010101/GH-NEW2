@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from 'next-intl';
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import RainbowRing from "@/components/compete/RainbowRing";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import RankCard from "@/components/RankCard";
@@ -802,9 +803,9 @@ export default function SessionComplete({
                             <div className={styles.photo}>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={round.imageUrl}
+                                src={toProxiedImageUrl(round.imageUrl) ?? ''}
                                 alt={round.title}
-                                onClick={() => { setViewerSrc(round.imageUrl); setViewerAlt(round.title); }}
+                                onClick={() => { setViewerSrc(toProxiedImageUrl(round.imageUrl) ?? ''); setViewerAlt(round.title); }}
                               />
                             </div>
                           )}

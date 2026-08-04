@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import styles from './FullscreenImageViewer.module.css';
 
 interface FullscreenImageViewerProps {
@@ -133,7 +134,7 @@ export default function FullscreenImageViewer({ src, alt, onClose }: FullscreenI
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
-        src={src}
+        src={toProxiedImageUrl(src) ?? ''}
         alt={alt || ''}
         className={styles.img}
         style={{

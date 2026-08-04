@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import { useIdentity } from "@/hooks/useIdentity";
 import { useLeaveGuard } from "@/hooks/useLeaveGuard";
@@ -266,7 +267,7 @@ export default function DailyRoundPage() {
     const nextImageUrl = snapshot.rounds?.[nextRoundIndex]?.imageUrl;
     if (!nextImageUrl) return;
     const img = new Image();
-    img.src = nextImageUrl;
+    img.src = toProxiedImageUrl(nextImageUrl) ?? '';
   }, [snapshot?.currentRoundIndex, snapshot?.status, snapshot?.rounds]);
 
   const viewer = useMemo(() => {
