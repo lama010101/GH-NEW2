@@ -86,7 +86,7 @@ export default function PrivacyPage() {
 
         <h2 className="text-xl font-semibold mt-8 mb-3">8. Contact Us</h2>
         <p className="leading-relaxed mb-6">
-          For privacy questions, data deletion requests, or other concerns, contact us at: [INSERT CONTACT EMAIL]
+          For privacy questions, data deletion requests, or other concerns, contact us at: appymanya@gmail.com
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-3">9. Changes to This Policy</h2>
