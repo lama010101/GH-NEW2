@@ -784,7 +784,7 @@ function buildAsyncPlayerSnapshotFromBase(
   const players: SessionPlayer[] = playerRows.map(row => {
     const events = allPlayerEvents.get(row.player_id) ?? [];
     const state = derivePlayerRoundState(events, globalRoundStartedAt, globalPhaseEndsAt, gameId, row.player_id);
-    const hasSubmitted = state.submittedRounds.has(state.currentRound);
+    const hasSubmitted = state.submittedRounds.has(playerState.currentRound);
     const player = mapSessionPlayerRowToPlayer(row, hasSubmitted);
 
     if (state.reachedRounds.size === 0) {
