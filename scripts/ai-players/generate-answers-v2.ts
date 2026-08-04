@@ -29,7 +29,7 @@ const DEADLINE_MS = (() => {
 // Hint tier penalty RATES copied verbatim from src/server/sessionCore.ts:93.
 // Applied proportionally in evaluateRound (not flat point subtraction).
 // WHEN (year) rates are age-discounted by eraScale inside evaluateRound.
-const TIER_PENALTY_RATE: Record<number, number> = { 1: 10, 2: 20, 3: 30, 4: 40, 5: 50 };
+const TIER_PENALTY_RATE: Record<number, number> = { 1: 30, 2: 20, 3: 50, 4: 40, 5: 50 };
 
 type HintRequest = { tier: number; type: string };
 type SuppliedHint = { id: string; tier: number; type: string; content: string };
