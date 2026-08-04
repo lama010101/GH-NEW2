@@ -25,6 +25,7 @@ import { setLocale } from "@/actions/setLocale";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm, hasSubmitted } from "@/core/competeUtils";
+import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
 import AccuracySuffix from "@/components/AccuracySuffix";
@@ -694,9 +695,8 @@ export default function RoundCompleteSection({
               const usedHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
                 .filter(h => submittedHintPenaltyRef.current.purchasedIds.includes(h.id))
                 .sort((a, b) => {
-                  const rate = (t: number) => [0, 30, 20, 50, 40, 50][t] ?? 0;
-                  const aRate = rate(a.tier);
-                  const bRate = rate(b.tier);
+                  const aRate = TIER_PENALTY_RATE[a.tier] ?? 0;
+                  const bRate = TIER_PENALTY_RATE[b.tier] ?? 0;
                   if (aRate !== bRate) return aRate - bRate;
                   return a.tier - b.tier;
                 });
@@ -705,7 +705,7 @@ export default function RoundCompleteSection({
                 <div className={styles.hintsCard}>
                   <div className={styles.hintsTitle}>{t('hints_used')}</div>
                   {usedHints.map((hint, idx) => {
-                    const tierPenaltyAcc = [0,30,20,50,40,50][hint.tier] ?? 0;
+                    const tierPenaltyAcc = TIER_PENALTY_RATE[hint.tier] ?? 0;
                     const meta = hint.metadata as { km?: number; years?: number | string } | null;
                     let revealedText = hint.content;
                     if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {

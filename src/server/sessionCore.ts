@@ -31,6 +31,7 @@ import {
 } from "@/core/types";
 import { MAX_ROUNDS, TIMER_MAX_SEC, TIMER_MIN_SEC } from "@/core/types";
 import { calculateBadges, evaluateNearMisses, evaluateRound } from "@/core/rules";
+import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
 import {
   dbPool,
   generateVerificationToken,
@@ -86,11 +87,6 @@ export const PRACTICE_PLAYER_ID = "00000000-0000-0000-0000-000000000000";
 export const PRACTICE_PLAYER_NAME = "Practice Player";
 
 export const PRESSURE_CLAMP_SECONDS = 30;
-
-// Hint tier penalty RATES (0-100 integer = 0%-100% of raw accuracy).
-// Applied proportionally in evaluateRound (not flat point subtraction).
-// WHEN (year) rates are age-discounted by eraScale inside evaluateRound.
-const TIER_PENALTY_RATE: Record<number, number> = { 1: 30, 2: 20, 3: 50, 4: 40, 5: 50 };
 
 export type DbExecutor = Pick<Pool, "query">;
 export type DbTransactionClient = DbExecutor & { release(): void };
