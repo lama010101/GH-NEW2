@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
-import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity';
+import { usePlayerFilter } from '@/hooks/usePlayerFilter';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
@@ -16,43 +16,12 @@ import styles from './leaderboard.module.css';
 type LeaderboardTab = 'daily' | 'levelup' | 'overall';
 type DailySubTab = 'today' | 'alltime';
 
-type TodayRow = {
-  player_id: string;
-  avg_accuracy: number;
-  completed_at: string;
-};
-
-type AlltimeRow = {
-  player_id: string;
-  avg_accuracy: number;
-  games_played: number;
-};
-
-type LevelupRow = {
-  player_id: string;
-  current_level: number;
-  best_accuracy: number;
-};
-
-type OverallRow = {
-  player_id: string;
-  avg_accuracy: number;
-  rounds_played: number;
-  rounds_won: number;
-  games_played: number;
-};
-
-type ProfileRow = {
-  id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-};
-
 type LeaderboardEntry = {
   rank: number;
   player_id: string;
   display_name: string | null;
   avatar_url: string | null;
+  is_ai: boolean;
   avg_accuracy?: number;
   games_played?: number;
   rounds_played?: number;
@@ -61,36 +30,44 @@ type LeaderboardEntry = {
   best_accuracy?: number;
 };
 
+type LeaderboardResponse = {
+  tab: string;
+  filter: string;
+  humans: boolean;
+  ai: boolean;
+  friends: boolean;
+  rows: LeaderboardEntry[];
+  ownEntry: LeaderboardEntry | null;
+};
+
 function LeaderboardPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { playerId, displayName } = useIdentity();
+  const { playerId, displayName, avatarUrl } = useIdentity();
+  const { filter, toggleHumans, toggleAi, toggleFriends } = usePlayerFilter();
   const t = useTranslations('leaderboard');
-  
+
   const [activeTab, setActiveTab] = useState<LeaderboardTab>('overall');
   const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
-  
-  const [todayData, setTodayData] = useState<LeaderboardEntry[] | null>(null);
-  const [alltimeData, setAlltimeData] = useState<LeaderboardEntry[] | null>(null);
-  const [levelupData, setLevelupData] = useState<LeaderboardEntry[] | null>(null);
-  const [overallData, setOverallData] = useState<LeaderboardEntry[] | null>(null);
-  
+
+  const [currentData, setCurrentData] = useState<LeaderboardEntry[] | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [initials, setInitials] = useState('PL');
   const [showNavModal, setShowNavModal] = useState(false);
   const locale = useLocale();
-  const [ownRank, setOwnRank] = useState<number | null>(null);
   const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+
+  const initials = useMemo(() => {
+    if (!displayName) return 'PL';
+    return displayName.trim().split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+  }, [displayName]);
 
   useEffect(() => {
     if (!playerId) {
-      setAvatarUrl(null);
-      setInitials('PL');
       setAccuracy('--');
       setXp('--');
       return;
@@ -107,191 +84,8 @@ function LeaderboardPageInner() {
           setXp(Number(stats.total_xp).toLocaleString('fr-FR'));
         }
       } catch {}
-      try {
-        const { data: profile } = await supabaseBrowser
-          .from('profiles')
-          .select('display_name,avatar_url')
-          .eq('id', playerId)
-          .single();
-        if (profile) {
-          if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
-          if (profile.display_name) setInitials(profile.display_name.slice(0, 2).toUpperCase());
-          if (profile.display_name) updateCachedDisplayName(profile.display_name);
-          if (profile.avatar_url) updateCachedAvatarUrl(profile.avatar_url);
-        }
-      } catch {}
     })();
   }, [playerId]);
-
-  const getInitials = (name: string | null): string => {
-    if (!name) return '?';
-    const words = name.trim().split(/\s+/);
-    const initials = words.map(w => w[0]).join('').toUpperCase();
-    return initials.slice(0, 2);
-  };
-
-  const fetchProfiles = async (playerIds: string[]): Promise<Map<string, ProfileRow>> => {
-    if (playerIds.length === 0) return new Map();
-    
-    const { data: profileRows } = await supabaseBrowser
-      .from('profiles')
-      .select('id, display_name, avatar_url')
-      .in('id', playerIds);
-    
-    const profileMap = new Map<string, ProfileRow>();
-    profileRows?.forEach((p: ProfileRow) => {
-      profileMap.set(p.id, p);
-    });
-    return profileMap;
-  };
-
-  const fetchTodayData = useCallback(async () => {
-    const today = new Date().toISOString().split('T')[0];
-    
-    const { data: todayRows, error: todayError } = await supabaseBrowser
-      .from('leaderboard_daily')
-      .select('player_id, avg_accuracy')
-      .eq('date', today)
-      .order('avg_accuracy', { ascending: false })
-      .order('best_round_accuracy', { ascending: false, nullsFirst: false })
-      .limit(50);
-    
-    if (todayError) throw todayError;
-    
-    const playerIds = (todayRows as TodayRow[] || []).map(r => r.player_id);
-    const profileMap = await fetchProfiles(playerIds);
-    
-    const entries: LeaderboardEntry[] = (todayRows as TodayRow[] || []).map((row, idx) => {
-      const profile = profileMap.get(row.player_id);
-      return {
-        rank: idx + 1,
-        player_id: row.player_id,
-        display_name: profile?.display_name ?? null,
-        avatar_url: profile?.avatar_url ?? null,
-        avg_accuracy: row.avg_accuracy,
-        games_played: 1,
-      };
-    });
-    
-    setTodayData(entries);
-  }, []);
-
-  const fetchAlltimeData = useCallback(async () => {
-    const { data: alltimeRows, error: alltimeError } = await supabaseBrowser
-      .from('leaderboard_daily_alltime')
-      .select('player_id, avg_accuracy, games_played')
-      .order('avg_accuracy', { ascending: false })
-      .order('total_xp', { ascending: false })
-      .limit(50);
-    
-    if (alltimeError) throw alltimeError;
-    
-    const playerIds = (alltimeRows as AlltimeRow[] || []).map(r => r.player_id);
-    const profileMap = await fetchProfiles(playerIds);
-    
-    const entries: LeaderboardEntry[] = (alltimeRows as AlltimeRow[] || []).map((row, idx) => {
-      const profile = profileMap.get(row.player_id);
-      return {
-        rank: idx + 1,
-        player_id: row.player_id,
-        display_name: profile?.display_name ?? null,
-        avatar_url: profile?.avatar_url ?? null,
-        avg_accuracy: row.avg_accuracy,
-        games_played: row.games_played,
-      };
-    });
-    
-    setAlltimeData(entries);
-  }, []);
-
-  const fetchLevelupData = useCallback(async () => {
-    const { data: levelupRows, error: levelupError } = await supabaseBrowser
-      .from('leaderboard_levelup')
-      .select('player_id, current_level, best_accuracy')
-      .order('current_level', { ascending: false })
-      .order('best_accuracy', { ascending: false })
-      .limit(50);
-    
-    if (levelupError) throw levelupError;
-    
-    const playerIds = (levelupRows as LevelupRow[] || []).map(r => r.player_id);
-    const profileMap = await fetchProfiles(playerIds);
-    
-    const entries: LeaderboardEntry[] = (levelupRows as LevelupRow[] || []).map((row, idx) => {
-      const profile = profileMap.get(row.player_id);
-      return {
-        rank: idx + 1,
-        player_id: row.player_id,
-        display_name: profile?.display_name ?? null,
-        avatar_url: profile?.avatar_url ?? null,
-        current_level: row.current_level,
-        best_accuracy: row.best_accuracy,
-      };
-    });
-    
-    setLevelupData(entries);
-  }, []);
-
-  const fetchOverallData = useCallback(async () => {
-    const { data: overallRows, error: overallError } = await supabaseBrowser
-      .from('player_global_stats')
-      .select('player_id, avg_accuracy, rounds_played, rounds_won, games_played')
-      .order('avg_accuracy', { ascending: false })
-      .order('total_xp', { ascending: false })
-      .limit(50);
-
-    if (overallError) throw overallError;
-
-    const playerIds = (overallRows as OverallRow[] || []).map(r => r.player_id);
-    const profileMap = await fetchProfiles(playerIds);
-
-    const entries: LeaderboardEntry[] = (overallRows as OverallRow[] || []).map((row, idx) => {
-      const profile = profileMap.get(row.player_id);
-      return {
-        rank: idx + 1,
-        player_id: row.player_id,
-        display_name: profile?.display_name ?? null,
-        avatar_url: profile?.avatar_url ?? null,
-        avg_accuracy: row.avg_accuracy,
-        rounds_played: row.rounds_played,
-        rounds_won: row.rounds_won,
-        games_played: row.games_played,
-      };
-    });
-
-    setOverallData(entries);
-  }, []);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      if (activeTab === 'daily') {
-        if (activeSubTab === 'today') {
-          if (todayData === null) {
-            await fetchTodayData();
-          }
-        } else {
-          if (alltimeData === null) {
-            await fetchAlltimeData();
-          }
-        }
-      } else if (activeTab === 'overall') {
-        if (overallData === null) {
-          await fetchOverallData();
-        }
-      } else {
-        if (levelupData === null) {
-          await fetchLevelupData();
-        }
-      }
-    } catch {
-      setError('Failed to load data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, activeSubTab, todayData, alltimeData, levelupData, overallData, fetchTodayData, fetchAlltimeData, fetchLevelupData, fetchOverallData]);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -305,92 +99,66 @@ function LeaderboardPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync activeTab + activeSubTab to URL so refresh restores the same view
+  // Sync activeTab + activeSubTab to URL so refresh restores the same view.
+  // Preserves any existing query params (e.g. filter chips).
   useEffect(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     if (activeTab !== 'overall') params.set('tab', activeTab);
+    else params.delete('tab');
     if (activeTab === 'daily' && activeSubTab === 'alltime') params.set('subtab', activeSubTab);
+    else params.delete('subtab');
     const qs = params.toString();
     router.replace(qs ? `/leaderboard?${qs}` : '/leaderboard', { scroll: false });
-  }, [activeTab, activeSubTab, router]);
+  }, [activeTab, activeSubTab, router, searchParams]);
+
+  const getApiTab = useCallback((): string => {
+    if (activeTab === 'daily') {
+      return activeSubTab === 'today' ? 'daily_today' : 'daily_alltime';
+    }
+    if (activeTab === 'levelup') return 'levelup';
+    return 'overall';
+  }, [activeTab, activeSubTab]);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams();
+      const apiTab = getApiTab();
+      if (apiTab !== 'overall') params.set('tab', apiTab);
+      if (filter.humans) params.set('humans', 'true');
+      if (filter.ai) params.set('ai', 'true');
+      if (filter.friends) params.set('friends', 'true');
+      const qs = params.toString();
+      const res = await fetch(`/api/leaderboard${qs ? `?${qs}` : ''}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Failed to load leaderboard');
+      }
+      const data = (await res.json()) as LeaderboardResponse;
+      setCurrentData(data.rows);
+    } catch {
+      setError(t('err_load_failed'));
+    } finally {
+      setLoading(false);
+    }
+  }, [getApiTab, filter, t]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   const handleRetry = () => {
-    if (activeTab === 'daily' && activeSubTab === 'today') {
-      setTodayData(null);
-    } else if (activeTab === 'daily' && activeSubTab === 'alltime') {
-      setAlltimeData(null);
-    } else if (activeTab === 'overall') {
-      setOverallData(null);
-    } else {
-      setLevelupData(null);
-    }
     fetchData();
   };
 
-  const getCurrentData = (): LeaderboardEntry[] | null => {
-    if (activeTab === 'daily') {
-      return activeSubTab === 'today' ? todayData : alltimeData;
-    }
-    if (activeTab === 'overall') return overallData;
-    return levelupData;
+  const getInitials = (name: string | null): string => {
+    if (!name) return '?';
+    const words = name.trim().split(/\s+/);
+    const initials = words.map(w => w[0]).join('').toUpperCase();
+    return initials.slice(0, 2);
   };
-
-  const fetchOwnRank = useCallback(async (): Promise<number | null> => {
-    if (!playerId) return null;
-    try {
-      let rows: { player_id: string }[] = [];
-      if (activeTab === 'overall') {
-        const { data } = await supabaseBrowser
-          .from('player_global_stats')
-          .select('player_id')
-          .order('avg_accuracy', { ascending: false })
-          .order('total_xp', { ascending: false });
-        rows = (data || []) as { player_id: string }[];
-      } else if (activeTab === 'daily' && activeSubTab === 'today') {
-        const today = new Date().toISOString().split('T')[0];
-        const { data } = await supabaseBrowser
-          .from('leaderboard_daily')
-          .select('player_id')
-          .eq('date', today)
-          .order('avg_accuracy', { ascending: false })
-          .order('best_round_accuracy', { ascending: false, nullsFirst: false });
-        rows = (data || []) as { player_id: string }[];
-      } else if (activeTab === 'daily' && activeSubTab === 'alltime') {
-        const { data } = await supabaseBrowser
-          .from('leaderboard_daily_alltime')
-          .select('player_id')
-          .order('avg_accuracy', { ascending: false })
-          .order('total_xp', { ascending: false });
-        rows = (data || []) as { player_id: string }[];
-      } else {
-        const { data } = await supabaseBrowser
-          .from('leaderboard_levelup')
-          .select('player_id, current_level, best_accuracy')
-          .order('current_level', { ascending: false })
-          .order('best_accuracy', { ascending: false });
-        rows = (data || []) as { player_id: string }[];
-      }
-      const index = rows.findIndex((r) => r.player_id === playerId);
-      return index === -1 ? null : index + 1;
-    } catch {
-      return null;
-    }
-  }, [playerId, activeTab, activeSubTab]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setOwnRank(null);
-    if (!playerId) return;
-    (async () => {
-      const rank = await fetchOwnRank();
-      if (!cancelled) setOwnRank(rank);
-    })();
-    return () => { cancelled = true; };
-  }, [playerId, activeTab, activeSubTab, fetchOwnRank]);
 
   const getOrdinalSuffix = (n: number): string => {
     const category = new Intl.PluralRules(locale, { type: 'ordinal' }).select(n);
@@ -405,6 +173,13 @@ function LeaderboardPageInner() {
     if (activeTab === 'levelup') return t('level_up');
     return t('overall');
   };
+
+  const ownRow = useMemo(() => {
+    if (!playerId || !currentData) return null;
+    return currentData.find((r) => r.player_id === playerId) ?? null;
+  }, [playerId, currentData]);
+
+  const ownRank = ownRow?.rank ?? null;
 
   const handleSummaryClick = () => {
     const row = playerId ? rowRefs.current.get(playerId) : undefined;
@@ -425,8 +200,6 @@ function LeaderboardPageInner() {
       </span>
     );
   }
-
-  const currentData = getCurrentData();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   rowRefs.current = useMemo(() => new Map<string, HTMLTableRowElement>(), [currentData]);
@@ -463,6 +236,9 @@ function LeaderboardPageInner() {
       subtitle = '';
     }
 
+    const name = entry.display_name ?? t('unknown_player');
+    const avatarFallback = entry.is_ai ? 'AI' : getInitials(entry.display_name);
+
     return (
       <div className={styles.playerCell}>
         {entry.avatar_url ? (
@@ -470,16 +246,16 @@ function LeaderboardPageInner() {
           <img
             src={entry.avatar_url}
             alt=""
-            className={styles.avatar}
+            className={`${styles.avatar} ${entry.is_ai ? styles.avatarAi : ''}`}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (
-          <div className={styles.avatarInitials}>
-            {getInitials(entry.display_name)}
+          <div className={`${styles.avatarInitials} ${entry.is_ai ? styles.avatarAi : ''}`}>
+            {avatarFallback}
           </div>
         )}
         <div className={styles.playerInfo}>
-          <span className={styles.playerName}>{entry.display_name ?? t('unknown_player')}</span>
+          <span className={styles.playerName}>{name}{entry.is_ai ? <span className={styles.aiBadge}>AI</span> : null}</span>
           <span className={styles.playerSubtitle}>{subtitle}</span>
         </div>
       </div>
@@ -546,6 +322,34 @@ function LeaderboardPageInner() {
         </div>
       )}
 
+      {/* Filter chips */}
+      <div className={styles.filterRow}>
+        <button
+          type="button"
+          onClick={toggleHumans}
+          className={`${styles.filterChip} ${filter.humans ? styles.filterChipActive : ''}`}
+          aria-pressed={filter.humans}
+        >
+          {t('filter_humans')}
+        </button>
+        <button
+          type="button"
+          onClick={toggleAi}
+          className={`${styles.filterChip} ${filter.ai ? styles.filterChipActive : ''}`}
+          aria-pressed={filter.ai}
+        >
+          {t('filter_ai')}
+        </button>
+        <button
+          type="button"
+          onClick={toggleFriends}
+          className={`${styles.friendsToggle} ${filter.friends ? styles.friendsToggleActive : ''}`}
+          aria-pressed={filter.friends}
+        >
+          {t('filter_friends')}
+        </button>
+      </div>
+
       {/* Summary */}
       {!loading && !error && ownRank !== null && ownRank > 0 && (
         <div
@@ -573,12 +377,12 @@ function LeaderboardPageInner() {
                 <img
                   src={slot.entry.avatar_url}
                   alt=""
-                  className={styles.podiumAvatar}
+                  className={`${styles.podiumAvatar} ${slot.entry.is_ai ? styles.avatarAi : ''}`}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
               ) : (
-                <div className={styles.podiumAvatarInitials}>
-                  {getInitials(slot.entry.display_name)}
+                <div className={`${styles.podiumAvatarInitials} ${slot.entry.is_ai ? styles.avatarAi : ''}`}>
+                  {slot.entry.is_ai ? 'AI' : getInitials(slot.entry.display_name)}
                 </div>
               )}
               <span className={styles.podiumName}>{slot.entry.display_name ?? t('unknown_player')}</span>
@@ -659,7 +463,7 @@ function LeaderboardPageInner() {
                     >
                       <td className={styles.rankCell}>{renderRank(entry.rank)}</td>
                       <td className={styles.playerCell}>{renderPlayerCell(entry)}</td>
-                      
+
                       {activeTab === 'daily' && activeSubTab === 'today' && (
                         <>
                           <td className={styles.accuracyCell}>
@@ -670,7 +474,7 @@ function LeaderboardPageInner() {
                           </td>
                         </>
                       )}
-                      
+
                       {activeTab === 'daily' && activeSubTab === 'alltime' && (
                         <>
                           <td className={styles.accuracyCell}>
@@ -681,7 +485,7 @@ function LeaderboardPageInner() {
                           </td>
                         </>
                       )}
-                      
+
                       {activeTab === 'levelup' && (
                         <>
                           <td className={styles.accuracyCell}>
