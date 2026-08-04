@@ -12,6 +12,8 @@ interface RankCardProps {
   /** When true, renders only the inner content (rankMain) with no wrapper/card/collapse.
    *  Used to merge the rank card into a parent card (e.g. Game accuracy card). */
   bare?: boolean;
+  /** When 'dark', forces rank XP text to white for use on dark backgrounds. */
+  variant?: 'default' | 'dark';
 }
 
 // Map rank tier → compressed image in /public/images/rank-titles/
@@ -31,7 +33,7 @@ const RANK_IMAGE: Record<number, string> = {
 // Collapsible rank card with medallion image, title, XP, next-rank line, progress bar.
 // Derives everything from totalXp via rankForXp (single source of truth).
 // open controls expand/collapse of the full module body.
-export default function RankCard({ totalXp, open, inline = false, bare = false }: RankCardProps) {
+export default function RankCard({ totalXp, open, inline = false, bare = false, variant = 'default' }: RankCardProps) {
   const t = useTranslations('rank');
 
   const xp = (totalXp === null || totalXp === undefined || Number.isNaN(totalXp))
@@ -43,11 +45,11 @@ export default function RankCard({ totalXp, open, inline = false, bare = false }
   const imgSrc = RANK_IMAGE[info.tier] ?? RANK_IMAGE[1];
 
   const rankMain = (
-    <div className={styles.rankMain}>
+    <div className={`${styles.rankMain} ${variant === 'dark' ? styles.rankMainDark : ''}`}>
       <div className={styles.rankMedallion}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imgSrc} alt={title} className={styles.rankMedImg} draggable={false} />
-        <span className={styles.rankMedTier}>T{info.tier}</span>
+        <span className={styles.rankMedTier}><span className={styles.rankMedTierText}>T{info.tier}</span></span>
       </div>
       <div className={styles.rankBody}>
         <div className={styles.rankHead}>
