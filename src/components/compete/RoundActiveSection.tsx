@@ -13,6 +13,9 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import AccuracySuffix from "@/components/AccuracySuffix";
 import { getAccuracyColor } from "@/core/accuracyColor";
+import PlayerAvatar from "./PlayerAvatar";
+import WhereIcon from "@/components/icons/WhereIcon";
+import WhenIcon from "@/components/icons/WhenIcon";
 import styles from "./RoundActiveSection.module.css";
 import type { ConnectionState } from "@/core/competeWebSocket";
 
@@ -745,9 +748,7 @@ export default function RoundActiveSection({
         <div className={styles.opponentList}>
           {snapshot.players
             .filter((p) => p.playerId !== playerId)
-            .map((p) => {
-              const initials = (p.displayName ?? p.playerId ?? "?")[0].toUpperCase();
-              return (
+            .map((p) => (
                 <div key={p.playerId} className={styles.opponentRow}>
                   {submittedToasts[p.playerId] && (
                     <div className={styles.submittedToast}>{t('guessed')}</div>
@@ -760,28 +761,16 @@ export default function RoundActiveSection({
                       {t('waiting_for')}
                     </div>
                   )}
-                  <div className={`${styles.opponentAvatar} ${p.hasSubmitted ? styles.opponentAvatarSubmitted : ""}`}>
-                    {p.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={p.avatarUrl}
-                        alt={initials}
-                        className={styles.opponentAvatarImg}
-                        onError={(e) => { 
-                          (e.currentTarget as HTMLImageElement).style.display = "none"; 
-                          const parent = (e.currentTarget as HTMLImageElement).parentElement;
-                          if (parent) {
-                            parent.textContent = initials;
-                          }
-                        }}
-                      />
-                    ) : (
-                      initials
-                    )}
-                  </div>
+                  <PlayerAvatar
+                    avatarUrl={p.avatarUrl ?? null}
+                    displayName={p.displayName || p.playerId.slice(0, 8)}
+                    playerId={p.playerId}
+                    size={42}
+                    submitted={p.hasSubmitted}
+                  />
                 </div>
-              );
-            })}
+              ))
+            }
         </div>
       )}
 
@@ -864,8 +853,7 @@ export default function RoundActiveSection({
               aria-label={t('when')}
               data-testid="round-when-btn"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/when.webp" alt={t('when')} className={styles.btnIcon} />
+              <WhenIcon className={styles.btnIcon} size={44} style={{ color: 'var(--gh-text-primary)' }} />
             </button>
           </div>
 
@@ -896,8 +884,7 @@ export default function RoundActiveSection({
               aria-label={t('where')}
               data-testid="round-where-btn"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/badges/where.webp" alt={t('where')} className={styles.btnIcon} />
+              <WhereIcon className={styles.btnIcon} size={44} style={{ color: 'var(--gh-text-primary)' }} />
             </button>
           </div>
 
@@ -948,8 +935,7 @@ export default function RoundActiveSection({
               <>
                 <div className={styles.sheetHeader}>
                   <div className={styles.sheetHeaderLeft}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/badges/where.webp" alt="" className={styles.sheetHeaderIcon} />
+                    <WhereIcon className={styles.sheetHeaderIcon} size={48} style={{ color: 'var(--gh-teal)' }} />
                     <div className={styles.sheetHeaderMeta}>
                       <span className={styles.sheetHeaderValue}>
                         {guessLocation !== null
@@ -1025,8 +1011,7 @@ export default function RoundActiveSection({
               <>
                 <div className={styles.sheetHeader}>
                   <div className={styles.sheetHeaderLeft}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/badges/when.webp" alt="" className={styles.sheetHeaderIcon} />
+                    <WhenIcon className={styles.sheetHeaderIcon} size={48} style={{ color: 'var(--gh-violet)' }} />
                     <div className={styles.sheetHeaderMeta}>
                       <span className={styles.sheetHeaderValue}>
                         {guessYear !== null ? String(guessYear) : t('no_year_set')}

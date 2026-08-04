@@ -8,6 +8,7 @@ import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import InlineImageBadge from './InlineImageBadge';
 import PlayerAvatar from './PlayerAvatar';
+import WhereIcon from "@/components/icons/WhereIcon";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import styles from "./WhereCard.module.css";
 
@@ -75,8 +76,7 @@ export default function WhereCard({
       {!bare && (
       <div className={styles.header}>
         <div className={styles.titleGroup}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/badges/where.webp" alt={t('where')} width={36} height={36} className={styles.titleIcon} />
+          <WhereIcon className={styles.titleIcon} size={36} style={{ color: 'var(--gh-teal)' }} />
           <span className={styles.titleText}>{t('where')}</span>
         </div>
         {(() => {
@@ -224,6 +224,7 @@ export default function WhereCard({
                     <PlayerAvatar
                       avatarUrl={snapshotPlayers.find(p => p.playerId === r.playerId)?.avatarUrl ?? null}
                       displayName={snapshotPlayers.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
+                      playerId={r.playerId}
                       size={40}
                     />
                     <span className={styles.lbName}>

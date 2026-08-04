@@ -16,6 +16,8 @@ import InlineImageBadge from "@/components/compete/InlineImageBadge";
 import BadgePopup from "@/components/compete/BadgePopup";
 import RatingControl from "@/components/compete/RatingControl";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
+import WhereIcon from "@/components/icons/WhereIcon";
+import WhenIcon from "@/components/icons/WhenIcon";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import { setLocale } from "@/actions/setLocale";
@@ -534,7 +536,7 @@ export default function RoundCompleteSection({
                     </span>
                     <span className={styles.lbNameCell}>
                       <span className={styles.lbNameInner}>
-                        <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} size={40} />
+                        <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} playerId={row.playerId} size={40} />
                         <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
                           {row.displayName}
                         </span>
@@ -563,7 +565,7 @@ export default function RoundCompleteSection({
                       <span className={styles.lbRank}>—</span>
                       <span className={styles.lbNameCell}>
                         <span className={styles.lbNameInner}>
-                          <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} size={40} />
+                          <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} playerId={p.playerId} size={40} />
                           <span style={{ ...getUsernameGradientStyle(p.playerId), fontWeight: isMe ? 700 : 500 }}>
                             {p.displayName || p.playerId.slice(0, 8)}
                           </span>
@@ -590,16 +592,14 @@ export default function RoundCompleteSection({
                   className={`${styles.whereWhenTab} ${whereWhenTab === 'where' ? styles.whereWhenTabActiveWhere : ''}`}
                   onClick={() => setWhereWhenTab('where')}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/badges/where.webp" alt="" width={20} height={20} className={styles.whereWhenTabIcon} />
+                  <WhereIcon className={styles.whereWhenTabIcon} size={20} />
                   {t('where')}
                 </button>
                 <button
                   className={`${styles.whereWhenTab} ${whereWhenTab === 'when' ? styles.whereWhenTabActiveWhen : ''}`}
                   onClick={() => setWhereWhenTab('when')}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/badges/when.webp" alt="" width={20} height={20} className={styles.whereWhenTabIcon} />
+                  <WhenIcon className={styles.whereWhenTabIcon} size={20} />
                   {t('when')}
                 </button>
               </div>
@@ -742,7 +742,7 @@ export default function RoundCompleteSection({
                         const name = p?.displayName ?? pid.slice(0, 8);
                         return (
                           <span key={pid} className={styles.readyName}>
-                            <PlayerAvatar avatarUrl={p?.avatarUrl ?? null} displayName={name} size={24} />
+                            <PlayerAvatar avatarUrl={p?.avatarUrl ?? null} displayName={name} playerId={pid} size={24} />
                             <span style={getUsernameGradientStyle(pid)}>{name}</span> ✓
                           </span>
                         );

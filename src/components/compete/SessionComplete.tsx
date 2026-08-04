@@ -17,7 +17,10 @@ import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import AccuracySuffix from "@/components/AccuracySuffix";
 import { getAccuracyColor } from "@/core/accuracyColor";
-import { Target, TrendingUp, type LucideIcon } from "lucide-react";
+import PlayerAvatar from "@/components/compete/PlayerAvatar";
+import WhereIcon from "@/components/icons/WhereIcon";
+import WhenIcon from "@/components/icons/WhenIcon";
+import { Target, TrendingUp } from "lucide-react";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
@@ -290,6 +293,7 @@ export default function SessionComplete({
         // ── MVP Awards ──
         type MvpPlayer = {
           playerId: string;
+          avatarUrl: string | null;
           displayName: string;
           isMe: boolean;
           stats: NonNullable<ReturnType<typeof computePlayerStats>>;
@@ -306,6 +310,7 @@ export default function SessionComplete({
             if (!stats) return null;
             return {
               playerId: p.playerId,
+              avatarUrl: p.avatarUrl ?? null,
               displayName: playerLabel(snapshot.players, p.playerId),
               isMe: p.playerId === playerId,
               stats,
@@ -317,17 +322,19 @@ export default function SessionComplete({
           })
           .filter((p): p is MvpPlayer => p !== null && p.roundCount === snapshot.config.totalRounds);
 
+        type IconComponent = React.ComponentType<{ size?: number | string; className?: string }>;
+
         type MvpCategory = {
           key: string;
           label: string;
-          icon: string | LucideIcon;
+          icon: IconComponent;
           getValue: (stats: MvpPlayer['stats']) => number;
         };
 
         const mvpCategories: MvpCategory[] = [
           { key: 'overall', label: tGame('mvp_overall'), icon: Target, getValue: (s: MvpPlayer['stats']) => s.avgAccuracy },
-          { key: 'year', label: tGame('mvp_year'), icon: '/badges/when.webp', getValue: (s: MvpPlayer['stats']) => s.avgYearAccuracy },
-          { key: 'location', label: tGame('mvp_location'), icon: '/badges/where.webp', getValue: (s: MvpPlayer['stats']) => s.avgLocationAccuracy },
+          { key: 'year', label: tGame('mvp_year'), icon: WhenIcon, getValue: (s: MvpPlayer['stats']) => s.avgYearAccuracy },
+          { key: 'location', label: tGame('mvp_location'), icon: WhereIcon, getValue: (s: MvpPlayer['stats']) => s.avgLocationAccuracy },
           { key: 'consistency', label: tGame('mvp_consistency'), icon: TrendingUp, getValue: (s: MvpPlayer['stats']) => s.avgConsistency },
         ];
 
@@ -475,16 +482,12 @@ export default function SessionComplete({
                   onClick={() => setNavModalOpen(true)}
                   aria-label={t('open_profile_menu')}
                 >
-                  {currentPlayerData?.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={currentPlayerData.avatarUrl}
-                      alt={currentDisplayName}
-                      className={styles.avatarImg}
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }}
-                    />
-                  ) : null}
-                  {currentInitial}
+                  <PlayerAvatar
+                    avatarUrl={currentPlayerData?.avatarUrl ?? null}
+                    displayName={currentDisplayName}
+                    playerId={playerId}
+                    size={32}
+                  />
                 </button>
                 <NavModal
                   isOpen={navModalOpen}
@@ -551,7 +554,6 @@ export default function SessionComplete({
                   const isCurrentPlayer = player.playerId === playerId;
                   const playerData = snapshot.players.find(p => p.playerId === player.playerId);
                   const displayName = player.displayName || playerLabel(snapshot.players, player.playerId);
-                  const firstLetter = displayName ? displayName.charAt(0).toUpperCase() : "?";
                   // Relax (async) player status. Sync (Rush) keeps hasPlayed-only behavior:
                   // roundStatus/currentRoundIndex are undefined there per types.ts.
                   let showAccuracy = player.hasPlayed;
@@ -575,18 +577,12 @@ export default function SessionComplete({
                         {index + 1}
                       </span>
                       <div className={styles.avatarWrap}>
-                        <div className={styles.rankAvatar}>
-                          {playerData?.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={playerData.avatarUrl}
-                              alt={displayName}
-                              className={styles.avatarImg}
-                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }}
-                            />
-                          ) : null}
-                          {firstLetter}
-                        </div>
+                        <PlayerAvatar
+                          avatarUrl={playerData?.avatarUrl ?? null}
+                          displayName={displayName}
+                          playerId={player.playerId}
+                          size={38}
+                        />
                       </div>
                       <div className={styles.rankMain}>
                         <div className={styles.rankNameLine}>
@@ -631,22 +627,24 @@ export default function SessionComplete({
                 <div className={styles.mvpList}>
                   {mvpAwards.map((award) => (
                     <div key={award.key} className={styles.mvpRow}>
-                      <span className={styles.mvpIcon}>
-                        {typeof award.icon === 'string' && award.icon.startsWith('/') ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={award.icon} alt="" width={24} height={24} />
-                          </>
-                        ) : typeof award.icon === 'string' ? (
-                          award.icon
-                        ) : (
-                          <award.icon size={22} />
-                        )}
+                      <span
+                        className={styles.mvpIcon}
+                        style={{
+                          color: award.key === 'year' ? 'var(--gh-violet)' : award.key === 'location' ? 'var(--gh-teal)' : 'var(--gh-text-primary)',
+                        }}
+                      >
+                        <award.icon size={24} />
                       </span>
                       <span className={styles.mvpLabel}>{award.label}</span>
                       <span className={styles.mvpNames}>
                         {award.winners.map((w, i) => (
                           <span key={w.playerId} className={styles.mvpWinner}>
+                            <PlayerAvatar
+                              avatarUrl={w.avatarUrl}
+                              displayName={w.displayName}
+                              playerId={w.playerId}
+                              size={24}
+                            />
                             <span>
                               <span className={`${styles.mvpName} ${w.isMe ? styles.mvpNameMe : ''}`}>
                                 {w.isMe ? tGame('mvp_you') : w.displayName}
