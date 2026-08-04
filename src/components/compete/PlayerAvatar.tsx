@@ -1,4 +1,5 @@
 import React from "react";
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import styles from './PlayerAvatar.module.css';
 
 interface PlayerAvatarProps {
@@ -30,7 +31,7 @@ export default function PlayerAvatar({ avatarUrl, displayName, size = 26 }: Play
       <span style={containerStyle}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={avatarUrl}
+          src={toProxiedImageUrl(avatarUrl) ?? ''}
           alt={displayName}
           className={styles.avatarImg}
           onError={(e) => { 

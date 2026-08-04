@@ -6,6 +6,7 @@ import { Settings } from "lucide-react";
 import styles from "./WelcomeModal.module.css";
 import { AvatarPickerModal } from "./AvatarPickerModal";
 import { updateCachedDisplayName, updateCachedAvatarUrl } from "@/core/identity";
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 
 export interface WelcomeModalProps {
   isOpen: boolean;
@@ -92,7 +93,7 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={avatarUrl}
+              src={toProxiedImageUrl(avatarUrl) ?? ''}
               alt={fullName}
               className={styles.avatarImg}
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }}

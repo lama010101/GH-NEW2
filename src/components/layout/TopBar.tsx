@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { rankForXp } from '@/core/rank'
 import { getAccuracyColor } from '@/core/accuracyColor'
+import { toProxiedImageUrl } from '@/lib/imageProxy'
 import NotificationBell from '@/components/NotificationBell'
 import styles from './TopBar.module.css'
 
@@ -43,7 +44,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
           {avatarUrl
             ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="" className={styles.avatarBtnImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
+              <img src={toProxiedImageUrl(avatarUrl) ?? ''} alt="" className={styles.avatarBtnImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
             )
             : null
           }

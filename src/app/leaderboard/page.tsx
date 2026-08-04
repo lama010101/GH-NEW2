@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { usePlayerFilter } from '@/hooks/usePlayerFilter';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
+import { toProxiedImageUrl } from '@/lib/imageProxy';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
 import AccuracySuffix from '@/components/AccuracySuffix';
@@ -246,7 +247,7 @@ function LeaderboardPageInner() {
         {entry.avatar_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={entry.avatar_url}
+            src={toProxiedImageUrl(entry.avatar_url) ?? ''}
             alt=""
             className={`${styles.avatar} ${entry.is_ai ? styles.avatarAi : ''}`}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
@@ -377,7 +378,7 @@ function LeaderboardPageInner() {
               {slot.entry.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={slot.entry.avatar_url}
+                  src={toProxiedImageUrl(slot.entry.avatar_url) ?? ''}
                   alt=""
                   className={`${styles.podiumAvatar} ${slot.entry.is_ai ? styles.avatarAi : ''}`}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
