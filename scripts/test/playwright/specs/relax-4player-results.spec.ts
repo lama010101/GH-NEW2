@@ -430,7 +430,6 @@ test('Relax 4-player results: avatars, ranking, MVP and best-player awards', asy
         displayName: USERS[0].displayName,
         playerId: USERS[0].id,
         mode: 'async',
-        totalRounds: 4,
         roundTimerSec: 0,
         resultsAutoAdvanceSec: 0,
       },
@@ -441,8 +440,8 @@ test('Relax 4-player results: avatars, ranking, MVP and best-player awards', asy
     const gameId: string = sessionData.gameId || sessionData.id;
     expect(gameId, 'Create game returned no gameId').toBeTruthy();
 
-    // Relax currently forces MAX_ROUNDS (5) in createCompeteSession. Use whatever the server returns.
-    const totalRounds: number = sessionData.config?.totalRounds ?? 4;
+    // Server always creates MAX_ROUNDS (5); use the returned config value.
+    const totalRounds: number = sessionData.config?.totalRounds ?? 5;
     console.log(`[RELAX-4P] game=${gameId} totalRounds=${totalRounds}`);
 
     await Promise.all(
@@ -481,7 +480,7 @@ test('Relax 4-player results: avatars, ranking, MVP and best-player awards', asy
     await screenshot(pages[0], outputDir, 'A1-p0-round1-waiting-for', testInfo);
 
     // ── A2: get all players to ROUND_COMPLETE at a common round (leaderboard check) ──
-    const leaderboardRoundIndex = Math.max(0, totalRounds - 3); // round 2 when totalRounds=5, round 1 when totalRounds=4
+    const leaderboardRoundIndex = Math.max(0, totalRounds - 3); // round 2 for MAX_ROUNDS=5
     for (const ws of wss) {
       await ensureAtRoundComplete(ws, leaderboardRoundIndex);
     }
