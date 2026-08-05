@@ -47,6 +47,7 @@ export default function SessionComplete({
   const router = useRouter();
   const t = useTranslations('compete_page');
   const tGame = useTranslations('game');
+  const tLobby = useTranslations('lobby');
   const distanceUnit = getDistanceUnitPreference();
   const isPractice = snapshot.config.mode === "practice";
   const isDaily = snapshot.config.mode === "daily";
@@ -57,6 +58,7 @@ export default function SessionComplete({
   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [totalXp, setTotalXp] = useState<number | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // A round "counts" for final stats if the player actually submitted a guess
   // or if the round was deadline-finalized while they were absent (score 0).
@@ -153,6 +155,17 @@ export default function SessionComplete({
       console.error("Failed to create lobby:", error);
       setLobbyError(t('failed_lobby_retry'));
       setIsCreatingLobby(false);
+    }
+  };
+
+  const handleShareLink = async () => {
+    try {
+      const link = typeof window !== "undefined" ? window.location.href : "";
+      await navigator.clipboard.writeText(link);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // ignore
     }
   };
 
@@ -884,6 +897,14 @@ export default function SessionComplete({
                   onClick={() => router.push("/home")}
                 >
                   {tGame('home')}
+                </button>
+                <button
+                  type="button"
+                  className={styles.homeBtn}
+                  onClick={handleShareLink}
+                  data-testid="session-share-link"
+                >
+                  {linkCopied ? tLobby('link_copied') : tLobby('copy_link')}
                 </button>
                 {!isDaily && (isHost ? (
                   <button
