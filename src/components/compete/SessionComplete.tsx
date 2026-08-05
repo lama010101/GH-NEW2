@@ -35,6 +35,18 @@ interface SessionCompleteProps {
   onPlayAgain?: () => void;
 }
 
+type DailyResult = {
+  player_id: string;
+  rank: number;
+  avg_accuracy: number;
+  total_xp: number;
+  completed_at: string | null;
+  best_round_accuracy: number | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  is_ai: boolean;
+};
+
 export default function SessionComplete({
   snapshot,
   playerId,
@@ -57,6 +69,9 @@ export default function SessionComplete({
   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [totalXp, setTotalXp] = useState<number | null>(null);
+  const [dailyResults, setDailyResults] = useState<DailyResult[] | null>(null);
+  const [dailyResultsLoading, setDailyResultsLoading] = useState(false);
+  const [dailyResultsError, setDailyResultsError] = useState<string | null>(null);
 
   // A round "counts" for final stats if the player actually submitted a guess
   // or if the round was deadline-finalized while they were absent (score 0).
@@ -114,6 +129,29 @@ export default function SessionComplete({
     })();
     return () => { cancelled = true; };
   }, [playerId]);
+
+  // Fetch the global Daily leaderboard once the session completes.
+  useEffect(() => {
+    if (!isDaily || snapshot?.status !== "SESSION_COMPLETE" || !playerId) return;
+    let cancelled = false;
+    setDailyResultsLoading(true);
+    setDailyResultsError(null);
+    (async () => {
+      try {
+        const res = await fetch("/api/daily/results");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (cancelled) return;
+        setDailyResults(json.results ?? null);
+      } catch (err) {
+        if (cancelled) return;
+        setDailyResultsError(err instanceof Error ? err.message : "Daily results unavailable");
+      } finally {
+        if (!cancelled) setDailyResultsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isDaily, snapshot?.status, playerId]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isHost = snapshot.players?.find((p: any) => p.playerId === playerId)?.isHost ?? false;
@@ -566,8 +604,67 @@ export default function SessionComplete({
                 </div>
               </section>
 
-              {/* FINAL RANKINGS — hidden in practice (solo) mode */}
-              {!isPractice && (
+              {/* DAILY RANKINGS — global all-players leaderboard */}
+              {isDaily && !isPractice && (
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('final_rankings')}</h2>
+                </div>
+                {dailyResultsLoading ? (
+                  <div className={styles.rankNoData}>{tGame('loading')}</div>
+                ) : dailyResultsError ? (
+                  <div className={styles.lobbyError}>{dailyResultsError}</div>
+                ) : !dailyResults || dailyResults.length === 0 ? (
+                  <div className={styles.rankNoData}>{tGame('loading')}</div>
+                ) : (
+                <div className={styles.ranks}>
+                {dailyResults.map((player, index) => {
+                  const isCurrentPlayer = player.player_id === playerId;
+                  const displayName = player.display_name ?? player.player_id;
+                  return (
+                    <div key={player.player_id} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`} data-testid="session-rank-row">
+                      <span className={`${styles.medal} ${index === 0 ? styles.medalGold : index === 1 ? styles.medalSilver : index === 2 ? styles.medalBronze : ""}`}>
+                        <span>{player.rank}</span>
+                      </span>
+                      <div className={styles.avatarWrap}>
+                        <PlayerAvatar
+                          avatarUrl={player.avatar_url}
+                          displayName={displayName}
+                          playerId={player.player_id}
+                          size={38}
+                        />
+                      </div>
+                      <div className={styles.rankMain}>
+                        <div className={styles.rankNameLine}>
+                          <span
+                            className={styles.rankName}
+                            style={getUsernameGradientStyle(player.player_id)}
+                          >
+                            {displayName}
+                          </span>
+                          {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
+                        </div>
+                        <div className={styles.bar}>
+                          <div
+                            className={styles.barFill}
+                            style={{ width: `${Math.max(0, Math.min(100, player.avg_accuracy))}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.rankScore}>
+                        <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avg_accuracy) }}>{player.avg_accuracy}<AccuracySuffix /></span>
+                      </div>
+                    </div>
+                  );
+                })}
+                </div>
+                )}
+              </section>
+              )}
+
+              {/* FINAL RANKINGS — hidden in practice (solo) mode; replaced by global Daily board for daily */}
+              {!isPractice && !isDaily && (
               <section className={styles.card}>
                 <div className={styles.cardHead}>
                   <span className={styles.accentBar} />
