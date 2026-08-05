@@ -76,7 +76,7 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
 
   return (
     <svg viewBox="0 0 200 200" style={{ width: 170, height: 170, display: "block", margin: "0 auto" }}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--gh-border-default)" strokeWidth={strokeWidth} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--gh-border-medium)" strokeWidth={strokeWidth} />
       <circle
         cx={cx} cy={cy} r={r} fill="none"
         stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"

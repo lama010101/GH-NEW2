@@ -692,7 +692,7 @@ export default function RoundActiveSection({
               <circle
                 cx="36" cy="36" r={radius}
                 fill="var(--gh-bg-elevated)"
-                stroke="var(--gh-border-default)"
+                stroke="var(--gh-border-medium)"
                 strokeWidth="3"
               />
               <circle
