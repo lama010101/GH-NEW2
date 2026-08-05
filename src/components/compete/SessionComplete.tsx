@@ -506,15 +506,10 @@ export default function SessionComplete({
               <div className={styles.banner}>
                 <span className={styles.bannerKicker}>{tGame('game_complete')}</span>
                 {!isPractice && (
-                <h1 className={styles.bannerTitle}>
-                  {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
-                </h1>
-                )}
-                {!isPractice && (
                 <div className={styles.bannerStats}>
-                  <span>{overallXP.toLocaleString()} {tGame('xp_unit')}</span>
-                  <span className={styles.bannerDot}>·</span>
-                  <span>{tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}</span>
+                  <span>
+                    {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span> / {overallXP.toLocaleString()} {tGame('xp_unit')} · {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
+                  </span>
                 </div>
                 )}
               </div>
@@ -576,7 +571,8 @@ export default function SessionComplete({
                   return (
                     <div key={player.playerId} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`} data-testid="session-rank-row">
                       <span className={`${styles.medal} ${index === 0 ? styles.medalGold : index === 1 ? styles.medalSilver : index === 2 ? styles.medalBronze : ""}`}>
-                        {index + 1}
+                        {player.wonRounds.length > 0 && <span className={styles.winTag}>🏆 {player.wonRounds.length}</span>}
+                        <span>{index + 1}</span>
                       </span>
                       <div className={styles.avatarWrap}>
                         <PlayerAvatar
@@ -595,7 +591,6 @@ export default function SessionComplete({
                             {displayName}
                           </span>
                           {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
-                          {player.wonRounds.length > 0 && <span className={styles.winTag}>🏆 {player.wonRounds.length}</span>}
                         </div>
                         <div className={styles.bar}>
                           {showAccuracy ? (
@@ -742,7 +737,7 @@ export default function SessionComplete({
                 hideAccuracy
                 hideStatsRow
                 embedded
-                rankCard={<RankCard totalXp={totalXp} open bare />}
+                rankCard={<RankCard totalXp={totalXp} open bare variant="dark" />}
                 data={{
                   byWhen,
                   byWhere,
