@@ -1,759 +1,801 @@
 "use client";
 
 // ============================================================================
-// STANDALONE PROTOTYPE — Desktop landing page with sign-in module
-// Route: /prototype   (direct access, fully self-contained)
+// LANDING-V2 PROTOTYPE — newbie-friendly, animated landing page
+// Route: /prototype/landing
 //
-// Two-column desktop layout:
-//   - Left: brand logo, tagline, hero description, feature bullets.
-//   - Right: self-contained sign-in / sign-up / forgot-password card.
+// Goals:
+//   - Must have animation
+//   - Use only existing webapp assets + CSS tokens
+//   - Easy to understand for a first-time visitor
+//   - Explain that images are made with AI
+//   - Sell "have fun and learn history"
 //
-// All data and auth are MOCK. No Supabase, no real network, no i18n.
+// Uses REAL game components:
+//   - WhereCard / WhenCard (mock Berlin Wall data)
+//   - ERA_STOCK_IMAGES / REGION_STOCK_IMAGES from @/core/useEraRegionImages
+//   - getAccuracyColor from @/core/accuracyColor
+//
+// No API calls. No real event images. Self-contained prototype.
 // ============================================================================
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import WhereCard from "@/components/compete/WhereCard";
+import WhenCard from "@/components/compete/WhenCard";
+import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
+import { getAccuracyColor } from "@/core/accuracyColor";
+import type { RoundResult } from "@/core/competeTypes";
+import type { SessionPlayer } from "@/core/types";
+import PlayerAvatar from "@/components/compete/PlayerAvatar";
+import { YearPicker } from "@/components/YearPicker";
+import styles from "./landing.module.css";
 
-type AuthMode = "signin" | "signup" | "forgot";
+const GameMap = dynamic(
+  () => import("@/components/GameMap").then((m) => m.GameMap),
+  { ssr: false }
+);
 
-const FEATURES = [
+// ── Mock data for WhereCard + WhenCard (Fall of the Berlin Wall, 1989) ──
+const CORRECT_LAT = 52.5163;
+const CORRECT_LNG = 13.3777;
+const CORRECT_NAME = "Berlin, Germany";
+const CORRECT_YEAR = 1989;
+const DEMO_YEAR_END = 1989;
+const DEMO_XP = 184;
+const DEMO_FLY_TO_BERLIN = { lat: 52.5163, lng: 13.3777, id: 1 };
+
+const MOCK_PLAYERS: SessionPlayer[] = [
   {
-    title: "Practice",
-    desc: "Solo warm-up with custom timers and year ranges.",
-    color: "#fb923c",
+    playerId: "p1",
+    displayName: "Albert Einstein",
+    joinedAt: "2024-01-01T00:00:00Z",
+    leftAt: null,
+    ready: true,
+    isHost: true,
+    avatarUrl: "https://im.runware.ai/image/ws/2/ii/28093021-6f59-4240-8ace-0a6e15f2672e.webp",
+    hasSubmitted: true,
   },
   {
-    title: "Daily Challenge",
-    desc: "Same events for everyone. New challenge every 24 hours.",
-    color: "#ef4444",
+    playerId: "p2",
+    displayName: "Marie Curie",
+    joinedAt: "2024-01-01T00:00:00Z",
+    leftAt: null,
+    ready: true,
+    isHost: false,
+    avatarUrl: "https://im.runware.ai/image/ws/2/ii/917583d3-87cd-4d55-a09d-7713a934180f.webp",
+    hasSubmitted: true,
   },
   {
-    title: "Compete",
-    desc: "Real-time Rush or turn-based Relax with friends.",
-    color: "#22d3ee",
-  },
-  {
-    title: "Level Up",
-    desc: "Progressive runs from level 1 to 100.",
-    color: "#e879f9",
+    playerId: "p3",
+    displayName: "Nelson Mandela",
+    joinedAt: "2024-01-01T00:00:00Z",
+    leftAt: null,
+    ready: true,
+    isHost: false,
+    avatarUrl: "https://im.runware.ai/image/ws/2/ii/dc36c8d7-b0f9-4ea7-9f55-047909ed4bd5.webp",
+    hasSubmitted: true,
   },
 ];
 
-function CheckIcon({ color }: { color: string }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="10" fill={color} fillOpacity="0.18" />
-      <path
-        d="M6 10l3 3 5-6"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+const MOCK_ROUND_RESULTS: RoundResult[] = [
+  {
+    playerId: "p1",
+    score: 1840,
+    rank: 1,
+    accuracy: 92,
+    locationScore: 96,
+    didSubmit: true,
+    guessYear: 1991,
+    guessLat: 52.45,
+    guessLng: 13.38,
+    timeScore: 88,
+    badges: [{ dimension: "location", tier: "gold", accuracy: 96 }],
+    nearMisses: [],
+    cumulativeScore: 1840,
+    cumulativeAccuracy: 92,
+  },
+  {
+    playerId: "p2",
+    score: 1980,
+    rank: 0,
+    accuracy: 99,
+    locationScore: 100,
+    didSubmit: true,
+    guessYear: 1989,
+    guessLat: 52.52,
+    guessLng: 13.40,
+    timeScore: 98,
+    badges: [{ dimension: "combo", tier: "gold", accuracy: 99 }],
+    nearMisses: [],
+    cumulativeScore: 1980,
+    cumulativeAccuracy: 99,
+  },
+  {
+    playerId: "p3",
+    score: 1210,
+    rank: 0,
+    accuracy: 71,
+    locationScore: 64,
+    didSubmit: true,
+    guessYear: 1978,
+    guessLat: 52.40,
+    guessLng: 13.10,
+    timeScore: 78,
+    badges: [],
+    nearMisses: [],
+    cumulativeScore: 1210,
+    cumulativeAccuracy: 71,
+  },
+];
+
+const MY_PLAYER_ID = "p1";
+const MY_DISTANCE_KM = 42;
+
+const ERA_LABELS: Record<string, string> = {
+  ancient: "Ancient",
+  medieval: "Medieval",
+  earlymodern: "Early Modern",
+  modern: "Modern",
+  contemporary: "Contemporary",
+};
+
+const REGION_LABELS: Record<string, string> = {
+  africa: "Africa",
+  asia: "Asia",
+  europe: "Europe",
+  north_america: "North America",
+  south_america: "South America",
+  oceania_antarctica: "Oceania & Antarctica",
+};
+
+const HERO_IMAGES = [
+  { src: "/prototype/landing/hero/hero-1.webp", label: "Hero 1" },
+  { src: "/prototype/landing/hero/hero-2.webp", label: "Hero 2" },
+  { src: "/prototype/landing/hero/hero-3.webp", label: "Hero 3" },
+  { src: "/prototype/landing/hero/hero-5.webp", label: "Hero 5" },
+  { src: "/prototype/landing/hero/hero-7.webp", label: "Hero 7" },
+];
+
+const PIPELINE = [
+  { label: "Real event", desc: "A documented moment in history." },
+  { label: "Research", desc: "Historians gather sources and facts." },
+  { label: "AI paints", desc: "An AI creates the scene from the research." },
+  { label: "Human check", desc: "Verified before it reaches you." },
+];
+
+const FUN_BADGES = [
+  "/badges/location_gold.webp",
+  "/badges/year_gold.webp",
+  "/badges/combo_gold.webp",
+  "/badges/where.webp",
+  "/badges/when.webp",
+];
+
+const RANK_IMAGE_NAMES = ["wanderer", "pathfinder", "trailblazer", "cartographer", "explorer"];
+
+const AVATAR_PREVIEWS = [
+  { name: "Albert Einstein", url: "https://im.runware.ai/image/ws/2/ii/28093021-6f59-4240-8ace-0a6e15f2672e.webp" },
+  { name: "Marie Curie", url: "https://im.runware.ai/image/ws/2/ii/917583d3-87cd-4d55-a09d-7713a934180f.webp" },
+  { name: "Nelson Mandela", url: "https://im.runware.ai/image/ws/2/ii/dc36c8d7-b0f9-4ea7-9f55-047909ed4bd5.webp" },
+  { name: "Ada Lovelace", url: "https://im.runware.ai/image/ws/2/ii/46d4c144-2458-478d-bc8f-30737639e933.webp" },
+  { name: "Amelia Earhart", url: "https://im.runware.ai/image/ws/2/ii/93cda3d3-b386-425b-8561-501d91868209.webp" },
+  { name: "Charles Darwin", url: "https://im.runware.ai/image/ws/2/ii/13398bd8-f56e-4b34-ad8a-a0b97bad8543.webp" },
+];
+
+function easeOutQuad(t: number) {
+  return 1 - (1 - t) * (1 - t);
 }
 
-function GoogleIcon() {
+export default function LandingV2Prototype() {
+  const [topbarSolid, setTopbarSolid] = useState(false);
+  const [showTopbarExtras, setShowTopbarExtras] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [demoPhase, setDemoPhase] = useState(0);
+  const [demoLoop, setDemoLoop] = useState(0);
+  const [demoXp, setDemoXp] = useState(0);
+  const [whereLbExpanded, setWhereLbExpanded] = useState(false);
+  const [whereCluesExpanded, setWhereCluesExpanded] = useState(false);
+  const [whenLbExpanded, setWhenLbExpanded] = useState(false);
+  const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const demoCounterRef = useRef<number | null>(null);
+  const topbarRef = useRef<HTMLElement>(null);
+  const heroLogoRef = useRef<HTMLHeadingElement>(null);
+  const heroCtaRef = useRef<HTMLAnchorElement>(null);
+
+  // Scroll reveal
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const ids = entries.map((e) => e.target.id).filter(Boolean) as string[];
+        if (ids.length === 0) return;
+        setRevealed((prev) => {
+          const next = { ...prev };
+          ids.forEach((id) => { next[id] = true; });
+          return next;
+        });
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -60px 0px" }
+    );
+    document.querySelectorAll("[data-reveal]").forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
+  // Topbar scroll state
+  useEffect(() => {
+    const onScroll = () => setTopbarSolid((window.scrollY || window.pageYOffset) > 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Show topbar logo + Play Now only when the hero logo and CTA are hidden by the topbar
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined" || !topbarRef.current) return;
+    const topbarHeight = topbarRef.current.offsetHeight;
+    const visible = { logo: true, cta: true };
+    const update = () => setShowTopbarExtras(!visible.logo && !visible.cta);
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.target === heroLogoRef.current) visible.logo = e.isIntersecting;
+          if (e.target === heroCtaRef.current) visible.cta = e.isIntersecting;
+        });
+        update();
+      },
+      { threshold: 0, rootMargin: `-${topbarHeight}px 0px 0px 0px` }
+    );
+    if (heroLogoRef.current) obs.observe(heroLogoRef.current);
+    if (heroCtaRef.current) obs.observe(heroCtaRef.current);
+    update();
+    return () => obs.disconnect();
+  }, []);
+
+  // Hero slideshow
+  useEffect(() => {
+    const id = setInterval(() => setHeroIndex((i) => (i + 1) % HERO_IMAGES.length), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Mini-demo phase loop
+  useEffect(() => {
+    const phases: [number, number][] = [
+      [0, 2200],
+      [1, 2200],
+      [2, 2200],
+      [3, 3400],
+    ];
+
+    const runPhase = (idx: number) => {
+      const [phase, wait] = phases[idx];
+      setDemoPhase(phase);
+      setDemoLoop((l) => l + 1);
+      if (phase === 3) {
+        // animate XP counter
+        const start = 0;
+        const end = DEMO_XP;
+        const startTime = performance.now();
+        const duration = 1200;
+        const tick = (now: number) => {
+          const t = Math.min(1, (now - startTime) / duration);
+          setDemoXp(Math.round(start + (end - start) * easeOutQuad(t)));
+          if (t < 1) {
+            demoCounterRef.current = requestAnimationFrame(tick);
+          }
+        };
+        demoCounterRef.current = requestAnimationFrame(tick);
+      }
+      return new Promise<void>((resolve) => setTimeout(resolve, wait));
+    };
+
+    let cancelled = false;
+    (async () => {
+      // eslint-disable-next-line no-constant-condition
+      while (!cancelled) {
+        for (let i = 0; i < phases.length; i++) {
+          if (cancelled) break;
+          await runPhase(i);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (demoCounterRef.current) cancelAnimationFrame(demoCounterRef.current);
+    };
+  }, []);
+
+  const phaseTitle = ["A mysterious scene", "Drop a pin", "Pick a year", "Learn the story"][demoPhase];
+  const phaseBody = [
+    "No names. No dates. Just a picture from the past.",
+    "Where on Earth do you think this happened?",
+    "What year do you think this took place?",
+    "The true event is revealed — and you earn XP for accuracy.",
+  ][demoPhase];
+
+  const eraPairs = useMemo(() => Object.entries(ERA_STOCK_IMAGES), []);
+  const regionPairs = useMemo(() => Object.entries(REGION_STOCK_IMAGES), []);
+  const doubleEras = useMemo(() => [...eraPairs, ...eraPairs], [eraPairs]);
+  const doubleRegions = useMemo(() => [...regionPairs, ...regionPairs], [regionPairs]);
+
   return (
-    <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
-      <path fill="none" d="M0 0h48v48H0z" />
-    </svg>
-  );
-}
-
-function SignInModule() {
-  const [mode, setMode] = useState<AuthMode>("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
-  const resetMessages = () => {
-    setError(null);
-    setSuccess(null);
-  };
-
-  const switchMode = (next: AuthMode) => {
-    setMode(next);
-    resetMessages();
-    setConfirmPassword("");
-  };
-
-  const handleGoogle = () => {
-    resetMessages();
-    setError("Google sign-in is mocked in this prototype.");
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    resetMessages();
-
-    if (!email || !password) {
-      setError("Email and password are required.");
-      return;
-    }
-
-    if (mode === "signup") {
-      if (password !== confirmPassword) {
-        setError("Passwords do not match.");
-        return;
-      }
-      if (password.length < 6) {
-        setError("Password must be at least 6 characters.");
-        return;
-      }
-    }
-
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (mode === "forgot") {
-        setSuccess("Password reset email sent. Check your inbox.");
-        setMode("signin");
-        setPassword("");
-        return;
-      }
-      setSuccess(mode === "signup" ? "Account created (mock). Welcome!" : "Signed in (mock). Welcome back!");
-    }, 900);
-  };
-
-  const submitLabel =
-    mode === "forgot" ? "Send reset email" : mode === "signup" ? "Create account" : "Sign in";
-
-  return (
-    <section className="signInCard" aria-label="Sign in module">
-      <h2 className="cardTitle">
-        {mode === "forgot" ? "Reset password" : mode === "signup" ? "Create account" : "Welcome back"}
-      </h2>
-      <p className="cardTagline">Where and when did it happen?</p>
-
-      <button
-        type="button"
-        className="googleButton"
-        onClick={handleGoogle}
-        disabled={loading}
-        aria-label="Sign in with Google"
+    <div className={styles.page}>
+      <header
+        ref={topbarRef}
+        className={`${styles.topbar} ${topbarSolid ? styles.topbarSolid : ""} ${showTopbarExtras ? styles.topbarHasExtras : ""}`}
       >
-        <GoogleIcon />
-        <span>Continue with Google</span>
-      </button>
-
-      <div className="divider" role="separator">
-        <span className="dividerLine" />
-        <span className="dividerText">or</span>
-        <span className="dividerLine" />
-      </div>
-
-      <form onSubmit={handleSubmit} noValidate className="form">
-        <div className="field">
-          <label htmlFor="proto-email" className="label">
-            Email
-          </label>
-          <input
-            id="proto-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-            className="input"
-            placeholder="you@example.com"
-            autoComplete="email"
-          />
-        </div>
-
-        {mode !== "forgot" && (
-          <div className="field">
-            <label htmlFor="proto-password" className="label">
-              Password
-            </label>
-            <input
-              id="proto-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              className="input"
-              placeholder="••••••••"
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-            />
-          </div>
+        {showTopbarExtras && (
+          <a className={styles.brand} href="#hero" aria-label="Back to top">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/logo.webp" alt="Guess History" width={120} height={32} className={styles.brandImg} />
+          </a>
         )}
 
-        {mode === "signup" && (
-          <div className="field">
-            <label htmlFor="proto-confirm-password" className="label">
-              Confirm password
-            </label>
-            <input
-              id="proto-confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={loading}
-              className="input"
-              placeholder="••••••••"
-              autoComplete="new-password"
-            />
-          </div>
-        )}
+        <nav className={styles.topnav} aria-label="Primary">
+          <a href="#how" onClick={() => setMenuOpen(false)}>How to play</a>
+          <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
+          <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
+          <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+        </nav>
 
-        {mode === "signin" && (
-          <div className="rowBetween">
-            <label className="checkboxWrap">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                disabled={loading}
-                className="checkbox"
-              />
-              <span className="checkboxLabel">Remember me</span>
-            </label>
-            <button
-              type="button"
-              className="textLink"
-              onClick={() => switchMode("forgot")}
-              disabled={loading}
-            >
-              Forgot password?
-            </button>
-          </div>
-        )}
-
-        {error && <p className="error" role="alert">{error}</p>}
-        {success && <p className="success" role="status">{success}</p>}
-
-        <button type="submit" disabled={loading} className="submitButton">
-          {loading ? "Loading…" : submitLabel}
+        <button
+          type="button"
+          className={`${styles.hamburger} ${menuOpen ? styles.hamburgerOpen : ""}`}
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
+          aria-controls="landing-menu"
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          <span />
+          <span />
+          <span />
         </button>
-      </form>
 
-      <p className="switchText">
-        {mode === "signin" ? (
-          <>
-            Don&apos;t have an account?{" "}
-            <button
-              type="button"
-              className="switchLink"
-              onClick={() => switchMode("signup")}
-              disabled={loading}
-            >
-              Sign up
-            </button>
-          </>
-        ) : mode === "signup" ? (
-          <>
-            Already have an account?{" "}
-            <button
-              type="button"
-              className="switchLink"
-              onClick={() => switchMode("signin")}
-              disabled={loading}
-            >
-              Sign in
-            </button>
-          </>
-        ) : (
-          <>
-            Remember your password?{" "}
-            <button
-              type="button"
-              className="switchLink"
-              onClick={() => switchMode("signin")}
-              disabled={loading}
-            >
-              Sign in
-            </button>
-          </>
+        <nav
+          id="landing-menu"
+          className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ""}`}
+          aria-label="Primary"
+        >
+          <a href="#how" onClick={() => setMenuOpen(false)}>How to play</a>
+          <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
+          <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
+          <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+        </nav>
+
+        {showTopbarExtras && (
+          <a href="/" className={`${styles.playNowBtn} ${styles.topbarCta}`}>
+            Play Now
+          </a>
         )}
-      </p>
-    </section>
-  );
-}
+      </header>
 
-function FeatureItem({
-  title,
-  desc,
-  color,
-}: {
-  title: string;
-  desc: string;
-  color: string;
-}) {
-  return (
-    <div className="featureItem">
-      <span className="featureIcon">
-        <CheckIcon color={color} />
-      </span>
-      <div className="featureText">
-        <span className="featureTitle">{title}</span>
-        <span className="featureDesc">{desc}</span>
-      </div>
-    </div>
-  );
-}
-
-export default function LandingPrototypePage() {
-  return (
-    <main className="screen">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/desktop-home_background.webp"
-        alt=""
-        className="bgImg"
-        draggable={false}
-      />
-      <div className="bgScrim" aria-hidden="true" />
-
-      <div className="protoBar">
-        <span className="protoTitle">Landing — Prototype</span>
-        <span className="protoHint">Mock sign-in · desktop view</span>
-      </div>
-
-      <div className="content">
-        <section className="hero">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/icons/logo.webp"
-            alt="Guess-History"
-            width={240}
-            height={64}
-            className="heroLogo"
-            draggable={false}
-          />
-          <h1 className="heroTitle">Where and when did it happen?</h1>
-          <p className="heroDesc">
-            Test your knowledge of history. See real events and guess the exact
-            year and location. Challenge your friends, climb the leaderboard,
-            and prove you know your history.
+      {/* ── HERO ── */}
+      <section className={styles.hero} id="hero" aria-label="Hero">
+        <div className={styles.heroSlides} aria-hidden="true">
+          {HERO_IMAGES.map((img, i) => (
+            <div
+              key={img.src}
+              className={`${styles.heroSlide} ${i === heroIndex ? styles.heroSlideActive : ""}`}
+              style={{ backgroundImage: `url(${img.src})` }}
+            />
+          ))}
+        </div>
+        <div className={styles.heroScrim} aria-hidden="true" />
+        <div className={styles.heroInner}>
+          <p className={styles.eyebrowCenter}>
+            <span className={styles.eyebrow}>Have fun. Learn history.</span>
           </p>
-
-          <div className="features">
-            {FEATURES.map((f) => (
-              <FeatureItem key={f.title} {...f} />
+          <h1 ref={heroLogoRef} className={styles.heroLogo}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/logo.webp" alt="Guess History" width={440} height={118} className={styles.heroLogoImg} />
+          </h1>
+          <p className={styles.heroSub}>Travel through time. Guess where and when.</p>
+          <p className={styles.heroTagline}>
+            A free game — look at a picture, guess the place and year, then learn the true story.
+          </p>
+          <a ref={heroCtaRef} href="/" className={`${styles.playNowBtn} ${styles.heroCta}`}>Play Now</a>
+          <div className={styles.heroDots}>
+            {HERO_IMAGES.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setHeroIndex(i)}
+                className={`${styles.heroDot} ${i === heroIndex ? styles.heroDotActive : ""}`}
+                aria-label={`Slide ${i + 1}`}
+              />
             ))}
           </div>
-        </section>
+        </div>
+        <div className={styles.scrollInd} aria-hidden="true">
+          <span>Scroll</span>
+          <span className={styles.mouse} />
+        </div>
+      </section>
 
-        <SignInModule />
-      </div>
+      {/* ── HOW TO PLAY ── */}
+      <section className={styles.sec} id="how" data-reveal="how">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.how ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>How to play</span>
+            </p>
+            <h2 className={styles.secHeadH2}>One scene. Three questions.</h2>
+            <p className={styles.secHeadP}>Look at the picture. Guess where and when. Then learn the real story.</p>
+          </div>
 
-      <style jsx>{`
-        .screen {
-          position: fixed;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-          font-family: var(--font-dm-sans), system-ui, -apple-system,
-            BlinkMacSystemFont, "Segoe UI", sans-serif;
-          color: var(--gh-text-primary);
-          background: var(--gh-bg-base);
-        }
+          <div className={`${styles.stepsRow} ${revealed.how ? styles.in : ""}`}>
+            <div className={styles.stepCard}>
+              <span className={styles.stepNum}>01</span>
+              <h3 className={styles.stepTitle}>Look</h3>
+              <p className={styles.stepDesc}>A mysterious scene appears. No names, no dates.</p>
+            </div>
+            <div className={styles.stepArrow} aria-hidden="true">→</div>
+            <div className={styles.stepCard}>
+              <span className={styles.stepNum}>02</span>
+              <h3 className={styles.stepTitle}>Guess</h3>
+              <p className={styles.stepDesc}>Drop a pin on the map and pick a year.</p>
+            </div>
+            <div className={styles.stepArrow} aria-hidden="true">→</div>
+            <div className={styles.stepCard}>
+              <span className={styles.stepNum}>03</span>
+              <h3 className={styles.stepTitle}>Learn</h3>
+              <p className={styles.stepDesc}>The event is revealed. Points go to the closest answers.</p>
+            </div>
+          </div>
 
-        .bgImg {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          z-index: 0;
-        }
+          <div className={`${styles.demo} ${revealed.how ? styles.in : ""}`}>
+            <div className={styles.demoCard}>
+              <div className={styles.demoView}>
+                {demoPhase === 0 && (
+                  <div key={`see-${demoLoop}`} className={styles.demoScene}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/prototype/landing/berlinwall.webp" alt="Historical scene" className={styles.demoSceneImg} />
+                    <span className={styles.demoSceneQuestion}>?</span>
+                  </div>
+                )}
+                {demoPhase === 1 && (
+                  <div key={`where-${demoLoop}`} className={styles.demoWhere}>
+                    <div className={styles.demoMapWrap}>
+                      <GameMap
+                        guessLocation={{ lat: 52.5163, lng: 13.3777 }}
+                        onSetLocation={() => {}}
+                        localPlayerAvatarUrl={MOCK_PLAYERS[0].avatarUrl}
+                        hideZoomControls
+                        flyToTarget={DEMO_FLY_TO_BERLIN}
+                      />
+                    </div>
+                    <p className={styles.demoWhereText}>You guess: Berlin</p>
+                  </div>
+                )}
+                {demoPhase === 2 && (
+                  <div key={`when-${demoLoop}`} className={styles.demoWhen}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/icons/when.webp" alt="When" width={40} height={40} className={styles.demoWhenIcon} />
+                    <div className={styles.demoYearPickerWrap}>
+                      <YearPicker
+                        value={DEMO_YEAR_END}
+                        onChange={() => {}}
+                        min={1900}
+                        max={2025}
+                        valueIsCommitted
+                        className={styles.demoYearPicker}
+                      />
+                    </div>
+                    <p className={styles.demoWhenText}>You guess: {DEMO_YEAR_END}</p>
+                  </div>
+                )}
+                {demoPhase === 3 && (
+                  <div key={`reveal-${demoLoop}`} className={styles.demoReveal}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/prototype/landing/berlinwall.webp" alt="" className={styles.demoSceneImg} />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "linear-gradient(180deg, rgba(8,12,20,.55) 0%, rgba(8,12,20,.80) 100%)",
+                        zIndex: 1,
+                      }}
+                      aria-hidden="true"
+                    />
+                    <div
+                      style={{
+                        position: "relative",
+                        zIndex: 2,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <p className={styles.demoRevealTitle}>Berlin Wall falls</p>
+                      <p className={styles.demoRevealYear}>1989</p>
+                      <div className={styles.demoRevealScore}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/badges/combo_gold.webp" alt="Gold badge" className={styles.demoBadge} />
+                        <span className={styles.demoXp}>{demoXp} XP</span>
+                      </div>
+                      <p className={styles.demoFact}>A divided city reunited — the end of the Cold War began here.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className={styles.demoProgress}>
+                {[0, 1, 2, 3].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`${styles.demoDot} ${p === demoPhase ? styles.demoDotActive : ""}`}
+                    aria-label={`Phase ${p + 1}`}
+                  />
+                ))}
+              </div>
+              <div className={styles.demoCaption}>
+                <p className={styles.demoPhaseTitle}>{phaseTitle}</p>
+                <p className={styles.demoPhaseBody}>{phaseBody}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        .bgScrim {
-          position: absolute;
-          inset: 0;
-          z-index: 1;
-          background: rgba(8, 12, 20, 0.78);
-        }
+      {/* ── REAL CARDS ── */}
+      <section className={`${styles.sec} ${styles.how}`} id="cards" data-reveal="cards">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.cards ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>The real thing</span>
+            </p>
+            <h2 className={styles.secHeadH2}>These are the real cards.</h2>
+            <p className={styles.secHeadP}>After each round, players see exactly how close their where and when guesses were.</p>
+          </div>
 
-        .protoBar {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 10;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 10px 14px;
-          background: rgba(10, 10, 12, 0.6);
-          backdrop-filter: blur(8px);
-          flex-wrap: wrap;
-        }
+          <div className={`${styles.howCards} ${revealed.cards ? styles.in : ""}`}>
+            <p className={styles.howStepLabel}>STEP 01 — WHERE?</p>
+            <WhereCard
+              roundResults={MOCK_ROUND_RESULTS}
+              playerId={MY_PLAYER_ID}
+              correctLat={CORRECT_LAT}
+              correctLng={CORRECT_LNG}
+              correctName={CORRECT_NAME}
+              whereAccPenalty={0}
+              guessLat={52.45}
+              guessLng={13.38}
+              myDistanceKm={MY_DISTANCE_KM}
+              whereLbExpanded={whereLbExpanded}
+              setWhereLbExpanded={setWhereLbExpanded}
+              whereCluesExpanded={whereCluesExpanded}
+              setWhereCluesExpanded={setWhereCluesExpanded}
+              roundHints={[]}
+              snapshotPlayers={MOCK_PLAYERS}
+              currentRoundIndex={0}
+              isVisible={true}
+              bare={false}
+              isPractice={false}
+            />
 
-        .protoTitle {
-          font-size: var(--font-xs);
-          font-weight: 600;
-          letter-spacing: 0.3px;
-          opacity: 0.85;
-        }
+            <p className={styles.howStepLabel}>STEP 02 — WHEN?</p>
+            <WhenCard
+              roundResults={MOCK_ROUND_RESULTS}
+              playerId={MY_PLAYER_ID}
+              correctYear={CORRECT_YEAR}
+              whenAccPenalty={0}
+              whenLbExpanded={whenLbExpanded}
+              setWhenLbExpanded={setWhenLbExpanded}
+              whenCluesExpanded={whenCluesExpanded}
+              setWhenCluesExpanded={setWhenCluesExpanded}
+              roundHints={[]}
+              snapshotPlayers={MOCK_PLAYERS}
+              isVisible={true}
+              bare={false}
+              isPractice={false}
+            />
 
-        .protoHint {
-          font-size: var(--font-2xs);
-          font-weight: 600;
-          opacity: 0.55;
-        }
+            <p className={styles.howStepLabel}>STEP 03 — WHY?</p>
+            <div className={styles.howWhyCard}>
+              <h4>The Fall of the Berlin Wall</h4>
+              <p>In 1989, crowds gathered at the Brandenburg Gate as the barrier dividing East and West Berlin was opened — a turning point that hastened German reunification and the end of the Cold War.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        .content {
-          position: relative;
-          z-index: 5;
-          width: 100%;
-          max-width: 1180px;
-          margin: 0 auto;
-          padding: 72px 24px 32px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 40px;
-          box-sizing: border-box;
-          overflow-y: auto;
-          max-height: 100vh;
-        }
+      {/* ── AI IMAGES ── */}
+      <section className={`${styles.sec} ${styles.ai}`} id="ai" data-reveal="ai">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.ai ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>Painted by AI</span>
+            </p>
+            <h2 className={styles.secHeadH2}>Every image is an <span className={styles.orangeText}>AI reconstruction.</span></h2>
+            <p className={styles.secHeadP}>No real photos. Each scene is generated by AI from real historical research, then checked by humans.</p>
+          </div>
 
-        .hero {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          max-width: 560px;
-          text-align: center;
-          align-items: center;
-        }
+          <div className={`${styles.pipeline} ${revealed.ai ? styles.in : ""}`}>
+            <div className={styles.pipeLine} aria-hidden="true">
+              <span className={styles.pipeDot} />
+            </div>
+            {PIPELINE.map((node, i) => (
+              <div key={node.label} className={styles.pipeNode}>
+                <span className={styles.pipeRing}>{i + 1}</span>
+                <h4 className={styles.pipeNodeH4}>{node.label}</h4>
+                <p className={styles.pipeNodeP}>{node.desc}</p>
+              </div>
+            ))}
+          </div>
 
-        .heroLogo {
-          width: 220px;
-          height: auto;
-          filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
-        }
+          <div className={`${styles.aiNote} ${revealed.ai ? styles.in : ""}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/when.webp" alt="" width={28} height={28} className={styles.aiNoteIcon} />
+            <p>
+              The illustrations help you imagine the moment, not replace primary sources. Historian and institution credits appear with each scene when available.
+            </p>
+          </div>
+        </div>
+      </section>
 
-        .heroTitle {
-          font-size: var(--font-3xl);
-          font-weight: 800;
-          margin: 0;
-          line-height: 1.15;
-          letter-spacing: -0.3px;
-        }
+      {/* ── EXPLORE ── */}
+      <section className={`${styles.sec} ${styles.explore}`} id="explore" data-reveal="explore">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.explore ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>Explore all of history</span>
+            </p>
+            <h2 className={styles.secHeadH2}>5 eras. 6 regions.</h2>
+            <p className={styles.secHeadP}>Pick an era or region to focus your investigation.</p>
+          </div>
 
-        .heroDesc {
-          font-size: var(--font-base);
-          color: var(--gh-text-secondary);
-          line-height: 1.55;
-          margin: 0;
-        }
+          <div className={`${styles.marqueeWrap} ${styles.erasWrap}`}>
+            <p className={styles.marqueeLabel}>Eras</p>
+            <div className={styles.marqueeTrack}>
+              {doubleEras.map(([key, src], i) => (
+                <div key={`${key}-${i}`} className={styles.marqueeCard}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt={ERA_LABELS[key] ?? key} className={styles.marqueeImg} />
+                  <span className={styles.marqueeOverlay} />
+                  <span className={styles.marqueeText}>{ERA_LABELS[key] ?? key}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        .features {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 16px;
-          width: 100%;
-          margin-top: 8px;
-        }
+          <div className={`${styles.marqueeWrap} ${styles.regionsWrap}`}>
+            <p className={styles.marqueeLabel}>Regions</p>
+            <div className={`${styles.marqueeTrack} ${styles.marqueeReverse}`}>
+              {doubleRegions.map(([key, src], i) => (
+                <div key={`${key}-${i}`} className={styles.marqueeCard}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt={REGION_LABELS[key] ?? key} className={styles.marqueeImg} />
+                  <span className={styles.marqueeOverlay} />
+                  <span className={styles.marqueeText}>{REGION_LABELS[key] ?? key}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
-        .featureItem {
-          display: flex;
-          align-items: flex-start;
-          gap: 14px;
-          padding: 14px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.07),
-            rgba(255, 255, 255, 0.03)
-          );
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: var(--gh-general-card-radius);
-          backdrop-filter: var(--gh-glass-blur);
-        }
+      {/* ── FUN & PROGRESS ── */}
+      <section className={`${styles.sec} ${styles.fun}`} id="fun" data-reveal="fun">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.fun ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>Have fun. Learn history.</span>
+            </p>
+            <h2 className={styles.secHeadH2}>Play. <span className={styles.orangeText}>Level up.</span> Learn a story.</h2>
+            <p className={styles.secHeadP}>Earn XP, unlock rank titles, and collect badges for every kind of guess.</p>
+          </div>
 
-        .featureIcon {
-          flex-shrink: 0;
-          margin-top: 2px;
-        }
+          <div className={`${styles.funGrid} ${revealed.fun ? styles.in : ""}`}>
+            <div className={styles.funCard}>
+              <h4 className={styles.funCardH4}>Badges</h4>
+              <div className={styles.funBadges}>
+                {FUN_BADGES.map((src, i) => (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img key={src} src={src} alt="" className={styles.funBadge} style={{ animationDelay: `${i * 0.15}s` }} />
+                ))}
+              </div>
+            </div>
 
-        .featureText {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          text-align: left;
-        }
+            <div className={styles.funCard}>
+              <h4 className={styles.funCardH4}>Accuracy Tiers</h4>
+              <div className={styles.tierRow}>
+                {[
+                  { label: "85%+", name: "Expert", color: "var(--gh-success)" },
+                  { label: "60–84%", name: "Skilled", color: "var(--gh-gold)" },
+                  { label: "40–59%", name: "Apprentice", color: "var(--gh-orange)" },
+                  { label: "<40%", name: "Beginner", color: "var(--gh-danger)" },
+                ].map((t) => (
+                  <div key={t.name} className={styles.tier}>
+                    <span className={styles.tierDot} style={{ background: t.color }} />
+                    <span className={styles.tierLabel}>{t.label}</span>
+                    <span className={styles.tierName}>{t.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        .featureTitle {
-          font-size: var(--font-sm);
-          font-weight: 700;
-          color: var(--gh-text-primary);
-        }
+            <div className={styles.funCard}>
+              <h4 className={styles.funCardH4}>Ranks</h4>
+              <div className={styles.rankStrip}>
+                {RANK_IMAGE_NAMES.map((name) => (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img key={name} src={`/images/rank-titles/${name}.jpg`} alt={name} className={styles.rankThumb} />
+                ))}
+              </div>
+            </div>
 
-        .featureDesc {
-          font-size: var(--font-xs);
-          color: var(--gh-text-muted);
-          line-height: 1.45;
-        }
+            <div className={styles.funCard}>
+              <h4 className={styles.funCardH4}>Avatars</h4>
+              <p className={styles.funCardDesc}>Play as a historical figure. These are the real avatars in the app.</p>
+              <div className={styles.avatarStrip}>
+                {AVATAR_PREVIEWS.map((a, i) => (
+                  <div key={a.name} className={styles.avatarChip}>
+                    <PlayerAvatar
+                      avatarUrl={a.url}
+                      displayName={a.name}
+                      playerId={`preview-${i}`}
+                      size={48}
+                    />
+                    <span className={styles.avatarName}>{a.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
-        .signInCard {
-          width: 100%;
-          max-width: 420px;
-          padding: 32px;
-          background: var(--gh-bg-surface);
-          border: 1px solid var(--gh-border-default);
-          border-radius: var(--gh-general-card-radius);
-          box-shadow: var(--gh-general-card-shadow);
-          backdrop-filter: var(--gh-glass-blur);
-          box-sizing: border-box;
-        }
+          <div className={`${styles.xpBar} ${revealed.fun ? styles.in : ""}`}>
+            <div className={styles.xpBarHead}>
+              <span className={styles.xpBarTitle}>Total XP</span>
+              <span className={styles.xpBarValue} style={{ color: getAccuracyColor(92) }}>1,840 / 5,000</span>
+            </div>
+            <div className={styles.xpBarTrack}>
+              <div className={styles.xpBarFill} style={{ width: "37%" }} />
+            </div>
+            <p className={styles.xpBarHint}>Keep playing to reach the next rank title.</p>
+          </div>
+        </div>
+      </section>
 
-        .cardTitle {
-          font-size: var(--font-2xl);
-          font-weight: 800;
-          margin: 0 0 6px 0;
-          text-align: center;
-        }
+      {/* ── FINAL CTA ── */}
+      <section className={styles.final} id="play" data-reveal="play">
+        <div className={styles.finalBg}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/era-region/medieval.jpg" alt="" className={styles.finalBgImg} />
+        </div>
+        <div className={styles.finalScrim} aria-hidden="true" />
+        <div className={`${styles.finalInner} ${revealed.play ? styles.in : ""}`}>
+          <p className={styles.eyebrowCenter}>
+            <span className={styles.eyebrow}>Ready when you are</span>
+          </p>
+          <h2 className={styles.finalH2}>Ready for your first trip through time?</h2>
+          <p className={styles.finalP}>No download. No cost. Just curiosity.</p>
+          <div className={styles.finalCtaRow}>
+            <a href="/" className={`${styles.playNowBtn} ${styles.ctaBig}`}>
+              <span className={styles.ctaPulse} />
+              Play Now
+            </a>
+          </div>
+        </div>
+      </section>
 
-        .cardTagline {
-          font-size: var(--font-sm);
-          color: var(--gh-text-muted);
-          text-align: center;
-          margin: 0 0 24px 0;
-        }
-
-        .googleButton {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          background: #ffffff;
-          color: #111827;
-          font-weight: 700;
-          padding: 12px 16px;
-          border-radius: var(--radius-md);
-          border: none;
-          cursor: pointer;
-          font-size: var(--font-sm);
-          margin-bottom: 20px;
-        }
-
-        .googleButton:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .divider {
-          display: flex;
-          align-items: center;
-          margin-bottom: 20px;
-          gap: 12px;
-        }
-
-        .dividerLine {
-          flex: 1;
-          height: 1px;
-          background: var(--gh-border-default);
-        }
-
-        .dividerText {
-          color: var(--gh-text-muted);
-          font-size: var(--font-sm);
-        }
-
-        .form {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-
-        .field {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .label {
-          font-size: var(--font-sm);
-          color: var(--gh-text-muted);
-          font-weight: 500;
-        }
-
-        .input {
-          width: 100%;
-          background: var(--gh-bg-input);
-          border: 1px solid var(--gh-border-default);
-          border-radius: var(--radius-md);
-          padding: 12px 14px;
-          color: var(--gh-text-primary);
-          outline: none;
-          font-size: var(--font-base);
-          box-sizing: border-box;
-        }
-
-        .input::placeholder {
-          color: var(--gh-text-muted);
-          opacity: 0.6;
-        }
-
-        .input:disabled {
-          opacity: 0.5;
-        }
-
-        .rowBetween {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-
-        .checkboxWrap {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-        }
-
-        .checkbox {
-          width: 16px;
-          height: 16px;
-          accent-color: var(--gh-teal);
-          cursor: pointer;
-        }
-
-        .checkboxLabel {
-          font-size: var(--font-sm);
-          color: var(--gh-text-muted);
-        }
-
-        .textLink {
-          background: none;
-          border: none;
-          color: var(--gh-text-secondary);
-          font-size: var(--font-xs);
-          cursor: pointer;
-          padding: 0;
-          text-decoration: underline;
-        }
-
-        .textLink:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .error {
-          color: var(--gh-danger);
-          font-size: var(--font-sm);
-          margin: 0;
-          padding: 10px 12px;
-          background: rgba(var(--gh-danger-rgb), 0.1);
-          border: 1px solid rgba(var(--gh-danger-rgb), 0.25);
-          border-radius: var(--radius-md);
-        }
-
-        .success {
-          color: var(--gh-success);
-          font-size: var(--font-sm);
-          margin: 0;
-          padding: 10px 12px;
-          background: rgba(var(--gh-success-rgb), 0.1);
-          border: 1px solid rgba(var(--gh-success-rgb), 0.25);
-          border-radius: var(--radius-md);
-        }
-
-        .submitButton {
-          width: 100%;
-          background: var(--gh-orange);
-          color: var(--gh-btn-text);
-          font-weight: 700;
-          padding: 14px 16px;
-          border-radius: var(--radius-md);
-          border: none;
-          cursor: pointer;
-          font-size: var(--font-sm);
-          margin-top: 4px;
-        }
-
-        .submitButton:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .switchText {
-          color: var(--gh-text-muted);
-          font-size: var(--font-sm);
-          text-align: center;
-          margin: 18px 0 0 0;
-        }
-
-        .switchLink {
-          background: none;
-          border: none;
-          color: var(--gh-text-secondary);
-          cursor: pointer;
-          font-size: var(--font-sm);
-          padding: 0;
-          text-decoration: underline;
-        }
-
-        .switchLink:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        @media (min-width: 1024px) {
-          .content {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            gap: 64px;
-            padding-top: 84px;
-          }
-
-          .hero {
-            flex: 1.35;
-            text-align: left;
-            align-items: flex-start;
-            max-width: none;
-          }
-
-          .heroLogo {
-            width: 260px;
-          }
-
-          .features {
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-          }
-
-          .signInCard {
-            flex: 1;
-            max-width: 440px;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .content {
-            padding: 68px 16px 24px;
-            gap: 28px;
-          }
-
-          .signInCard {
-            padding: 24px;
-          }
-
-          .heroLogo {
-            width: 180px;
-          }
-
-          .heroTitle {
-            font-size: var(--font-2xl);
-          }
-        }
-      `}</style>
-    </main>
+      {/* ── FOOTER ── */}
+      <footer className={styles.footer}>
+        <p className={styles.footerDisc}>
+          All event images are AI-generated reconstructions based on historical research. They are illustrations, not photographs.
+        </p>
+        <div className={styles.footerLinks}>
+          <a href="#how">How to Play</a>
+          <a href="#ai">AI Images</a>
+          <a href="#explore">Explore</a>
+          <a href="#fun">Why Play</a>
+          <a href="/">Play Now</a>
+        </div>
+        <p className={styles.footerCopy}>© {new Date().getFullYear()} Guess History</p>
+      </footer>
+    </div>
   );
 }
