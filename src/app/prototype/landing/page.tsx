@@ -26,11 +26,13 @@ import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages
 import { getAccuracyColor } from "@/core/accuracyColor";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
-import PlayerAvatar from "@/components/compete/PlayerAvatar";
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import { YearPicker } from "@/components/YearPicker";
 import { AuthModal } from "@/components/AuthModal";
 import { useAuthGate } from "@/hooks/useAuthGate";
+import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import styles from "./landing.module.css";
+import lbStyles from "@/app/leaderboard/leaderboard.module.css";
 
 const GameMap = dynamic(
   () => import("@/components/GameMap").then((m) => m.GameMap),
@@ -171,26 +173,383 @@ const PIPELINE = [
 ];
 
 const FUN_BADGES = [
-  "/badges/location_gold.webp",
-  "/badges/year_gold.webp",
-  "/badges/combo_gold.webp",
-  "/badges/where.webp",
-  "/badges/when.webp",
+  { src: "/badges/year_gold.webp", label: "Year" },
+  { src: "/badges/location_gold.webp", label: "Location" },
+  { src: "/badges/combo_gold.webp", label: "Combo" },
 ];
 
-const RANK_IMAGE_NAMES = ["wanderer", "pathfinder", "trailblazer", "cartographer", "explorer"];
+const RANK_PREVIEWS = [
+  { key: "wanderer", title: "Wanderer" },
+  { key: "pathfinder", title: "Pathfinder" },
+  { key: "trailblazer", title: "Trailblazer" },
+  { key: "cartographer", title: "Cartographer" },
+  { key: "explorer", title: "Explorer" },
+];
 
 const AVATAR_PREVIEWS = [
-  { name: "Albert Einstein", url: "https://im.runware.ai/image/ws/2/ii/28093021-6f59-4240-8ace-0a6e15f2672e.webp" },
-  { name: "Marie Curie", url: "https://im.runware.ai/image/ws/2/ii/917583d3-87cd-4d55-a09d-7713a934180f.webp" },
-  { name: "Nelson Mandela", url: "https://im.runware.ai/image/ws/2/ii/dc36c8d7-b0f9-4ea7-9f55-047909ed4bd5.webp" },
-  { name: "Ada Lovelace", url: "https://im.runware.ai/image/ws/2/ii/46d4c144-2458-478d-bc8f-30737639e933.webp" },
-  { name: "Amelia Earhart", url: "https://im.runware.ai/image/ws/2/ii/93cda3d3-b386-425b-8561-501d91868209.webp" },
-  { name: "Charles Darwin", url: "https://im.runware.ai/image/ws/2/ii/13398bd8-f56e-4b34-ad8a-a0b97bad8543.webp" },
+  {
+    name: "Albert Einstein",
+    description: "Developed the theory of relativity",
+    born: "Born: 1879-03-14, Ulm, Germany",
+    died: "Died: 1955-04-18, Princeton, USA",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2F0d19257e-9a2a-4553-93d7-1edf70327c68_AlbertEinstein.jpg?alt=media&token=d008d166-da67-423f-9281-9ec2e7f6aef0",
+  },
+  {
+    name: "Marie Curie",
+    description: "Pioneer in radioactivity; first person to win two Nobel Prizes",
+    born: "Born: 1867-11-07, Warsaw, Poland",
+    died: "Died: 1934-07-04, Passy, France",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fa0afd408-fa5a-43f7-8723-4d50642ce210_MarieCurie.jpg?alt=media&token=32195928-02bf-4fd8-894f-4fb95badddb4",
+  },
+  {
+    name: "Nelson Mandela",
+    description: "Anti-apartheid revolutionary and former President of South Africa",
+    born: "Born: 1918-07-18, Mvezo, South Africa",
+    died: "Died: 2013-12-05, Johannesburg, South Africa",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fd93a9e35-9e9b-42cd-afd4-5d53e2329167_NelsonMandela.jpg?alt=media&token=55a85578-412a-4bf2-86ed-ba9c87c7b29e",
+  },
+  {
+    name: "Ada Lovelace",
+    description: "Wrote the first algorithm intended for a computer",
+    born: "Born: 1815-12-10, London, United Kingdom",
+    died: "Died: 1852-11-27, Marylebone, United Kingdom",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fe44e050a-f408-4698-a6d0-6f607fd2579b_AdaLovelace.jpg?alt=media&token=e82217a3-9b73-45ac-a932-1815dd762368",
+  },
+  {
+    name: "Charles Darwin",
+    description: "Naturalist known for the theory of evolution",
+    born: "Born: 1809-02-12, Shrewsbury, United Kingdom",
+    died: "Died: 1882-04-19, Downe, United Kingdom",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2F1cb7486d-da10-44ac-b068-483147b76226_CharlesDarwin.jpg?alt=media&token=487ff003-b5f3-4c2a-8510-3c1e3e6de016",
+  },
 ];
 
 function easeOutQuad(t: number) {
   return 1 - (1 - t) * (1 - t);
+}
+
+type LandingLeaderboardTab = "overall" | "daily" | "levelup";
+type LandingDailySubTab = "today" | "alltime";
+
+type LandingLeaderboardEntry = {
+  rank: number;
+  player_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  is_ai: boolean;
+  is_friend: boolean;
+  avg_accuracy: number;
+  games_played: number;
+  rounds_won: number;
+  current_level: number;
+  best_accuracy: number;
+};
+
+const LEADERBOARD_OVERALL: LandingLeaderboardEntry[] = [
+  { rank: 1, player_id: "p5", display_name: "Jamal Wright", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 91, games_played: 124, rounds_won: 12, current_level: 7, best_accuracy: 96 },
+  { rank: 2, player_id: "p2", display_name: "Mina Kovač", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 93, games_played: 110, rounds_won: 10, current_level: 6, best_accuracy: 98 },
+  { rank: 3, player_id: "p1", display_name: "Alex Rivera", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 87, games_played: 98, rounds_won: 8, current_level: 5, best_accuracy: 94 },
+  { rank: 4, player_id: "p6", display_name: "Priya Patel", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 85, games_played: 92, rounds_won: 7, current_level: 5, best_accuracy: 92 },
+  { rank: 5, player_id: "p7", display_name: "Liam O'Connor", avatar_url: null, is_ai: true, is_friend: false, avg_accuracy: 82, games_played: 80, rounds_won: 6, current_level: 4, best_accuracy: 89 },
+  { rank: 6, player_id: "p4", display_name: "Sara Bianchi", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 80, games_played: 75, rounds_won: 5, current_level: 4, best_accuracy: 88 },
+  { rank: 7, player_id: "p3", display_name: "Theo Lambert", avatar_url: null, is_ai: true, is_friend: false, avg_accuracy: 70, games_played: 60, rounds_won: 4, current_level: 3, best_accuracy: 78 },
+];
+
+const LEADERBOARD_DAILY_TODAY: LandingLeaderboardEntry[] = [
+  { rank: 1, player_id: "p2", display_name: "Mina Kovač", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 96, games_played: 4, rounds_won: 3, current_level: 6, best_accuracy: 98 },
+  { rank: 2, player_id: "p1", display_name: "Alex Rivera", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 94, games_played: 3, rounds_won: 2, current_level: 5, best_accuracy: 94 },
+  { rank: 3, player_id: "p5", display_name: "Jamal Wright", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 91, games_played: 5, rounds_won: 3, current_level: 7, best_accuracy: 96 },
+  { rank: 4, player_id: "p4", display_name: "Sara Bianchi", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 88, games_played: 4, rounds_won: 2, current_level: 4, best_accuracy: 88 },
+  { rank: 5, player_id: "p9", display_name: "Emma Dubois", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 86, games_played: 3, rounds_won: 1, current_level: 4, best_accuracy: 86 },
+];
+
+const LEADERBOARD_DAILY_ALLTIME: LandingLeaderboardEntry[] = [
+  { rank: 1, player_id: "p5", display_name: "Jamal Wright", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 91, games_played: 452, rounds_won: 112, current_level: 7, best_accuracy: 96 },
+  { rank: 2, player_id: "p2", display_name: "Mina Kovač", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 93, games_played: 410, rounds_won: 98, current_level: 6, best_accuracy: 98 },
+  { rank: 3, player_id: "p1", display_name: "Alex Rivera", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 87, games_played: 389, rounds_won: 86, current_level: 5, best_accuracy: 94 },
+  { rank: 4, player_id: "p6", display_name: "Priya Patel", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 85, games_played: 371, rounds_won: 74, current_level: 5, best_accuracy: 92 },
+  { rank: 5, player_id: "p7", display_name: "Liam O'Connor", avatar_url: null, is_ai: true, is_friend: false, avg_accuracy: 82, games_played: 340, rounds_won: 62, current_level: 4, best_accuracy: 89 },
+  { rank: 6, player_id: "p4", display_name: "Sara Bianchi", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 80, games_played: 312, rounds_won: 55, current_level: 4, best_accuracy: 88 },
+];
+
+const LEADERBOARD_LEVELUP: LandingLeaderboardEntry[] = [
+  { rank: 1, player_id: "p5", display_name: "Jamal Wright", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 96, games_played: 124, rounds_won: 12, current_level: 12, best_accuracy: 96 },
+  { rank: 2, player_id: "p2", display_name: "Mina Kovač", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 98, games_played: 110, rounds_won: 10, current_level: 11, best_accuracy: 98 },
+  { rank: 3, player_id: "p1", display_name: "Alex Rivera", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 94, games_played: 98, rounds_won: 8, current_level: 9, best_accuracy: 94 },
+  { rank: 4, player_id: "p6", display_name: "Priya Patel", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 92, games_played: 92, rounds_won: 7, current_level: 8, best_accuracy: 92 },
+  { rank: 5, player_id: "p7", display_name: "Liam O'Connor", avatar_url: null, is_ai: true, is_friend: false, avg_accuracy: 89, games_played: 80, rounds_won: 6, current_level: 7, best_accuracy: 89 },
+];
+
+function MainLeaderboard() {
+  const [activeTab, setActiveTab] = useState<LandingLeaderboardTab>("overall");
+  const [activeSubTab, setActiveSubTab] = useState<LandingDailySubTab>("today");
+  const [filter, setFilter] = useState({ humans: false, ai: false, friends: false });
+
+  const allRows = activeTab === "daily"
+    ? (activeSubTab === "today" ? LEADERBOARD_DAILY_TODAY : LEADERBOARD_DAILY_ALLTIME)
+    : activeTab === "levelup"
+      ? LEADERBOARD_LEVELUP
+      : LEADERBOARD_OVERALL;
+
+  const filteredRows = useMemo(() => {
+    const rows = !filter.humans && !filter.ai && !filter.friends ? allRows : allRows.filter(
+      (e) => (filter.humans && !e.is_ai) || (filter.ai && e.is_ai) || (filter.friends && e.is_friend)
+    );
+    return [...rows].sort((a, b) => {
+      if (activeTab === "levelup") return (b.current_level ?? 0) - (a.current_level ?? 0);
+      return (b.avg_accuracy ?? 0) - (a.avg_accuracy ?? 0);
+    });
+  }, [allRows, filter, activeTab]);
+
+  const ownRank = useMemo(() => {
+    const idx = filteredRows.findIndex((e) => e.player_id === "p1");
+    return idx >= 0 ? idx + 1 : null;
+  }, [filteredRows]);
+
+  const summaryLabel = activeTab === "daily"
+    ? `Daily ${activeSubTab === "today" ? "Today" : "All-Time"}`
+    : activeTab === "levelup"
+      ? "Level Up"
+      : "Overall";
+
+  const podium = useMemo(() => {
+    if (filteredRows.length < 3) return [];
+    return [
+      { entry: filteredRows[1], place: 2, className: lbStyles.podiumSilver, height: "85%" },
+      { entry: filteredRows[0], place: 1, className: lbStyles.podiumGold, height: "100%" },
+      { entry: filteredRows[2], place: 3, className: lbStyles.podiumBronze, height: "85%" },
+    ];
+  }, [filteredRows]);
+
+  const getInitials = (name: string | null): string => {
+    if (!name) return "?";
+    return name.trim().split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  const getOrdinalSuffix = (n: number): string => {
+    const m = n % 100;
+    if (m >= 11 && m <= 13) return "th";
+    switch (n % 10) {
+      case 1: return "st";
+      case 2: return "nd";
+      case 3: return "rd";
+      default: return "th";
+    }
+  };
+
+  const formatNumber = (num: number | undefined): string => {
+    if (num === undefined || num === null) return "—";
+    return num.toLocaleString();
+  };
+
+  function AccuracyValue({ acc }: { acc: number | undefined }) {
+    if (acc === undefined || acc === null) return "—";
+    return (
+      <span className={lbStyles.accuracyValue} style={{ color: getAccuracyColor(acc) }}>
+        {Math.round(acc)}%
+      </span>
+    );
+  }
+
+  function PlayerCell({ entry }: { entry: LandingLeaderboardEntry }) {
+    let subtitle: string;
+    if (activeTab === "overall") {
+      const roundsWon = entry.rounds_won ?? 0;
+      subtitle = `${roundsWon} round${roundsWon === 1 ? "" : "s"} won · ${formatNumber(entry.games_played)} played`;
+    } else if (activeTab === "daily") {
+      const games = entry.games_played ?? 0;
+      subtitle = `${formatNumber(games)} game${games === 1 ? "" : "s"} played`;
+    } else {
+      subtitle = `Level ${entry.current_level ?? 0}`;
+    }
+    const avatarFallback = entry.is_ai ? "AI" : getInitials(entry.display_name);
+    return (
+      <div className={lbStyles.playerCell}>
+        {entry.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={toProxiedImageUrl(entry.avatar_url) ?? ""}
+            alt=""
+            className={lbStyles.avatar}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+        ) : (
+          <div className={`${lbStyles.avatarInitials} ${entry.is_ai ? lbStyles.avatarAi : ""}`}>{avatarFallback}</div>
+        )}
+        <div className={lbStyles.playerInfo}>
+          <span className={lbStyles.playerName}>
+            {entry.display_name}
+            {entry.is_ai ? <span className={lbStyles.aiBadge}>AI</span> : null}
+          </span>
+          <span className={lbStyles.playerSubtitle}>{subtitle}</span>
+        </div>
+      </div>
+    );
+  }
+
+  const renderRank = (rank: number) => {
+    if (rank === 1) return <span className={lbStyles.medalGold}>🥇</span>;
+    if (rank === 2) return <span className={lbStyles.medalSilver}>🥈</span>;
+    if (rank === 3) return <span className={lbStyles.medalBronze}>🥉</span>;
+    return <span className={lbStyles.rankNumber}>{rank}</span>;
+  };
+
+  return (
+    <div>
+      <div className={lbStyles.tabRow}>
+        {(["overall", "daily", "levelup"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`${lbStyles.tab} ${activeTab === tab ? lbStyles.tabActive : ""}`}
+          >
+            {tab === "overall" ? "Overall" : tab === "daily" ? "Daily" : "Level Up"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "daily" && (
+        <div className={lbStyles.subTabRow}>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("today")}
+            className={`${lbStyles.subTab} ${activeSubTab === "today" ? lbStyles.subTabActive : ""}`}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("alltime")}
+            className={`${lbStyles.subTab} ${activeSubTab === "alltime" ? lbStyles.subTabActive : ""}`}
+          >
+            All-Time
+          </button>
+        </div>
+      )}
+
+      <div className={lbStyles.filterRow}>
+        <button
+          type="button"
+          onClick={() => setFilter((f) => ({ ...f, humans: !f.humans }))}
+          className={`${lbStyles.filterChip} ${filter.humans ? lbStyles.filterChipActive : ""}`}
+          aria-pressed={filter.humans}
+        >
+          Humans
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilter((f) => ({ ...f, ai: !f.ai }))}
+          className={`${lbStyles.filterChip} ${filter.ai ? lbStyles.filterChipActive : ""}`}
+          aria-pressed={filter.ai}
+        >
+          AI
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilter((f) => ({ ...f, friends: !f.friends }))}
+          className={`${lbStyles.friendsToggle} ${filter.friends ? lbStyles.friendsToggleActive : ""}`}
+          aria-pressed={filter.friends}
+        >
+          Friends
+        </button>
+      </div>
+
+      {ownRank !== null && ownRank > 0 && (
+        <div className={lbStyles.summaryLine}>
+          You are {ownRank}
+          {getOrdinalSuffix(ownRank)} in {summaryLabel}
+        </div>
+      )}
+
+      {podium.length === 3 && (
+        <div className={lbStyles.podium}>
+          {podium.map((slot) => (
+            <div
+              key={slot.entry.player_id}
+              className={`${lbStyles.podiumItem} ${slot.className}`}
+              style={{ height: slot.height }}
+            >
+              <span className={lbStyles.podiumRank}>{slot.place}</span>
+              {slot.entry.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={toProxiedImageUrl(slot.entry.avatar_url) ?? ""}
+                  alt=""
+                  className={lbStyles.podiumAvatar}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+              ) : (
+                <div className={`${lbStyles.podiumAvatarInitials} ${slot.entry.is_ai ? lbStyles.avatarAi : ""}`}>
+                  {slot.entry.is_ai ? "AI" : getInitials(slot.entry.display_name)}
+                </div>
+              )}
+              <span className={lbStyles.podiumName}>{slot.entry.display_name}</span>
+              <span className={lbStyles.podiumValue}>
+                {activeTab === "levelup" ? (
+                  <span style={{ color: "var(--gh-violet)" }}>{slot.entry.current_level}</span>
+                ) : (
+                  <AccuracyValue acc={slot.entry.avg_accuracy} />
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {filteredRows.length === 0 ? (
+        <div className={lbStyles.emptyState}>No players match the selected filters.</div>
+      ) : (
+        <div className={lbStyles.tableWrapper}>
+          <table className={lbStyles.table}>
+            <thead>
+              <tr>
+                <th className={lbStyles.th}>#</th>
+                <th className={lbStyles.th}>Player</th>
+                {activeTab === "levelup" ? (
+                  <>
+                    <th className={lbStyles.th}>Accuracy</th>
+                    <th className={lbStyles.th}>Level</th>
+                  </>
+                ) : (
+                  <>
+                    <th className={lbStyles.th}>Accuracy</th>
+                    <th className={`${lbStyles.th} ${lbStyles.thGames}`}>Games</th>
+                  </>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRows.map((entry, idx) => {
+                const rank = idx + 1;
+                const isMe = entry.player_id === "p1";
+                return (
+                  <tr
+                    key={entry.player_id}
+                    className={`${lbStyles.row} ${isMe ? lbStyles.rowHighlight : ""}`}
+                  >
+                    <td className={lbStyles.rankCell}>{renderRank(rank)}</td>
+                    <td className={lbStyles.playerCell}><PlayerCell entry={entry} /></td>
+                    {activeTab === "levelup" ? (
+                      <>
+                        <td className={lbStyles.accuracyCell}><AccuracyValue acc={entry.best_accuracy} /></td>
+                        <td className={lbStyles.levelCell}><span className={lbStyles.levelValue}>Lvl {entry.current_level}</span></td>
+                      </>
+                    ) : (
+                      <>
+                        <td className={lbStyles.accuracyCell}><AccuracyValue acc={entry.avg_accuracy} /></td>
+                        <td className={`${lbStyles.gamesCell} ${lbStyles.gamesCellDesktop}`}>{formatNumber(entry.games_played)}</td>
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function LandingV2Prototype() {
@@ -198,6 +557,7 @@ export default function LandingV2Prototype() {
   const [showTopbarExtras, setShowTopbarExtras] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [avatarIndex, setAvatarIndex] = useState(0);
   const [demoPhase, setDemoPhase] = useState(0);
   const [demoLoop, setDemoLoop] = useState(0);
   const [demoXp, setDemoXp] = useState(0);
@@ -264,6 +624,12 @@ export default function LandingV2Prototype() {
   // Hero slideshow
   useEffect(() => {
     const id = setInterval(() => setHeroIndex((i) => (i + 1) % HERO_IMAGES.length), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Avatar card slideshow
+  useEffect(() => {
+    const id = setInterval(() => setAvatarIndex((i) => (i + 1) % AVATAR_PREVIEWS.length), 3500);
     return () => clearInterval(id);
   }, []);
 
@@ -346,6 +712,7 @@ export default function LandingV2Prototype() {
           <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
           <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
           <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+          <LanguageDropdown />
         </nav>
 
         <button
@@ -370,6 +737,7 @@ export default function LandingV2Prototype() {
           <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
           <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
           <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+          <LanguageDropdown />
         </nav>
 
         {showTopbarExtras && (
@@ -440,7 +808,7 @@ export default function LandingV2Prototype() {
             <p className={styles.eyebrowCenter}>
               <span className={styles.eyebrow}>How to play</span>
             </p>
-            <h2 className={styles.secHeadH2}>One scene. Three questions.</h2>
+            <h2 className={styles.secHeadH2}>One scene. Three actions.</h2>
             <p className={styles.secHeadP}>Look at the picture. Guess where and when. Then learn the real story.</p>
           </div>
 
@@ -471,7 +839,6 @@ export default function LandingV2Prototype() {
                   <div key={`see-${demoLoop}`} className={styles.demoScene}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/prototype/landing/berlinwall.webp" alt="Historical scene" className={styles.demoSceneImg} />
-                    <span className={styles.demoSceneQuestion}>?</span>
                   </div>
                 )}
                 {demoPhase === 1 && (
@@ -567,7 +934,7 @@ export default function LandingV2Prototype() {
             <p className={styles.eyebrowCenter}>
               <span className={styles.eyebrow}>The real thing</span>
             </p>
-            <h2 className={styles.secHeadH2}>These are the real cards.</h2>
+            <h2 className={styles.secHeadH2}>How accurate can you be?</h2>
             <p className={styles.secHeadP}>After each round, players see exactly how close their where and when guesses were.</p>
           </div>
 
@@ -649,7 +1016,7 @@ export default function LandingV2Prototype() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/when.webp" alt="" width={28} height={28} className={styles.aiNoteIcon} />
             <p>
-              The illustrations help you imagine the moment, not replace primary sources. Historian and institution credits appear with each scene when available.
+              The illustrations help you imagine the moment, not replace primary sources.
             </p>
           </div>
         </div>
@@ -711,9 +1078,12 @@ export default function LandingV2Prototype() {
             <div className={styles.funCard}>
               <h4 className={styles.funCardH4}>Badges</h4>
               <div className={styles.funBadges}>
-                {FUN_BADGES.map((src, i) => (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img key={src} src={src} alt="" className={styles.funBadge} style={{ animationDelay: `${i * 0.15}s` }} />
+                {FUN_BADGES.map(({ src, label }, i) => (
+                  <div key={src} className={styles.funBadgeWrap}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt={label} className={styles.funBadge} style={{ animationDelay: `${i * 0.15}s` }} />
+                    <span className={styles.funBadgeLabel}>{label}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -736,44 +1106,153 @@ export default function LandingV2Prototype() {
               </div>
             </div>
 
-            <div className={styles.funCard}>
-              <h4 className={styles.funCardH4}>Ranks</h4>
-              <div className={styles.rankStrip}>
-                {RANK_IMAGE_NAMES.map((name) => (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img key={name} src={`/images/rank-titles/${name}.jpg`} alt={name} className={styles.rankThumb} />
-                ))}
+            <div className={styles.funCol}>
+              <div className={styles.funCard}>
+                <h4 className={styles.funCardH4}>Ranks</h4>
+                <div className={styles.rankStrip}>
+                  {RANK_PREVIEWS.map(({ key, title }) => (
+                    <div key={key} className={styles.rankItem}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/images/rank-titles/${key}.jpg`} alt={title} className={styles.rankThumb} />
+                      <span className={styles.rankTitle}>{title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`${styles.xpBar} ${styles.xpCard} ${revealed.fun ? styles.in : ""}`}>
+                <div className={styles.xpBarHead}>
+                  <span className={styles.xpBarTitle}>Total XP</span>
+                  <span className={styles.xpBarValue} style={{ color: getAccuracyColor(92) }}>1,840 / 5,000</span>
+                </div>
+                <div className={styles.xpBarTrack}>
+                  <div className={styles.xpBarFill} style={{ width: "37%" }} />
+                </div>
+                <p className={styles.xpBarHint}>Keep playing to reach the next rank title.</p>
               </div>
             </div>
 
             <div className={styles.funCard}>
               <h4 className={styles.funCardH4}>Avatars</h4>
               <p className={styles.funCardDesc}>Play as a historical figure. These are the real avatars in the app.</p>
-              <div className={styles.avatarStrip}>
+              <div style={{ overflow: "hidden", width: "100%", marginTop: 16 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    width: `${AVATAR_PREVIEWS.length * 100}%`,
+                    transform: `translateX(-${(avatarIndex * 100) / AVATAR_PREVIEWS.length}%)`,
+                    transition: "transform 0.6s ease",
+                  }}
+                >
+                  {AVATAR_PREVIEWS.map((a) => (
+                    <div
+                      key={a.name}
+                      style={{
+                        width: `${100 / AVATAR_PREVIEWS.length}%`,
+                        flexShrink: 0,
+                        padding: "0 8px",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <div
+                        style={{
+                          background: "var(--gh-glass-bg)",
+                          borderRadius: "var(--gh-radius-md)",
+                          padding: "20px 24px",
+                          textAlign: "center",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 96,
+                            height: 96,
+                            borderRadius: "50%",
+                            padding: 3,
+                            background: "linear-gradient(135deg, #f9a8d4, #fde047)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto 12px",
+                          }}
+                        >
+                          <img
+                            src={toProxiedImageUrl(a.url) ?? ""}
+                            alt={a.name}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                              border: "2px solid var(--gh-bg-surface)",
+                            }}
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                          />
+                        </div>
+                        <h5
+                          className="font-bebas"
+                          style={{
+                            fontSize: 20,
+                            fontWeight: 700,
+                            marginBottom: 6,
+                            color: "var(--gh-text-primary)",
+                            letterSpacing: "0.02em",
+                          }}
+                        >
+                          {a.name}
+                        </h5>
+                        <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--gh-text-muted)", marginBottom: 10 }}>
+                          {a.description}
+                        </p>
+                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)", marginBottom: 4 }}>{a.born}</p>
+                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)" }}>{a.died}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
                 {AVATAR_PREVIEWS.map((a, i) => (
-                  <div key={a.name} className={styles.avatarChip}>
-                    <PlayerAvatar
-                      avatarUrl={a.url}
-                      displayName={a.name}
-                      playerId={`preview-${i}`}
-                      size={48}
-                    />
-                    <span className={styles.avatarName}>{a.name}</span>
-                  </div>
+                  <button
+                    key={a.name}
+                    type="button"
+                    aria-label={`Show ${a.name}`}
+                    onClick={() => setAvatarIndex(i)}
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      background: i === avatarIndex ? "var(--gh-text-primary)" : "var(--gh-text-muted)",
+                      opacity: i === avatarIndex ? 1 : 0.5,
+                    }}
+                  />
                 ))}
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className={`${styles.xpBar} ${revealed.fun ? styles.in : ""}`}>
-            <div className={styles.xpBarHead}>
-              <span className={styles.xpBarTitle}>Total XP</span>
-              <span className={styles.xpBarValue} style={{ color: getAccuracyColor(92) }}>1,840 / 5,000</span>
-            </div>
-            <div className={styles.xpBarTrack}>
-              <div className={styles.xpBarFill} style={{ width: "37%" }} />
-            </div>
-            <p className={styles.xpBarHint}>Keep playing to reach the next rank title.</p>
+      {/* ── LEADERBOARD ── */}
+      <section className={styles.sec} id="leaderboard" data-reveal="leaderboard">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.leaderboard ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>Compete Rankings</span>
+            </p>
+            <h2 className={lbStyles.title}>Leaderboard</h2>
+            <p className={styles.secHeadP}>See how you rank against players around the world.</p>
+          </div>
+          <div
+            style={{
+              opacity: revealed.leaderboard ? 1 : 0,
+              transform: revealed.leaderboard ? "translateY(0)" : "translateY(24px)",
+              transition: "opacity .7s .15s ease, transform .7s .15s cubic-bezier(.2,.7,.2,1)",
+            }}
+          >
+            <MainLeaderboard />
           </div>
         </div>
       </section>
