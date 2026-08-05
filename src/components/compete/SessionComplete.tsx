@@ -527,7 +527,7 @@ export default function SessionComplete({
                   <div className={styles.heroRingWrap}>
                     <RainbowRing value={overallAccuracy} />
                     <div className={styles.heroXp}>
-                      <span className={styles.heroXpVal}>{overallXP.toLocaleString()}</span>
+                      <span className={styles.heroXpVal}>+{overallXP.toLocaleString()}</span>
                       <span className={styles.heroXpLabel}>{tGame('xp_unit')}</span>
                     </div>
                   </div>
