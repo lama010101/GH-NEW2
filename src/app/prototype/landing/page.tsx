@@ -291,11 +291,14 @@ function MainLeaderboard() {
       : LEADERBOARD_OVERALL;
 
   const filteredRows = useMemo(() => {
-    if (!filter.humans && !filter.ai && !filter.friends) return allRows;
-    return allRows.filter(
+    const rows = !filter.humans && !filter.ai && !filter.friends ? allRows : allRows.filter(
       (e) => (filter.humans && !e.is_ai) || (filter.ai && e.is_ai) || (filter.friends && e.is_friend)
     );
-  }, [allRows, filter]);
+    return [...rows].sort((a, b) => {
+      if (activeTab === "levelup") return (b.current_level ?? 0) - (a.current_level ?? 0);
+      return (b.avg_accuracy ?? 0) - (a.avg_accuracy ?? 0);
+    });
+  }, [allRows, filter, activeTab]);
 
   const ownRank = useMemo(() => {
     const idx = filteredRows.findIndex((e) => e.player_id === "p1");
