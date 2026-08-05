@@ -817,7 +817,7 @@ export default function RoundActiveSection({
             type="button"
             onClick={onOpenHints}
             disabled={isLocked}
-            className={`${styles.circleBtn} ${styles.hintsBtn} ${isLocked ? styles.hintsBtnLocked : ""}`}
+            className={`${styles.circleBtn} ${styles.hintsBtn} ${!isLocked ? styles.hintBtnPulse : ""} ${isLocked ? styles.hintsBtnLocked : ""}`}
             aria-label={t('hints')}
             data-testid="round-hints-btn"
           >
