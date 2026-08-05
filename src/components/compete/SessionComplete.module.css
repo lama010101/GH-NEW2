@@ -144,11 +144,13 @@
 }
 
 .heroXp {
+  order: 3;
+  flex-basis: 100%;
   display: flex;
   align-items: baseline;
   justify-content: center;
   gap: 4px;
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 .heroXpVal {
@@ -213,6 +215,7 @@
 }
 
 .statPair {
+  order: 2;
   flex: 1;
   display: flex;
   gap: 12px;
