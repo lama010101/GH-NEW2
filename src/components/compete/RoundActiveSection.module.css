@@ -1094,7 +1094,15 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  margin-bottom: 20px;
   transition: background 0.15s;
+}
+
+.settingsResumeHint {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--gh-text-secondary);
+  text-align: center;
 }
 
 .settingsHomeBtn:active {
@@ -1104,10 +1112,6 @@
 .settingsHomeBtn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-.settingsHomeBtn:first-child {
-  margin-bottom: 20px;
 }
 
 @keyframes ghSettingsHomeSpin {
