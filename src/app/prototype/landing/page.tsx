@@ -440,7 +440,7 @@ export default function LandingV2Prototype() {
             <p className={styles.eyebrowCenter}>
               <span className={styles.eyebrow}>How to play</span>
             </p>
-            <h2 className={styles.secHeadH2}>One scene. Three questions.</h2>
+            <h2 className={styles.secHeadH2}>One scene. Three actions.</h2>
             <p className={styles.secHeadP}>Look at the picture. Guess where and when. Then learn the real story.</p>
           </div>
 
