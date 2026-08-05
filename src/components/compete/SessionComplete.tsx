@@ -954,7 +954,7 @@ export default function SessionComplete({
               <div className={styles.dockSpacer} />
 
               {/* BOTTOM CTA */}
-              <div className={styles.cta}>
+              <div className={isDaily ? `${styles.cta} ${styles.ctaDaily}` : styles.cta}>
                 <button
                   type="button"
                   className={styles.homeBtn}
