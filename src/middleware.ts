@@ -72,11 +72,19 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: getUser() triggers session refresh if the access token is stale.
-  // Do not remove or replace with getSession() — getSession() does not refresh.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // FLAG: middleware previously used the user-refreshing auth call here, which
+  // holds the GoTrue shared mutex. Per the project auth-session resilience
+  // rule, we now use a single getSession() call with a bounded timeout. A
+  // timeout is treated as "no valid session" and falls through to the
+  // existing null-session path.
+  const SESSION_TIMEOUT_MS = 5000;
+  const sessionResult = await Promise.race([
+    supabase.auth.getSession(),
+    new Promise<{ data: { session: null } }>((resolve) =>
+      setTimeout(() => resolve({ data: { session: null } }), SESSION_TIMEOUT_MS)
+    ),
+  ]);
+  const user = sessionResult.data.session?.user ?? null;
 
   const { pathname } = request.nextUrl;
 
