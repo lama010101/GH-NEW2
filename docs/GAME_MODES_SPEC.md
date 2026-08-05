@@ -625,13 +625,14 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 
 ### 5.10 End Screen
 
-**Final leaderboard:** All players ranked by accuracy% (total score used only as a tiebreaker for exactly equal accuracy). Per-round breakdown per player.
+**Final leaderboard:** All players ranked by accuracy% only. Total score is used solely as a deterministic tiebreaker when two or more players have exactly equal accuracy — it is never itself the ranking metric. No in-round partial leaderboard; scores are hidden until round/session complete; no score shown on avatar badges. Per-round breakdown per player.
 
 **MVP awards:**
 - Most accurate overall
 - Best year guesser (highest average year accuracy)
 - Best location guesser (highest average location accuracy)
 - Most consistent (highest average `min(year_accuracy, location_accuracy)`)
+- Best round (highest single-round score; ties shown as joint winners)
 
 **Actions:** Play Again (all return to lobby, same settings, re-ready required), Home (individual).
 
