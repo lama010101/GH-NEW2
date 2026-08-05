@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from 'next-intl';
 import { toProxiedImageUrl } from "@/lib/imageProxy";
 import RainbowRing from "@/components/compete/RainbowRing";
+import { MiniRing } from "@/components/compete/RoundCompleteSection";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import RankCard from "@/components/RankCard";
 import type { CompeteSessionSnapshot } from "@/core/types";
@@ -21,7 +22,7 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { Target, TrendingUp, Trophy } from "lucide-react";
+import { TrendingUp, Trophy } from "lucide-react";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
@@ -162,6 +163,8 @@ export default function SessionComplete({
     if (playerResults.length === 0) return null;
 
     const totalScore = playerResults.reduce((sum, r) => sum + r.score, 0);
+    const totalLocationScore = playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0);
+    const totalYearScore = playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0);
     const bestRoundScore = Math.max(...playerResults.map(r => r.score));
     const avgAccuracy = Math.round(playerResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / playerResults.length);
     const avgLocationAccuracy = Math.round(playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / playerResults.length);
@@ -170,7 +173,7 @@ export default function SessionComplete({
     const avgDistanceKm = playerResults.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0) / playerResults.length;
     const avgYearDiff = playerResults.reduce((sum, r) => sum + (r.yearDiff ?? 0), 0) / playerResults.length;
 
-    return { totalScore, bestRoundScore, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgConsistency, avgDistanceKm, avgYearDiff };
+    return { totalScore, totalLocationScore, totalYearScore, bestRoundScore, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgConsistency, avgDistanceKm, avgYearDiff };
   };
 
   // Helper: compute per-round stats for all players
@@ -236,6 +239,8 @@ export default function SessionComplete({
         const overallXP = myStats?.totalScore ?? 0;
         const whereAccuracy = myStats?.avgLocationAccuracy ?? 0;
         const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
+        const whereXP = myStats?.totalLocationScore ?? 0;
+        const whenXP = myStats?.totalYearScore ?? 0;
         const avgDistanceKm = myStats?.avgDistanceKm ?? 0;
         const avgYearDiff = myStats?.avgYearDiff ?? 0;
         const currentPlayerData = snapshot.players.find(p => p.playerId === playerId);
@@ -335,7 +340,6 @@ export default function SessionComplete({
         };
 
         const mvpCategories: MvpCategory[] = [
-          { key: 'overall', label: tGame('mvp_overall'), icon: Target, getValue: (s: MvpPlayer['stats']) => s.avgAccuracy },
           { key: 'year', label: tGame('mvp_year'), icon: WhenIcon, getValue: (s: MvpPlayer['stats']) => s.avgYearAccuracy },
           { key: 'location', label: tGame('mvp_location'), icon: WhereIcon, getValue: (s: MvpPlayer['stats']) => s.avgLocationAccuracy },
           { key: 'consistency', label: tGame('mvp_consistency'), icon: TrendingUp, getValue: (s: MvpPlayer['stats']) => s.avgConsistency },
@@ -509,17 +513,14 @@ export default function SessionComplete({
               {/* VICTORY BANNER */}
               <div className={styles.banner}>
                 <span className={styles.bannerKicker}>{tGame('game_complete')}</span>
-                {!isPractice && (
-                <div className={styles.bannerStats}>
-                  <span>
-                    {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span> / {overallXP.toLocaleString()} {tGame('xp_unit')} · {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
-                  </span>
-                </div>
-                )}
               </div>
 
               {/* HERO ACCURACY CARD — ring + Where/When stat tiles */}
               <section className={`${styles.card} ${styles.heroCard}`}>
+                <div className={styles.heroHead}>
+                  <div className={styles.heroHeadLine1}>{tGame('you_finished')} <span className={styles.heroRank}>{myRank}{rankSuffix(myRank)}</span></div>
+                  <div className={styles.heroHeadLine2}>{overallXP.toLocaleString()} {tGame('xp_unit')} · {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}</div>
+                </div>
                 {myStats ? (
                   <RainbowRing value={overallAccuracy} />
                 ) : (
@@ -527,18 +528,32 @@ export default function SessionComplete({
                 )}
                 <div className={styles.statPair}>
                   <div className={styles.statTile}>
-                    <span className={styles.statTileLabelWhere}>{tGame('where')}</span>
-                    <span className={styles.statTileVal} style={{ color: myStats ? getAccuracyColor(whereAccuracy) : 'var(--gh-text-muted)' }}>
-                      {myStats ? whereAccuracy : tGame('not_started')}
-                      {myStats && <AccuracySuffix />}
-                    </span>
+                    <span className={styles.statTileLabelWhere}><WhereIcon size={14} className={styles.statTileIconWhere} />{tGame('where')}</span>
+                    {myStats ? (
+                      <>
+                        <MiniRing value={whereAccuracy} color={getAccuracyColor(whereAccuracy)} />
+                        <div className={styles.statTileXp}>
+                          <span className={styles.statTileXpVal}>+{whereXP}</span>
+                          <span className={styles.statTileXpLabel}>{tGame('xp_unit')}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className={styles.statTileVal} style={{ color: 'var(--gh-text-muted)' }}>{tGame('not_started')}</span>
+                    )}
                   </div>
                   <div className={styles.statTile}>
-                    <span className={styles.statTileLabelWhen}>{tGame('when')}</span>
-                    <span className={styles.statTileVal} style={{ color: myStats ? getAccuracyColor(whenAccuracy) : 'var(--gh-text-muted)' }}>
-                      {myStats ? whenAccuracy : tGame('not_started')}
-                      {myStats && <AccuracySuffix />}
-                    </span>
+                    <span className={styles.statTileLabelWhen}><WhenIcon size={14} className={styles.statTileIconWhen} />{tGame('when')}</span>
+                    {myStats ? (
+                      <>
+                        <MiniRing value={whenAccuracy} color={getAccuracyColor(whenAccuracy)} />
+                        <div className={styles.statTileXp}>
+                          <span className={styles.statTileXpVal}>+{whenXP}</span>
+                          <span className={styles.statTileXpLabel}>{tGame('xp_unit')}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className={styles.statTileVal} style={{ color: 'var(--gh-text-muted)' }}>{tGame('not_started')}</span>
+                    )}
                   </div>
                 </div>
               </section>
@@ -575,7 +590,6 @@ export default function SessionComplete({
                   return (
                     <div key={player.playerId} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`} data-testid="session-rank-row">
                       <span className={`${styles.medal} ${index === 0 ? styles.medalGold : index === 1 ? styles.medalSilver : index === 2 ? styles.medalBronze : ""}`}>
-                        {player.wonRounds.length > 0 && <span className={styles.winTag}>🏆 {player.wonRounds.length}</span>}
                         <span>{index + 1}</span>
                       </span>
                       <div className={styles.avatarWrap}>
@@ -609,7 +623,7 @@ export default function SessionComplete({
                         {showAccuracy ? (
                           <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avgAccuracy) }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
                         ) : (
-                          <span className={styles.rankAcc}>{statusLabel ?? tGame('not_started')}</span>
+                          <span className={styles.rankStatus}>{statusLabel ?? tGame('not_started')}</span>
                         )}
                       </div>
                     </div>
@@ -646,18 +660,16 @@ export default function SessionComplete({
                               playerId={w.playerId}
                               size={24}
                             />
-                            <span>
-                              <span className={`${styles.mvpName} ${w.isMe ? styles.mvpNameMe : ''}`}>
-                                {w.isMe ? tGame('mvp_you') : w.displayName}
-                              </span>
-                              {i < award.winners.length - 1 && (
-                                <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
-                              )}
+                            <span className={styles.mvpName}>
+                              {w.isMe ? tGame('mvp_you') : w.displayName}
                             </span>
                             <span className={styles.mvpValue} style={{ color: getAccuracyColor(award.getValue(w.stats)) }}>
                               {award.getValue(w.stats)}
                               {award.key === 'bestRound' ? ` ${tGame('xp_unit')}` : <AccuracySuffix />}
                             </span>
+                            {i < award.winners.length - 1 && (
+                              <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
+                            )}
                           </span>
                         ))}
                       </span>
@@ -824,7 +836,7 @@ export default function SessionComplete({
                                 {roundStats.avgLocationScore}
                                 <AccuracySuffix />
                               </span>
-                              <span className={styles.miniLabelWhere}>{tGame('where')}</span>
+                              <span className={styles.miniLabelWhere}><WhereIcon size={14} className={styles.miniIconWhere} />{tGame('where')}</span>
                               <span className={styles.miniSub}>{tGame('distance_label', { distance: formatDistance(roundStats.avgDistanceKm, distanceUnit) })}</span>
                             </div>
                             <div className={styles.miniTile}>
@@ -832,7 +844,7 @@ export default function SessionComplete({
                                 {roundStats.avgTimeScore}
                                 <AccuracySuffix />
                               </span>
-                              <span className={styles.miniLabelWhen}>{tGame('when')}</span>
+                              <span className={styles.miniLabelWhen}><WhenIcon size={14} className={styles.miniIconWhen} />{tGame('when')}</span>
                               <span className={styles.miniSub}>{tGame('year_diff_label', { n: Math.round(roundStats.avgYearDiff) })}</span>
                             </div>
                           </div>

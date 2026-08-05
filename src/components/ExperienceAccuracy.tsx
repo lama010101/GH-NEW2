@@ -3,6 +3,8 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import AccuracySuffix from '@/components/AccuracySuffix';
+import WhereIcon from '@/components/icons/WhereIcon';
+import WhenIcon from '@/components/icons/WhenIcon';
 import { getAccuracyColor } from '@/core/accuracyColor';
 import styles from './ExperienceAccuracy.module.css';
 
@@ -82,14 +84,14 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
               className={`${styles.tabBtn} ${experienceTab === 'when' ? styles.tabActiveWhen : ''}`}
               onClick={() => setExperienceTab('when')}
             >
-              <span className={styles.tabDotWhen} />
+              <WhenIcon size={14} className={styles.tabIconWhen} />
               {t('when')}
             </button>
             <button
               className={`${styles.tabBtn} ${experienceTab === 'where' ? styles.tabActiveWhere : ''}`}
               onClick={() => setExperienceTab('where')}
             >
-              <span className={styles.tabDotWhere} />
+              <WhereIcon size={14} className={styles.tabIconWhere} />
               {t('where')}
             </button>
           </div>
@@ -163,14 +165,14 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
               className={`${styles.tabBtn} ${accuracyTab === 'when' ? styles.tabActiveWhen : ''}`}
               onClick={() => setAccuracyTab('when')}
             >
-              <span className={styles.tabDotWhen} />
+              <WhenIcon size={14} className={styles.tabIconWhen} />
               {t('when')}
             </button>
             <button
               className={`${styles.tabBtn} ${accuracyTab === 'where' ? styles.tabActiveWhere : ''}`}
               onClick={() => setAccuracyTab('where')}
             >
-              <span className={styles.tabDotWhere} />
+              <WhereIcon size={14} className={styles.tabIconWhere} />
               {t('where')}
             </button>
           </div>
