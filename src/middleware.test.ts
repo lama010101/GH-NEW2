@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 vi.mock("@supabase/ssr", () => ({
   createServerClient: vi.fn(() => ({
     auth: {
-      getUser: vi.fn(),
+      getSession: vi.fn(),
     },
   })),
 }));
@@ -106,11 +106,11 @@ beforeEach(async () => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 
-  // Default: getUser returns no user.
+  // Default: getSession returns no session.
   const createServerClient = await getMockCreateServerClient();
   createServerClient.mockReturnValue({
     auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
     },
   });
 });
@@ -124,8 +124,8 @@ describe("middleware redirect logic — KC-007", () => {
       const createServerClient = await getMockCreateServerClient();
       createServerClient.mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: "user-1" } },
+          getSession: vi.fn().mockResolvedValue({
+            data: { session: { user: { id: "user-1" } } },
           }),
         },
       });
@@ -143,8 +143,8 @@ describe("middleware redirect logic — KC-007", () => {
       const createServerClient = await getMockCreateServerClient();
       createServerClient.mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: "user-1" } },
+          getSession: vi.fn().mockResolvedValue({
+            data: { session: { user: { id: "user-1" } } },
           }),
         },
       });
@@ -163,8 +163,8 @@ describe("middleware redirect logic — KC-007", () => {
       const createServerClient = await getMockCreateServerClient();
       createServerClient.mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: "user-1" } },
+          getSession: vi.fn().mockResolvedValue({
+            data: { session: { user: { id: "user-1" } } },
           }),
         },
       });
@@ -183,8 +183,8 @@ describe("middleware redirect logic — KC-007", () => {
       const createServerClient = await getMockCreateServerClient();
       createServerClient.mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: "user-1" } },
+          getSession: vi.fn().mockResolvedValue({
+            data: { session: { user: { id: "user-1" } } },
           }),
         },
       });
@@ -207,8 +207,8 @@ describe("middleware redirect logic — KC-007", () => {
       const createServerClient = await getMockCreateServerClient();
       createServerClient.mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: "user-1" } },
+          getSession: vi.fn().mockResolvedValue({
+            data: { session: { user: { id: "user-1" } } },
           }),
         },
       });
@@ -312,8 +312,8 @@ describe("middleware redirect logic — KC-007", () => {
       const createServerClient = await getMockCreateServerClient();
       createServerClient.mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: "user-1" } },
+          getSession: vi.fn().mockResolvedValue({
+            data: { session: { user: { id: "user-1" } } },
           }),
         },
       });
@@ -330,8 +330,8 @@ describe("middleware redirect logic — KC-007", () => {
       const createServerClient = await getMockCreateServerClient();
       createServerClient.mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({
-            data: { user: { id: "user-1" } },
+          getSession: vi.fn().mockResolvedValue({
+            data: { session: { user: { id: "user-1" } } },
           }),
         },
       });
@@ -373,6 +373,31 @@ describe("middleware redirect logic — KC-007", () => {
       await middleware(req);
 
       expect(redirectCalls).toHaveLength(0);
+    });
+  });
+
+  describe("session read timeout", () => {
+    it("falls back to the null-session code path when getSession exceeds the timeout", async () => {
+      vi.useFakeTimers();
+      const middleware = await loadMiddleware();
+      const createServerClient = await getMockCreateServerClient();
+      createServerClient.mockReturnValue({
+        auth: {
+          getSession: vi.fn(() => new Promise(() => {})), // never resolves
+        },
+      });
+
+      const req = createMockRequest("/home");
+      const middlewarePromise = middleware(req);
+
+      vi.advanceTimersByTime(5000);
+      await middlewarePromise;
+
+      expect(redirectCalls).toHaveLength(1);
+      expect(redirectCalls[0].url).toContain("/login");
+      expect(redirectCalls[0].url).toContain("next=%2Fhome");
+
+      vi.useRealTimers();
     });
   });
 
