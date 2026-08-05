@@ -958,6 +958,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.homeBtnFull {
+  flex: 1;
+}
+
 .playBtn {
   flex: 1;
   padding: 12px 20px;
