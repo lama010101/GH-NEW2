@@ -58,6 +58,43 @@ export default function SessionComplete({
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [totalXp, setTotalXp] = useState<number | null>(null);
 
+  // Daily global final-results leaderboard
+  type DailyResult = {
+    player_id: string;
+    rank: number;
+    display_name: string | null;
+    avatar_url: string | null;
+    is_ai: boolean;
+    avg_accuracy: number;
+    total_xp: number;
+    completed_at: string | null;
+    best_round_accuracy: number | null;
+  };
+  const [dailyResults, setDailyResults] = useState<DailyResult[] | null>(null);
+  const [dailyResultsLoading, setDailyResultsLoading] = useState(false);
+  const [dailyResultsError, setDailyResultsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isDaily || snapshot.status !== "SESSION_COMPLETE") return;
+    if (dailyResults !== null || dailyResultsLoading) return;
+    setDailyResultsLoading(true);
+    setDailyResultsError(null);
+    fetch("/api/daily/results")
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!Array.isArray(data.results)) throw new Error("Invalid response");
+        setDailyResults(data.results as DailyResult[]);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        setDailyResultsError(message);
+      })
+      .finally(() => {
+        setDailyResultsLoading(false);
+      });
+  }, [isDaily, snapshot.status, snapshot.gameId, dailyResults, dailyResultsLoading]);
+
   // A round "counts" for final stats if the player actually submitted a guess
   // or if the round was deadline-finalized while they were absent (score 0).
   // Truly "not started" players have no round result rows at all.
@@ -566,69 +603,117 @@ export default function SessionComplete({
                   <h2 className={styles.cardTitle}>{tGame('final_rankings')}</h2>
                 </div>
                 <div className={styles.ranks}>
-                {leaderboard.map((player, index) => {
-                  const isCurrentPlayer = player.playerId === playerId;
-                  const playerData = snapshot.players.find(p => p.playerId === player.playerId);
-                  const displayName = player.displayName || playerLabel(snapshot.players, player.playerId);
-                  // Relax (async) player status. Sync (Rush) keeps hasPlayed-only behavior:
-                  // roundStatus/currentRoundIndex are undefined there per types.ts.
-                  let showAccuracy = player.hasPlayed;
-                  let statusLabel: string | null = null;
-                  if (isAsyncResults) {
-                    const rs = player.roundStatus;
-                    if (rs === 'invited') {
-                      showAccuracy = false;
-                      statusLabel = tGame('invited');
-                    } else if (rs === 'playing') {
-                      showAccuracy = false;
-                      statusLabel = tGame('on_round', { current: (player.currentRoundIndex ?? 0) + 1, total: snapshot.config.totalRounds });
-                    } else if ((rs === 'joined' || rs === 'ready') && !player.hasPlayed) {
-                      showAccuracy = false;
-                      statusLabel = tGame('not_started');
-                    }
-                  }
-                  return (
-                    <div key={player.playerId} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`} data-testid="session-rank-row">
-                      <span className={`${styles.medal} ${index === 0 ? styles.medalGold : index === 1 ? styles.medalSilver : index === 2 ? styles.medalBronze : ""}`}>
-                        <span>{index + 1}</span>
-                      </span>
-                      <div className={styles.avatarWrap}>
-                        <PlayerAvatar
-                          avatarUrl={playerData?.avatarUrl ?? null}
-                          displayName={displayName}
-                          playerId={player.playerId}
-                          size={38}
-                        />
-                      </div>
-                      <div className={styles.rankMain}>
-                        <div className={styles.rankNameLine}>
-                          <span
-                            className={styles.rankName}
-                            style={getUsernameGradientStyle(player.playerId)}
-                          >
-                            {displayName}
-                          </span>
-                          {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
+                {isDaily ? (
+                  dailyResultsLoading ? (
+                    <p style={{ padding: 24, textAlign: 'center', color: 'var(--gh-text-secondary)' }}>{tGame('loading')}</p>
+                  ) : dailyResultsError ? (
+                    <p style={{ padding: 24, textAlign: 'center', color: 'var(--gh-text-secondary)' }}>{dailyResultsError}</p>
+                  ) : dailyResults?.map((r, i) => {
+                    const isCurrentPlayer = r.player_id === playerId;
+                    const displayName = r.display_name || r.player_id.slice(0, 8);
+                    const rank = r.rank || i + 1;
+                    return (
+                      <div key={r.player_id} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`} data-testid="session-rank-row">
+                        <span className={`${styles.medal} ${rank === 1 ? styles.medalGold : rank === 2 ? styles.medalSilver : rank === 3 ? styles.medalBronze : ""}`}>
+                          <span>{rank}</span>
+                        </span>
+                        <div className={styles.avatarWrap}>
+                          <PlayerAvatar
+                            avatarUrl={r.avatar_url ?? null}
+                            displayName={displayName}
+                            playerId={r.player_id}
+                            size={38}
+                          />
                         </div>
-                        <div className={styles.bar}>
-                          {showAccuracy ? (
+                        <div className={styles.rankMain}>
+                          <div className={styles.rankNameLine}>
+                            <span
+                              className={styles.rankName}
+                              style={getUsernameGradientStyle(r.player_id)}
+                            >
+                              {displayName}
+                            </span>
+                            {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
+                          </div>
+                          <div className={styles.bar}>
                             <div
                               className={styles.barFill}
-                              style={{ width: `${Math.max(0, Math.min(100, player.avgAccuracy))}%` }}
+                              style={{ width: `${Math.max(0, Math.min(100, r.avg_accuracy))}%` }}
                             />
-                          ) : null}
+                          </div>
+                        </div>
+                        <div className={styles.rankScore}>
+                          <span className={styles.rankAcc} style={{ color: getAccuracyColor(r.avg_accuracy) }}>{r.avg_accuracy}<AccuracySuffix /></span>
+                          <span className={styles.rankXp}>{r.total_xp.toLocaleString()} {tGame('xp_unit')}</span>
                         </div>
                       </div>
-                      <div className={styles.rankScore}>
-                        {showAccuracy ? (
-                          <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avgAccuracy) }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
-                        ) : (
-                          <span className={styles.rankStatus}>{statusLabel ?? tGame('not_started')}</span>
-                        )}
+                    );
+                  })
+                ) : (
+                  leaderboard.map((player, index) => {
+                    const isCurrentPlayer = player.playerId === playerId;
+                    const playerData = snapshot.players.find(p => p.playerId === player.playerId);
+                    const displayName = player.displayName || playerLabel(snapshot.players, player.playerId);
+                    // Relax (async) player status. Sync (Rush) keeps hasPlayed-only behavior:
+                    // roundStatus/currentRoundIndex are undefined there per types.ts.
+                    let showAccuracy = player.hasPlayed;
+                    let statusLabel: string | null = null;
+                    if (isAsyncResults) {
+                      const rs = player.roundStatus;
+                      if (rs === 'invited') {
+                        showAccuracy = false;
+                        statusLabel = tGame('invited');
+                      } else if (rs === 'playing') {
+                        showAccuracy = false;
+                        statusLabel = tGame('on_round', { current: (player.currentRoundIndex ?? 0) + 1, total: snapshot.config.totalRounds });
+                      } else if ((rs === 'joined' || rs === 'ready') && !player.hasPlayed) {
+                        showAccuracy = false;
+                        statusLabel = tGame('not_started');
+                      }
+                    }
+                    return (
+                      <div key={player.playerId} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`} data-testid="session-rank-row">
+                        <span className={`${styles.medal} ${index === 0 ? styles.medalGold : index === 1 ? styles.medalSilver : index === 2 ? styles.medalBronze : ""}`}>
+                          <span>{index + 1}</span>
+                        </span>
+                        <div className={styles.avatarWrap}>
+                          <PlayerAvatar
+                            avatarUrl={playerData?.avatarUrl ?? null}
+                            displayName={displayName}
+                            playerId={player.playerId}
+                            size={38}
+                          />
+                        </div>
+                        <div className={styles.rankMain}>
+                          <div className={styles.rankNameLine}>
+                            <span
+                              className={styles.rankName}
+                              style={getUsernameGradientStyle(player.playerId)}
+                            >
+                              {displayName}
+                            </span>
+                            {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
+                          </div>
+                          <div className={styles.bar}>
+                            {showAccuracy ? (
+                              <div
+                                className={styles.barFill}
+                                style={{ width: `${Math.max(0, Math.min(100, player.avgAccuracy))}%` }}
+                              />
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className={styles.rankScore}>
+                          {showAccuracy ? (
+                            <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avgAccuracy) }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
+                          ) : (
+                            <span className={styles.rankStatus}>{statusLabel ?? tGame('not_started')}</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
                 </div>
               </section>
               )}
