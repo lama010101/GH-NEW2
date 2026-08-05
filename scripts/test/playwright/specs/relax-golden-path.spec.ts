@@ -139,18 +139,38 @@ async function openCompletedTab(page: Page) {
 }
 
 async function fetchActiveGames(page: Page) {
-  const res = await page.request.get(`${BASE_URL}/api/compete/active-games`);
-  expect(res.ok(), 'active-games API failed').toBeTruthy();
-  const data = await res.json();
-  return (data.games ?? []) as Array<{
-    id: string;
-    game_id: string;
-    opponent_name: string;
-    round_current: number;
-    round_total: number;
-    status: 'your_turn' | 'waiting' | 'completed';
-    mode: 'sync' | 'async';
-  }>;
+  const url = `${BASE_URL}/api/compete/active-games`;
+  let lastError: string | undefined;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const res = await page.request.get(url);
+    const contentType = res.headers()['content-type'] ?? '';
+    const text = await res.text();
+    if (res.ok() && !text.trim().startsWith('<')) {
+      try {
+        const data = JSON.parse(text) as { games?: unknown[] };
+        return (data.games ?? []) as Array<{
+          id: string;
+          game_id: string;
+          opponent_name: string;
+          round_current: number;
+          round_total: number;
+          status: 'your_turn' | 'waiting' | 'completed';
+          mode: 'sync' | 'async';
+        }>;
+      } catch {
+        // fall through to retry
+      }
+    }
+
+    lastError = `status=${res.status()} contentType=${contentType} body=${text.slice(0, 200)} url=${res.url()}`;
+    console.warn(`[fetchActiveGames] non-JSON response on attempt ${attempt}/3: ${lastError}`);
+    if (attempt < 3) {
+      await page.waitForTimeout(1000);
+    }
+  }
+
+  throw new Error(`active-games API did not return JSON after 3 attempts; last: ${lastError}`);
 }
 
 async function expectCompeteCardGame(page: Page, gameId: string, expectedRound: number) {
