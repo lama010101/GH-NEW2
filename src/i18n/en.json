@@ -208,7 +208,9 @@
     "born_prefix": "Born:",
     "died_prefix": "Died:",
     "no_data_yet": "No data yet",
-    "back_to_home": "Back to Home"
+    "back_to_home": "Back to Home",
+    "round": "Round",
+    "game": "Game"
   },
   "lobby": {
     "waiting": "Waiting for players ({ready}/{total} ready)",
@@ -279,7 +281,9 @@
     "filter_favorites": "Favorites",
     "no_favorites_yet": "No favorites yet — click the star on a player's avatar to add them here.",
     "help_game_settings": "Choose how this Compete session plays out.\n\nANYTIME (Own Pace) — Asynchronous. Each player plays all 5 rounds independently, at their own speed — no waiting on anyone else. The session stays open for the deadline you set below (1–14 days). You can optionally turn on a per-round timer; if a player runs out of time on a round, only that round auto-submits for them — nobody else is affected.\n\nLIVE (Live Challenge) — Synchronous. Everyone plays the same round at the same time. Each round has an optional countdown timer (15 seconds to 5 minutes). After everyone submits, results are shown to all players together, with an auto-advance timer to the next round.\n\nRound Timer — Optional. How long each player has to submit a guess for a round.\nResults Timer — The maximum time available to view the round results before automatically advancing to the next round.\nGame Timer (Anytime only) — The overall deadline for the whole session, from 1 to 14 days after you start the game.",
-    "help_invite_players": "Add 2 to 8 players to this game.\n\nSearch for players by name, or use Share Link to send a join link to anyone — they don't need to already be a friend to join.\n\nAs host, you can click the star on a player's avatar to mark them as a favorite, making them easier to find next time.\n\nPlayers you invite will appear in the lobby once they accept. As host, you can remove a player from the lobby at any time before the game starts."
+    "help_invite_players": "Add 2 to 8 players to this game.\n\nSearch for players by name, or use Share Link to send a join link to anyone — they don't need to already be a friend to join.\n\nAs host, you can click the star on a player's avatar to mark them as a favorite, making them easier to find next time.\n\nPlayers you invite will appear in the lobby once they accept. As host, you can remove a player from the lobby at any time before the game starts.",
+    "era_region_presets": "Era & Region Presets",
+    "label": "lobby"
   },
   "compete_page": {
     "title": "Multiplayer Sync Game",
@@ -721,73 +725,221 @@
     },
     "mission": {
       "title": "Mission",
-      "topic_1": { "title": "Why history matters", "summary": "TBD", "detail": "TBD" },
-      "topic_2": { "title": "Why current education fails", "summary": "TBD", "detail": "TBD" },
-      "topic_3": { "title": "Why games can teach", "summary": "TBD", "detail": "TBD" }
+      "topic_1": {
+        "title": "Why history matters",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "topic_2": {
+        "title": "Why current education fails",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "topic_3": {
+        "title": "Why games can teach",
+        "summary": "TBD",
+        "detail": "TBD"
+      }
     },
     "problem": {
       "title": "The Problem",
-      "axis_1": { "left_label": "Passive", "right_label": "Discovery", "detail": "TBD" },
-      "axis_2": { "left_label": "Memorization", "right_label": "Curiosity", "detail": "TBD" },
-      "axis_3": { "left_label": "Exams", "right_label": "Exploration", "detail": "TBD" },
-      "axis_4": { "left_label": "—", "right_label": "Progression", "detail": "TBD" }
+      "axis_1": {
+        "left_label": "Passive",
+        "right_label": "Discovery",
+        "detail": "TBD"
+      },
+      "axis_2": {
+        "left_label": "Memorization",
+        "right_label": "Curiosity",
+        "detail": "TBD"
+      },
+      "axis_3": {
+        "left_label": "Exams",
+        "right_label": "Exploration",
+        "detail": "TBD"
+      },
+      "axis_4": {
+        "left_label": "—",
+        "right_label": "Progression",
+        "detail": "TBD"
+      }
     },
     "vision": {
       "title": "Vision",
-      "node_1": { "label": "Today", "detail": "TBD" },
-      "node_2": { "label": "Daily history game", "detail": "TBD" },
-      "node_3": { "label": "Millions of players", "detail": "TBD" },
-      "node_4": { "label": "Educational platform", "detail": "TBD" },
-      "node_5": { "label": "Multiple guessing games", "detail": "TBD" },
-      "node_6": { "label": "Immersive historical experiences", "detail": "TBD" },
-      "node_7": { "label": "VR History", "detail": "TBD" },
+      "node_1": {
+        "label": "Today",
+        "detail": "TBD"
+      },
+      "node_2": {
+        "label": "Daily history game",
+        "detail": "TBD"
+      },
+      "node_3": {
+        "label": "Millions of players",
+        "detail": "TBD"
+      },
+      "node_4": {
+        "label": "Educational platform",
+        "detail": "TBD"
+      },
+      "node_5": {
+        "label": "Multiple guessing games",
+        "detail": "TBD"
+      },
+      "node_6": {
+        "label": "Immersive historical experiences",
+        "detail": "TBD"
+      },
+      "node_7": {
+        "label": "VR History",
+        "detail": "TBD"
+      },
       "vr_disclaimer": "Long-term vision. Not funded. No schedule."
     },
     "product": {
       "title": "The Product",
       "demo_label": "Try it",
-      "feature_1": { "title": "Embedded playable demo", "desc": "TBD" },
-      "feature_2": { "title": "Screenshots", "desc": "TBD" },
-      "feature_3": { "title": "Game modes", "desc": "TBD" },
-      "feature_4": { "title": "Progression", "desc": "TBD" },
-      "feature_5": { "title": "Learning", "desc": "TBD" },
-      "feature_6": { "title": "Leaderboards", "desc": "TBD" },
-      "feature_7": { "title": "Machine vs Human", "desc": "TBD" },
+      "feature_1": {
+        "title": "Embedded playable demo",
+        "desc": "TBD"
+      },
+      "feature_2": {
+        "title": "Screenshots",
+        "desc": "TBD"
+      },
+      "feature_3": {
+        "title": "Game modes",
+        "desc": "TBD"
+      },
+      "feature_4": {
+        "title": "Progression",
+        "desc": "TBD"
+      },
+      "feature_5": {
+        "title": "Learning",
+        "desc": "TBD"
+      },
+      "feature_6": {
+        "title": "Leaderboards",
+        "desc": "TBD"
+      },
+      "feature_7": {
+        "title": "Machine vs Human",
+        "desc": "TBD"
+      },
       "roadmap_badge": "Roadmap"
     },
     "why_it_works": {
       "title": "Why It Works",
-      "card_1": { "title": "Daily habit", "summary": "TBD", "detail": "TBD" },
-      "card_2": { "title": "XP progression", "summary": "TBD", "detail": "TBD" },
-      "card_3": { "title": "Level Up", "summary": "TBD", "detail": "TBD" },
-      "card_4": { "title": "Competition", "summary": "TBD", "detail": "TBD" },
-      "card_5": { "title": "Learning loop", "summary": "TBD", "detail": "TBD" },
-      "card_6": { "title": "Replayability", "summary": "TBD", "detail": "TBD" },
-      "card_7": { "title": "Reveal explanations", "summary": "TBD", "detail": "TBD" },
-      "card_8": { "title": "Historical context", "summary": "TBD", "detail": "TBD" }
+      "card_1": {
+        "title": "Daily habit",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_2": {
+        "title": "XP progression",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_3": {
+        "title": "Level Up",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_4": {
+        "title": "Competition",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_5": {
+        "title": "Learning loop",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_6": {
+        "title": "Replayability",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_7": {
+        "title": "Reveal explanations",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_8": {
+        "title": "Historical context",
+        "summary": "TBD",
+        "detail": "TBD"
+      }
     },
     "market": {
       "title": "Market Opportunity",
       "intro": "TBD",
-      "sector_1": { "name": "Gaming", "description": "TBD" },
-      "sector_2": { "name": "Education", "description": "TBD" },
-      "sector_3": { "name": "AI", "description": "TBD" },
-      "sector_4": { "name": "Culture", "description": "TBD" },
-      "sector_5": { "name": "Museums", "description": "TBD" },
-      "sector_6": { "name": "Corporate Learning", "description": "TBD" },
+      "sector_1": {
+        "name": "Gaming",
+        "description": "TBD"
+      },
+      "sector_2": {
+        "name": "Education",
+        "description": "TBD"
+      },
+      "sector_3": {
+        "name": "AI",
+        "description": "TBD"
+      },
+      "sector_4": {
+        "name": "Culture",
+        "description": "TBD"
+      },
+      "sector_5": {
+        "name": "Museums",
+        "description": "TBD"
+      },
+      "sector_6": {
+        "name": "Corporate Learning",
+        "description": "TBD"
+      },
       "center_label": "Guess-History"
     },
     "business_model": {
       "title": "Business Model",
       "current_title": "Current",
       "future_title": "Future",
-      "stream_1": { "title": "Free Daily", "summary": "TBD", "detail": "TBD" },
-      "stream_2": { "title": "Premium", "summary": "TBD", "detail": "TBD" },
-      "stream_3": { "title": "Ads (non-intrusive)", "summary": "TBD", "detail": "TBD" },
-      "stream_4": { "title": "Education", "summary": "TBD", "detail": "TBD" },
-      "stream_5": { "title": "AI partnerships", "summary": "TBD", "detail": "TBD" },
-      "stream_6": { "title": "Corporate learning", "summary": "TBD", "detail": "TBD" },
-      "stream_7": { "title": "White-label editions", "summary": "TBD", "detail": "TBD" },
+      "stream_1": {
+        "title": "Free Daily",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_2": {
+        "title": "Premium",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_3": {
+        "title": "Ads (non-intrusive)",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_4": {
+        "title": "Education",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_5": {
+        "title": "AI partnerships",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_6": {
+        "title": "Corporate learning",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_7": {
+        "title": "White-label editions",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
       "badge_future": "Future"
     },
     "governance": {
@@ -808,13 +960,34 @@
     },
     "financial": {
       "title": "Financial Model",
-      "flow_1": { "label": "Revenue", "detail": "TBD" },
-      "flow_2": { "label": "Operating costs", "detail": "TBD" },
-      "flow_3": { "label": "Fair compensation", "detail": "TBD" },
-      "flow_4": { "label": "Investor returns (capped)", "detail": "TBD" },
-      "flow_5": { "label": "Strategic reserve", "detail": "TBD" },
-      "flow_6": { "label": "Reinvestment", "detail": "TBD" },
-      "flow_7": { "label": "Future projects", "detail": "TBD" },
+      "flow_1": {
+        "label": "Revenue",
+        "detail": "TBD"
+      },
+      "flow_2": {
+        "label": "Operating costs",
+        "detail": "TBD"
+      },
+      "flow_3": {
+        "label": "Fair compensation",
+        "detail": "TBD"
+      },
+      "flow_4": {
+        "label": "Investor returns (capped)",
+        "detail": "TBD"
+      },
+      "flow_5": {
+        "label": "Strategic reserve",
+        "detail": "TBD"
+      },
+      "flow_6": {
+        "label": "Reinvestment",
+        "detail": "TBD"
+      },
+      "flow_7": {
+        "label": "Future projects",
+        "detail": "TBD"
+      },
       "future_projects_title": "Future projects",
       "future_project_1": "Guess-History",
       "future_project_2": "VR History",
@@ -837,21 +1010,66 @@
       "title": "Partnerships",
       "current_title": "Current",
       "future_title": "Future",
-      "opportunity_1": { "name": "Education", "description": "TBD" },
-      "opportunity_2": { "name": "AI research", "description": "TBD" },
-      "opportunity_3": { "name": "Museums", "description": "TBD" },
-      "opportunity_4": { "name": "Archives", "description": "TBD" },
-      "opportunity_5": { "name": "Corporate learning", "description": "TBD" },
-      "opportunity_6": { "name": "Tourism", "description": "TBD" },
-      "opportunity_7": { "name": "Publishers", "description": "TBD" },
+      "opportunity_1": {
+        "name": "Education",
+        "description": "TBD"
+      },
+      "opportunity_2": {
+        "name": "AI research",
+        "description": "TBD"
+      },
+      "opportunity_3": {
+        "name": "Museums",
+        "description": "TBD"
+      },
+      "opportunity_4": {
+        "name": "Archives",
+        "description": "TBD"
+      },
+      "opportunity_5": {
+        "name": "Corporate learning",
+        "description": "TBD"
+      },
+      "opportunity_6": {
+        "name": "Tourism",
+        "description": "TBD"
+      },
+      "opportunity_7": {
+        "name": "Publishers",
+        "description": "TBD"
+      },
       "badge_future": "Future"
     },
     "contributors": {
       "title": "Contributors",
-      "role_1": { "name": "Developer", "why": "TBD", "what": "TBD", "receive": "TBD", "cta": "Apply as a Developer" },
-      "role_2": { "name": "Historian", "why": "TBD", "what": "TBD", "receive": "TBD", "cta": "Apply as a Historian" },
-      "role_3": { "name": "Creator", "why": "TBD", "what": "TBD", "receive": "TBD", "cta": "Apply as a Creator" },
-      "role_4": { "name": "Investor", "why": "TBD", "what": "TBD", "receive": "TBD", "cta": "Apply as an Investor" },
+      "role_1": {
+        "name": "Developer",
+        "why": "TBD",
+        "what": "TBD",
+        "receive": "TBD",
+        "cta": "Apply as a Developer"
+      },
+      "role_2": {
+        "name": "Historian",
+        "why": "TBD",
+        "what": "TBD",
+        "receive": "TBD",
+        "cta": "Apply as a Historian"
+      },
+      "role_3": {
+        "name": "Creator",
+        "why": "TBD",
+        "what": "TBD",
+        "receive": "TBD",
+        "cta": "Apply as a Creator"
+      },
+      "role_4": {
+        "name": "Investor",
+        "why": "TBD",
+        "what": "TBD",
+        "receive": "TBD",
+        "cta": "Apply as an Investor"
+      },
       "incentive_1": "Public recognition",
       "incentive_2": "Portfolio",
       "incentive_3": "Founding status",
@@ -868,19 +1086,53 @@
       "lane_2": "In progress",
       "lane_3": "Next",
       "lane_4": "Future",
-      "item_1": { "title": "TBD", "date": "TBD", "description": "TBD" },
-      "item_2": { "title": "TBD", "date": "TBD", "description": "TBD" },
-      "item_3": { "title": "TBD", "date": "TBD", "description": "TBD" },
-      "item_4": { "title": "TBD", "date": "TBD", "description": "TBD" }
+      "item_1": {
+        "title": "TBD",
+        "date": "TBD",
+        "description": "TBD"
+      },
+      "item_2": {
+        "title": "TBD",
+        "date": "TBD",
+        "description": "TBD"
+      },
+      "item_3": {
+        "title": "TBD",
+        "date": "TBD",
+        "description": "TBD"
+      },
+      "item_4": {
+        "title": "TBD",
+        "date": "TBD",
+        "description": "TBD"
+      }
     },
     "risks": {
       "title": "Risks",
-      "risk_1": { "title": "Competition", "mitigation": "TBD" },
-      "risk_2": { "title": "AI limitations", "mitigation": "TBD" },
-      "risk_3": { "title": "Funding", "mitigation": "TBD" },
-      "risk_4": { "title": "Small team", "mitigation": "TBD" },
-      "risk_5": { "title": "Execution risk", "mitigation": "TBD" },
-      "risk_6": { "title": "Long development cycle", "mitigation": "TBD" }
+      "risk_1": {
+        "title": "Competition",
+        "mitigation": "TBD"
+      },
+      "risk_2": {
+        "title": "AI limitations",
+        "mitigation": "TBD"
+      },
+      "risk_3": {
+        "title": "Funding",
+        "mitigation": "TBD"
+      },
+      "risk_4": {
+        "title": "Small team",
+        "mitigation": "TBD"
+      },
+      "risk_5": {
+        "title": "Execution risk",
+        "mitigation": "TBD"
+      },
+      "risk_6": {
+        "title": "Long development cycle",
+        "mitigation": "TBD"
+      }
     },
     "faq": {
       "title": "Frequently Asked Questions",
@@ -901,10 +1153,18 @@
     },
     "cta": {
       "headline": "Join us in building the future of historical discovery.",
-      "button_1": { "label": "Play" },
-      "button_2": { "label": "Contribute" },
-      "button_3": { "label": "Partner" },
-      "button_4": { "label": "Register Interest" }
+      "button_1": {
+        "label": "Play"
+      },
+      "button_2": {
+        "label": "Contribute"
+      },
+      "button_3": {
+        "label": "Partner"
+      },
+      "button_4": {
+        "label": "Register Interest"
+      }
     },
     "footer": {
       "sources": "Sources",
