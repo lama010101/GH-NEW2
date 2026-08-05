@@ -429,6 +429,8 @@
     "hints": "Pistas",
     "no_guess": "Sin respuesta",
     "not_started": "No iniciado",
+    "invited": "Invitado",
+    "on_round": "Ronda {current} / {total}",
     "no_time_clues": "Sin pistas temporales para este evento.",
     "no_location_clues": "Sin pistas de ubicación para este evento.",
     "near_miss": "Casi acierto",
