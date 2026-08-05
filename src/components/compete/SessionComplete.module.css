@@ -143,6 +143,27 @@
   -webkit-text-fill-color: transparent;
 }
 
+.heroXp {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.heroXpVal {
+  font-size: var(--font-2xl);
+  font-weight: 400;
+  color: var(--gh-text-primary);
+  line-height: 1;
+}
+
+.heroXpLabel {
+  font-size: var(--font-xs);
+  font-weight: 400;
+  color: var(--gh-text-primary);
+}
+
 /* ── Cards (shared) ── */
 
 .card {
@@ -256,14 +277,14 @@
 }
 
 .statTileXpVal {
-  font-size: var(--font-base);
-  font-weight: 800;
+  font-size: var(--font-xs);
+  font-weight: 400;
   color: var(--gh-text-primary);
 }
 
 .statTileXpLabel {
-  font-size: var(--font-xs);
-  font-weight: 700;
+  font-size: var(--font-2xs);
+  font-weight: 400;
   color: var(--gh-text-primary);
 }
 
