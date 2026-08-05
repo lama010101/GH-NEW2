@@ -471,7 +471,6 @@ export default function LandingV2Prototype() {
                   <div key={`see-${demoLoop}`} className={styles.demoScene}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/prototype/landing/berlinwall.webp" alt="Historical scene" className={styles.demoSceneImg} />
-                    <span className={styles.demoSceneQuestion}>?</span>
                   </div>
                 )}
                 {demoPhase === 1 && (
