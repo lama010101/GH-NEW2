@@ -343,19 +343,17 @@ describe("middleware redirect logic — KC-007", () => {
     });
   });
 
-  describe("root path unconditional redirect", () => {
-    it("redirects to /home for an unauthenticated visitor", async () => {
+  describe("root path public landing", () => {
+    it("passes through / for an unauthenticated visitor", async () => {
       const middleware = await loadMiddleware();
 
       const req = createMockRequest("/");
       await middleware(req);
 
-      expect(redirectCalls).toHaveLength(1);
-      expect(redirectCalls[0].url).toContain("/home");
-      expect(redirectCalls[0].status).toBe(307);
+      expect(redirectCalls).toHaveLength(0);
     });
 
-    it("redirects to /home even with a stale admin query param", async () => {
+    it("passes through / even with a stale admin query param", async () => {
       const middleware = await loadMiddleware();
 
       const req = createMockRequest("/", {
@@ -363,12 +361,10 @@ describe("middleware redirect logic — KC-007", () => {
       });
       await middleware(req);
 
-      expect(redirectCalls).toHaveLength(1);
-      expect(redirectCalls[0].url).toContain("/home");
-      expect(redirectCalls[0].status).toBe(307);
+      expect(redirectCalls).toHaveLength(0);
     });
 
-    it("redirects to /home even with a stale gh_admin_bypass cookie", async () => {
+    it("passes through / even with a stale gh_admin_bypass cookie", async () => {
       const middleware = await loadMiddleware();
 
       const req = createMockRequest("/", {
@@ -376,9 +372,7 @@ describe("middleware redirect logic — KC-007", () => {
       });
       await middleware(req);
 
-      expect(redirectCalls).toHaveLength(1);
-      expect(redirectCalls[0].url).toContain("/home");
-      expect(redirectCalls[0].status).toBe(307);
+      expect(redirectCalls).toHaveLength(0);
     });
   });
 
