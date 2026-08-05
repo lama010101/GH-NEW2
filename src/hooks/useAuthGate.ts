@@ -30,18 +30,17 @@ export function useAuthGate(): UseAuthGateReturn {
   );
 
   const closeModal = useCallback(() => {
-    pendingRef.current = null;
     setIsModalOpen(false);
   }, []);
 
   useEffect(() => {
-    if (state.status === "ready" && isModalOpen && pendingRef.current) {
+    if (state.status === "ready" && pendingRef.current) {
       const next = pendingRef.current;
       pendingRef.current = null;
       setIsModalOpen(false);
       router.push(next);
     }
-  }, [state.status, isModalOpen, router]);
+  }, [state.status, router]);
 
   return { requireAuth, isModalOpen, closeModal };
 }
