@@ -414,7 +414,7 @@ export default function RoundCompleteSection({
                 {/* Where mini card */}
                 <div className={styles.miniCard}>
                   <div className={styles.miniCardHead}>
-                    <span className={styles.miniCardDotWhere} />
+                    <WhereIcon className={styles.miniCardIcon} size={16} style={{ color: 'var(--gh-teal)' }} />
                     <span className={styles.miniCardTitle}>{t('where')}</span>
                   </div>
                   {(() => {
@@ -453,7 +453,7 @@ export default function RoundCompleteSection({
                 {/* When mini card */}
                 <div className={styles.miniCard}>
                   <div className={styles.miniCardHead}>
-                    <span className={styles.miniCardDotWhen} />
+                    <WhenIcon className={styles.miniCardIcon} size={16} style={{ color: 'var(--gh-violet)' }} />
                     <span className={styles.miniCardTitle}>{t('when')}</span>
                   </div>
                   {(() => {
