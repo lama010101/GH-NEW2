@@ -176,7 +176,13 @@ const FUN_BADGES = [
   { src: "/badges/combo_gold.webp", label: "Combo" },
 ];
 
-const RANK_IMAGE_NAMES = ["wanderer", "pathfinder", "trailblazer", "cartographer", "explorer"];
+const RANK_PREVIEWS = [
+  { key: "wanderer", title: "Wanderer" },
+  { key: "pathfinder", title: "Pathfinder" },
+  { key: "trailblazer", title: "Trailblazer" },
+  { key: "cartographer", title: "Cartographer" },
+  { key: "explorer", title: "Explorer" },
+];
 
 const AVATAR_PREVIEWS = [
   { name: "Albert Einstein", url: "https://im.runware.ai/image/ws/2/ii/28093021-6f59-4240-8ace-0a6e15f2672e.webp" },
@@ -736,13 +742,29 @@ export default function LandingV2Prototype() {
               </div>
             </div>
 
-            <div className={styles.funCard}>
-              <h4 className={styles.funCardH4}>Ranks</h4>
-              <div className={styles.rankStrip}>
-                {RANK_IMAGE_NAMES.map((name) => (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img key={name} src={`/images/rank-titles/${name}.jpg`} alt={name} className={styles.rankThumb} />
-                ))}
+            <div className={styles.funCol}>
+              <div className={styles.funCard}>
+                <h4 className={styles.funCardH4}>Ranks</h4>
+                <div className={styles.rankStrip}>
+                  {RANK_PREVIEWS.map(({ key, title }) => (
+                    <div key={key} className={styles.rankItem}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/images/rank-titles/${key}.jpg`} alt={title} className={styles.rankThumb} />
+                      <span className={styles.rankTitle}>{title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`${styles.xpBar} ${styles.xpCard} ${revealed.fun ? styles.in : ""}`}>
+                <div className={styles.xpBarHead}>
+                  <span className={styles.xpBarTitle}>Total XP</span>
+                  <span className={styles.xpBarValue} style={{ color: getAccuracyColor(92) }}>1,840 / 5,000</span>
+                </div>
+                <div className={styles.xpBarTrack}>
+                  <div className={styles.xpBarFill} style={{ width: "37%" }} />
+                </div>
+                <p className={styles.xpBarHint}>Keep playing to reach the next rank title.</p>
               </div>
             </div>
 
@@ -763,17 +785,6 @@ export default function LandingV2Prototype() {
                 ))}
               </div>
             </div>
-          </div>
-
-          <div className={`${styles.xpBar} ${revealed.fun ? styles.in : ""}`}>
-            <div className={styles.xpBarHead}>
-              <span className={styles.xpBarTitle}>Total XP</span>
-              <span className={styles.xpBarValue} style={{ color: getAccuracyColor(92) }}>1,840 / 5,000</span>
-            </div>
-            <div className={styles.xpBarTrack}>
-              <div className={styles.xpBarFill} style={{ width: "37%" }} />
-            </div>
-            <p className={styles.xpBarHint}>Keep playing to reach the next rank title.</p>
           </div>
         </div>
       </section>
