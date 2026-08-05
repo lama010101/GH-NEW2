@@ -134,7 +134,8 @@ async function expectCompeteCardGame(page: Page, gameId: string, expectedRound: 
   expect(game!.round_current, 'round_current matches per-player state').toBe(expectedRound);
   expect(game!.status, 'status is your_turn').toBe('your_turn');
   // Confirm the row is visible under the Your Turn tab.
-  await expect(page.getByText(new RegExp(`Round ${expectedRound} / 5`)).first()).toBeVisible({ timeout: 10000 });
+  // Some locales/translations omit ` / 5`, so make the total optional.
+  await expect(page.getByText(new RegExp(`Round ${expectedRound}(?: / ${game!.round_total})?`)).first()).toBeVisible({ timeout: 10000 });
 }
 
 async function expectCompletedGame(page: Page, gameId: string) {
@@ -154,6 +155,12 @@ async function playRounds(ws: CompeteWSClient, startRound: number, lastRound: nu
   for (let round = startRound; round <= lastRound; round++) {
     ws.submitGuess(round, 1900, 0, 0, []);
     if (round === lastRound) {
+      await ws.waitForState(
+        (s) => s.status === 'ROUND_COMPLETE' && s.currentRoundIndex === round,
+        STATE_TIMEOUT,
+        true,
+      );
+      ws.readyNext(round);
       await ws.waitForState((s) => s.status === 'SESSION_COMPLETE', STATE_TIMEOUT, true);
     } else {
       await ws.waitForState(
@@ -547,10 +554,17 @@ test('Relax golden path A0–A13', async () => {
     const rankRows = hostPage.locator('[data-testid="session-rank-row"]');
     await expect(rankRows).toHaveCount(3, { timeout: 20000 });
 
+    // Re-read display names from the host's current snapshot after all players
+    // have finished; reconnect can update a player's display_name in the stream.
+    const finalSnapshot = hostWS.getLastSnapshot()!;
+    const finalHostName = finalSnapshot.players.find((p) => p.playerId === HOST_USER.id)?.displayName ?? hostName;
+    const finalGuestBName = finalSnapshot.players.find((p) => p.playerId === GUEST_B_USER.id)?.displayName ?? guestBName;
+    const finalGuestCName = finalSnapshot.players.find((p) => p.playerId === GUEST_C_USER.id)?.displayName ?? guestCName;
+
     const finalText = await hostPage.locator('body').innerText();
-    expect(finalText, 'A9: host name in final ranking').toContain(hostName);
-    expect(finalText, 'A9: guestB name in final ranking').toContain(guestBName);
-    expect(finalText, 'A9: guestC name in final ranking').toContain(guestCName);
+    expect(finalText, 'A9: host name in final ranking').toContain(finalHostName);
+    expect(finalText, 'A9: guestB name in final ranking').toContain(finalGuestBName);
+    expect(finalText, 'A9: guestC name in final ranking').toContain(finalGuestCName);
     console.log('[RELAX-GOLDEN] A9 passed: all players finished, divergent scores rendered');
 
     // ═════════════════════════════════════════════════════════════════
@@ -560,6 +574,116 @@ test('Relax golden path A0–A13', async () => {
     await assertNoBannedLobbyText(guestBPage, 'A10-guestB');
     await assertNoBannedLobbyText(guestCPage, 'A10-guestC');
     console.log('[RELAX-GOLDEN] A10 passed: no banned lobby text');
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Relax final round shows own RoundCompleteSection before explicit SessionComplete', async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const GUEST_D_USER = TEST_USERS[3];
+    const hostCtx = await browser.newContext(DESKTOP_PRESET);
+    const guestCtx = await browser.newContext(DESKTOP_PRESET);
+    const hostPage = await hostCtx.newPage();
+    const guestPage = await guestCtx.newPage();
+
+    await Promise.all([
+      hostPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+      guestPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+    ]);
+    await Promise.all([
+      ensureLoggedIn(hostPage, HOST_USER),
+      ensureLoggedIn(guestPage, GUEST_D_USER),
+    ]);
+
+    const createRes = await hostPage.request.post(`${BASE_URL}/api/compete/create`, {
+      data: {
+        displayName: HOST_USER.displayName,
+        playerId: HOST_USER.id,
+        mode: 'async',
+        roundTimerSec: 0,
+        resultsAutoAdvanceSec: 0,
+      },
+      timeout: NAV_TIMEOUT,
+    });
+    expect(createRes.ok(), 'Create final-round test game failed').toBeTruthy();
+    const sessionData = await createRes.json();
+    const gameId = sessionData.gameId || sessionData.id;
+    expect(gameId, 'Create game returned no gameId').toBeTruthy();
+
+    await Promise.all([
+      hostPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+      guestPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+    ]);
+    await Promise.all([
+      waitForSection(hostPage, 'lobby-shell'),
+      waitForSection(guestPage, 'lobby-shell'),
+    ]);
+
+    const [hostToken, guestToken] = await Promise.all([
+      fetchAccessToken(HOST_USER),
+      fetchAccessToken(GUEST_D_USER),
+    ]);
+    const hostWS = createWS(gameId, HOST_USER, hostToken, [], []);
+    const guestWS = createWS(gameId, GUEST_D_USER, guestToken, [], []);
+    await Promise.all([hostWS.connect(), guestWS.connect()]);
+    await Promise.all([
+      hostWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 2, STATE_TIMEOUT),
+      guestWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 2, STATE_TIMEOUT),
+    ]);
+
+    await hostPage.getByTestId('lobby-ready-btn').first().click();
+    await hostWS.waitForState((s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === 0, STATE_TIMEOUT, true);
+    await waitForSection(hostPage, 'round-active-section', { roundIndex: 0 });
+
+    for (let round = 0; round <= 3; round++) {
+      hostWS.submitGuess(round, 1900, 0, 0, []);
+      await hostWS.waitForState(
+        (s) => s.status === 'ROUND_COMPLETE' && s.currentRoundIndex === round,
+        STATE_TIMEOUT,
+        true,
+      );
+      await waitForSection(hostPage, 'round-complete-section', { roundIndex: round });
+      hostWS.readyNext(round);
+      await hostWS.waitForState(
+        (s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === round + 1,
+        STATE_TIMEOUT,
+        true,
+      );
+      await waitForSection(hostPage, 'round-active-section', { roundIndex: round + 1 });
+    }
+
+    // Final round: submit and land on ROUND_COMPLETE, not SESSION_COMPLETE.
+    hostWS.submitGuess(4, 1900, 0, 0, []);
+    await hostWS.waitForState(
+      (s) => s.status === 'ROUND_COMPLETE' && s.currentRoundIndex === 4,
+      STATE_TIMEOUT,
+      true,
+    );
+    await waitForSection(hostPage, 'round-complete-section', { roundIndex: 4 });
+
+    await expect(hostPage.getByTestId('round-next-btn').first()).not.toBeDisabled();
+    await expect(hostPage.locator('[data-testid="session-complete-section"]')).not.toBeVisible();
+
+    const hostSnapshotBefore = hostWS.getLastSnapshot()!;
+    expect(
+      hostSnapshotBefore.players.find((p) => p.playerId === HOST_USER.id)?.roundStatus,
+      'host should not be marked finished before explicit final tap',
+    ).not.toBe('finished');
+    await expectRosterStatus(guestPage, HOST_USER.id, 'playing');
+
+    // Explicit "Final Results" tap transitions to SESSION_COMPLETE.
+    hostWS.readyNext(4);
+    await hostWS.waitForState((s) => s.status === 'SESSION_COMPLETE', STATE_TIMEOUT, true);
+    await waitForSection(hostPage, 'session-complete-section');
+
+    const hostSnapshotAfter = hostWS.getLastSnapshot()!;
+    expect(
+      hostSnapshotAfter.players.find((p) => p.playerId === HOST_USER.id)?.roundStatus,
+      'host should be finished after explicit final tap',
+    ).toBe('finished');
+    await expectRosterStatus(guestPage, HOST_USER.id, 'finished');
   } finally {
     await browser.close();
   }
