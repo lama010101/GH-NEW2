@@ -171,11 +171,9 @@ const PIPELINE = [
 ];
 
 const FUN_BADGES = [
-  "/badges/location_gold.webp",
-  "/badges/year_gold.webp",
-  "/badges/combo_gold.webp",
-  "/badges/where.webp",
-  "/badges/when.webp",
+  { src: "/badges/year_gold.webp", label: "Year" },
+  { src: "/badges/location_gold.webp", label: "Location" },
+  { src: "/badges/combo_gold.webp", label: "Combo" },
 ];
 
 const RANK_IMAGE_NAMES = ["wanderer", "pathfinder", "trailblazer", "cartographer", "explorer"];
@@ -710,9 +708,12 @@ export default function LandingV2Prototype() {
             <div className={styles.funCard}>
               <h4 className={styles.funCardH4}>Badges</h4>
               <div className={styles.funBadges}>
-                {FUN_BADGES.map((src, i) => (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img key={src} src={src} alt="" className={styles.funBadge} style={{ animationDelay: `${i * 0.15}s` }} />
+                {FUN_BADGES.map(({ src, label }, i) => (
+                  <div key={src} className={styles.funBadgeWrap}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt={label} className={styles.funBadge} style={{ animationDelay: `${i * 0.15}s` }} />
+                    <span className={styles.funBadgeLabel}>{label}</span>
+                  </div>
                 ))}
               </div>
             </div>
