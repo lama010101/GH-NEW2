@@ -17,6 +17,7 @@ import authModalStyles from '@/components/AuthModal.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
 import RankCard from '@/components/RankCard'
+import { Trophy } from 'lucide-react'
 
 function HomePageInner() {
   const router = useRouter()
@@ -605,15 +606,13 @@ function ModeCard({
                   onNavigate(`/daily/game/${dailyStatus?.gameId}/results`)
                 }}
                 disabled={navigating}
-                aria-label={t('home.daily_view')}
+                aria-label="View results"
               >
                 {navigating ? (
                   <span className={styles.playPillSpinner} aria-hidden="true" />
                 ) : (
                   <>
-                    <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                      {t('home.daily_finished')}
-                    </span>
+                    <Trophy width={22} height={22} aria-hidden="true" />
                     {t('home.daily_view')}
                   </>
                 )}
