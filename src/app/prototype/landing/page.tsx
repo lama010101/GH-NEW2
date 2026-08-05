@@ -29,6 +29,8 @@ import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import { YearPicker } from "@/components/YearPicker";
+import { AuthModal } from "@/components/AuthModal";
+import { useAuthGate } from "@/hooks/useAuthGate";
 import styles from "./landing.module.css";
 
 const GameMap = dynamic(
@@ -200,10 +202,11 @@ export default function LandingV2Prototype() {
   const [whenLbExpanded, setWhenLbExpanded] = useState(false);
   const [whenCluesExpanded, setWhenCluesExpanded] = useState(false);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const { requireAuth, isModalOpen, closeModal } = useAuthGate();
   const demoCounterRef = useRef<number | null>(null);
   const topbarRef = useRef<HTMLElement>(null);
   const heroLogoRef = useRef<HTMLHeadingElement>(null);
-  const heroCtaRef = useRef<HTMLAnchorElement>(null);
+  const heroCtaRef = useRef<HTMLButtonElement>(null);
 
   // Scroll reveal
   useEffect(() => {
@@ -366,9 +369,13 @@ export default function LandingV2Prototype() {
         </nav>
 
         {showTopbarExtras && (
-          <a href="/" className={`${styles.playNowBtn} ${styles.topbarCta}`}>
+          <button
+            type="button"
+            onClick={() => requireAuth('/home')}
+            className={`${styles.playNowBtn} ${styles.topbarCta}`}
+          >
             Play Now
-          </a>
+          </button>
         )}
       </header>
 
@@ -396,7 +403,14 @@ export default function LandingV2Prototype() {
           <p className={styles.heroTagline}>
             A free game — look at a picture, guess the place and year, then learn the true story.
           </p>
-          <a ref={heroCtaRef} href="/" className={`${styles.playNowBtn} ${styles.heroCta}`}>Play Now</a>
+          <button
+            ref={heroCtaRef}
+            type="button"
+            onClick={() => requireAuth('/home')}
+            className={`${styles.playNowBtn} ${styles.heroCta}`}
+          >
+            Play Now
+          </button>
           <div className={styles.heroDots}>
             {HERO_IMAGES.map((_, i) => (
               <button
@@ -774,10 +788,14 @@ export default function LandingV2Prototype() {
           <h2 className={styles.finalH2}>Ready for your first trip through time?</h2>
           <p className={styles.finalP}>No download. No cost. Just curiosity.</p>
           <div className={styles.finalCtaRow}>
-            <a href="/" className={`${styles.playNowBtn} ${styles.ctaBig}`}>
+            <button
+              type="button"
+              onClick={() => requireAuth('/home')}
+              className={`${styles.playNowBtn} ${styles.ctaBig}`}
+            >
               <span className={styles.ctaPulse} />
               Play Now
-            </a>
+            </button>
           </div>
         </div>
       </section>
@@ -792,10 +810,11 @@ export default function LandingV2Prototype() {
           <a href="#ai">AI Images</a>
           <a href="#explore">Explore</a>
           <a href="#fun">Why Play</a>
-          <a href="/">Play Now</a>
+          <a href="/" onClick={(e) => { e.preventDefault(); requireAuth('/home'); }}>Play Now</a>
         </div>
         <p className={styles.footerCopy}>© {new Date().getFullYear()} Guess History</p>
       </footer>
+      <AuthModal isOpen={isModalOpen} onClose={closeModal} required={false} />
     </div>
   );
 }

@@ -80,8 +80,10 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Root path: redirect all visitors to /home.
-  if (pathname === "/") {
+  // Root path: signed-in users go to /home. Signed-out users see the
+  // public landing page rendered by src/app/page.tsx (handled below by
+  // falling through to isPublicPath).
+  if (pathname === "/" && user) {
     return NextResponse.redirect(new URL("/home", request.url), 307);
   }
 
