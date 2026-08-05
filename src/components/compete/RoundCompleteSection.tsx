@@ -60,7 +60,7 @@ interface RoundCompleteSectionProps {
 
 // Small % ring for Where/When mini cards — colored stroke + value text.
 // Mirrors the prototype MiniRing visual. Color is passed in (derived from score).
-function MiniRing({ value, color }: { value: number; color: string }) {
+export function MiniRing({ value, color }: { value: number; color: string }) {
   const size = 56;
   const sw = 5;
   const r = size / 2 - sw;
@@ -69,7 +69,7 @@ function MiniRing({ value, color }: { value: number; color: string }) {
   return (
     <div className={styles.miniRingWrap} style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--gh-bg-input)" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--gh-border-medium)" strokeWidth={sw} />
         <circle
           cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw}
           strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset}

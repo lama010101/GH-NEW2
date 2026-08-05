@@ -249,6 +249,24 @@
   line-height: 1;
 }
 
+.statTileXp {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.statTileXpVal {
+  font-size: var(--font-base);
+  font-weight: 800;
+  color: var(--gh-text-primary);
+}
+
+.statTileXpLabel {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
 .statTileSub {
   font-size: 11px; /* layout-constrained — do not tokenize */
   color: var(--gh-text-muted);
@@ -355,12 +373,6 @@
   background: var(--gh-glow-orange);
   padding: 1px 7px;
   border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.winTag {
-  font-size: 11px; /* layout-constrained — do not tokenize */
-  font-weight: 700;
   flex-shrink: 0;
 }
 
