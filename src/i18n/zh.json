@@ -1172,5 +1172,11 @@
       "legal": "法律免责声明",
       "privacy": "隐私"
     }
+  },
+  "practice": {
+    "title": "练习游戏进行中",
+    "resume_prompt": "您有一个未完成的练习游戏。您想做什么？",
+    "resume_game": "继续进行中的游戏",
+    "create_new_game": "创建新游戏"
   }
 }

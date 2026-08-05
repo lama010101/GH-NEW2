@@ -1172,5 +1172,11 @@
       "legal": "Mentions légales",
       "privacy": "Confidentialité"
     }
+  },
+  "practice": {
+    "title": "Jeu d'entraînement en cours",
+    "resume_prompt": "Vous avez un jeu d'entraînement inachevé. Que souhaitez-vous faire ?",
+    "resume_game": "Reprendre le jeu en cours",
+    "create_new_game": "Créer un nouveau jeu"
   }
 }
