@@ -1,5 +1,7 @@
 # GUESS-HISTORY — Implementation Progress
 
+||| MP-UIX-SHARELINK-FINALRESULTS-001 | DONE | src/components/compete/SessionComplete.tsx, docs/PROGRESS.md | Added a Share Link button to the SessionComplete final results bottom CTA bar, positioned between the Home and Play Again buttons. The button copies the current URL to the clipboard and temporarily shows the existing `lobby.link_copied` translation for 2 seconds, reusing the same handler pattern from `LobbySection`. `npm run typecheck` 0 errors; `npm run lint` 0 ERRORS (pre-existing warnings only). Branch `devin/MP-UIX-SHARELINK-FINALRESULTS-001`. | (2026-08-05) |
+
 || MP-PROTOTYPE-LANDINGV2-TOPBAR-MOBILE-001 | DONE | src/app/prototype/landing/landing.module.css, docs/PROGRESS.md | Mobile landing topbar (≤880px): reduce logo to 21px (~33% smaller) and reorder flex items so logo is left, Play Now is center, hamburger is right when all three elements are visible. `npx tsc --noEmit` 0 errors; `npx next lint` 0 ERRORS (pre-existing warnings only). Branch `devin/MP-PROTOTYPE-LANDINGV2-TOPBAR-MOBILE-001`, merged to `main`. | (2026-08-05) |
 
 ||| MP-PROTOTYPE-LANDINGV2-COPY-001 | DONE | src/app/prototype/landing/page.tsx, docs/PROGRESS.md | Updated "How to play" section heading from "One scene. Three questions." to "One scene. Three actions." `npx tsc --noEmit` 0 errors; `npx next lint` 0 ERRORS (pre-existing warnings only). | (2026-08-05) |
