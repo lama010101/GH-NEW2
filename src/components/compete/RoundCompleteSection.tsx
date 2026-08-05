@@ -844,6 +844,9 @@ export default function RoundCompleteSection({
           </button>
 
           <div className={activeStyles.settingsCard} onClick={(e) => e.stopPropagation()}>
+            <p className={activeStyles.settingsResumeHint}>
+              {t('settings_resume_hint')}
+            </p>
             <button
               type="button"
               onClick={() => { setHomeNavigating(true); window.location.href = '/home'; }}
@@ -862,9 +865,6 @@ export default function RoundCompleteSection({
               )}
               {tNav('home')}
             </button>
-            <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--gh-text-secondary)', textAlign: 'center' }}>
-              {t('settings_resume_hint')}
-            </p>
             <div className={activeStyles.settingsTitle}>{t('settings')}</div>
 
             <div className={activeStyles.settingsRow}>
