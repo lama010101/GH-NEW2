@@ -1,7 +1,7 @@
 import { test, expect, chromium } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { TEST_USERS, fetchAccessToken } from '../fixtures/auth';
-import { ensureLoggedIn } from '../helpers/auth-ui';
+import { authenticatePage } from '../helpers/auth-cookie';
 import { CompeteWSClient, type CompeteSnapshot } from '../orchestrator/websocketClient';
 
 // ═════════════════════════════════════════════════════════════════════
@@ -21,6 +21,10 @@ import { CompeteWSClient, type CompeteSnapshot } from '../orchestrator/websocket
 const PARTYKIT_HOST =
   process.env.PARTYKIT_HOST || process.env.NEXT_PUBLIC_PARTY_KIT_HOST || 'localhost:1999';
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
+
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const DESKTOP_PRESET = {
   viewport: { width: 1280, height: 800 },
@@ -104,12 +108,34 @@ async function dismissWelcomeModal(page: Page) {
   }
 }
 
+async function ensureWelcomeCompleted(userId: string) {
+  if (!SUPABASE_SERVICE_ROLE_KEY) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({ welcome_completed: true }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.warn(`[RELAX-GOLDEN] Could not mark welcome_completed for ${userId}: ${res.status} ${body}`);
+    }
+  } catch (err) {
+    console.warn('[RELAX-GOLDEN] ensureWelcomeCompleted failed:', err);
+  }
+}
+
 async function openYourTurnTab(page: Page) {
-  await page.getByRole('button', { name: /YOUR TURN/i }).click();
+  await page.getByRole('button', { name: /YOUR TURN/i }).click({ timeout: STATE_TIMEOUT });
 }
 
 async function openCompletedTab(page: Page) {
-  await page.getByRole('button', { name: /COMPLETED/i }).click();
+  await page.getByRole('button', { name: /COMPLETED/i }).click({ timeout: STATE_TIMEOUT });
 }
 
 async function fetchActiveGames(page: Page) {
@@ -133,8 +159,10 @@ async function expectCompeteCardGame(page: Page, gameId: string, expectedRound: 
   expect(game, `game ${gameId} not found in active-games`).toBeTruthy();
   expect(game!.round_current, 'round_current matches per-player state').toBe(expectedRound);
   expect(game!.status, 'status is your_turn').toBe('your_turn');
-  // Confirm the row is visible under the Your Turn tab.
-  await expect(page.getByText(new RegExp(`Round ${expectedRound} / 5`)).first()).toBeVisible({ timeout: 10000 });
+  // Wait for the active-games list to render the expected row before asserting text.
+  await expect(
+    page.locator('[class*="gameRow"]').filter({ hasText: new RegExp(`Round ${expectedRound} / 5`) }).first(),
+  ).toBeVisible({ timeout: STATE_TIMEOUT });
 }
 
 async function expectCompletedGame(page: Page, gameId: string) {
@@ -142,8 +170,10 @@ async function expectCompletedGame(page: Page, gameId: string) {
   const game = games.find((g) => g.game_id === gameId);
   expect(game, `game ${gameId} not found in active-games`).toBeTruthy();
   expect(game!.status, 'status is completed').toBe('completed');
-  // Confirm the completed row is visible under the Completed tab.
-  await expect(page.locator('[class*="gameRow"]').filter({ hasText: new RegExp(game!.opponent_name) }).first()).toBeVisible({ timeout: 10000 });
+  // Wait for the active-games list to render the expected completed row.
+  await expect(
+    page.locator('[class*="gameRow"]').filter({ hasText: new RegExp(game!.opponent_name) }).first(),
+  ).toBeVisible({ timeout: STATE_TIMEOUT });
 }
 
 function sendStartPlayer(ws: CompeteWSClient, playerId: string) {
@@ -198,9 +228,15 @@ test('Relax golden path A0–A13', async () => {
     ]);
 
     await Promise.all([
-      ensureLoggedIn(hostPage, HOST_USER),
-      ensureLoggedIn(guestBPage, GUEST_B_USER),
-      ensureLoggedIn(guestCPage, GUEST_C_USER),
+      authenticatePage(hostPage, HOST_USER),
+      authenticatePage(guestBPage, GUEST_B_USER),
+      authenticatePage(guestCPage, GUEST_C_USER),
+    ]);
+
+    await Promise.all([
+      ensureWelcomeCompleted(HOST_USER.id),
+      ensureWelcomeCompleted(GUEST_B_USER.id),
+      ensureWelcomeCompleted(GUEST_C_USER.id),
     ]);
 
     const createRes = await hostPage.request.post(`${BASE_URL}/api/compete/create`, {
@@ -518,7 +554,7 @@ test('Relax golden path A0–A13', async () => {
 
     guestBWS.close();
     await guestBPage.reload({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
-    await ensureLoggedIn(guestBPage, GUEST_B_USER);
+    await authenticatePage(guestBPage, GUEST_B_USER);
     await waitForSection(guestBPage, 'round-active-section', { roundIndex: 2 });
 
     // Reuse the original guest B token (still within its JWT lifetime) so we
