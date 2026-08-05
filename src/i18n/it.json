@@ -1172,5 +1172,11 @@
       "legal": "Disclaimer legale",
       "privacy": "Privacy"
     }
+  },
+  "practice": {
+    "title": "Gioco di pratica in corso",
+    "resume_prompt": "Hai un gioco di pratica non terminato. Cosa vuoi fare?",
+    "resume_game": "Riprendi il gioco in corso",
+    "create_new_game": "Crea un nuovo gioco"
   }
 }

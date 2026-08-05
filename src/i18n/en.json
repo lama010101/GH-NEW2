@@ -1172,5 +1172,11 @@
       "legal": "Legal disclaimer",
       "privacy": "Privacy"
     }
+  },
+  "practice": {
+    "title": "Practice game in progress",
+    "resume_prompt": "You have an unfinished Practice game. What would you like to do?",
+    "resume_game": "Resume game in progress",
+    "create_new_game": "Create new game"
   }
 }
