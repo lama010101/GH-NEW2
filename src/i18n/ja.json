@@ -429,6 +429,8 @@
     "hints": "ヒント",
     "no_guess": "未回答",
     "not_started": "未開始",
+    "invited": "招待済み",
+    "on_round": "ラウンド {current} / {total}",
     "no_time_clues": "このイベントには時間の手がかりがありません。",
     "no_location_clues": "このイベントには位置の手がかりがありません。",
     "near_miss": "惜しい",
