@@ -19,6 +19,7 @@ export interface ExperienceAccuracyData {
 export default function ExperienceAccuracy({ data, hideAccuracy = false, hideStatsRow = false, embedded = false, rankCard }: { data: ExperienceAccuracyData; hideAccuracy?: boolean; hideStatsRow?: boolean; embedded?: boolean; rankCard?: ReactNode }) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
+  const tGame = useTranslations('game');
   const [accuracyTab, setAccuracyTab] = useState<'when' | 'where'>('when');
   const [experienceTab, setExperienceTab] = useState<'when' | 'where'>('when');
 
@@ -114,7 +115,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhen}`} style={{ width: `${(item.totalXp / maxWhenXp) * 100}%` }} />
                       </div>
                     </div>
-                    <span className={styles.regionPct}>{item.totalXp.toLocaleString()} XP</span>
+                    <span className={styles.regionPct}>{item.totalXp.toLocaleString()} {tGame('xp_unit')}</span>
                     <span className={styles.regionCount}>{item.roundCount}</span>
                   </div>
                 ))
@@ -140,7 +141,7 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
                         <div className={`${styles.regionBarFill} ${styles.regionBarFillWhere}`} style={{ width: `${(item.totalXp / maxWhereXp) * 100}%` }} />
                       </div>
                     </div>
-                    <span className={styles.regionPct}>{item.totalXp.toLocaleString()} XP</span>
+                    <span className={styles.regionPct}>{item.totalXp.toLocaleString()} {tGame('xp_unit')}</span>
                     <span className={styles.regionCount}>{item.roundCount}</span>
                   </div>
                 ))

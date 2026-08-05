@@ -184,7 +184,8 @@
     "practice_desc": "العب فردياً.\nغير محدود",
     "play_mode_aria": "العب {mode}",
     "compete_play_aria": "العب",
-    "compete_delete_aria": "حذف"
+    "compete_delete_aria": "حذف",
+    "coming_up_soon": "قريباً"
   },
   "common": {
     "next_round": "الجولة التالية",
@@ -210,7 +211,8 @@
     "no_data_yet": "لا توجد بيانات بعد",
     "back_to_home": "العودة للرئيسية",
     "round": "جولة",
-    "game": "لعبة"
+    "game": "لعبة",
+    "loading_ellipsis": "جارٍ التحميل…"
   },
   "lobby": {
     "waiting": "بانتظار اللاعبين ({ready}/{total} جاهز)",
@@ -635,7 +637,9 @@
     "best": "الأفضل",
     "rated": "مقيّم",
     "regions": "المناطق",
-    "countries": "البلدان"
+    "countries": "البلدان",
+    "daily_all_time": "يومي (على مر العصور)",
+    "level": "المستوى"
   },
   "account": {
     "title": "الحساب",

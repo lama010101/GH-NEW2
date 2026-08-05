@@ -184,7 +184,8 @@
     "practice_desc": "Spiele solo.\nUnbegrenzt",
     "play_mode_aria": "{mode} spielen",
     "compete_play_aria": "Spielen",
-    "compete_delete_aria": "Löschen"
+    "compete_delete_aria": "Löschen",
+    "coming_up_soon": "Bald verfügbar"
   },
   "common": {
     "next_round": "Nächste Runde",
@@ -210,7 +211,8 @@
     "no_data_yet": "Noch keine Daten",
     "back_to_home": "Zurück zur Startseite",
     "round": "Runde",
-    "game": "Spiel"
+    "game": "Spiel",
+    "loading_ellipsis": "Laden…"
   },
   "lobby": {
     "waiting": "Warte auf Spieler ({ready}/{total} bereit)",
@@ -635,7 +637,9 @@
     "best": "bestes",
     "rated": "Bewertet",
     "regions": "Regionen",
-    "countries": "Länder"
+    "countries": "Länder",
+    "daily_all_time": "Täglich (gesamt)",
+    "level": "Stufe"
   },
   "account": {
     "title": "Konto",
