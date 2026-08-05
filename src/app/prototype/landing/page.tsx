@@ -26,7 +26,7 @@ import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages
 import { getAccuracyColor } from "@/core/accuracyColor";
 import type { RoundResult } from "@/core/competeTypes";
 import type { SessionPlayer } from "@/core/types";
-import PlayerAvatar from "@/components/compete/PlayerAvatar";
+import { toProxiedImageUrl } from "@/lib/imageProxy";
 import { YearPicker } from "@/components/YearPicker";
 import { AuthModal } from "@/components/AuthModal";
 import { useAuthGate } from "@/hooks/useAuthGate";
@@ -185,12 +185,41 @@ const RANK_PREVIEWS = [
 ];
 
 const AVATAR_PREVIEWS = [
-  { name: "Albert Einstein", url: "https://im.runware.ai/image/ws/2/ii/28093021-6f59-4240-8ace-0a6e15f2672e.webp" },
-  { name: "Marie Curie", url: "https://im.runware.ai/image/ws/2/ii/917583d3-87cd-4d55-a09d-7713a934180f.webp" },
-  { name: "Nelson Mandela", url: "https://im.runware.ai/image/ws/2/ii/dc36c8d7-b0f9-4ea7-9f55-047909ed4bd5.webp" },
-  { name: "Ada Lovelace", url: "https://im.runware.ai/image/ws/2/ii/46d4c144-2458-478d-bc8f-30737639e933.webp" },
-  { name: "Amelia Earhart", url: "https://im.runware.ai/image/ws/2/ii/93cda3d3-b386-425b-8561-501d91868209.webp" },
-  { name: "Charles Darwin", url: "https://im.runware.ai/image/ws/2/ii/13398bd8-f56e-4b34-ad8a-a0b97bad8543.webp" },
+  {
+    name: "Albert Einstein",
+    description: "Developed the theory of relativity",
+    born: "Born: 1879-03-14, Ulm, Germany",
+    died: "Died: 1955-04-18, Princeton, USA",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2F0d19257e-9a2a-4553-93d7-1edf70327c68_AlbertEinstein.jpg?alt=media&token=d008d166-da67-423f-9281-9ec2e7f6aef0",
+  },
+  {
+    name: "Marie Curie",
+    description: "Pioneer in radioactivity; first person to win two Nobel Prizes",
+    born: "Born: 1867-11-07, Warsaw, Poland",
+    died: "Died: 1934-07-04, Passy, France",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fa0afd408-fa5a-43f7-8723-4d50642ce210_MarieCurie.jpg?alt=media&token=32195928-02bf-4fd8-894f-4fb95badddb4",
+  },
+  {
+    name: "Nelson Mandela",
+    description: "Anti-apartheid revolutionary and former President of South Africa",
+    born: "Born: 1918-07-18, Mvezo, South Africa",
+    died: "Died: 2013-12-05, Johannesburg, South Africa",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fd93a9e35-9e9b-42cd-afd4-5d53e2329167_NelsonMandela.jpg?alt=media&token=55a85578-412a-4bf2-86ed-ba9c87c7b29e",
+  },
+  {
+    name: "Ada Lovelace",
+    description: "Wrote the first algorithm intended for a computer",
+    born: "Born: 1815-12-10, London, United Kingdom",
+    died: "Died: 1852-11-27, Marylebone, United Kingdom",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2Fe44e050a-f408-4698-a6d0-6f607fd2579b_AdaLovelace.jpg?alt=media&token=e82217a3-9b73-45ac-a932-1815dd762368",
+  },
+  {
+    name: "Charles Darwin",
+    description: "Naturalist known for the theory of evolution",
+    born: "Born: 1809-02-12, Shrewsbury, United Kingdom",
+    died: "Died: 1882-04-19, Downe, United Kingdom",
+    url: "https://firebasestorage.googleapis.com/v0/b/historify-ai.firebasestorage.app/o/avatars%2F1cb7486d-da10-44ac-b068-483147b76226_CharlesDarwin.jpg?alt=media&token=487ff003-b5f3-4c2a-8510-3c1e3e6de016",
+  },
 ];
 
 function easeOutQuad(t: number) {
@@ -202,6 +231,7 @@ export default function LandingV2Prototype() {
   const [showTopbarExtras, setShowTopbarExtras] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [avatarIndex, setAvatarIndex] = useState(0);
   const [demoPhase, setDemoPhase] = useState(0);
   const [demoLoop, setDemoLoop] = useState(0);
   const [demoXp, setDemoXp] = useState(0);
@@ -268,6 +298,12 @@ export default function LandingV2Prototype() {
   // Hero slideshow
   useEffect(() => {
     const id = setInterval(() => setHeroIndex((i) => (i + 1) % HERO_IMAGES.length), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Avatar card slideshow
+  useEffect(() => {
+    const id = setInterval(() => setAvatarIndex((i) => (i + 1) % AVATAR_PREVIEWS.length), 3500);
     return () => clearInterval(id);
   }, []);
 
@@ -771,17 +807,99 @@ export default function LandingV2Prototype() {
             <div className={styles.funCard}>
               <h4 className={styles.funCardH4}>Avatars</h4>
               <p className={styles.funCardDesc}>Play as a historical figure. These are the real avatars in the app.</p>
-              <div className={styles.avatarStrip}>
+              <div style={{ overflow: "hidden", width: "100%", marginTop: 16 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    width: `${AVATAR_PREVIEWS.length * 100}%`,
+                    transform: `translateX(-${(avatarIndex * 100) / AVATAR_PREVIEWS.length}%)`,
+                    transition: "transform 0.6s ease",
+                  }}
+                >
+                  {AVATAR_PREVIEWS.map((a) => (
+                    <div
+                      key={a.name}
+                      style={{
+                        width: `${100 / AVATAR_PREVIEWS.length}%`,
+                        flexShrink: 0,
+                        padding: "0 8px",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <div
+                        style={{
+                          background: "var(--gh-glass-bg)",
+                          borderRadius: "var(--gh-radius-md)",
+                          padding: "20px 24px",
+                          textAlign: "center",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 96,
+                            height: 96,
+                            borderRadius: "50%",
+                            padding: 3,
+                            background: "linear-gradient(135deg, #f9a8d4, #fde047)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto 12px",
+                          }}
+                        >
+                          <img
+                            src={toProxiedImageUrl(a.url) ?? ""}
+                            alt={a.name}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                              border: "2px solid var(--gh-bg-surface)",
+                            }}
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                          />
+                        </div>
+                        <h5
+                          className="font-bebas"
+                          style={{
+                            fontSize: 20,
+                            fontWeight: 700,
+                            marginBottom: 6,
+                            color: "var(--gh-text-primary)",
+                            letterSpacing: "0.02em",
+                          }}
+                        >
+                          {a.name}
+                        </h5>
+                        <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--gh-text-muted)", marginBottom: 10 }}>
+                          {a.description}
+                        </p>
+                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)", marginBottom: 4 }}>{a.born}</p>
+                        <p style={{ fontSize: 12, color: "var(--gh-text-muted)" }}>{a.died}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 12 }}>
                 {AVATAR_PREVIEWS.map((a, i) => (
-                  <div key={a.name} className={styles.avatarChip}>
-                    <PlayerAvatar
-                      avatarUrl={a.url}
-                      displayName={a.name}
-                      playerId={`preview-${i}`}
-                      size={48}
-                    />
-                    <span className={styles.avatarName}>{a.name}</span>
-                  </div>
+                  <button
+                    key={a.name}
+                    type="button"
+                    aria-label={`Show ${a.name}`}
+                    onClick={() => setAvatarIndex(i)}
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      background: i === avatarIndex ? "var(--gh-text-primary)" : "var(--gh-text-muted)",
+                      opacity: i === avatarIndex ? 1 : 0.5,
+                    }}
+                  />
                 ))}
               </div>
             </div>
