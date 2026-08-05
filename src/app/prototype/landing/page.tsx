@@ -31,6 +31,7 @@ import { YearPicker } from "@/components/YearPicker";
 import { AuthModal } from "@/components/AuthModal";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import styles from "./landing.module.css";
+import lbStyles from "@/app/leaderboard/leaderboard.module.css";
 
 const GameMap = dynamic(
   () => import("@/components/GameMap").then((m) => m.GameMap),
@@ -224,6 +225,327 @@ const AVATAR_PREVIEWS = [
 
 function easeOutQuad(t: number) {
   return 1 - (1 - t) * (1 - t);
+}
+
+type LandingLeaderboardTab = "overall" | "daily" | "levelup";
+type LandingDailySubTab = "today" | "alltime";
+
+type LandingLeaderboardEntry = {
+  rank: number;
+  player_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  is_ai: boolean;
+  is_friend: boolean;
+  avg_accuracy: number;
+  games_played: number;
+  rounds_won: number;
+  current_level: number;
+  best_accuracy: number;
+};
+
+const LEADERBOARD_OVERALL: LandingLeaderboardEntry[] = [
+  { rank: 1, player_id: "p5", display_name: "Jamal Wright", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 91, games_played: 124, rounds_won: 12, current_level: 7, best_accuracy: 96 },
+  { rank: 2, player_id: "p2", display_name: "Mina Kovač", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 93, games_played: 110, rounds_won: 10, current_level: 6, best_accuracy: 98 },
+  { rank: 3, player_id: "p1", display_name: "Alex Rivera", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 87, games_played: 98, rounds_won: 8, current_level: 5, best_accuracy: 94 },
+  { rank: 4, player_id: "p6", display_name: "Priya Patel", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 85, games_played: 92, rounds_won: 7, current_level: 5, best_accuracy: 92 },
+  { rank: 5, player_id: "p7", display_name: "Liam O'Connor", avatar_url: null, is_ai: true, is_friend: false, avg_accuracy: 82, games_played: 80, rounds_won: 6, current_level: 4, best_accuracy: 89 },
+  { rank: 6, player_id: "p4", display_name: "Sara Bianchi", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 80, games_played: 75, rounds_won: 5, current_level: 4, best_accuracy: 88 },
+  { rank: 7, player_id: "p3", display_name: "Theo Lambert", avatar_url: null, is_ai: true, is_friend: false, avg_accuracy: 70, games_played: 60, rounds_won: 4, current_level: 3, best_accuracy: 78 },
+];
+
+const LEADERBOARD_DAILY_TODAY: LandingLeaderboardEntry[] = [
+  { rank: 1, player_id: "p2", display_name: "Mina Kovač", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 96, games_played: 4, rounds_won: 3, current_level: 6, best_accuracy: 98 },
+  { rank: 2, player_id: "p1", display_name: "Alex Rivera", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 94, games_played: 3, rounds_won: 2, current_level: 5, best_accuracy: 94 },
+  { rank: 3, player_id: "p5", display_name: "Jamal Wright", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 91, games_played: 5, rounds_won: 3, current_level: 7, best_accuracy: 96 },
+  { rank: 4, player_id: "p4", display_name: "Sara Bianchi", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 88, games_played: 4, rounds_won: 2, current_level: 4, best_accuracy: 88 },
+  { rank: 5, player_id: "p9", display_name: "Emma Dubois", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 86, games_played: 3, rounds_won: 1, current_level: 4, best_accuracy: 86 },
+];
+
+const LEADERBOARD_DAILY_ALLTIME: LandingLeaderboardEntry[] = [
+  { rank: 1, player_id: "p5", display_name: "Jamal Wright", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 91, games_played: 452, rounds_won: 112, current_level: 7, best_accuracy: 96 },
+  { rank: 2, player_id: "p2", display_name: "Mina Kovač", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 93, games_played: 410, rounds_won: 98, current_level: 6, best_accuracy: 98 },
+  { rank: 3, player_id: "p1", display_name: "Alex Rivera", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 87, games_played: 389, rounds_won: 86, current_level: 5, best_accuracy: 94 },
+  { rank: 4, player_id: "p6", display_name: "Priya Patel", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 85, games_played: 371, rounds_won: 74, current_level: 5, best_accuracy: 92 },
+  { rank: 5, player_id: "p7", display_name: "Liam O'Connor", avatar_url: null, is_ai: true, is_friend: false, avg_accuracy: 82, games_played: 340, rounds_won: 62, current_level: 4, best_accuracy: 89 },
+  { rank: 6, player_id: "p4", display_name: "Sara Bianchi", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 80, games_played: 312, rounds_won: 55, current_level: 4, best_accuracy: 88 },
+];
+
+const LEADERBOARD_LEVELUP: LandingLeaderboardEntry[] = [
+  { rank: 1, player_id: "p5", display_name: "Jamal Wright", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 96, games_played: 124, rounds_won: 12, current_level: 12, best_accuracy: 96 },
+  { rank: 2, player_id: "p2", display_name: "Mina Kovač", avatar_url: null, is_ai: false, is_friend: true, avg_accuracy: 98, games_played: 110, rounds_won: 10, current_level: 11, best_accuracy: 98 },
+  { rank: 3, player_id: "p1", display_name: "Alex Rivera", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 94, games_played: 98, rounds_won: 8, current_level: 9, best_accuracy: 94 },
+  { rank: 4, player_id: "p6", display_name: "Priya Patel", avatar_url: null, is_ai: false, is_friend: false, avg_accuracy: 92, games_played: 92, rounds_won: 7, current_level: 8, best_accuracy: 92 },
+  { rank: 5, player_id: "p7", display_name: "Liam O'Connor", avatar_url: null, is_ai: true, is_friend: false, avg_accuracy: 89, games_played: 80, rounds_won: 6, current_level: 7, best_accuracy: 89 },
+];
+
+function MainLeaderboard() {
+  const [activeTab, setActiveTab] = useState<LandingLeaderboardTab>("overall");
+  const [activeSubTab, setActiveSubTab] = useState<LandingDailySubTab>("today");
+  const [filter, setFilter] = useState({ humans: false, ai: false, friends: false });
+
+  const allRows = activeTab === "daily"
+    ? (activeSubTab === "today" ? LEADERBOARD_DAILY_TODAY : LEADERBOARD_DAILY_ALLTIME)
+    : activeTab === "levelup"
+      ? LEADERBOARD_LEVELUP
+      : LEADERBOARD_OVERALL;
+
+  const filteredRows = useMemo(() => {
+    if (!filter.humans && !filter.ai && !filter.friends) return allRows;
+    return allRows.filter(
+      (e) => (filter.humans && !e.is_ai) || (filter.ai && e.is_ai) || (filter.friends && e.is_friend)
+    );
+  }, [allRows, filter]);
+
+  const ownRank = useMemo(() => {
+    const idx = filteredRows.findIndex((e) => e.player_id === "p1");
+    return idx >= 0 ? idx + 1 : null;
+  }, [filteredRows]);
+
+  const summaryLabel = activeTab === "daily"
+    ? `Daily ${activeSubTab === "today" ? "Today" : "All-Time"}`
+    : activeTab === "levelup"
+      ? "Level Up"
+      : "Overall";
+
+  const podium = useMemo(() => {
+    if (filteredRows.length < 3) return [];
+    return [
+      { entry: filteredRows[1], place: 2, className: lbStyles.podiumSilver, height: "85%" },
+      { entry: filteredRows[0], place: 1, className: lbStyles.podiumGold, height: "100%" },
+      { entry: filteredRows[2], place: 3, className: lbStyles.podiumBronze, height: "85%" },
+    ];
+  }, [filteredRows]);
+
+  const getInitials = (name: string | null): string => {
+    if (!name) return "?";
+    return name.trim().split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  const getOrdinalSuffix = (n: number): string => {
+    const m = n % 100;
+    if (m >= 11 && m <= 13) return "th";
+    switch (n % 10) {
+      case 1: return "st";
+      case 2: return "nd";
+      case 3: return "rd";
+      default: return "th";
+    }
+  };
+
+  const formatNumber = (num: number | undefined): string => {
+    if (num === undefined || num === null) return "—";
+    return num.toLocaleString();
+  };
+
+  function AccuracyValue({ acc }: { acc: number | undefined }) {
+    if (acc === undefined || acc === null) return "—";
+    return (
+      <span className={lbStyles.accuracyValue} style={{ color: getAccuracyColor(acc) }}>
+        {Math.round(acc)}%
+      </span>
+    );
+  }
+
+  function PlayerCell({ entry }: { entry: LandingLeaderboardEntry }) {
+    let subtitle: string;
+    if (activeTab === "overall") {
+      const roundsWon = entry.rounds_won ?? 0;
+      subtitle = `${roundsWon} round${roundsWon === 1 ? "" : "s"} won · ${formatNumber(entry.games_played)} played`;
+    } else if (activeTab === "daily") {
+      const games = entry.games_played ?? 0;
+      subtitle = `${formatNumber(games)} game${games === 1 ? "" : "s"} played`;
+    } else {
+      subtitle = `Level ${entry.current_level ?? 0}`;
+    }
+    const avatarFallback = entry.is_ai ? "AI" : getInitials(entry.display_name);
+    return (
+      <div className={lbStyles.playerCell}>
+        {entry.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={toProxiedImageUrl(entry.avatar_url) ?? ""}
+            alt=""
+            className={lbStyles.avatar}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+        ) : (
+          <div className={`${lbStyles.avatarInitials} ${entry.is_ai ? lbStyles.avatarAi : ""}`}>{avatarFallback}</div>
+        )}
+        <div className={lbStyles.playerInfo}>
+          <span className={lbStyles.playerName}>
+            {entry.display_name}
+            {entry.is_ai ? <span className={lbStyles.aiBadge}>AI</span> : null}
+          </span>
+          <span className={lbStyles.playerSubtitle}>{subtitle}</span>
+        </div>
+      </div>
+    );
+  }
+
+  const renderRank = (rank: number) => {
+    if (rank === 1) return <span className={lbStyles.medalGold}>🥇</span>;
+    if (rank === 2) return <span className={lbStyles.medalSilver}>🥈</span>;
+    if (rank === 3) return <span className={lbStyles.medalBronze}>🥉</span>;
+    return <span className={lbStyles.rankNumber}>{rank}</span>;
+  };
+
+  return (
+    <div>
+      <div className={lbStyles.tabRow}>
+        {(["overall", "daily", "levelup"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`${lbStyles.tab} ${activeTab === tab ? lbStyles.tabActive : ""}`}
+          >
+            {tab === "overall" ? "Overall" : tab === "daily" ? "Daily" : "Level Up"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "daily" && (
+        <div className={lbStyles.subTabRow}>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("today")}
+            className={`${lbStyles.subTab} ${activeSubTab === "today" ? lbStyles.subTabActive : ""}`}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("alltime")}
+            className={`${lbStyles.subTab} ${activeSubTab === "alltime" ? lbStyles.subTabActive : ""}`}
+          >
+            All-Time
+          </button>
+        </div>
+      )}
+
+      <div className={lbStyles.filterRow}>
+        <button
+          type="button"
+          onClick={() => setFilter((f) => ({ ...f, humans: !f.humans }))}
+          className={`${lbStyles.filterChip} ${filter.humans ? lbStyles.filterChipActive : ""}`}
+          aria-pressed={filter.humans}
+        >
+          Humans
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilter((f) => ({ ...f, ai: !f.ai }))}
+          className={`${lbStyles.filterChip} ${filter.ai ? lbStyles.filterChipActive : ""}`}
+          aria-pressed={filter.ai}
+        >
+          AI
+        </button>
+        <button
+          type="button"
+          onClick={() => setFilter((f) => ({ ...f, friends: !f.friends }))}
+          className={`${lbStyles.friendsToggle} ${filter.friends ? lbStyles.friendsToggleActive : ""}`}
+          aria-pressed={filter.friends}
+        >
+          Friends
+        </button>
+      </div>
+
+      {ownRank !== null && ownRank > 0 && (
+        <div className={lbStyles.summaryLine}>
+          You are {ownRank}
+          {getOrdinalSuffix(ownRank)} in {summaryLabel}
+        </div>
+      )}
+
+      {podium.length === 3 && (
+        <div className={lbStyles.podium}>
+          {podium.map((slot) => (
+            <div
+              key={slot.entry.player_id}
+              className={`${lbStyles.podiumItem} ${slot.className}`}
+              style={{ height: slot.height }}
+            >
+              <span className={lbStyles.podiumRank}>{slot.place}</span>
+              {slot.entry.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={toProxiedImageUrl(slot.entry.avatar_url) ?? ""}
+                  alt=""
+                  className={lbStyles.podiumAvatar}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+              ) : (
+                <div className={`${lbStyles.podiumAvatarInitials} ${slot.entry.is_ai ? lbStyles.avatarAi : ""}`}>
+                  {slot.entry.is_ai ? "AI" : getInitials(slot.entry.display_name)}
+                </div>
+              )}
+              <span className={lbStyles.podiumName}>{slot.entry.display_name}</span>
+              <span className={lbStyles.podiumValue}>
+                {activeTab === "levelup" ? (
+                  <span style={{ color: "var(--gh-violet)" }}>{slot.entry.current_level}</span>
+                ) : (
+                  <AccuracyValue acc={slot.entry.avg_accuracy} />
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {filteredRows.length === 0 ? (
+        <div className={lbStyles.emptyState}>No players match the selected filters.</div>
+      ) : (
+        <div className={lbStyles.tableWrapper}>
+          <table className={lbStyles.table}>
+            <thead>
+              <tr>
+                <th className={lbStyles.th}>#</th>
+                <th className={lbStyles.th}>Player</th>
+                {activeTab === "levelup" ? (
+                  <>
+                    <th className={lbStyles.th}>Accuracy</th>
+                    <th className={lbStyles.th}>Level</th>
+                  </>
+                ) : (
+                  <>
+                    <th className={lbStyles.th}>Accuracy</th>
+                    <th className={`${lbStyles.th} ${lbStyles.thGames}`}>Games</th>
+                  </>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRows.map((entry, idx) => {
+                const rank = idx + 1;
+                const isMe = entry.player_id === "p1";
+                return (
+                  <tr
+                    key={entry.player_id}
+                    className={`${lbStyles.row} ${isMe ? lbStyles.rowHighlight : ""}`}
+                  >
+                    <td className={lbStyles.rankCell}>{renderRank(rank)}</td>
+                    <td className={lbStyles.playerCell}><PlayerCell entry={entry} /></td>
+                    {activeTab === "levelup" ? (
+                      <>
+                        <td className={lbStyles.accuracyCell}><AccuracyValue acc={entry.best_accuracy} /></td>
+                        <td className={lbStyles.levelCell}><span className={lbStyles.levelValue}>Lvl {entry.current_level}</span></td>
+                      </>
+                    ) : (
+                      <>
+                        <td className={lbStyles.accuracyCell}><AccuracyValue acc={entry.avg_accuracy} /></td>
+                        <td className={`${lbStyles.gamesCell} ${lbStyles.gamesCellDesktop}`}>{formatNumber(entry.games_played)}</td>
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function LandingV2Prototype() {
@@ -903,6 +1225,28 @@ export default function LandingV2Prototype() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── LEADERBOARD ── */}
+      <section className={styles.sec} id="leaderboard" data-reveal="leaderboard">
+        <div className={styles.wrap}>
+          <div className={`${styles.secHead} ${revealed.leaderboard ? styles.in : ""}`}>
+            <p className={styles.eyebrowCenter}>
+              <span className={styles.eyebrow}>Compete Rankings</span>
+            </p>
+            <h2 className={lbStyles.title}>Leaderboard</h2>
+            <p className={styles.secHeadP}>See how you rank against players around the world.</p>
+          </div>
+          <div
+            style={{
+              opacity: revealed.leaderboard ? 1 : 0,
+              transform: revealed.leaderboard ? "translateY(0)" : "translateY(24px)",
+              transition: "opacity .7s .15s ease, transform .7s .15s cubic-bezier(.2,.7,.2,1)",
+            }}
+          >
+            <MainLeaderboard />
           </div>
         </div>
       </section>
