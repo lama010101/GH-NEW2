@@ -429,6 +429,8 @@
     "hints": "Tips",
     "no_guess": "Geen gok",
     "not_started": "Niet gestart",
+    "invited": "Uitgenodigd",
+    "on_round": "Ronde {current} / {total}",
     "no_time_clues": "Geen tijdsaanknopingen beschikbaar voor dit event.",
     "no_location_clues": "Geen locatie-aanwijzingen beschikbaar voor dit event.",
     "near_miss": "Bijna-misser",
