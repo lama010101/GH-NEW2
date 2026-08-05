@@ -116,6 +116,33 @@
   color: var(--gh-text-muted);
 }
 
+.heroHead {
+  flex: 0 0 100%;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.heroHeadLine1 {
+  font-size: var(--font-2xl);
+  font-weight: 800;
+  color: var(--gh-text-primary);
+  line-height: 1.2;
+}
+
+.heroHeadLine2 {
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  color: var(--gh-text-secondary);
+  margin-top: 2px;
+}
+
+.heroRank {
+  background: linear-gradient(135deg, var(--gh-teal), var(--gh-violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* ── Cards (shared) ── */
 
 .card {
@@ -153,6 +180,7 @@
 
 .heroCard {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 18px;
   padding: 18px;
@@ -189,6 +217,8 @@
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--gh-teal);
+  display: inline-flex;
+  align-items: center;
 }
 
 .statTileLabelWhen {
@@ -197,6 +227,20 @@
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--gh-violet);
+  display: inline-flex;
+  align-items: center;
+}
+
+.statTileIconWhere {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+}
+
+.statTileIconWhen {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
 }
 
 .statTileVal {
@@ -348,6 +392,12 @@
 .rankAcc {
   font-size: 14px; /* layout-constrained — do not tokenize */
   font-weight: 800;
+}
+
+.rankStatus {
+  font-size: var(--font-2xs);
+  font-weight: 400;
+  color: var(--gh-text-secondary);
 }
 
 .rankXp {
@@ -680,6 +730,8 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--gh-teal);
+  display: inline-flex;
+  align-items: center;
 }
 
 .miniLabelWhen {
@@ -688,6 +740,15 @@
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--gh-violet);
+  display: inline-flex;
+  align-items: center;
+}
+
+.miniIconWhere,
+.miniIconWhen {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
 }
 
 .miniSub {
@@ -773,27 +834,27 @@
   color: var(--gh-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .mvpNames {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  flex: 1;
 }
 
 .mvpName {
   font-size: 13px; /* layout-constrained — do not tokenize */
-  font-weight: 700;
+  font-weight: 400;
   color: var(--gh-text-primary);
   white-space: nowrap;
-}
-
-.mvpNameMe {
-  color: var(--gh-orange);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .mvpAnd {
@@ -804,9 +865,9 @@
 
 .mvpWinner {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .mvpValue {
