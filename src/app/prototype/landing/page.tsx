@@ -649,7 +649,7 @@ export default function LandingV2Prototype() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/when.webp" alt="" width={28} height={28} className={styles.aiNoteIcon} />
             <p>
-              The illustrations help you imagine the moment, not replace primary sources. Historian and institution credits appear with each scene when available.
+              The illustrations help you imagine the moment, not replace primary sources.
             </p>
           </div>
         </div>
