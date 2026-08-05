@@ -21,7 +21,7 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { Target, TrendingUp } from "lucide-react";
+import { Target, TrendingUp, Trophy } from "lucide-react";
 import styles from "./SessionComplete.module.css";
 
 interface SessionCompleteProps {
@@ -162,6 +162,7 @@ export default function SessionComplete({
     if (playerResults.length === 0) return null;
 
     const totalScore = playerResults.reduce((sum, r) => sum + r.score, 0);
+    const bestRoundScore = Math.max(...playerResults.map(r => r.score));
     const avgAccuracy = Math.round(playerResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / playerResults.length);
     const avgLocationAccuracy = Math.round(playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / playerResults.length);
     const avgYearAccuracy = Math.round(playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0) / playerResults.length);
@@ -169,7 +170,7 @@ export default function SessionComplete({
     const avgDistanceKm = playerResults.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0) / playerResults.length;
     const avgYearDiff = playerResults.reduce((sum, r) => sum + (r.yearDiff ?? 0), 0) / playerResults.length;
 
-    return { totalScore, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgConsistency, avgDistanceKm, avgYearDiff };
+    return { totalScore, bestRoundScore, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgConsistency, avgDistanceKm, avgYearDiff };
   };
 
   // Helper: compute per-round stats for all players
@@ -338,6 +339,7 @@ export default function SessionComplete({
           { key: 'year', label: tGame('mvp_year'), icon: WhenIcon, getValue: (s: MvpPlayer['stats']) => s.avgYearAccuracy },
           { key: 'location', label: tGame('mvp_location'), icon: WhereIcon, getValue: (s: MvpPlayer['stats']) => s.avgLocationAccuracy },
           { key: 'consistency', label: tGame('mvp_consistency'), icon: TrendingUp, getValue: (s: MvpPlayer['stats']) => s.avgConsistency },
+          { key: 'bestRound', label: tGame('mvp_best_round'), icon: Trophy, getValue: (s: MvpPlayer['stats']) => s.bestRoundScore },
         ];
 
         const mvpAwards = mvpCategories
@@ -353,12 +355,14 @@ export default function SessionComplete({
               return 0;
             });
             const first = sorted[0];
-            const winners = sorted.filter((p) => (
-              cat.getValue(p.stats) === cat.getValue(first.stats) &&
-              p.totalScore === first.totalScore &&
-              p.totalDistanceKm === first.totalDistanceKm &&
-              p.totalYearDiff === first.totalYearDiff
-            ));
+            const winners = cat.key === 'bestRound'
+              ? sorted.filter((p) => cat.getValue(p.stats) === cat.getValue(first.stats))
+              : sorted.filter((p) => (
+                  cat.getValue(p.stats) === cat.getValue(first.stats) &&
+                  p.totalScore === first.totalScore &&
+                  p.totalDistanceKm === first.totalDistanceKm &&
+                  p.totalYearDiff === first.totalYearDiff
+                ));
             return { ...cat, winners };
           })
           .filter((award): award is MvpCategory & { winners: MvpPlayer[] } => award !== null);
@@ -651,7 +655,8 @@ export default function SessionComplete({
                               )}
                             </span>
                             <span className={styles.mvpValue} style={{ color: getAccuracyColor(award.getValue(w.stats)) }}>
-                              {award.getValue(w.stats)}<AccuracySuffix />
+                              {award.getValue(w.stats)}
+                              {award.key === 'bestRound' ? ` ${tGame('xp_unit')}` : <AccuracySuffix />}
                             </span>
                           </span>
                         ))}
