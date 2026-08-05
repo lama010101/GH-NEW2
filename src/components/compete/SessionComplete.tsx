@@ -524,13 +524,13 @@ export default function SessionComplete({
                   <div className={styles.heroHeadLine2}>{tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}</div>
                 </div>
                 {myStats ? (
-                  <>
+                  <div className={styles.heroRingWrap}>
                     <RainbowRing value={overallAccuracy} />
                     <div className={styles.heroXp}>
                       <span className={styles.heroXpVal}>{overallXP.toLocaleString()}</span>
                       <span className={styles.heroXpLabel}>{tGame('xp_unit')}</span>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--gh-text-muted)' }}>—</span>
                 )}
@@ -588,17 +588,8 @@ export default function SessionComplete({
                       showAccuracy = false;
                       statusLabel = tGame('invited');
                     } else if (rs === 'playing') {
-                      showAccuracy = false;
-                      const roundNum = (player.currentRoundIndex ?? 0) + 1;
-                      const roundLabel = tGame('on_round', { current: roundNum });
-                      const [before, after] = roundLabel.split(String(roundNum));
-                      statusLabel = (
-                        <>
-                          {before}
-                          <span className={styles.rankStatusNum}>{roundNum}</span>
-                          {after}
-                        </>
-                      );
+                      showAccuracy = true;
+                      statusLabel = null;
                     } else if ((rs === 'joined' || rs === 'ready') && !player.hasPlayed) {
                       showAccuracy = false;
                       statusLabel = tGame('not_started');
