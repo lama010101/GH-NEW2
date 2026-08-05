@@ -184,7 +184,8 @@
     "practice_desc": "单人游玩。\n无限",
     "play_mode_aria": "播放 {mode}",
     "compete_play_aria": "播放",
-    "compete_delete_aria": "删除"
+    "compete_delete_aria": "删除",
+    "coming_up_soon": "即将上线"
   },
   "common": {
     "next_round": "下一回合",
@@ -210,7 +211,8 @@
     "no_data_yet": "暂无数据",
     "back_to_home": "返回首页",
     "round": "回合",
-    "game": "游戏"
+    "game": "游戏",
+    "loading_ellipsis": "加载中…"
   },
   "lobby": {
     "waiting": "等待玩家中（{ready}/{total} 已准备）",
@@ -635,7 +637,9 @@
     "best": "最佳",
     "rated": "已评分",
     "regions": "地区",
-    "countries": "国家"
+    "countries": "国家",
+    "daily_all_time": "每日（所有时间）",
+    "level": "等级"
   },
   "account": {
     "title": "账户",

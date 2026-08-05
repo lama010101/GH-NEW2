@@ -433,7 +433,7 @@ export default function RoundCompleteSection({
                     <span className={styles.miniXpVal} style={!submitted ? { color: 'var(--gh-text-muted)' } : undefined}>
                       {submitted ? `+${Math.round(myResult?.locationScore ?? 0)}` : '—'}
                     </span>
-                    {submitted && <span className={styles.miniXpLabel}>XP</span>}
+                    {submitted && <span className={styles.miniXpLabel}>{t('xp_unit')}</span>}
                   </div>
                   <div className={styles.miniBadges}>
                     {(() => {
@@ -472,7 +472,7 @@ export default function RoundCompleteSection({
                     <span className={styles.miniXpVal} style={!submitted ? { color: 'var(--gh-text-muted)' } : undefined}>
                       {submitted ? `+${Math.round(myResult?.timeScore ?? 0)}` : '—'}
                     </span>
-                    {submitted && <span className={styles.miniXpLabel}>XP</span>}
+                    {submitted && <span className={styles.miniXpLabel}>{t('xp_unit')}</span>}
                   </div>
                   <div className={styles.miniBadges}>
                     {(() => {

@@ -654,7 +654,7 @@ function ModeCard({
             >
               ×
             </button>
-            <h2 className={authModalStyles.title}>Coming Up Soon</h2>
+            <h2 className={authModalStyles.title}>{t('home.coming_up_soon')}</h2>
           </div>
         </div>
       )}

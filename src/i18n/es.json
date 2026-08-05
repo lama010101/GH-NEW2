@@ -184,7 +184,8 @@
     "practice_desc": "Juega en solitario.\nIlimitado",
     "play_mode_aria": "Jugar a {mode}",
     "compete_play_aria": "Jugar",
-    "compete_delete_aria": "Eliminar"
+    "compete_delete_aria": "Eliminar",
+    "coming_up_soon": "Próximamente"
   },
   "common": {
     "next_round": "Siguiente ronda",
@@ -210,7 +211,8 @@
     "no_data_yet": "Aún sin datos",
     "back_to_home": "Volver al inicio",
     "round": "Ronda",
-    "game": "Juego"
+    "game": "Juego",
+    "loading_ellipsis": "Cargando…"
   },
   "lobby": {
     "waiting": "Esperando jugadores ({ready}/{total} listos)",
@@ -635,7 +637,9 @@
     "best": "mejor",
     "rated": "Calificadas",
     "regions": "Regiones",
-    "countries": "Países"
+    "countries": "Países",
+    "daily_all_time": "Diario (de todos los tiempos)",
+    "level": "Nivel"
   },
   "account": {
     "title": "Cuenta",

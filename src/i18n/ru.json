@@ -184,7 +184,8 @@
     "practice_desc": "Играй соло.\nБез ограничений",
     "play_mode_aria": "Играть {mode}",
     "compete_play_aria": "Играть",
-    "compete_delete_aria": "Удалить"
+    "compete_delete_aria": "Удалить",
+    "coming_up_soon": "Скоро появится"
   },
   "common": {
     "next_round": "Следующий раунд",
@@ -210,7 +211,8 @@
     "no_data_yet": "Пока нет данных",
     "back_to_home": "На главную",
     "round": "Раунд",
-    "game": "Игра"
+    "game": "Игра",
+    "loading_ellipsis": "Загрузка…"
   },
   "lobby": {
     "waiting": "Ожидание игроков ({ready}/{total} готово)",
@@ -635,7 +637,9 @@
     "best": "лучший",
     "rated": "Оценено",
     "regions": "Регионы",
-    "countries": "Страны"
+    "countries": "Страны",
+    "daily_all_time": "Ежедневно (всегда)",
+    "level": "Уровень"
   },
   "account": {
     "title": "Аккаунт",
