@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import modalStyles from "./PracticeSettingsModal.module.css";
 import styles from "./PracticeResumeModal.module.css";
 
@@ -12,6 +13,8 @@ interface PracticeResumeModalProps {
 }
 
 export function PracticeResumeModal({ isOpen, onClose, onResume, onCreateNew }: PracticeResumeModalProps) {
+  const t = useTranslations();
+
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -26,16 +29,16 @@ export function PracticeResumeModal({ isOpen, onClose, onResume, onCreateNew }: 
       <div className={modalStyles.backdrop} onClick={onClose} />
       <div className={`${modalStyles.card} ${styles.card}`}>
         <div className={modalStyles.header}>
-          <h3>Practice game in progress</h3>
-          <button type="button" className={modalStyles.closeBtn} onClick={onClose} aria-label="Close">✕</button>
+          <h3>{t('practice.title')}</h3>
+          <button type="button" className={modalStyles.closeBtn} onClick={onClose} aria-label={t('nav.close')}>✕</button>
         </div>
-        <p className={styles.message}>You have an unfinished Practice game. What would you like to do?</p>
+        <p className={styles.message}>{t('practice.resume_prompt')}</p>
         <div className={styles.actions}>
           <button type="button" className={`${modalStyles.startBtn} ${styles.resumeBtn}`} data-testid="practice-resume-btn" onClick={onResume}>
-            Resume game in progress
+            {t('practice.resume_game')}
           </button>
           <button type="button" className={`${modalStyles.startBtn} ${styles.newBtn}`} data-testid="practice-new-game-btn" onClick={onCreateNew}>
-            Create new game
+            {t('practice.create_new_game')}
           </button>
         </div>
       </div>

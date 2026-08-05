@@ -1172,5 +1172,11 @@
       "legal": "法的免責事項",
       "privacy": "プライバシー"
     }
+  },
+  "practice": {
+    "title": "練習ゲームが進行中",
+    "resume_prompt": "未完了の練習ゲームがあります。どうしますか？",
+    "resume_game": "進行中のゲームを再開",
+    "create_new_game": "新しいゲームを作成"
   }
 }

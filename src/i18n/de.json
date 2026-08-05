@@ -1172,5 +1172,11 @@
       "legal": "Haftungsausschluss",
       "privacy": "Privatsphäre"
     }
+  },
+  "practice": {
+    "title": "Übungsspiel läuft",
+    "resume_prompt": "Sie haben ein unvollendetes Übungsspiel. Was möchten Sie tun?",
+    "resume_game": "Spiel fortsetzen",
+    "create_new_game": "Neues Spiel erstellen"
   }
 }
