@@ -1066,6 +1066,7 @@
 .lobby-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gh-orange); box-shadow: 0 0 8px rgba(var(--gh-orange-rgb), 0.7); animation: pulseDot 1.8s ease-in-out infinite; }
 @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 .lobby-title-h1 { font-size: var(--font-3xl); font-weight: 800; margin: 0 0 4px; letter-spacing: -0.5px; text-align: center; color: var(--gh-text-primary); }
+[data-theme="light"] .lobby-title-h1 { color: #ffffff; }
 .lobby-accent-bar-sm { width: 4px; height: 18px; border-radius: 999px; background: var(--gh-orange); flex-shrink: 0; }
 .lobby-section-number {
   display: inline-flex;
