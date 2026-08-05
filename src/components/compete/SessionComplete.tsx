@@ -25,6 +25,18 @@ import WhenIcon from "@/components/icons/WhenIcon";
 import { TrendingUp, Trophy } from "lucide-react";
 import styles from "./SessionComplete.module.css";
 
+type DailyResultPlayer = {
+  player_id: string;
+  rank: number;
+  display_name: string | null;
+  avatar_url: string | null;
+  is_ai: boolean;
+  avg_accuracy: number;
+  total_xp: number;
+  completed_at: string | null;
+  best_round_accuracy: number | null;
+};
+
 interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
   playerId: string | null;
@@ -59,6 +71,10 @@ export default function SessionComplete({
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [totalXp, setTotalXp] = useState<number | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [dailyResults, setDailyResults] = useState<DailyResultPlayer[] | null>(null);
+  const [dailyLoading, setDailyLoading] = useState(false);
+  const [dailyError, setDailyError] = useState<string | null>(null);
+  const [dailyRetryCount, setDailyRetryCount] = useState(0);
 
   // A round "counts" for final stats if the player actually submitted a guess
   // or if the round was deadline-finalized while they were absent (score 0).
@@ -116,6 +132,34 @@ export default function SessionComplete({
     })();
     return () => { cancelled = true; };
   }, [playerId]);
+
+  // Fetch the global all-players Daily leaderboard once the session completes.
+  useEffect(() => {
+    if (!isDaily || snapshot.status !== "SESSION_COMPLETE") return;
+    let cancelled = false;
+    setDailyLoading(true);
+    setDailyError(null);
+    (async () => {
+      try {
+        const response = await fetch("/api/daily/results");
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to load daily results");
+        }
+        const json = await response.json();
+        if (cancelled) return;
+        setDailyResults(json.rows ?? []);
+      } catch (error) {
+        console.error("Failed to fetch daily results:", error);
+        if (!cancelled) {
+          setDailyError(error instanceof Error ? error.message : "Failed to load daily results");
+        }
+      } finally {
+        if (!cancelled) setDailyLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isDaily, snapshot.status, dailyRetryCount]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isHost = snapshot.players?.find((p: any) => p.playerId === playerId)?.isHost ?? false;
@@ -580,7 +624,7 @@ export default function SessionComplete({
               </section>
 
               {/* FINAL RANKINGS — hidden in practice (solo) mode */}
-              {!isPractice && (
+              {!isPractice && !isDaily && (
               <section className={styles.card}>
                 <div className={styles.cardHead}>
                   <span className={styles.accentBar} />
@@ -651,6 +695,74 @@ export default function SessionComplete({
                   );
                 })}
                 </div>
+              </section>
+              )}
+
+              {isDaily && (
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('final_rankings')}</h2>
+                </div>
+                {dailyLoading ? (
+                  <p style={{ padding: 24, textAlign: 'center', color: 'var(--gh-text-secondary)' }}>{tGame('loading')}</p>
+                ) : dailyError ? (
+                  <div style={{ padding: 24, textAlign: 'center' }}>
+                    <p style={{ color: 'var(--gh-text-secondary)', marginBottom: 12 }}>{dailyError}</p>
+                    <button
+                      type="button"
+                      className={styles.playBtn}
+                      onClick={() => setDailyRetryCount(n => n + 1)}
+                    >
+                      {tGame('retry')}
+                    </button>
+                  </div>
+                ) : dailyResults && dailyResults.length > 0 ? (
+                <div className={styles.ranks}>
+                {dailyResults.map((player) => {
+                  const isCurrentPlayer = player.player_id === playerId;
+                  const displayName = player.display_name || (player.is_ai ? "AI" : "?");
+                  return (
+                    <div key={player.player_id} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`} data-testid="daily-rank-row">
+                      <span className={`${styles.medal} ${player.rank === 1 ? styles.medalGold : player.rank === 2 ? styles.medalSilver : player.rank === 3 ? styles.medalBronze : ""}`}>
+                        <span>{player.rank}</span>
+                      </span>
+                      <div className={styles.avatarWrap}>
+                        <PlayerAvatar
+                          avatarUrl={player.avatar_url ?? null}
+                          displayName={displayName}
+                          playerId={player.player_id}
+                          size={38}
+                        />
+                      </div>
+                      <div className={styles.rankMain}>
+                        <div className={styles.rankNameLine}>
+                          <span
+                            className={styles.rankName}
+                            style={getUsernameGradientStyle(player.player_id)}
+                          >
+                            {displayName}
+                          </span>
+                          {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
+                        </div>
+                        <div className={styles.bar}>
+                          <div
+                            className={styles.barFill}
+                            style={{ width: `${Math.max(0, Math.min(100, player.avg_accuracy))}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.rankScore}>
+                        <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avg_accuracy) }}>{player.avg_accuracy}<AccuracySuffix /></span>
+                        <span className={styles.rankXp}>+{player.total_xp} {tGame('xp_unit')}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                </div>
+                ) : (
+                  <p style={{ padding: 24, textAlign: 'center', color: 'var(--gh-text-secondary)' }}>{tGame('not_started')}</p>
+                )}
               </section>
               )}
 
