@@ -351,7 +351,7 @@
     "round_label": "ラウンド {current}",
     "round_label_compact": "ラウンド{current}/{total}",
     "source_link": "出典 ↗",
-    "rate": "評価",
+    "rate": "Rate Image Realism",
     "rate_saved": "保存済み",
     "this_round": "このラウンド",
     "total_penalty": "合計ペナルティ",
