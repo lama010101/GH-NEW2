@@ -21,7 +21,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import WhereCard from "@/components/compete/WhereCard";
 import WhenCard from "@/components/compete/WhenCard";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import { getAccuracyColor } from "@/core/accuracyColor";
@@ -35,6 +34,11 @@ import styles from "./landing.module.css";
 
 const GameMap = dynamic(
   () => import("@/components/GameMap").then((m) => m.GameMap),
+  { ssr: false }
+);
+
+const WhereCard = dynamic(
+  () => import("@/components/compete/WhereCard"),
   { ssr: false }
 );
 
