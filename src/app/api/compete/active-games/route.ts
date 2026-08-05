@@ -52,6 +52,7 @@ export async function GET(_request: NextRequest) {
       score_you?: number;
       score_them?: number;
       accuracy_you: number;
+      leaderboard_rank?: number;
     }> = [];
 
     for (const session of sessionsResult.rows) {
@@ -164,6 +165,23 @@ export async function GET(_request: NextRequest) {
         }
       }
 
+      let leaderboardRank: number | undefined;
+      if (status === "completed" && scoresResult.rows.length > 0) {
+        const sorted = [...scoresResult.rows].sort((a, b) => {
+          const aAvg = parseInt(a.avg_accuracy ?? "0", 10);
+          const bAvg = parseInt(b.avg_accuracy ?? "0", 10);
+          if (bAvg !== aAvg) return bAvg - aAvg;
+          const aScore = parseInt(a.total_score ?? "0", 10);
+          const bScore = parseInt(b.total_score ?? "0", 10);
+          if (bScore !== aScore) return bScore - aScore;
+          return a.player_id.localeCompare(b.player_id);
+        });
+        const rankIndex = sorted.findIndex((r) => r.player_id === playerId);
+        if (rankIndex >= 0) {
+          leaderboardRank = rankIndex + 1;
+        }
+      }
+
       games.push({
         id: gameId,
         game_id: gameId,
@@ -176,6 +194,7 @@ export async function GET(_request: NextRequest) {
         score_you: scoreYou,
         score_them: scoreThem,
         accuracy_you: accuracyYou,
+        leaderboard_rank: leaderboardRank,
       });
     }
 
