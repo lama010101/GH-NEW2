@@ -161,7 +161,7 @@
     "compete_invited_you": "Nodigde je uit voor een spel",
     "compete_invite_meta": "{mode} · verzonden {time}",
     "compete_invite_sent": "verzonden {time}",
-    "compete_round_label": "Ronde {current} / {total}",
+    "compete_round_label": "Ronde {current}",
     "compete_play": "SPEEL",
     "compete_mode_rush": "Live",
     "compete_mode_relax": "Anytime",
@@ -199,7 +199,7 @@
     "your_guess": "Jouw gok",
     "years_off": "{n} jaar ernaast",
     "km_away": "{distance} ervandaan",
-    "round_label": "Ronde {current} / {total}",
+    "round_label": "Ronde {current}",
     "loading": "Laden...",
     "no_description": "Geen beschrijving beschikbaar",
     "timer_min_short": "{n}min {s}s",
@@ -208,7 +208,9 @@
     "born_prefix": "Geboren:",
     "died_prefix": "Overleden:",
     "no_data_yet": "Nog geen gegevens",
-    "back_to_home": "Terug naar home"
+    "back_to_home": "Terug naar home",
+    "round": "Ronde",
+    "game": "Spel"
   },
   "lobby": {
     "waiting": "Wachten op spelers ({ready}/{total} klaar)",
@@ -279,7 +281,9 @@
     "filter_favorites": "Favorieten",
     "no_favorites_yet": "Nog geen favorieten — klik op de ster op de avatar van een speler om hem hier toe te voegen.",
     "help_game_settings": "Kies hoe deze Compete-sessie verloopt.\n\nANYTIME (Eigen tempo) — Asynchroon. Elke speler speelt alle 5 ronden onafhankelijk, in eigen tempo — zonder op anderen te wachten. De sessie blijft open tot de deadline die je hieronder instelt (1–14 dagen). Je kunt optioneel een timer per ronde inschakelen; als een speler de tijd voor een ronde overschrijdt, wordt alleen die ronde automatisch voor hem ingediend — niemand anders wordt beïnvloed.\n\nLIVE (Live uitdaging) — Synchroon. Iedereen speelt dezelfde ronde tegelijk. Elke ronde heeft een optionele countdown-timer (15 seconden tot 5 minuten). Nadat iedereen heeft ingediend, worden de resultaten aan alle spelers tegelijk getoond, met een auto-advance-timer naar de volgende ronde.\n\nRonde-timer — Optioneel. Hoe lang elke speler heeft om een gok voor een ronde in te dienen.\nResultaten-timer — De maximale tijd om de ronderesultaten te bekijken voordat er automatisch wordt doorgaan.\nSpel-timer (alleen Anytime) — De totale deadline voor het hele spel, 1 tot 14 dagen nadat je het spel start.",
-    "help_invite_players": "Voeg 2 tot 8 spelers toe aan dit spel.\n\nZoek spelers op naam, of gebruik de Deel-link om een deelname-link naar iemand te sturen — ze hoeven nog geen vriend te zijn om mee te doen.\n\nAls gastheer kun je op de ster op de avatar van een speler klikken om hem als favoriet te markeren, zodat je hem de volgende keer makkelijker kunt vinden.\n\nSpelers die je uitnodigt, verschijnen in de lobby zodra ze accepteren. Als gastheer kun je een speler op elk moment voor de start van het spel uit de lobby verwijderen."
+    "help_invite_players": "Voeg 2 tot 8 spelers toe aan dit spel.\n\nZoek spelers op naam, of gebruik de Deel-link om een deelname-link naar iemand te sturen — ze hoeven nog geen vriend te zijn om mee te doen.\n\nAls gastheer kun je op de ster op de avatar van een speler klikken om hem als favoriet te markeren, zodat je hem de volgende keer makkelijker kunt vinden.\n\nSpelers die je uitnodigt, verschijnen in de lobby zodra ze accepteren. Als gastheer kun je een speler op elk moment voor de start van het spel uit de lobby verwijderen.",
+    "era_region_presets": "Era en Regio Voorinstellingen",
+    "label": "lobby"
   },
   "compete_page": {
     "title": "Synchroon multiplayer spel",
@@ -344,7 +348,7 @@
     "hist_context": "Historische context",
     "next_arrow": "Volgende →",
     "open_profile_menu": "Open profielmenu",
-    "round_label": "Ronde {current} / {total}",
+    "round_label": "Ronde {current}",
     "round_label_compact": "Ronde {current}/{total}",
     "source_link": "Bron ↗",
     "rate": "Beoordeel",
@@ -430,7 +434,7 @@
     "no_guess": "Geen gok",
     "not_started": "Niet gestart",
     "invited": "Uitgenodigd",
-    "on_round": "Ronde {current} / {total}",
+    "on_round": "Ronde {current}",
     "no_time_clues": "Geen tijdsaanknopingen beschikbaar voor dit event.",
     "no_location_clues": "Geen locatie-aanwijzingen beschikbaar voor dit event.",
     "near_miss": "Bijna-misser",

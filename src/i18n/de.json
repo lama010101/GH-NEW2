@@ -161,7 +161,7 @@
     "compete_invited_you": "Hat dich zu einem Spiel eingeladen",
     "compete_invite_meta": "{mode} · gesendet {time}",
     "compete_invite_sent": "gesendet {time}",
-    "compete_round_label": "Runde {current} / {total}",
+    "compete_round_label": "Runde {current}",
     "compete_play": "SPIELEN",
     "compete_mode_rush": "Live",
     "compete_mode_relax": "Anytime",
@@ -199,7 +199,7 @@
     "your_guess": "Deine Antwort",
     "years_off": "{n} Jahre daneben",
     "km_away": "{distance} entfernt",
-    "round_label": "Runde {current} / {total}",
+    "round_label": "Runde {current}",
     "loading": "Laden...",
     "no_description": "Keine Beschreibung verfügbar",
     "timer_min_short": "{n}min {s}s",
@@ -208,7 +208,9 @@
     "born_prefix": "Geboren:",
     "died_prefix": "Gestorben:",
     "no_data_yet": "Noch keine Daten",
-    "back_to_home": "Zurück zur Startseite"
+    "back_to_home": "Zurück zur Startseite",
+    "round": "Runde",
+    "game": "Spiel"
   },
   "lobby": {
     "waiting": "Warte auf Spieler ({ready}/{total} bereit)",
@@ -279,7 +281,9 @@
     "filter_favorites": "Favoriten",
     "no_favorites_yet": "Noch keine Favoriten — klicke auf den Stern auf dem Avatar eines Spielers, um ihn hier hinzuzufügen.",
     "help_game_settings": "Wähle aus, wie diese Compete-Session abläuft.\n\nANYTIME (Eigene Geschwindigkeit) — Asynchron. Jeder Spieler spielt alle 5 Runden unabhängig und in seinem eigenen Tempo — ohne auf andere zu warten. Die Sitzung bleibt bis zur von dir festgelegten Frist geöffnet (1–14 Tage). Optional kannst du einen Timer pro Runde einschalten; wenn ein Spieler die Zeit in einer Runde überschreitet, wird nur diese Runde für ihn automatisch abgegeben — niemand sonst wird beeinflusst.\n\nLIVE (Live-Herausforderung) — Synchron. Alle spielen dieselbe Runde gleichzeitig. Jede Runde hat einen optionalen Countdown-Timer (15 Sekunden bis 5 Minuten). Nachdem alle abgegeben haben, werden die Ergebnisse allen Spielern gemeinsam angezeigt, mit einem Auto-Advance-Timer zur nächsten Runde.\n\nRunden-Timer — Optional. Wie lange jeder Spieler hat, um einen Tipp für eine Runde abzugeben.\nErgebnis-Timer — Die maximale Zeit, um die Rundergebnisse anzusehen, bevor automatisch zur nächsten Runde gewechselt wird.\nSpiel-Timer (nur Anytime) — Die Gesamtfrist für die gesamte Partie, 1 bis 14 Tage nach Spielstart.",
-    "help_invite_players": "Füge 2 bis 8 Spieler zu diesem Spiel hinzu.\n\nSuche Spieler nach Namen, oder nutze den Freigabe-Link, um einen Beitrittslink an jemanden zu senden — sie müssen nicht bereits ein Freund sein, um beizutreten.\n\nAls Gastgeber kannst du auf den Stern auf dem Avatar eines Spielers klicken, um ihn als Favorit zu markieren, damit du ihn beim nächsten Mal leichter findest.\n\nEingeladene Spieler erscheinen in der Lobby, sobald sie akzeptiert haben. Als Gastgeber kannst du einen Spieler jederzeit vor Spielstart aus der Lobby entfernen."
+    "help_invite_players": "Füge 2 bis 8 Spieler zu diesem Spiel hinzu.\n\nSuche Spieler nach Namen, oder nutze den Freigabe-Link, um einen Beitrittslink an jemanden zu senden — sie müssen nicht bereits ein Freund sein, um beizutreten.\n\nAls Gastgeber kannst du auf den Stern auf dem Avatar eines Spielers klicken, um ihn als Favorit zu markieren, damit du ihn beim nächsten Mal leichter findest.\n\nEingeladene Spieler erscheinen in der Lobby, sobald sie akzeptiert haben. Als Gastgeber kannst du einen Spieler jederzeit vor Spielstart aus der Lobby entfernen.",
+    "era_region_presets": "Epochen- & Regionsvorgaben",
+    "label": "Lobby"
   },
   "compete_page": {
     "title": "Synchrone Mehrspielerspiel",
@@ -344,7 +348,7 @@
     "hist_context": "Historischer Kontext",
     "next_arrow": "Weiter →",
     "open_profile_menu": "Profilmenü öffnen",
-    "round_label": "Runde {current} / {total}",
+    "round_label": "Runde {current}",
     "round_label_compact": "Runde {current}/{total}",
     "source_link": "Quelle ↗",
     "rate": "Bewerten",
@@ -430,7 +434,7 @@
     "no_guess": "Keine Antwort",
     "not_started": "Nicht gestartet",
     "invited": "Eingeladen",
-    "on_round": "Runde {current} / {total}",
+    "on_round": "Runde {current}",
     "no_time_clues": "Keine Zeit Hinweise für dieses Ereignis.",
     "no_location_clues": "Keine Ort Hinweise für dieses Ereignis.",
     "near_miss": "Knapp daneben",

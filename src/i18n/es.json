@@ -161,7 +161,7 @@
     "compete_invited_you": "Te invitó a una partida",
     "compete_invite_meta": "{mode} · enviado {time}",
     "compete_invite_sent": "enviado {time}",
-    "compete_round_label": "Ronda {current} / {total}",
+    "compete_round_label": "Ronda {current}",
     "compete_play": "JUGAR",
     "compete_mode_rush": "Live",
     "compete_mode_relax": "Anytime",
@@ -199,7 +199,7 @@
     "your_guess": "Tu respuesta",
     "years_off": "{n} años de diferencia",
     "km_away": "{distance} de distancia",
-    "round_label": "Ronda {current} / {total}",
+    "round_label": "Ronda {current}",
     "loading": "Cargando...",
     "no_description": "Sin descripción disponible",
     "timer_min_short": "{n}min {s}s",
@@ -208,7 +208,9 @@
     "born_prefix": "Nacido:",
     "died_prefix": "Fallecido:",
     "no_data_yet": "Aún sin datos",
-    "back_to_home": "Volver al inicio"
+    "back_to_home": "Volver al inicio",
+    "round": "Ronda",
+    "game": "Juego"
   },
   "lobby": {
     "waiting": "Esperando jugadores ({ready}/{total} listos)",
@@ -279,7 +281,9 @@
     "filter_favorites": "Favoritos",
     "no_favorites_yet": "Aún no hay favoritos — haz clic en la estrella del avatar de un jugador para añadirlo aquí.",
     "help_game_settings": "Elige cómo se desarrolla esta sesión de Compite.\n\nANYTIME (A tu ritmo) — Asíncrono. Cada jugador juega las 5 rondas de forma independiente, a su propio ritmo — sin esperar a nadie. La sesión permanece abierta hasta la fecha límite que configures abajo (1–14 días). Puedes activar opcionalmente un temporizador por ronda; si un jugador se queda sin tiempo en una ronda, solo esa ronda se envía automáticamente para él — nadie más se ve afectado.\n\nLIVE (Desafío en vivo) — Síncrono. Todos juegan la misma ronda al mismo tiempo. Cada ronda tiene un temporizador opcional (15 segundos a 5 minutos). Después de que todos envíen, los resultados se muestran a todos los jugadores juntos, con un temporizador de avance automático a la siguiente ronda.\n\nTemporizador de ronda — Opcional. Cuánto tiempo tiene cada jugador para enviar un intento en una ronda.\nTemporizador de resultados — El tiempo máximo disponible para ver los resultados de la ronda antes de avanzar automáticamente.\nTemporizador de partida (solo Anytime) — El plazo general para toda la partida, de 1 a 14 días después de iniciarla.",
-    "help_invite_players": "Añade de 2 a 8 jugadores a esta partida.\n\nBusca jugadores por nombre, o usa el enlace de compartir para enviar un enlace de unión a cualquiera — no necesitan ser amigos para unirse.\n\nComo anfitrión, puedes hacer clic en la estrella del avatar de un jugador para marcarlo como favorito y encontrarlo más fácilmente la próxima vez.\n\nLos jugadores que invites aparecerán en el lobby una vez que acepten. Como anfitrión, puedes expulsar a un jugador del lobby en cualquier momento antes de que empiece la partida."
+    "help_invite_players": "Añade de 2 a 8 jugadores a esta partida.\n\nBusca jugadores por nombre, o usa el enlace de compartir para enviar un enlace de unión a cualquiera — no necesitan ser amigos para unirse.\n\nComo anfitrión, puedes hacer clic en la estrella del avatar de un jugador para marcarlo como favorito y encontrarlo más fácilmente la próxima vez.\n\nLos jugadores que invites aparecerán en el lobby una vez que acepten. Como anfitrión, puedes expulsar a un jugador del lobby en cualquier momento antes de que empiece la partida.",
+    "era_region_presets": "Presets de Era y Región",
+    "label": "sala"
   },
   "compete_page": {
     "title": "Partida síncrona multijugador",
@@ -344,7 +348,7 @@
     "hist_context": "Contexto histórico",
     "next_arrow": "Siguiente →",
     "open_profile_menu": "Abrir menú de perfil",
-    "round_label": "Ronda {current} / {total}",
+    "round_label": "Ronda {current}",
     "round_label_compact": "Ronda {current}/{total}",
     "source_link": "Fuente ↗",
     "rate": "Valorar",
@@ -430,7 +434,7 @@
     "no_guess": "Sin respuesta",
     "not_started": "No iniciado",
     "invited": "Invitado",
-    "on_round": "Ronda {current} / {total}",
+    "on_round": "Ronda {current}",
     "no_time_clues": "Sin pistas temporales para este evento.",
     "no_location_clues": "Sin pistas de ubicación para este evento.",
     "near_miss": "Casi acierto",

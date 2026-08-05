@@ -436,6 +436,11 @@
   color: var(--gh-text-secondary);
 }
 
+.rankStatusNum {
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
 .rankXp {
   font-size: 12px; /* layout-constrained — do not tokenize */
   font-weight: 700;
