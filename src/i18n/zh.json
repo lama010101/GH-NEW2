@@ -436,7 +436,6 @@
     "no_guess": "未作答",
     "not_started": "未开始",
     "invited": "已邀请",
-    "on_round": "第 {current} 轮",
     "no_time_clues": "此事件没有时间线索。",
     "no_location_clues": "此事件没有位置线索。",
     "near_miss": "擦肩",
