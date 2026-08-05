@@ -581,7 +581,7 @@ export default function SessionComplete({
                   // Relax (async) player status. Sync (Rush) keeps hasPlayed-only behavior:
                   // roundStatus/currentRoundIndex are undefined there per types.ts.
                   let showAccuracy = player.hasPlayed;
-                  let statusLabel: string | null = null;
+                  let statusLabel: React.ReactNode = null;
                   if (isAsyncResults) {
                     const rs = player.roundStatus;
                     if (rs === 'invited') {
@@ -589,7 +589,16 @@ export default function SessionComplete({
                       statusLabel = tGame('invited');
                     } else if (rs === 'playing') {
                       showAccuracy = false;
-                      statusLabel = tGame('on_round', { current: (player.currentRoundIndex ?? 0) + 1, total: snapshot.config.totalRounds });
+                      const roundNum = (player.currentRoundIndex ?? 0) + 1;
+                      const roundLabel = tGame('on_round', { current: roundNum });
+                      const [before, after] = roundLabel.split(String(roundNum));
+                      statusLabel = (
+                        <>
+                          {before}
+                          <span className={styles.rankStatusNum}>{roundNum}</span>
+                          {after}
+                        </>
+                      );
                     } else if ((rs === 'joined' || rs === 'ready') && !player.hasPlayed) {
                       showAccuracy = false;
                       statusLabel = tGame('not_started');

@@ -161,7 +161,7 @@
     "compete_invited_you": "邀请你加入游戏",
     "compete_invite_meta": "{mode} · 发送于 {time}",
     "compete_invite_sent": "发送于 {time}",
-    "compete_round_label": "第 {current} / {total} 回合",
+    "compete_round_label": "第 {current} 回合",
     "compete_play": "开始",
     "compete_mode_rush": "Live",
     "compete_mode_relax": "Anytime",
@@ -199,7 +199,7 @@
     "your_guess": "你的答案",
     "years_off": "相差 {n} 年",
     "km_away": "相距 {distance}",
-    "round_label": "第 {current} / {total} 回合",
+    "round_label": "第 {current} 回合",
     "loading": "加载中...",
     "no_description": "暂无描述",
     "timer_min_short": "{n}分{s}秒",
@@ -208,7 +208,9 @@
     "born_prefix": "出生:",
     "died_prefix": "逝世:",
     "no_data_yet": "暂无数据",
-    "back_to_home": "返回首页"
+    "back_to_home": "返回首页",
+    "round": "回合",
+    "game": "游戏"
   },
   "lobby": {
     "waiting": "等待玩家中（{ready}/{total} 已准备）",
@@ -279,7 +281,9 @@
     "filter_favorites": "收藏",
     "no_favorites_yet": "还没有收藏 — 点击玩家头像上的星标，将他们添加到此处。",
     "help_game_settings": "选择此对战会话的玩法。\n\nANYTIME（自己的节奏） — 异步模式。每位玩家独立进行全部5轮，按自己的节奏游玩，无需等待他人。会话将保持开放至你在下方设置的截止期限（1–14天）。你可以选择性开启每轮计时器；如果某位玩家在某轮中耗尽时间，则仅该轮会自动替他提交 — 不会影响其他人。\n\nLIVE（实时挑战） — 同步模式。所有玩家同时游玩同一轮。每轮可选倒计时（15秒到5分钟）。所有玩家提交后，结果会一起展示给所有玩家，并自动进入下一轮倒计时。\n\n回合计时器 — 可选。每位玩家每轮提交猜测可用的时间。\n结果计时器 — 自动进入下一轮前查看回合结果的最长时间。\n游戏计时器（仅Anytime） — 整场会话的总截止期限，从游戏开始后1到14天。",
-    "help_invite_players": "为此游戏添加2到8名玩家。\n\n按名称搜索玩家，或使用分享链接将加入链接发送给任何人 — 他们不需要已经是好友即可加入。\n\n作为房主，你可以点击玩家头像上的星标将其标记为收藏，方便下次查找。\n\n你邀请的玩家接受后将显示在大厅中。作为房主，你可以在游戏开始前随时将玩家移出大厅。"
+    "help_invite_players": "为此游戏添加2到8名玩家。\n\n按名称搜索玩家，或使用分享链接将加入链接发送给任何人 — 他们不需要已经是好友即可加入。\n\n作为房主，你可以点击玩家头像上的星标将其标记为收藏，方便下次查找。\n\n你邀请的玩家接受后将显示在大厅中。作为房主，你可以在游戏开始前随时将玩家移出大厅。",
+    "era_region_presets": "时代与地区预设",
+    "label": "大厅"
   },
   "compete_page": {
     "title": "多人同步游戏",
@@ -344,7 +348,7 @@
     "hist_context": "历史背景",
     "next_arrow": "下一页 →",
     "open_profile_menu": "打开个人菜单",
-    "round_label": "第 {current} / {total} 回合",
+    "round_label": "第 {current} 回合",
     "round_label_compact": "第{current}/{total}回合",
     "source_link": "来源 ↗",
     "rate": "评分",
@@ -430,7 +434,7 @@
     "no_guess": "未作答",
     "not_started": "未开始",
     "invited": "已邀请",
-    "on_round": "第 {current} / {total} 轮",
+    "on_round": "第 {current} 轮",
     "no_time_clues": "此事件没有时间线索。",
     "no_location_clues": "此事件没有位置线索。",
     "near_miss": "擦肩",

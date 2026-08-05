@@ -161,7 +161,7 @@
     "compete_invited_you": "あなたをゲームに招待しました",
     "compete_invite_meta": "{mode} · 送信 {time}",
     "compete_invite_sent": "送信 {time}",
-    "compete_round_label": "ラウンド {current} / {total}",
+    "compete_round_label": "ラウンド {current}",
     "compete_play": "プレイ",
     "compete_mode_rush": "Live",
     "compete_mode_relax": "Anytime",
@@ -199,7 +199,7 @@
     "your_guess": "あなたの回答",
     "years_off": "{n}年の差",
     "km_away": "{distance}離れている",
-    "round_label": "ラウンド {current} / {total}",
+    "round_label": "ラウンド {current}",
     "loading": "読み込み中...",
     "no_description": "説明はありません",
     "timer_min_short": "{n}分{s}秒",
@@ -208,7 +208,9 @@
     "born_prefix": "生年:",
     "died_prefix": "没年:",
     "no_data_yet": "データなし",
-    "back_to_home": "ホームへ戻る"
+    "back_to_home": "ホームへ戻る",
+    "round": "ラウンド",
+    "game": "ゲーム"
   },
   "lobby": {
     "waiting": "プレイヤーを待っています（{ready}/{total} 準備完了）",
@@ -279,7 +281,9 @@
     "filter_favorites": "お気に入り",
     "no_favorites_yet": "まだお気に入りはありません — プレイヤーのアバターの星をクリックするとここに追加されます。",
     "help_game_settings": "この対戦セッションの進め方を選びましょう。\n\nANYTIME（マイペース） — 非同期。各プレイヤーは5ラウンドを互いに独立し、自分のペースでプレイします。他のプレイヤーを待つ必要はありません。セッションは、下で設定する期限（1〜14日）まで開放されます。オプションでラウンドごとのタイマーを設定できます。プレイヤーがラウンド内で時間切れになった場合、そのラウンドのみが自動送信されます — 他のプレイヤーには影響しません。\n\nLIVE（ライブ対戦） — 同期。全員が同じラウンドを同時にプレイします。各ラウンドにはオプションのカウントダウンタイマー（15秒〜5分）があります。全員が提出すると、結果が全員に一緒に表示され、次のラウンドへ自動進行するタイマーが作動します。\n\nラウンドタイマー — 任意。各プレイヤーが1ラウンドの推測を提出できる時間です。\n結果タイマー — 自動的に次のラウンドへ進む前に、ラウンド結果を表示できる最大時間です。\nゲームタイマー（Anytimeのみ） — ゲーム開始から1日〜14日後までの、セッション全体の期限です。",
-    "help_invite_players": "このゲームに2〜8人のプレイヤーを追加します。\n\n名前でプレイヤーを検索するか、共有リンクを使って参加リンクを誰にでも送ることができます — 友達でなくても参加できます。\n\nホストは、プレイヤーのアバターの星をクリックしてお気に入りに登録でき、次回以降見つけやすくなります。\n\n招待したプレイヤーは承諾するとロビーに表示されます。ホストはゲーム開始前であればいつでもロビーからプレイヤーを削除できます。"
+    "help_invite_players": "このゲームに2〜8人のプレイヤーを追加します。\n\n名前でプレイヤーを検索するか、共有リンクを使って参加リンクを誰にでも送ることができます — 友達でなくても参加できます。\n\nホストは、プレイヤーのアバターの星をクリックしてお気に入りに登録でき、次回以降見つけやすくなります。\n\n招待したプレイヤーは承諾するとロビーに表示されます。ホストはゲーム開始前であればいつでもロビーからプレイヤーを削除できます。",
+    "era_region_presets": "時代と地域のプリセット",
+    "label": "ロビー"
   },
   "compete_page": {
     "title": "マルチプレイヤーシンクゲーム",
@@ -344,7 +348,7 @@
     "hist_context": "歴史的背景",
     "next_arrow": "次へ →",
     "open_profile_menu": "プロフィールメニューを開く",
-    "round_label": "ラウンド {current} / {total}",
+    "round_label": "ラウンド {current}",
     "round_label_compact": "ラウンド{current}/{total}",
     "source_link": "出典 ↗",
     "rate": "評価",
@@ -430,7 +434,7 @@
     "no_guess": "未回答",
     "not_started": "未開始",
     "invited": "招待済み",
-    "on_round": "ラウンド {current} / {total}",
+    "on_round": "ラウンド {current}",
     "no_time_clues": "このイベントには時間の手がかりがありません。",
     "no_location_clues": "このイベントには位置の手がかりがありません。",
     "near_miss": "惜しい",
