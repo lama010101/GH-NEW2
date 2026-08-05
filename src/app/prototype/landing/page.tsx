@@ -30,6 +30,7 @@ import { toProxiedImageUrl } from "@/lib/imageProxy";
 import { YearPicker } from "@/components/YearPicker";
 import { AuthModal } from "@/components/AuthModal";
 import { useAuthGate } from "@/hooks/useAuthGate";
+import { LanguageDropdown } from "@/components/layout/LanguageDropdown";
 import styles from "./landing.module.css";
 import lbStyles from "@/app/leaderboard/leaderboard.module.css";
 
@@ -711,6 +712,7 @@ export default function LandingV2Prototype() {
           <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
           <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
           <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+          <LanguageDropdown />
         </nav>
 
         <button
@@ -735,6 +737,7 @@ export default function LandingV2Prototype() {
           <a href="#ai" onClick={() => setMenuOpen(false)}>AI images</a>
           <a href="#explore" onClick={() => setMenuOpen(false)}>Explore</a>
           <a href="#fun" onClick={() => setMenuOpen(false)}>Why play</a>
+          <LanguageDropdown />
         </nav>
 
         {showTopbarExtras && (
