@@ -379,10 +379,12 @@
 }
 .avatarChip:hover { transform: translateY(-2px); border-color: var(--gh-orange); }
 .avatarName { font-size: var(--font-2xs); color: var(--gh-text-secondary); font-weight: 600; }
+.funBadgeWrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .funBadge {
   width: 48px; height: 48px; object-fit: contain;
   animation: float 4s ease-in-out infinite, v2BadgeEnter .6s both;
 }
+.funBadgeLabel { font-size: var(--font-2xs); color: var(--gh-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
 .tierRow { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
