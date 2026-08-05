@@ -437,7 +437,6 @@
     "no_guess": "Pas de réponse",
     "not_started": "Pas commencé",
     "invited": "Invité",
-    "on_round": "Manche {current}",
     "no_time_clues": "Aucun indice temporel disponible pour cet événement.",
     "no_location_clues": "Aucun indice de localisation disponible pour cet événement.",
     "near_miss": "Presque !",
