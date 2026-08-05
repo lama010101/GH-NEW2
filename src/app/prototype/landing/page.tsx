@@ -567,7 +567,7 @@ export default function LandingV2Prototype() {
             <p className={styles.eyebrowCenter}>
               <span className={styles.eyebrow}>The real thing</span>
             </p>
-            <h2 className={styles.secHeadH2}>These are the real cards.</h2>
+            <h2 className={styles.secHeadH2}>How accurate can you be?</h2>
             <p className={styles.secHeadP}>After each round, players see exactly how close their where and when guesses were.</p>
           </div>
 
