@@ -351,7 +351,7 @@
     "round_label": "第 {current} 回合",
     "round_label_compact": "第{current}/{total}回合",
     "source_link": "来源 ↗",
-    "rate": "评分",
+    "rate": "Rate Image Realism",
     "rate_saved": "已保存",
     "this_round": "本回合",
     "total_penalty": "总惩罚",
