@@ -560,7 +560,8 @@ export default class GameServer {
       // Reset readyForNext when transitioning from ROUND_COMPLETE to ROUND_ACTIVE (new round started)
       if (isRuntimeState(this.snapshot) &&
           this.snapshot.status === "ROUND_COMPLETE" &&
-          snapshot.status === "ROUND_ACTIVE") {
+          snapshot.status === "ROUND_ACTIVE" &&
+          snapshot.currentRoundIndex === this.snapshot.currentRoundIndex + 1) {
         this.readyForNext.clear();
         // MP-FIX-SYNC-DESYNC-001: Reset completeInFlight (set true by SUBMIT_GUESS
         // early-completion path) and ensure roundTimerHandle is cleared so the new
