@@ -565,6 +565,10 @@
   border-color: var(--gh-border-strong);
 }
 
+.whenBtn .btnIcon {
+  object-fit: cover;
+}
+
 /* ── Submit button ── */
 .submitBtn {
   width: 52px;
