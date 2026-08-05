@@ -714,7 +714,7 @@ export default function SessionComplete({
                         {badgeCounts.combo > 0 && (
                           <span className={`${styles.badgeTallyItem} ${styles.badgeTallyCombo}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/combo_gold.webp" alt="combo" width={28} height={28} />
+                            <img src="/badges/combo_gold.webp" alt={tGame('combo_badges')} width={28} height={28} />
                             <span className={styles.badgeTallyCount}>{badgeCounts.combo}</span>
                             <span className={styles.badgeTallyTier}>{tGame('combo_badges')}</span>
                           </span>
@@ -722,7 +722,7 @@ export default function SessionComplete({
                         {badgeCounts.when > 0 && (
                           <span className={`${styles.badgeTallyItem} ${styles.badgeTallyWhen}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/year_gold.webp" alt="when" width={28} height={28} />
+                            <img src="/badges/year_gold.webp" alt={tGame('when_badges')} width={28} height={28} />
                             <span className={styles.badgeTallyCount}>{badgeCounts.when}</span>
                             <span className={styles.badgeTallyTier}>{tGame('when_badges')}</span>
                           </span>
@@ -730,7 +730,7 @@ export default function SessionComplete({
                         {badgeCounts.where > 0 && (
                           <span className={`${styles.badgeTallyItem} ${styles.badgeTallyWhere}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/location_gold.webp" alt="where" width={28} height={28} />
+                            <img src="/badges/location_gold.webp" alt={tGame('where_badges')} width={28} height={28} />
                             <span className={styles.badgeTallyCount}>{badgeCounts.where}</span>
                             <span className={styles.badgeTallyTier}>{tGame('where_badges')}</span>
                           </span>

@@ -258,7 +258,7 @@ function LeaderboardPageInner() {
           </div>
         )}
         <div className={styles.playerInfo}>
-          <span className={styles.playerName}>{name}{entry.is_ai ? <span className={styles.aiBadge}>AI</span> : null}</span>
+          <span className={styles.playerName}>{name}{entry.is_ai ? <span className={styles.aiBadge}>{t('filter_ai')}</span> : null}</span>
           <span className={styles.playerSubtitle}>{subtitle}</span>
         </div>
       </div>
@@ -530,8 +530,9 @@ function LeaderboardPageInner() {
 }
 
 export default function LeaderboardPage() {
+  const t = useTranslations();
   return (
-    <Suspense fallback={<div style={{ color: 'var(--gh-text-primary)', padding: '2rem', textAlign: 'center' }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ color: 'var(--gh-text-primary)', padding: '2rem', textAlign: 'center' }}>{t('common.loading_ellipsis')}</div>}>
       <LeaderboardPageInner />
     </Suspense>
   );

@@ -184,7 +184,8 @@
     "practice_desc": "Play solo.\nUnlimited",
     "play_mode_aria": "Play {mode}",
     "compete_play_aria": "Play",
-    "compete_delete_aria": "Delete"
+    "compete_delete_aria": "Delete",
+    "coming_up_soon": "Coming Up Soon"
   },
   "common": {
     "next_round": "Next Round",
@@ -210,7 +211,8 @@
     "no_data_yet": "No data yet",
     "back_to_home": "Back to Home",
     "round": "Round",
-    "game": "Game"
+    "game": "Game",
+    "loading_ellipsis": "Loading…"
   },
   "lobby": {
     "waiting": "Waiting for players ({ready}/{total} ready)",
@@ -635,7 +637,9 @@
     "rated": "Rated",
     "regions": "Regions",
     "countries": "Countries",
-    "practice": "Practice"
+    "practice": "Practice",
+    "daily_all_time": "Daily (all-time)",
+    "level": "Level"
   },
   "account": {
     "title": "Account",

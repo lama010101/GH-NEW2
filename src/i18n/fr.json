@@ -184,7 +184,8 @@
     "practice_desc": "Joue en solo.\nIllimité",
     "play_mode_aria": "Jouer à {mode}",
     "compete_play_aria": "Jouer",
-    "compete_delete_aria": "Supprimer"
+    "compete_delete_aria": "Supprimer",
+    "coming_up_soon": "À venir bientôt"
   },
   "common": {
     "next_round": "Manche suivante",
@@ -210,7 +211,8 @@
     "no_data_yet": "Pas encore de données",
     "back_to_home": "Retour à l'accueil",
     "round": "Manche",
-    "game": "Jeu"
+    "game": "Jeu",
+    "loading_ellipsis": "Chargement…"
   },
   "lobby": {
     "waiting": "En attente de joueurs ({ready}/{total} prêts)",
@@ -635,7 +637,9 @@
     "best": "meilleur",
     "rated": "Notées",
     "regions": "Régions",
-    "countries": "Pays"
+    "countries": "Pays",
+    "daily_all_time": "Quotidien (tous les temps)",
+    "level": "Niveau"
   },
   "account": {
     "title": "Compte",

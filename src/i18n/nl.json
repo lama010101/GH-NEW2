@@ -184,7 +184,8 @@
     "practice_desc": "Speel solo.\nOnbeperkt",
     "play_mode_aria": "Speel {mode}",
     "compete_play_aria": "Spelen",
-    "compete_delete_aria": "Verwijderen"
+    "compete_delete_aria": "Verwijderen",
+    "coming_up_soon": "Binnenkort beschikbaar"
   },
   "common": {
     "next_round": "Volgende ronde",
@@ -210,7 +211,8 @@
     "no_data_yet": "Nog geen gegevens",
     "back_to_home": "Terug naar home",
     "round": "Ronde",
-    "game": "Spel"
+    "game": "Spel",
+    "loading_ellipsis": "Laden…"
   },
   "lobby": {
     "waiting": "Wachten op spelers ({ready}/{total} klaar)",
@@ -635,7 +637,9 @@
     "best": "beste",
     "rated": "Beoordeeld",
     "regions": "Regio's",
-    "countries": "Landen"
+    "countries": "Landen",
+    "daily_all_time": "Dagelijks (alle tijden)",
+    "level": "Niveau"
   },
   "account": {
     "title": "Rekening",

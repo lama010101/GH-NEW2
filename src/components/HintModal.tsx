@@ -268,7 +268,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
                     <rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="currentColor" strokeWidth="1.1" />
                     <path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
                   </svg>
-                  <span className={styles.axisLbl}>When</span>
+                  <span className={styles.axisLbl}>{t('when_badges')}</span>
                 </div>
                 <div className={`${styles.axisVal} ${getPenaltyColor(penalties.whenAcc)}`}>
                   −{penalties.whenAcc}%
@@ -283,7 +283,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
                   <svg viewBox="0 0 10 10" fill="none">
                     <path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="currentColor" />
                   </svg>
-                  <span className={styles.axisLbl}>Where</span>
+                  <span className={styles.axisLbl}>{t('where_badges')}</span>
                 </div>
                 <div className={`${styles.axisVal} ${getPenaltyColor(penalties.whereAcc)}`}>
                   −{penalties.whereAcc}%
@@ -302,7 +302,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
               onClick={() => setActiveTab("when")}
             >
               <WhenIcon className={styles.tabIcon} size={22} />
-              <span className={styles.tabLbl}>When</span>
+              <span className={styles.tabLbl}>{t('when_badges')}</span>
               {getPurchasedCount("when") > 0 && (
                 <div className={styles.tabBadge}>{getPurchasedCount("when")}</div>
               )}
@@ -312,7 +312,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
               onClick={() => setActiveTab("where")}
             >
               <WhereIcon className={styles.tabIcon} size={22} />
-              <span className={styles.tabLbl}>Where</span>
+              <span className={styles.tabLbl}>{t('where_badges')}</span>
               {getPurchasedCount("where") > 0 && (
                 <div className={styles.tabBadge}>{getPurchasedCount("where")}</div>
               )}

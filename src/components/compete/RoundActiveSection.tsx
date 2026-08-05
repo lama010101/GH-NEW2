@@ -614,7 +614,7 @@ export default function RoundActiveSection({
               key={imgRetryKey}
               ref={imgRef}
               src={toProxiedImageUrl(currentEvent.imageUrl) ?? ''}
-              alt="Historical event"
+              alt={t('historical_event')}
               draggable={false}
               className={styles.eventImg}
               onError={() => setImgError(true)}
@@ -648,8 +648,8 @@ export default function RoundActiveSection({
             type="button"
             className={styles.zoomBtn}
             onClick={handleZoomIn}
-            aria-label="Zoom in"
-            title="Zoom in"
+            aria-label={t('zoom_in')}
+            title={t('zoom_in')}
           >
             +
           </button>
@@ -657,8 +657,8 @@ export default function RoundActiveSection({
             type="button"
             className={styles.zoomBtn}
             onClick={handleZoomOut}
-            aria-label="Zoom out"
-            title="Zoom out"
+            aria-label={t('zoom_out')}
+            title={t('zoom_out')}
           >
             −
           </button>
