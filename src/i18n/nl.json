@@ -1172,5 +1172,11 @@
       "legal": "Juridische disclaimer",
       "privacy": "Privacy"
     }
+  },
+  "practice": {
+    "title": "Oefenspel bezig",
+    "resume_prompt": "Je hebt een onafgemaakt oefenspel. Wat wil je doen?",
+    "resume_game": "Spel voortzetten",
+    "create_new_game": "Nieuw spel aanmaken"
   }
 }

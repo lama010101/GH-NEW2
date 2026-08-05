@@ -1172,5 +1172,11 @@
       "legal": "Isenção de responsabilidade legal",
       "privacy": "Privacidade"
     }
+  },
+  "practice": {
+    "title": "Jogo de prática em andamento",
+    "resume_prompt": "Você tem um jogo de prática não finalizado. O que você gostaria de fazer?",
+    "resume_game": "Retomar o jogo em andamento",
+    "create_new_game": "Criar novo jogo"
   }
 }
