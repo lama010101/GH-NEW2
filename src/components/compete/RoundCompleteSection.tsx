@@ -709,9 +709,9 @@ export default function RoundCompleteSection({
                     const meta = hint.metadata as { km?: number; years?: number | string } | null;
                     let revealedText = hint.content;
                     if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
-                      revealedText = `${hint.content} — ${t('km_away_short', { distance: formatDistance(meta.km, distanceUnit) })}`;
+                      revealedText = `${hint.content} • ${t('km_away_short', { distance: formatDistance(meta.km, distanceUnit) })}`;
                     } else if (hint.type === "when" && (hint.tier === 2 || hint.tier === 4) && meta?.years != null) {
-                      revealedText = `${hint.content} — ${t('years_off_short', { n: meta.years })}`;
+                      revealedText = `${hint.content} • ${t('years_off_short', { n: meta.years })}`;
                     }
                     const labelMap: Record<string, Record<number, string>> = {
                       when: { 1: t('hint_century'), 2: t('hint_historical_event'), 3: t('hint_decade'), 4: t('hint_contemporary_event'), 5: t('hint_visual_clues') },
