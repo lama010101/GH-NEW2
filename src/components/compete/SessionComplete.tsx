@@ -887,7 +887,7 @@ export default function SessionComplete({
                 hideAccuracy
                 hideStatsRow
                 embedded
-                rankCard={<RankCard totalXp={totalXp} open bare variant="dark" />}
+                rankCard={<RankCard totalXp={totalXp} sessionXp={overallXP} open bare variant="dark" />}
                 data={{
                   byWhen,
                   byWhere,
