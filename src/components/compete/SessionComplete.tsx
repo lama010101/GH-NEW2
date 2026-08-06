@@ -893,7 +893,7 @@ export default function SessionComplete({
               <div className={styles.cta}>
                 <button
                   type="button"
-                  className={styles.homeBtn}
+                  className={isDaily ? `${styles.homeBtn} ${styles.homeBtnFull}` : styles.homeBtn}
                   onClick={() => router.push("/home")}
                 >
                   {tGame('home')}
