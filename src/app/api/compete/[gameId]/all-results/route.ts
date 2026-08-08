@@ -76,7 +76,7 @@ export async function GET(
       yearDiff: row.year_diff,
       locationScore: row.location_score,
       timeScore: row.time_score,
-      didSubmit: row.year_guess !== null,
+      didSubmit: row.year_guess !== null || row.location_lat !== null || row.location_lng !== null,
       region: row.region,
       absent: row.absent ?? false,
     }));
