@@ -28,35 +28,54 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch invitations" }, { status: 500 });
     }
 
-    // Resolve each invitation's game mode (sync = rush, async = relax) from
-    // the sessions table via the direct DB pool. The cookie-scoped Supabase
-    // client is RLS-bound and may not read sessions, so we use the pool here.
+    // Resolve each invitation's game mode (sync = rush, async = relax) and
+    // session_deadline from the sessions table via the direct DB pool. The
+    // cookie-scoped Supabase client is RLS-bound and may not read sessions,
+    // so we use the pool here.
     const gameIds = Array.from(new Set((invitations ?? []).map((i) => i.game_id)));
-    const modeByGameId = new Map<string, string>();
+    const sessionInfoByGameId = new Map<string, { mode: string; session_deadline: string | null }>();
     if (gameIds.length > 0) {
       const pool = getDbPool();
-      const modeResult = await pool.query<{ game_id: string; mode: string }>(
-        `SELECT game_id, mode FROM sessions WHERE game_id = ANY($1)`,
+      const sessionResult = await pool.query<{ game_id: string; mode: string; session_deadline: Date | null }>(
+        `SELECT game_id, mode, session_deadline FROM sessions WHERE game_id = ANY($1)`,
         [gameIds]
       );
-      for (const row of modeResult.rows) {
-        modeByGameId.set(row.game_id, row.mode);
+      for (const row of sessionResult.rows) {
+        sessionInfoByGameId.set(row.game_id, {
+          mode: row.mode,
+          session_deadline: row.session_deadline ? new Date(row.session_deadline).toISOString() : null,
+        });
       }
     }
 
+    // Filter out invitations for async (Relax) sessions whose session_deadline
+    // has passed. Sync (Rush) sessions have session_deadline = NULL and are
+    // never filtered by this check.
+    const now = Date.now();
+    const visibleInvitations = (invitations ?? []).filter((invite) => {
+      const sessionInfo = sessionInfoByGameId.get(invite.game_id);
+      if (!sessionInfo) return true;
+      if (sessionInfo.session_deadline !== null && new Date(sessionInfo.session_deadline).getTime() < now) {
+        return false;
+      }
+      return true;
+    });
+
     const invitesWithNames = await Promise.all(
-      (invitations ?? []).map(async (invite) => {
+      visibleInvitations.map(async (invite) => {
         const { data: profile } = await supabase
           .from("profiles")
           .select("display_name, avatar_url")
           .eq("id", invite.inviter_id)
           .single();
 
+        const sessionInfo = sessionInfoByGameId.get(invite.game_id);
         return {
           ...invite,
           inviter_name: profile?.display_name ?? "Unknown",
           avatar_url: profile?.avatar_url ?? undefined,
-          mode: modeByGameId.get(invite.game_id) ?? undefined,
+          mode: sessionInfo?.mode ?? undefined,
+          session_deadline: sessionInfo?.session_deadline ?? undefined,
         };
       })
     );
