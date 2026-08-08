@@ -509,6 +509,8 @@
     "km_away_short": "{distance} away",
     "years_off_short": "{n} years off",
     "failed_create_session": "Failed to create session",
+    "game_ended_deadline": "This game has ended",
+    "game_already_started": "This game has already started",
     "room_not_found": "Room not found",
     "error_creating_game": "Error creating game",
     "unknown_player": "Unknown",
