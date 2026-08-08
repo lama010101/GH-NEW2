@@ -388,3 +388,54 @@
 [data-theme="light"] .cardCtaBtnBlue {
   background: #ffffff;
 }
+
+/* ── Host badge ── */
+.hostBadge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: var(--font-3xs);
+  font-weight: 600;
+  color: var(--gh-text-secondary);
+  background: var(--gh-glass-bg-hover);
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.hostBadgeSelf {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: var(--font-3xs);
+  font-weight: 600;
+  color: var(--gh-text-primary);
+  background: var(--gh-accent-bg, rgba(99, 102, 241, 0.2));
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+/* ── Time remaining ── */
+.timeRemaining {
+  font-size: var(--font-3xs);
+  color: var(--gh-text-secondary);
+  white-space: nowrap;
+}
+
+/* ── See all link ── */
+.seeAllLink {
+  display: block;
+  width: 100%;
+  padding: 8px 0;
+  margin-top: 4px;
+  background: none;
+  border: none;
+  color: var(--gh-text-secondary);
+  font-size: var(--font-2xs);
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.seeAllLink:hover {
+  color: var(--gh-text-primary);
+}

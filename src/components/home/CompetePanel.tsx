@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser'
 import { getAccuracyColor } from '@/core/accuracyColor'
@@ -21,6 +22,10 @@ type ActiveGame = {
   accuracy_you?: number
   completed_at?: string
   leaderboard_rank?: number
+  created_at?: string
+  session_deadline?: string
+  is_host_opponent?: boolean
+  is_host_viewer?: boolean
 }
 
 function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) => string): string {
@@ -29,6 +34,14 @@ function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) 
   if (diff < 3600000) return t('notifications.m_ago', { n: Math.floor(diff / 60000) })
   if (diff < 86400000) return t('notifications.h_ago', { n: Math.floor(diff / 3600000) })
   return t('notifications.d_ago', { n: Math.floor(diff / 86400000) })
+}
+
+function timeRemaining(deadlineIso: string, t: (key: string, params?: Record<string, number>) => string): string {
+  const diff = new Date(deadlineIso).getTime() - Date.now()
+  if (diff <= 0) return t('home.compete_expires_soon')
+  if (diff < 3600000) return t('home.compete_expires_soon')
+  if (diff < 86400000) return t('home.compete_time_left_h', { n: Math.floor(diff / 3600000) })
+  return t('home.compete_time_left_d', { n: Math.floor(diff / 86400000) })
 }
 
 function PlayIcon() {
@@ -55,6 +68,7 @@ export function CompetePanel({ onLobby, playerId }: {
   playerId: string
 }) {
   const t = useTranslations()
+  const router = useRouter()
   const [invites, setInvites] = useState<Array<{
     id: string
     game_id: string
@@ -64,6 +78,7 @@ export function CompetePanel({ onLobby, playerId }: {
     created_at: string
     expires_at: string
     mode?: 'sync' | 'async'
+    session_deadline?: string
   }>>([])
   const [invitesLoading, setInvitesLoading] = useState(true)
   const [tab, setTab] = useState<'invitations'|'your_turn'|'completed'>('invitations')
@@ -243,6 +258,9 @@ export function CompetePanel({ onLobby, playerId }: {
                             time: timeAgo(invite.created_at, t),
                           })
                         : t('home.compete_invite_sent', { time: timeAgo(invite.created_at, t) })}
+                      {invite.mode === 'async' && invite.session_deadline && (
+                        <span className={cpStyles.timeRemaining}> · {timeRemaining(invite.session_deadline, t)}</span>
+                      )}
                     </span>
                   </div>
                   <button
@@ -286,7 +304,11 @@ export function CompetePanel({ onLobby, playerId }: {
                     {(game.opponent_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}
                   </div>
                   <div className={cpStyles.gameInfo}>
-                    <span className={cpStyles.gameName}>{game.opponent_name}</span>
+                    <span className={cpStyles.gameName}>
+                      {game.opponent_name}
+                      {game.is_host_opponent && <span className={cpStyles.hostBadge}>{t('home.compete_host')}</span>}
+                      {game.is_host_viewer && <span className={cpStyles.hostBadgeSelf}>{t('home.compete_host_you')}</span>}
+                    </span>
                     <span className={cpStyles.gameSub}>
                       {game.mode && (
                         <span className={cpStyles.modeBadgeInline}>
@@ -295,6 +317,9 @@ export function CompetePanel({ onLobby, playerId }: {
                       )}
                       {' '}
                       {t('home.compete_round_label', { current: game.round_current, total: game.round_total })}
+                      {game.mode === 'async' && game.session_deadline && (
+                        <span className={cpStyles.timeRemaining}> · {timeRemaining(game.session_deadline, t)}</span>
+                      )}
                     </span>
                   </div>
                   <button
@@ -331,7 +356,11 @@ export function CompetePanel({ onLobby, playerId }: {
                     {(game.opponent_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}
                   </div>
                   <div className={cpStyles.gameInfo}>
-                    <span className={cpStyles.gameName}>{game.opponent_name}</span>
+                    <span className={cpStyles.gameName}>
+                      {game.opponent_name}
+                      {game.is_host_opponent && <span className={cpStyles.hostBadge}>{t('home.compete_host')}</span>}
+                      {game.is_host_viewer && <span className={cpStyles.hostBadgeSelf}>{t('home.compete_host_you')}</span>}
+                    </span>
                     <span className={cpStyles.gameSub}>
                       {game.mode && (
                         <span className={cpStyles.modeBadgeInline}>
@@ -364,6 +393,19 @@ export function CompetePanel({ onLobby, playerId }: {
             </div>
           )
         )}
+
+      {/* See all link — shown when a tab's row count equals the API LIMIT */}
+      {((tab === 'invitations' && invites.length >= 5) ||
+        (tab === 'your_turn' && yourTurnGames.length >= 20) ||
+        (tab === 'completed' && completedGames.length >= 20)) && (
+        <button
+          type="button"
+          className={cpStyles.seeAllLink}
+          onClick={() => router.push('/home/compete/all')}
+        >
+          {t('home.compete_see_all')}
+        </button>
+      )}
       </div>
     </>
   );
