@@ -677,6 +677,8 @@
     "invited_you": "invited you to a game",
     "sent": "sent {time}",
     "join_game": "Join Game",
+    "session_complete": "{name} completed the game",
+    "view_results": "View Results",
     "someone": "Someone"
   },
   "welcome": {

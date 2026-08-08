@@ -677,6 +677,8 @@
     "invited_you": "nodigde je uit voor een spel",
     "sent": "verzonden {time}",
     "join_game": "Sluit aan bij spel",
+    "session_complete": "{name} heeft het spel voltooid",
+    "view_results": "Bekijk resultaten",
     "someone": "Iemand"
   },
   "landing": {
