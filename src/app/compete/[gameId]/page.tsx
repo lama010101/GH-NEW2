@@ -60,6 +60,7 @@ export default function CompeteGamePage() {
   const [guessLat, setGuessLat] = useState<number | null>(null);
   const [guessLng, setGuessLng] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expiredState, setExpiredState] = useState<'async_deadline' | 'sync_in_progress' | null>(null);
   const [busy, setBusy] = useState(false);
   const [localSubmitted, setLocalSubmitted] = useState(false);
   const [showGuessedLabel, setShowGuessedLabel] = useState(false);
@@ -133,6 +134,34 @@ export default function CompeteGamePage() {
   }, [identity.status])
 
   const { playerId, displayName, isLoading: identityLoading, error: identityError } = useIdentity();
+
+  // Create a new async game from the expired-state screen (Case B / Rush parity).
+  // Calls /api/compete/create directly and navigates to the new lobby.
+  const handleExpiredCreateGame = useCallback(async () => {
+    if (!playerId || !displayName) {
+      router.push('/home');
+      return;
+    }
+    try {
+      const res = await fetch('/api/compete/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId,
+          displayName,
+          mode: 'async',
+          yearMin: -400,
+          yearMax: 2025,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || t('failed_create_session'));
+      router.push(`/compete/${data.gameId}`);
+    } catch {
+      router.push('/home');
+    }
+  }, [playerId, displayName, router, t]);
+
   // Auto-submit on timer expiry using current input values.
   // Refs are necessary because useEffect closures cannot safely read state that changes frequently.
   const guessYearRef = useRef<number | null>(null);
@@ -258,13 +287,15 @@ export default function CompeteGamePage() {
   // Navigation guard: prevent refresh and back button during active game phases
   useLeaveGuard(snapshot?.status, gameId, ["LOBBY", "ROUND_ACTIVE", "ROUND_COMPLETE"]);
 
-  // Redirect to home if JOIN_ROOM fails before any snapshot is received
+  // Redirect to home if JOIN_ROOM fails before any snapshot is received,
+  // UNLESS the error is a known "game ended" state (deadline passed or game
+  // already in progress) — those show a two-button screen instead.
   useEffect(() => {
-    if (error && !snapshot) {
+    if (error && !snapshot && !expiredState) {
       const timer = setTimeout(() => router.push("/home"), 3000);
       return () => clearTimeout(timer);
     }
-  }, [error, snapshot, router]);
+  }, [error, snapshot, router, expiredState]);
 
   const {
     wsRef,
@@ -362,6 +393,18 @@ export default function CompeteGamePage() {
       if (code === "PLAYER_KICKED") {
         setError(tLobby('kicked_toast'));
         router.push("/home?kicked=1");
+        return;
+      }
+      // Detect Case B (async deadline passed) and Rush (game already in progress)
+      // to show the two-button "game ended" screen instead of a raw error + redirect.
+      if (message === "Session deadline has passed") {
+        setExpiredState('async_deadline');
+        setError(message);
+        return;
+      }
+      if (message === "Game already in progress") {
+        setExpiredState('sync_in_progress');
+        setError(message);
         return;
       }
       setError(message);
@@ -633,6 +676,45 @@ export default function CompeteGamePage() {
   }, [snapshot, playerId, guessYear, guessLat, guessLng, localSubmitted, hintResult, submitGuess]);
 
   if (!gameId) return null;
+
+  // Case B: new joiner after deadline (async) or game already in progress (sync).
+  // Show a two-button "game ended" screen instead of raw error + auto-redirect.
+  if (expiredState && !snapshot) {
+    const handleCreateGame = () => {
+      void handleExpiredCreateGame();
+    };
+    return (
+      <div className={pageStyles.loadingScreen}>
+        <div className={pageStyles.loadingBg} aria-hidden="true" />
+        <div className={pageStyles.loadingScrim} aria-hidden="true" />
+        <div className={pageStyles.loadingContent}>
+          <span className={pageStyles.loadingLabel}>
+            {expiredState === 'async_deadline'
+              ? t('game_ended_deadline')
+              : t('game_already_started')}
+          </span>
+          <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+            <button
+              type="button"
+              onClick={handleCreateGame}
+              className={btnStyles.button}
+              style={{ padding: '10px 24px', borderRadius: 999 }}
+            >
+              {t('create_game')}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/home')}
+              className={btnStyles.button}
+              style={{ padding: '10px 24px', borderRadius: 999 }}
+            >
+              {tCommon('home')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (identityLoading || identityError || !snapshot) {
     return (

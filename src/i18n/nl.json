@@ -502,6 +502,8 @@
     "km_away_short": "{distance} ervandaan",
     "years_off_short": "{n} jaar ernaast",
     "failed_create_session": "Sessie maken mislukt",
+    "game_ended_deadline": "Dit spel is afgelopen",
+    "game_already_started": "Dit spel is al begonnen",
     "room_not_found": "Kamer niet gevonden",
     "error_creating_game": "Fout bij spel maken",
     "unknown_player": "Onbekend",
