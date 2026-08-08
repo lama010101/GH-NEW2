@@ -10,9 +10,19 @@ const CONCURRENCY = 3;
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [1000, 4000]; // exponential-ish: 1s, 4s
 
-const MODEL_ID = "anthropic/claude-sonnet-4.6";
-const AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
+// Defaults preserve the original Sonnet behavior when no CLI flag is passed.
+const DEFAULT_MODEL_ID = "anthropic/claude-sonnet-4.6";
+const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
 const PROVIDER = "openrouter";
+
+function parseFlag(name: string): string | undefined {
+  const prefix = `--${name}=`;
+  const arg = process.argv.find((a) => a.startsWith(prefix));
+  return arg ? arg.slice(prefix.length) : undefined;
+}
+
+const MODEL_ID = parseFlag("model") ?? DEFAULT_MODEL_ID;
+const AI_PLAYER_NAME = parseFlag("player-name") ?? DEFAULT_AI_PLAYER_NAME;
 
 const DEFAULT_WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers.ts");
 const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
@@ -108,7 +118,14 @@ function isTransientFailure(stderr: string, stdout: string): boolean {
 
 function runWorker(eventId: string): Promise<WorkerResult> {
   return new Promise((resolve) => {
-    const child = spawn(TSX_BIN, [getWorkerScript(), eventId], {
+    const workerArgs = [getWorkerScript(), eventId];
+    // Forward model/player-name flags so the worker records results under the
+    // correct ai_player. Only forwarded when explicitly set on run-batch.
+    const modelFlag = parseFlag("model");
+    const playerNameFlag = parseFlag("player-name");
+    if (modelFlag) workerArgs.push(`--model=${modelFlag}`);
+    if (playerNameFlag) workerArgs.push(`--player-name=${playerNameFlag}`);
+    const child = spawn(TSX_BIN, workerArgs, {
       cwd: process.cwd(),
       env: process.env,
       stdio: "pipe",

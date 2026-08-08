@@ -7,9 +7,20 @@ import type { EventRecord, Location } from "@/core/types";
 config({ path: ".env.local" });
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL_ID = "anthropic/claude-sonnet-4.6";
+
+// Defaults preserve the original Sonnet behavior when no CLI flag is passed.
+const DEFAULT_MODEL_ID = "anthropic/claude-sonnet-4.6";
+const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
 const PROVIDER = "openrouter";
-const AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
+
+function parseFlag(name: string): string | undefined {
+  const prefix = `--${name}=`;
+  const arg = process.argv.find((a) => a.startsWith(prefix));
+  return arg ? arg.slice(prefix.length) : undefined;
+}
+
+const MODEL_ID = parseFlag("model") ?? DEFAULT_MODEL_ID;
+const AI_PLAYER_NAME = parseFlag("player-name") ?? DEFAULT_AI_PLAYER_NAME;
 
 // Live Daily default timer (seconds). Confirmed in src/server/sessionCore.ts createDailySession.
 const DAILY_TIMER_SECONDS = 90;
@@ -33,9 +44,9 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const eventId = process.argv[2];
+  const eventId = process.argv.find((a, i) => i >= 2 && !a.startsWith("--"));
   if (!eventId) {
-    console.error("Usage: tsx scripts/ai-players/generate-answers.ts <event-id>");
+    console.error("Usage: tsx scripts/ai-players/generate-answers.ts <event-id> [--model=<slug>] [--player-name=<display-name>]");
     process.exit(1);
   }
 
