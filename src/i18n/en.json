@@ -164,6 +164,7 @@
     "compete_time_left_h": "{n}h left",
     "compete_expires_soon": "Expires soon",
     "compete_see_all": "See all",
+    "compete_all_title": "All Compete Games",
     "compete_invited_you": "Invited you to a game",
     "compete_invite_meta": "{mode} · sent {time}",
     "compete_invite_sent": "sent {time}",
