@@ -3768,6 +3768,28 @@ export async function advancePlayerRoundAsync(
       );
       if ((sessionCompleteResult as unknown as { rowCount: number | null }).rowCount === 1) {
         await updatePlayerGlobalStats(gameId, session.mode as "practice" | "sync" | "async", playerId, client);
+        // Fan-out session_complete notification to OTHER active session players.
+        // Per RELAX_MODE_SPEC.md §5: in-app notification fires only when a player
+        // completes their final (5th) round, sent to other active session players.
+        const otherPlayersResult = await client.query<{ player_id: string }>(
+          `SELECT player_id FROM session_players
+           WHERE game_id = $1 AND player_id != $2 AND left_at IS NULL AND NOT kicked`,
+          [gameId, playerId]
+        );
+        if (otherPlayersResult.rows.length > 0) {
+          const completerNameResult = await client.query<{ display_name: string }>(
+            `SELECT display_name FROM session_players WHERE game_id = $1 AND player_id = $2`,
+            [gameId, playerId]
+          );
+          const completerName = completerNameResult.rows[0]?.display_name ?? "Unknown";
+          for (const other of otherPlayersResult.rows) {
+            await client.query(
+              `INSERT INTO notifications (user_id, type, payload)
+               VALUES ($1, 'session_complete', $2::jsonb)`,
+              [other.player_id, JSON.stringify({ game_id: gameId, completing_player_id: playerId, completing_player_name: completerName })]
+            );
+          }
+        }
       }
     }
 
