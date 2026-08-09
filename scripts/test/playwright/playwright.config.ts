@@ -54,7 +54,7 @@ export default defineConfig({
       testMatch: /relax-golden-path\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
       timeout: 300000, // 5-min cap — manual burn-in; mirror sync-golden budget
-      retries: 1, // switch to retries:0 once wired to pre-push
+      retries: 0, // no retries — fix flakiness, don't retry past it
     },
     {
       name: 'practice-golden',
