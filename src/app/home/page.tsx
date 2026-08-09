@@ -12,6 +12,7 @@ import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
 import { PracticeResumeModal } from '@/components/practice/PracticeResumeModal'
 import { loadPracticeSettings, savePracticeSettings } from '@/components/practice/practiceSettings'
+import { createAsyncCompeteSession } from '@/core/competeCreate'
 import styles from './home.module.css'
 import authModalStyles from '@/components/AuthModal.module.css'
 import { NavModal } from '@/components/NavModal'
@@ -473,20 +474,8 @@ function ModeCard({
     setCompeteLoading(true)
     setCompeteError(null)
     try {
-      const res = await fetch('/api/compete/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playerId,
-          displayName,
-          mode: 'async',
-          yearMin: -400,
-          yearMax: 2025,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t('game.failed_create_session'))
-      onLobby(data.gameId)
+      const gameId = await createAsyncCompeteSession(playerId, displayName)
+      onLobby(gameId)
     } catch (e) {
       setCompeteError(e instanceof Error ? e.message : t('game.error_creating_game'))
     } finally {

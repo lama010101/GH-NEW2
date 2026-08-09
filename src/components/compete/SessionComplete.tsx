@@ -11,6 +11,7 @@ import RankCard from "@/components/RankCard";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
+import { createAsyncCompeteSession } from "@/core/competeCreate";
 import { calculateBadges } from "@/core/rules";
 import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import { NavModal } from "@/components/NavModal";
@@ -163,6 +164,7 @@ export default function SessionComplete({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isHost = snapshot.players?.find((p: any) => p.playerId === playerId)?.isHost ?? false;
+  const deadlinePassed = snapshot.config.mode === "async" && snapshot.config.sessionDeadline !== null && new Date(snapshot.config.sessionDeadline).getTime() < Date.now();
 
   const handlePlayAgain = async () => {
     if (!playerId) return;
@@ -197,6 +199,24 @@ export default function SessionComplete({
       sendMessage({ type: "PLAY_AGAIN", playerId, newGameId: data.gameId });
     } catch (error) {
       console.error("Failed to create lobby:", error);
+      setLobbyError(t('failed_lobby_retry'));
+      setIsCreatingLobby(false);
+    }
+  };
+
+  const handleGuestCreateGame = async () => {
+    const currentDisplayName = playerLabel(snapshot.players, playerId ?? "");
+    if (!playerId || !currentDisplayName) {
+      router.push("/home");
+      return;
+    }
+    setIsCreatingLobby(true);
+    setLobbyError(null);
+    try {
+      const gameId = await createAsyncCompeteSession(playerId, currentDisplayName);
+      router.push('/compete/' + gameId);
+    } catch (error) {
+      console.error("Failed to create game:", error);
       setLobbyError(t('failed_lobby_retry'));
       setIsCreatingLobby(false);
     }
@@ -1027,6 +1047,16 @@ export default function SessionComplete({
                     data-testid="session-play-again-btn"
                   >
                     {isCreatingLobby ? tGame('creating_lobby') : tGame('play_again')}
+                  </button>
+                ) : deadlinePassed ? (
+                  <button
+                    type="button"
+                    className={styles.playBtn}
+                    onClick={handleGuestCreateGame}
+                    disabled={isCreatingLobby}
+                    data-testid="session-guest-create-game-btn"
+                  >
+                    {isCreatingLobby ? tGame('creating_lobby') : tGame('create_game')}
                   </button>
                 ) : (
                   <GuestPlayAgainButton styles={styles} />
