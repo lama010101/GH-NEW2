@@ -692,7 +692,7 @@ export default function LobbySection({
           <div className={styles['lobby-header-meta']}>
             <span className={styles['lobby-status-chip']}>
               <span className={styles['lobby-status-dot']} />
-              {'lobby '}
+              {t('lobby.label')}{' '}
               <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--gh-text-primary)', letterSpacing: '1px' }}>{roomCode}</span>
             </span>
           </div>
@@ -739,7 +739,7 @@ export default function LobbySection({
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> Round</span>
+              <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> {t('common.round')}</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
@@ -878,7 +878,7 @@ export default function LobbySection({
                 className={styles['lobby-presets-header']}
                 onClick={() => setPresetsExpanded(v => !v)}
               >
-                <span className={styles['lobby-setting-label']}>Era & Region Presets</span>
+                <span className={styles['lobby-setting-label']}>{t('lobby.era_region_presets')}</span>
                 <ChevronDown size={16} className={`${styles['lobby-presets-chevron']} ${presetsExpanded ? styles['lobby-presets-chevron-open'] : ''}`} />
               </button>
               {presetsExpanded && (
@@ -960,7 +960,7 @@ export default function LobbySection({
             </>)}
             {settingsTab === 'turnturn' && (<>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-              <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> Round</span>
+              <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> {t('common.round')}</span>
               {isHost ? (
                 <span className={styles['lobbyRowLeftWrap']}>
                   <button
@@ -1027,7 +1027,7 @@ export default function LobbySection({
               )}
             </div>
               <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
-                <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> Game</span>
+                <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> {t('common.game')}</span>
                 {isHost ? (
                 <span className={styles['lobbyRowLeft']}>
                   <span className={styles['lobby-timer-slider-wrap']}>
@@ -1064,7 +1064,7 @@ export default function LobbySection({
                 className={styles['lobby-presets-header']}
                 onClick={() => setPresetsExpanded(v => !v)}
               >
-                <span className={styles['lobby-setting-label']}>Era & Region Presets</span>
+                <span className={styles['lobby-setting-label']}>{t('lobby.era_region_presets')}</span>
                 <ChevronDown size={16} className={`${styles['lobby-presets-chevron']} ${presetsExpanded ? styles['lobby-presets-chevron-open'] : ''}`} />
               </button>
               {presetsExpanded && (

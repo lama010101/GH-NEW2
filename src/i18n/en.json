@@ -161,7 +161,7 @@
     "compete_invited_you": "Invited you to a game",
     "compete_invite_meta": "{mode} · sent {time}",
     "compete_invite_sent": "sent {time}",
-    "compete_round_label": "Round {current} / {total}",
+    "compete_round_label": "Round {current}",
     "compete_play": "PLAY",
     "compete_mode_rush": "Live",
     "compete_mode_relax": "Anytime",
@@ -184,7 +184,8 @@
     "practice_desc": "Play solo.\nUnlimited",
     "play_mode_aria": "Play {mode}",
     "compete_play_aria": "Play",
-    "compete_delete_aria": "Delete"
+    "compete_delete_aria": "Delete",
+    "coming_up_soon": "Coming Up Soon"
   },
   "common": {
     "next_round": "Next Round",
@@ -199,7 +200,7 @@
     "your_guess": "Your guess",
     "years_off": "{n} years off",
     "km_away": "{distance} away",
-    "round_label": "Round {current} / {total}",
+    "round_label": "Round {current}",
     "loading": "Loading...",
     "no_description": "No description available",
     "timer_min_short": "{n}m {s}s",
@@ -208,7 +209,10 @@
     "born_prefix": "Born:",
     "died_prefix": "Died:",
     "no_data_yet": "No data yet",
-    "back_to_home": "Back to Home"
+    "back_to_home": "Back to Home",
+    "round": "Round",
+    "game": "Game",
+    "loading_ellipsis": "Loading…"
   },
   "lobby": {
     "waiting": "Waiting for players ({ready}/{total} ready)",
@@ -279,7 +283,9 @@
     "filter_favorites": "Favorites",
     "no_favorites_yet": "No favorites yet — click the star on a player's avatar to add them here.",
     "help_game_settings": "Choose how this Compete session plays out.\n\nANYTIME (Own Pace) — Asynchronous. Each player plays all 5 rounds independently, at their own speed — no waiting on anyone else. The session stays open for the deadline you set below (1–14 days). You can optionally turn on a per-round timer; if a player runs out of time on a round, only that round auto-submits for them — nobody else is affected.\n\nLIVE (Live Challenge) — Synchronous. Everyone plays the same round at the same time. Each round has an optional countdown timer (15 seconds to 5 minutes). After everyone submits, results are shown to all players together, with an auto-advance timer to the next round.\n\nRound Timer — Optional. How long each player has to submit a guess for a round.\nResults Timer — The maximum time available to view the round results before automatically advancing to the next round.\nGame Timer (Anytime only) — The overall deadline for the whole session, from 1 to 14 days after you start the game.",
-    "help_invite_players": "Add 2 to 8 players to this game.\n\nSearch for players by name, or use Share Link to send a join link to anyone — they don't need to already be a friend to join.\n\nAs host, you can click the star on a player's avatar to mark them as a favorite, making them easier to find next time.\n\nPlayers you invite will appear in the lobby once they accept. As host, you can remove a player from the lobby at any time before the game starts."
+    "help_invite_players": "Add 2 to 8 players to this game.\n\nSearch for players by name, or use Share Link to send a join link to anyone — they don't need to already be a friend to join.\n\nAs host, you can click the star on a player's avatar to mark them as a favorite, making them easier to find next time.\n\nPlayers you invite will appear in the lobby once they accept. As host, you can remove a player from the lobby at any time before the game starts.",
+    "era_region_presets": "Era & Region Presets",
+    "label": "lobby"
   },
   "compete_page": {
     "title": "Multiplayer Sync Game",
@@ -345,10 +351,10 @@
     "hist_context": "Historical Context",
     "next_arrow": "Next →",
     "open_profile_menu": "Open profile menu",
-    "round_label": "Round {current} / {total}",
+    "round_label": "Round {current}",
     "round_label_compact": "Round {current}/{total}",
     "source_link": "Source ↗",
-    "rate": "Rate",
+    "rate": "Rate Image Realism",
     "rate_saved": "Saved",
     "this_round": "This Round",
     "total_penalty": "Total penalty",
@@ -422,9 +428,10 @@
     "best_player": "Best Player",
     "mvp_awards": "Top Performers",
     "mvp_overall": "Most Accurate",
-    "mvp_year": "Best Year Guesser",
-    "mvp_location": "Best Location Guesser",
-    "mvp_consistency": "Most Consistent",
+    "mvp_year": "Year",
+    "mvp_location": "Location",
+    "mvp_consistency": "Consistency",
+    "mvp_best_round": "Best Round",
     "mvp_you": "You",
     "mvp_and": " & ",
     "creating_lobby": "Creating lobby...",
@@ -435,7 +442,6 @@
     "no_guess": "No guess",
     "not_started": "Not started",
     "invited": "Invited",
-    "on_round": "On round {current} / {total}",
     "no_time_clues": "No time clues available for this event.",
     "no_location_clues": "No location clues available for this event.",
     "near_miss": "Near miss",
@@ -630,7 +636,9 @@
     "rated": "Rated",
     "regions": "Regions",
     "countries": "Countries",
-    "practice": "Practice"
+    "practice": "Practice",
+    "daily_all_time": "Daily (all-time)",
+    "level": "Level"
   },
   "account": {
     "title": "Account",
@@ -720,73 +728,221 @@
     },
     "mission": {
       "title": "Mission",
-      "topic_1": { "title": "Why history matters", "summary": "TBD", "detail": "TBD" },
-      "topic_2": { "title": "Why current education fails", "summary": "TBD", "detail": "TBD" },
-      "topic_3": { "title": "Why games can teach", "summary": "TBD", "detail": "TBD" }
+      "topic_1": {
+        "title": "Why history matters",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "topic_2": {
+        "title": "Why current education fails",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "topic_3": {
+        "title": "Why games can teach",
+        "summary": "TBD",
+        "detail": "TBD"
+      }
     },
     "problem": {
       "title": "The Problem",
-      "axis_1": { "left_label": "Passive", "right_label": "Discovery", "detail": "TBD" },
-      "axis_2": { "left_label": "Memorization", "right_label": "Curiosity", "detail": "TBD" },
-      "axis_3": { "left_label": "Exams", "right_label": "Exploration", "detail": "TBD" },
-      "axis_4": { "left_label": "—", "right_label": "Progression", "detail": "TBD" }
+      "axis_1": {
+        "left_label": "Passive",
+        "right_label": "Discovery",
+        "detail": "TBD"
+      },
+      "axis_2": {
+        "left_label": "Memorization",
+        "right_label": "Curiosity",
+        "detail": "TBD"
+      },
+      "axis_3": {
+        "left_label": "Exams",
+        "right_label": "Exploration",
+        "detail": "TBD"
+      },
+      "axis_4": {
+        "left_label": "—",
+        "right_label": "Progression",
+        "detail": "TBD"
+      }
     },
     "vision": {
       "title": "Vision",
-      "node_1": { "label": "Today", "detail": "TBD" },
-      "node_2": { "label": "Daily history game", "detail": "TBD" },
-      "node_3": { "label": "Millions of players", "detail": "TBD" },
-      "node_4": { "label": "Educational platform", "detail": "TBD" },
-      "node_5": { "label": "Multiple guessing games", "detail": "TBD" },
-      "node_6": { "label": "Immersive historical experiences", "detail": "TBD" },
-      "node_7": { "label": "VR History", "detail": "TBD" },
+      "node_1": {
+        "label": "Today",
+        "detail": "TBD"
+      },
+      "node_2": {
+        "label": "Daily history game",
+        "detail": "TBD"
+      },
+      "node_3": {
+        "label": "Millions of players",
+        "detail": "TBD"
+      },
+      "node_4": {
+        "label": "Educational platform",
+        "detail": "TBD"
+      },
+      "node_5": {
+        "label": "Multiple guessing games",
+        "detail": "TBD"
+      },
+      "node_6": {
+        "label": "Immersive historical experiences",
+        "detail": "TBD"
+      },
+      "node_7": {
+        "label": "VR History",
+        "detail": "TBD"
+      },
       "vr_disclaimer": "Long-term vision. Not funded. No schedule."
     },
     "product": {
       "title": "The Product",
       "demo_label": "Try it",
-      "feature_1": { "title": "Embedded playable demo", "desc": "TBD" },
-      "feature_2": { "title": "Screenshots", "desc": "TBD" },
-      "feature_3": { "title": "Game modes", "desc": "TBD" },
-      "feature_4": { "title": "Progression", "desc": "TBD" },
-      "feature_5": { "title": "Learning", "desc": "TBD" },
-      "feature_6": { "title": "Leaderboards", "desc": "TBD" },
-      "feature_7": { "title": "Machine vs Human", "desc": "TBD" },
+      "feature_1": {
+        "title": "Embedded playable demo",
+        "desc": "TBD"
+      },
+      "feature_2": {
+        "title": "Screenshots",
+        "desc": "TBD"
+      },
+      "feature_3": {
+        "title": "Game modes",
+        "desc": "TBD"
+      },
+      "feature_4": {
+        "title": "Progression",
+        "desc": "TBD"
+      },
+      "feature_5": {
+        "title": "Learning",
+        "desc": "TBD"
+      },
+      "feature_6": {
+        "title": "Leaderboards",
+        "desc": "TBD"
+      },
+      "feature_7": {
+        "title": "Machine vs Human",
+        "desc": "TBD"
+      },
       "roadmap_badge": "Roadmap"
     },
     "why_it_works": {
       "title": "Why It Works",
-      "card_1": { "title": "Daily habit", "summary": "TBD", "detail": "TBD" },
-      "card_2": { "title": "XP progression", "summary": "TBD", "detail": "TBD" },
-      "card_3": { "title": "Level Up", "summary": "TBD", "detail": "TBD" },
-      "card_4": { "title": "Competition", "summary": "TBD", "detail": "TBD" },
-      "card_5": { "title": "Learning loop", "summary": "TBD", "detail": "TBD" },
-      "card_6": { "title": "Replayability", "summary": "TBD", "detail": "TBD" },
-      "card_7": { "title": "Reveal explanations", "summary": "TBD", "detail": "TBD" },
-      "card_8": { "title": "Historical context", "summary": "TBD", "detail": "TBD" }
+      "card_1": {
+        "title": "Daily habit",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_2": {
+        "title": "XP progression",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_3": {
+        "title": "Level Up",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_4": {
+        "title": "Competition",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_5": {
+        "title": "Learning loop",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_6": {
+        "title": "Replayability",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_7": {
+        "title": "Reveal explanations",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "card_8": {
+        "title": "Historical context",
+        "summary": "TBD",
+        "detail": "TBD"
+      }
     },
     "market": {
       "title": "Market Opportunity",
       "intro": "TBD",
-      "sector_1": { "name": "Gaming", "description": "TBD" },
-      "sector_2": { "name": "Education", "description": "TBD" },
-      "sector_3": { "name": "AI", "description": "TBD" },
-      "sector_4": { "name": "Culture", "description": "TBD" },
-      "sector_5": { "name": "Museums", "description": "TBD" },
-      "sector_6": { "name": "Corporate Learning", "description": "TBD" },
+      "sector_1": {
+        "name": "Gaming",
+        "description": "TBD"
+      },
+      "sector_2": {
+        "name": "Education",
+        "description": "TBD"
+      },
+      "sector_3": {
+        "name": "AI",
+        "description": "TBD"
+      },
+      "sector_4": {
+        "name": "Culture",
+        "description": "TBD"
+      },
+      "sector_5": {
+        "name": "Museums",
+        "description": "TBD"
+      },
+      "sector_6": {
+        "name": "Corporate Learning",
+        "description": "TBD"
+      },
       "center_label": "Guess-History"
     },
     "business_model": {
       "title": "Business Model",
       "current_title": "Current",
       "future_title": "Future",
-      "stream_1": { "title": "Free Daily", "summary": "TBD", "detail": "TBD" },
-      "stream_2": { "title": "Premium", "summary": "TBD", "detail": "TBD" },
-      "stream_3": { "title": "Ads (non-intrusive)", "summary": "TBD", "detail": "TBD" },
-      "stream_4": { "title": "Education", "summary": "TBD", "detail": "TBD" },
-      "stream_5": { "title": "AI partnerships", "summary": "TBD", "detail": "TBD" },
-      "stream_6": { "title": "Corporate learning", "summary": "TBD", "detail": "TBD" },
-      "stream_7": { "title": "White-label editions", "summary": "TBD", "detail": "TBD" },
+      "stream_1": {
+        "title": "Free Daily",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_2": {
+        "title": "Premium",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_3": {
+        "title": "Ads (non-intrusive)",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_4": {
+        "title": "Education",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_5": {
+        "title": "AI partnerships",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_6": {
+        "title": "Corporate learning",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
+      "stream_7": {
+        "title": "White-label editions",
+        "summary": "TBD",
+        "detail": "TBD"
+      },
       "badge_future": "Future"
     },
     "governance": {
@@ -807,13 +963,34 @@
     },
     "financial": {
       "title": "Financial Model",
-      "flow_1": { "label": "Revenue", "detail": "TBD" },
-      "flow_2": { "label": "Operating costs", "detail": "TBD" },
-      "flow_3": { "label": "Fair compensation", "detail": "TBD" },
-      "flow_4": { "label": "Investor returns (capped)", "detail": "TBD" },
-      "flow_5": { "label": "Strategic reserve", "detail": "TBD" },
-      "flow_6": { "label": "Reinvestment", "detail": "TBD" },
-      "flow_7": { "label": "Future projects", "detail": "TBD" },
+      "flow_1": {
+        "label": "Revenue",
+        "detail": "TBD"
+      },
+      "flow_2": {
+        "label": "Operating costs",
+        "detail": "TBD"
+      },
+      "flow_3": {
+        "label": "Fair compensation",
+        "detail": "TBD"
+      },
+      "flow_4": {
+        "label": "Investor returns (capped)",
+        "detail": "TBD"
+      },
+      "flow_5": {
+        "label": "Strategic reserve",
+        "detail": "TBD"
+      },
+      "flow_6": {
+        "label": "Reinvestment",
+        "detail": "TBD"
+      },
+      "flow_7": {
+        "label": "Future projects",
+        "detail": "TBD"
+      },
       "future_projects_title": "Future projects",
       "future_project_1": "Guess-History",
       "future_project_2": "VR History",
@@ -836,21 +1013,66 @@
       "title": "Partnerships",
       "current_title": "Current",
       "future_title": "Future",
-      "opportunity_1": { "name": "Education", "description": "TBD" },
-      "opportunity_2": { "name": "AI research", "description": "TBD" },
-      "opportunity_3": { "name": "Museums", "description": "TBD" },
-      "opportunity_4": { "name": "Archives", "description": "TBD" },
-      "opportunity_5": { "name": "Corporate learning", "description": "TBD" },
-      "opportunity_6": { "name": "Tourism", "description": "TBD" },
-      "opportunity_7": { "name": "Publishers", "description": "TBD" },
+      "opportunity_1": {
+        "name": "Education",
+        "description": "TBD"
+      },
+      "opportunity_2": {
+        "name": "AI research",
+        "description": "TBD"
+      },
+      "opportunity_3": {
+        "name": "Museums",
+        "description": "TBD"
+      },
+      "opportunity_4": {
+        "name": "Archives",
+        "description": "TBD"
+      },
+      "opportunity_5": {
+        "name": "Corporate learning",
+        "description": "TBD"
+      },
+      "opportunity_6": {
+        "name": "Tourism",
+        "description": "TBD"
+      },
+      "opportunity_7": {
+        "name": "Publishers",
+        "description": "TBD"
+      },
       "badge_future": "Future"
     },
     "contributors": {
       "title": "Contributors",
-      "role_1": { "name": "Developer", "why": "TBD", "what": "TBD", "receive": "TBD", "cta": "Apply as a Developer" },
-      "role_2": { "name": "Historian", "why": "TBD", "what": "TBD", "receive": "TBD", "cta": "Apply as a Historian" },
-      "role_3": { "name": "Creator", "why": "TBD", "what": "TBD", "receive": "TBD", "cta": "Apply as a Creator" },
-      "role_4": { "name": "Investor", "why": "TBD", "what": "TBD", "receive": "TBD", "cta": "Apply as an Investor" },
+      "role_1": {
+        "name": "Developer",
+        "why": "TBD",
+        "what": "TBD",
+        "receive": "TBD",
+        "cta": "Apply as a Developer"
+      },
+      "role_2": {
+        "name": "Historian",
+        "why": "TBD",
+        "what": "TBD",
+        "receive": "TBD",
+        "cta": "Apply as a Historian"
+      },
+      "role_3": {
+        "name": "Creator",
+        "why": "TBD",
+        "what": "TBD",
+        "receive": "TBD",
+        "cta": "Apply as a Creator"
+      },
+      "role_4": {
+        "name": "Investor",
+        "why": "TBD",
+        "what": "TBD",
+        "receive": "TBD",
+        "cta": "Apply as an Investor"
+      },
       "incentive_1": "Public recognition",
       "incentive_2": "Portfolio",
       "incentive_3": "Founding status",
@@ -867,19 +1089,53 @@
       "lane_2": "In progress",
       "lane_3": "Next",
       "lane_4": "Future",
-      "item_1": { "title": "TBD", "date": "TBD", "description": "TBD" },
-      "item_2": { "title": "TBD", "date": "TBD", "description": "TBD" },
-      "item_3": { "title": "TBD", "date": "TBD", "description": "TBD" },
-      "item_4": { "title": "TBD", "date": "TBD", "description": "TBD" }
+      "item_1": {
+        "title": "TBD",
+        "date": "TBD",
+        "description": "TBD"
+      },
+      "item_2": {
+        "title": "TBD",
+        "date": "TBD",
+        "description": "TBD"
+      },
+      "item_3": {
+        "title": "TBD",
+        "date": "TBD",
+        "description": "TBD"
+      },
+      "item_4": {
+        "title": "TBD",
+        "date": "TBD",
+        "description": "TBD"
+      }
     },
     "risks": {
       "title": "Risks",
-      "risk_1": { "title": "Competition", "mitigation": "TBD" },
-      "risk_2": { "title": "AI limitations", "mitigation": "TBD" },
-      "risk_3": { "title": "Funding", "mitigation": "TBD" },
-      "risk_4": { "title": "Small team", "mitigation": "TBD" },
-      "risk_5": { "title": "Execution risk", "mitigation": "TBD" },
-      "risk_6": { "title": "Long development cycle", "mitigation": "TBD" }
+      "risk_1": {
+        "title": "Competition",
+        "mitigation": "TBD"
+      },
+      "risk_2": {
+        "title": "AI limitations",
+        "mitigation": "TBD"
+      },
+      "risk_3": {
+        "title": "Funding",
+        "mitigation": "TBD"
+      },
+      "risk_4": {
+        "title": "Small team",
+        "mitigation": "TBD"
+      },
+      "risk_5": {
+        "title": "Execution risk",
+        "mitigation": "TBD"
+      },
+      "risk_6": {
+        "title": "Long development cycle",
+        "mitigation": "TBD"
+      }
     },
     "faq": {
       "title": "Frequently Asked Questions",
@@ -900,10 +1156,18 @@
     },
     "cta": {
       "headline": "Join us in building the future of historical discovery.",
-      "button_1": { "label": "Play" },
-      "button_2": { "label": "Contribute" },
-      "button_3": { "label": "Partner" },
-      "button_4": { "label": "Register Interest" }
+      "button_1": {
+        "label": "Play"
+      },
+      "button_2": {
+        "label": "Contribute"
+      },
+      "button_3": {
+        "label": "Partner"
+      },
+      "button_4": {
+        "label": "Register Interest"
+      }
     },
     "footer": {
       "sources": "Sources",
@@ -911,5 +1175,91 @@
       "legal": "Legal disclaimer",
       "privacy": "Privacy"
     }
+  },
+  "practice": {
+    "title": "Practice game in progress",
+    "resume_prompt": "You have an unfinished Practice game. What would you like to do?",
+    "resume_game": "Resume game in progress",
+    "create_new_game": "Create new game"
+  },
+  "legal": {
+    "privacy.meta_title": "Privacy Policy — Guess-History",
+    "privacy.meta_description": "Privacy Policy for Guess-History",
+    "privacy.title": "Privacy Policy",
+    "privacy.last_updated": "Last updated: August 4, 2026",
+    "privacy.intro": "Guess-History (\"we,\" \"us,\" \"our\") operates the website www.guess-history.com (the \"Service\"), a multiplayer historical geography and year-guessing game. This Privacy Policy explains what information we collect, how we use it, and your rights regarding that information.",
+    "privacy.section1_title": "1. Information We Collect",
+    "privacy.account_info_label": "Account information:",
+    "privacy.account_info_text": "When you sign in via Google or email/password, we receive your email address, display name, and profile picture (if provided by Google). Authentication is handled by Supabase.",
+    "privacy.gameplay_data_label": "Gameplay data:",
+    "privacy.gameplay_data_text": "We store your game sessions, guesses (year and location), scores, accuracy statistics, badges, and leaderboard rankings to operate the Service and show you your history and progress.",
+    "privacy.usage_data_label": "Usage data:",
+    "privacy.usage_data_text": "We may automatically collect standard technical data such as IP address, browser type, device type, and pages visited, for security, debugging, and service reliability purposes.",
+    "privacy.images_label": "Images:",
+    "privacy.images_text": "Historical event images used in gameplay are served from our own image infrastructure (Firebase Storage). We do not use your personal photos.",
+    "privacy.section2_title": "2. How We Use Information",
+    "privacy.use_intro": "We use collected information to:",
+    "privacy.use_provide": "Provide, operate, and maintain the Service (game sessions, multiplayer matchmaking, leaderboards)",
+    "privacy.use_authenticate": "Authenticate your account and keep it secure",
+    "privacy.use_track": "Track your scores, stats, badges, and progress across game modes",
+    "privacy.use_improve": "Diagnose bugs and improve performance and reliability",
+    "privacy.use_communicate": "Communicate with you about your account or the Service, if necessary",
+    "privacy.no_sell": "We do not sell your personal information. We do not use your data for third-party advertising.",
+    "privacy.section3_title": "3. Third-Party Services",
+    "privacy.providers_intro": "We use the following third-party service providers to operate Guess-History:",
+    "privacy.supabase_name": "Supabase",
+    "privacy.supabase_desc": "— authentication and database hosting",
+    "privacy.google_name": "Google OAuth",
+    "privacy.google_desc": "— optional sign-in method",
+    "privacy.firebase_name": "Firebase Storage",
+    "privacy.firebase_desc": "— hosting of game content images",
+    "privacy.vercel_name": "Vercel",
+    "privacy.vercel_desc": "— application hosting",
+    "privacy.cloudflare_name": "Cloudflare (via PartyKit)",
+    "privacy.cloudflare_desc": "— real-time multiplayer session infrastructure",
+    "privacy.providers_outro": "Each provider processes data only as necessary to provide their respective service to us and is bound by their own privacy and security practices.",
+    "privacy.section4_title": "4. Cookies and Local Storage",
+    "privacy.cookies_text": "We use cookies and browser local storage to maintain your login session and game state (e.g., resuming an in-progress round after a page refresh). These are functional, not advertising, cookies.",
+    "privacy.section5_title": "5. Data Retention",
+    "privacy.retention_text": "We retain account and gameplay data for as long as your account is active. You may request deletion of your account and associated data at any time by contacting us (see Section 8).",
+    "privacy.section6_title": "6. Data Security",
+    "privacy.security_text": "We take reasonable technical and organizational measures to protect your information, including encrypted connections (HTTPS) and access-controlled databases. No method of transmission or storage is 100% secure, and we cannot guarantee absolute security.",
+    "privacy.section7_title": "7. Children's Privacy",
+    "privacy.children_text": "The Service is not directed at children under 13, and we do not knowingly collect personal information from children under 13.",
+    "privacy.section8_title": "8. Contact Us",
+    "privacy.contact_text": "For privacy questions, data deletion requests, or other concerns, contact us at: appymanya@gmail.com",
+    "privacy.section9_title": "9. Changes to This Policy",
+    "privacy.changes_text": "We may update this Privacy Policy from time to time. Material changes will be reflected by an updated \"Last updated\" date on this page.",
+    "terms.meta_title": "Terms of Service — Guess-History",
+    "terms.meta_description": "Terms of Service for Guess-History",
+    "terms.title": "Terms of Service",
+    "terms.last_updated": "Last updated: August 4, 2026",
+    "terms.intro": "Welcome to Guess-History (\"Service\"), operated at www.guess-history.com. By accessing or using the Service, you agree to be bound by these Terms of Service (\"Terms\"). If you do not agree, do not use the Service.",
+    "terms.section1_title": "1. Description of Service",
+    "terms.section1_text": "Guess-History is a multiplayer and single-player game where players guess the year and location of historical events depicted in images, compete on leaderboards, and play against friends or the community.",
+    "terms.section2_title": "2. Accounts",
+    "terms.section2_text": "You must create an account (via Google or email/password) to access most features. You are responsible for maintaining the confidentiality of your account and for all activity under it. You must provide accurate information and are responsible for keeping it up to date.",
+    "terms.section3_title": "3. Acceptable Use",
+    "terms.acceptable_use_intro": "You agree not to:",
+    "terms.use_unlawful": "Use the Service for any unlawful purpose",
+    "terms.use_exploit": "Attempt to disrupt, exploit, or reverse-engineer game mechanics, scoring, or multiplayer infrastructure",
+    "terms.use_bots": "Use bots, scripts, or automated means to play on your behalf outside of any officially sanctioned AI-player features",
+    "terms.use_harass": "Harass, abuse, or impersonate other users",
+    "terms.use_unauthorized": "Attempt to gain unauthorized access to accounts, data, or systems",
+    "terms.section3_outro": "We reserve the right to suspend or terminate accounts that violate these Terms.",
+    "terms.section4_title": "4. User Content",
+    "terms.section4_text": "Any display names, avatars, or other content you submit must not be offensive, infringing, or unlawful. We reserve the right to remove or moderate such content at our discretion.",
+    "terms.section5_title": "5. Intellectual Property",
+    "terms.section5_text": "The Service, including its game design, software, and branding, is owned by Guess-History and its creators. Historical event images used in gameplay are used for educational/informational purposes; rights to underlying source images remain with their respective owners where applicable.",
+    "terms.section6_title": "6. Disclaimer of Warranties",
+    "terms.section6_text": "The Service is provided \"as is\" and \"as available\" without warranties of any kind, express or implied. We do not guarantee the Service will be uninterrupted, error-free, or secure at all times.",
+    "terms.section7_title": "7. Limitation of Liability",
+    "terms.section7_text": "To the maximum extent permitted by law, Guess-History and its operators shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Service.",
+    "terms.section8_title": "8. Changes to the Service",
+    "terms.section8_text": "We may modify, suspend, or discontinue any part of the Service at any time, including game modes, features, or scoring systems, without prior notice.",
+    "terms.section9_title": "9. Changes to These Terms",
+    "terms.section9_text": "We may update these Terms from time to time. Continued use of the Service after changes take effect constitutes acceptance of the revised Terms.",
+    "terms.section10_title": "10. Contact Us",
+    "terms.contact_text": "For questions about these Terms, contact us at: appymanya@gmail.com"
   }
 }

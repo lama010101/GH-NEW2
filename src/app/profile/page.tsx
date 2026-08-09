@@ -524,13 +524,13 @@ export default function ProfilePage() {
           <div className="flex flex-col gap-3">
             {/* Daily */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-[var(--gh-text-secondary)]">Daily (all-time)</span>
+              <span className="text-xs text-[var(--gh-text-secondary)]">{t('daily_all_time')}</span>
               <span className={`font-bebas text-sm font-bold text-blue-400`}>
                 {profileData.dailyAvgAccuracy === null ? '—' : (
                   <>
                     {Math.round(Number(profileData.dailyAvgAccuracy))}
                     <AccuracySuffix />
-                    {' · '}{profileData.dailyGamesPlayed ?? 0} games
+                    {' · '}{profileData.dailyGamesPlayed ?? 0} {t('games')}
                   </>
                 )}
               </span>
@@ -541,8 +541,8 @@ export default function ProfilePage() {
               <span className={`font-bebas text-sm font-bold ${styles.leaderboardViolet}`}>
                 {profileData.levelUpCurrentLevel === null ? '—' : (
                   <>
-                    Level {profileData.levelUpCurrentLevel} · {profileData.levelUpBestAccuracy ?? 0}
-                    <AccuracySuffix /> best
+                    {t('level')} {profileData.levelUpCurrentLevel} · {profileData.levelUpBestAccuracy ?? 0}
+                    <AccuracySuffix /> {t('best')}
                   </>
                 )}
               </span>

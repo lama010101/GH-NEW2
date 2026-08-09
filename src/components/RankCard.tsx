@@ -7,6 +7,8 @@ import styles from './RankCard.module.css';
 interface RankCardProps {
   totalXp: number | null;
   open: boolean;
+  /** XP earned in the current session/game; shown under the rank title when provided. */
+  sessionXp?: number;
   /** When true, renders in content flow (position: static) instead of fixed below TopBar. */
   inline?: boolean;
   /** When true, renders only the inner content (rankMain) with no wrapper/card/collapse.
@@ -33,7 +35,7 @@ const RANK_IMAGE: Record<number, string> = {
 // Collapsible rank card with medallion image, title, XP, next-rank line, progress bar.
 // Derives everything from totalXp via rankForXp (single source of truth).
 // open controls expand/collapse of the full module body.
-export default function RankCard({ totalXp, open, inline = false, bare = false, variant = 'default' }: RankCardProps) {
+export default function RankCard({ totalXp, open, sessionXp, inline = false, bare = false, variant = 'default' }: RankCardProps) {
   const t = useTranslations('rank');
 
   const xp = (totalXp === null || totalXp === undefined || Number.isNaN(totalXp))
@@ -53,7 +55,12 @@ export default function RankCard({ totalXp, open, inline = false, bare = false, 
       </div>
       <div className={styles.rankBody}>
         <div className={styles.rankHead}>
-          <h3 className={styles.rankTitle}>{title}</h3>
+          <div className={styles.rankTitleWrap}>
+            <h3 className={styles.rankTitle}>{title}</h3>
+            {sessionXp != null && sessionXp > 0 && (
+              <span className={styles.rankSessionXp}>+{Math.floor(sessionXp).toLocaleString()}<i>XP</i></span>
+            )}
+          </div>
           <span className={styles.rankXp}>{Math.floor(xp).toLocaleString()}<i>XP</i></span>
         </div>
         <div className={styles.rankNextLine}>
