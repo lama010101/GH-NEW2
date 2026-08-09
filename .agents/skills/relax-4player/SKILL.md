@@ -43,12 +43,25 @@ The HTML report will be at `/home/ubuntu/repos/GH-NEW2/playwright-report/index.h
 
 1. **Do NOT send `START_PLAYER` concurrently.** `partykit/server.ts` uses a global `startInFlight` boolean; concurrent messages are dropped. Start players in a `for...of` loop.
 2. **Async Relax currently always creates 5 rounds.** `createCompeteSession` in `src/server/sessionCore.ts` forces `MAX_ROUNDS` for `mode === 'async'`. Tests must read `totalRounds` from the create response rather than relying on the requested value.
-3. **Final submission jumps directly to `SESSION_COMPLETE`.** `submitGuess` on the last round will not produce `ROUND_COMPLETE`; wait for `status === 'SESSION_COMPLETE'` instead.
+3. **Final submission lands on `ROUND_COMPLETE` for round 5.** `submitGuess` on the last round produces a normal `ROUND_COMPLETE` state for that round; the player must explicitly tap the "Next"/"Final Results" button (`readyNext`) to transition to `SESSION_COMPLETE`. Wait for `status === 'ROUND_COMPLETE' && currentRoundIndex === 4` before sending `readyNext(4)`, then wait for `status === 'SESSION_COMPLETE'`.
 4. **`RoundActiveSection` "Guessed" toasts only render on the final round.** On earlier rounds unsubmitted opponents are shown with the `waiting_for` text. If asserting on non-final rounds, expect `Waiting for` but not `Guessed`.
 5. **Leaderboard selectors must be scoped.** The `WhereCard` and `WhenCard` components embedded in `RoundCompleteSection` reuse `lbRow`/`lbRank`/`lbAccPill` class names. Use a selector scoped to the main leaderboard card, e.g. `[data-testid="round-complete-section"] [class*="leaderboardCard"] [class*="lbRow"]`.
 6. **Cumulative accuracy uses raw per-round values.** Do not pre-round each round's accuracy before averaging; the UI computes `cumulativeAccuracy` from the raw `(location_score + time_score) / 2` values and rounds only the final average.
 7. **Current-player labels differ by section.** `SessionComplete` final ranking and round breakdown append `(you)` to the display name. The MVP section uses `mvp_you` (`You`) as the whole name.
 8. **Round breakdown defaults to only round 0 expanded.** Use the `roundItemOpen` class to determine whether a `roundTop` click will collapse an already-open round before asserting `bestRow`.
+
+## Multi-context final-results gotchas
+
+9. **Disable Chromium background throttling for multi-context Relax specs.** Background tabs are heavily throttled by default, so the `session-complete-section` may not render on the host page if it is not in the foreground. Launch Chromium with:
+   ```
+   --disable-background-timer-throttling
+   --disable-backgrounding-occluded-windows
+   --disable-renderer-backgrounding
+   --disable-features=CalculateNativeWinOcclusion
+   ```
+   and call `await page.bringToFront()` before the final `/compete/{gameId}` navigation that asserts `SessionComplete`.
+
+10. **Set `SUPABASE_URL` for PartyKit when `NEXT_PUBLIC_SUPABASE_URL` is the only Supabase URL exported.** Some secret files export only `NEXT_PUBLIC_SUPABASE_URL`; PartyKit's `--var SUPABASE_URL` needs an explicit value. Add `export SUPABASE_URL=${SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}` to the environment before starting `partykit dev`.
 
 ## Ground truth
 

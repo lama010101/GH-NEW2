@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from 'next-intl';
 import { formatDistance, getDistanceUnitPreference, type DistanceUnit } from "@/lib/distance";
 import type { EventHint } from "@/core/types";
+import { TIER_PENALTY_RATE, TIER_PENALTY_XP } from "@/core/hintPenalties";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
 import styles from "./HintModal.module.css";
@@ -23,13 +24,13 @@ export type HintModalProps = {
   purchasedIds: string[];
 };
 
-// Tier penalty mapping (spec-authoritative)
+// Tier penalty mapping (constructed from the single source of truth in @/core/hintPenalties)
 const TIER_PENALTIES = {
-  1: { acc: 30, xp: 60 },
-  2: { acc: 20, xp: 40 },
-  3: { acc: 50, xp: 100 },
-  4: { acc: 40, xp: 80 },
-  5: { acc: 50, xp: 100 },
+  1: { acc: TIER_PENALTY_RATE[1], xp: TIER_PENALTY_XP[1] },
+  2: { acc: TIER_PENALTY_RATE[2], xp: TIER_PENALTY_XP[2] },
+  3: { acc: TIER_PENALTY_RATE[3], xp: TIER_PENALTY_XP[3] },
+  4: { acc: TIER_PENALTY_RATE[4], xp: TIER_PENALTY_XP[4] },
+  5: { acc: TIER_PENALTY_RATE[5], xp: TIER_PENALTY_XP[5] },
 } as const;
 
 // Icon SVG strings (from reference HTML)
@@ -268,7 +269,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
                     <rect x="1" y="1.5" width="8" height="7.5" rx="1.2" stroke="currentColor" strokeWidth="1.1" />
                     <path d="M3.5 1v1.5M6.5 1v1.5M1 4h8" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
                   </svg>
-                  <span className={styles.axisLbl}>When</span>
+                  <span className={styles.axisLbl}>{t('when_badges')}</span>
                 </div>
                 <div className={`${styles.axisVal} ${getPenaltyColor(penalties.whenAcc)}`}>
                   −{penalties.whenAcc}%
@@ -283,7 +284,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
                   <svg viewBox="0 0 10 10" fill="none">
                     <path d="M5 1C3.62 1 2.5 2.12 2.5 3.5c0 1.88 2.5 5.5 2.5 5.5s2.5-3.62 2.5-5.5C7.5 2.12 6.38 1 5 1zm0 3.33a.83.83 0 110-1.66.83.83 0 010 1.66z" fill="currentColor" />
                   </svg>
-                  <span className={styles.axisLbl}>Where</span>
+                  <span className={styles.axisLbl}>{t('where_badges')}</span>
                 </div>
                 <div className={`${styles.axisVal} ${getPenaltyColor(penalties.whereAcc)}`}>
                   −{penalties.whereAcc}%
@@ -302,7 +303,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
               onClick={() => setActiveTab("when")}
             >
               <WhenIcon className={styles.tabIcon} size={22} />
-              <span className={styles.tabLbl}>When</span>
+              <span className={styles.tabLbl}>{t('when_badges')}</span>
               {getPurchasedCount("when") > 0 && (
                 <div className={styles.tabBadge}>{getPurchasedCount("when")}</div>
               )}
@@ -312,7 +313,7 @@ export function HintModal({ hints, isOpen, onClose, purchasedIds }: HintModalPro
               onClick={() => setActiveTab("where")}
             >
               <WhereIcon className={styles.tabIcon} size={22} />
-              <span className={styles.tabLbl}>Where</span>
+              <span className={styles.tabLbl}>{t('where_badges')}</span>
               {getPurchasedCount("where") > 0 && (
                 <div className={styles.tabBadge}>{getPurchasedCount("where")}</div>
               )}
