@@ -31,6 +31,7 @@ import {
 } from "@/core/types";
 import { MAX_ROUNDS, TIMER_MAX_SEC, TIMER_MIN_SEC } from "@/core/types";
 import { calculateBadges, evaluateNearMisses, evaluateRound } from "@/core/rules";
+import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
 import {
   dbPool,
   generateVerificationToken,
@@ -86,11 +87,6 @@ export const PRACTICE_PLAYER_ID = "00000000-0000-0000-0000-000000000000";
 export const PRACTICE_PLAYER_NAME = "Practice Player";
 
 export const PRESSURE_CLAMP_SECONDS = 30;
-
-// Hint tier penalty RATES (0-100 integer = 0%-100% of raw accuracy).
-// Applied proportionally in evaluateRound (not flat point subtraction).
-// WHEN (year) rates are age-discounted by eraScale inside evaluateRound.
-const TIER_PENALTY_RATE: Record<number, number> = { 1: 30, 2: 20, 3: 50, 4: 40, 5: 50 };
 
 export type DbExecutor = Pick<Pool, "query">;
 export type DbTransactionClient = DbExecutor & { release(): void };
@@ -770,7 +766,6 @@ function buildAsyncPlayerSnapshotFromBase(
 
   const activePlayerRows = playerRows.filter(p => p.left_at === null && p.kicked !== true);
   const allPlayersReady = false;
-  const finalRoundIndex = session.total_rounds - 1;
 
   const players: SessionPlayer[] = playerRows.map(row => {
     const events = allPlayerEvents.get(row.player_id) ?? [];
@@ -781,7 +776,7 @@ function buildAsyncPlayerSnapshotFromBase(
     if (state.reachedRounds.size === 0) {
       return { ...player, roundStatus: row.ready ? 'ready' : 'joined', currentRoundIndex: null };
     }
-    if (state.completedRounds.has(finalRoundIndex) || state.phase === 'PLAYER_SESSION_COMPLETE') {
+    if (state.phase === 'PLAYER_SESSION_COMPLETE') {
       return { ...player, roundStatus: 'finished', currentRoundIndex: state.currentRound };
     }
     return { ...player, roundStatus: 'playing', currentRoundIndex: state.currentRound };
@@ -3692,19 +3687,6 @@ async function submitGuessAsync(input: SubmitGuessInput): Promise<CompeteSession
       [gameId, playerId, roundIndex, JSON.stringify({ score, resultPhaseStartedAt: new Date().toISOString() }), completeToken]
     );
 
-    if (roundIndex === guard.total_rounds - 1) {
-      const sessionCompleteToken = generateVerificationToken();
-      const sessionCompleteResult = await client.query(
-        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
-         VALUES ($1, $2, $3, 'PLAYER_SESSION_COMPLETE', $4::jsonb, now(), $5)
-         ON CONFLICT DO NOTHING`,
-        [gameId, playerId, roundIndex, JSON.stringify({ totalRounds: guard.total_rounds }), sessionCompleteToken]
-      );
-      if ((sessionCompleteResult as unknown as { rowCount: number | null }).rowCount === 1) {
-        await updatePlayerGlobalStats(gameId, guard.mode as "practice" | "sync" | "async", playerId, client);
-      }
-    }
-
     const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
     await client.query("COMMIT");
     client.release();
@@ -3776,6 +3758,17 @@ export async function advancePlayerRoundAsync(
           token,
         ]
       );
+    } else {
+      const sessionCompleteToken = generateVerificationToken();
+      const sessionCompleteResult = await client.query(
+        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
+         VALUES ($1, $2, $3, 'PLAYER_SESSION_COMPLETE', $4::jsonb, now(), $5)
+         ON CONFLICT DO NOTHING`,
+        [gameId, playerId, session.total_rounds - 1, JSON.stringify({ totalRounds: session.total_rounds }), sessionCompleteToken]
+      );
+      if ((sessionCompleteResult as unknown as { rowCount: number | null }).rowCount === 1) {
+        await updatePlayerGlobalStats(gameId, session.mode as "practice" | "sync" | "async", playerId, client);
+      }
     }
 
     const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
@@ -3921,19 +3914,6 @@ export async function markPlayerRoundAbsent(
        ON CONFLICT DO NOTHING`,
       [gameId, playerId, roundIndex, JSON.stringify({ absent: true, score: 0, resultPhaseStartedAt: new Date().toISOString() }), completeToken]
     );
-
-    if (roundIndex === guard.total_rounds - 1) {
-      const sessionCompleteToken = generateVerificationToken();
-      const sessionCompleteResult = await client.query(
-        `INSERT INTO player_round_events (game_id, player_id, round_index, event_type, payload, occurred_at, verification_token)
-         VALUES ($1, $2, $3, 'PLAYER_SESSION_COMPLETE', $4::jsonb, now(), $5)
-         ON CONFLICT DO NOTHING`,
-        [gameId, playerId, roundIndex, JSON.stringify({ totalRounds: guard.total_rounds }), sessionCompleteToken]
-      );
-      if ((sessionCompleteResult as unknown as { rowCount: number | null }).rowCount === 1) {
-        await updatePlayerGlobalStats(gameId, guard.mode as "practice" | "sync" | "async", playerId, client);
-      }
-    }
 
     const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, client);
     await client.query("COMMIT");

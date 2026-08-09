@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from 'next-intl';
 import { toProxiedImageUrl } from "@/lib/imageProxy";
 import RainbowRing from "@/components/compete/RainbowRing";
+import { MiniRing } from "@/components/compete/RoundCompleteSection";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import RankCard from "@/components/RankCard";
 import type { CompeteSessionSnapshot } from "@/core/types";
@@ -21,8 +22,20 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { Target, TrendingUp } from "lucide-react";
+import { TrendingUp, Trophy } from "lucide-react";
 import styles from "./SessionComplete.module.css";
+
+type DailyResultPlayer = {
+  player_id: string;
+  rank: number;
+  display_name: string | null;
+  avatar_url: string | null;
+  is_ai: boolean;
+  avg_accuracy: number;
+  total_xp: number;
+  completed_at: string | null;
+  best_round_accuracy: number | null;
+};
 
 interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
@@ -46,6 +59,7 @@ export default function SessionComplete({
   const router = useRouter();
   const t = useTranslations('compete_page');
   const tGame = useTranslations('game');
+  const tLobby = useTranslations('lobby');
   const distanceUnit = getDistanceUnitPreference();
   const isPractice = snapshot.config.mode === "practice";
   const isDaily = snapshot.config.mode === "daily";
@@ -56,6 +70,11 @@ export default function SessionComplete({
   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [totalXp, setTotalXp] = useState<number | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [dailyResults, setDailyResults] = useState<DailyResultPlayer[] | null>(null);
+  const [dailyLoading, setDailyLoading] = useState(false);
+  const [dailyError, setDailyError] = useState<string | null>(null);
+  const [dailyRetryCount, setDailyRetryCount] = useState(0);
 
   // A round "counts" for final stats if the player actually submitted a guess
   // or if the round was deadline-finalized while they were absent (score 0).
@@ -114,6 +133,34 @@ export default function SessionComplete({
     return () => { cancelled = true; };
   }, [playerId]);
 
+  // Fetch the global all-players Daily leaderboard once the session completes.
+  useEffect(() => {
+    if (!isDaily || snapshot.status !== "SESSION_COMPLETE") return;
+    let cancelled = false;
+    setDailyLoading(true);
+    setDailyError(null);
+    (async () => {
+      try {
+        const response = await fetch("/api/daily/results");
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || "Failed to load daily results");
+        }
+        const json = await response.json();
+        if (cancelled) return;
+        setDailyResults(json.rows ?? []);
+      } catch (error) {
+        console.error("Failed to fetch daily results:", error);
+        if (!cancelled) {
+          setDailyError(error instanceof Error ? error.message : "Failed to load daily results");
+        }
+      } finally {
+        if (!cancelled) setDailyLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isDaily, snapshot.status, dailyRetryCount]);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isHost = snapshot.players?.find((p: any) => p.playerId === playerId)?.isHost ?? false;
 
@@ -155,6 +202,17 @@ export default function SessionComplete({
     }
   };
 
+  const handleShareLink = async () => {
+    try {
+      const link = typeof window !== "undefined" ? window.location.href : "";
+      await navigator.clipboard.writeText(link);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
   // Helper: compute derived stats for a player
   const computePlayerStats = (pid: string) => {
     if (!effectiveResults) return null;
@@ -162,6 +220,11 @@ export default function SessionComplete({
     if (playerResults.length === 0) return null;
 
     const totalScore = playerResults.reduce((sum, r) => sum + r.score, 0);
+    const totalLocationScore = playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0);
+    const totalYearScore = playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0);
+    const bestRoundResult = playerResults.reduce((best, r) => (r.score > best.score ? r : best), playerResults[0]);
+    const bestRoundScore = bestRoundResult.score;
+    const bestRoundAccuracy = Math.round(((bestRoundResult.locationScore ?? 0) + (bestRoundResult.timeScore ?? 0)) / 2);
     const avgAccuracy = Math.round(playerResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / playerResults.length);
     const avgLocationAccuracy = Math.round(playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / playerResults.length);
     const avgYearAccuracy = Math.round(playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0) / playerResults.length);
@@ -169,7 +232,7 @@ export default function SessionComplete({
     const avgDistanceKm = playerResults.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0) / playerResults.length;
     const avgYearDiff = playerResults.reduce((sum, r) => sum + (r.yearDiff ?? 0), 0) / playerResults.length;
 
-    return { totalScore, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgConsistency, avgDistanceKm, avgYearDiff };
+    return { totalScore, totalLocationScore, totalYearScore, bestRoundScore, bestRoundAccuracy, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgConsistency, avgDistanceKm, avgYearDiff };
   };
 
   // Helper: compute per-round stats for all players
@@ -235,6 +298,8 @@ export default function SessionComplete({
         const overallXP = myStats?.totalScore ?? 0;
         const whereAccuracy = myStats?.avgLocationAccuracy ?? 0;
         const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
+        const whereXP = myStats?.totalLocationScore ?? 0;
+        const whenXP = myStats?.totalYearScore ?? 0;
         const avgDistanceKm = myStats?.avgDistanceKm ?? 0;
         const avgYearDiff = myStats?.avgYearDiff ?? 0;
         const currentPlayerData = snapshot.players.find(p => p.playerId === playerId);
@@ -334,10 +399,10 @@ export default function SessionComplete({
         };
 
         const mvpCategories: MvpCategory[] = [
-          { key: 'overall', label: tGame('mvp_overall'), icon: Target, getValue: (s: MvpPlayer['stats']) => s.avgAccuracy },
           { key: 'year', label: tGame('mvp_year'), icon: WhenIcon, getValue: (s: MvpPlayer['stats']) => s.avgYearAccuracy },
           { key: 'location', label: tGame('mvp_location'), icon: WhereIcon, getValue: (s: MvpPlayer['stats']) => s.avgLocationAccuracy },
           { key: 'consistency', label: tGame('mvp_consistency'), icon: TrendingUp, getValue: (s: MvpPlayer['stats']) => s.avgConsistency },
+          { key: 'bestRound', label: tGame('mvp_best_round'), icon: Trophy, getValue: (s: MvpPlayer['stats']) => s.bestRoundAccuracy },
         ];
 
         const mvpAwards = mvpCategories
@@ -353,12 +418,14 @@ export default function SessionComplete({
               return 0;
             });
             const first = sorted[0];
-            const winners = sorted.filter((p) => (
-              cat.getValue(p.stats) === cat.getValue(first.stats) &&
-              p.totalScore === first.totalScore &&
-              p.totalDistanceKm === first.totalDistanceKm &&
-              p.totalYearDiff === first.totalYearDiff
-            ));
+            const winners = cat.key === 'bestRound'
+              ? sorted.filter((p) => cat.getValue(p.stats) === cat.getValue(first.stats))
+              : sorted.filter((p) => (
+                  cat.getValue(p.stats) === cat.getValue(first.stats) &&
+                  p.totalScore === first.totalScore &&
+                  p.totalDistanceKm === first.totalDistanceKm &&
+                  p.totalYearDiff === first.totalYearDiff
+                ));
             return { ...cat, winners };
           })
           .filter((award): award is MvpCategory & { winners: MvpPlayer[] } => award !== null);
@@ -505,47 +572,59 @@ export default function SessionComplete({
               {/* VICTORY BANNER */}
               <div className={styles.banner}>
                 <span className={styles.bannerKicker}>{tGame('game_complete')}</span>
-                {!isPractice && (
-                <h1 className={styles.bannerTitle}>
-                  {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
-                </h1>
-                )}
-                {!isPractice && (
-                <div className={styles.bannerStats}>
-                  <span>{overallXP.toLocaleString()} {tGame('xp_unit')}</span>
-                  <span className={styles.bannerDot}>·</span>
-                  <span>{tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}</span>
-                </div>
-                )}
               </div>
 
               {/* HERO ACCURACY CARD — ring + Where/When stat tiles */}
               <section className={`${styles.card} ${styles.heroCard}`}>
+                <div className={styles.heroHead}>
+                  <div className={styles.heroHeadLine1}>{tGame('you_finished')} <span className={styles.heroRank}>{myRank}{rankSuffix(myRank)}</span></div>
+                  <div className={styles.heroHeadLine2}>{tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}</div>
+                </div>
                 {myStats ? (
-                  <RainbowRing value={overallAccuracy} />
+                  <div className={styles.heroRingWrap}>
+                    <RainbowRing value={overallAccuracy} />
+                    <div className={styles.heroXp}>
+                      <span className={styles.heroXpVal}>+{overallXP.toLocaleString()}</span>
+                      <span className={styles.heroXpLabel}>{tGame('xp_unit')}</span>
+                    </div>
+                  </div>
                 ) : (
                   <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--gh-text-muted)' }}>—</span>
                 )}
                 <div className={styles.statPair}>
                   <div className={styles.statTile}>
-                    <span className={styles.statTileLabelWhere}>{tGame('where')}</span>
-                    <span className={styles.statTileVal} style={{ color: myStats ? getAccuracyColor(whereAccuracy) : 'var(--gh-text-muted)' }}>
-                      {myStats ? whereAccuracy : tGame('not_started')}
-                      {myStats && <AccuracySuffix />}
-                    </span>
+                    <span className={styles.statTileLabelWhere}><WhereIcon size={14} className={styles.statTileIconWhere} />{tGame('where')}</span>
+                    {myStats ? (
+                      <>
+                        <MiniRing value={whereAccuracy} color={getAccuracyColor(whereAccuracy)} />
+                        <div className={styles.statTileXp}>
+                          <span className={styles.statTileXpVal}>+{whereXP}</span>
+                          <span className={styles.statTileXpLabel}>{tGame('xp_unit')}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className={styles.statTileVal} style={{ color: 'var(--gh-text-muted)' }}>{tGame('not_started')}</span>
+                    )}
                   </div>
                   <div className={styles.statTile}>
-                    <span className={styles.statTileLabelWhen}>{tGame('when')}</span>
-                    <span className={styles.statTileVal} style={{ color: myStats ? getAccuracyColor(whenAccuracy) : 'var(--gh-text-muted)' }}>
-                      {myStats ? whenAccuracy : tGame('not_started')}
-                      {myStats && <AccuracySuffix />}
-                    </span>
+                    <span className={styles.statTileLabelWhen}><WhenIcon size={14} className={styles.statTileIconWhen} />{tGame('when')}</span>
+                    {myStats ? (
+                      <>
+                        <MiniRing value={whenAccuracy} color={getAccuracyColor(whenAccuracy)} />
+                        <div className={styles.statTileXp}>
+                          <span className={styles.statTileXpVal}>+{whenXP}</span>
+                          <span className={styles.statTileXpLabel}>{tGame('xp_unit')}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className={styles.statTileVal} style={{ color: 'var(--gh-text-muted)' }}>{tGame('not_started')}</span>
+                    )}
                   </div>
                 </div>
               </section>
 
               {/* FINAL RANKINGS — hidden in practice (solo) mode */}
-              {!isPractice && (
+              {!isPractice && !isDaily && (
               <section className={styles.card}>
                 <div className={styles.cardHead}>
                   <span className={styles.accentBar} />
@@ -559,15 +638,15 @@ export default function SessionComplete({
                   // Relax (async) player status. Sync (Rush) keeps hasPlayed-only behavior:
                   // roundStatus/currentRoundIndex are undefined there per types.ts.
                   let showAccuracy = player.hasPlayed;
-                  let statusLabel: string | null = null;
+                  let statusLabel: React.ReactNode = null;
                   if (isAsyncResults) {
                     const rs = player.roundStatus;
                     if (rs === 'invited') {
                       showAccuracy = false;
                       statusLabel = tGame('invited');
                     } else if (rs === 'playing') {
-                      showAccuracy = false;
-                      statusLabel = tGame('on_round', { current: (player.currentRoundIndex ?? 0) + 1, total: snapshot.config.totalRounds });
+                      showAccuracy = true;
+                      statusLabel = null;
                     } else if ((rs === 'joined' || rs === 'ready') && !player.hasPlayed) {
                       showAccuracy = false;
                       statusLabel = tGame('not_started');
@@ -576,7 +655,7 @@ export default function SessionComplete({
                   return (
                     <div key={player.playerId} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`} data-testid="session-rank-row">
                       <span className={`${styles.medal} ${index === 0 ? styles.medalGold : index === 1 ? styles.medalSilver : index === 2 ? styles.medalBronze : ""}`}>
-                        {index + 1}
+                        <span>{index + 1}</span>
                       </span>
                       <div className={styles.avatarWrap}>
                         <PlayerAvatar
@@ -595,7 +674,6 @@ export default function SessionComplete({
                             {displayName}
                           </span>
                           {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
-                          {player.wonRounds.length > 0 && <span className={styles.winTag}>🏆 {player.wonRounds.length}</span>}
                         </div>
                         <div className={styles.bar}>
                           {showAccuracy ? (
@@ -610,13 +688,81 @@ export default function SessionComplete({
                         {showAccuracy ? (
                           <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avgAccuracy) }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
                         ) : (
-                          <span className={styles.rankAcc}>{statusLabel ?? tGame('not_started')}</span>
+                          <span className={styles.rankStatus}>{statusLabel ?? tGame('not_started')}</span>
                         )}
                       </div>
                     </div>
                   );
                 })}
                 </div>
+              </section>
+              )}
+
+              {isDaily && (
+              <section className={styles.card}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('final_rankings')}</h2>
+                </div>
+                {dailyLoading ? (
+                  <p style={{ padding: 24, textAlign: 'center', color: 'var(--gh-text-secondary)' }}>{tGame('loading')}</p>
+                ) : dailyError ? (
+                  <div style={{ padding: 24, textAlign: 'center' }}>
+                    <p style={{ color: 'var(--gh-text-secondary)', marginBottom: 12 }}>{dailyError}</p>
+                    <button
+                      type="button"
+                      className={styles.playBtn}
+                      onClick={() => setDailyRetryCount(n => n + 1)}
+                    >
+                      {tGame('retry')}
+                    </button>
+                  </div>
+                ) : dailyResults && dailyResults.length > 0 ? (
+                <div className={styles.ranks}>
+                {dailyResults.map((player) => {
+                  const isCurrentPlayer = player.player_id === playerId;
+                  const displayName = player.display_name || (player.is_ai ? "AI" : "?");
+                  return (
+                    <div key={player.player_id} className={`${styles.rankRow} ${isCurrentPlayer ? styles.rankRowMe : ""}`} data-testid="daily-rank-row">
+                      <span className={`${styles.medal} ${player.rank === 1 ? styles.medalGold : player.rank === 2 ? styles.medalSilver : player.rank === 3 ? styles.medalBronze : ""}`}>
+                        <span>{player.rank}</span>
+                      </span>
+                      <div className={styles.avatarWrap}>
+                        <PlayerAvatar
+                          avatarUrl={player.avatar_url ?? null}
+                          displayName={displayName}
+                          playerId={player.player_id}
+                          size={38}
+                        />
+                      </div>
+                      <div className={styles.rankMain}>
+                        <div className={styles.rankNameLine}>
+                          <span
+                            className={styles.rankName}
+                            style={getUsernameGradientStyle(player.player_id)}
+                          >
+                            {displayName}
+                          </span>
+                          {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
+                        </div>
+                        <div className={styles.bar}>
+                          <div
+                            className={styles.barFill}
+                            style={{ width: `${Math.max(0, Math.min(100, player.avg_accuracy))}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.rankScore}>
+                        <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avg_accuracy) }}>{player.avg_accuracy}<AccuracySuffix /></span>
+                        <span className={styles.rankXp}>+{player.total_xp} {tGame('xp_unit')}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                </div>
+                ) : (
+                  <p style={{ padding: 24, textAlign: 'center', color: 'var(--gh-text-secondary)' }}>{tGame('not_started')}</p>
+                )}
               </section>
               )}
 
@@ -647,17 +793,16 @@ export default function SessionComplete({
                               playerId={w.playerId}
                               size={24}
                             />
-                            <span>
-                              <span className={`${styles.mvpName} ${w.isMe ? styles.mvpNameMe : ''}`}>
-                                {w.isMe ? tGame('mvp_you') : w.displayName}
-                              </span>
-                              {i < award.winners.length - 1 && (
-                                <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
-                              )}
+                            <span className={styles.mvpName}>
+                              {w.isMe ? tGame('mvp_you') : w.displayName}
                             </span>
                             <span className={styles.mvpValue} style={{ color: getAccuracyColor(award.getValue(w.stats)) }}>
-                              {award.getValue(w.stats)}<AccuracySuffix />
+                              {award.getValue(w.stats)}
+                              <AccuracySuffix />
                             </span>
+                            {i < award.winners.length - 1 && (
+                              <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
+                            )}
                           </span>
                         ))}
                       </span>
@@ -685,7 +830,7 @@ export default function SessionComplete({
                         {badgeCounts.combo > 0 && (
                           <span className={`${styles.badgeTallyItem} ${styles.badgeTallyCombo}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/combo_gold.webp" alt="combo" width={28} height={28} />
+                            <img src="/badges/combo_gold.webp" alt={tGame('combo_badges')} width={28} height={28} />
                             <span className={styles.badgeTallyCount}>{badgeCounts.combo}</span>
                             <span className={styles.badgeTallyTier}>{tGame('combo_badges')}</span>
                           </span>
@@ -693,7 +838,7 @@ export default function SessionComplete({
                         {badgeCounts.when > 0 && (
                           <span className={`${styles.badgeTallyItem} ${styles.badgeTallyWhen}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/year_gold.webp" alt="when" width={28} height={28} />
+                            <img src="/badges/year_gold.webp" alt={tGame('when_badges')} width={28} height={28} />
                             <span className={styles.badgeTallyCount}>{badgeCounts.when}</span>
                             <span className={styles.badgeTallyTier}>{tGame('when_badges')}</span>
                           </span>
@@ -701,7 +846,7 @@ export default function SessionComplete({
                         {badgeCounts.where > 0 && (
                           <span className={`${styles.badgeTallyItem} ${styles.badgeTallyWhere}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/location_gold.webp" alt="where" width={28} height={28} />
+                            <img src="/badges/location_gold.webp" alt={tGame('where_badges')} width={28} height={28} />
                             <span className={styles.badgeTallyCount}>{badgeCounts.where}</span>
                             <span className={styles.badgeTallyTier}>{tGame('where_badges')}</span>
                           </span>
@@ -742,7 +887,7 @@ export default function SessionComplete({
                 hideAccuracy
                 hideStatsRow
                 embedded
-                rankCard={<RankCard totalXp={totalXp} open bare />}
+                rankCard={<RankCard totalXp={totalXp} sessionXp={overallXP} open bare variant="dark" />}
                 data={{
                   byWhen,
                   byWhere,
@@ -824,7 +969,7 @@ export default function SessionComplete({
                                 {roundStats.avgLocationScore}
                                 <AccuracySuffix />
                               </span>
-                              <span className={styles.miniLabelWhere}>{tGame('where')}</span>
+                              <span className={styles.miniLabelWhere}><WhereIcon size={14} className={styles.miniIconWhere} />{tGame('where')}</span>
                               <span className={styles.miniSub}>{tGame('distance_label', { distance: formatDistance(roundStats.avgDistanceKm, distanceUnit) })}</span>
                             </div>
                             <div className={styles.miniTile}>
@@ -832,7 +977,7 @@ export default function SessionComplete({
                                 {roundStats.avgTimeScore}
                                 <AccuracySuffix />
                               </span>
-                              <span className={styles.miniLabelWhen}>{tGame('when')}</span>
+                              <span className={styles.miniLabelWhen}><WhenIcon size={14} className={styles.miniIconWhen} />{tGame('when')}</span>
                               <span className={styles.miniSub}>{tGame('year_diff_label', { n: Math.round(roundStats.avgYearDiff) })}</span>
                             </div>
                           </div>
@@ -860,10 +1005,18 @@ export default function SessionComplete({
               <div className={styles.cta}>
                 <button
                   type="button"
-                  className={styles.homeBtn}
+                  className={isDaily ? `${styles.homeBtn} ${styles.homeBtnFull}` : styles.homeBtn}
                   onClick={() => router.push("/home")}
                 >
                   {tGame('home')}
+                </button>
+                <button
+                  type="button"
+                  className={styles.homeBtn}
+                  onClick={handleShareLink}
+                  data-testid="session-share-link"
+                >
+                  {linkCopied ? tLobby('link_copied') : tLobby('copy_link')}
                 </button>
                 {!isDaily && (isHost ? (
                   <button

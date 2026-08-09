@@ -25,6 +25,7 @@ import { setLocale } from "@/actions/setLocale";
 import type { CompeteSessionSnapshot } from "@/core/types";
 import type { RoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, haversineKm, hasSubmitted } from "@/core/competeUtils";
+import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
 import styles from "./RoundCompleteSection.module.css";
 import activeStyles from "./RoundActiveSection.module.css";
 import AccuracySuffix from "@/components/AccuracySuffix";
@@ -60,7 +61,7 @@ interface RoundCompleteSectionProps {
 
 // Small % ring for Where/When mini cards — colored stroke + value text.
 // Mirrors the prototype MiniRing visual. Color is passed in (derived from score).
-function MiniRing({ value, color }: { value: number; color: string }) {
+export function MiniRing({ value, color }: { value: number; color: string }) {
   const size = 56;
   const sw = 5;
   const r = size / 2 - sw;
@@ -69,7 +70,7 @@ function MiniRing({ value, color }: { value: number; color: string }) {
   return (
     <div className={styles.miniRingWrap} style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--gh-bg-input)" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--gh-border-medium)" strokeWidth={sw} />
         <circle
           cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw}
           strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset}
@@ -414,7 +415,7 @@ export default function RoundCompleteSection({
                 {/* Where mini card */}
                 <div className={styles.miniCard}>
                   <div className={styles.miniCardHead}>
-                    <span className={styles.miniCardDotWhere} />
+                    <WhereIcon className={styles.miniCardIcon} size={16} style={{ color: 'var(--gh-teal)' }} />
                     <span className={styles.miniCardTitle}>{t('where')}</span>
                   </div>
                   {(() => {
@@ -433,7 +434,7 @@ export default function RoundCompleteSection({
                     <span className={styles.miniXpVal} style={!submitted ? { color: 'var(--gh-text-muted)' } : undefined}>
                       {submitted ? `+${Math.round(myResult?.locationScore ?? 0)}` : '—'}
                     </span>
-                    {submitted && <span className={styles.miniXpLabel}>XP</span>}
+                    {submitted && <span className={styles.miniXpLabel}>{t('xp_unit')}</span>}
                   </div>
                   <div className={styles.miniBadges}>
                     {(() => {
@@ -453,7 +454,7 @@ export default function RoundCompleteSection({
                 {/* When mini card */}
                 <div className={styles.miniCard}>
                   <div className={styles.miniCardHead}>
-                    <span className={styles.miniCardDotWhen} />
+                    <WhenIcon className={styles.miniCardIcon} size={16} style={{ color: 'var(--gh-violet)' }} />
                     <span className={styles.miniCardTitle}>{t('when')}</span>
                   </div>
                   {(() => {
@@ -472,7 +473,7 @@ export default function RoundCompleteSection({
                     <span className={styles.miniXpVal} style={!submitted ? { color: 'var(--gh-text-muted)' } : undefined}>
                       {submitted ? `+${Math.round(myResult?.timeScore ?? 0)}` : '—'}
                     </span>
-                    {submitted && <span className={styles.miniXpLabel}>XP</span>}
+                    {submitted && <span className={styles.miniXpLabel}>{t('xp_unit')}</span>}
                   </div>
                   <div className={styles.miniBadges}>
                     {(() => {
@@ -694,9 +695,8 @@ export default function RoundCompleteSection({
               const usedHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
                 .filter(h => submittedHintPenaltyRef.current.purchasedIds.includes(h.id))
                 .sort((a, b) => {
-                  const rate = (t: number) => [0, 30, 20, 50, 40, 50][t] ?? 0;
-                  const aRate = rate(a.tier);
-                  const bRate = rate(b.tier);
+                  const aRate = TIER_PENALTY_RATE[a.tier] ?? 0;
+                  const bRate = TIER_PENALTY_RATE[b.tier] ?? 0;
                   if (aRate !== bRate) return aRate - bRate;
                   return a.tier - b.tier;
                 });
@@ -705,13 +705,13 @@ export default function RoundCompleteSection({
                 <div className={styles.hintsCard}>
                   <div className={styles.hintsTitle}>{t('hints_used')}</div>
                   {usedHints.map((hint, idx) => {
-                    const tierPenaltyAcc = [0,30,20,50,40,50][hint.tier] ?? 0;
+                    const tierPenaltyAcc = TIER_PENALTY_RATE[hint.tier] ?? 0;
                     const meta = hint.metadata as { km?: number; years?: number | string } | null;
                     let revealedText = hint.content;
                     if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
-                      revealedText = `${hint.content} — ${t('km_away_short', { distance: formatDistance(meta.km, distanceUnit) })}`;
+                      revealedText = `${hint.content} • ${t('km_away_short', { distance: formatDistance(meta.km, distanceUnit) })}`;
                     } else if (hint.type === "when" && (hint.tier === 2 || hint.tier === 4) && meta?.years != null) {
-                      revealedText = `${hint.content} — ${t('years_off_short', { n: meta.years })}`;
+                      revealedText = `${hint.content} • ${t('years_off_short', { n: meta.years })}`;
                     }
                     const labelMap: Record<string, Record<number, string>> = {
                       when: { 1: t('hint_century'), 2: t('hint_historical_event'), 3: t('hint_decade'), 4: t('hint_contemporary_event'), 5: t('hint_visual_clues') },
@@ -844,6 +844,9 @@ export default function RoundCompleteSection({
           </button>
 
           <div className={activeStyles.settingsCard} onClick={(e) => e.stopPropagation()}>
+            <p className={activeStyles.settingsResumeHint}>
+              {t('settings_resume_hint')}
+            </p>
             <button
               type="button"
               onClick={() => { setHomeNavigating(true); window.location.href = '/home'; }}
@@ -862,9 +865,6 @@ export default function RoundCompleteSection({
               )}
               {tNav('home')}
             </button>
-            <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--gh-text-secondary)', textAlign: 'center' }}>
-              {t('settings_resume_hint')}
-            </p>
             <div className={activeStyles.settingsTitle}>{t('settings')}</div>
 
             <div className={activeStyles.settingsRow}>

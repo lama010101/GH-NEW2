@@ -2,6 +2,7 @@ import { config } from "dotenv";
 import { getDbPool } from "@/server/db";
 import { evaluateRound } from "@/core/rules";
 import type { EventRecord, EventHint, Location } from "@/core/types";
+import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -25,11 +26,6 @@ const DEADLINE_MS = (() => {
   if (Number.isFinite(parsed) && parsed > 0) return parsed;
   return DAILY_TIMER_MS;
 })();
-
-// Hint tier penalty RATES copied verbatim from src/server/sessionCore.ts:93.
-// Applied proportionally in evaluateRound (not flat point subtraction).
-// WHEN (year) rates are age-discounted by eraScale inside evaluateRound.
-const TIER_PENALTY_RATE: Record<number, number> = { 1: 30, 2: 20, 3: 50, 4: 40, 5: 50 };
 
 type HintRequest = { tier: number; type: string };
 type SuppliedHint = { id: string; tier: number; type: string; content: string };

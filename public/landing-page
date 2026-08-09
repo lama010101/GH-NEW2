@@ -1,0 +1,624 @@
+Guess History Landing Page Specification v2.0
+
+Project: guess-history.com
+
+Objective
+
+Create a premium cinematic landing page that explains the game through interactive scrollytelling, builds trust in AI-generated historical reconstructions, and converts visitors into players in under 60 seconds.
+
+The experience should feel like an interactive documentary rather than a traditional marketing page.
+
+Primary Goals
+Explain the game in less than one minute.
+Create curiosity immediately.
+Demonstrate gameplay visually.
+Build trust in AI-generated imagery.
+Convert visitors into players.
+
+Success metric:
+
+Visitor reaches first Play Free CTA before 60 seconds.
+
+Target Audience
+Curious people
+Casual gamers
+History enthusiasts
+Quiz players
+Educational users
+Mobile-first users
+Design Philosophy
+Minimal Prose
+
+Large editorial typography.
+
+Very little text.
+
+Every sentence must earn its place.
+
+Maximum Drama
+
+The images tell the story.
+
+Scrolling reveals information progressively.
+
+Never overwhelm users with paragraphs.
+
+User-Controlled Motion
+
+Animations are entirely scroll-driven.
+
+No autoplay cinematic sequences.
+
+The visitor controls pacing.
+
+Premium Editorial Feel
+
+Dark backgrounds
+
+#0B0C10
+#12131C
+
+Gold accents
+
+#D4AF37
+
+Interactive blue
+
+#3B82F6
+
+Elegant serif headings.
+
+Modern sans-serif body text.
+
+Conversion Funnel
+
+The page follows a strict narrative.
+
+Curiosity
+
+↓
+
+Mystery
+
+↓
+
+Gameplay
+
+↓
+
+Trust
+
+↓
+
+Competition
+
+↓
+
+Play
+
+Everything not supporting this funnel is secondary.
+
+Overall Page Structure
+1. Hero
+
+Pinned
+
+100vh
+
+Purpose:
+
+Immediately hook the visitor.
+
+Visual
+
+Large cinematic historical reconstruction.
+
+Slow zoom.
+
+Ambient particles.
+
+Fog.
+
+Copy
+GUESS HISTORY
+
+Discover Where.
+When.
+Why.
+
+Primary CTA
+
+Play Free
+
+Secondary
+
+Scroll indicator
+
+Animation
+
+0–50%
+
+Background zoom
+
+1.00 → 1.08
+
+50–100%
+
+Headline fades upward
+
+CTA remains briefly
+
+Page continues.
+
+2. The Premise
+
+Natural scrolling.
+
+Split layout.
+
+Left
+
+Historical scene
+
+Right
+
+History becomes a game.
+
+Every round begins with a mysterious scene.
+
+No names.
+
+No dates.
+
+No clues.
+
+Just your curiosity.
+
+Animation
+
+Image reveals from center.
+
+Words appear progressively.
+
+3. Explore All of History
+
+Pinned gallery.
+
+Approximately 120–150vh.
+
+Show diverse historical eras.
+
+Examples
+
+Ancient Egypt
+Pompeii
+Roman Empire
+French Revolution
+Titanic
+Wright Brothers
+Constantinople
+Space Age
+
+Images transition using
+
+cross dissolve
+subtle depth zoom
+
+Avoid aggressive effects.
+
+Mid-section CTA
+
+Play Free
+
+4. Why These Images Exist
+
+Purpose
+
+Prevent users believing the game contains fake history.
+
+Pinned.
+
+Dark background.
+
+Three sequential messages.
+
+1
+
+Photographs of these moments never existed.
+
+↓
+
+2
+
+Yet every scene is historically accurate.
+
+↓
+
+3
+
+Recreated by AI.
+
+Verified by historians.
+
+Built to make you think.
+
+End with
+
+See how →
+
+leading into the next section.
+
+5. How You Play
+
+Pinned.
+
+Approx 250vh.
+
+Left
+
+Historical image remains fixed.
+
+Right cycles through gameplay.
+
+Step 1
+
+WHERE?
+
+Animated world map.
+
+Pin drops.
+
+Radar pulse.
+
+Step 2
+
+WHEN?
+
+Timeline slider.
+
+Moves through centuries.
+
+Stops on estimated year.
+
+Step 3
+
+WHY?
+
+Historical explanation card expands.
+
+Shows educational insight.
+
+Footer message
+
+History isn't memorization.
+
+It's investigation.
+
+Below the interaction
+
+Three compact feature cards.
+
+✓ Find the Place
+
+✓ Estimate the Year
+
+✓ Discover the Story
+
+CTA
+
+Play Free
+
+6. Example Game Round
+
+Sticky phone frame.
+
+Game UI animates.
+
+User Guess
+
+Rome
+
+1450
+
+↓
+
+Reality
+
+Constantinople
+
+1453
+
+↓
+
+Historical Context
+
+Short educational explanation.
+
+Score counts upward.
+
+Example
+
++4250 XP
+
+7. Why You Can Trust It
+
+Horizontal pipeline.
+
+Historical Event
+
+↓
+
+Historical Research
+
+↓
+
+Prompt Engineering
+
+↓
+
+AI Reconstruction
+
+↓
+
+Human Fact Check
+
+Connecting lines draw as user scrolls.
+
+Optional
+
+Historian or institution credits.
+
+CTA
+
+Play Free
+
+8. Compete & Progress
+
+Merge progression and social into one section.
+
+Headline
+
+History is Better Together
+
+Show
+
+Leaderboard
+
+Badges
+
+XP
+
+Titles
+
+Progress
+
+Examples
+
+Novice Explorer
+
+Historian
+
+Scholar
+
+Master Historian
+
+Animated leaderboard.
+
+Progress bars.
+
+Achievement badges.
+
+9. Final CTA
+
+Large cinematic background carousel.
+
+Slow crossfades.
+
+Headline
+
+Ready to test your history instincts?
+
+Primary CTA
+
+Play Free
+
+Secondary
+
+Watch Trailer
+
+Footer
+
+Educational disclaimer
+
+AI-generated historical reconstructions based on verified historical research.
+
+Persistent Conversion Elements
+
+After Hero unpins
+
+Sticky floating CTA appears.
+
+Always visible.
+
+Never intrusive.
+
+CTA text
+
+Play Free
+
+Mobile Adaptation
+
+The mobile version is not a scaled desktop version.
+
+Several interactions simplify.
+
+Hero
+
+Shorter pin duration.
+
+Section 3
+
+Vertical gallery instead of horizontal.
+
+Section 5
+
+Sticky stacked cards.
+
+Reduce overall scroll distance.
+
+Maximum page length approximately 60–70% of desktop.
+
+Animation Rules
+
+Animate only
+
+Transform
+
+Opacity
+
+Hardware accelerated filter
+
+Never animate
+
+Width
+
+Height
+
+Top
+
+Left
+
+Margins
+
+Avoid layout thrashing.
+
+Target
+
+60 FPS.
+
+Accessibility
+
+Required
+
+Semantic headings
+
+ARIA landmarks
+
+Keyboard navigation
+
+Keyboard-operable map and timeline
+
+Alt text for every historical image
+
+WCAG-compliant contrast
+
+Respect
+
+prefers-reduced-motion
+
+Provide optional
+
+Reduce Motion toggle.
+
+Performance
+Framework
+
+Next.js
+
+SSG / ISR
+
+Animation
+
+Preferred
+
+GSAP + ScrollTrigger
+
+Alternative
+
+Framer Motion
+
+Images
+
+AVIF
+
+WebP
+
+Responsive srcset
+
+Hero preloaded.
+
+Everything else lazy loaded.
+
+JavaScript Budget
+
+Landing page interactions
+
+<150 KB gzipped
+
+excluding React.
+
+Largest Contentful Paint
+
+Target
+
+<2.5 seconds
+
+Animation Budget
+
+Composite-only animations.
+
+No expensive filters.
+
+Avoid clip-path unless absolutely necessary.
+
+Analytics
+
+Track
+
+Hero CTA
+
+Mid-page CTA
+
+Final CTA
+
+Scroll depth
+
+Simulator interaction
+
+Trailer clicks
+
+Conversion rate
+
+SEO
+
+Use semantic HTML.
+
+One H1.
+
+Structured headings.
+
+Descriptive image alt text.
+
+Structured data.
+
+Progressive enhancement.
+
+Page remains understandable without JavaScript.
+
+Success Criteria
+
+Visitors should understand within one minute:
+
+What the game is
+How to play
+Why AI is used
+Why they can trust the images
+Why it's fun
+Why they should start immediately
+Technical Principles
+Scroll controls the story.
+Images communicate more than text.
+Trust is established before asking for commitment.
+Conversion opportunities appear throughout the experience, not only at the end.
+Mobile experience is intentionally simplified rather than mirroring desktop.
+Every animation must support the narrative, never exist solely for decoration.

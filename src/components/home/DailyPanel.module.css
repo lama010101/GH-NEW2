@@ -20,6 +20,7 @@
   font-size: var(--font-sm);
   color: var(--gh-text-primary);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .timerCountdown {

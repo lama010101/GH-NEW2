@@ -20,6 +20,7 @@
   width: 100%;
   max-width: 380px;
   box-sizing: border-box;
+  margin: auto;
   max-height: 100vh;
   overflow-y: auto;
 }
@@ -241,18 +242,11 @@
 
 @media (max-width: 480px) {
   .card {
+    margin: auto;
     padding: max(24px, 8vh) 18px;
-    max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: safe center;
-    min-height: 100vh;
-  }
-
-  .overlay {
-    align-items: stretch;
+    min-height: auto;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
   }
 
   .title {
