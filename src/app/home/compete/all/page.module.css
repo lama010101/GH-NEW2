@@ -1,0 +1,51 @@
+.shell {
+  min-height: 100vh;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--gh-border-medium);
+  border-radius: 50%;
+  background: var(--gh-glass-bg);
+  color: var(--gh-text-primary);
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.backBtn:hover {
+  background: var(--gh-glass-bg-hover);
+}
+
+.title {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+  margin: 0;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--gh-text-secondary);
+  font-size: var(--font-sm);
+}

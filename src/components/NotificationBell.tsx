@@ -68,6 +68,33 @@ function NotificationItem({
     );
   }
 
+  if (notification.type === 'session_complete') {
+    const completerName = (notification.payload.completing_player_name as string) ?? t('someone');
+    const gameId = notification.payload.game_id as string;
+
+    return (
+      <div className={styles.notifItem}>
+        {notification.read === false && <span className={styles.unreadDot} />}
+        <div className={styles.notifBody}>
+          <div className={styles.notifText}>
+            {t('session_complete', { name: completerName })}
+          </div>
+          <div className={styles.notifTime}>{timeAgo(notification.created_at, t)}</div>
+          <button
+            type="button"
+            className={styles.joinBtn}
+            onClick={() => {
+              router.push(`/compete/${gameId}`);
+              onClose();
+            }}
+          >
+            {t('view_results')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.notifItem}>
       {notification.read === false && <span className={styles.unreadDot} />}

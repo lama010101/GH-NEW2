@@ -28,8 +28,9 @@ export async function GET(_request: NextRequest) {
       total_rounds: number;
       mode: string;
       created_at: Date;
+      session_deadline: Date | null;
     }>(
-      `SELECT s.game_id, s.total_rounds, s.mode, s.created_at
+      `SELECT s.game_id, s.total_rounds, s.mode, s.created_at, s.session_deadline
        FROM sessions s
        JOIN session_players sp ON sp.game_id = s.game_id
        WHERE sp.player_id = $1
@@ -45,6 +46,8 @@ export async function GET(_request: NextRequest) {
       game_id: string;
       opponent_name: string;
       opponent_avatar?: string;
+      is_host_opponent: boolean;
+      is_host_viewer: boolean;
       round_current: number;
       round_total: number;
       status: "your_turn" | "waiting" | "completed";
@@ -53,6 +56,9 @@ export async function GET(_request: NextRequest) {
       score_them?: number;
       accuracy_you: number;
       leaderboard_rank?: number;
+      created_at: string;
+      session_deadline?: string;
+      completed_at?: string;
     }> = [];
 
     for (const session of sessionsResult.rows) {
@@ -64,8 +70,9 @@ export async function GET(_request: NextRequest) {
         player_id: string;
         display_name: string;
         avatar_url: string | null;
+        is_host: boolean;
       }>(
-        `SELECT sp.player_id, sp.display_name, sp.avatar_url
+        `SELECT sp.player_id, sp.display_name, sp.avatar_url, sp.is_host
          FROM session_players sp
          WHERE sp.game_id = $1
            AND sp.player_id != $2
@@ -78,6 +85,13 @@ export async function GET(_request: NextRequest) {
       if (opponentResult.rows.length === 0) continue;
 
       const opponent = opponentResult.rows[0];
+
+      // Fetch viewer's own is_host status for host badge display.
+      const viewerHostResult = await pool.query<{ is_host: boolean }>(
+        `SELECT is_host FROM session_players WHERE game_id = $1 AND player_id = $2`,
+        [gameId, playerId]
+      );
+      const isHostViewer = viewerHostResult.rows[0]?.is_host ?? false;
 
       // Step 3: Derive current round index and status
       let status: "your_turn" | "waiting" | "completed";
@@ -135,6 +149,33 @@ export async function GET(_request: NextRequest) {
         }
       }
 
+      // Derive completed_at from events:
+      // async: MAX(occurred_at) of PLAYER_SESSION_COMPLETE events for this game
+      // sync: created_at of the SESSION_COMPLETE round_event for this game
+      let completedAt: string | undefined;
+      if (status === "completed") {
+        if (session.mode === "async") {
+          const completedAtResult = await pool.query<{ completed_at: Date | null }>(
+            `SELECT MAX(occurred_at) AS completed_at FROM player_round_events
+             WHERE game_id = $1 AND event_type = 'PLAYER_SESSION_COMPLETE'`,
+            [gameId]
+          );
+          if (completedAtResult.rows[0]?.completed_at) {
+            completedAt = new Date(completedAtResult.rows[0].completed_at).toISOString();
+          }
+        } else {
+          const completedAtResult = await pool.query<{ created_at: Date | null }>(
+            `SELECT created_at FROM round_events
+             WHERE game_id = $1 AND event_type = 'SESSION_COMPLETE'
+             ORDER BY id DESC LIMIT 1`,
+            [gameId]
+          );
+          if (completedAtResult.rows[0]?.created_at) {
+            completedAt = new Date(completedAtResult.rows[0].created_at).toISOString();
+          }
+        }
+      }
+
       // Step 6: Fetch scores and accuracy
       const scoresResult = await pool.query<{
         player_id: string;
@@ -187,6 +228,8 @@ export async function GET(_request: NextRequest) {
         game_id: gameId,
         opponent_name: opponent.display_name || "Unknown",
         opponent_avatar: opponent.avatar_url ?? undefined,
+        is_host_opponent: opponent.is_host ?? false,
+        is_host_viewer: isHostViewer,
         round_current: currentRoundIndex + 1,
         round_total: session.total_rounds,
         status,
@@ -195,6 +238,9 @@ export async function GET(_request: NextRequest) {
         score_them: scoreThem,
         accuracy_you: accuracyYou,
         leaderboard_rank: leaderboardRank,
+        created_at: new Date(session.created_at).toISOString(),
+        session_deadline: session.session_deadline ? new Date(session.session_deadline).toISOString() : undefined,
+        completed_at: completedAt,
       });
     }
 
