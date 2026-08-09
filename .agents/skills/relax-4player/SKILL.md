@@ -50,6 +50,19 @@ The HTML report will be at `/home/ubuntu/repos/GH-NEW2/playwright-report/index.h
 7. **Current-player labels differ by section.** `SessionComplete` final ranking and round breakdown append `(you)` to the display name. The MVP section uses `mvp_you` (`You`) as the whole name.
 8. **Round breakdown defaults to only round 0 expanded.** Use the `roundItemOpen` class to determine whether a `roundTop` click will collapse an already-open round before asserting `bestRow`.
 
+## Multi-context final-results gotchas
+
+9. **Disable Chromium background throttling for multi-context Relax specs.** Background tabs are heavily throttled by default, so the `session-complete-section` may not render on the host page if it is not in the foreground. Launch Chromium with:
+   ```
+   --disable-background-timer-throttling
+   --disable-backgrounding-occluded-windows
+   --disable-renderer-backgrounding
+   --disable-features=CalculateNativeWinOcclusion
+   ```
+   and call `await page.bringToFront()` before the final `/compete/{gameId}` navigation that asserts `SessionComplete`.
+
+10. **Set `SUPABASE_URL` for PartyKit when `NEXT_PUBLIC_SUPABASE_URL` is the only Supabase URL exported.** Some secret files export only `NEXT_PUBLIC_SUPABASE_URL`; PartyKit's `--var SUPABASE_URL` needs an explicit value. Add `export SUPABASE_URL=${SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}` to the environment before starting `partykit dev`.
+
 ## Ground truth
 
 Authoritative numbers come from `round_results` rows for the created `game_id`. The spec template uses `pg.Client` with `SUPABASE_DB_CONNECTION` and compares UI text against DB-computed ranks, cumulative accuracy, final ranking, MVP categories, and best player per round.
