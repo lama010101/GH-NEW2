@@ -10,9 +10,32 @@ const CONCURRENCY = 3;
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [1000, 4000]; // exponential-ish: 1s, 4s
 
-const MODEL_ID = "anthropic/claude-sonnet-4.6";
-const AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
-const PROVIDER = "openrouter";
+const DEFAULT_MODEL_ID = "anthropic/claude-sonnet-4.6";
+const DEFAULT_PROVIDER = "openrouter";
+const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
+
+function parseFlags(): { modelId: string; provider: string; playerName: string } {
+  const args = process.argv.slice(2);
+  const flags = new Map<string, string>();
+  for (const arg of args) {
+    if (arg.startsWith("--")) {
+      const eq = arg.indexOf("=");
+      const key = eq > 2 ? arg.slice(2, eq) : arg.slice(2);
+      const value = eq > 2 ? arg.slice(eq + 1) : "";
+      flags.set(key, value);
+    }
+  }
+  return {
+    modelId: flags.get("model") ?? DEFAULT_MODEL_ID,
+    provider: flags.get("provider") ?? DEFAULT_PROVIDER,
+    playerName: flags.get("player-name") ?? DEFAULT_AI_PLAYER_NAME,
+  };
+}
+
+const parsedFlags = parseFlags();
+const MODEL_ID = parsedFlags.modelId;
+const PROVIDER = parsedFlags.provider;
+const AI_PLAYER_NAME = parsedFlags.playerName;
 
 const DEFAULT_WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers.ts");
 const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
@@ -108,7 +131,7 @@ function isTransientFailure(stderr: string, stdout: string): boolean {
 
 function runWorker(eventId: string): Promise<WorkerResult> {
   return new Promise((resolve) => {
-    const child = spawn(TSX_BIN, [getWorkerScript(), eventId], {
+    const child = spawn(TSX_BIN, [getWorkerScript(), eventId, `--model=${MODEL_ID}`, `--provider=${PROVIDER}`, `--player-name=${AI_PLAYER_NAME}`], {
       cwd: process.cwd(),
       env: process.env,
       stdio: "pipe",
