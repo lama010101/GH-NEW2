@@ -7,9 +7,37 @@ import type { EventRecord, Location } from "@/core/types";
 config({ path: ".env.local" });
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL_ID = "anthropic/claude-sonnet-4.6";
-const PROVIDER = "openrouter";
-const AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
+
+const DEFAULT_MODEL_ID = "anthropic/claude-sonnet-4.6";
+const DEFAULT_PROVIDER = "openrouter";
+const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
+
+function parseArgs(): { eventId: string; modelId: string; provider: string; playerName: string } {
+  const args = process.argv.slice(2);
+  const flags = new Map<string, string>();
+  const positional: string[] = [];
+  for (const arg of args) {
+    if (arg.startsWith("--")) {
+      const eq = arg.indexOf("=");
+      const key = eq > 2 ? arg.slice(2, eq) : arg.slice(2);
+      const value = eq > 2 ? arg.slice(eq + 1) : "";
+      flags.set(key, value);
+    } else {
+      positional.push(arg);
+    }
+  }
+  return {
+    eventId: positional[0] ?? "",
+    modelId: flags.get("model") ?? DEFAULT_MODEL_ID,
+    provider: flags.get("provider") ?? DEFAULT_PROVIDER,
+    playerName: flags.get("player-name") ?? DEFAULT_AI_PLAYER_NAME,
+  };
+}
+
+const parsedArgs = parseArgs();
+const MODEL_ID = parsedArgs.modelId;
+const PROVIDER = parsedArgs.provider;
+const AI_PLAYER_NAME = parsedArgs.playerName;
 
 // Live Daily default timer (seconds). Confirmed in src/server/sessionCore.ts createDailySession.
 const DAILY_TIMER_SECONDS = 90;
@@ -33,9 +61,11 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const eventId = process.argv[2];
+  const eventId = parsedArgs.eventId;
   if (!eventId) {
-    console.error("Usage: tsx scripts/ai-players/generate-answers.ts <event-id>");
+    console.error(
+      "Usage: tsx scripts/ai-players/generate-answers.ts [--model=<slug>] [--provider=<provider>] [--player-name=<name>] <event-id>"
+    );
     process.exit(1);
   }
 
