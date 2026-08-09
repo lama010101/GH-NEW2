@@ -103,12 +103,38 @@
   gap: 10px;
 }
 
+.rankTitleWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .rankTitle {
   font-size: var(--font-xl);
   font-weight: 800;
   margin: 0;
   line-height: 1.1;
   color: var(--gh-text-primary);
+}
+
+.rankSessionXp {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: #fb923c;
+  white-space: nowrap;
+}
+
+.rankSessionXp i {
+  font-style: normal;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  margin-left: 3px;
+  opacity: 0.7;
+}
+
+.rankMainDark .rankSessionXp {
+  color: #fb923c;
 }
 
 .rankXp {

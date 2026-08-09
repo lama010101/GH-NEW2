@@ -614,7 +614,7 @@ export default function RoundActiveSection({
               key={imgRetryKey}
               ref={imgRef}
               src={toProxiedImageUrl(currentEvent.imageUrl) ?? ''}
-              alt="Historical event"
+              alt={t('historical_event')}
               draggable={false}
               className={styles.eventImg}
               onError={() => setImgError(true)}
@@ -648,8 +648,8 @@ export default function RoundActiveSection({
             type="button"
             className={styles.zoomBtn}
             onClick={handleZoomIn}
-            aria-label="Zoom in"
-            title="Zoom in"
+            aria-label={t('zoom_in')}
+            title={t('zoom_in')}
           >
             +
           </button>
@@ -657,8 +657,8 @@ export default function RoundActiveSection({
             type="button"
             className={styles.zoomBtn}
             onClick={handleZoomOut}
-            aria-label="Zoom out"
-            title="Zoom out"
+            aria-label={t('zoom_out')}
+            title={t('zoom_out')}
           >
             −
           </button>
@@ -692,7 +692,7 @@ export default function RoundActiveSection({
               <circle
                 cx="36" cy="36" r={radius}
                 fill="var(--gh-bg-elevated)"
-                stroke="var(--gh-border-default)"
+                stroke="var(--gh-border-medium)"
                 strokeWidth="3"
               />
               <circle
@@ -817,7 +817,7 @@ export default function RoundActiveSection({
             type="button"
             onClick={onOpenHints}
             disabled={isLocked}
-            className={`${styles.circleBtn} ${styles.hintsBtn} ${isLocked ? styles.hintsBtnLocked : ""}`}
+            className={`${styles.circleBtn} ${styles.hintsBtn} ${!isLocked ? styles.hintBtnPulse : ""} ${isLocked ? styles.hintsBtnLocked : ""}`}
             aria-label={t('hints')}
             data-testid="round-hints-btn"
           >
@@ -1101,6 +1101,9 @@ export default function RoundActiveSection({
           </button>
 
           <div className={styles.settingsCard} onClick={(e) => e.stopPropagation()}>
+            <p className={styles.settingsResumeHint}>
+              {t('settings_resume_hint')}
+            </p>
             <button
               type="button"
               onClick={() => { setHomeNavigating(true); window.location.href = '/home'; }}
@@ -1119,9 +1122,6 @@ export default function RoundActiveSection({
               )}
               {tNav('home')}
             </button>
-            <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--gh-text-secondary)', textAlign: 'center' }}>
-              {t('settings_resume_hint')}
-            </p>
             <div className={styles.settingsTitle}>{t('settings')}</div>
 
             <div className={styles.settingsRow}>

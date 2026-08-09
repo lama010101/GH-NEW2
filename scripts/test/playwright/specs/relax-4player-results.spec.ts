@@ -148,6 +148,12 @@ async function submitFinalRound(ws: CompeteWSClient, roundIndex: number) {
   const g = guessFor(playerIndex, roundIndex);
   ws.submitGuess(roundIndex, g.year, g.lat, g.lng, []);
   await ws.waitForState(
+    (s) => s.status === 'ROUND_COMPLETE' && s.currentRoundIndex === roundIndex,
+    STATE_TIMEOUT,
+    true,
+  );
+  ws.readyNext(roundIndex);
+  await ws.waitForState(
     (s) => s.status === 'SESSION_COMPLETE',
     STATE_TIMEOUT,
     true,
@@ -300,6 +306,7 @@ function playerWonRounds(rows: RoundResultRow[], playerId: string, playerIds: st
   for (const round of rounds) {
     const roundRows = rows.filter((r) => r.round_index === round);
     const maxScore = Math.max(...roundRows.map((r) => r.score));
+    if (maxScore <= 0) continue;
     if (roundRows.find((r) => r.player_id === playerId && r.score === maxScore)) {
       won += 1;
     }

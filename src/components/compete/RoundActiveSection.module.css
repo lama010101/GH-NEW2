@@ -534,6 +534,10 @@
   opacity: 0.45;
 }
 
+.hintBtnPulse {
+  animation: smallPulse 1.4s ease-in-out infinite;
+}
+
 .hintsCount {
   position: absolute;
   top: -4px;
@@ -565,6 +569,10 @@
   border-color: var(--gh-border-strong);
 }
 
+.whenBtn .btnIcon {
+  object-fit: cover;
+}
+
 /* ── Submit button ── */
 .submitBtn {
   width: 52px;
@@ -576,35 +584,18 @@
   background: var(--gh-orange);
   color: #fff;
   border-color: var(--gh-border-strong);
-  animation: breathe 1.6s ease-in-out infinite;
+  animation: turbo 2.2s ease-in-out infinite;
 }
 
-/* Sonar ring 1 — staggered concentric expanding ring */
+/* March ring — dashed ring rotates around the ready submit button */
 .submitBtnReady::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -7px;
   border-radius: 50%;
-  border: 2px solid rgba(var(--gh-orange-rgb), 0.7);
+  border: 2px dashed rgba(var(--gh-orange-rgb), 0.9);
   pointer-events: none;
-  animation: sonar 2s ease-out infinite;
-}
-
-/* Sonar ring 2 — delayed second ring */
-.submitBtnReady::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 2px solid rgba(var(--gh-orange-rgb), 0.7);
-  pointer-events: none;
-  animation: sonar 2s ease-out infinite;
-  animation-delay: 1s;
-}
-
-/* Circle then burst — send icon orbits inside the disk, then bursts at center */
-.submitBtnReady svg {
-  animation: planeOrbitBurst 2.6s linear infinite;
+  animation: dashring 4s linear infinite;
 }
 
 .submitBtnSubmitted {
@@ -623,19 +614,26 @@
   100% { transform: scale(2.2); opacity: 0; }
 }
 
-@keyframes planeOrbitBurst {
-  0%      { transform: translate(10px, 0) scale(1);     opacity: 1; }
-  7.5%    { transform: translate(7px, 7px) scale(1);    opacity: 1; }
-  15%     { transform: translate(0, 10px) scale(1);     opacity: 1; }
-  22.5%   { transform: translate(-7px, 7px) scale(1);   opacity: 1; }
-  30%     { transform: translate(-10px, 0) scale(1);    opacity: 1; }
-  37.5%   { transform: translate(-7px, -7px) scale(1);  opacity: 1; }
-  45%     { transform: translate(0, -10px) scale(1);    opacity: 1; }
-  52.5%   { transform: translate(7px, -7px) scale(1);   opacity: 1; }
-  60%     { transform: translate(0, 0) scale(1);        opacity: 1; }
-  80%     { transform: translate(0, 0) scale(2);        opacity: 0; }
-  81%     { transform: translate(0, 0) scale(0.3);      opacity: 0; }
-  100%    { transform: translate(0, 0) scale(1);        opacity: 1; }
+/* Turbo: heartbeat (D) + soft pulse + dashed ring (E) */
+@keyframes turbo {
+  0%, 100% { transform: scale(1); }
+  8%       { transform: scale(1.12); }
+  16%      { transform: scale(1); }
+  24%      { transform: scale(1.12); }
+  32%      { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+  68%      { transform: scale(1); }
+}
+
+@keyframes dashring {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Soft pulse for the active hints button */
+@keyframes smallPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
 }
 
 /* ── Active state (panel open) ── */
@@ -1094,7 +1092,15 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  margin-bottom: 20px;
   transition: background 0.15s;
+}
+
+.settingsResumeHint {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--gh-text-secondary);
+  text-align: center;
 }
 
 .settingsHomeBtn:active {
@@ -1104,10 +1110,6 @@
 .settingsHomeBtn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-.settingsHomeBtn:first-child {
-  margin-bottom: 20px;
 }
 
 @keyframes ghSettingsHomeSpin {
