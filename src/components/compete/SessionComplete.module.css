@@ -17,50 +17,6 @@
   box-sizing: border-box;
 }
 
-/* ── Top bar ── */
-
-.topbar {
-  width: 100%;
-  min-height: 48px;
-  background: var(--gh-bottombar-wrap-bg);
-  backdrop-filter: var(--gh-glass-blur);
-  -webkit-backdrop-filter: var(--gh-glass-blur);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 14px;
-}
-
-.siteTitle {
-  color: var(--gh-text-muted);
-  font-size: 12px; /* layout-constrained — do not tokenize */
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.avatarBtn {
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--gh-bg-elevated);
-  color: var(--gh-text-primary);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  cursor: pointer;
-  font-size: var(--font-xs);
-  font-weight: 700;
-}
-
-.avatarImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 /* ── Content wrapper ── */
 
 .content {
@@ -73,11 +29,13 @@
   gap: 14px;
 }
 
-/* ── Victory banner ── */
+/* ── Victory banner (now inside hero card) ── */
 
 .banner {
   text-align: center;
-  padding: 14px 8px 4px;
+  padding: 4px 8px 14px;
+  width: 100%;
+  border-bottom: 1px solid var(--gh-border-subtle);
 }
 
 .bannerKicker {
@@ -116,6 +74,14 @@
   color: var(--gh-text-muted);
 }
 
+.gameAccLabel {
+  font-size: var(--font-2xs);
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gh-text-muted);
+}
+
 .heroHead {
   flex: 0 0 100%;
   text-align: center;
@@ -147,8 +113,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  flex: 0 0 auto;
+  gap: 8px;
+  width: 100%;
 }
 
 .heroXp {
@@ -159,8 +125,8 @@
 }
 
 .heroXpVal {
-  font-size: var(--font-2xl);
-  font-weight: 400;
+  font-size: var(--font-xl);
+  font-weight: 800;
   color: var(--gh-text-primary);
   line-height: 1;
 }
@@ -208,9 +174,9 @@
 
 .heroCard {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   padding: 18px;
 }
 
@@ -222,7 +188,8 @@
 .statPair {
   flex: 1;
   display: flex;
-  gap: 12px;
+  gap: 10px;
+  width: 100%;
   min-width: 0;
 }
 
@@ -231,44 +198,42 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   padding: 12px 8px;
-  border-radius: var(--gh-radius-sm);
+  border-radius: 14px;
   background: var(--gh-mini-card-bg);
   border: 1px solid var(--gh-mini-card-border);
   min-width: 0;
 }
 
 .statTileLabelWhere {
-  font-size: 11px; /* layout-constrained — do not tokenize */
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--gh-teal);
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gh-text-secondary);
 }
 
 .statTileLabelWhen {
-  font-size: 11px; /* layout-constrained — do not tokenize */
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--gh-violet);
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gh-text-secondary);
 }
 
 .statTileIconWhere {
-  width: 14px;
-  height: 14px;
-  margin-right: 4px;
+  width: 16px;
+  height: 16px;
+  color: var(--gh-teal);
 }
 
 .statTileIconWhen {
-  width: 14px;
-  height: 14px;
-  margin-right: 4px;
+  width: 16px;
+  height: 16px;
+  color: var(--gh-violet);
 }
 
 .statTileVal {
@@ -284,7 +249,7 @@
 }
 
 .statTileXpVal {
-  font-size: var(--font-xs);
+  font-size: var(--font-sm);
   font-weight: 400;
   color: var(--gh-text-primary);
 }
@@ -397,8 +362,8 @@
 .youTag {
   font-size: 10px; /* layout-constrained — do not tokenize */
   font-weight: 700;
-  color: var(--gh-orange);
-  background: var(--gh-glow-orange);
+  color: var(--gh-teal);
+  background: rgba(34, 211, 238, 0.15);
   padding: 1px 7px;
   border-radius: 999px;
   flex-shrink: 0;
@@ -406,17 +371,17 @@
 
 .bar {
   width: 100%;
-  height: 4px;
-  background: var(--gh-mini-card-bg);
+  height: 5px;
+  background: var(--gh-border-subtle);
   border-radius: 999px;
-  margin-top: 6px;
+  margin-top: 5px;
   overflow: hidden;
 }
 
 .barFill {
   height: 100%;
   border-radius: 999px;
-  background: var(--gh-text-muted);
+  background: linear-gradient(90deg, var(--gh-teal), var(--gh-violet));
 }
 
 .rankScore {
@@ -441,9 +406,10 @@
 }
 
 .rankXp {
-  font-size: 12px; /* layout-constrained — do not tokenize */
-  font-weight: 700;
-  color: var(--gh-text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gh-text-muted);
+  margin-top: 1px;
 }
 
 .rankPctSuffix {
@@ -484,30 +450,19 @@
 
 .badgeTally {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .badgeTallyItem {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
-  border-radius: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
   background: var(--gh-mini-card-bg);
-  border: 1px solid var(--gh-border-subtle);
-}
-
-.badgeTallyCombo {
-  border-color: var(--gh-badge-gold);
-}
-
-.badgeTallyWhen {
-  border-color: var(--gh-violet);
-}
-
-.badgeTallyWhere {
-  border-color: var(--gh-teal);
+  border: 1px solid var(--gh-mini-card-border);
 }
 
 .badgeTallyCount {
@@ -519,13 +474,10 @@
 .badgeTallyTier {
   font-size: 11px; /* layout-constrained — do not tokenize */
   font-weight: 700;
+  color: var(--gh-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-
-.badgeTallyCombo .badgeTallyTier { color: var(--gh-badge-gold); }
-.badgeTallyWhen .badgeTallyTier { color: var(--gh-violet); }
-.badgeTallyWhere .badgeTallyTier { color: var(--gh-teal); }
 
 /* Stat groups (XP per era / region) */
 .statGroup {
@@ -593,33 +545,38 @@
 .gameStatsGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .gameStatsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .gameStatTile {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 4px;
-  padding: 12px 8px;
+  padding: 12px 14px;
   border-radius: 12px;
   background: var(--gh-mini-card-bg);
   border: 1px solid var(--gh-mini-card-border);
 }
 
 .gameStatVal {
-  font-size: 18px; /* layout-constrained — do not tokenize */
-  font-weight: 800;
+  font-size: var(--font-xl);
+  font-weight: 400;
   color: var(--gh-text-primary);
+  line-height: 1;
 }
 
 .gameStatLabel {
   font-size: 11px; /* layout-constrained — do not tokenize */
-  font-weight: 600;
+  font-weight: 700;
   color: var(--gh-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  text-align: center;
 }
 
 /* ── Round breakdown ── */
@@ -801,13 +758,17 @@
 .bestRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   margin-top: 10px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 10px;
   background: var(--gh-mini-card-bg);
   border: 1px solid var(--gh-border-subtle);
+}
+
+.bestRowMe {
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 .bestLabel {
@@ -816,6 +777,27 @@
   letter-spacing: 0.5px;
   color: var(--gh-badge-gold);
   text-transform: uppercase;
+}
+
+.bestPlayerRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.bestAvatarWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 2px;
+  border: 2px solid transparent;
+}
+
+.bestAvatarMe {
+  border-color: var(--gh-teal);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
 }
 
 .bestName {
@@ -833,48 +815,68 @@
   color: var(--gh-orange);
 }
 
-/* ── MVP awards ── */
+/* ── Best player (was MVP awards) ── */
 
 .mvpList {
-  padding: 0 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  padding: 0 12px 12px;
 }
 
 .mvpRow {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--gh-mini-card-bg);
-  border: 1px solid var(--gh-mini-card-border);
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: 10px;
 }
 
-.mvpIcon {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  display: flex;
+.mvpRow + .mvpRow {
+  border-top: 1px solid var(--gh-border-subtle);
+}
+
+.mvpDisk {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  flex-shrink: 0;
+  color: #ffffff;
 }
 
-.mvpIcon img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
+.mvpDiskOrange { background: var(--gh-orange); }
+.mvpDiskYear { background: var(--gh-violet); }
+.mvpDiskLocation { background: var(--gh-teal); }
+
+.mvpDisk img,
+.mvpDisk svg {
+  width: 18px;
+  height: 18px;
 }
 
 .mvpLabel {
-  font-size: 12px; /* layout-constrained — do not tokenize */
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+
+.mvpAvatarWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 2px;
+  border: 2px solid transparent;
+}
+
+.mvpAvatarMe {
+  border-color: var(--gh-teal);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
 }
 
 .mvpNames {
@@ -888,8 +890,8 @@
 }
 
 .mvpName {
-  font-size: 13px; /* layout-constrained — do not tokenize */
-  font-weight: 400;
+  font-size: 14px; /* layout-constrained — do not tokenize */
+  font-weight: 600;
   color: var(--gh-text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -906,13 +908,13 @@
 .mvpWinner {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   min-width: 0;
 }
 
 .mvpValue {
-  font-size: 11px; /* layout-constrained — do not tokenize */
-  font-weight: 700;
+  font-size: 13px; /* layout-constrained — do not tokenize */
+  font-weight: 800;
   color: var(--gh-text-muted);
   white-space: nowrap;
   line-height: 1;
@@ -966,9 +968,9 @@
   flex: 1;
   padding: 12px 20px;
   border: none;
-  color: var(--gh-btn-text);
-  background: var(--gh-orange);
-  box-shadow: 0 6px 22px rgba(var(--gh-orange-rgb), 0.35);
+  color: #06181c;
+  background: var(--gh-teal);
+  box-shadow: 0 6px 20px rgba(34, 211, 238, 0.3);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -989,6 +991,13 @@
 
 /* ── Responsive ── */
 
+.gridZone {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
 @media (max-width: 767px) {
   .content {
     padding-left: 4px;
@@ -998,7 +1007,9 @@
 
 @media (min-width: 768px) {
   .content {
-    max-width: 560px;
+    max-width: 720px;
+    padding: 24px 24px 0;
+    gap: 18px;
   }
 
   .section {
@@ -1012,11 +1023,62 @@
 
   .cta {
     position: static;
-    max-width: 560px;
+    max-width: 720px;
     margin: 18px auto 0;
     padding: 0 16px;
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+
+  .gridZone {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .gridZone > * {
+    grid-column: span 1;
+  }
+
+  .gridZone > section:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .gameStatsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .content {
+    max-width: 1100px;
+    padding: 32px 32px 0;
+    gap: 22px;
+  }
+
+  .cta {
+    max-width: 1100px;
+  }
+
+  .gridZone {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 22px;
+  }
+
+  .gridZone > section:last-child {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 1440px) {
+  .content {
+    max-width: 1200px;
+    gap: 26px;
+  }
+
+  .cta {
+    max-width: 1200px;
   }
 }

@@ -14,7 +14,6 @@ import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
 import { createAsyncCompeteSession } from "@/core/competeCreate";
 import { calculateBadges } from "@/core/rules";
 import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
-import { NavModal } from "@/components/NavModal";
 import ExperienceAccuracy from "@/components/ExperienceAccuracy";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
@@ -68,7 +67,6 @@ export default function SessionComplete({
   const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
-  const [navModalOpen, setNavModalOpen] = useState(false);
   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [viewerAlt, setViewerAlt] = useState<string>("");
   const [totalXp, setTotalXp] = useState<number | null>(null);
@@ -323,9 +321,6 @@ export default function SessionComplete({
         const whenXP = myStats?.totalYearScore ?? 0;
         const avgDistanceKm = myStats?.avgDistanceKm ?? 0;
         const avgYearDiff = myStats?.avgYearDiff ?? 0;
-        const currentPlayerData = snapshot.players.find(p => p.playerId === playerId);
-        const currentDisplayName = playerLabel(snapshot.players, playerId);
-        const currentInitial = currentDisplayName ? currentDisplayName.charAt(0).toUpperCase() : "?";
 
         const roundWinners = new Map<number, string[]>();
         for (let i = 0; i < snapshot.config.totalRounds; i++) {
@@ -562,45 +557,19 @@ export default function SessionComplete({
 
         return (
           <>
-            {/* TOP BAR */}
-            <div className={styles.topbar}>
-              <div className={styles.siteTitle}>{tGame('guess_history')}</div>
-              <>
-                <button
-                  type="button"
-                  className={styles.avatarBtn}
-                  onClick={() => setNavModalOpen(true)}
-                  aria-label={t('open_profile_menu')}
-                >
-                  <PlayerAvatar
-                    avatarUrl={currentPlayerData?.avatarUrl ?? null}
-                    displayName={currentDisplayName}
-                    playerId={playerId}
-                    size={32}
-                  />
-                </button>
-                <NavModal
-                  isOpen={navModalOpen}
-                  onClose={() => setNavModalOpen(false)}
-                  avatarUrl={currentPlayerData?.avatarUrl ?? null}
-                  initials={currentInitial}
-                  displayName={currentDisplayName}
-                />
-              </>
-            </div>
-
             <div className={styles.content}>
-              {/* VICTORY BANNER */}
-              <div className={styles.banner}>
-                <span className={styles.bannerKicker}>{tGame('game_complete')}</span>
-              </div>
-
-              {/* HERO ACCURACY CARD — ring + Where/When stat tiles */}
+              {/* HERO ACCURACY CARD — banner + ring + Where/When stat tiles */}
               <section className={`${styles.card} ${styles.heroCard}`}>
-                <div className={styles.heroHead}>
-                  <div className={styles.heroHeadLine1}>{tGame('you_finished')} <span className={styles.heroRank}>{myRank}{rankSuffix(myRank)}</span></div>
-                  <div className={styles.heroHeadLine2}>{tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}</div>
+                <div className={styles.banner}>
+                  <span className={styles.bannerKicker}>{tGame('game_complete')}</span>
+                  <h1 className={styles.bannerTitle}>
+                    {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
+                  </h1>
+                  <div className={styles.bannerStats}>
+                    {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
+                  </div>
                 </div>
+                <span className={styles.gameAccLabel}>Game Accuracy (%)</span>
                 {myStats ? (
                   <div className={styles.heroRingWrap}>
                     <RainbowRing value={overallAccuracy} />
@@ -644,6 +613,7 @@ export default function SessionComplete({
                 </div>
               </section>
 
+              <div className={styles.gridZone}>
               {/* FINAL RANKINGS — hidden in practice (solo) mode */}
               {!isPractice && !isDaily && (
               <section className={styles.card}>
@@ -791,31 +761,36 @@ export default function SessionComplete({
               <section className={styles.card}>
                 <div className={styles.cardHead}>
                   <span className={styles.accentBar} />
-                  <h2 className={styles.cardTitle}>{tGame('mvp_awards')}</h2>
+                  <h2 className={styles.cardTitle}>{tGame('best_player')}</h2>
                 </div>
                 <div className={styles.mvpList}>
                   {mvpAwards.map((award) => (
                     <div key={award.key} className={styles.mvpRow}>
                       <span
-                        className={styles.mvpIcon}
-                        style={{
-                          color: award.key === 'year' ? 'var(--gh-violet)' : award.key === 'location' ? 'var(--gh-teal)' : 'var(--gh-text-primary)',
-                        }}
+                        className={`${styles.mvpDisk} ${
+                          award.key === 'year'
+                            ? styles.mvpDiskYear
+                            : award.key === 'location'
+                            ? styles.mvpDiskLocation
+                            : styles.mvpDiskOrange
+                        }`}
                       >
-                        <award.icon size={24} />
+                        <award.icon size={18} />
                       </span>
                       <span className={styles.mvpLabel}>{award.label}</span>
                       <span className={styles.mvpNames}>
                         {award.winners.map((w, i) => (
                           <span key={w.playerId} className={styles.mvpWinner}>
-                            <PlayerAvatar
-                              avatarUrl={w.avatarUrl}
-                              displayName={w.displayName}
-                              playerId={w.playerId}
-                              size={24}
-                            />
+                            <span className={`${styles.mvpAvatarWrap} ${w.isMe ? styles.mvpAvatarMe : ""}`}>
+                              <PlayerAvatar
+                                avatarUrl={w.avatarUrl}
+                                displayName={w.displayName}
+                                playerId={w.playerId}
+                                size={24}
+                              />
+                            </span>
                             <span className={styles.mvpName}>
-                              {w.isMe ? tGame('mvp_you') : w.displayName}
+                              {w.displayName}
                             </span>
                             <span className={styles.mvpValue} style={{ color: getAccuracyColor(award.getValue(w.stats)) }}>
                               {award.getValue(w.stats)}
@@ -932,6 +907,7 @@ export default function SessionComplete({
                     avgDistanceKm: 0, avgYearDiff: 0, totalScore: 0, bestPlayerId: null
                   };
                   const bestPlayerName = roundStats.bestPlayerId ? playerLabel(snapshot.players, roundStats.bestPlayerId) : null;
+                  const bestPlayerData = roundStats.bestPlayerId ? snapshot.players.find(p => p.playerId === roundStats.bestPlayerId) : null;
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
                   const myRoundResult = effectiveResults.find(r => r.roundIndex === i && r.playerId === playerId);
                   const myRoundAcc = hasResult(myRoundResult)
@@ -1004,10 +980,20 @@ export default function SessionComplete({
                           </div>
 
                           {bestPlayerName && (
-                            <div className={styles.bestRow}>
+                            <div className={`${styles.bestRow} ${isCurrentBestPlayer ? styles.bestRowMe : ""}`}>
                               <span className={styles.bestLabel}>🏆 {tGame('best_player')}</span>
-                              <span className={`${styles.bestName} ${isCurrentBestPlayer ? styles.bestNameMe : ""}`}>
-                                {bestPlayerName}{isCurrentBestPlayer ? ` (${tGame('you')})` : ""}
+                              <span className={styles.bestPlayerRight}>
+                                <span className={`${styles.bestAvatarWrap} ${isCurrentBestPlayer ? styles.bestAvatarMe : ""}`}>
+                                  <PlayerAvatar
+                                    avatarUrl={bestPlayerData?.avatarUrl ?? null}
+                                    displayName={bestPlayerName}
+                                    playerId={roundStats.bestPlayerId ?? undefined}
+                                    size={24}
+                                  />
+                                </span>
+                                <span className={`${styles.bestName} ${isCurrentBestPlayer ? styles.bestNameMe : ""}`}>
+                                  {bestPlayerName}{isCurrentBestPlayer ? ` (${tGame('you')})` : ""}
+                                </span>
                               </span>
                             </div>
                           )}
@@ -1019,6 +1005,7 @@ export default function SessionComplete({
                 })()}
                 </div>
               </section>
+              </div>
 
               <div className={styles.dockSpacer} />
 
