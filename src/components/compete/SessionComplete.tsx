@@ -63,6 +63,7 @@ export default function SessionComplete({
   const distanceUnit = getDistanceUnitPreference();
   const isPractice = snapshot.config.mode === "practice";
   const isDaily = snapshot.config.mode === "daily";
+  const isAsync = snapshot.config.mode === "async";
   const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
@@ -1010,14 +1011,16 @@ export default function SessionComplete({
                 >
                   {tGame('home')}
                 </button>
-                <button
-                  type="button"
-                  className={styles.homeBtn}
-                  onClick={handleShareLink}
-                  data-testid="session-share-link"
-                >
-                  {linkCopied ? tLobby('link_copied') : tLobby('copy_link')}
-                </button>
+                {isAsync && (!snapshot.config.sessionDeadline || new Date(snapshot.config.sessionDeadline) > new Date()) && (
+                  <button
+                    type="button"
+                    className={styles.homeBtn}
+                    onClick={handleShareLink}
+                    data-testid="session-share-link"
+                  >
+                    {linkCopied ? tLobby('link_copied') : tLobby('copy_link')}
+                  </button>
+                )}
                 {!isDaily && (isHost ? (
                   <button
                     type="button"
