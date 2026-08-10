@@ -12,7 +12,7 @@ const RETRY_DELAYS_MS = [1000, 4000]; // exponential-ish: 1s, 4s
 
 const DEFAULT_MODEL_ID = "anthropic/claude-sonnet-4.6";
 const DEFAULT_PROVIDER = "openrouter";
-const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
+const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6";
 
 function parseFlags(): { modelId: string; provider: string; playerName: string } {
   const args = process.argv.slice(2);
@@ -37,7 +37,7 @@ const MODEL_ID = parsedFlags.modelId;
 const PROVIDER = parsedFlags.provider;
 const AI_PLAYER_NAME = parsedFlags.playerName;
 
-const DEFAULT_WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers.ts");
+const DEFAULT_WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers-v3.ts");
 const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
 
 function getWorkerScript(): string {
