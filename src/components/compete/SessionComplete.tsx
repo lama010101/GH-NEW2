@@ -331,8 +331,6 @@ export default function SessionComplete({
         const overallXP = myStats?.totalScore ?? 0;
         const whereAccuracy = myStats?.avgLocationAccuracy ?? 0;
         const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
-        const whereXP = myStats?.totalLocationScore ?? 0;
-        const whenXP = myStats?.totalYearScore ?? 0;
         const avgDistanceKm = myStats?.avgDistanceKm ?? 0;
         const avgYearDiff = myStats?.avgYearDiff ?? 0;
 
@@ -509,7 +507,10 @@ export default function SessionComplete({
             badgeCountsByTier[b.dimension][b.tier]++;
           }
         }
-        const totalBadges = BADGE_DIMENSIONS.reduce((sum, dim) => sum + BADGE_TIERS.reduce((s, tier) => s + badgeCountsByTier[dim][tier], 0), 0);
+        const earnedBadges = BADGE_DIMENSIONS.flatMap((dim) =>
+          BADGE_TIERS.filter((tier) => badgeCountsByTier[dim][tier] > 0)
+            .map((tier) => ({ dim, tier, count: badgeCountsByTier[dim][tier] }))
+        );
 
         // XP per era (for ExperienceAccuracy component)
         const byWhenMap = new Map<string, { totalXp: number; totalAcc: number; roundCount: number }>();
@@ -589,10 +590,6 @@ export default function SessionComplete({
                 {myStats ? (
                   <div className={styles.heroRingWrap}>
                     <RainbowRing value={Math.ceil(overallAccuracy)} />
-                    <div className={styles.heroXp}>
-                      <span className={styles.heroXpVal}>+{overallXP.toLocaleString()}</span>
-                      <span className={styles.heroXpLabel}>{tGame('xp_unit')}</span>
-                    </div>
                   </div>
                 ) : (
                   <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--gh-text-muted)' }}>—</span>
@@ -603,10 +600,6 @@ export default function SessionComplete({
                     {myStats ? (
                       <>
                         <MiniRing value={Math.ceil(whereAccuracy)} color={getAccuracyColor(Math.ceil(whereAccuracy))} />
-                        <div className={styles.statTileXp}>
-                          <span className={styles.statTileXpVal}>+{whereXP}</span>
-                          <span className={styles.statTileXpLabel}>{tGame('xp_unit')}</span>
-                        </div>
                       </>
                     ) : (
                       <span className={styles.statTileVal} style={{ color: 'var(--gh-text-muted)' }}>{tGame('not_started')}</span>
@@ -617,10 +610,6 @@ export default function SessionComplete({
                     {myStats ? (
                       <>
                         <MiniRing value={Math.ceil(whenAccuracy)} color={getAccuracyColor(Math.ceil(whenAccuracy))} />
-                        <div className={styles.statTileXp}>
-                          <span className={styles.statTileXpVal}>+{whenXP}</span>
-                          <span className={styles.statTileXpLabel}>{tGame('xp_unit')}</span>
-                        </div>
                       </>
                     ) : (
                       <span className={styles.statTileVal} style={{ color: 'var(--gh-text-muted)' }}>{tGame('not_started')}</span>
@@ -833,24 +822,18 @@ export default function SessionComplete({
                     <h2 className={styles.cardTitle}>{tGame('badges_won')}</h2>
                   </div>
                   <div className={styles.achievementsBody}>
-                    {totalBadges === 0 ? (
+                    {earnedBadges.length === 0 ? (
                       <span className={styles.noBadges}>{tGame('no_badges')}</span>
                     ) : (
                       <div className={styles.badgeTally}>
-                        {BADGE_DIMENSIONS.flatMap((dim) =>
-                          BADGE_TIERS.map((tier) => {
-                            const count = badgeCountsByTier[dim][tier];
-                            const earned = count > 0;
-                            return (
-                              <span key={`${dim}-${tier}`} className={`${styles.badgeTallyItem} ${earned ? "" : styles.badgeTallyItemUnearned}`}>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={`/badges/${dim}_${tier}.webp`} alt={`${tGame(BADGE_TIER_LABEL_KEY[tier])} ${tGame(BADGE_DIMENSION_LABEL_KEY[dim])}`} width={28} height={28} />
-                                <span className={styles.badgeTallyCount}>{count}</span>
-                                <span className={styles.badgeTallyTier}>{tGame(BADGE_DIMENSION_LABEL_KEY[dim])}</span>
-                              </span>
-                            );
-                          })
-                        )}
+                        {earnedBadges.map(({ dim, tier, count }) => (
+                          <span key={`${dim}-${tier}`} className={styles.badgeTallyItem}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={`/badges/${dim}_${tier}.webp`} alt={`${tGame(BADGE_TIER_LABEL_KEY[tier])} ${tGame(BADGE_DIMENSION_LABEL_KEY[dim])}`} width={28} height={28} />
+                            <span className={styles.badgeTallyCount}>{count}</span>
+                            <span className={styles.badgeTallyTier}>{tGame(BADGE_DIMENSION_LABEL_KEY[dim])}</span>
+                          </span>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -911,7 +894,10 @@ export default function SessionComplete({
                       <div className={styles.customRankBody}>
                         <div className={styles.customRankHead}>
                           <span className={styles.customRankTitle}>{title}</span>
-                          <span className={styles.customRankSessionXp}>+{overallXP.toLocaleString()} XP</span>
+                          <span className={styles.customRankXpGroup}>
+                            <span className={styles.customRankSessionXp}>+{overallXP.toLocaleString()} XP</span>
+                            <span className={styles.customRankTotalXp}>{Math.floor(totalXp ?? 0).toLocaleString()} XP</span>
+                          </span>
                         </div>
                         <div className={styles.customRankNext}>
                           <span className={styles.customRankNextLabel}>{tRank('next_label')}:</span>
