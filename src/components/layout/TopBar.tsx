@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -18,6 +19,8 @@ interface TopBarProps {
 export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick }: TopBarProps) {
   const router = useRouter()
   const t = useTranslations('landing')
+  const [imgError, setImgError] = useState(false)
+  useEffect(() => { setImgError(false) }, [avatarUrl])
 
   // Derive rank tier from xp string for the "Rank" badge.
   // xp may be "--" (loading) or a locale-formatted number like "32 500".
@@ -41,14 +44,15 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
           onClick={onAvatarClick}
           className={styles.avatarBtn}
         >
-          {avatarUrl
+          {avatarUrl && !imgError
             ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={toProxiedImageUrl(avatarUrl) ?? ''} alt="" className={styles.avatarBtnImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
+              <img src={toProxiedImageUrl(avatarUrl) ?? ''} alt="" className={styles.avatarBtnImg} onError={() => setImgError(true)} />
             )
-            : null
+            : (
+              <span className={styles.avatarBtnInitials}>{initials.slice(0,2)}</span>
+            )
           }
-          <span className={styles.avatarBtnInitials} style={{ display: avatarUrl ? "none" : "inline" }}>{initials.slice(0,2)}</span>
         </button>
       </div>
     </div>
