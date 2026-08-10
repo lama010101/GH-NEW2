@@ -8,7 +8,7 @@
   width: 100%;
   overflow-x: hidden;
   background: transparent;
-  padding: 0 0 calc(96px + env(safe-area-inset-bottom, 0px));
+  padding: 0 0 calc(140px + env(safe-area-inset-bottom, 0px));
   color: var(--gh-text-primary);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -76,7 +76,7 @@
 
 .gameAccLabel {
   font-size: var(--font-2xs);
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--gh-text-muted);
@@ -274,6 +274,10 @@
   flex-shrink: 0;
 }
 
+.avatarMe {
+  box-shadow: 0 0 0 2px var(--gh-teal), 0 0 8px rgba(34, 211, 238, 0.4);
+}
+
 .rankAvatar {
   width: 38px;
   height: 38px;
@@ -427,6 +431,12 @@
   gap: 16px;
 }
 
+.achievementsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 /* Badge summary */
 .badgeSummary {
   display: flex;
@@ -477,6 +487,11 @@
   color: var(--gh-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.badgeTallyItemUnearned {
+  opacity: 0.4;
+  filter: grayscale(1);
 }
 
 /* Stat groups (XP per era / region) */
@@ -920,6 +935,119 @@
   line-height: 1;
 }
 
+/* ── Custom rank card (Experience slot) ── */
+
+.customRankCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.customRankMedallion {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 2px solid var(--gh-gold);
+  box-shadow: 0 0 18px rgba(251, 146, 60, 0.27);
+  border-radius: 14px;
+  background: var(--gh-bg-elevated);
+}
+
+.customRankTier {
+  font-size: var(--font-xs);
+  font-weight: 800;
+  color: var(--gh-gold);
+  line-height: 1;
+}
+
+.customRankStars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+}
+
+.customRankBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.customRankHead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.customRankTitle {
+  font-size: var(--font-xl);
+  font-weight: 800;
+  color: var(--gh-text-primary);
+  line-height: 1.1;
+}
+
+.customRankSessionXp {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--gh-orange);
+  white-space: nowrap;
+}
+
+.customRankNext {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: var(--font-2xs);
+}
+
+.customRankNextLabel {
+  color: var(--gh-text-muted);
+  font-weight: 600;
+}
+
+.customRankNextTitle {
+  color: var(--gh-text-primary);
+  font-weight: 700;
+}
+
+.customRankNextXp {
+  margin-left: auto;
+  color: var(--gh-orange);
+  font-weight: 800;
+}
+
+.customRankBar {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--gh-border-default);
+  overflow: hidden;
+}
+
+.customRankBarFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gh-orange), #f97316);
+  transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 768px) {
+  .customRankHead {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+}
+
 /* ── Dock spacer ── */
 
 .dockSpacer {
@@ -935,8 +1063,9 @@
   bottom: 0;
   z-index: 30;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
   background: var(--gh-bottombar-wrap-bg);
   backdrop-filter: var(--gh-glass-blur);
@@ -952,16 +1081,26 @@
 }
 
 .homeBtn {
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  background: var(--gh-btn-action-bg);
+  color: var(--gh-btn-action-text);
+  box-shadow: var(--gh-btn-action-glow);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.homeBtnFull {
+  flex: 1;
+}
+
+.ctaSecondary {
   flex-shrink: 0;
   padding: 12px 20px;
   border: 1px solid var(--gh-border-default);
   background: var(--gh-mini-card-bg);
   color: var(--gh-text-secondary);
   -webkit-tap-highlight-color: transparent;
-}
-
-.homeBtnFull {
-  flex: 1;
 }
 
 .playBtn {
@@ -1013,7 +1152,7 @@
   }
 
   .section {
-    padding-bottom: 48px;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 
   .topbar {
@@ -1022,13 +1161,20 @@
   }
 
   .cta {
-    position: static;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
     max-width: 720px;
-    margin: 18px auto 0;
-    padding: 0 16px;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    margin: 0 auto;
+    padding: 12px 24px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--gh-bottombar-wrap-bg);
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .homeBtn {
+    width: 220px;
   }
 
   .gridZone {
@@ -1068,7 +1214,7 @@
   }
 
   .gridZone > section:last-child {
-    grid-column: span 2;
+    grid-column: 1 / -1;
   }
 }
 
