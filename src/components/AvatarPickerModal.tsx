@@ -12,6 +12,13 @@ type Avatar = {
   last_name: string | null;
   image_url: string | null;
   firebase_url: string | null;
+  description: string | null;
+  birth_day: string | null;
+  death_day: string | null;
+  birth_city: string | null;
+  birth_country: string | null;
+  death_city: string | null;
+  death_country: string | null;
 };
 
 export interface AvatarPickerModalProps {
@@ -32,8 +39,10 @@ export function AvatarPickerModal({
   onSkip,
 }: AvatarPickerModalProps) {
   const t = useTranslations('avatar_picker');
+  const commonT = useTranslations('common');
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
+  const [selectedAvatarDetail, setSelectedAvatarDetail] = useState<Avatar | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingAvatars, setIsLoadingAvatars] = useState(false);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
@@ -41,6 +50,7 @@ export function AvatarPickerModal({
   useEffect(() => {
     if (!isOpen) return;
     setSelectedAvatar(currentAvatarUrl);
+    setSelectedAvatarDetail(null);
     setSearchQuery('');
 
     const fetchAvatars = async () => {
@@ -48,7 +58,7 @@ export function AvatarPickerModal({
       try {
         const { data } = await supabaseBrowser
           .from('avatars')
-          .select('id, first_name, last_name, image_url, firebase_url')
+          .select('id, first_name, last_name, image_url, firebase_url, description, birth_day, death_day, birth_city, birth_country, death_city, death_country')
           .eq('ready', true);
         setAvatars(data ?? []);
       } catch (error) {
@@ -75,10 +85,35 @@ export function AvatarPickerModal({
     return parts.join(' ') || t('unknown');
   };
 
+  const formatLifeEvent = (
+    day: string | null,
+    city: string | null,
+    country: string | null
+  ): string | null => {
+    const parts = [day, city, country].filter((part): part is string => Boolean(part));
+    return parts.length > 0 ? parts.join(', ') : null;
+  };
+
   const filteredAvatars = avatars.filter(avatar => {
     const name = getAvatarName(avatar).toLowerCase();
     return name.includes(searchQuery.toLowerCase());
   });
+
+  const bornLine = selectedAvatarDetail
+    ? formatLifeEvent(
+        selectedAvatarDetail.birth_day,
+        selectedAvatarDetail.birth_city,
+        selectedAvatarDetail.birth_country
+      )
+    : null;
+
+  const diedLine = selectedAvatarDetail
+    ? formatLifeEvent(
+        selectedAvatarDetail.death_day,
+        selectedAvatarDetail.death_city,
+        selectedAvatarDetail.death_country
+      )
+    : null;
 
   const handleSave = async () => {
     if (!selectedAvatar) return;
@@ -128,7 +163,7 @@ export function AvatarPickerModal({
                   <div
                     key={avatar.id}
                     className={`${avatarPickerStyles.avatarCell} ${selectedAvatar === url ? avatarPickerStyles.selected : ''}`}
-                    onClick={() => setSelectedAvatar(url)}
+                    onClick={() => { setSelectedAvatar(url); setSelectedAvatarDetail(avatar); }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -140,6 +175,60 @@ export function AvatarPickerModal({
                   </div>
                 );
               })}
+            </div>
+          )}
+          {selectedAvatarDetail && (
+            <div
+              style={{
+                marginTop: 16,
+                padding: 16,
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--gh-glass-bg)',
+                border: '1px solid var(--gh-modal-divider)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 'var(--font-lg)',
+                  fontWeight: 600,
+                  color: 'var(--gh-modal-text-primary)',
+                  marginBottom: 8,
+                }}
+              >
+                {getAvatarName(selectedAvatarDetail)}
+              </div>
+              {bornLine && (
+                <div
+                  style={{
+                    fontSize: 'var(--font-sm)',
+                    color: 'var(--gh-modal-text-secondary)',
+                    marginBottom: 4,
+                  }}
+                >
+                  {commonT('born_prefix')} {bornLine}
+                </div>
+              )}
+              {diedLine && (
+                <div
+                  style={{
+                    fontSize: 'var(--font-sm)',
+                    color: 'var(--gh-modal-text-secondary)',
+                    marginBottom: 4,
+                  }}
+                >
+                  {commonT('died_prefix')} {diedLine}
+                </div>
+              )}
+              <div
+                style={{
+                  fontSize: 'var(--font-sm)',
+                  color: 'var(--gh-modal-text-secondary)',
+                  marginTop: 8,
+                  lineHeight: 1.5,
+                }}
+              >
+                {selectedAvatarDetail.description || commonT('no_description')}
+              </div>
             </div>
           )}
         </div>
