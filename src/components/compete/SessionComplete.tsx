@@ -7,12 +7,12 @@ import { toProxiedImageUrl } from "@/lib/imageProxy";
 import RainbowRing from "@/components/compete/RainbowRing";
 import { MiniRing } from "@/components/compete/RoundCompleteSection";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
-import RankCard from "@/components/RankCard";
-import type { CompeteSessionSnapshot } from "@/core/types";
+import type { BadgeDimension, BadgeTier, CompeteSessionSnapshot } from "@/core/types";
 import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
 import { createAsyncCompeteSession } from "@/core/competeCreate";
 import { calculateBadges } from "@/core/rules";
+import { rankForXp } from "@/core/rank";
 import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import ExperienceAccuracy from "@/components/ExperienceAccuracy";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
@@ -22,8 +22,21 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { TrendingUp, Trophy } from "lucide-react";
+import { Star, TrendingUp, Trophy } from "lucide-react";
 import styles from "./SessionComplete.module.css";
+
+const BADGE_DIMENSIONS: BadgeDimension[] = ["location", "year", "combo"];
+const BADGE_TIERS: BadgeTier[] = ["gold", "silver", "bronze"];
+const BADGE_DIMENSION_LABEL_KEY: Record<BadgeDimension, string> = {
+  location: "badge_dim_location",
+  year: "badge_dim_year",
+  combo: "badge_dim_combo",
+};
+const BADGE_TIER_LABEL_KEY: Record<BadgeTier, string> = {
+  gold: "badge_tier_gold",
+  silver: "badge_tier_silver",
+  bronze: "badge_tier_bronze",
+};
 
 type DailyResultPlayer = {
   player_id: string;
@@ -59,6 +72,7 @@ export default function SessionComplete({
   const router = useRouter();
   const t = useTranslations('compete_page');
   const tGame = useTranslations('game');
+  const tRank = useTranslations('rank');
   const tLobby = useTranslations('lobby');
   const distanceUnit = getDistanceUnitPreference();
   const isPractice = snapshot.config.mode === "practice";
@@ -243,11 +257,11 @@ export default function SessionComplete({
     const totalYearScore = playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0);
     const bestRoundResult = playerResults.reduce((best, r) => (r.score > best.score ? r : best), playerResults[0]);
     const bestRoundScore = bestRoundResult.score;
-    const bestRoundAccuracy = Math.round(((bestRoundResult.locationScore ?? 0) + (bestRoundResult.timeScore ?? 0)) / 2);
-    const avgAccuracy = Math.round(playerResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / playerResults.length);
-    const avgLocationAccuracy = Math.round(playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / playerResults.length);
-    const avgYearAccuracy = Math.round(playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0) / playerResults.length);
-    const avgConsistency = Math.round(playerResults.reduce((sum, r) => sum + Math.min(r.locationScore ?? 0, r.timeScore ?? 0), 0) / playerResults.length);
+    const bestRoundAccuracy = ((bestRoundResult.locationScore ?? 0) + (bestRoundResult.timeScore ?? 0)) / 2;
+    const avgAccuracy = playerResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / playerResults.length;
+    const avgLocationAccuracy = playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / playerResults.length;
+    const avgYearAccuracy = playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0) / playerResults.length;
+    const avgConsistency = playerResults.reduce((sum, r) => sum + Math.min(r.locationScore ?? 0, r.timeScore ?? 0), 0) / playerResults.length;
     const avgDistanceKm = playerResults.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0) / playerResults.length;
     const avgYearDiff = playerResults.reduce((sum, r) => sum + (r.yearDiff ?? 0), 0) / playerResults.length;
 
@@ -262,9 +276,9 @@ export default function SessionComplete({
       return { avgAccuracy: 0, avgLocationScore: 0, avgTimeScore: 0, avgDistanceKm: 0, avgYearDiff: 0, totalScore: 0, bestPlayerId: null };
     }
 
-    const avgAccuracy = Math.round(roundResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / roundResults.length);
-    const avgLocationScore = Math.round(roundResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / roundResults.length);
-    const avgTimeScore = Math.round(roundResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0) / roundResults.length);
+    const avgAccuracy = roundResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / roundResults.length;
+    const avgLocationScore = roundResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / roundResults.length;
+    const avgTimeScore = roundResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0) / roundResults.length;
     const avgDistanceKm = roundResults.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0) / roundResults.length;
     const avgYearDiff = roundResults.reduce((sum, r) => sum + (r.yearDiff ?? 0), 0) / roundResults.length;
     const totalScore = roundResults.reduce((sum, r) => sum + r.score, 0);
@@ -480,19 +494,22 @@ export default function SessionComplete({
           'Antarctica':     { icon: '🏝️', stockImg: REGION_STOCK_IMAGES.oceania_antarctica, order: 5 },
         };
 
-        // Aggregate badges across all rounds (by dimension: combo/when/where)
-        const badgeCounts = { combo: 0, when: 0, where: 0 };
+        // Aggregate badges across all rounds by dimension + tier
+        const badgeCountsByTier: Record<BadgeDimension, Record<BadgeTier, number>> = {
+          location: { gold: 0, silver: 0, bronze: 0 },
+          year: { gold: 0, silver: 0, bronze: 0 },
+          combo: { gold: 0, silver: 0, bronze: 0 },
+        };
         for (const r of myRoundResults) {
           const loc = r.locationScore ?? 0;
           const time = r.timeScore ?? 0;
           const combo = (loc + time) / 2;
           const badges = calculateBadges({ yearAccuracy: time, locationAccuracy: loc, comboAccuracy: combo });
           for (const b of badges) {
-            if (b.dimension === 'combo') badgeCounts.combo++;
-            else if (b.dimension === 'year') badgeCounts.when++;
-            else if (b.dimension === 'location') badgeCounts.where++;
+            badgeCountsByTier[b.dimension][b.tier]++;
           }
         }
+        const totalBadges = BADGE_DIMENSIONS.reduce((sum, dim) => sum + BADGE_TIERS.reduce((s, tier) => s + badgeCountsByTier[dim][tier], 0), 0);
 
         // XP per era (for ExperienceAccuracy component)
         const byWhenMap = new Map<string, { totalXp: number; totalAcc: number; roundCount: number }>();
@@ -553,7 +570,6 @@ export default function SessionComplete({
         const myScores = myRoundResults.map(r => r.score);
         const bestRoundScore = myScores.length > 0 ? Math.max(...myScores) : 0;
         const bestRoundIdx = myRoundResults.findIndex(r => r.score === bestRoundScore);
-        const totalBadges = badgeCounts.combo + badgeCounts.when + badgeCounts.where;
 
         return (
           <>
@@ -572,7 +588,7 @@ export default function SessionComplete({
                 <span className={styles.gameAccLabel}>Game Accuracy (%)</span>
                 {myStats ? (
                   <div className={styles.heroRingWrap}>
-                    <RainbowRing value={overallAccuracy} />
+                    <RainbowRing value={Math.ceil(overallAccuracy)} />
                     <div className={styles.heroXp}>
                       <span className={styles.heroXpVal}>+{overallXP.toLocaleString()}</span>
                       <span className={styles.heroXpLabel}>{tGame('xp_unit')}</span>
@@ -586,7 +602,7 @@ export default function SessionComplete({
                     <span className={styles.statTileLabelWhere}><WhereIcon size={14} className={styles.statTileIconWhere} />{tGame('where')}</span>
                     {myStats ? (
                       <>
-                        <MiniRing value={whereAccuracy} color={getAccuracyColor(whereAccuracy)} />
+                        <MiniRing value={Math.ceil(whereAccuracy)} color={getAccuracyColor(Math.ceil(whereAccuracy))} />
                         <div className={styles.statTileXp}>
                           <span className={styles.statTileXpVal}>+{whereXP}</span>
                           <span className={styles.statTileXpLabel}>{tGame('xp_unit')}</span>
@@ -600,7 +616,7 @@ export default function SessionComplete({
                     <span className={styles.statTileLabelWhen}><WhenIcon size={14} className={styles.statTileIconWhen} />{tGame('when')}</span>
                     {myStats ? (
                       <>
-                        <MiniRing value={whenAccuracy} color={getAccuracyColor(whenAccuracy)} />
+                        <MiniRing value={Math.ceil(whenAccuracy)} color={getAccuracyColor(Math.ceil(whenAccuracy))} />
                         <div className={styles.statTileXp}>
                           <span className={styles.statTileXpVal}>+{whenXP}</span>
                           <span className={styles.statTileXpLabel}>{tGame('xp_unit')}</span>
@@ -654,6 +670,7 @@ export default function SessionComplete({
                           displayName={displayName}
                           playerId={player.playerId}
                           size={38}
+                          className={isCurrentPlayer ? styles.avatarMe : undefined}
                         />
                       </div>
                       <div className={styles.rankMain}>
@@ -664,7 +681,6 @@ export default function SessionComplete({
                           >
                             {displayName}
                           </span>
-                          {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
                         </div>
                         <div className={styles.bar}>
                           {showAccuracy ? (
@@ -677,7 +693,7 @@ export default function SessionComplete({
                       </div>
                       <div className={styles.rankScore}>
                         {showAccuracy ? (
-                          <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avgAccuracy) }}>{player.avgAccuracy}<span className={styles.rankPctSuffix}>%</span></span>
+                          <span className={styles.rankAcc} style={{ color: getAccuracyColor(Math.ceil(player.avgAccuracy)) }}>{Math.ceil(player.avgAccuracy)}<span className={styles.rankPctSuffix}>%</span></span>
                         ) : (
                           <span className={styles.rankStatus}>{statusLabel ?? tGame('not_started')}</span>
                         )}
@@ -724,6 +740,7 @@ export default function SessionComplete({
                           displayName={displayName}
                           playerId={player.player_id}
                           size={38}
+                          className={isCurrentPlayer ? styles.avatarMe : undefined}
                         />
                       </div>
                       <div className={styles.rankMain}>
@@ -734,7 +751,6 @@ export default function SessionComplete({
                           >
                             {displayName}
                           </span>
-                          {isCurrentPlayer ? <span className={styles.youTag}>{tGame('you')}</span> : null}
                         </div>
                         <div className={styles.bar}>
                           <div
@@ -744,7 +760,7 @@ export default function SessionComplete({
                         </div>
                       </div>
                       <div className={styles.rankScore}>
-                        <span className={styles.rankAcc} style={{ color: getAccuracyColor(player.avg_accuracy) }}>{player.avg_accuracy}<AccuracySuffix /></span>
+                        <span className={styles.rankAcc} style={{ color: getAccuracyColor(Math.ceil(player.avg_accuracy)) }}>{Math.ceil(player.avg_accuracy)}<AccuracySuffix /></span>
                         <span className={styles.rankXp}>+{player.total_xp} {tGame('xp_unit')}</span>
                       </div>
                     </div>
@@ -781,19 +797,20 @@ export default function SessionComplete({
                       <span className={styles.mvpNames}>
                         {award.winners.map((w, i) => (
                           <span key={w.playerId} className={styles.mvpWinner}>
-                            <span className={`${styles.mvpAvatarWrap} ${w.isMe ? styles.mvpAvatarMe : ""}`}>
+                            <span className={styles.mvpAvatarWrap}>
                               <PlayerAvatar
                                 avatarUrl={w.avatarUrl}
                                 displayName={w.displayName}
                                 playerId={w.playerId}
                                 size={24}
+                                className={w.isMe ? styles.avatarMe : undefined}
                               />
                             </span>
                             <span className={styles.mvpName}>
                               {w.displayName}
                             </span>
-                            <span className={styles.mvpValue} style={{ color: getAccuracyColor(award.getValue(w.stats)) }}>
-                              {award.getValue(w.stats)}
+                            <span className={styles.mvpValue} style={{ color: getAccuracyColor(Math.ceil(award.getValue(w.stats))) }}>
+                              {Math.ceil(award.getValue(w.stats))}
                               <AccuracySuffix />
                             </span>
                             {i < award.winners.length - 1 && (
@@ -808,74 +825,68 @@ export default function SessionComplete({
               </section>
               )}
 
-              {/* ACHIEVEMENTS — badges, XP per era/region, game stats */}
-              <section className={styles.card}>
-                <div className={styles.cardHead}>
-                  <span className={styles.accentBar} />
-                  <h2 className={styles.cardTitle}>{tGame('achievements')}</h2>
-                </div>
-
-                <div className={styles.achievementsBody}>
-                  {/* Badge totals */}
-                  <div className={styles.badgeSummary}>
-                    <span className={styles.badgeSummaryLabel}>{tGame('badges_won')}</span>
+              {/* BADGES & STATS */}
+              <div className={styles.achievementsGroup}>
+                <section className={styles.card}>
+                  <div className={styles.cardHead}>
+                    <span className={styles.accentBar} />
+                    <h2 className={styles.cardTitle}>{tGame('badges_won')}</h2>
+                  </div>
+                  <div className={styles.achievementsBody}>
                     {totalBadges === 0 ? (
                       <span className={styles.noBadges}>{tGame('no_badges')}</span>
                     ) : (
                       <div className={styles.badgeTally}>
-                        {badgeCounts.combo > 0 && (
-                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyCombo}`}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/combo_gold.webp" alt={tGame('combo_badges')} width={28} height={28} />
-                            <span className={styles.badgeTallyCount}>{badgeCounts.combo}</span>
-                            <span className={styles.badgeTallyTier}>{tGame('combo_badges')}</span>
-                          </span>
-                        )}
-                        {badgeCounts.when > 0 && (
-                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyWhen}`}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/year_gold.webp" alt={tGame('when_badges')} width={28} height={28} />
-                            <span className={styles.badgeTallyCount}>{badgeCounts.when}</span>
-                            <span className={styles.badgeTallyTier}>{tGame('when_badges')}</span>
-                          </span>
-                        )}
-                        {badgeCounts.where > 0 && (
-                          <span className={`${styles.badgeTallyItem} ${styles.badgeTallyWhere}`}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src="/badges/location_gold.webp" alt={tGame('where_badges')} width={28} height={28} />
-                            <span className={styles.badgeTallyCount}>{badgeCounts.where}</span>
-                            <span className={styles.badgeTallyTier}>{tGame('where_badges')}</span>
-                          </span>
+                        {BADGE_DIMENSIONS.flatMap((dim) =>
+                          BADGE_TIERS.map((tier) => {
+                            const count = badgeCountsByTier[dim][tier];
+                            const earned = count > 0;
+                            return (
+                              <span key={`${dim}-${tier}`} className={`${styles.badgeTallyItem} ${earned ? "" : styles.badgeTallyItemUnearned}`}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={`/badges/${dim}_${tier}.webp`} alt={`${tGame(BADGE_TIER_LABEL_KEY[tier])} ${tGame(BADGE_DIMENSION_LABEL_KEY[dim])}`} width={28} height={28} />
+                                <span className={styles.badgeTallyCount}>{count}</span>
+                                <span className={styles.badgeTallyTier}>{tGame(BADGE_DIMENSION_LABEL_KEY[dim])}</span>
+                              </span>
+                            );
+                          })
                         )}
                       </div>
                     )}
                   </div>
+                </section>
 
-                  {/* Game stats grid */}
-                  <div className={styles.gameStatsGrid}>
-                    <div className={styles.gameStatTile}>
-                      <span className={styles.gameStatVal}>{myStats ? formatDistance(avgDistanceKm, distanceUnit) : '—'}</span>
-                      <span className={styles.gameStatLabel}>{tGame('avg_km_away_label')}</span>
-                    </div>
-                    <div className={styles.gameStatTile}>
-                      <span className={styles.gameStatVal}>{myStats ? Math.round(avgYearDiff) : '—'}</span>
-                      <span className={styles.gameStatLabel}>{tGame('avg_yrs_off_label')}</span>
-                    </div>
-                    {bestRoundIdx >= 0 && (
-                      <div className={styles.gameStatTile}>
-                        <span className={styles.gameStatVal}>{Math.round(((myRoundResults[bestRoundIdx].locationScore ?? 0) + (myRoundResults[bestRoundIdx].timeScore ?? 0)) / 2)}</span>
-                        <span className={styles.gameStatLabel}>{tGame('best_round_pct')}</span>
-                      </div>
-                    )}
-                    {bestRoundIdx >= 0 && (
-                      <div className={styles.gameStatTile}>
-                        <span className={styles.gameStatVal}>{bestRoundScore.toLocaleString()}</span>
-                        <span className={styles.gameStatLabel}>{tGame('best_round_xp')}</span>
-                      </div>
-                    )}
+                <section className={styles.card}>
+                  <div className={styles.cardHead}>
+                    <span className={styles.accentBar} />
+                    <h2 className={styles.cardTitle}>{tGame('game_stats')}</h2>
                   </div>
-                </div>
-              </section>
+                  <div className={styles.achievementsBody}>
+                    <div className={styles.gameStatsGrid}>
+                      <div className={styles.gameStatTile}>
+                        <span className={styles.gameStatVal}>{myStats ? formatDistance(avgDistanceKm, distanceUnit) : '—'}</span>
+                        <span className={styles.gameStatLabel}>{tGame('avg_km_away_label')}</span>
+                      </div>
+                      <div className={styles.gameStatTile}>
+                        <span className={styles.gameStatVal}>{myStats ? Math.round(avgYearDiff) : '—'}</span>
+                        <span className={styles.gameStatLabel}>{tGame('avg_yrs_off_label')}</span>
+                      </div>
+                      {bestRoundIdx >= 0 && (
+                        <div className={styles.gameStatTile}>
+                          <span className={styles.gameStatVal}>{Math.ceil(((myRoundResults[bestRoundIdx].locationScore ?? 0) + (myRoundResults[bestRoundIdx].timeScore ?? 0)) / 2)}</span>
+                          <span className={styles.gameStatLabel}>{tGame('best_round_pct')}</span>
+                        </div>
+                      )}
+                      {bestRoundIdx >= 0 && (
+                        <div className={styles.gameStatTile}>
+                          <span className={styles.gameStatVal}>{bestRoundScore.toLocaleString()}</span>
+                          <span className={styles.gameStatLabel}>{tGame('best_round_xp')}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              </div>
 
               {/* EXPERIENCE & ACCURACY (shared component) — rank card rendered inside,
                   before the when/where tabs */}
@@ -883,7 +894,43 @@ export default function SessionComplete({
                 hideAccuracy
                 hideStatsRow
                 embedded
-                rankCard={<RankCard totalXp={totalXp} sessionXp={overallXP} open bare variant="dark" />}
+                rankCard={(() => {
+                  const info = rankForXp(totalXp ?? 0);
+                  const title = tRank(info.titleKey);
+                  const nextTitle = info.nextTitleKey ? tRank(info.nextTitleKey) : null;
+                  return (
+                    <div className={styles.customRankCard}>
+                      <div className={styles.customRankMedallion}>
+                        <span className={styles.customRankTier}>T{info.tier}</span>
+                        <span className={styles.customRankStars}>
+                          {Array.from({ length: info.tier }, (_, i) => (
+                            <Star key={i} size={8} fill="var(--gh-gold)" color="var(--gh-gold)" />
+                          ))}
+                        </span>
+                      </div>
+                      <div className={styles.customRankBody}>
+                        <div className={styles.customRankHead}>
+                          <span className={styles.customRankTitle}>{title}</span>
+                          <span className={styles.customRankSessionXp}>+{overallXP.toLocaleString()} XP</span>
+                        </div>
+                        <div className={styles.customRankNext}>
+                          <span className={styles.customRankNextLabel}>{tRank('next_label')}:</span>
+                          {info.isMaxRank ? (
+                            <span className={styles.customRankNextTitle}>{tRank('max_rank')}</span>
+                          ) : (
+                            <>
+                              <span className={styles.customRankNextTitle}>{nextTitle}</span>
+                              <span className={styles.customRankNextXp}>{info.xpToNext?.toLocaleString()} XP</span>
+                            </>
+                          )}
+                        </div>
+                        <div className={styles.customRankBar}>
+                          <div className={styles.customRankBarFill} style={{ width: `${info.progressPct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 data={{
                   byWhen,
                   byWhere,
@@ -911,7 +958,7 @@ export default function SessionComplete({
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
                   const myRoundResult = effectiveResults.find(r => r.roundIndex === i && r.playerId === playerId);
                   const myRoundAcc = hasResult(myRoundResult)
-                    ? Math.round(((myRoundResult!.locationScore ?? 0) + (myRoundResult!.timeScore ?? 0)) / 2)
+                    ? ((myRoundResult!.locationScore ?? 0) + (myRoundResult!.timeScore ?? 0)) / 2
                     : null;
                   const open = openRounds.has(i);
                   return (
@@ -932,8 +979,8 @@ export default function SessionComplete({
                           <span className={styles.roundMeta}>{round.year} · {round.locationName || (round.latitude != null && round.longitude != null ? `${round.latitude.toFixed(2)}, ${round.longitude.toFixed(2)}` : '—')}</span>
                         </div>
                         {myRoundAcc != null && (
-                          <span className={styles.roundMyAcc} style={{ color: getAccuracyColor(myRoundAcc) }}>
-                            {myRoundAcc}
+                          <span className={styles.roundMyAcc} style={{ color: getAccuracyColor(Math.ceil(myRoundAcc)) }}>
+                            {Math.ceil(myRoundAcc)}
                             <AccuracySuffix />
                           </span>
                         )}
@@ -954,24 +1001,24 @@ export default function SessionComplete({
                           )}
                           <div className={styles.miniGrid}>
                             <div className={styles.miniTile}>
-                              <span className={styles.miniVal} style={{ color: getAccuracyColor(roundStats.avgAccuracy) }}>
-                                {roundStats.avgAccuracy}
+                              <span className={styles.miniVal} style={{ color: getAccuracyColor(Math.ceil(roundStats.avgAccuracy)) }}>
+                                {Math.ceil(roundStats.avgAccuracy)}
                                 <AccuracySuffix />
                               </span>
                               <span className={styles.miniLabel}>{tGame('total')}</span>
                               <span className={styles.miniSub}>{roundStats.totalScore.toLocaleString()} {tGame('xp_unit')}</span>
                             </div>
                             <div className={styles.miniTile}>
-                              <span className={styles.miniVal} style={{ color: getAccuracyColor(roundStats.avgLocationScore) }}>
-                                {roundStats.avgLocationScore}
+                              <span className={styles.miniVal} style={{ color: getAccuracyColor(Math.ceil(roundStats.avgLocationScore)) }}>
+                                {Math.ceil(roundStats.avgLocationScore)}
                                 <AccuracySuffix />
                               </span>
                               <span className={styles.miniLabelWhere}><WhereIcon size={14} className={styles.miniIconWhere} />{tGame('where')}</span>
                               <span className={styles.miniSub}>{tGame('distance_label', { distance: formatDistance(roundStats.avgDistanceKm, distanceUnit) })}</span>
                             </div>
                             <div className={styles.miniTile}>
-                              <span className={styles.miniVal} style={{ color: getAccuracyColor(roundStats.avgTimeScore) }}>
-                                {roundStats.avgTimeScore}
+                              <span className={styles.miniVal} style={{ color: getAccuracyColor(Math.ceil(roundStats.avgTimeScore)) }}>
+                                {Math.ceil(roundStats.avgTimeScore)}
                                 <AccuracySuffix />
                               </span>
                               <span className={styles.miniLabelWhen}><WhenIcon size={14} className={styles.miniIconWhen} />{tGame('when')}</span>
@@ -983,16 +1030,17 @@ export default function SessionComplete({
                             <div className={`${styles.bestRow} ${isCurrentBestPlayer ? styles.bestRowMe : ""}`}>
                               <span className={styles.bestLabel}>🏆 {tGame('best_player')}</span>
                               <span className={styles.bestPlayerRight}>
-                                <span className={`${styles.bestAvatarWrap} ${isCurrentBestPlayer ? styles.bestAvatarMe : ""}`}>
+                                <span className={styles.bestAvatarWrap}>
                                   <PlayerAvatar
                                     avatarUrl={bestPlayerData?.avatarUrl ?? null}
                                     displayName={bestPlayerName}
                                     playerId={roundStats.bestPlayerId ?? undefined}
                                     size={24}
+                                    className={isCurrentBestPlayer ? styles.avatarMe : undefined}
                                   />
                                 </span>
                                 <span className={`${styles.bestName} ${isCurrentBestPlayer ? styles.bestNameMe : ""}`}>
-                                  {bestPlayerName}{isCurrentBestPlayer ? ` (${tGame('you')})` : ""}
+                                  {bestPlayerName}
                                 </span>
                               </span>
                             </div>
@@ -1013,7 +1061,7 @@ export default function SessionComplete({
               <div className={styles.cta}>
                 <button
                   type="button"
-                  className={isDaily ? `${styles.homeBtn} ${styles.homeBtnFull}` : styles.homeBtn}
+                  className={styles.homeBtn}
                   onClick={() => router.push("/home")}
                 >
                   {tGame('home')}
@@ -1021,7 +1069,7 @@ export default function SessionComplete({
                 {isAsync && (!snapshot.config.sessionDeadline || new Date(snapshot.config.sessionDeadline) > new Date()) && (
                   <button
                     type="button"
-                    className={styles.homeBtn}
+                    className={styles.ctaSecondary}
                     onClick={handleShareLink}
                     data-testid="session-share-link"
                   >
