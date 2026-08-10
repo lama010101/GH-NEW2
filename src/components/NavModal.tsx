@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import styles from './NavModal.module.css'
@@ -19,6 +19,8 @@ interface NavModalProps {
 export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: NavModalProps) {
   const router = useRouter()
   const t = useTranslations('nav')
+  const [imgError, setImgError] = useState(false)
+  useEffect(() => { setImgError(false) }, [avatarUrl])
 
   useEffect(() => {
     if (!isOpen) return
@@ -56,12 +58,15 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
 
         <div className={styles.avatarSection}>
           <div className={styles.avatarRing}>
-            {avatarUrl
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={toProxiedImageUrl(avatarUrl) ?? ''} alt="" className={styles.avatarImg} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }} />
-              : null
+            {avatarUrl && !imgError
+              ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={toProxiedImageUrl(avatarUrl) ?? ''} alt="" className={styles.avatarImg} onError={() => setImgError(true)} />
+              )
+              : (
+                <span className={styles.avatarInitials}>{initials.slice(0, 2)}</span>
+              )
             }
-            <span className={styles.avatarInitials} style={{ display: avatarUrl ? "none" : "inline" }}>{initials.slice(0, 2)}</span>
           </div>
           <span className={styles.displayName}>{displayName}</span>
         </div>

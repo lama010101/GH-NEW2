@@ -107,8 +107,14 @@ function HomePageInner() {
   // The profile fetch effect below is the single source of truth for welcome_completed.
   useEffect(() => {
     if (!isNewUserForWelcome) return
-    if (welcomeCompleted === null) return
-    if (welcomeCompleted) return
+    if (welcomeCompleted === null) {
+      setWelcomeLoading(true)
+      return
+    }
+    if (welcomeCompleted) {
+      setWelcomeLoading(false)
+      return
+    }
     if (welcomeHandledRef.current) return
     triggerAssignAvatar()
   }, [isNewUserForWelcome, welcomeCompleted, triggerAssignAvatar])
