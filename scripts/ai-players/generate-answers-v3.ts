@@ -1,4 +1,5 @@
 import { config } from "dotenv";
+import { createHash } from "crypto";
 import { getDbPool } from "@/server/db";
 import { evaluateRound } from "@/core/rules";
 import type { EventRecord, EventHint, Location } from "@/core/types";
@@ -8,24 +9,23 @@ import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
 config({ path: ".env.local" });
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL_ID = "anthropic/claude-sonnet-4.6";
-const PROVIDER = "openrouter";
-const AI_PLAYER_NAME = "Claude Sonnet 4.6";
 
-// Live Daily default timer (seconds). Confirmed in src/server/sessionCore.ts createDailySession.
+const DEFAULT_MODEL_ID = "anthropic/claude-sonnet-4.6";
+const DEFAULT_PROVIDER = "openrouter";
+const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6";
+
 const DAILY_TIMER_SECONDS = 90;
 const DAILY_TIMER_MS = DAILY_TIMER_SECONDS * 1000;
 
-// Test-only override: if set, use this as the cumulative timer deadline (ms).
-// If unset, behavior is identical to current (90s). Stored timeout rows still
-// record DAILY_TIMER_MS as the canonical timer maximum, not the override.
 const DEADLINE_MS = (() => {
-  const override = process.env.AI_V2_TIMER_OVERRIDE_MS;
+  const override = process.env.AI_V3_TIMER_OVERRIDE_MS;
   if (!override) return DAILY_TIMER_MS;
   const parsed = Number(override);
   if (Number.isFinite(parsed) && parsed > 0) return parsed;
   return DAILY_TIMER_MS;
 })();
+
+const DETAIL_MODE = "auto";
 
 type HintRequest = { tier: number; type: string };
 type SuppliedHint = { id: string; tier: number; type: string; content: string };
@@ -41,6 +41,65 @@ type TurnResult =
   | { kind: "hints"; hintRequests: HintRequest[] }
   | { kind: "error"; error: string };
 
+type OpenRouterUsage = {
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  reasoning_tokens: number | null;
+  total_tokens: number | null;
+  cost: number | null;
+};
+
+type OpenRouterCallResult = {
+  content: string;
+  rawResponse: unknown;
+  error?: string;
+  requestStartedAt: Date;
+  responseReceivedAt: Date;
+  usage: OpenRouterUsage;
+  reasoning: string | null;
+  reasoningAvailable: boolean;
+};
+
+type ManifestRequest = {
+  provider: string;
+  model_id: string;
+  messages: unknown[];
+  temperature: number;
+  max_tokens: number;
+};
+
+function parseArgs(): {
+  eventId: string;
+  modelId: string;
+  provider: string;
+  playerName: string;
+} {
+  const args = process.argv.slice(2);
+  const flags = new Map<string, string>();
+  const positional: string[] = [];
+  for (const arg of args) {
+    if (arg.startsWith("--")) {
+      const eq = arg.indexOf("=");
+      const key = eq > 2 ? arg.slice(2, eq) : arg.slice(2);
+      const value = eq > 2 ? arg.slice(eq + 1) : "";
+      flags.set(key, value);
+    } else {
+      positional.push(arg);
+    }
+  }
+  return {
+    eventId: positional[0] ?? "",
+    modelId: flags.get("model") ?? DEFAULT_MODEL_ID,
+    provider: flags.get("provider") ?? DEFAULT_PROVIDER,
+    playerName: flags.get("player-name") ?? DEFAULT_AI_PLAYER_NAME,
+  };
+}
+
+const parsedArgs = parseArgs();
+const MODEL_ID = parsedArgs.modelId;
+const PROVIDER = parsedArgs.provider;
+const AI_PLAYER_NAME = parsedArgs.playerName;
+
 async function main(): Promise<void> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey || apiKey.trim().length === 0) {
@@ -48,9 +107,11 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const eventId = process.argv[2];
+  const eventId = parsedArgs.eventId;
   if (!eventId) {
-    console.error("Usage: tsx scripts/ai-players/generate-answers-v2.ts <event-id>");
+    console.error(
+      "Usage: tsx scripts/ai-players/generate-answers-v3.ts [--model=<slug>] [--provider=<provider>] [--player-name=<name>] <event-id>"
+    );
     process.exit(1);
   }
 
@@ -151,6 +212,9 @@ async function main(): Promise<void> {
 
   console.log("True answer:", JSON.stringify(trueAnswer));
 
+  const groundTruthVersionId = await resolveGroundTruthVersion(pool, row);
+  const stimulusId = await resolveStimulus(pool, row.image_url, DETAIL_MODE);
+
   const referenceYear = new Date().getFullYear();
   const turnStart = Date.now();
   const calls: Array<{
@@ -161,33 +225,68 @@ async function main(): Promise<void> {
     error: string | null;
   }> = [];
 
-  // Turn 1: image + available hint list. Model either final-guesses or requests hints.
   const turn1Messages = buildTurn1Messages(row.image_url, hints);
+  const turn1ManifestId = await resolveManifest(pool, {
+    provider: PROVIDER,
+    model_id: MODEL_ID,
+    messages: turn1Messages,
+    temperature: 0.2,
+    max_tokens: 1024,
+  });
   const turn1 = await callOpenRouter(apiKey, turn1Messages, 1, calls);
   if (turn1.error) {
-    await writeErrorResult(pool, row.event_id, calls, `OpenRouter turn 1 failed: ${turn1.error}`);
+    const evaluationId = await writeErrorEvalFact(pool, {
+      eventId: row.event_id,
+      aiPlayerId: await ensureAiPlayer(pool),
+      manifestId: turn1ManifestId,
+      groundTruthVersionId,
+      stimulusId,
+      callResult: turn1,
+      suppliedHints: [],
+      imageQualityScore: null,
+      imageQualityNotes: null,
+      critiqueError: `OpenRouter turn 1 failed: ${turn1.error}`,
+      finalGuess: null,
+      error: `OpenRouter turn 1 failed: ${turn1.error}`,
+    });
+    await writeErrorResult(pool, evaluationId, row.event_id, calls, `OpenRouter turn 1 failed: ${turn1.error}`);
     process.exit(1);
   }
 
   const turn1Parse = parseTurn1Response(turn1.content);
   if (turn1Parse.kind === "error") {
-    await writeErrorResult(pool, row.event_id, calls, turn1Parse.error);
+    const evaluationId = await writeErrorEvalFact(pool, {
+      eventId: row.event_id,
+      aiPlayerId: await ensureAiPlayer(pool),
+      manifestId: turn1ManifestId,
+      groundTruthVersionId,
+      stimulusId,
+      callResult: turn1,
+      suppliedHints: [],
+      imageQualityScore: null,
+      imageQualityNotes: null,
+      critiqueError: null,
+      finalGuess: null,
+      error: turn1Parse.error,
+    });
+    await writeErrorResult(pool, evaluationId, row.event_id, calls, turn1Parse.error);
     console.error(turn1Parse.error);
     process.exit(1);
   }
 
   let finalGuess: FinalGuess | null = null;
-  let reasoning: string | null = null;
+  let finalReasoning: string | null = null;
   let suppliedHints: SuppliedHint[] = [];
+  let finalCall: OpenRouterCallResult = turn1;
+  let finalManifestId: string = turn1ManifestId;
   let timedOut = false;
   let timeToGuessMs: number | null = null;
 
   if (turn1Parse.kind === "guess") {
     finalGuess = turn1Parse.finalGuess;
-    reasoning = turn1Parse.reasoning;
+    finalReasoning = turn1Parse.reasoning;
     timeToGuessMs = Date.now() - turnStart;
   } else {
-    // Turn 2: supply requested hint content and get final guess.
     const elapsedAfterTurn1 = Date.now() - turnStart;
     if (elapsedAfterTurn1 >= DEADLINE_MS) {
       timedOut = true;
@@ -198,30 +297,85 @@ async function main(): Promise<void> {
       suppliedHints = supplied;
 
       if (missing.length > 0) {
-        console.warn(`Requested hint tier/type not found: ${missing.map((m) => `tier=${m.tier} type=${m.type}`).join(", ")}`);
+        console.warn(
+          `Requested hint tier/type not found: ${missing.map((m) => `tier=${m.tier} type=${m.type}`).join(", ")}`
+        );
       }
 
       const turn2Messages = buildTurn2Messages(turn1Messages, turn1.content, supplied);
+      const turn2ManifestId = await resolveManifest(pool, {
+        provider: PROVIDER,
+        model_id: MODEL_ID,
+        messages: turn2Messages,
+        temperature: 0.2,
+        max_tokens: 1024,
+      });
       const turn2 = await callOpenRouter(apiKey, turn2Messages, 2, calls);
+      finalManifestId = turn2ManifestId;
+      finalCall = turn2;
+
       if (turn2.error) {
-        await writeErrorResult(pool, row.event_id, calls, `OpenRouter turn 2 failed: ${turn2.error}`);
+        const evaluationId = await writeErrorEvalFact(pool, {
+          eventId: row.event_id,
+          aiPlayerId: await ensureAiPlayer(pool),
+          manifestId: finalManifestId,
+          groundTruthVersionId,
+          stimulusId,
+          callResult: finalCall,
+          suppliedHints,
+          imageQualityScore: null,
+          imageQualityNotes: null,
+          critiqueError: `OpenRouter turn 2 failed: ${turn2.error}`,
+          finalGuess: null,
+          error: `OpenRouter turn 2 failed: ${turn2.error}`,
+        });
+        await writeErrorResult(pool, evaluationId, row.event_id, calls, `OpenRouter turn 2 failed: ${turn2.error}`);
         process.exit(1);
       }
 
       const turn2Parse = parseFinalGuessResponse(turn2.content);
       if (turn2Parse.kind === "error") {
-        await writeErrorResult(pool, row.event_id, calls, turn2Parse.error);
+        const evaluationId = await writeErrorEvalFact(pool, {
+          eventId: row.event_id,
+          aiPlayerId: await ensureAiPlayer(pool),
+          manifestId: finalManifestId,
+          groundTruthVersionId,
+          stimulusId,
+          callResult: finalCall,
+          suppliedHints,
+          imageQualityScore: null,
+          imageQualityNotes: null,
+          critiqueError: null,
+          finalGuess: null,
+          error: turn2Parse.error,
+        });
+        await writeErrorResult(pool, evaluationId, row.event_id, calls, turn2Parse.error);
         console.error(turn2Parse.error);
         process.exit(1);
       }
       if (turn2Parse.kind !== "guess") {
-        await writeErrorResult(pool, row.event_id, calls, "Unexpected turn 2 response kind");
-        console.error("Unexpected turn 2 response kind:", turn2Parse.kind);
+        const err = "Unexpected turn 2 response kind";
+        const evaluationId = await writeErrorEvalFact(pool, {
+          eventId: row.event_id,
+          aiPlayerId: await ensureAiPlayer(pool),
+          manifestId: finalManifestId,
+          groundTruthVersionId,
+          stimulusId,
+          callResult: finalCall,
+          suppliedHints,
+          imageQualityScore: null,
+          imageQualityNotes: null,
+          critiqueError: null,
+          finalGuess: null,
+          error: err,
+        });
+        await writeErrorResult(pool, evaluationId, row.event_id, calls, err);
+        console.error(err, turn2Parse.kind);
         process.exit(1);
       }
 
       finalGuess = turn2Parse.finalGuess;
-      reasoning = turn2Parse.reasoning;
+      finalReasoning = turn2Parse.reasoning;
       timeToGuessMs = Date.now() - turnStart;
     }
   }
@@ -234,8 +388,14 @@ async function main(): Promise<void> {
     }
   }
 
-  // Turn 3: reveal correct answer and get image-quality critique. Always runs.
   const critiqueMessages = buildCritiqueMessages(row.image_url, trueAnswer, row.title ?? "", row.location_name ?? "");
+  await resolveManifest(pool, {
+    provider: PROVIDER,
+    model_id: MODEL_ID,
+    messages: critiqueMessages,
+    temperature: 0.2,
+    max_tokens: 1024,
+  });
   const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls);
   const critiqueParse = critique.error
     ? { score: null, notes: null, error: `OpenRouter turn 3 failed: ${critique.error}` }
@@ -254,7 +414,6 @@ async function main(): Promise<void> {
   }
 
   if (timedOut || !finalGuess) {
-    // Timeout result: match human-timeout shape (null guess, zero scores, timer max time).
     const timeoutMs = DAILY_TIMER_MS;
     const result = evaluateRound(
       eventRecord,
@@ -267,7 +426,24 @@ async function main(): Promise<void> {
     );
 
     const aiPlayerId = await ensureAiPlayer(pool);
+    const evaluationId = await writeEvalFact(pool, {
+      eventId: row.event_id,
+      aiPlayerId,
+      humanPlayerId: null,
+      manifestId: finalManifestId,
+      groundTruthVersionId,
+      stimulusId,
+      callResult: finalCall,
+      finalGuess: null,
+      suppliedHints: [],
+      imageQualityScore,
+      imageQualityNotes,
+      critiqueError,
+      error: null,
+    });
+
     const answerBankId = await writeResult(pool, {
+      evaluationId,
       eventId: row.event_id,
       aiPlayerId,
       result,
@@ -279,7 +455,7 @@ async function main(): Promise<void> {
       imageQualityScore,
       imageQualityNotes,
       critiqueError,
-      rawLlmResponse: null,
+      rawLlmResponse: finalCall.rawResponse,
     });
     await writeCalls(pool, answerBankId, calls);
 
@@ -288,7 +464,6 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // Compute penalty from supplied hints.
   let whenPenaltyRate = 0;
   let wherePenaltyRate = 0;
   for (const h of suppliedHints) {
@@ -327,12 +502,29 @@ async function main(): Promise<void> {
   const finalGuessResponsePayload =
     turn1Parse.kind === "guess" ? calls[0]?.response_payload : calls[1]?.response_payload ?? null;
 
+  const evaluationId = await writeEvalFact(pool, {
+    eventId: row.event_id,
+    aiPlayerId,
+    humanPlayerId: null,
+    manifestId: finalManifestId,
+    groundTruthVersionId,
+    stimulusId,
+    callResult: finalCall,
+    finalGuess,
+    suppliedHints: hintsRequestedPayload,
+    imageQualityScore,
+    imageQualityNotes,
+    critiqueError,
+    error: null,
+  });
+
   const answerBankId = await writeResult(pool, {
+    evaluationId,
     eventId: row.event_id,
     aiPlayerId,
     result,
     referenceYear,
-    reasoning,
+    reasoning: finalReasoning,
     hintsRequested: hintsRequestedPayload,
     hintPenaltyApplied: hintPenaltyAppliedPayload,
     timeToGuessMs: timeToGuessMs ?? DAILY_TIMER_MS,
@@ -343,7 +535,7 @@ async function main(): Promise<void> {
   });
   await writeCalls(pool, answerBankId, calls);
 
-  console.log("Stored v2 answer for event", row.event_id, "ai_player", aiPlayerId);
+  console.log("Stored v3 answer for event", row.event_id, "ai_player", aiPlayerId, "evaluation_id", evaluationId);
   await pool.end();
   process.exit(0);
 }
@@ -370,7 +562,7 @@ function buildTurn1Messages(imageUrl: string, hints: EventHint[]): unknown[] {
     {
       role: "user",
       content: [
-        { type: "image_url", image_url: { url: imageUrl } },
+        { type: "image_url", image_url: { url: imageUrl, detail: DETAIL_MODE } },
         { type: "text", text: "What is your guess or hint request?" },
       ],
     },
@@ -382,9 +574,7 @@ function buildTurn2Messages(
   assistantTurn1Content: string,
   suppliedHints: SuppliedHint[]
 ): unknown[] {
-  const hintsText = suppliedHints
-    .map((h) => `- Tier ${h.tier} ${h.type}: "${h.content}"`)
-    .join("\n");
+  const hintsText = suppliedHints.map((h) => `- Tier ${h.tier} ${h.type}: "${h.content}"`).join("\n");
 
   const userPrompt =
     `You requested the following hints. Their content is now revealed:\n${hintsText}\n\n` +
@@ -421,7 +611,7 @@ function buildCritiqueMessages(
     {
       role: "user",
       content: [
-        { type: "image_url", image_url: { url: imageUrl } },
+        { type: "image_url", image_url: { url: imageUrl, detail: DETAIL_MODE } },
         { type: "text", text: userPrompt },
       ],
     },
@@ -439,7 +629,7 @@ async function callOpenRouter(
     duration_ms: number;
     error: string | null;
   }>
-): Promise<{ content: string; error?: string }> {
+): Promise<OpenRouterCallResult> {
   const requestBody = {
     model: MODEL_ID,
     messages,
@@ -447,6 +637,7 @@ async function callOpenRouter(
     max_tokens: 1024,
   };
 
+  const requestStartedAt = new Date();
   const start = Date.now();
   let response: Response;
   try {
@@ -461,6 +652,7 @@ async function callOpenRouter(
       body: JSON.stringify(requestBody),
     });
   } catch (networkErr) {
+    const responseReceivedAt = new Date();
     const durationMs = Date.now() - start;
     const errorMsg = `fetch failed: ${networkErr instanceof Error ? networkErr.message : String(networkErr)}`;
     calls.push({
@@ -470,7 +662,16 @@ async function callOpenRouter(
       duration_ms: durationMs,
       error: errorMsg,
     });
-    return { content: "", error: errorMsg };
+    return {
+      content: "",
+      rawResponse: { rawText: "" },
+      error: errorMsg,
+      requestStartedAt,
+      responseReceivedAt,
+      usage: nullUsage(),
+      reasoning: null,
+      reasoningAvailable: false,
+    };
   }
 
   let rawResponse: unknown;
@@ -482,7 +683,7 @@ async function callOpenRouter(
     responseText = await response.text();
     rawResponse = { rawText: responseText };
   }
-
+  const responseReceivedAt = new Date();
   const durationMs = Date.now() - start;
 
   if (!response.ok) {
@@ -494,7 +695,16 @@ async function callOpenRouter(
       duration_ms: durationMs,
       error: errorMsg,
     });
-    return { content: "", error: errorMsg };
+    return {
+      content: "",
+      rawResponse,
+      error: errorMsg,
+      requestStartedAt,
+      responseReceivedAt,
+      usage: extractUsage(rawResponse),
+      reasoning: null,
+      reasoningAvailable: false,
+    };
   }
 
   calls.push({
@@ -506,7 +716,61 @@ async function callOpenRouter(
   });
 
   const content = extractAssistantContent(rawResponse);
-  return { content };
+  const { reasoning, reasoningAvailable } = extractReasoning(rawResponse);
+  return {
+    content,
+    rawResponse,
+    requestStartedAt,
+    responseReceivedAt,
+    usage: extractUsage(rawResponse),
+    reasoning,
+    reasoningAvailable,
+  };
+}
+
+function nullUsage(): OpenRouterUsage {
+  return {
+    prompt_tokens: null,
+    completion_tokens: null,
+    reasoning_tokens: null,
+    total_tokens: null,
+    cost: null,
+  };
+}
+
+function extractUsage(raw: unknown): OpenRouterUsage {
+  const empty = nullUsage();
+  if (typeof raw !== "object" || raw === null) return empty;
+  const maybe = raw as Record<string, unknown>;
+  const usage = maybe.usage;
+  if (!usage || typeof usage !== "object") return empty;
+  const u = usage as Record<string, unknown>;
+  const completionDetails =
+    u.completion_tokens_details && typeof u.completion_tokens_details === "object"
+      ? (u.completion_tokens_details as Record<string, unknown>)
+      : null;
+  return {
+    prompt_tokens: toInt(u.prompt_tokens),
+    completion_tokens: toInt(u.completion_tokens),
+    reasoning_tokens: toInt(u.reasoning_tokens) ?? toInt(completionDetails?.reasoning_tokens),
+    total_tokens: toInt(u.total_tokens),
+    cost: toNumber(u.cost),
+  };
+}
+
+function extractReasoning(raw: unknown): { reasoning: string | null; reasoningAvailable: boolean } {
+  if (typeof raw !== "object" || raw === null) return { reasoning: null, reasoningAvailable: false };
+  const maybe = raw as Record<string, unknown>;
+  const choices = maybe.choices;
+  if (!Array.isArray(choices) || choices.length === 0) return { reasoning: null, reasoningAvailable: false };
+  const first = choices[0] as Record<string, unknown>;
+  const message = first.message;
+  if (!message || typeof message !== "object") return { reasoning: null, reasoningAvailable: false };
+  const msg = message as Record<string, unknown>;
+  const reasoning = msg.reasoning;
+  if (reasoning === undefined || reasoning === null) return { reasoning: null, reasoningAvailable: false };
+  if (typeof reasoning === "string") return { reasoning, reasoningAvailable: true };
+  return { reasoning: JSON.stringify(reasoning), reasoningAvailable: true };
 }
 
 function extractAssistantContent(raw: unknown): string {
@@ -659,6 +923,24 @@ function toFiniteNumber(value: unknown): number | null {
   return null;
 }
 
+function toInt(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isInteger(parsed)) return parsed;
+  }
+  return null;
+}
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
 function resolveHintRequests(
   available: EventHint[],
   requests: HintRequest[]
@@ -683,6 +965,26 @@ function resolveHintRequests(
   return { supplied, missing };
 }
 
+function sha256(input: string | Buffer): string {
+  return createHash("sha256").update(input).digest("hex");
+}
+
+function stableStringify(value: unknown): string {
+  return JSON.stringify(sortKeys(value));
+}
+
+function sortKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value && typeof value === "object") {
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+      sorted[key] = sortKeys((value as Record<string, unknown>)[key]);
+    }
+    return sorted;
+  }
+  return value;
+}
+
 async function ensureAiPlayer(pool: Awaited<ReturnType<typeof getDbPool>>): Promise<string> {
   const existing = await pool.query<{ id: string }>(
     "SELECT id FROM ai_players WHERE model_id = $1 LIMIT 1",
@@ -698,7 +1000,202 @@ async function ensureAiPlayer(pool: Awaited<ReturnType<typeof getDbPool>>): Prom
   return inserted.rows[0].id;
 }
 
+async function resolveManifest(
+  pool: Awaited<ReturnType<typeof getDbPool>>,
+  request: ManifestRequest
+): Promise<string> {
+  const content = {
+    provider: request.provider,
+    model_id: request.model_id,
+    messages: request.messages,
+    temperature: request.temperature,
+    max_tokens: request.max_tokens,
+  };
+  const contentHash = sha256(stableStringify(content));
+
+  const existing = await pool.query<{ id: string }>(
+    "SELECT id FROM ai_model_execution_manifests WHERE content_hash = $1 LIMIT 1",
+    [contentHash]
+  );
+  if (existing.rows.length > 0) {
+    return existing.rows[0].id;
+  }
+
+  const inserted = await pool.query<{ id: string }>(
+    `INSERT INTO ai_model_execution_manifests (content_hash, provider, model_id, content)
+     VALUES ($1, $2, $3, $4) RETURNING id`,
+    [contentHash, request.provider, request.model_id, content]
+  );
+  return inserted.rows[0].id;
+}
+
+async function resolveGroundTruthVersion(
+  pool: Awaited<ReturnType<typeof getDbPool>>,
+  row: {
+    event_id: string;
+    event_year: number;
+    latitude: number;
+    longitude: number;
+    location_name: string | null;
+    title: string | null;
+    country: string | null;
+    continent: string | null;
+  }
+): Promise<string> {
+  const content = {
+    event_year: row.event_year,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    location_name: row.location_name,
+    title: row.title,
+    country: row.country,
+    continent: row.continent,
+  };
+  const contentHash = sha256(stableStringify(content));
+
+  const existing = await pool.query<{ id: string }>(
+    "SELECT id FROM ground_truth_versions WHERE event_id = $1 AND content_hash = $2 LIMIT 1",
+    [row.event_id, contentHash]
+  );
+  if (existing.rows.length > 0) {
+    return existing.rows[0].id;
+  }
+
+  const versionResult = await pool.query<{ next_version: number }>(
+    "SELECT COALESCE(MAX(version), 0) + 1 AS next_version FROM ground_truth_versions WHERE event_id = $1",
+    [row.event_id]
+  );
+  const version = versionResult.rows[0].next_version;
+
+  const inserted = await pool.query<{ id: string }>(
+    `INSERT INTO ground_truth_versions (event_id, version, content_hash, content)
+     VALUES ($1, $2, $3, $4) RETURNING id`,
+    [row.event_id, version, contentHash, content]
+  );
+  return inserted.rows[0].id;
+}
+
+async function resolveStimulus(
+  pool: Awaited<ReturnType<typeof getDbPool>>,
+  imageUrl: string,
+  detailMode: string
+): Promise<string> {
+  const response = await fetch(imageUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image from ${imageUrl}: ${response.status} ${response.statusText}`);
+  }
+  const arrayBuffer = await response.arrayBuffer();
+  const bytes = Buffer.from(arrayBuffer);
+  const sourceBytesSha256 = sha256(bytes);
+
+  const hashInput = stableStringify({
+    source_url: imageUrl,
+    detail_mode: detailMode,
+    source_bytes_sha256: sourceBytesSha256,
+  });
+  const stimulusHash = sha256(hashInput);
+
+  const existing = await pool.query<{ id: string }>(
+    "SELECT id FROM eval_stimuli WHERE stimulus_hash = $1 LIMIT 1",
+    [stimulusHash]
+  );
+  if (existing.rows.length > 0) {
+    return existing.rows[0].id;
+  }
+
+  const inserted = await pool.query<{ id: string }>(
+    `INSERT INTO eval_stimuli (stimulus_hash, source_url, source_bytes_sha256, detail_mode)
+     VALUES ($1, $2, $3, $4) RETURNING id`,
+    [stimulusHash, imageUrl, sourceBytesSha256, detailMode]
+  );
+  return inserted.rows[0].id;
+}
+
+type EvalFactInput = {
+  eventId: string;
+  aiPlayerId: string;
+  humanPlayerId: string | null;
+  manifestId: string;
+  groundTruthVersionId: string;
+  stimulusId: string;
+  callResult: OpenRouterCallResult;
+  finalGuess: FinalGuess | null;
+  suppliedHints: unknown[];
+  imageQualityScore: number | null;
+  imageQualityNotes: string | null;
+  critiqueError: string | null;
+  error: string | null;
+};
+
+async function writeEvalFact(
+  pool: Awaited<ReturnType<typeof getDbPool>>,
+  input: EvalFactInput
+): Promise<string> {
+  const gameContext = {
+    game_mode_type: "bank_generation",
+    time_budget_ms: 90000,
+  };
+
+  const result = await pool.query<{ evaluation_id: string }>(
+    `INSERT INTO eval_facts (
+      event_id, ai_player_id, human_player_id, manifest_id, ground_truth_version_id, stimulus_id,
+      game_context, time_budget_ms, request_started_at, response_received_at,
+      prompt_tokens, completion_tokens, reasoning_tokens, total_tokens, cost,
+      reasoning_trace_available, reasoning_trace,
+      final_guess, supplied_hints, image_quality_score, image_quality_notes, critique_error,
+      raw_llm_response, error
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6,
+      $7, $8, $9, $10,
+      $11, $12, $13, $14, $15,
+      $16, $17,
+      $18, $19, $20, $21, $22,
+      $23, $24
+    ) RETURNING evaluation_id`,
+    [
+      input.eventId,
+      input.aiPlayerId,
+      input.humanPlayerId,
+      input.manifestId,
+      input.groundTruthVersionId,
+      input.stimulusId,
+      gameContext,
+      gameContext.time_budget_ms,
+      input.callResult.requestStartedAt.toISOString(),
+      input.callResult.responseReceivedAt.toISOString(),
+      input.callResult.usage.prompt_tokens,
+      input.callResult.usage.completion_tokens,
+      input.callResult.usage.reasoning_tokens,
+      input.callResult.usage.total_tokens,
+      input.callResult.usage.cost,
+      input.callResult.reasoningAvailable,
+      input.callResult.reasoning,
+      input.finalGuess,
+      input.suppliedHints.length > 0 ? input.suppliedHints : null,
+      input.imageQualityScore,
+      input.imageQualityNotes,
+      input.critiqueError,
+      input.callResult.rawResponse,
+      input.error,
+    ]
+  );
+  return result.rows[0].evaluation_id;
+}
+
+type ErrorEvalFactInput = Omit<EvalFactInput, "humanPlayerId"> & { humanPlayerId?: string | null };
+
+async function writeErrorEvalFact(
+  pool: Awaited<ReturnType<typeof getDbPool>>,
+  input: ErrorEvalFactInput
+): Promise<string> {
+  return writeEvalFact(pool, {
+    ...input,
+    humanPlayerId: input.humanPlayerId ?? null,
+  });
+}
+
 type ResultWriteInput = {
+  evaluationId: string;
   eventId: string;
   aiPlayerId: string;
   result: ReturnType<typeof evaluateRound>;
@@ -723,8 +1220,9 @@ async function writeResult(
       distance_km, year_diff, location_accuracy, year_accuracy,
       round_accuracy, round_xp, raw_llm_response, error,
       reference_year, reasoning, hints_requested, hint_penalty_applied,
-      time_to_guess_ms, image_quality_score, image_quality_notes, critique_error
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+      time_to_guess_ms, image_quality_score, image_quality_notes, critique_error,
+      evaluation_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
     ON CONFLICT (event_id, ai_player_id)
     DO UPDATE SET
       guess_lat = EXCLUDED.guess_lat,
@@ -746,6 +1244,7 @@ async function writeResult(
       image_quality_score = EXCLUDED.image_quality_score,
       image_quality_notes = EXCLUDED.image_quality_notes,
       critique_error = EXCLUDED.critique_error,
+      evaluation_id = EXCLUDED.evaluation_id,
       created_at = now()
     RETURNING id`,
     [
@@ -770,6 +1269,7 @@ async function writeResult(
       input.imageQualityScore,
       input.imageQualityNotes,
       input.critiqueError,
+      input.evaluationId,
     ]
   );
   return res.rows[0].id;
@@ -798,6 +1298,7 @@ async function writeCalls(
 
 async function writeErrorResult(
   pool: Awaited<ReturnType<typeof getDbPool>>,
+  evaluationId: string,
   eventId: string,
   calls: Array<{
     turn_index: number;
@@ -813,8 +1314,9 @@ async function writeErrorResult(
     `INSERT INTO ai_answer_bank (
       event_id, ai_player_id, raw_llm_response, error,
       reference_year, reasoning, hints_requested, hint_penalty_applied,
-      time_to_guess_ms, image_quality_score, image_quality_notes, critique_error
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      time_to_guess_ms, image_quality_score, image_quality_notes, critique_error,
+      evaluation_id
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     ON CONFLICT (event_id, ai_player_id)
     DO UPDATE SET
       raw_llm_response = EXCLUDED.raw_llm_response,
@@ -836,6 +1338,7 @@ async function writeErrorResult(
       image_quality_score = EXCLUDED.image_quality_score,
       image_quality_notes = EXCLUDED.image_quality_notes,
       critique_error = EXCLUDED.critique_error,
+      evaluation_id = EXCLUDED.evaluation_id,
       created_at = now()
     RETURNING id`,
     [
@@ -851,10 +1354,11 @@ async function writeErrorResult(
       null,
       null,
       null,
+      evaluationId,
     ]
   );
   await writeCalls(pool, res.rows[0].id, calls);
-  console.log("Stored error row for event", eventId, "ai_player", aiPlayerId);
+  console.log("Stored error row for event", eventId, "ai_player", aiPlayerId, "evaluation_id", evaluationId);
 }
 
 main().catch(async (error) => {
