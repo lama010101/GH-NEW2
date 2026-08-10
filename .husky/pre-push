@@ -76,6 +76,28 @@ if [ "$STACK_EXIT" -ne 0 ]; then
   exit 1
 fi
 
+# MP-FIX-GATE-COLDCOMPILE-WARMUP-001 — warm the /compete/[gameId] route
+# BEFORE the timed Playwright run. A freshly started Next.js dev server
+# takes ~24-29s to on-demand-compile the /compete/[gameId] route (1500+
+# modules) on the first hit, which exceeds the spec's 30s domcontentloaded
+# timeout (NAV_TIMEOUT in sync-compete-golden-path.spec.ts). Second+ hits
+# are ~0.25s. This single GET to a throwaway gameId pays that one-time
+# cold-compile tax outside the timed window. The response status is
+# irrelevant — even an error/lobby page compiles the route — so only a
+# connection failure (curl exit != 0) aborts the gate. No application
+# code is touched; pure tooling/CI plumbing.
+WARMUP_GAMEID="00000000-0000-0000-0000-000000000000"
+WARMUP_URL="http://localhost:3000/compete/${WARMUP_GAMEID}"
+echo "PRE-PUSH: warming route ${WARMUP_URL} (absorbs cold-compile cost before timed run)..."
+WARMUP_HTTP=$(curl -s -o /dev/null --max-time 120 --write-out '%{http_code}' "${WARMUP_URL}" 2>/dev/null)
+WARMUP_CURL_EXIT=$?
+if [ "$WARMUP_CURL_EXIT" -ne 0 ]; then
+  echo "PRE-PUSH: FAILED — route warm-up request failed (curl exit ${WARMUP_CURL_EXIT}). Dev server not reachable at ${WARMUP_URL}."
+  echo "PRE-PUSH: The gate never silently passes. Fix the stack and re-push."
+  exit 1
+fi
+echo "PRE-PUSH: route warm-up complete (HTTP ${WARMUP_HTTP}). Cold-compile cost absorbed; timed run may proceed."
+
 # Run the golden-path spec: scripts/test/playwright/specs/sync-compete-golden-path.spec.ts
 # (3-min timeout enforced by the sync-golden project config)
 npx playwright test --config=scripts/test/playwright/playwright.config.ts \
