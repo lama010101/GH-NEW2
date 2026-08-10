@@ -117,25 +117,7 @@
   width: 100%;
 }
 
-.heroXp {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 4px;
-}
 
-.heroXpVal {
-  font-size: var(--font-xl);
-  font-weight: 800;
-  color: var(--gh-text-primary);
-  line-height: 1;
-}
-
-.heroXpLabel {
-  font-size: var(--font-xs);
-  font-weight: 400;
-  color: var(--gh-text-primary);
-}
 
 /* ── Cards (shared) ── */
 
@@ -242,23 +224,7 @@
   line-height: 1;
 }
 
-.statTileXp {
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
-}
 
-.statTileXpVal {
-  font-size: var(--font-sm);
-  font-weight: 400;
-  color: var(--gh-text-primary);
-}
-
-.statTileXpLabel {
-  font-size: var(--font-2xs);
-  font-weight: 400;
-  color: var(--gh-text-primary);
-}
 
 .statTileSub {
   font-size: 11px; /* layout-constrained — do not tokenize */
@@ -275,7 +241,21 @@
 }
 
 .avatarMe {
-  box-shadow: 0 0 0 2px var(--gh-teal), 0 0 8px rgba(34, 211, 238, 0.4);
+  position: relative;
+}
+
+.avatarMe::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--gh-teal);
+  border: 2px solid var(--gh-general-card-bg);
+  box-shadow: 0 0 0 1px var(--gh-teal);
+  z-index: 1;
 }
 
 .rankAvatar {
@@ -489,10 +469,7 @@
   letter-spacing: 0.5px;
 }
 
-.badgeTallyItemUnearned {
-  opacity: 0.4;
-  filter: grayscale(1);
-}
+
 
 /* Stat groups (XP per era / region) */
 .statGroup {
@@ -982,9 +959,10 @@
 
 .customRankHead {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
 }
 
 .customRankTitle {
@@ -992,12 +970,32 @@
   font-weight: 800;
   color: var(--gh-text-primary);
   line-height: 1.1;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.customRankXpGroup {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .customRankSessionXp {
   font-size: var(--font-sm);
   font-weight: 700;
-  color: var(--gh-orange);
+  color: var(--gh-success);
+  white-space: nowrap;
+}
+
+.customRankTotalXp {
+  font-size: var(--font-sm);
+  font-weight: 800;
+  color: var(--gh-text-primary);
   white-space: nowrap;
 }
 
@@ -1021,7 +1019,7 @@
 
 .customRankNextXp {
   margin-left: auto;
-  color: var(--gh-orange);
+  color: var(--gh-gold);
   font-weight: 800;
 }
 
@@ -1040,13 +1038,7 @@
   transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (min-width: 768px) {
-  .customRankHead {
-    flex-direction: row;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-}
+
 
 /* ── Dock spacer ── */
 

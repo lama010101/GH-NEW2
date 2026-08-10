@@ -773,18 +773,17 @@ export default function RoundCompleteSection({
                   </svg>
                 </button>
                 <div className={styles.progressDots}>
-                  {Array.from({ length: snapshot.rounds.length }).map((_, i) => {
-                    const isDone = i < snapshot.currentRoundIndex;
-                    const isCurrent = i === snapshot.currentRoundIndex;
+                  {Array.from({ length: snapshot.config.totalRounds }).map((_, i) => {
+                    const isDone = i <= snapshot.currentRoundIndex;
                     return (
                       <div
                         key={i}
-                        className={`${styles.progressDot} ${isDone ? styles.progressDotDone : isCurrent ? styles.progressDotCurrent : styles.progressDotPending}`}
+                        className={`${styles.progressDot} ${isDone ? styles.progressDotDone : styles.progressDotPending}`}
                       />
                     );
                   })}
                   <span className={styles.roundLabel}>
-                    {t('round_label_compact', { current: snapshot.currentRoundIndex + 1, total: snapshot.rounds.length })}
+                    {t('round_label_compact', { current: snapshot.currentRoundIndex + 1, total: snapshot.config.totalRounds })}
                   </span>
                 </div>
                 <button
