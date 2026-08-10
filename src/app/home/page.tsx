@@ -602,7 +602,7 @@ function ModeCard({
                 ) : (
                   <>
                     <Trophy width={22} height={22} aria-hidden="true" />
-                    {t('home.daily_view')}
+                    {`${Math.round(Number(dailyStatus?.avgAccuracy ?? 0))}%`}
                   </>
                 )}
               </button>

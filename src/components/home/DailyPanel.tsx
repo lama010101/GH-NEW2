@@ -7,6 +7,9 @@ import styles from './DailyPanel.module.css'
 export type DailyStatusPayload = {
   status: 'not_started' | 'in_progress' | 'completed' | 'expired' | null
   gameId?: string
+  avgAccuracy?: number
+  totalXp?: number
+  rank?: number | null
 }
 
 export function DailyPanel({
@@ -27,6 +30,9 @@ export function DailyPanel({
         const payload: DailyStatusPayload = {
           status: data.status ?? null,
           gameId: data.gameId,
+          avgAccuracy: data.results?.avgAccuracy,
+          totalXp: data.results?.totalXp,
+          rank: data.results?.rank,
         }
         setStatus(payload.status)
         onStatusChange?.(payload)
@@ -40,10 +46,8 @@ export function DailyPanel({
   useEffect(() => {
     const compute = () => {
       const now = new Date()
-      const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
-      const tomorrowMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 2))
-      const target = status === 'in_progress' ? todayMidnight : tomorrowMidnight
-      const diff = Math.max(0, target.getTime() - now.getTime())
+      const nextUtcMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
+      const diff = Math.max(0, nextUtcMidnight.getTime() - now.getTime())
       const h = Math.floor(diff / 3600000)
       const m = Math.floor((diff % 3600000) / 60000)
       return t('common.countdown_hm', { h, m })
