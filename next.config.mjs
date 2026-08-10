@@ -10,10 +10,6 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'im.runware.ai',
       },
-      {
-        protocol: 'https',
-        hostname: 'firebasestorage.googleapis.com',
-      },
     ],
   },
   async headers() {
