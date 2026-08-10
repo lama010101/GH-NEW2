@@ -1,0 +1,29 @@
+name: Daily AI Auto-Play
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  daily-autoplay:
+    name: Run active AI players against today's Daily challenge
+    runs-on: ubuntu-latest
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      SUPABASE_DB_CONNECTION: ${{ secrets.SUPABASE_DB_CONNECTION }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run daily AI autoplay
+        run: npx tsx scripts/ai-players/daily-autoplay.ts
