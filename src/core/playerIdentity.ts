@@ -31,7 +31,7 @@ export async function resolvePlayerIdentities(
      SELECT
        id AS player_id,
        name AS display_name,
-       NULL AS avatar_url,
+       avatar_url,
        true AS is_ai
      FROM ai_players
      WHERE id = ANY($1::uuid[]) AND is_active = true`,
@@ -66,7 +66,7 @@ export function playerIdentityCTE(): string {
     SELECT
       id AS player_id,
       name AS display_name,
-      NULL AS avatar_url,
+      avatar_url,
       true AS is_ai
     FROM ai_players
     WHERE is_active = true

@@ -10,7 +10,7 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 const DEFAULT_MODEL_ID = "anthropic/claude-sonnet-4.6";
 const DEFAULT_PROVIDER = "openrouter";
-const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6 via OpenRouter";
+const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6";
 
 function parseArgs(): { eventId: string; modelId: string; provider: string; playerName: string } {
   const args = process.argv.slice(2);
