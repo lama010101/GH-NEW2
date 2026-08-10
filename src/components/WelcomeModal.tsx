@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Settings } from "lucide-react";
 import styles from "./WelcomeModal.module.css";
@@ -35,6 +35,8 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [avatarData, setAvatarData] = useState(avatar);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(avatar.image_url);
+  const [imgError, setImgError] = useState(false);
+  useEffect(() => { setImgError(false) }, [avatarUrl]);
 
   if (!isOpen) return null;
 
@@ -90,16 +92,17 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
         <h2 className={styles.avatarIntro}>{t('your_historical_avatar')}</h2>
 
         <div className={styles.avatarWrap}>
-          {avatarUrl ? (
+          {avatarUrl && !imgError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={toProxiedImageUrl(avatarUrl) ?? ''}
               alt={fullName}
               className={styles.avatarImg}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("hidden"); }}
+              onError={() => setImgError(true)}
             />
-          ) : null}
-          <span className={styles.avatarInitials} style={{ display: avatarUrl ? "none" : "inline" }}>{initials.toUpperCase()}</span>
+          ) : (
+            <span className={styles.avatarInitials}>{initials.toUpperCase()}</span>
+          )}
           <button
             type="button"
             className={styles.gearButton}
@@ -171,6 +174,7 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
             setUsernameValue(data.display_name);
             setBaselineDisplayName(data.display_name);
           }
+          onSaved?.();
           setAvatarPickerOpen(false);
         }}
       />
