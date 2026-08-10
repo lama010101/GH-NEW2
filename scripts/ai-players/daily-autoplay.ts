@@ -7,7 +7,7 @@ import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
 
-const WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers.ts");
+const WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers-v3.ts");
 const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
 
 const CONCURRENCY = 2;
