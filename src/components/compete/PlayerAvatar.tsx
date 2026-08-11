@@ -38,7 +38,8 @@ export default function PlayerAvatar({
   // Two-tier ring thickness: large avatars (profile, account, menu) keep the
   // original 2px frame/gap/ring; small avatars (leaderboard, topbar, lobby,
   // compete panels, MVPs) use 1px so the ring does not dominate the image.
-  const ring = size >= 80 ? 2 : 1;
+  // Reduce the ring width by 15% everywhere so it is less visually dominant.
+  const ring = Math.round(((size >= 80 ? 2 : 1) * 0.85) * 100) / 100;
   const ringColor = submitted ? 'var(--gh-success)' : 'var(--gh-border-default)';
 
   const handleClick = (e: React.MouseEvent) => {
