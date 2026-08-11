@@ -696,3 +696,17 @@ a {
   border: 1px solid rgba(234, 122, 28, 0.28);
   color: var(--gh-orange);
 }
+
+/* /grow investor deck: native viewport-snapped cinematic slides.
+   The document (html) is the scroll container; each narrative section
+   snaps to the top of the viewport. The footer intentionally has no
+   snap alignment. Reduced-motion users get normal free scrolling. */
+@media not (prefers-reduced-motion: reduce) {
+  html:has([data-grow-snap]) {
+    scroll-snap-type: y mandatory;
+  }
+  [data-grow-snap] [data-section-id] {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+}
