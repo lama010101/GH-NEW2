@@ -15,7 +15,7 @@ export default function Section01Hook() {
       className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden px-4"
     >
       {section.visual.src && (
-        <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 z-0">
           <Image
             src={section.visual.src}
             alt={section.visual.alt ?? ''}
