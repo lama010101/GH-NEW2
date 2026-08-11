@@ -52,6 +52,22 @@ export async function PATCH(_request: NextRequest) {
   const serviceRoleClient = createSupabaseServerClient();
 
   try {
+    const likePattern = displayName
+      .replace(/\\/g, "\\\\")
+      .replace(/%/g, "\\%")
+      .replace(/_/g, "\\_");
+    const { data: existing } = await serviceRoleClient
+      .from("profiles")
+      .select("id")
+      .ilike("display_name", likePattern)
+      .neq("id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json({ error: "username_taken", message: "That username is already taken." }, { status: 409 });
+    }
+
     const updateData: { display_name: string; updated_at: string; welcome_completed?: boolean } = {
       display_name: displayName,
       updated_at: new Date().toISOString(),
@@ -66,6 +82,9 @@ export async function PATCH(_request: NextRequest) {
       .eq("id", user.id);
 
     if (updateError) {
+      if (updateError.code === "23505") {
+        return NextResponse.json({ error: "username_taken", message: "That username is already taken." }, { status: 409 });
+      }
       console.error("[update-username] Failed to update profile:", updateError);
       return NextResponse.json({ error: "Failed to update username" }, { status: 500 });
     }
