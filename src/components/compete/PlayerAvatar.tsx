@@ -35,10 +35,10 @@ export default function PlayerAvatar({
   const [imgError, setImgError] = useState(false);
   const initial = initials ?? (displayName || "?")[0].toUpperCase();
   const { color1, color2 } = playerId ? getPlayerFrameColor(playerId) : { color1: 'var(--gh-border-default)', color2: 'var(--gh-border-default)' };
-  // Scale the frame/gap/ring thickness with avatar size so small avatars
-  // (e.g. 32-40px on the leaderboard) keep the same visual ring proportion as
-  // the large profile avatar (110px ~ 2px ring). Clamp to a 0.5px minimum.
-  const ring = Math.max(0.5, Math.round((size / 55) * 100) / 100);
+  // Two-tier ring thickness: large avatars (profile, account, menu) keep the
+  // original 2px frame/gap/ring; small avatars (leaderboard, topbar, lobby,
+  // compete panels, MVPs) use 1px so the ring does not dominate the image.
+  const ring = size >= 80 ? 2 : 1;
   const ringColor = submitted ? 'var(--gh-success)' : 'var(--gh-border-default)';
 
   const handleClick = (e: React.MouseEvent) => {
