@@ -49,6 +49,7 @@
 }
 
 .avatarRing {
+  position: relative;
   width: 80px;
   height: 80px;
   border-radius: 50%;
@@ -59,6 +60,20 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 12px;
+}
+
+.avatarRing::after {
+  content: '';
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gh-teal);
+  border: 2px solid var(--gh-bg-base);
+  box-shadow: 0 0 0 1px var(--gh-teal);
+  z-index: 2;
 }
 
 .avatarImg {

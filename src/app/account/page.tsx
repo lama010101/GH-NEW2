@@ -239,19 +239,21 @@ export default function AccountPage() {
       {avatarInfo && (
         <div className={styles.avatarSection}>
           <div className={styles.card}>
+            <div className={styles.avatarWrap}>
             {avatarInfo.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={toProxiedImageUrl(avatarInfo.imageUrl) ?? ''}
-                alt={avatarInfo.name}
-                className={styles.avatarImg}
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-              />
-            ) : (
-              <div className={styles.avatarInitials}>
-                {getInitials(avatarInfo.name)}
-              </div>
-            )}
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={toProxiedImageUrl(avatarInfo.imageUrl) ?? ''}
+                  alt={avatarInfo.name}
+                  className={styles.avatarImg}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                />
+              ) : (
+                <div className={styles.avatarInitials}>
+                  {getInitials(avatarInfo.name)}
+                </div>
+              )}
+          </div>
             <div className={styles.avatarName}>{avatarInfo.name}</div>
             {avatarInfo.description && (
               <div className={styles.avatarDescription}>

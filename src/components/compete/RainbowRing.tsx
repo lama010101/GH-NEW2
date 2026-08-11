@@ -83,8 +83,8 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
         strokeDasharray={circumference} strokeDashoffset={offset}
         transform={`rotate(-90 ${cx} ${cy})`}
       />
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="var(--gh-text-primary)" fontSize={52} fontWeight="bold">
-        <tspan>{clamped}</tspan>
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" fill="var(--gh-text-primary)" fontSize={52} fontWeight="bold">
+        <tspan dy="0.05em">{clamped}</tspan>
       </text>
     </svg>
   );

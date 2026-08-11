@@ -1230,7 +1230,7 @@ export default function LobbySection({
                   return (
                     <div key={player.id} className={styles['lobbyPlayerCard']}>
                       <div className={styles['lobbyAvatarWrap']}>
-                        <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} playerId={player.id} size={40} />
+                        <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} playerId={player.id} size={40} isMe={player.id === viewerId} />
                         {!player.is_ai && (
                           <button
                             className={styles['lobbyStarBtn']}
@@ -1316,7 +1316,7 @@ export default function LobbySection({
                     return (
                       <div key={player.id} className={styles['lobbyPlayerCard']}>
                         <div className={styles['lobbyAvatarWrap']}>
-                          <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} playerId={player.id} size={40} />
+                          <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} playerId={player.id} size={40} isMe={player.id === viewerId} />
                           {!player.is_ai && (
                             <button
                               className={styles['lobbyStarBtn']}
@@ -1375,7 +1375,7 @@ export default function LobbySection({
                 return (
                   <div key={p.playerId} className={`${styles['lobbyRosterRow']} ${p.ready ? styles['lobbyRosterRowReady'] : ''}`} data-testid={`lobby-player-${p.playerId}`} data-ready={p.ready ? 'true' : 'false'} data-host={p.isHost ? 'true' : 'false'}>
                     <div className={styles['lobbyAvatarWrap']}>
-                      <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} playerId={p.playerId} size={40} />
+                      <PlayerAvatar avatarUrl={p.avatarUrl} displayName={displayName} playerId={p.playerId} size={40} isMe={isViewerPlayer} />
                       {!isViewerPlayer && (
                         <button
                           className={styles['lobbyStarBtn']}
@@ -1423,7 +1423,7 @@ export default function LobbySection({
               })}
               {(snapshot.pendingInvitees ?? []).map((p) => (
                 <div key={p.playerId} className={styles['lobbyRosterRow']}>
-                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} playerId={p.playerId} size={40} />
+                  <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName} playerId={p.playerId} size={40} isMe={p.playerId === viewerId} />
                   <div className={styles['lobbyRosterMeta']}>
                     <span className={styles['lobbyRosterName']}>{p.displayName}</span>
                   </div>

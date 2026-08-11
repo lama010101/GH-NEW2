@@ -113,19 +113,23 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
           </button>
         </div>
 
-        <div className={styles.avatarName}>{fullName}</div>
-
-        <button onClick={() => setAvatarPickerOpen(true)} className={styles.skipLink} style={{ marginBottom: 16 }}>
-          {t('choose_different_avatar')}
-        </button>
-
         {bioLine && <div className={styles.bioLine}>{bioLine}</div>}
 
         {avatarData.description && (
           <div className={styles.description}>{avatarData.description}</div>
         )}
 
-        <div className={styles.usernameLabel}>{t('your_username')}</div>
+        <div className={styles.avatarName}>{fullName}</div>
+
+        <button onClick={() => setAvatarPickerOpen(true)} className={styles.skipLink} style={{ marginBottom: 16 }}>
+          {t('choose_different_avatar')}
+        </button>
+
+        <div className={styles.usernameLabel} aria-label={t('your_username')}>
+          <span>{t('username_label_1')}</span>
+          <span>{t('username_label_2')}</span>
+          <span>{t('username_label_3')}</span>
+        </div>
         <input
           type="text"
           value={usernameValue}

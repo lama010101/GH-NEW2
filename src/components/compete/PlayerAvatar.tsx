@@ -11,13 +11,14 @@ interface PlayerAvatarProps {
   playerId?: string;
   size?: number;
   submitted?: boolean;
+  isMe?: boolean;
   className?: string;
 }
 
-export default function PlayerAvatar({ avatarUrl, displayName, playerId, size = 26, submitted = false, className }: PlayerAvatarProps) {
+export default function PlayerAvatar({ avatarUrl, displayName, playerId, size = 26, submitted = false, isMe = false, className }: PlayerAvatarProps) {
   const [imgError, setImgError] = useState(false);
   const initial = (displayName || "?")[0].toUpperCase();
-  const frameColor = playerId ? getPlayerFrameColor(playerId) : 'var(--gh-border-default)';
+  const { color1, color2 } = playerId ? getPlayerFrameColor(playerId) : { color1: 'var(--gh-border-default)', color2: 'var(--gh-border-default)' };
 
   const outerStyle: React.CSSProperties = {
     width: size,
@@ -28,8 +29,10 @@ export default function PlayerAvatar({ avatarUrl, displayName, playerId, size = 
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    border: `2px solid ${frameColor}`,
-    padding: 2,
+    position: "relative",
+    border: "none",
+    padding: 4,
+    background: `conic-gradient(${color1} 0deg 180deg, ${color2} 180deg 360deg)`,
     verticalAlign: "middle",
   };
 
@@ -49,6 +52,20 @@ export default function PlayerAvatar({ avatarUrl, displayName, playerId, size = 
     color: "var(--gh-text-secondary)",
   };
 
+  const dotSize = Math.max(6, Math.round(size / 4));
+  const dotStyle: React.CSSProperties = {
+    position: "absolute",
+    bottom: -3,
+    right: -3,
+    width: dotSize,
+    height: dotSize,
+    borderRadius: "50%",
+    background: "var(--gh-teal)",
+    border: "2px solid var(--gh-bg-base)",
+    boxShadow: "0 0 0 1px var(--gh-teal)",
+    zIndex: 1,
+  };
+
   return (
     <span className={className} style={outerStyle}>
       <span style={innerStyle}>
@@ -62,6 +79,7 @@ export default function PlayerAvatar({ avatarUrl, displayName, playerId, size = 
           />
         ) : initial}
       </span>
+      {isMe && <span style={dotStyle} aria-hidden="true" />}
     </span>
   );
 }

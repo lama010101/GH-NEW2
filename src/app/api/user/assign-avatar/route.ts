@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthenticatedServerClient, createSupabaseServerClient } from "@/core/supabaseServer";
+import { canOverwriteDisplayName } from "@/lib/autoDisplayName";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,7 @@ export async function POST(_request: NextRequest) {
         .single();
 
       if (avatar) {
+        const avatarUrl = avatar.image_url ?? avatar.firebase_url;
         return NextResponse.json({
           assigned: false,
           profile: { display_name: profile.display_name },
@@ -63,7 +65,7 @@ export async function POST(_request: NextRequest) {
             death_country: avatar.death_country,
             birth_day: avatar.birth_day,
             death_day: avatar.death_day,
-            image_url: avatar.image_url,
+            image_url: avatarUrl,
           },
         });
       }
@@ -86,14 +88,19 @@ export async function POST(_request: NextRequest) {
     // Build display_name: first_name + last_name (if exists) + random 4-digit suffix
     const baseName = randomAvatar.first_name + (randomAvatar.last_name ? ` ${randomAvatar.last_name}` : "");
     const randomSuffix = Math.floor(Math.random() * 9000 + 1000).toString();
-    const displayName = `${baseName}#${randomSuffix}`;
+    const newDisplayName = `${baseName}#${randomSuffix}`;
+    const displayNameToSet = canOverwriteDisplayName(profile?.display_name)
+      ? newDisplayName
+      : profile.display_name;
 
-    // Update profile with avatar_url and display_name
+    const avatarUrl = randomAvatar.firebase_url || randomAvatar.image_url;
+
+    // Update profile with avatar_url and display_name (preserve existing custom name)
     const { error: updateError } = await serviceRoleClient
       .from("profiles")
       .update({
-        avatar_url: randomAvatar.firebase_url || randomAvatar.image_url,
-        display_name: displayName,
+        avatar_url: avatarUrl,
+        display_name: displayNameToSet,
         updated_at: new Date().toISOString(),
       })
       .eq("id", user.id);
@@ -105,7 +112,7 @@ export async function POST(_request: NextRequest) {
 
     return NextResponse.json({
       assigned: true,
-      profile: { display_name: displayName },
+      profile: { display_name: displayNameToSet },
       avatar: {
         id: randomAvatar.id,
         first_name: randomAvatar.first_name,
@@ -118,7 +125,7 @@ export async function POST(_request: NextRequest) {
         death_country: randomAvatar.death_country,
         birth_day: randomAvatar.birth_day,
         death_day: randomAvatar.death_day,
-        image_url: randomAvatar.firebase_url || randomAvatar.image_url,
+        image_url: avatarUrl,
       },
     });
   } catch (error) {

@@ -152,6 +152,88 @@
   color: var(--gh-text-primary);
 }
 
+.helpButton {
+  margin-left: auto;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  color: var(--gh-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.helpButton:hover {
+  color: var(--gh-text-primary);
+  background: var(--gh-glass-bg-hover);
+}
+
+.helpOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--gh-modal-overlay);
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+}
+
+.helpCard {
+  width: 100%;
+  max-width: 420px;
+  background: var(--gh-general-card-bg);
+  border: 1px solid var(--gh-general-card-border);
+  border-radius: var(--gh-radius-md);
+  box-shadow: var(--gh-general-card-shadow);
+  padding: 20px;
+}
+
+.helpHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.helpTitle {
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+  margin: 0;
+}
+
+.helpClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gh-glass-bg-hover);
+  color: var(--gh-text-secondary);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.helpClose:hover {
+  background: var(--gh-glass-bg-active);
+  color: var(--gh-text-primary);
+}
+
+.helpBody {
+  font-size: var(--font-sm);
+  line-height: 1.6;
+  color: var(--gh-text-secondary);
+}
+
 /* ── Hero card (ring + Where/When stat tiles) ── */
 
 .heroCard {
@@ -160,6 +242,11 @@
   align-items: center;
   gap: 14px;
   padding: 18px;
+}
+
+.heroCard .cardHead {
+  align-self: stretch;
+  padding: 0 0 4px;
 }
 
 .rankWrap {
@@ -238,24 +325,6 @@
   position: relative;
   display: inline-block;
   flex-shrink: 0;
-}
-
-.avatarMe {
-  position: relative;
-}
-
-.avatarMe::after {
-  content: '';
-  position: absolute;
-  bottom: -3px;
-  right: -3px;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--gh-teal);
-  border: 2px solid var(--gh-general-card-bg);
-  box-shadow: 0 0 0 1px var(--gh-teal);
-  z-index: 1;
 }
 
 .avatarWrap > span,
@@ -1061,7 +1130,9 @@
   bottom: 0;
   z-index: 30;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: stretch;
   align-items: stretch;
   gap: 10px;
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
@@ -1076,10 +1147,13 @@
   cursor: pointer;
   font-size: 15px; /* layout-constrained — do not tokenize */
   font-weight: 800;
+  flex: 1 1 0;
+  min-width: 120px;
 }
 
 .homeBtn {
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 120px;
   padding: 12px 20px;
   border: none;
   background: var(--gh-btn-action-bg);
@@ -1088,12 +1162,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.homeBtnFull {
-  flex: 1;
-}
-
 .ctaSecondary {
-  flex-shrink: 0;
+  flex: 1 1 0;
+  min-width: 120px;
   padding: 12px 20px;
   border: 1px solid var(--gh-border-default);
   background: var(--gh-mini-card-bg);
@@ -1102,7 +1173,8 @@
 }
 
 .playBtn {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 120px;
   padding: 12px 20px;
   border: none;
   color: #06181c;
@@ -1122,7 +1194,8 @@
   color: var(--gh-danger);
   font-size: var(--font-2xs);
   margin-top: 8px;
-  grid-column: 1 / -1;
+  width: 100%;
+  flex-basis: 100%;
   text-align: center;
 }
 
@@ -1185,11 +1258,14 @@
     padding: 12px 24px calc(12px + env(safe-area-inset-bottom, 0px));
     background: var(--gh-bottombar-wrap-bg);
     flex-direction: row;
-    align-items: center;
+    align-items: stretch;
+    flex-wrap: wrap;
+    justify-content: stretch;
   }
 
   .homeBtn {
-    width: 220px;
+    flex: 1 1 0;
+    min-width: 120px;
   }
 
   .gridZone {

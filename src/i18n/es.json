@@ -697,7 +697,10 @@
     "choose_different_avatar": "Elegir otro avatar",
     "your_username": "Tu nombre de usuario",
     "lets_play": "¡A jugar!",
-    "skip_for_now": "Saltar por ahora"
+    "skip_for_now": "Saltar por ahora",
+    "username_label_1": "ENTER YOUR USERNAME",
+    "username_label_2": "PICK A UNIQUE NAME",
+    "username_label_3": "OTHERS WILL SEE THIS NAME"
   },
   "landing": {
     "meta_title": "Guess-History — Pon a prueba tu conocimiento de cuándo y dónde",

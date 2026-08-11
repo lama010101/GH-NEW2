@@ -219,6 +219,7 @@ export default function WhenCard({
                   displayName={snapshotPlayers.find(p => p.playerId === row.playerId)?.displayName ?? row.playerId.slice(0, 2)}
                   playerId={row.playerId}
                   size={22}
+                  isMe={row.isMe}
                 />
               </div>
               <div
@@ -260,7 +261,7 @@ export default function WhenCard({
                 >
                   <span className={styles.lbRank}>{idx + 1}</span>
                   <span className={styles.lbNameGroup}>
-                    <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} playerId={row.playerId} size={40} />
+                    <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} playerId={row.playerId} size={40} isMe={row.isMe} />
                     <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
                       {row.displayName}
                     </span>

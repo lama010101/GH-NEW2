@@ -226,6 +226,7 @@ export default function WhereCard({
                       displayName={snapshotPlayers.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
                       playerId={r.playerId}
                       size={40}
+                      isMe={r.playerId === playerId}
                     />
                     <span className={styles.lbName}>
                       <span style={{ ...getUsernameGradientStyle(r.playerId), fontWeight: r.playerId === playerId ? 600 : 400 }}>
