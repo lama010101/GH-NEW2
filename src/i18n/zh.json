@@ -697,7 +697,10 @@
     "choose_different_avatar": "选择其他头像",
     "your_username": "你的用户名",
     "lets_play": "开始游戏！",
-    "skip_for_now": "暂时跳过"
+    "skip_for_now": "暂时跳过",
+    "username_label_1": "ENTER YOUR USERNAME",
+    "username_label_2": "PICK A UNIQUE NAME",
+    "username_label_3": "OTHERS WILL SEE THIS NAME"
   },
   "landing": {
     "meta_title": "Guess-History — 测试你的历史知识",

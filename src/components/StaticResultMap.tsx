@@ -66,6 +66,18 @@ const createAvatarIcon = (avatarUrl: string | null | undefined, label: string | 
 
 const PLAYER_COLORS = ["#EF4444", "#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6", "#F59E0B"];
 
+function normalizeLongitude(lng: number, refLng: number): number {
+  // Keep the short way across the antimeridian by expressing the longitude
+  // relative to the reference longitude.
+  const ref = ((refLng % 360) + 540) % 360 - 180;
+  const delta = ((lng - ref + 540) % 360) - 180;
+  return ref + delta;
+}
+
+function displayLatLng(lat: number, lng: number, refLng: number): L.LatLng {
+  return L.latLng(lat, normalizeLongitude(lng, refLng));
+}
+
 function MapController({
   correctLat,
   correctLng,
@@ -82,20 +94,21 @@ function MapController({
   const map = useMap();
 
   useEffect(() => {
-    const points: L.LatLngExpression[] = [[correctLat, correctLng]];
+    const correctLL = L.latLng(correctLat, correctLng).wrap();
+    const points: L.LatLng[] = [correctLL];
     if (guessLat !== null && guessLng !== null) {
-      points.push([guessLat, guessLng]);
+      points.push(displayLatLng(guessLat, guessLng, correctLL.lng));
     }
     if (playerGuesses && playerGuesses.length > 0) {
       for (const g of playerGuesses) {
-        points.push([g.lat, g.lng]);
+        points.push(displayLatLng(g.lat, g.lng, correctLL.lng));
       }
     }
     if (points.length > 1) {
       const bounds = L.latLngBounds(points);
       map.fitBounds(bounds, { padding: [40, 40] });
     } else {
-      map.setView([correctLat, correctLng], 5);
+      map.setView(correctLL, 5);
     }
   }, [map, correctLat, correctLng, guessLat, guessLng, playerGuesses]);
 
@@ -112,10 +125,12 @@ export function StaticResultMap({
   ownLabel,
 }: StaticResultMapProps) {
   const hasGuess = guessLat !== null && guessLng !== null;
+  const correctLL = L.latLng(correctLat, correctLng).wrap();
+  const guessLL = hasGuess ? displayLatLng(guessLat, guessLng, correctLL.lng) : null;
 
   return (
     <MapContainer
-      center={[correctLat, correctLng]}
+      center={correctLL}
       zoom={5}
       style={{ width: "100%", height: "220px", borderRadius: "4px" }}
       dragging={false}
@@ -140,23 +155,20 @@ export function StaticResultMap({
       />
 
       {/* Correct location marker (always shown) */}
-      <Marker position={[correctLat, correctLng]} icon={correctIcon} />
+      <Marker position={correctLL} icon={correctIcon} />
 
       {/* Guess marker (only if player submitted a location) */}
-      {hasGuess && (
+      {guessLL && (
         <Marker
-          position={[guessLat, guessLng]}
+          position={guessLL}
           icon={createAvatarIcon(ownAvatarUrl ?? null, ownLabel ?? "")}
         />
       )}
 
       {/* Dashed connecting line (only if both markers exist) */}
-      {hasGuess && (
+      {guessLL && (
         <Polyline
-          positions={[
-            [correctLat, correctLng],
-            [guessLat, guessLng],
-          ]}
+          positions={[correctLL, guessLL]}
           dashArray="8, 6"
           color="#FFFFFF"
           opacity={0.7}
@@ -165,30 +177,31 @@ export function StaticResultMap({
       )}
 
       {/* All player guess markers */}
-      {playerGuesses?.map((g) => (
-        <Marker
-          key={g.playerId}
-          position={[g.lat, g.lng]}
-          icon={createAvatarIcon(g.avatarUrl, g.label)}
-        >
-          {g.label ? (
-            <Tooltip direction="top" offset={[0, -10]}>
-              {g.label}
-            </Tooltip>
-          ) : null}
-        </Marker>
-      ))}
+      {playerGuesses?.map((g) => {
+        const gLL = displayLatLng(g.lat, g.lng, correctLL.lng);
+        return (
+          <Marker
+            key={g.playerId}
+            position={gLL}
+            icon={createAvatarIcon(g.avatarUrl, g.label)}
+          >
+            {g.label ? (
+              <Tooltip direction="top" offset={[0, -10]}>
+                {g.label}
+              </Tooltip>
+            ) : null}
+          </Marker>
+        );
+      })}
 
       {/* Polylines from each player guess to correct location */}
       {playerGuesses?.map((g, i) => {
         const color = g.color ?? PLAYER_COLORS[i % PLAYER_COLORS.length];
+        const gLL = displayLatLng(g.lat, g.lng, correctLL.lng);
         return (
           <Polyline
             key={`line-${g.playerId}`}
-            positions={[
-              [correctLat, correctLng],
-              [g.lat, g.lng],
-            ]}
+            positions={[correctLL, gLL]}
             dashArray="8, 6"
             color={color}
             opacity={0.5}

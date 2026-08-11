@@ -1,26 +1,34 @@
 import type { SessionPlayer } from "./types";
 
 const FRAME_COLOR_PALETTE = [
-  '#ef4444',
-  '#f97316',
-  '#f59e0b',
-  '#84cc16',
-  '#22c55e',
-  '#14b8a6',
-  '#06b6d4',
-  '#3b82f6',
-  '#8b5cf6',
-  '#d946ef',
-  '#f43f5e',
-  '#78716c',
+  'var(--gh-orange)',
+  'var(--gh-blue)',
+  'var(--gh-violet)',
+  'var(--gh-gold)',
+  'var(--gh-teal)',
+  'var(--gh-success)',
+  'var(--gh-danger)',
+  'var(--gh-where-solid)',
+  'var(--gh-when-solid)',
 ] as const;
 
-export function getPlayerFrameColor(playerId: string): string {
+export interface PlayerFrameColors {
+  color1: string;
+  color2: string;
+}
+
+export function getPlayerFrameColor(playerId: string): PlayerFrameColors {
   let hash = 0;
   for (let i = 0; i < playerId.length; i++) {
     hash = Math.imul(hash, 31) + playerId.charCodeAt(i);
   }
-  return FRAME_COLOR_PALETTE[Math.abs(hash) % FRAME_COLOR_PALETTE.length];
+  const n = FRAME_COLOR_PALETTE.length;
+  const idx1 = Math.abs(hash) % n;
+  const idx2 = (idx1 + 1 + (Math.abs(hash >> 8) % (n - 1))) % n;
+  return {
+    color1: FRAME_COLOR_PALETTE[idx1],
+    color2: FRAME_COLOR_PALETTE[idx2],
+  };
 }
 
 // KC-009 gate live-fire test

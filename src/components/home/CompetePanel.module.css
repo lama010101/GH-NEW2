@@ -389,30 +389,7 @@
   background: #ffffff;
 }
 
-/* ── Host badge ── */
-.hostBadge {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 6px;
-  font-size: var(--font-3xs);
-  font-weight: 600;
-  color: var(--gh-text-secondary);
-  background: var(--gh-glass-bg-hover);
-  border-radius: 4px;
-  vertical-align: middle;
-}
 
-.hostBadgeSelf {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 6px;
-  font-size: var(--font-3xs);
-  font-weight: 600;
-  color: var(--gh-text-primary);
-  background: var(--gh-accent-bg, rgba(99, 102, 241, 0.2));
-  border-radius: 4px;
-  vertical-align: middle;
-}
 
 /* ── Time remaining ── */
 .timeRemaining {

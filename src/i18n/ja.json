@@ -697,7 +697,10 @@
     "choose_different_avatar": "別のアバターを選ぶ",
     "your_username": "あなたのユーザー名",
     "lets_play": "遊ぼう！",
-    "skip_for_now": "今はスキップ"
+    "skip_for_now": "今はスキップ",
+    "username_label_1": "ENTER YOUR USERNAME",
+    "username_label_2": "PICK A UNIQUE NAME",
+    "username_label_3": "OTHERS WILL SEE THIS NAME"
   },
   "landing": {
     "meta_title": "Guess-History — 歴史の知識を試そう",

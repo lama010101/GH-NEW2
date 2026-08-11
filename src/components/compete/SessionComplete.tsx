@@ -22,7 +22,7 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { Star, TrendingUp, Trophy } from "lucide-react";
+import { HelpCircle, Star, TrendingUp, Trophy } from "lucide-react";
 import styles from "./SessionComplete.module.css";
 
 const BADGE_DIMENSIONS: BadgeDimension[] = ["location", "year", "combo"];
@@ -74,6 +74,8 @@ export default function SessionComplete({
   const tGame = useTranslations('game');
   const tRank = useTranslations('rank');
   const tLobby = useTranslations('lobby');
+  const tHelp = useTranslations('help');
+  const tCommon = useTranslations('common');
   const distanceUnit = getDistanceUnitPreference();
   const isPractice = snapshot.config.mode === "practice";
   const isDaily = snapshot.config.mode === "daily";
@@ -88,6 +90,7 @@ export default function SessionComplete({
   const [dailyResults, setDailyResults] = useState<DailyResultPlayer[] | null>(null);
   const [dailyLoading, setDailyLoading] = useState(false);
   const [dailyError, setDailyError] = useState<string | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [dailyRetryCount, setDailyRetryCount] = useState(0);
 
   // A round "counts" for final stats if the player actually submitted a guess
@@ -577,6 +580,18 @@ export default function SessionComplete({
             <div className={styles.content}>
               {/* HERO ACCURACY CARD — banner + ring + Where/When stat tiles */}
               <section className={`${styles.card} ${styles.heroCard}`}>
+                <div className={styles.cardHead}>
+                  <span className={styles.accentBar} />
+                  <h2 className={styles.cardTitle}>{tGame('final_scores')}</h2>
+                  <button
+                    type="button"
+                    className={styles.helpButton}
+                    onClick={() => setHelpOpen(true)}
+                    aria-label={tHelp('faq_q1')}
+                  >
+                    <HelpCircle size={18} />
+                  </button>
+                </div>
                 <div className={styles.banner}>
                   <span className={styles.bannerKicker}>{tGame('game_complete')}</span>
                   <h1 className={styles.bannerTitle}>
@@ -659,7 +674,7 @@ export default function SessionComplete({
                           displayName={displayName}
                           playerId={player.playerId}
                           size={38}
-                          className={isCurrentPlayer ? styles.avatarMe : undefined}
+                          isMe={isCurrentPlayer}
                         />
                       </div>
                       <div className={styles.rankMain}>
@@ -729,7 +744,7 @@ export default function SessionComplete({
                           displayName={displayName}
                           playerId={player.player_id}
                           size={38}
-                          className={isCurrentPlayer ? styles.avatarMe : undefined}
+                          isMe={isCurrentPlayer}
                         />
                       </div>
                       <div className={styles.rankMain}>
@@ -792,7 +807,7 @@ export default function SessionComplete({
                                 displayName={w.displayName}
                                 playerId={w.playerId}
                                 size={24}
-                                className={w.isMe ? styles.avatarMe : undefined}
+                                isMe={w.isMe}
                               />
                             </span>
                             <span className={styles.mvpName}>
@@ -1022,7 +1037,7 @@ export default function SessionComplete({
                                     displayName={bestPlayerName}
                                     playerId={roundStats.bestPlayerId ?? undefined}
                                     size={24}
-                                    className={isCurrentBestPlayer ? styles.avatarMe : undefined}
+                                    isMe={isCurrentBestPlayer}
                                   />
                                 </span>
                                 <span className={`${styles.bestName} ${isCurrentBestPlayer ? styles.bestNameMe : ""}`}>
@@ -1099,6 +1114,27 @@ export default function SessionComplete({
           alt={viewerAlt}
           onClose={() => setViewerSrc(null)}
         />
+      )}
+
+      {helpOpen && (
+        <div className={styles.helpOverlay} onClick={() => setHelpOpen(false)}>
+          <div className={styles.helpCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.helpHead}>
+              <h3 className={styles.helpTitle}>{tHelp('faq_q1')}</h3>
+              <button
+                type="button"
+                className={styles.helpClose}
+                onClick={() => setHelpOpen(false)}
+                aria-label={tCommon('close')}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.helpBody}>
+              {tHelp('faq_a1')}
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/server/db";
-import { assertParticipantOrPartyKit } from "@/server/sessionCore";
+import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { verifyPartyKitSecret } from "@/server/partykitAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,9 +17,33 @@ export async function GET(
       return NextResponse.json({ error: "gameId is required" }, { status: 400 });
     }
 
-    const auth = await assertParticipantOrPartyKit(request, gameId);
-    if (!auth.ok) {
-      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    // Authorization: PartyKit server-to-server bypass, or an authenticated user
+    // who has a session_players row for this game and was not kicked (they may
+    // have left after the session completed, which is allowed for final results).
+    const partyKitSecret = request.headers.get("x-partykit-secret");
+    if (partyKitSecret && verifyPartyKitSecret(partyKitSecret)) {
+      const viewerHeader = request.headers.get("x-viewer-player-id");
+      if (!viewerHeader || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(viewerHeader)) {
+        return NextResponse.json({ error: "invalid viewer header" }, { status: 400 });
+      }
+    } else {
+      const supabase = createAuthenticatedServerClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return NextResponse.json({ error: "authentication required" }, { status: 401 });
+      }
+
+      const participantResult = await dbPool.query<{ exists: boolean }>(
+        `SELECT EXISTS(
+          SELECT 1 FROM session_players
+          WHERE game_id = $1 AND player_id = $2 AND kicked IS NOT TRUE
+        ) AS exists`,
+        [gameId, user.id]
+      );
+
+      if (!participantResult.rows[0]?.exists) {
+        return NextResponse.json({ error: "not a participant" }, { status: 403 });
+      }
     }
 
     const result = await dbPool.query<{

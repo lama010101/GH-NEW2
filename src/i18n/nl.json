@@ -697,7 +697,10 @@
     "choose_different_avatar": "Kies een andere avatar",
     "your_username": "Jouw gebruikersnaam",
     "lets_play": "Laten we spelen!",
-    "skip_for_now": "Nu overslaan"
+    "skip_for_now": "Nu overslaan",
+    "username_label_1": "ENTER YOUR USERNAME",
+    "username_label_2": "PICK A UNIQUE NAME",
+    "username_label_3": "OTHERS WILL SEE THIS NAME"
   },
   "landing": {
     "meta_title": "Guess-History — Test je kennis van wanneer en waar",
