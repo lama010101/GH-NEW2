@@ -53,9 +53,6 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  overflow: hidden;
-  border: 2.5px solid rgba(var(--gh-when-solid-rgb), 0.6);
-  background: linear-gradient(135deg, var(--gh-orange), var(--gh-blue));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,18 +71,6 @@
   border: 2px solid var(--gh-bg-base);
   box-shadow: 0 0 0 1px var(--gh-teal);
   z-index: 2;
-}
-
-.avatarImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatarInitials {
-  color: var(--gh-text-primary);
-  font-size: var(--font-2xl);
-  font-weight: 700;
 }
 
 .displayName {

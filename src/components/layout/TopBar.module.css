@@ -76,11 +76,6 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid var(--gh-border-medium);
-  background: linear-gradient(135deg, var(--gh-orange), var(--gh-blue));
-  cursor: pointer;
-  padding: 0;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -101,17 +96,19 @@
   z-index: 2;
 }
 
-.avatarBtnImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.avatarBtnInitials {
+.menuBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gh-glass-bg);
   color: var(--gh-text-primary);
-  font-size: var(--font-xs);
-  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .logoImg {
