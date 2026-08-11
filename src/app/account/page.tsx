@@ -41,6 +41,7 @@ export default function AccountPage() {
   const [createdAt, setCreatedAt] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveResult, setSaveResult] = useState<'idle' | 'success' | 'error'>('idle')
+  const [usernameError, setUsernameError] = useState<string | null>(null)
   const [avatarInfo, setAvatarInfo] = useState<AvatarInfo | null>(null)
   const [signOutError, setSignOutError] = useState<string | null>(null)
   const [showNavModal, setShowNavModal] = useState(false)
@@ -163,17 +164,29 @@ export default function AccountPage() {
     if (!playerId || displayName.trim() === savedName.trim()) return
     setSaving(true)
     setSaveResult('idle')
-    const { error } = await supabaseBrowser
-      .from('profiles')
-      .update({ display_name: displayName.trim() })
-      .eq('id', playerId)
-    setSaving(false)
-    if (error) {
-      setSaveResult('error')
-    } else {
+    setUsernameError(null)
+    try {
+      const res = await fetch('/api/user/update-username', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ display_name: displayName.trim() }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        if (res.status === 409) {
+          setUsernameError(data.message || "That username is already taken.")
+        }
+        setSaveResult('error')
+        return
+      }
       setSavedName(displayName.trim())
+      updateCachedDisplayName(displayName.trim())
       setSaveResult('success')
       setTimeout(() => setSaveResult('idle'), 2500)
+    } catch {
+      setSaveResult('error')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -282,7 +295,7 @@ export default function AccountPage() {
               <div className={styles.saveFeedbackSuccess}>{t('saved')}</div>
             )}
             {saveResult === 'error' && (
-              <div className={styles.saveFeedbackError}>{t('err_save_failed')}</div>
+              <div className={styles.saveFeedbackError}>{usernameError || t('err_save_failed')}</div>
             )}
           </div>
 
