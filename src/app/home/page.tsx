@@ -8,6 +8,7 @@ import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
 import { DailyPanel, type DailyStatusPayload } from '@/components/home/DailyPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
+import { JourneyPanel } from '@/components/home/JourneyPanel'
 import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
 import { PracticeResumeModal } from '@/components/practice/PracticeResumeModal'
@@ -388,6 +389,7 @@ function HomePageInner() {
 
         {/* Vertical card stack */}
         <div className={styles['cards-stack']}>
+          <JourneyPanel onStart={() => handleNav('/journey')} />
           {VERTICAL_CARD_ORDER.map(mode => (
             <ModeCard
               key={mode}
