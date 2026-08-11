@@ -251,9 +251,10 @@ export default function CompeteGamePage() {
     setLocationName(null);
   }, [snapshot?.currentRoundIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch all round results when session completes
+  // Fetch all round results when a synchronous session completes.
+  // Async sessions already have snapshot.rounds, so the extra fetch is unnecessary.
   useEffect(() => {
-    if (snapshot?.status !== "SESSION_COMPLETE" || !gameId || allRoundResults) return;
+    if (snapshot?.status !== "SESSION_COMPLETE" || !gameId || allRoundResults || snapshot.config.mode === 'async') return;
     let cancelled = false;
     const fetchResults = async (attempt = 0) => {
       try {
@@ -277,7 +278,7 @@ export default function CompeteGamePage() {
     };
     fetchResults();
     return () => { cancelled = true; };
-  }, [snapshot?.status, gameId, allRoundResults, playerId, tLeaderboard]);
+  }, [snapshot?.status, snapshot?.config?.mode, gameId, allRoundResults, playerId, tLeaderboard]);
 
   const onRetryAllResults = useCallback(() => {
     setAllRoundResults(null);

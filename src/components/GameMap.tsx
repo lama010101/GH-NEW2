@@ -79,7 +79,7 @@ class GameMapErrorBoundary extends Component<{ children: ReactNode; errorTitle?:
 function MapClickHandler({ onSetLocation }: { onSetLocation: (location: LatLng) => void }) {
   useMapEvents({
     click: (event: { latlng: { lat: number; lng: number } }) => {
-      const { lat, lng } = event.latlng;
+      const { lat, lng } = L.latLng(event.latlng.lat, event.latlng.lng).wrap();
       console.log("[MAP_CLICK]", { lat, lng, timestamp: Date.now() });
       onSetLocation({ lat, lng });
     }
@@ -93,7 +93,8 @@ function FlyToHandler({ target }: { target: { lat: number; lng: number; id: numb
   useEffect(() => {
     if (target && target.id !== lastId.current) {
       lastId.current = target.id;
-      map.flyTo([target.lat, target.lng], 6, { animate: true, duration: 0.8 });
+      const { lat, lng } = L.latLng(target.lat, target.lng).wrap();
+      map.flyTo([lat, lng], 6, { animate: true, duration: 0.8 });
     }
   }, [target, map]);
   return null;
@@ -156,7 +157,7 @@ class GameMapInner extends Component<GameMapProps, GameMapState> {
             <FlyToHandler target={this.props.flyToTarget} />
             {this.props.guessLocation && (
               <Marker
-                position={[this.props.guessLocation.lat, this.props.guessLocation.lng]}
+                position={[L.latLng(this.props.guessLocation.lat, this.props.guessLocation.lng).wrap().lat, L.latLng(this.props.guessLocation.lat, this.props.guessLocation.lng).wrap().lng]}
                 icon={L.divIcon({
                   className: "",
                   html: this.props.localPlayerAvatarUrl
@@ -171,7 +172,7 @@ class GameMapInner extends Component<GameMapProps, GameMapState> {
               this.props.playerMarkers.map((marker) => (
                 <Marker
                   key={marker.playerId}
-                  position={[marker.location.lat, marker.location.lng]}
+                  position={[L.latLng(marker.location.lat, marker.location.lng).wrap().lat, L.latLng(marker.location.lat, marker.location.lng).wrap().lng]}
                   icon={L.divIcon({
                     className: "",
                     html: marker.avatarUrl

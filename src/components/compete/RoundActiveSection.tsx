@@ -101,8 +101,6 @@ export default function RoundActiveSection({
     return true;
   });
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(() => getDistanceUnitPreference());
-  const [submittedToasts, setSubmittedToasts] = useState<Record<string, boolean>>({});
-  const toastTimeoutsRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [guessHint, setGuessHint] = useState<string | null>(null);
   const [imgError, setImgError] = useState(false);
   const [imgRetryKey, setImgRetryKey] = useState(0);
@@ -271,11 +269,8 @@ export default function RoundActiveSection({
 
   // Cleanup on unmount
   useEffect(() => {
-    const timeouts = toastTimeoutsRef.current;
     return () => {
       if (panRafId.current) cancelAnimationFrame(panRafId.current);
-      // Clear all toast timeouts
-      Object.values(timeouts).forEach(clearTimeout);
       if (guessHintTimer.current) clearTimeout(guessHintTimer.current);
     };
   }, []);
@@ -370,27 +365,6 @@ export default function RoundActiveSection({
   useEffect(() => {
     setDistanceUnitPreference(distanceUnit);
   }, [distanceUnit]);
-
-  // Watch for opponent submissions and show toasts/status on every round
-  useEffect(() => {
-    if (!snapshot.players || !playerId) return;
-
-    snapshot.players.forEach((p) => {
-      if (p.hasSubmitted && p.playerId !== playerId && !submittedToasts[p.playerId]) {
-        setSubmittedToasts(prev => ({ ...prev, [p.playerId]: true }));
-
-        const timeoutId = setTimeout(() => {
-          setSubmittedToasts(prev => {
-            const next = { ...prev };
-            delete next[p.playerId];
-            return next;
-          });
-        }, 2000);
-
-        toastTimeoutsRef.current[p.playerId] = timeoutId;
-      }
-    });
-  }, [snapshot.players, playerId, submittedToasts]);
 
   const handleMapSetLocation = (location: { lat: number; lng: number }) => {
     if (!isLocked) {
@@ -749,16 +723,10 @@ export default function RoundActiveSection({
             .filter((p) => p.playerId !== playerId)
             .map((p) => (
                 <div key={p.playerId} className={styles.opponentRow}>
-                  {submittedToasts[p.playerId] && (
-                    <div className={styles.submittedToast}>{t('guessed')}</div>
-                  )}
-                  {!p.hasSubmitted && !submittedToasts[p.playerId] && (
-                    <div
-                      className={styles.submittedToast}
-                      style={{ animation: "none", opacity: 1, color: "var(--gh-text-tertiary)" }}
-                    >
-                      {t('waiting_for')}
-                    </div>
+                  {p.hasSubmitted ? (
+                    <div className={styles.opponentStatusGuessed}>{t('guessed')}</div>
+                  ) : (
+                    <div className={styles.opponentStatusWaiting}>{t('waiting_for')}</div>
                   )}
                   <PlayerAvatar
                     avatarUrl={p.avatarUrl ?? null}
