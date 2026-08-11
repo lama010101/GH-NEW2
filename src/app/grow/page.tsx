@@ -1,58 +1,59 @@
-import { getTranslations } from 'next-intl/server'
+import type { Metadata } from 'next'
 import { DM_Sans } from 'next/font/google'
-import HeroSection from '@/components/grow/HeroSection'
-import MissionSection from '@/components/grow/MissionSection'
-import ProblemSection from '@/components/grow/ProblemSection'
-import VisionSection from '@/components/grow/VisionSection'
-import ProductSection from '@/components/grow/ProductSection'
-import WhyItWorksSection from '@/components/grow/WhyItWorksSection'
-import MarketSection from '@/components/grow/MarketSection'
-import BusinessModelSection from '@/components/grow/BusinessModelSection'
-import GovernanceSection from '@/components/grow/GovernanceSection'
-import FinancialModelSection from '@/components/grow/FinancialModelSection'
-import PartnershipsSection from '@/components/grow/PartnershipsSection'
-import ContributorsSection from '@/components/grow/ContributorsSection'
-import RoadmapSection from '@/components/grow/RoadmapSection'
-import RisksSection from '@/components/grow/RisksSection'
-import FaqSection from '@/components/grow/FaqSection'
-import CtaSection from '@/components/grow/CtaSection'
-import FooterSection from '@/components/grow/FooterSection'
-import GrowStickyNav from '@/components/grow/GrowStickyNav'
+import { investorContent } from '@/lib/investorContent'
+import InvestorFooter from '@/components/grow/InvestorFooter'
+import InvestorProgress from '@/components/grow/InvestorProgress'
+import Section01Hook from '@/components/grow/Section01Hook'
+import Section02Game from '@/components/grow/Section02Game'
+import Section03HumanData from '@/components/grow/Section03HumanData'
+import Section04HumanVsAI from '@/components/grow/Section04HumanVsAI'
+import Section05Evaluation from '@/components/grow/Section05Evaluation'
+import Section06DataMoat from '@/components/grow/Section06DataMoat'
+import Section07TestModel from '@/components/grow/Section07TestModel'
+import Section08RecurringRevenue from '@/components/grow/Section08RecurringRevenue'
+import Section09BusinessModel from '@/components/grow/Section09BusinessModel'
+import Section10Flywheel from '@/components/grow/Section10Flywheel'
+import Section11Platform from '@/components/grow/Section11Platform'
+import Section12Investment from '@/components/grow/Section12Investment'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['300', '400', '500', '700'],
 })
 
-export async function generateMetadata() {
-  const t = await getTranslations('grow')
-  return {
-    title: t('meta_title'),
-    description: t('meta_description'),
-  }
+export const metadata: Metadata = {
+  title: `${investorContent.title} — Investor Deck`,
+  description:
+    'A cinematic investor presentation: from a history game to a human-grounded visual AI benchmark.',
+  openGraph: {
+    images: [
+      {
+        url: '/home_background.webp',
+        alt: 'Guess History investor deck',
+      },
+    ],
+  },
 }
 
 export default function GrowPage() {
   return (
-    <main className={`${dmSans.className} min-h-screen bg-[var(--gh-bg-base)] text-[var(--gh-text-primary)]`}>
-      <GrowStickyNav />
-      <HeroSection />
-      <MissionSection />
-      <ProblemSection />
-      <VisionSection />
-      <ProductSection />
-      <WhyItWorksSection />
-      <MarketSection />
-      <BusinessModelSection />
-      <GovernanceSection />
-      <FinancialModelSection />
-      <PartnershipsSection />
-      <ContributorsSection />
-      <RoadmapSection />
-      <RisksSection />
-      <FaqSection />
-      <CtaSection />
-      <FooterSection />
+    <main
+      className={`${dmSans.className} min-h-screen bg-[var(--gh-bg-base)] text-[var(--gh-text-primary)]`}
+    >
+      <InvestorProgress />
+      <Section01Hook />
+      <Section02Game />
+      <Section03HumanData />
+      <Section04HumanVsAI />
+      <Section05Evaluation />
+      <Section06DataMoat />
+      <Section07TestModel />
+      <Section08RecurringRevenue />
+      <Section09BusinessModel />
+      <Section10Flywheel />
+      <Section11Platform />
+      <Section12Investment />
+      <InvestorFooter />
     </main>
   )
 }
