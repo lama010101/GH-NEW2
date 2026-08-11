@@ -574,12 +574,16 @@ export default function PracticeGamePage() {
             <span className={pageStyles.loadingError}>{error}</span>
           )}
           {showLoadingTimeout && (
-            <button
-              onClick={() => { forceClearAuthStorage(); window.location.href = '/'; }}
-              style={{ marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer', background: 'var(--color-orange, #f97316)', color: '#fff', border: 'none', borderRadius: '6px' }}
-            >
-              Taking too long? Clear session &amp; return home
-            </button>
+            <>
+              <div style={{ marginTop: 8, fontSize: 'var(--font-sm)', opacity: 0.8 }}>{t('taking_too_long')}</div>
+              <button
+                type="button"
+                onClick={() => { forceClearAuthStorage(); window.location.href = '/'; }}
+                style={{ marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer', background: 'var(--color-orange, #f97316)', color: '#fff', border: 'none', borderRadius: '6px' }}
+              >
+                {t('clear_session_restart')}
+              </button>
+            </>
           )}
         </div>
       </div>
