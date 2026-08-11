@@ -258,6 +258,12 @@
   z-index: 1;
 }
 
+.avatarWrap > span,
+.bestAvatarWrap > span,
+.mvpAvatarWrap > span {
+  border-color: var(--gh-border-default) !important;
+}
+
 .rankAvatar {
   width: 38px;
   height: 38px;
@@ -1133,6 +1139,23 @@
   .content {
     padding-left: 4px;
     padding-right: 4px;
+  }
+
+  .customRankHead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .customRankTitle {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    width: 100%;
+  }
+
+  .customRankXpGroup {
+    align-self: flex-end;
   }
 }
 
