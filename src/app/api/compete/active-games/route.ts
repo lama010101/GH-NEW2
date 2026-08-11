@@ -44,6 +44,7 @@ export async function GET(_request: NextRequest) {
     const games: Array<{
       id: string;
       game_id: string;
+      opponent_id: string;
       opponent_name: string;
       opponent_avatar?: string;
       is_host_opponent: boolean;
@@ -226,6 +227,7 @@ export async function GET(_request: NextRequest) {
       games.push({
         id: gameId,
         game_id: gameId,
+        opponent_id: opponent.player_id,
         opponent_name: opponent.display_name || "Unknown",
         opponent_avatar: opponent.avatar_url ?? undefined,
         is_host_opponent: opponent.is_host ?? false,

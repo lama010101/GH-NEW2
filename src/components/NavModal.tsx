@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import styles from './NavModal.module.css'
-import { toProxiedImageUrl } from '@/lib/imageProxy'
+import PlayerAvatar from '@/components/compete/PlayerAvatar'
+import { useIdentity } from '@/hooks/useIdentity'
 import { ThemeToggle } from './layout/ThemeToggle'
 import { LanguageDropdown } from './layout/LanguageDropdown'
 
@@ -19,6 +20,7 @@ interface NavModalProps {
 export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: NavModalProps) {
   const router = useRouter()
   const t = useTranslations('nav')
+  const { playerId } = useIdentity()
   const [imgError, setImgError] = useState(false)
   useEffect(() => { setImgError(false) }, [avatarUrl])
 
@@ -58,15 +60,14 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
 
         <div className={styles.avatarSection}>
           <div className={styles.avatarRing}>
-            {avatarUrl && !imgError
-              ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={toProxiedImageUrl(avatarUrl) ?? ''} alt="" className={styles.avatarImg} onError={() => setImgError(true)} />
-              )
-              : (
-                <span className={styles.avatarInitials}>{initials.slice(0, 2)}</span>
-              )
-            }
+            <PlayerAvatar
+              avatarUrl={avatarUrl && !imgError ? avatarUrl : null}
+              displayName={displayName}
+              playerId={playerId ?? undefined}
+              size={80}
+              initials={initials.slice(0, 2)}
+              disableProfileNavigation={!playerId}
+            />
           </div>
           <span className={styles.displayName}>{displayName}</span>
         </div>

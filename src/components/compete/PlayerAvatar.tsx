@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { getPlayerFrameColor } from "@/core/competeUtils";
 import { toProxiedImageUrl } from "@/lib/imageProxy";
 import styles from './PlayerAvatar.module.css';
@@ -13,14 +14,40 @@ interface PlayerAvatarProps {
   submitted?: boolean;
   isMe?: boolean;
   className?: string;
+  initials?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  disableProfileNavigation?: boolean;
 }
 
-export default function PlayerAvatar({ avatarUrl, displayName, playerId, size = 26, submitted = false, isMe = false, className }: PlayerAvatarProps) {
+export default function PlayerAvatar({
+  avatarUrl,
+  displayName,
+  playerId,
+  size = 26,
+  submitted = false,
+  isMe = false,
+  className,
+  initials,
+  onClick,
+  disableProfileNavigation = false,
+}: PlayerAvatarProps) {
+  const router = useRouter();
   const [imgError, setImgError] = useState(false);
-  const initial = (displayName || "?")[0].toUpperCase();
+  const initial = initials ?? (displayName || "?")[0].toUpperCase();
   const { color1, color2 } = playerId ? getPlayerFrameColor(playerId) : { color1: 'var(--gh-border-default)', color2: 'var(--gh-border-default)' };
 
-  const outerStyle: React.CSSProperties = {
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      onClick(e);
+      return;
+    }
+    if (!disableProfileNavigation && playerId) {
+      e.stopPropagation();
+      router.push(`/profile?playerId=${playerId}`);
+    }
+  };
+
+  const containerStyle: React.CSSProperties = {
     width: size,
     height: size,
     borderRadius: "50%",
@@ -31,9 +58,32 @@ export default function PlayerAvatar({ avatarUrl, displayName, playerId, size = 
     justifyContent: "center",
     position: "relative",
     border: "none",
-    padding: 4,
-    background: `conic-gradient(${color1} 0deg 180deg, ${color2} 180deg 360deg)`,
+    padding: 0,
+    margin: 0,
+    background: "transparent",
     verticalAlign: "middle",
+    cursor: (onClick || (!disableProfileNavigation && playerId)) ? "pointer" : "default",
+  };
+
+  const frameStyle: React.CSSProperties = {
+    width: "100%",
+    height: "100%",
+    borderRadius: "50%",
+    boxSizing: "border-box",
+    padding: 2,
+    background: `conic-gradient(from 0deg, ${color1}, ${color2}, ${color1})`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const gapStyle: React.CSSProperties = {
+    width: "100%",
+    height: "100%",
+    borderRadius: "50%",
+    boxSizing: "border-box",
+    padding: 2,
+    background: "transparent",
   };
 
   const innerStyle: React.CSSProperties = {
@@ -66,19 +116,42 @@ export default function PlayerAvatar({ avatarUrl, displayName, playerId, size = 
     zIndex: 1,
   };
 
-  return (
-    <span className={className} style={outerStyle}>
-      <span style={innerStyle}>
-        {avatarUrl && !imgError ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={toProxiedImageUrl(avatarUrl) ?? ''}
-            alt={displayName}
-            className={styles.avatarImg}
-            onError={() => setImgError(true)}
-          />
-        ) : initial}
+  const content = (
+    <span style={frameStyle}>
+      <span style={gapStyle}>
+        <span style={innerStyle}>
+          {avatarUrl && !imgError ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={toProxiedImageUrl(avatarUrl) ?? ''}
+              alt={displayName}
+              className={styles.avatarImg}
+              onError={() => setImgError(true)}
+            />
+          ) : initial}
+        </span>
       </span>
+    </span>
+  );
+
+  if (onClick || (!disableProfileNavigation && playerId)) {
+    return (
+      <button
+        type="button"
+        className={className}
+        style={containerStyle}
+        onClick={handleClick}
+        aria-label={displayName}
+      >
+        {content}
+        {isMe && <span style={dotStyle} aria-hidden="true" />}
+      </button>
+    );
+  }
+
+  return (
+    <span className={className} style={containerStyle}>
+      {content}
       {isMe && <span style={dotStyle} aria-hidden="true" />}
     </span>
   );

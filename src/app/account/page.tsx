@@ -8,9 +8,9 @@ import { useIdentity } from '@/hooks/useIdentity'
 import { signOut, updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity'
 import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit } from '@/lib/distance'
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
-import { toProxiedImageUrl } from '@/lib/imageProxy'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
+import PlayerAvatar from '@/components/compete/PlayerAvatar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { LanguageDropdown } from '@/components/layout/LanguageDropdown'
 import { NavModal } from '@/components/NavModal'
@@ -240,20 +240,15 @@ export default function AccountPage() {
         <div className={styles.avatarSection}>
           <div className={styles.card}>
             <div className={styles.avatarWrap}>
-            {avatarInfo.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={toProxiedImageUrl(avatarInfo.imageUrl) ?? ''}
-                  alt={avatarInfo.name}
-                  className={styles.avatarImg}
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-                />
-              ) : (
-                <div className={styles.avatarInitials}>
-                  {getInitials(avatarInfo.name)}
-                </div>
-              )}
-          </div>
+              <PlayerAvatar
+                avatarUrl={avatarInfo.imageUrl ?? null}
+                displayName={avatarInfo.name}
+                playerId={playerId ?? undefined}
+                size={96}
+                initials={getInitials(avatarInfo.name)}
+                disableProfileNavigation={!playerId}
+              />
+            </div>
             <div className={styles.avatarName}>{avatarInfo.name}</div>
             {avatarInfo.description && (
               <div className={styles.avatarDescription}>

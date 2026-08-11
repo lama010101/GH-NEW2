@@ -1,14 +1,14 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity';
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser';
-import { toProxiedImageUrl } from '@/lib/imageProxy';
 import styles from './profile.module.css';
 import TopBar from '@/components/layout/TopBar';
+import PlayerAvatar from '@/components/compete/PlayerAvatar';
 import { NavModal } from '@/components/NavModal';
 import { AvatarPickerModal } from '@/components/AvatarPickerModal';
 import ExperienceAccuracy from '@/components/ExperienceAccuracy';
@@ -27,7 +27,10 @@ type ProfileHistoricalAvatar = {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { playerId } = useIdentity();
+  const viewedPlayerId = searchParams?.get('playerId') || playerId;
+  const isOwnProfile = Boolean(playerId) && viewedPlayerId === playerId;
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
   const locale = useLocale();
@@ -75,54 +78,79 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (playerId === undefined) return;
-    if (!playerId) {
+    if (!playerId && !viewedPlayerId) {
       router.replace('/login');
       return;
     }
 
+    const targetPlayerId = viewedPlayerId || playerId;
+    if (!targetPlayerId) return;
+
     const fetchProfileData = async () => {
       try {
-        const { data: profileResult } = await supabaseBrowser
+        let isAiPlayer = false;
+
+        let { data: profileResult } = await supabaseBrowser
           .from('profiles')
           .select('display_name, avatar_url')
-          .eq('id', playerId)
+          .eq('id', targetPlayerId)
           .limit(1)
           .single();
 
+        // Fallback to AI player identity for AI profiles.
+        if (!profileResult) {
+          try {
+            const identityRes = await fetch(`/api/player-identity?id=${encodeURIComponent(targetPlayerId)}`);
+            if (identityRes.ok) {
+              const identity = await identityRes.json();
+              profileResult = {
+                display_name: identity.displayName,
+                avatar_url: identity.avatarUrl,
+              };
+              isAiPlayer = Boolean(identity.isAi);
+            }
+          } catch (identityError) {
+            console.error('Error fetching player identity:', identityError);
+          }
+        }
+
         const session = await readSession();
         const authUser = session?.user;
-        const email = authUser?.email ?? null;
-        const createdAt = authUser?.created_at ?? null;
+        const email = isOwnProfile ? (authUser?.email ?? null) : null;
+        const createdAt = isOwnProfile ? (authUser?.created_at ?? null) : null;
 
         const { data: statsResult } = await supabaseBrowser
           .from('player_global_stats')
           .select('avg_accuracy, total_xp, rounds_played, games_played')
-          .eq('player_id', playerId)
+          .eq('player_id', targetPlayerId)
           .limit(1)
           .single();
 
         if (statsResult) {
           setAccuracy(String(Math.round(Number(statsResult.avg_accuracy))));
           setXp(Number(statsResult.total_xp).toLocaleString('fr-FR'));
+        } else {
+          setAccuracy('--');
+          setXp('--');
         }
 
         // Leaderboard positions
         const { data: dailyAlltimeResult } = await supabaseBrowser
           .from('leaderboard_daily_alltime')
           .select('avg_accuracy, games_played, total_xp')
-          .eq('player_id', playerId)
+          .eq('player_id', targetPlayerId)
           .limit(1)
           .single();
 
         const { data: levelupResult } = await supabaseBrowser
           .from('leaderboard_levelup')
           .select('current_level, best_accuracy')
-          .eq('player_id', playerId)
+          .eq('player_id', targetPlayerId)
           .limit(1)
           .single();
 
         let historicalAvatar: ProfileHistoricalAvatar | null = null;
-        if (profileResult?.avatar_url) {
+        if (!isAiPlayer && profileResult?.avatar_url) {
           let { data: avatarResult } = await supabaseBrowser
             .from('avatars')
             .select('first_name, last_name, description, birth_day, death_day, birth_city, birth_country, death_city, death_country')
@@ -167,8 +195,8 @@ export default function ProfilePage() {
           }
         }
 
-        if (profileResult?.display_name) updateCachedDisplayName(profileResult.display_name);
-        if (profileResult?.avatar_url) updateCachedAvatarUrl(profileResult.avatar_url);
+        if (isOwnProfile && profileResult?.display_name) updateCachedDisplayName(profileResult.display_name);
+        if (isOwnProfile && profileResult?.avatar_url) updateCachedAvatarUrl(profileResult.avatar_url);
         setProfileData({
           displayName: profileResult?.display_name ?? null,
           avatarUrl: profileResult?.avatar_url ?? null,
@@ -185,10 +213,12 @@ export default function ProfilePage() {
           historicalAvatar,
         });
 
-        const progressRes = await fetch('/api/progress')
-        if (progressRes.ok) {
-          const json = await progressRes.json()
-          setProgressData(json)
+        if (isOwnProfile) {
+          const progressRes = await fetch('/api/progress')
+          if (progressRes.ok) {
+            const json = await progressRes.json()
+            setProgressData(json)
+          }
         }
       } catch (error) {
         console.error('Error fetching profile data:', error);
@@ -196,7 +226,7 @@ export default function ProfilePage() {
     };
 
     fetchProfileData();
-  }, [playerId, router]);
+  }, [viewedPlayerId, playerId, isOwnProfile, router, tCommon]);
 
   const getInitials = (name: string | null): string => {
     if (!name) return '??';
@@ -262,32 +292,25 @@ export default function ProfilePage() {
 
       {/* 4. HERO SECTION */}
       <div className="relative z-10 max-w-[820px] mx-auto pt-16 px-6 flex flex-col items-center text-center">
-        {/* Avatar with gradient border */}
+        {/* Avatar with standardized gradient ring */}
         <div className="relative mb-4">
-          <div
-            className="w-[110px] h-[110px] rounded-full p-[3px] bg-gradient-to-br from-pink-300 to-yellow-300 flex items-center justify-center cursor-pointer"
-            onClick={handleAvatarClick}
-          >
-            {profileData.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={toProxiedImageUrl(profileData.avatarUrl) ?? ''}
-                alt={t('avatar_alt')}
-                className="w-full h-full object-cover rounded-full"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              />
-            ) : (
-              <span className={`font-bebas text-4xl font-extrabold text-[var(--gh-text-primary)]`}>
-                {getInitials(profileData.displayName)}
-              </span>
-            )}
-          </div>
-          <span className={styles.avatarEditIcon} aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 20h9"/>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-            </svg>
-          </span>
+          <PlayerAvatar
+            avatarUrl={profileData.avatarUrl}
+            displayName={profileData.displayName ?? ''}
+            playerId={viewedPlayerId ?? undefined}
+            size={110}
+            initials={getInitials(profileData.displayName)}
+            onClick={isOwnProfile ? handleAvatarClick : undefined}
+            disableProfileNavigation={!isOwnProfile}
+          />
+          {isOwnProfile && (
+            <span className={styles.avatarEditIcon} aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+              </svg>
+            </span>
+          )}
         </div>
 
         {/* Username */}
