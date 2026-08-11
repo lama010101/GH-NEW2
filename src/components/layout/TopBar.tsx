@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { Menu } from 'lucide-react'
 import { rankForXp } from '@/core/rank'
 import { getAccuracyColor } from '@/core/accuracyColor'
-import { toProxiedImageUrl } from '@/lib/imageProxy'
+import { useIdentity } from '@/hooks/useIdentity'
 import NotificationBell from '@/components/NotificationBell'
+import PlayerAvatar from '@/components/compete/PlayerAvatar'
 import styles from './TopBar.module.css'
 
 interface TopBarProps {
@@ -19,6 +21,7 @@ interface TopBarProps {
 export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick }: TopBarProps) {
   const router = useRouter()
   const t = useTranslations('landing')
+  const { playerId } = useIdentity()
   const [imgError, setImgError] = useState(false)
   useEffect(() => { setImgError(false) }, [avatarUrl])
 
@@ -40,19 +43,23 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
       </div>
       <div className={styles.topbarRight}>
         <NotificationBell />
+        <div className={styles.avatarBtn}>
+          <PlayerAvatar
+            avatarUrl={avatarUrl && !imgError ? avatarUrl : null}
+            displayName={initials}
+            playerId={playerId ?? undefined}
+            size={36}
+            initials={initials.slice(0, 2)}
+            disableProfileNavigation={!playerId}
+          />
+        </div>
         <button
           onClick={onAvatarClick}
-          className={styles.avatarBtn}
+          className={styles.menuBtn}
+          aria-label="Menu"
+          type="button"
         >
-          {avatarUrl && !imgError
-            ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={toProxiedImageUrl(avatarUrl) ?? ''} alt="" className={styles.avatarBtnImg} onError={() => setImgError(true)} />
-            )
-            : (
-              <span className={styles.avatarBtnInitials}>{initials.slice(0,2)}</span>
-            )
-          }
+          <Menu size={20} />
         </button>
       </div>
     </div>
