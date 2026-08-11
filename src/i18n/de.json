@@ -158,6 +158,13 @@
     "compete_no_invitations": "Keine ausstehenden Einladungen",
     "compete_no_your_turn": "Keine Spiele warten auf deinen Zug",
     "compete_no_completed": "Noch keine abgeschlossenen Spiele",
+    "compete_host": "Gastgeber",
+    "compete_host_you": "Du bist der Gastgeber",
+    "compete_time_left_d": "{n}d übrig",
+    "compete_time_left_h": "{n}h übrig",
+    "compete_expires_soon": "Bald ablaufend",
+    "compete_see_all": "Alle ansehen",
+    "compete_all_title": "Alle Wettbewerbs-Spiele",
     "compete_invited_you": "Hat dich zu einem Spiel eingeladen",
     "compete_invite_meta": "{mode} · gesendet {time}",
     "compete_invite_sent": "gesendet {time}",
@@ -185,7 +192,8 @@
     "play_mode_aria": "{mode} spielen",
     "compete_play_aria": "Spielen",
     "compete_delete_aria": "Löschen",
-    "coming_up_soon": "Bald verfügbar"
+    "coming_up_soon": "Bald verfügbar",
+    "daily_view_results": "Ergebnisse ansehen"
   },
   "common": {
     "next_round": "Nächste Runde",
@@ -233,6 +241,8 @@
     "disconnected": "Getrennt",
     "mode_challenge": "WETTSTREIT",
     "game_lobby": "Spiel-Lobby",
+    "create_game": "Spiel erstellen",
+    "join_game": "Dem Spiel beitreten",
     "invite_players": "Spieler einladen",
     "copy_code": "Code kopieren",
     "link_copied": "Link kopiert!",
@@ -277,8 +287,6 @@
     "start_my_game": "Mein Spiel starten",
     "back": "Zurück",
     "default_player_name": "Spieler",
-    "create_game": "Spiel erstellen",
-    "join_game": "Dem Spiel beitreten",
     "filter_all": "Alle",
     "filter_favorites": "Favoriten",
     "no_favorites_yet": "Noch keine Favoriten — klicke auf den Stern auf dem Avatar eines Spielers, um ihn hier hinzuzufügen.",
@@ -340,6 +348,7 @@
     "col_player": "Spieler",
     "col_score": "Punkte",
     "col_total": "Gesamt",
+    "col_accuracy": "Genauigkeit",
     "experience": "ERFAHRUNG",
     "correct_location": "Richtig",
     "correct_year": "Richtig",
@@ -399,6 +408,10 @@
     "total_distance": "Gesamtentfernung",
     "avg_consistency": "Konsistenz",
     "rounds_played": "Gespielte Runden",
+    "avg_km_away_label": "Durchschn. Entfernung",
+    "avg_yrs_off_label": "Durchschn. Jahre Rabatt",
+    "best_round_pct": "Beste Runde %",
+    "best_round_xp": "Beste Runden-XP",
     "gold_badges": "Gold",
     "silver_badges": "Silber",
     "bronze_badges": "Bronze",
@@ -412,10 +425,11 @@
     "era_modern": "Neuzeit",
     "era_contemporary": "Zeitgenössisch",
     "region_africa": "Afrika",
-    "region_oceania_antarctica": "Ozeanien & Antarktis",
+    "region_antarctica": "Antarktis",
     "region_asia": "Asien",
     "region_europe": "Europa",
     "region_north_america": "Nordamerika",
+    "region_oceania": "Ozeanien",
     "region_south_america": "Südamerika",
     "unknown_region": "Unbekannt",
     "round_label_short": "RUNDE {n}",
@@ -457,6 +471,7 @@
     "hint_penalties": "Hinweisstrafen abgezogen",
     "round_leaderboard": "Rundenbestenliste",
     "breakdown": "Aufschlüsselung",
+    "game_accuracy": "Spielgenauigkeit (alle Runden)",
     "hints_used": "Verwendete Hinweise",
     "era_presets": "Epochen-Voreinstellungen",
     "region_presets": "Region Voreinstellungen",
@@ -503,6 +518,8 @@
     "km_away_short": "{distance} entfernt",
     "years_off_short": "{n} Jahre daneben",
     "failed_create_session": "Sitzung konnte nicht erstellt werden",
+    "game_ended_deadline": "Dieses Spiel ist beendet",
+    "game_already_started": "Dieses Spiel hat bereits begonnen",
     "room_not_found": "Raum nicht gefunden",
     "error_creating_game": "Fehler beim Erstellen des Spiels",
     "unknown_player": "Unbekannt",
@@ -530,14 +547,8 @@
     "clear_session_restart": "Sitzung löschen und neu starten",
     "taking_too_long": "Dauert es zu lange?",
     "retry": "Erneut versuchen",
-    "col_accuracy": "Genauigkeit",
-    "best_round_pct": "Beste Runde %",
-    "avg_yrs_off_label": "Durchschn. Jahre Rabatt",
-    "game_accuracy": "Spielgenauigkeit (alle Runden)",
-    "region_oceania": "Ozeanien",
-    "region_antarctica": "Antarktis",
-    "best_round_xp": "Beste Runden-XP",
-    "avg_km_away_label": "Durchschn. Entfernung"
+    "region_oceania_antarctica": "Ozeanien & Antarktis",
+    "game_accuracy_pct": "Spielgenauigkeit (%)"
   },
   "auth": {
     "sign_in": "Anmelden",
@@ -586,6 +597,8 @@
     "all_time": "Allzeit",
     "err_load_failed": "Daten konnten nicht geladen werden. Versuche es erneut.",
     "retry": "Erneut versuchen",
+    "clear_session_restart": "Sitzung löschen und neu starten",
+    "taking_too_long": "Dauert es zu lange?",
     "no_results_today": "Heute noch keine Ergebnisse.",
     "accuracy_pct": "Genauigkeit %",
     "unknown_player": "Unbekannt",
@@ -597,9 +610,7 @@
     "rank_suffix_two": ".",
     "rank_suffix_few": ".",
     "rank_suffix_many": ".",
-    "rank_suffix_other": ".",
-    "clear_session_restart": "Sitzung löschen und neu starten",
-    "taking_too_long": "Dauert es zu lange?"
+    "rank_suffix_other": "."
   },
   "profile": {
     "accuracy_breakdown": "Genauigkeitsaufschlüsselung",
@@ -618,7 +629,6 @@
     "daily": "Täglich",
     "level_up": "Level aufsteigen",
     "compete": "Wettstreit",
-    "practice": "Übung",
     "back": "Zurück",
     "avatar_alt": "Avatar",
     "avg_accuracy": "Ø Genauigkeit",
@@ -638,6 +648,7 @@
     "rated": "Bewertet",
     "regions": "Regionen",
     "countries": "Länder",
+    "practice": "Übung",
     "daily_all_time": "Täglich (gesamt)",
     "level": "Stufe"
   },
@@ -676,23 +687,17 @@
     "invited_you": "hat dich zu einem Spiel eingeladen",
     "sent": "gesendet {time}",
     "join_game": "Spiel beitreten",
+    "session_complete": "{name} hat das Spiel abgeschlossen",
+    "view_results": "Ergebnisse ansehen",
     "someone": "Jemand"
   },
-  "rank": {
-    "rank_label": "Rang",
-    "next_label": "Weiter",
-    "rank_1": "Wanderer",
-    "rank_2": "Pfadfinder",
-    "rank_3": "Wegbereiter",
-    "rank_4": "Kartograf",
-    "rank_5": "Entdecker",
-    "rank_6": "Navigator",
-    "rank_7": "Chronist",
-    "rank_8": "Historiker",
-    "rank_9": "Gelehrter",
-    "rank_10": "Königlicher Kartograf",
-    "next_rank": "{xp} XP bis {title}",
-    "max_rank": "Maximaler Rang erreicht"
+  "welcome": {
+    "title": "Willkommen bei Guess-History!",
+    "your_historical_avatar": "Dein historischer Avatar",
+    "choose_different_avatar": "Anderen Avatar wählen",
+    "your_username": "Dein Benutzername",
+    "lets_play": "Los geht's!",
+    "skip_for_now": "Vorerst überspringen"
   },
   "landing": {
     "meta_title": "Guess-History — Teste dein Wissen über Wann und Wo",
@@ -711,13 +716,21 @@
     "waitlist_err_generic": "Etwas ist schiefgelaufen. Versuche es erneut.",
     "waitlist_err_network": "Netzwerkfehler. Versuche es erneut."
   },
-  "welcome": {
-    "title": "Willkommen bei Guess-History!",
-    "your_historical_avatar": "Dein historischer Avatar",
-    "choose_different_avatar": "Anderen Avatar wählen",
-    "your_username": "Dein Benutzername",
-    "lets_play": "Los geht's!",
-    "skip_for_now": "Vorerst überspringen"
+  "rank": {
+    "rank_label": "Rang",
+    "next_label": "Weiter",
+    "rank_1": "Wanderer",
+    "rank_2": "Pfadfinder",
+    "rank_3": "Wegbereiter",
+    "rank_4": "Kartograf",
+    "rank_5": "Entdecker",
+    "rank_6": "Navigator",
+    "rank_7": "Chronist",
+    "rank_8": "Historiker",
+    "rank_9": "Gelehrter",
+    "rank_10": "Königlicher Kartograf",
+    "next_rank": "{xp} XP bis {title}",
+    "max_rank": "Maximaler Rang erreicht"
   },
   "grow": {
     "meta_title": "Grow With Us — Guess-History",
@@ -1175,7 +1188,8 @@
       "references": "Referenzen",
       "legal": "Haftungsausschluss",
       "privacy": "Privatsphäre"
-    }
+    },
+    "nav_aria_label": "Wachstumsseitenabschnitte"
   },
   "practice": {
     "title": "Übungsspiel läuft",

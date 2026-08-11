@@ -158,6 +158,13 @@
     "compete_no_invitations": "لا توجد دعوات معلّقة",
     "compete_no_your_turn": "لا توجد ألعاب بانتظار دورك",
     "compete_no_completed": "لا توجد ألعاب مكتملة بعد",
+    "compete_host": "المضيف",
+    "compete_host_you": "أنت المضيف",
+    "compete_time_left_d": "{n} يوم متبقي",
+    "compete_time_left_h": "{n} ساعة متبقية",
+    "compete_expires_soon": "ستنتهي قريبًا",
+    "compete_see_all": "عرض الكل",
+    "compete_all_title": "جميع الألعاب التنافسية",
     "compete_invited_you": "دعاك إلى لعبة",
     "compete_invite_meta": "{mode} · أُرسلت {time}",
     "compete_invite_sent": "أُرسلت {time}",
@@ -185,7 +192,8 @@
     "play_mode_aria": "العب {mode}",
     "compete_play_aria": "العب",
     "compete_delete_aria": "حذف",
-    "coming_up_soon": "قريباً"
+    "coming_up_soon": "قريباً",
+    "daily_view_results": "عرض النتائج"
   },
   "common": {
     "next_round": "الجولة التالية",
@@ -233,6 +241,8 @@
     "disconnected": "غير متصل",
     "mode_challenge": "تحدّي",
     "game_lobby": "ردهة اللعبة",
+    "create_game": "إنشاء لعبة",
+    "join_game": "انضم للعبة",
     "invite_players": "ادعُ لاعبين",
     "copy_code": "نسخ الرمز",
     "link_copied": "تم نسخ الرابط!",
@@ -277,8 +287,6 @@
     "start_my_game": "ابدأ لعبتي",
     "back": "رجوع",
     "default_player_name": "لاعب",
-    "create_game": "إنشاء لعبة",
-    "join_game": "انضم للعبة",
     "filter_all": "الكل",
     "filter_favorites": "المفضلة",
     "no_favorites_yet": "لا توجد مفضلات بعد — اضغط على النجمة بجانب صورة لاعب لإضافته هنا.",
@@ -340,6 +348,7 @@
     "col_player": "اللاعب",
     "col_score": "النتيجة",
     "col_total": "الإجمالي",
+    "col_accuracy": "الدقة",
     "experience": "الخبرة",
     "correct_location": "صحيح",
     "correct_year": "صحيح",
@@ -399,6 +408,10 @@
     "total_distance": "إجمالي المسافة",
     "avg_consistency": "الاتساق",
     "rounds_played": "الجولات الملعوبة",
+    "avg_km_away_label": "متوسط المسافة",
+    "avg_yrs_off_label": "متوسط سنوات التوقف",
+    "best_round_pct": "أفضل جولة %",
+    "best_round_xp": "أفضل جولة XP",
     "gold_badges": "ذهبي",
     "silver_badges": "فضي",
     "bronze_badges": "برونزي",
@@ -412,10 +425,11 @@
     "era_modern": "حديث",
     "era_contemporary": "معاصر",
     "region_africa": "أفريقيا",
-    "region_oceania_antarctica": "أوقيانوسيا وأنتاركتيكا",
+    "region_antarctica": "القارة القطبية الجنوبية",
     "region_asia": "آسيا",
     "region_europe": "أوروبا",
     "region_north_america": "أمريكا الشمالية",
+    "region_oceania": "أوقيانوسيا",
     "region_south_america": "أمريكا الجنوبية",
     "unknown_region": "غير معروف",
     "round_label_short": "الجولة {n}",
@@ -457,6 +471,7 @@
     "hint_penalties": "عقوبات التلميحات المخصومة",
     "round_leaderboard": "لوحة متصدرين الجولة",
     "breakdown": "التفصيل",
+    "game_accuracy": "دقة اللعبة (جميع الجولات)",
     "hints_used": "التلميحات المستخدمة",
     "era_presets": "إعدادات العصور",
     "region_presets": "إعدادات المناطق",
@@ -503,6 +518,8 @@
     "km_away_short": "على بُعد {distance}",
     "years_off_short": "بفرق {n} سنة",
     "failed_create_session": "فشل إنشاء الجلسة",
+    "game_ended_deadline": "انتهت هذه اللعبة",
+    "game_already_started": "لقد بدأت هذه اللعبة بالفعل",
     "room_not_found": "لم يُعثر على الغرفة",
     "error_creating_game": "خطأ في إنشاء اللعبة",
     "unknown_player": "غير معروف",
@@ -530,14 +547,8 @@
     "clear_session_restart": "مسح الجلسة وإعادة التشغيل",
     "taking_too_long": "هل يستغرق وقتًا طويلاً؟",
     "retry": "إعادة المحاولة",
-    "col_accuracy": "الدقة",
-    "best_round_pct": "أفضل جولة %",
-    "avg_yrs_off_label": "متوسط سنوات التوقف",
-    "game_accuracy": "دقة اللعبة (جميع الجولات)",
-    "region_oceania": "أوقيانوسيا",
-    "region_antarctica": "القارة القطبية الجنوبية",
-    "best_round_xp": "أفضل جولة XP",
-    "avg_km_away_label": "متوسط المسافة"
+    "region_oceania_antarctica": "أوقيانوسيا وأنتاركتيكا",
+    "game_accuracy_pct": "دقة اللعبة (%)"
   },
   "auth": {
     "sign_in": "تسجيل الدخول",
@@ -586,6 +597,8 @@
     "all_time": "كل الوقت",
     "err_load_failed": "فشل تحميل البيانات. حاول مرة أخرى.",
     "retry": "إعادة المحاولة",
+    "clear_session_restart": "مسح الجلسة وإعادة التشغيل",
+    "taking_too_long": "يستغرق وقتا طويلا؟",
     "no_results_today": "لا توجد نتائج بعد لليوم.",
     "accuracy_pct": "نسبة الدقة",
     "unknown_player": "غير معروف",
@@ -597,9 +610,7 @@
     "rank_suffix_two": "",
     "rank_suffix_few": "",
     "rank_suffix_many": "",
-    "rank_suffix_other": "",
-    "clear_session_restart": "مسح الجلسة وإعادة التشغيل",
-    "taking_too_long": "يستغرق وقتا طويلا؟"
+    "rank_suffix_other": ""
   },
   "profile": {
     "accuracy_breakdown": "تفصيل الدقة",
@@ -618,7 +629,6 @@
     "daily": "يومي",
     "level_up": "تطوّر المستوى",
     "compete": "تنافس",
-    "practice": "تدريب",
     "back": "رجوع",
     "avatar_alt": "صورة رمزية",
     "avg_accuracy": "متوسط الدقة",
@@ -638,6 +648,7 @@
     "rated": "مقيّم",
     "regions": "المناطق",
     "countries": "البلدان",
+    "practice": "تدريب",
     "daily_all_time": "يومي (على مر العصور)",
     "level": "المستوى"
   },
@@ -676,6 +687,8 @@
     "invited_you": "دعاك إلى لعبة",
     "sent": "أُرسلت {time}",
     "join_game": "انضم للعبة",
+    "session_complete": "أكمل {name} اللعبة",
+    "view_results": "عرض النتائج",
     "someone": "شخص ما"
   },
   "welcome": {
@@ -1175,7 +1188,8 @@
       "references": "المراجع",
       "legal": "إخلاء المسؤولية القانونية",
       "privacy": "الخصوصية"
-    }
+    },
+    "nav_aria_label": "أقسام صفحة النمو"
   },
   "practice": {
     "title": "لعبة تدريبية جارية",

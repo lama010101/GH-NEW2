@@ -158,6 +158,13 @@
     "compete_no_invitations": "Aucune invitation en attente",
     "compete_no_your_turn": "Aucune partie en attente",
     "compete_no_completed": "Aucune partie terminée",
+    "compete_host": "Hôte",
+    "compete_host_you": "Vous êtes l'hôte",
+    "compete_time_left_d": "{n}j restant",
+    "compete_time_left_h": "{n}h restant",
+    "compete_expires_soon": "Expire bientôt",
+    "compete_see_all": "Voir tout",
+    "compete_all_title": "Tous les jeux compétitifs",
     "compete_invited_you": "T'a invité à une partie",
     "compete_invite_meta": "{mode} · envoyé {time}",
     "compete_invite_sent": "envoyé {time}",
@@ -185,7 +192,8 @@
     "play_mode_aria": "Jouer à {mode}",
     "compete_play_aria": "Jouer",
     "compete_delete_aria": "Supprimer",
-    "coming_up_soon": "À venir bientôt"
+    "coming_up_soon": "À venir bientôt",
+    "daily_view_results": "Voir les résultats"
   },
   "common": {
     "next_round": "Manche suivante",
@@ -233,6 +241,8 @@
     "disconnected": "Déconnecté",
     "mode_challenge": "DÉFI",
     "game_lobby": "Salon de jeu",
+    "create_game": "Créer un jeu",
+    "join_game": "Rejoindre le jeu",
     "invite_players": "Inviter des joueurs",
     "copy_code": "Copier le code",
     "link_copied": "Lien copié !",
@@ -277,8 +287,6 @@
     "start_my_game": "Commencer ma partie",
     "back": "Retour",
     "default_player_name": "Joueur",
-    "create_game": "Créer un jeu",
-    "join_game": "Rejoindre le jeu",
     "filter_all": "Tous",
     "filter_favorites": "Favoris",
     "no_favorites_yet": "Aucun favori pour l'instant — cliquez sur l'étoile sur l'avatar d'un joueur pour l'ajouter ici.",
@@ -400,6 +408,10 @@
     "total_distance": "Distance totale",
     "avg_consistency": "Cohérence",
     "rounds_played": "Manches jouées",
+    "avg_km_away_label": "Distance moyenne",
+    "avg_yrs_off_label": "Années moyennes désactivées",
+    "best_round_pct": "% du meilleur tour",
+    "best_round_xp": "Meilleur tour d'XP",
     "gold_badges": "Or",
     "silver_badges": "Argent",
     "bronze_badges": "Bronze",
@@ -413,10 +425,11 @@
     "era_modern": "Époque moderne",
     "era_contemporary": "Contemporain",
     "region_africa": "Afrique",
-    "region_oceania_antarctica": "Océanie et Antarctique",
+    "region_antarctica": "Antarctique",
     "region_asia": "Asie",
     "region_europe": "Europe",
     "region_north_america": "Amérique du Nord",
+    "region_oceania": "Océanie",
     "region_south_america": "Amérique du Sud",
     "unknown_region": "Inconnue",
     "round_label_short": "MANCHE {n}",
@@ -458,6 +471,7 @@
     "hint_penalties": "Pénalités d'indices déduites",
     "round_leaderboard": "Classement du round",
     "breakdown": "Détail",
+    "game_accuracy": "Précision du jeu (tous les tours)",
     "hints_used": "Indices utilisés",
     "era_presets": "Préréglages d'ère",
     "region_presets": "Préréglages de Région",
@@ -504,6 +518,8 @@
     "km_away_short": "{distance}",
     "years_off_short": "{n} ans d'écart",
     "failed_create_session": "Échec de la création de la session",
+    "game_ended_deadline": "Ce jeu est terminé",
+    "game_already_started": "Ce jeu a déjà commencé",
     "room_not_found": "Salon introuvable",
     "error_creating_game": "Erreur lors de la création de la partie",
     "unknown_player": "Inconnu",
@@ -528,16 +544,11 @@
     "badge_dim_location": "Localisation",
     "badge_dim_year": "Année",
     "badge_dim_combo": "Combo",
+    "clear_session_restart": "Effacer la session et redémarrer",
     "taking_too_long": "Trop long ?",
     "retry": "Réessayer",
-    "best_round_pct": "% du meilleur tour",
-    "avg_yrs_off_label": "Années moyennes désactivées",
-    "game_accuracy": "Précision du jeu (tous les tours)",
-    "region_oceania": "Océanie",
-    "clear_session_restart": "Effacer la session et redémarrer",
-    "region_antarctica": "Antarctique",
-    "best_round_xp": "Meilleur tour d'XP",
-    "avg_km_away_label": "Distance moyenne"
+    "region_oceania_antarctica": "Océanie et Antarctique",
+    "game_accuracy_pct": "Précision du jeu (%)"
   },
   "auth": {
     "sign_in": "Se connecter",
@@ -618,7 +629,6 @@
     "daily": "Quotidien",
     "level_up": "Monter de niveau",
     "compete": "Compétition",
-    "practice": "Entraînement",
     "back": "Retour",
     "avatar_alt": "avatar",
     "avg_accuracy": "Précision moy.",
@@ -638,6 +648,7 @@
     "rated": "Notées",
     "regions": "Régions",
     "countries": "Pays",
+    "practice": "Entraînement",
     "daily_all_time": "Quotidien (tous les temps)",
     "level": "Niveau"
   },
@@ -676,7 +687,17 @@
     "invited_you": "t'a invité à une partie",
     "sent": "envoyé {time}",
     "join_game": "Rejoindre",
+    "session_complete": "{name} a terminé le jeu",
+    "view_results": "Voir les résultats",
     "someone": "Quelqu'un"
+  },
+  "welcome": {
+    "title": "Bienvenue sur Guess-History !",
+    "your_historical_avatar": "Ton avatar historique",
+    "choose_different_avatar": "Choisir un autre avatar",
+    "your_username": "Ton nom d'utilisateur",
+    "lets_play": "C'est parti !",
+    "skip_for_now": "Passer pour l'instant"
   },
   "landing": {
     "meta_title": "Guess-History — Teste tes connaissances sur le quand et le où",
@@ -694,14 +715,6 @@
     "waitlist_err_invalid_email": "Saisis une adresse e-mail valide.",
     "waitlist_err_generic": "Une erreur s'est produite. Réessaie.",
     "waitlist_err_network": "Erreur réseau. Réessaie."
-  },
-  "welcome": {
-    "title": "Bienvenue sur Guess-History !",
-    "your_historical_avatar": "Ton avatar historique",
-    "choose_different_avatar": "Choisir un autre avatar",
-    "your_username": "Ton nom d'utilisateur",
-    "lets_play": "C'est parti !",
-    "skip_for_now": "Passer pour l'instant"
   },
   "rank": {
     "rank_label": "Rang",
@@ -1175,7 +1188,8 @@
       "references": "Références",
       "legal": "Mentions légales",
       "privacy": "Confidentialité"
-    }
+    },
+    "nav_aria_label": "Sections de la page de croissance"
   },
   "practice": {
     "title": "Jeu d'entraînement en cours",

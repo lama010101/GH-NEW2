@@ -601,7 +601,7 @@ function ModeCard({
                   onNavigate(`/daily/game/${dailyStatus?.gameId}/results`)
                 }}
                 disabled={navigating}
-                aria-label="View results"
+                aria-label={t('home.daily_view_results')}
               >
                 {navigating ? (
                   <span className={styles.playPillSpinner} aria-hidden="true" />
