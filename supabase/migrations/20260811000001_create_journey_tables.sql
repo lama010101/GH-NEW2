@@ -2,6 +2,36 @@
 -- Scope: Historian's Journey v1 data model
 -- Do NOT run on prod until v1 validated.
 
+-- Host-check safety guard: this migration is only safe on the dev project.
+--
+-- Investigation found no structurally reliable, project-identifying signal that
+-- is queryable from inside PostgreSQL on hosted Supabase: current_database()
+-- returns 'postgres' on every project; no Supabase-injected setting (current_setting)
+-- contains the project ref; and the DB backend IP behind the shared Supavisor
+-- pooler (inet_server_addr()) is a pooler-assigned backend address, not a stable
+-- per-project identifier.
+--
+-- This guard therefore falls back to a SOFT dev-only marker: the existence of the
+-- public._devin_smoke_test table. That table is present in the dev project but is
+-- not part of the application schema. The failure mode is explicit: if the table is
+-- ever created in prod, or if it is dropped in dev, the guard can false-pass or
+-- false-block. It is a backstop, not a substitute for connection-string discipline.
+DO $$
+BEGIN
+  IF current_database() <> 'postgres' THEN
+    RAISE EXCEPTION 'Migration abort: current_database() is %, expected postgres (dev project jfggdhsducvjydnejypg)', current_database();
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = '_devin_smoke_test'
+  ) THEN
+    RAISE EXCEPTION 'Migration abort: dev-only marker table public._devin_smoke_test is missing. This migration is only safe on the dev project (jfggdhsducvjydnejypg).';
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.journey_stages (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   stage_number        INT NOT NULL UNIQUE,
@@ -10,7 +40,7 @@ CREATE TABLE IF NOT EXISTS public.journey_stages (
   learning_objective  TEXT,
   difficulty_rating   INT CHECK (difficulty_rating IS NULL OR difficulty_rating BETWEEN 1 AND 10),
   min_accuracy_pct    NUMERIC NOT NULL CHECK (min_accuracy_pct BETWEEN 0 AND 100),
-  pool_size           INT NOT NULL DEFAULT 5 CHECK (pool_size BETWEEN 1 AND 5),
+  pool_size           INT NOT NULL DEFAULT 5,
   status              TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','approved','live')),
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -20,17 +50,12 @@ CREATE TABLE IF NOT EXISTS public.journey_stage_events (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   stage_id      UUID NOT NULL REFERENCES public.journey_stages(id) ON DELETE CASCADE,
   event_id      UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
-  status        TEXT NOT NULL DEFAULT 'proposed' CHECK (status IN ('proposed','approved','rejected')),
-  display_order INT NOT NULL DEFAULT 0,
   approved_by   UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   approved_at   TIMESTAMPTZ,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (stage_id, event_id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_journey_stage_events_stage_status
-  ON public.journey_stage_events(stage_id, status);
 
 CREATE TABLE IF NOT EXISTS public.journey_player_progress (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -55,10 +80,10 @@ CREATE TABLE IF NOT EXISTS public.journey_playthroughs (
   player_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   stage_id      UUID NOT NULL REFERENCES public.journey_stages(id) ON DELETE CASCADE,
   session_id    UUID REFERENCES public.sessions(game_id) ON DELETE SET NULL,
-  accuracy_pct  NUMERIC NOT NULL CHECK (accuracy_pct BETWEEN 0 AND 100),
+  accuracy_pct  NUMERIC CHECK (accuracy_pct IS NULL OR accuracy_pct BETWEEN 0 AND 100),
   badge_awarded TEXT CHECK (badge_awarded IS NULL OR badge_awarded IN ('gold','silver','bronze','completion')),
   xp_awarded    INT NOT NULL DEFAULT 0,
-  completed_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at  TIMESTAMPTZ,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -85,6 +110,10 @@ ALTER TABLE public.journey_stages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.journey_stage_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.journey_player_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.journey_playthroughs ENABLE ROW LEVEL SECURITY;
+
+-- No INSERT/UPDATE/DELETE policies are created below. RLS is enabled so the
+-- authenticated role has no write path; all writes must go through the service
+-- role (which bypasses RLS) or through SECURITY DEFINER functions.
 
 DO $$
 BEGIN
