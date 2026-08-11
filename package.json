@@ -7,7 +7,7 @@
   },
   "scripts": {
     "predev": "bash scripts/dev/check-partykit-secret.sh",
-    "dev": "npx kill-port 3000 1999 && concurrently -n next,party -c cyan,magenta \"next dev\" \"partykit dev\"",
+    "dev": "set -a && [ -f ./.env.local ] && . ./.env.local; set +a && npx kill-port 3000 1999 && concurrently -n next,party -c cyan,magenta \"next dev\" \"partykit dev --var SUPABASE_URL=$SUPABASE_URL --var SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
