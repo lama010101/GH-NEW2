@@ -67,13 +67,33 @@
   text-align: center;
 }
 
+.avatarWrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 12px;
+}
+
+.avatarWrap::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--gh-teal);
+  border: 2px solid var(--gh-bg-base);
+  box-shadow: 0 0 0 1px var(--gh-teal);
+  z-index: 2;
+}
+
 .avatarImg {
   width: 96px;
   height: 96px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--gh-border-medium);
-  margin: 0 auto 12px;
 }
 
 .avatarInitials {
@@ -84,7 +104,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
   font-size: var(--font-4xl);
   font-weight: 700;
   background: var(--gh-glass-bg-hover);

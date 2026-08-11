@@ -127,13 +127,8 @@
 .totalXpRow {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-}
-
-.totalXpVal {
-  font-size: 18px; /* layout-constrained — do not tokenize */
-  font-weight: 800;
-  color: var(--gh-text-primary);
 }
 
 .hintPenaltyBadge {
@@ -202,6 +197,10 @@
 
 .miniRingVal {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
   font-size: 13px; /* layout-constrained — do not tokenize */
   font-weight: 800;
   line-height: 1;

@@ -694,6 +694,9 @@
     "your_historical_avatar": "Your historical avatar",
     "choose_different_avatar": "Choose a different avatar",
     "your_username": "Your username",
+    "username_label_1": "ENTER YOUR USERNAME",
+    "username_label_2": "PICK A UNIQUE NAME",
+    "username_label_3": "OTHERS WILL SEE THIS NAME",
     "lets_play": "Let's play!",
     "skip_for_now": "Skip for now"
   },

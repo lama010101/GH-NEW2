@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthenticatedServerClient, createSupabaseServerClient } from "@/core/supabaseServer";
+import { canOverwriteDisplayName } from "@/lib/autoDisplayName";
 
 export const dynamic = "force-dynamic";
 
@@ -58,13 +59,22 @@ export async function PATCH(_request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
+    // Fetch the existing display_name so we only overwrite a custom name when
+    // it is still null/empty or matches the auto-generated naming pattern.
+    const { data: existingProfile } = await serviceRoleClient
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .single();
+    const currentDisplayName = existingProfile?.display_name ?? null;
+
     const profileUpdate: { avatar_url: string; updated_at: string; display_name?: string } = {
       avatar_url: avatarUrl,
       updated_at: new Date().toISOString(),
     };
 
     let regeneratedDisplayName: string | null = null;
-    if (regenerateDisplayName && avatarRow) {
+    if (regenerateDisplayName && avatarRow && canOverwriteDisplayName(currentDisplayName)) {
       const baseName = avatarRow.first_name + (avatarRow.last_name ? ` ${avatarRow.last_name}` : "");
       const randomSuffix = Math.floor(Math.random() * 9000 + 1000).toString();
       regeneratedDisplayName = `${baseName}#${randomSuffix}`;

@@ -716,6 +716,9 @@
     "your_historical_avatar": "Il tuo avatar storico",
     "choose_different_avatar": "Scegli un avatar diverso",
     "your_username": "Il tuo nome utente",
+    "username_label_1": "ENTER YOUR USERNAME",
+    "username_label_2": "PICK A UNIQUE NAME",
+    "username_label_3": "OTHERS WILL SEE THIS NAME",
     "lets_play": "Iniziamo!",
     "skip_for_now": "Salta per ora"
   },

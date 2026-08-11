@@ -306,8 +306,6 @@ export function CompetePanel({ onLobby, playerId }: {
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>
                       {game.opponent_name}
-                      {game.is_host_opponent && <span className={cpStyles.hostBadge}>{t('home.compete_host')}</span>}
-                      {game.is_host_viewer && <span className={cpStyles.hostBadgeSelf}>{t('home.compete_host_you')}</span>}
                     </span>
                     <span className={cpStyles.gameSub}>
                       {game.mode && (
@@ -358,8 +356,6 @@ export function CompetePanel({ onLobby, playerId }: {
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>
                       {game.opponent_name}
-                      {game.is_host_opponent && <span className={cpStyles.hostBadge}>{t('home.compete_host')}</span>}
-                      {game.is_host_viewer && <span className={cpStyles.hostBadgeSelf}>{t('home.compete_host_you')}</span>}
                     </span>
                     <span className={cpStyles.gameSub}>
                       {game.mode && (
