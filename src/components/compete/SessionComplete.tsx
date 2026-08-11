@@ -586,7 +586,7 @@ export default function SessionComplete({
                     {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
                   </div>
                 </div>
-                <span className={styles.gameAccLabel}>Game Accuracy (%)</span>
+                <span className={styles.gameAccLabel}>{tGame('game_accuracy_pct')}</span>
                 {myStats ? (
                   <div className={styles.heroRingWrap}>
                     <RainbowRing value={Math.ceil(overallAccuracy)} />

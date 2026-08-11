@@ -192,7 +192,8 @@
     "play_mode_aria": "Speel {mode}",
     "compete_play_aria": "Spelen",
     "compete_delete_aria": "Verwijderen",
-    "coming_up_soon": "Binnenkort beschikbaar"
+    "coming_up_soon": "Binnenkort beschikbaar",
+    "daily_view_results": "Bekijk resultaten"
   },
   "common": {
     "next_round": "Volgende ronde",
@@ -240,6 +241,8 @@
     "disconnected": "Verbroken",
     "mode_challenge": "UITDAGING",
     "game_lobby": "Spel-lobby",
+    "create_game": "Spel maken",
+    "join_game": "Doe mee met het spel",
     "invite_players": "Nodig spelers uit",
     "copy_code": "Kopieer code",
     "link_copied": "Link gekopieerd!",
@@ -284,8 +287,6 @@
     "start_my_game": "Start mijn spel",
     "back": "Terug",
     "default_player_name": "Speler",
-    "create_game": "Spel maken",
-    "join_game": "Doe mee met het spel",
     "filter_all": "Alle",
     "filter_favorites": "Favorieten",
     "no_favorites_yet": "Nog geen favorieten — klik op de ster op de avatar van een speler om hem hier toe te voegen.",
@@ -347,6 +348,7 @@
     "col_player": "Speler",
     "col_score": "Scoren",
     "col_total": "Totaal",
+    "col_accuracy": "Nauwkeurigheid",
     "experience": "ERVARING",
     "correct_location": "Juist",
     "correct_year": "Juist",
@@ -406,6 +408,10 @@
     "total_distance": "Totale afstand",
     "avg_consistency": "Consistentie",
     "rounds_played": "Rondes gespeeld",
+    "avg_km_away_label": "Gem. afstand",
+    "avg_yrs_off_label": "Gem. jaar vrij",
+    "best_round_pct": "Beste ronde %",
+    "best_round_xp": "Beste Ronde XP",
     "gold_badges": "Goud",
     "silver_badges": "Zilver",
     "bronze_badges": "Brons",
@@ -419,10 +425,11 @@
     "era_modern": "Modern",
     "era_contemporary": "Tegenwoordig",
     "region_africa": "Afrika",
-    "region_oceania_antarctica": "Oceanië & Antarctica",
+    "region_antarctica": "Antarctica",
     "region_asia": "Azië",
     "region_europe": "Europa",
     "region_north_america": "Noord-Amerika",
+    "region_oceania": "Oceanië",
     "region_south_america": "Zuid-Amerika",
     "unknown_region": "Onbekend",
     "round_label_short": "RONDE {n}",
@@ -464,6 +471,7 @@
     "hint_penalties": "Hint-straffen ingehouden",
     "round_leaderboard": "Ronde-ranglijst",
     "breakdown": "Overzicht",
+    "game_accuracy": "Spelnauwkeurigheid (alle rondes)",
     "hints_used": "Hints gebruikt",
     "era_presets": "Era-voorinstellingen",
     "region_presets": "Regio Voorinstellingen",
@@ -539,14 +547,8 @@
     "clear_session_restart": "Sessie wissen en herstarten",
     "taking_too_long": "Duurt het te lang?",
     "retry": "Opnieuw proberen",
-    "col_accuracy": "Nauwkeurigheid",
-    "best_round_pct": "Beste ronde %",
-    "avg_yrs_off_label": "Gem. jaar vrij",
-    "game_accuracy": "Spelnauwkeurigheid (alle rondes)",
-    "region_oceania": "Oceanië",
-    "region_antarctica": "Antarctica",
-    "best_round_xp": "Beste Ronde XP",
-    "avg_km_away_label": "Gem. afstand"
+    "region_oceania_antarctica": "Oceanië & Antarctica",
+    "game_accuracy_pct": "Spel Nauwkeurigheid (%)"
   },
   "auth": {
     "sign_in": "Inloggen",
@@ -595,6 +597,8 @@
     "all_time": "Altijd",
     "err_load_failed": "Gegevens laden mislukt. Probeer opnieuw.",
     "retry": "Opnieuw proberen",
+    "clear_session_restart": "Sessie wissen en opnieuw opstarten",
+    "taking_too_long": "Te lang duren?",
     "no_results_today": "Nog geen resultaten vandaag.",
     "accuracy_pct": "Nauwkeurigheid %",
     "unknown_player": "Onbekend",
@@ -606,9 +610,7 @@
     "rank_suffix_two": "e",
     "rank_suffix_few": "e",
     "rank_suffix_many": "e",
-    "rank_suffix_other": "e",
-    "clear_session_restart": "Sessie wissen en opnieuw opstarten",
-    "taking_too_long": "Te lang duren?"
+    "rank_suffix_other": "e"
   },
   "profile": {
     "accuracy_breakdown": "Nauwkeurigheid-overzicht",
@@ -627,7 +629,6 @@
     "daily": "Dagelijks",
     "level_up": "Niveau omhoog",
     "compete": "Concurreer",
-    "practice": "Oefenen",
     "back": "Terug",
     "avatar_alt": "Avatar",
     "avg_accuracy": "Gem nauwkeurigheid",
@@ -647,6 +648,7 @@
     "rated": "Beoordeeld",
     "regions": "Regio's",
     "countries": "Landen",
+    "practice": "Oefenen",
     "daily_all_time": "Dagelijks (alle tijden)",
     "level": "Niveau"
   },
@@ -689,6 +691,14 @@
     "view_results": "Bekijk resultaten",
     "someone": "Iemand"
   },
+  "welcome": {
+    "title": "Welkom bij Guess-History!",
+    "your_historical_avatar": "Jouw historische avatar",
+    "choose_different_avatar": "Kies een andere avatar",
+    "your_username": "Jouw gebruikersnaam",
+    "lets_play": "Laten we spelen!",
+    "skip_for_now": "Nu overslaan"
+  },
   "landing": {
     "meta_title": "Guess-History — Test je kennis van wanneer en waar",
     "meta_description": "Een historisch raadspel. Bekijk echte events uit de geschiedenis en raad het exacte jaar en de locatie. Daag vrienden uit, beklim de ranglijst en bewijs je geschiedeniskennis.",
@@ -721,14 +731,6 @@
     "rank_10": "Koninklijke Cartograaf",
     "next_rank": "{xp} XP tot {title}",
     "max_rank": "Maximale rang bereikt"
-  },
-  "welcome": {
-    "title": "Welkom bij Guess-History!",
-    "your_historical_avatar": "Jouw historische avatar",
-    "choose_different_avatar": "Kies een andere avatar",
-    "your_username": "Jouw gebruikersnaam",
-    "lets_play": "Laten we spelen!",
-    "skip_for_now": "Nu overslaan"
   },
   "grow": {
     "meta_title": "Grow With Us — Guess-History",
@@ -1186,7 +1188,8 @@
       "references": "Referenties",
       "legal": "Juridische disclaimer",
       "privacy": "Privacy"
-    }
+    },
+    "nav_aria_label": "Groei pagina secties"
   },
   "practice": {
     "title": "Oefenspel bezig",
