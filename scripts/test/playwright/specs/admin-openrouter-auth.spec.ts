@@ -83,9 +83,8 @@ test.describe('admin/openrouter auth gate', () => {
 
   test('unauthenticated visitor is redirected away from /admin/openrouter', async ({ page }) => {
     await page.goto('/admin/openrouter');
-    await page.waitForLoadState('networkidle');
 
-    expect(page.url()).not.toContain('/admin/openrouter');
+    await expect(page).not.toHaveURL(/admin\/openrouter/);
     await expect(page.locator('text=OpenRouter AI Player Activity')).toHaveCount(0);
   });
 
@@ -103,9 +102,8 @@ test.describe('admin/openrouter auth gate', () => {
     ]);
 
     await page.goto('/admin/openrouter');
-    await page.waitForLoadState('networkidle');
 
-    expect(page.url()).not.toContain('/admin/openrouter');
+    await expect(page).not.toHaveURL(/admin\/openrouter/);
     await expect(page.locator('text=OpenRouter AI Player Activity')).toHaveCount(0);
   });
 
@@ -123,9 +121,8 @@ test.describe('admin/openrouter auth gate', () => {
     ]);
 
     await page.goto('/admin/openrouter');
-    await page.waitForLoadState('networkidle');
 
-    expect(page.url()).toContain('/admin/openrouter');
+    await expect(page).toHaveURL(/admin\/openrouter/);
     await expect(page.locator('text=OpenRouter AI Player Activity')).toBeVisible();
     await expect(page.locator('text=Total Cost').first()).toBeVisible();
   });
