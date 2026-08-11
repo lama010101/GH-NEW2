@@ -158,6 +158,13 @@
     "compete_no_invitations": "没有待处理的邀请",
     "compete_no_your_turn": "没有等待你的回合的游戏",
     "compete_no_completed": "还没有已结束的游戏",
+    "compete_host": "主持人",
+    "compete_host_you": "您是主持人",
+    "compete_time_left_d": "{n}天剩余",
+    "compete_time_left_h": "{n}小时剩余",
+    "compete_expires_soon": "即将过期",
+    "compete_see_all": "查看全部",
+    "compete_all_title": "所有竞争游戏",
     "compete_invited_you": "邀请你加入游戏",
     "compete_invite_meta": "{mode} · 发送于 {time}",
     "compete_invite_sent": "发送于 {time}",
@@ -185,7 +192,8 @@
     "play_mode_aria": "播放 {mode}",
     "compete_play_aria": "播放",
     "compete_delete_aria": "删除",
-    "coming_up_soon": "即将上线"
+    "coming_up_soon": "即将上线",
+    "daily_view_results": "查看结果"
   },
   "common": {
     "next_round": "下一回合",
@@ -233,6 +241,8 @@
     "disconnected": "已断开",
     "mode_challenge": "挑战",
     "game_lobby": "游戏大厅",
+    "create_game": "创建游戏",
+    "join_game": "加入游戏",
     "invite_players": "邀请玩家",
     "copy_code": "复制代码",
     "link_copied": "链接已复制！",
@@ -277,8 +287,6 @@
     "start_my_game": "开始我的游戏",
     "back": "返回",
     "default_player_name": "玩家",
-    "create_game": "创建游戏",
-    "join_game": "加入游戏",
     "filter_all": "全部",
     "filter_favorites": "收藏",
     "no_favorites_yet": "还没有收藏 — 点击玩家头像上的星标，将他们添加到此处。",
@@ -340,6 +348,7 @@
     "col_player": "玩家",
     "col_score": "得分",
     "col_total": "总计",
+    "col_accuracy": "准确度",
     "experience": "经验值",
     "correct_location": "正确",
     "correct_year": "正确",
@@ -399,6 +408,10 @@
     "total_distance": "总距离",
     "avg_consistency": "稳定性",
     "rounds_played": "已玩回合",
+    "avg_km_away_label": "平均距离",
+    "avg_yrs_off_label": "平均休息年数",
+    "best_round_pct": "最佳回合百分比",
+    "best_round_xp": "最佳回合经验值",
     "gold_badges": "金",
     "silver_badges": "银",
     "bronze_badges": "铜",
@@ -412,10 +425,11 @@
     "era_modern": "近代",
     "era_contemporary": "当代",
     "region_africa": "非洲",
-    "region_oceania_antarctica": "大洋洲与南极洲",
+    "region_antarctica": "南极洲",
     "region_asia": "亚洲",
     "region_europe": "欧洲",
     "region_north_america": "北美洲",
+    "region_oceania": "大洋洲",
     "region_south_america": "南美洲",
     "unknown_region": "未知",
     "round_label_short": "第 {n} 回合",
@@ -457,6 +471,7 @@
     "hint_penalties": "已扣除提示惩罚",
     "round_leaderboard": "回合排行榜",
     "breakdown": "明细",
+    "game_accuracy": "游戏准确度（所有回合）",
     "hints_used": "已使用提示",
     "era_presets": "时代预设",
     "region_presets": "地区预设",
@@ -503,6 +518,8 @@
     "km_away_short": "相距 {distance}",
     "years_off_short": "相差 {n} 年",
     "failed_create_session": "创建会话失败",
+    "game_ended_deadline": "此游戏已结束",
+    "game_already_started": "此游戏已开始",
     "room_not_found": "未找到房间",
     "error_creating_game": "创建游戏出错",
     "unknown_player": "未知玩家",
@@ -530,14 +547,8 @@
     "clear_session_restart": "清除会话并重启",
     "taking_too_long": "耗时太长？",
     "retry": "重试",
-    "col_accuracy": "准确度",
-    "best_round_pct": "最佳回合百分比",
-    "avg_yrs_off_label": "平均休息年数",
-    "game_accuracy": "游戏准确度（所有回合）",
-    "region_oceania": "大洋洲",
-    "region_antarctica": "南极洲",
-    "best_round_xp": "最佳回合经验值",
-    "avg_km_away_label": "平均距离"
+    "region_oceania_antarctica": "大洋洲与南极洲",
+    "game_accuracy_pct": "游戏准确度 (%)"
   },
   "auth": {
     "sign_in": "登录",
@@ -586,6 +597,8 @@
     "all_time": "历史",
     "err_load_failed": "数据加载失败。请重试。",
     "retry": "重试",
+    "clear_session_restart": "清除会话并重新启动",
+    "taking_too_long": "时间太长？",
     "no_results_today": "今天暂无结果。",
     "accuracy_pct": "准确度 %",
     "unknown_player": "未知玩家",
@@ -597,9 +610,7 @@
     "rank_suffix_two": "",
     "rank_suffix_few": "",
     "rank_suffix_many": "",
-    "rank_suffix_other": "",
-    "clear_session_restart": "清除会话并重新启动",
-    "taking_too_long": "时间太长？"
+    "rank_suffix_other": ""
   },
   "profile": {
     "accuracy_breakdown": "准确度明细",
@@ -618,7 +629,6 @@
     "daily": "每日",
     "level_up": "升级",
     "compete": "对战",
-    "practice": "练习",
     "back": "返回",
     "avatar_alt": "头像",
     "avg_accuracy": "平均准确度",
@@ -638,6 +648,7 @@
     "rated": "已评分",
     "regions": "地区",
     "countries": "国家",
+    "practice": "练习",
     "daily_all_time": "每日（所有时间）",
     "level": "等级"
   },
@@ -676,7 +687,17 @@
     "invited_you": "邀请你加入游戏",
     "sent": "发送于 {time}",
     "join_game": "加入游戏",
+    "session_complete": "{name}完成了游戏",
+    "view_results": "查看结果",
     "someone": "某人"
+  },
+  "welcome": {
+    "title": "欢迎来到 Guess-History！",
+    "your_historical_avatar": "你的历史头像",
+    "choose_different_avatar": "选择其他头像",
+    "your_username": "你的用户名",
+    "lets_play": "开始游戏！",
+    "skip_for_now": "暂时跳过"
   },
   "landing": {
     "meta_title": "Guess-History — 测试你的历史知识",
@@ -694,14 +715,6 @@
     "waitlist_err_invalid_email": "请输入有效的邮箱地址。",
     "waitlist_err_generic": "出了点问题。请重试。",
     "waitlist_err_network": "网络错误。请重试。"
-  },
-  "welcome": {
-    "title": "欢迎来到 Guess-History！",
-    "your_historical_avatar": "你的历史头像",
-    "choose_different_avatar": "选择其他头像",
-    "your_username": "你的用户名",
-    "lets_play": "开始游戏！",
-    "skip_for_now": "暂时跳过"
   },
   "rank": {
     "rank_label": "段位",
@@ -1175,7 +1188,8 @@
       "references": "参考文献",
       "legal": "法律免责声明",
       "privacy": "隐私"
-    }
+    },
+    "nav_aria_label": "成长页面部分"
   },
   "practice": {
     "title": "练习游戏进行中",

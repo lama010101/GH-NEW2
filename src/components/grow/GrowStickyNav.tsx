@@ -47,7 +47,7 @@ export default function GrowStickyNav() {
 
   return (
     <nav
-      aria-label="Grow page sections"
+      aria-label={t('nav_aria_label')}
       className={`sticky top-0 z-50 w-full border-b border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)]/90 backdrop-blur transition-transform ${visible ? 'translate-y-0' : '-translate-y-full'}`}
     >
       <div className="flex gap-2 overflow-x-auto px-4 py-3">
