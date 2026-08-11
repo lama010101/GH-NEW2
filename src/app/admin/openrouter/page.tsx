@@ -1,4 +1,7 @@
 import { getDbPool } from "@/server/db";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
@@ -119,7 +122,42 @@ function formatTimestamp(value: Date | string | null | undefined): string {
   return d.toISOString().replace("T", " ").slice(0, 19) + " UTC";
 }
 
+function getAdminAccessToken(): string | null {
+  const cookieStore = cookies();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return null;
+  const storageKey = `sb-${new URL(url).hostname.split(".")[0]}-auth-token`;
+  const cookie = cookieStore.get(storageKey);
+  if (!cookie?.value || !cookie.value.startsWith("base64-")) return null;
+  try {
+    const decoded = Buffer.from(
+      cookie.value.slice("base64-".length),
+      "base64url"
+    ).toString("utf-8");
+    const session = JSON.parse(decoded) as { access_token?: string };
+    return session.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function OpenRouterAdminPage() {
+  const accessToken = getAdminAccessToken();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (accessToken && supabaseUrl && serviceKey) {
+    const authClient = createClient(supabaseUrl, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data } = await authClient.auth.getUser(accessToken);
+    if (!data.user || data.user.app_metadata?.role !== "admin") {
+      redirect("/login");
+    }
+  } else {
+    redirect("/login");
+  }
+
   const db = getDbPool();
   let players: PlayerSummary[] = [];
   let daily: DailyStat[] = [];
