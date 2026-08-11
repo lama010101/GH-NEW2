@@ -35,6 +35,12 @@ export default function PlayerAvatar({
   const [imgError, setImgError] = useState(false);
   const initial = initials ?? (displayName || "?")[0].toUpperCase();
   const { color1, color2 } = playerId ? getPlayerFrameColor(playerId) : { color1: 'var(--gh-border-default)', color2: 'var(--gh-border-default)' };
+  // Two-tier ring thickness: large avatars (profile, account, menu) keep the
+  // original 2px frame/gap/ring; small avatars (leaderboard, topbar, lobby,
+  // compete panels, MVPs) use 1px so the ring does not dominate the image.
+  // Reduce the ring width by 15% everywhere so it is less visually dominant.
+  const ring = Math.round(((size >= 80 ? 2 : 1) * 0.85) * 100) / 100;
+  const ringColor = submitted ? 'var(--gh-success)' : 'var(--gh-border-default)';
 
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) {
@@ -70,7 +76,7 @@ export default function PlayerAvatar({
     height: "100%",
     borderRadius: "50%",
     boxSizing: "border-box",
-    padding: 2,
+    padding: ring,
     background: `conic-gradient(from 0deg, ${color1}, ${color2}, ${color1})`,
     backgroundClip: "padding-box",
     display: "flex",
@@ -83,16 +89,27 @@ export default function PlayerAvatar({
     height: "100%",
     borderRadius: "50%",
     boxSizing: "border-box",
-    padding: 2,
+    padding: ring,
     background: "transparent",
   };
 
-  const innerStyle: React.CSSProperties = {
+  const ringStyle: React.CSSProperties = {
     width: "100%",
     height: "100%",
     borderRadius: "50%",
     boxSizing: "border-box",
-    border: `2px solid ${submitted ? 'var(--gh-success)' : 'var(--gh-border-default)'}`,
+    padding: ring,
+    background: ringColor,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const avatarStyle: React.CSSProperties = {
+    width: "100%",
+    height: "100%",
+    borderRadius: "50%",
+    boxSizing: "border-box",
     overflow: "hidden",
     display: "flex",
     alignItems: "center",
@@ -120,16 +137,18 @@ export default function PlayerAvatar({
   const content = (
     <span style={frameStyle}>
       <span style={gapStyle}>
-        <span style={innerStyle}>
-          {avatarUrl && !imgError ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={toProxiedImageUrl(avatarUrl) ?? ''}
-              alt={displayName}
-              className={styles.avatarImg}
-              onError={() => setImgError(true)}
-            />
-          ) : initial}
+        <span style={ringStyle}>
+          <span style={avatarStyle}>
+            {avatarUrl && !imgError ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={toProxiedImageUrl(avatarUrl) ?? ''}
+                alt={displayName}
+                className={styles.avatarImg}
+                onError={() => setImgError(true)}
+              />
+            ) : initial}
+          </span>
         </span>
       </span>
     </span>
