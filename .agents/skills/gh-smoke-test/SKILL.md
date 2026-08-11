@@ -39,3 +39,10 @@ description: End-to-end smoke testing of Guess-History (GH-NEW2) in a local dev 
 - The settings gear is in the top-left round pill during `ROUND_ACTIVE` and in the bottom bar during `ROUND_COMPLETE`.
 - The settings modal key values are: `settingsResumeHint` text above the Home button, language switch updating labels while the hint stays English, and Sound/Vibrate/Theme/Distance toggles visibly changing state.
 - Clicking **Home** triggers a `beforeunload` "Leave site?" dialog; choosing **Leave** navigates to `/home`.
+
+## Localized smoke test tips
+- Locales are defined in `src/i18n/config.ts` (default `en`). `next-intl` reads the `gh_locale` cookie; set it with `ctx.addCookies([{ name: 'gh_locale', value: locale, domain: 'localhost', path: '/' }])`.
+- To switch locale mid-test, clear the old `gh_locale` cookie and re-add both the Supabase auth cookie and the new locale cookie; otherwise Playwright may keep the first locale value.
+- The **Grow** sticky nav items are localized, so prefer clicking by `data-analytics="grow-nav-<id>"` rather than visible text.
+- The notification bell button has class `bellBtn` in CSS modules; select it with `button[class*="bellBtn"]`. Clicking a notification's **View Results** button marks the row as read, so when checking both `en` and `es` either skip the first click or reset `read=false` before the second locale.
+- For `Compete` SessionComplete, drive a 5-round sync game with `CompeteWSClient` (send `TOGGLE_READY`, `SUBMIT_GUESS` per round, `READY_NEXT` between rounds). After the final `READY_NEXT` the server emits `SESSION_COMPLETE`. The label under test is `game.game_accuracy_pct` (`Game Accuracy (%)` in `en`, `Precisión del juego (%)` in `es`).
