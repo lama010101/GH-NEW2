@@ -192,7 +192,8 @@
     "play_mode_aria": "Play {mode}",
     "compete_play_aria": "Play",
     "compete_delete_aria": "Delete",
-    "coming_up_soon": "Coming Up Soon"
+    "coming_up_soon": "Coming Up Soon",
+    "daily_view_results": "View results"
   },
   "common": {
     "next_round": "Next Round",
@@ -546,7 +547,8 @@
     "clear_session_restart": "Clear session & restart",
     "taking_too_long": "Taking too long?",
     "retry": "Retry",
-    "region_oceania_antarctica": "Oceania & Antarctica"
+    "region_oceania_antarctica": "Oceania & Antarctica",
+    "game_accuracy_pct": "Game Accuracy (%)"
   },
   "auth": {
     "sign_in": "Sign In",
@@ -1189,7 +1191,8 @@
       "references": "References",
       "legal": "Legal disclaimer",
       "privacy": "Privacy"
-    }
+    },
+    "nav_aria_label": "Grow page sections"
   },
   "practice": {
     "title": "Practice game in progress",

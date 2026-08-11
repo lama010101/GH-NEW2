@@ -158,6 +158,13 @@
     "compete_no_invitations": "Нет ожидающих приглашений",
     "compete_no_your_turn": "Нет игр, ожидающих твоего хода",
     "compete_no_completed": "Нет завершённых игр",
+    "compete_host": "Хост",
+    "compete_host_you": "Вы хост",
+    "compete_time_left_d": "{n} дн. осталось",
+    "compete_time_left_h": "{n} ч. осталось",
+    "compete_expires_soon": "Скоро истечет",
+    "compete_see_all": "Посмотреть все",
+    "compete_all_title": "Все соревновательные игры",
     "compete_invited_you": "Пригласил тебя в игру",
     "compete_invite_meta": "{mode} · отправлено {time}",
     "compete_invite_sent": "отправлено {time}",
@@ -185,7 +192,8 @@
     "play_mode_aria": "Играть {mode}",
     "compete_play_aria": "Играть",
     "compete_delete_aria": "Удалить",
-    "coming_up_soon": "Скоро появится"
+    "coming_up_soon": "Скоро появится",
+    "daily_view_results": "Посмотреть результаты"
   },
   "common": {
     "next_round": "Следующий раунд",
@@ -233,6 +241,8 @@
     "disconnected": "Отключено",
     "mode_challenge": "ВЫЗОВ",
     "game_lobby": "Игровое лобби",
+    "create_game": "Создать игру",
+    "join_game": "Присоединиться к игре",
     "invite_players": "Пригласить игроков",
     "copy_code": "Копировать код",
     "link_copied": "Ссылка скопирована!",
@@ -277,8 +287,6 @@
     "start_my_game": "Начать мою игру",
     "back": "Назад",
     "default_player_name": "Игрок",
-    "create_game": "Создать игру",
-    "join_game": "Присоединиться к игре",
     "filter_all": "Все",
     "filter_favorites": "Избранное",
     "no_favorites_yet": "Пока нет избранных — нажмите на звёздочку на аватаре игрока, чтобы добавить его сюда.",
@@ -340,6 +348,7 @@
     "col_player": "Игрок",
     "col_score": "Счёт",
     "col_total": "Итого",
+    "col_accuracy": "Точность",
     "experience": "ОПЫТ",
     "correct_location": "Правильно",
     "correct_year": "Правильно",
@@ -399,6 +408,10 @@
     "total_distance": "Общее расстояние",
     "avg_consistency": "Стабильность",
     "rounds_played": "Сыграно раундов",
+    "avg_km_away_label": "Среднее расстояние",
+    "avg_yrs_off_label": "Среднее количество лет выключено",
+    "best_round_pct": "Лучший раунд %",
+    "best_round_xp": "Лучший раунд опыта",
     "gold_badges": "Золото",
     "silver_badges": "Серебро",
     "bronze_badges": "Бронза",
@@ -412,10 +425,11 @@
     "era_modern": "Новое время",
     "era_contemporary": "Современность",
     "region_africa": "Африка",
-    "region_oceania_antarctica": "Океания и Антарктида",
+    "region_antarctica": "Антарктида",
     "region_asia": "Азия",
     "region_europe": "Европа",
     "region_north_america": "Северная Америка",
+    "region_oceania": "Океания",
     "region_south_america": "Южная Америка",
     "unknown_region": "Неизвестный",
     "round_label_short": "РАУНД {n}",
@@ -457,6 +471,7 @@
     "hint_penalties": "Вычтенные штрафы за подсказки",
     "round_leaderboard": "Рейтинг раунда",
     "breakdown": "Разбивка",
+    "game_accuracy": "Точность игры (все раунды)",
     "hints_used": "Использованные подсказки",
     "era_presets": "Пресеты эпох",
     "region_presets": "Предустановки регионов",
@@ -503,6 +518,8 @@
     "km_away_short": "Расстояние {distance}",
     "years_off_short": "Разница {n} лет",
     "failed_create_session": "Не удалось создать сессию",
+    "game_ended_deadline": "Эта игра завершена",
+    "game_already_started": "Эта игра уже началась",
     "room_not_found": "Комната не найдена",
     "error_creating_game": "Ошибка создания игры",
     "unknown_player": "Неизвестный",
@@ -530,14 +547,8 @@
     "clear_session_restart": "Очистить сессию и перезапустить",
     "taking_too_long": "Слишком долго?",
     "retry": "Повторить",
-    "col_accuracy": "Точность",
-    "best_round_pct": "Лучший раунд %",
-    "avg_yrs_off_label": "Среднее количество лет выключено",
-    "game_accuracy": "Точность игры (все раунды)",
-    "region_oceania": "Океания",
-    "region_antarctica": "Антарктида",
-    "best_round_xp": "Лучший раунд опыта",
-    "avg_km_away_label": "Среднее расстояние"
+    "region_oceania_antarctica": "Океания и Антарктида",
+    "game_accuracy_pct": "Точность игры (%)"
   },
   "auth": {
     "sign_in": "Войти",
@@ -586,6 +597,8 @@
     "all_time": "За всё время",
     "err_load_failed": "Не удалось загрузить данные. Повторите.",
     "retry": "Повторить",
+    "clear_session_restart": "Очистить сеанс и перезапустить",
+    "taking_too_long": "Слишком долго?",
     "no_results_today": "Сегодня результатов нет.",
     "accuracy_pct": "Точность %",
     "unknown_player": "Неизвестный",
@@ -597,9 +610,7 @@
     "rank_suffix_two": "-й",
     "rank_suffix_few": "-й",
     "rank_suffix_many": "-й",
-    "rank_suffix_other": "-й",
-    "clear_session_restart": "Очистить сеанс и перезапустить",
-    "taking_too_long": "Слишком долго?"
+    "rank_suffix_other": "-й"
   },
   "profile": {
     "accuracy_breakdown": "Разбивка точности",
@@ -618,7 +629,6 @@
     "daily": "Ежедневный",
     "level_up": "Повышение уровня",
     "compete": "Соревнование",
-    "practice": "Практика",
     "back": "Назад",
     "avatar_alt": "Аватар",
     "avg_accuracy": "Средняя точность",
@@ -638,6 +648,7 @@
     "rated": "Оценено",
     "regions": "Регионы",
     "countries": "Страны",
+    "practice": "Практика",
     "daily_all_time": "Ежедневно (всегда)",
     "level": "Уровень"
   },
@@ -676,7 +687,20 @@
     "invited_you": "пригласил тебя в игру",
     "sent": "отправлено {time}",
     "join_game": "Войти в игру",
+    "session_complete": "{name} завершил игру",
+    "view_results": "Посмотреть результаты",
     "someone": "Кто-то"
+  },
+  "welcome": {
+    "title": "Добро пожаловать в Guess-History!",
+    "your_historical_avatar": "Твой исторический аватар",
+    "choose_different_avatar": "Выбрать другой аватар",
+    "your_username": "Твоё имя пользователя",
+    "lets_play": "Поиграем!",
+    "skip_for_now": "Пропустить",
+    "username_label_1": "ENTER YOUR USERNAME",
+    "username_label_2": "PICK A UNIQUE NAME",
+    "username_label_3": "OTHERS WILL SEE THIS NAME"
   },
   "landing": {
     "meta_title": "Guess-History — Проверь свои знания истории",
@@ -694,17 +718,6 @@
     "waitlist_err_invalid_email": "Введи корректный email.",
     "waitlist_err_generic": "Что-то пошло не так. Повтори.",
     "waitlist_err_network": "Сетевая ошибка. Повтори."
-  },
-  "welcome": {
-    "title": "Добро пожаловать в Guess-History!",
-    "your_historical_avatar": "Твой исторический аватар",
-    "choose_different_avatar": "Выбрать другой аватар",
-    "your_username": "Твоё имя пользователя",
-    "username_label_1": "ENTER YOUR USERNAME",
-    "username_label_2": "PICK A UNIQUE NAME",
-    "username_label_3": "OTHERS WILL SEE THIS NAME",
-    "lets_play": "Поиграем!",
-    "skip_for_now": "Пропустить"
   },
   "rank": {
     "rank_label": "Ранг",
@@ -1178,7 +1191,8 @@
       "references": "Ссылки",
       "legal": "Юридическая оговорка",
       "privacy": "Конфиденциальность"
-    }
+    },
+    "nav_aria_label": "Разделы страницы роста"
   },
   "practice": {
     "title": "Игра на практике в процессе",
