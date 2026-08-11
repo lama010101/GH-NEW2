@@ -30,6 +30,10 @@ export default function Section07TestModel() {
         )}
 
         <div className="w-full max-w-2xl rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] p-6 text-left">
+          <div className="mb-4">
+            <StatusBadge status="illustrative" label="ILLUSTRATIVE" />
+          </div>
+
           {section.visual.steps?.map((step, index) => (
             <div
               key={step}
