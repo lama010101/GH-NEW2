@@ -72,6 +72,7 @@ export default function PlayerAvatar({
     boxSizing: "border-box",
     padding: 2,
     background: `conic-gradient(from 0deg, ${color1}, ${color2}, ${color1})`,
+    backgroundClip: "padding-box",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
