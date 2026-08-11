@@ -1,0 +1,810 @@
+# RECONCILED ARCHITECTURE: Guess History LLM Evaluation Dataset
+
+**Authority:** System Architect / Technical Authority
+**Status:** Authoritative specification
+**Supersedes:** All prior LLM evaluation dataset specifications
+
+Implement exactly this architecture. Do not invent alternative schemas, collapse data layers, introduce additional sources of truth, or make derived metrics authoritative.
+
+---
+
+## 0. Core Principle — Non-Negotiable
+
+The system collects **immutable raw events, observations, and evaluation facts**.
+
+All provider-facing scores, analytics, classifications, benchmarks, and reports are **derived from those immutable facts**.
+
+### Fundamental invariant
+
+> Historical results must remain reproducible even if ground truth, parsers, prompts, difficulty models, or scoring algorithms are later corrected.
+
+No historical observation may be rewritten to reflect a later correction.
+
+Every submitted guess must establish:
+
+* who guessed
+* what they guessed
+* which exact visual stimulus they received
+* which information and constraints applied
+* what confidence they expressed
+* how long the evaluation took
+* which ground-truth version was used
+* which model/prompt/execution configuration was used
+* what raw response was received
+
+For LLM evaluations, model identity and execution configuration must be immutable and reconstructable.
+
+---
+
+# 1. Data Architecture
+
+The system has four strictly separated layers.
+
+### Layer 1 — Immutable Raw Events
+
+What actually happened.
+
+Examples:
+
+* `GameStarted`
+* `RoundStarted`
+* `ImagePresented`
+* `GuessSubmitted`
+* `LLMRequestStarted`
+* `LLMResponseReceived`
+* `RoundCompleted`
+* `GameCompleted`
+
+Raw events are append-only.
+
+### Layer 2 — Immutable Evaluation Facts
+
+The canonical record of a submitted answer and the immutable context required to reproduce its evaluation.
+
+Primary identifier:
+
+`evaluation_id`
+
+This layer contains **facts and immutable references only**.
+
+It must not depend on a mutable scoring result.
+
+### Layer 3 — Derived Analytics
+
+Calculated from Layer 1 + Layer 2 + versioned reference data.
+
+Examples:
+
+* accuracy
+* year error
+* location error
+* XP/game score
+* calibration
+* difficulty
+* human-vs-LLM comparisons
+* latency percentiles
+* cost efficiency
+* contamination signals
+
+Derived results may be materialized for performance, but are never the source of truth.
+
+Every derived calculation must identify its methodology/version.
+
+### Layer 4 — Provider Delivery Surfaces
+
+Read-only projections/export surfaces:
+
+* analytics API
+* provider dashboards
+* benchmark exports
+* optional preference-training exports
+
+Delivery surfaces must never become data authorities.
+
+---
+
+# 2. Immutable Player / Model Identity
+
+Every evaluation references an immutable player identity.
+
+```text
+player_id
+player_type = human | llm
+```
+
+## Human
+
+Store only information required for evaluation:
+
+* account creation timestamp
+* locale
+* timezone
+* relevant progression identifiers where required for analysis
+
+Do not collect unnecessary PII or precise location.
+
+## LLM
+
+The following are immutable:
+
+* `provider`
+* `model_family`
+* `exact_model_id`
+* `model_version` / snapshot
+* `api_version`
+* `vision_capability_version`
+* knowledge cutoff, when exposed
+
+The model identity must never be represented only as a generic name such as "GPT" or "Claude".
+
+---
+
+# 3. Immutable Model Execution Manifest
+
+Every LLM evaluation references an immutable:
+
+`model_execution_manifest_id`
+
+The manifest contains:
+
+* provider
+* exact model ID
+* model snapshot/version
+* API version
+* system prompt version
+* evaluation prompt version
+* response schema version
+* parser version
+* vision configuration
+* tool configuration
+* inference parameters
+* temperature
+* top-p
+* max tokens
+* image detail mode
+* other provider-specific parameters
+
+The manifest is immutable.
+
+If any execution parameter changes, create a new manifest.
+
+---
+
+# 4. Game Context
+
+Each evaluation references:
+
+* `game_id`
+* `round_id`
+* `guess_id`
+* `player_id`
+* `game_mode`
+* `game_mode_type`
+* `time_budget_ms`
+* game timestamp
+* round number
+* player count
+* opponent composition
+* difficulty reference
+* image/event reference
+
+Supported game mode types:
+
+```text
+sync_rush
+async_relax
+```
+
+Time budgets must be explicit.
+
+---
+
+# 5. Ground Truth — Immutable and Versioned
+
+Every image/event has versioned ground truth.
+
+Required fields:
+
+* `event_id`
+* canonical event name
+* canonical date
+* date precision
+* canonical location
+* category
+* entities
+* accepted answer ranges
+* image-to-event confidence
+* source/reference
+* `ground_truth_version`
+
+### Mandatory invariant
+
+```text
+evaluation → ground_truth_version
+```
+
+is immutable.
+
+If the ground truth is corrected:
+
+* create a new ground-truth version
+* never rewrite historical evaluations
+* never silently re-score historical evaluations
+
+Historical analytics remain reproducible against the original ground-truth version.
+
+---
+
+# 6. Exact Visual Stimulus
+
+The system must record exactly what the LLM received.
+
+Every visual stimulus receives:
+
+`stimulus_id`
+
+and:
+
+`stimulus_hash`
+
+The hash must uniquely identify the exact visual representation delivered to the model.
+
+Required information includes:
+
+```json
+{
+  "stimulus_id": "...",
+  "image_id": "...",
+  "image_content_hash": "...",
+  "stimulus_hash": "...",
+  "source_resolution": [1024, 768],
+  "delivered_resolution": [1024, 768],
+  "image_detail_mode": "high",
+  "crop_box": [x1, y1, x2, y2],
+  "downscaling_factor": 1.0,
+  "encoding": "...",
+  "visual_enhancements_applied": false,
+  "transformation_pipeline_version": "..."
+}
+```
+
+Any transformation that changes the visual stimulus must produce a new stimulus identity/version.
+
+### Image characteristics
+
+The system may additionally store analytical characteristics such as:
+
+* visual complexity
+* people count
+* visible text
+* landmarks
+* ambiguity
+* image quality
+* clue density
+
+These characteristics are descriptive metadata, not ground truth.
+
+---
+
+# 7. Atomic Evaluation Fact
+
+Every human or LLM guess produces an immutable:
+
+`evaluation_id`
+
+The evaluation fact records:
+
+```json
+{
+  "evaluation_id": "...",
+  "timestamp": "...",
+
+  "player_id": "...",
+
+  "model_execution_manifest_id": "...",
+
+  "game_context": {
+    "game_id": "...",
+    "round_id": "...",
+    "guess_id": "...",
+    "game_mode": "sync_rush",
+    "time_budget_ms": 30000
+  },
+
+  "benchmark_lineage": {
+    "benchmark_version": "...",
+    "dataset_version": "...",
+    "ground_truth_version": "...",
+    "stimulus_id": "...",
+    "parser_version": "..."
+  },
+
+  "submitted_answer": {
+    "raw_answer": "...",
+    "normalized_year_guess": null,
+    "normalized_location_guess": null,
+    "confidence_value": null,
+    "confidence_scale": null
+  },
+
+  "execution": {
+    "request_started_at": "...",
+    "response_received_at": "...",
+    "end_to_end_latency_ms": 0,
+    "model_latency_ms": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "reasoning_tokens": null,
+    "estimated_cost_usd": null,
+    "success": true,
+    "failure_domain": null,
+    "failure_type": null
+  },
+
+  "raw_output": {
+    "raw_text_response": "...",
+    "structured_answer": {},
+    "parser_status": "...",
+    "reasoning_trace_available": false,
+    "reasoning_trace": null
+  }
+}
+```
+
+### Important
+
+`evaluation_id` is an immutable **fact record**.
+
+It is not a container for mutable scoring results.
+
+---
+
+# 8. Reasoning Trace Policy
+
+The architecture must **not require hidden chain-of-thought**.
+
+Where a provider explicitly exposes permitted reasoning information, the system may record it.
+
+Possible forms include:
+
+* provider-returned reasoning trace
+* structured intermediate hypotheses
+* reasoning summary
+* tool calls
+* structured evidence fields
+
+The system must distinguish:
+
+```text
+reasoning_trace_available
+reasoning_trace
+```
+
+Absence of reasoning data must never cause an evaluation to fail.
+
+---
+
+# 9. Derived Evaluation Results
+
+All scoring is derived.
+
+A derived result must reference:
+
+* `evaluation_id`
+* `ground_truth_version`
+* `scoring_algorithm_version`
+* relevant methodology versions
+
+Examples:
+
+### Temporal
+
+* absolute year error
+* signed year error
+* relative error
+* exact-year accuracy
+* within ±1 / ±5 / ±10 / ±25 / ±50 years
+* directional bias
+* percentage early/late
+
+### Spatial
+
+* geographic distance in km
+* location accuracy score
+
+### Game scoring
+
+Keep game scoring separate from benchmark accuracy.
+
+Possible derived values:
+
+* `year_accuracy_score`
+* `location_accuracy_score`
+* `combined_accuracy_score`
+* `game_xp`
+
+`game_xp` is a game-engine result and must not become the sole provider-evaluation metric.
+
+---
+
+# 10. Confidence and Calibration
+
+Confidence must be normalized before calibration analysis.
+
+Record:
+
+* confidence value
+* original confidence representation
+* confidence scale
+* extraction method
+* confidence normalization version
+
+Derived analytics include:
+
+* calibration curve
+* confidence buckets
+* ECE
+* Brier score where statistically appropriate
+* overconfidence
+* underconfidence
+* high-confidence error rate
+
+---
+
+# 11. Human Baseline
+
+Human performance is the benchmark baseline.
+
+Store immutable human evaluation facts.
+
+Derived human metrics may include:
+
+* median year error
+* mean year error
+* standard deviation
+* response time
+* percentage correct
+* per-image performance
+
+Difficulty classification must be produced by a versioned methodology:
+
+`difficulty_model_version`
+
+Possible tiers:
+
+```text
+easy
+medium
+hard
+extreme
+```
+
+The methodology must define sample requirements and statistical treatment.
+
+Historical difficulty assignments must remain reproducible.
+
+---
+
+# 12. Human vs LLM Analysis
+
+Derived comparisons include:
+
+* median error
+* mean error
+* best performance
+* percentage of images where LLM wins
+* percentage where human wins
+* percentage tied
+* performance by difficulty tier
+* performance by historical period
+* performance by geography
+* performance by event category
+
+All comparisons must report:
+
+* sample size
+* unique images
+* methodology version
+* confidence interval where appropriate
+
+---
+
+# 13. Image & Error Taxonomy
+
+Derived error classifications may include:
+
+* correct event + correct date
+* correct event + wrong date
+* related event
+* correct broad period + wrong event
+* completely wrong
+* no answer
+* parser failure
+* model failure
+* infrastructure failure
+
+Classification methodology must be versioned.
+
+---
+
+# 14. Reliability and Cost
+
+Separate model failures from system/provider failures.
+
+Required failure dimensions:
+
+```text
+failure_domain:
+model
+provider
+infrastructure
+application
+parser
+```
+
+Examples of failure types:
+
+* timeout
+* rate limit
+* API error
+* malformed response
+* parser failure
+* safety refusal
+* unavailable model
+* infrastructure failure
+
+Derived reliability metrics include:
+
+* P50 latency
+* P95 latency
+* P99 latency
+* timeout rate
+* model failure rate
+* infrastructure failure rate
+* token usage
+* cost per evaluation
+* cost per correct answer
+* accuracy/cost efficiency
+
+---
+
+# 15. Contamination / Memorization Analysis
+
+The system may generate **contamination signals**, not definitive claims of memorization.
+
+Potential signals include:
+
+* exact-string matches on obscure filenames
+* captions or metadata matches
+* suspiciously exact answers
+* unusually high performance on high-ambiguity images
+* repeated identical responses
+* suspicious temporal performance patterns
+
+Each signal should reference:
+
+* `contamination_method_version`
+* signal type
+* evidence
+* confidence/severity
+
+Do not store an unsupported boolean assertion that a model is definitively contaminated.
+
+---
+
+# 16. Consistency and Multi-Model Analysis
+
+For the same stimulus:
+
+* compare model answers
+* measure agreement
+* measure consensus accuracy
+* identify systematic disagreement
+* compare model clusters
+
+All multi-model analyses must reference the same:
+
+* stimulus identity
+* ground-truth version
+* evaluation methodology
+
+---
+
+# 17. Temporal Model Evolution
+
+Never aggregate away model version history.
+
+Track:
+
+* model version
+* benchmark version
+* calendar time
+* accuracy
+* bias
+* calibration
+* latency
+* cost
+* failure rate
+
+A provider's performance must remain attributable to the exact model version evaluated.
+
+---
+
+# 18. Statistical Reporting
+
+Every reported benchmark metric must include, where statistically meaningful:
+
+* sample size
+* number of unique images
+* evaluation count
+* methodology version
+* confidence interval
+* confidence interval methodology
+
+Aggregations must never hide the underlying sample size.
+
+---
+
+# 19. Data Retention and Privacy
+
+Do not collect:
+
+* private human messages
+* unnecessary PII
+* precise human location
+* unrelated gameplay telemetry
+
+Provider evaluation data is limited to information required for benchmarking, analysis, reproducibility, and explicitly approved downstream datasets.
+
+Raw LLM outputs must follow applicable provider terms and the project's retention policy.
+
+---
+
+# 20. Provider Delivery Surfaces
+
+## Analytics
+
+Provide read-only projections through:
+
+* dashboard
+* analytics API
+* batch exports
+
+## Benchmark Dataset
+
+Export immutable evaluation facts plus the required version references.
+
+## Preference Dataset
+
+Preference-training exports such as DPO/RLHF are **optional downstream datasets**, not the evaluation dataset itself.
+
+They may only be generated through a separately versioned preference-generation methodology.
+
+The evaluation dataset must remain independent of any training transformation.
+
+---
+
+# 21. Highest-Value Provider Metrics
+
+Dashboard priority:
+
+1. Overall temporal accuracy
+2. Overall spatial accuracy
+3. Combined dual-axis accuracy
+4. Median and signed year error
+5. Directional date bias
+6. Accuracy by historical period
+7. Accuracy by geography
+8. Accuracy by event category
+9. Accuracy by image difficulty
+10. Human-vs-LLM performance
+11. Confidence calibration
+12. High-confidence error rate
+13. Sync-Rush latency P50/P95/P99
+14. Model vs infrastructure failure rate
+15. Token usage and cost per correct answer
+16. Performance by exact model version
+17. Temporal performance evolution
+18. Contamination signals
+19. Multi-model agreement
+20. Sample size and confidence intervals
+
+---
+
+# 22. Architectural Invariants
+
+The following rules are mandatory.
+
+### Single Source of Truth
+
+There is exactly one authoritative owner for:
+
+* raw events
+* evaluation facts
+* ground truth
+* model execution manifests
+* stimuli
+
+Derived analytics are never authoritative.
+
+### Immutability
+
+Historical evaluation facts are never rewritten.
+
+### Versioning
+
+The following are versioned:
+
+* ground truth
+* dataset
+* benchmark
+* stimulus transformation pipeline
+* model execution manifest
+* prompts
+* parser
+* scoring algorithm
+* difficulty methodology
+* error taxonomy
+* contamination methodology
+* preference-generation methodology
+
+### Determinism
+
+Given identical:
+
+```text
+evaluation facts
++
+ground truth version
++
+methodology versions
+```
+
+the derived result must be reproducible.
+
+### No Hidden Coupling
+
+Provider analytics must not require changes to gameplay state ownership.
+
+Game progression must not become the source of truth for provider benchmarking.
+
+### Failure Isolation
+
+Model failure, provider failure, infrastructure failure, application failure, and parser failure must remain distinguishable.
+
+---
+
+# 23. Implementation Directive to AI Coder
+
+Before implementation, verify:
+
+* repository structure
+* current state ownership
+* lifecycle authority
+* existing event architecture
+* existing evaluation/scoring paths
+* existing ground-truth representation
+* existing memory files
+* API boundaries
+
+If any of these are unknown, **STOP and issue an Investigation Prompt.**
+
+Once architecture is verified:
+
+1. Implement immutable evaluation facts.
+2. Implement immutable model execution manifests.
+3. Implement immutable stimulus identity/hashing.
+4. Ensure all LLM guess paths create the complete evaluation fact before derived processing.
+5. Ensure ground truth is versioned.
+6. Ensure prompts, parsers, scoring algorithms and methodologies are versioned.
+7. Implement derived evaluation results separately from immutable evaluation facts.
+8. Support both `sync_rush` and `async_relax`.
+9. Keep game XP separate from benchmark accuracy.
+10. Implement provider analytics projections.
+11. Implement benchmark export.
+12. Treat DPO/RLHF export as a separately versioned downstream transformation.
+13. Update all required memory files after implementation.
+
+Any deviation from the immutability, versioning, single-source-of-truth, determinism, or separation-of-layers rules is an architectural defect and must be rejected.
+
+**This document is the authoritative production architecture for the Guess History LLM Evaluation Dataset.**
