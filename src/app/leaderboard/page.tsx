@@ -7,10 +7,10 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { usePlayerFilter } from '@/hooks/usePlayerFilter';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
-import { toProxiedImageUrl } from '@/lib/imageProxy';
 import TopBar from '@/components/layout/TopBar';
 import { NavModal } from '@/components/NavModal';
 import AccuracySuffix from '@/components/AccuracySuffix';
+import PlayerAvatar from '@/components/compete/PlayerAvatar';
 import { getAccuracyColor } from '@/core/accuracyColor';
 import styles from './leaderboard.module.css';
 
@@ -240,23 +240,16 @@ function LeaderboardPageInner() {
     }
 
     const name = entry.display_name ?? t('unknown_player');
-    const avatarFallback = entry.is_ai ? 'AI' : getInitials(entry.display_name);
 
     return (
       <div className={styles.playerCell}>
-        {entry.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={toProxiedImageUrl(entry.avatar_url) ?? ''}
-            alt=""
-            className={`${styles.avatar} ${entry.is_ai ? styles.avatarAi : ''}`}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-          />
-        ) : (
-          <div className={`${styles.avatarInitials} ${entry.is_ai ? styles.avatarAi : ''}`}>
-            {avatarFallback}
-          </div>
-        )}
+        <PlayerAvatar
+          avatarUrl={entry.avatar_url}
+          displayName={name}
+          playerId={entry.player_id}
+          size={32}
+          initials={entry.is_ai ? 'AI' : getInitials(entry.display_name)}
+        />
         <div className={styles.playerInfo}>
           <span className={styles.playerName}>{name}{entry.is_ai ? <span className={styles.aiBadge}>{t('filter_ai')}</span> : null}</span>
           <span className={styles.playerSubtitle}>{subtitle}</span>
@@ -375,19 +368,13 @@ function LeaderboardPageInner() {
               style={{ height: slot.height }}
             >
               <span className={styles.podiumRank}>{slot.place}</span>
-              {slot.entry.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={toProxiedImageUrl(slot.entry.avatar_url) ?? ''}
-                  alt=""
-                  className={`${styles.podiumAvatar} ${slot.entry.is_ai ? styles.avatarAi : ''}`}
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                />
-              ) : (
-                <div className={`${styles.podiumAvatarInitials} ${slot.entry.is_ai ? styles.avatarAi : ''}`}>
-                  {slot.entry.is_ai ? 'AI' : getInitials(slot.entry.display_name)}
-                </div>
-              )}
+              <PlayerAvatar
+                avatarUrl={slot.entry.avatar_url}
+                displayName={slot.entry.display_name ?? t('unknown_player')}
+                playerId={slot.entry.player_id}
+                size={40}
+                initials={slot.entry.is_ai ? 'AI' : getInitials(slot.entry.display_name)}
+              />
               <span className={styles.podiumName}>{slot.entry.display_name ?? t('unknown_player')}</span>
               <span className={styles.podiumValue}>
                 {activeTab === 'levelup'
