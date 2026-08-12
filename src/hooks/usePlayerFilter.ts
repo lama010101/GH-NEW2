@@ -75,14 +75,14 @@ export type UsePlayerFilterReturn = {
  * URL params take precedence on first load; changes are written back to localStorage
  * and the URL query string so the state is restorable and shareable.
  */
-export function usePlayerFilter(): UsePlayerFilterReturn {
+export function usePlayerFilter(defaultFilter: Partial<PlayerFilter> = {}): UsePlayerFilterReturn {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const initialFilter = useMemo<PlayerFilter>(() => {
     const fromUrl = parseFilterFromSearchParams(searchParams);
-    return fromUrl ?? readFromStorage() ?? DEFAULT_PLAYER_FILTER;
-  }, [searchParams]);
+    return fromUrl ?? readFromStorage() ?? { ...DEFAULT_PLAYER_FILTER, ...defaultFilter };
+  }, [searchParams, defaultFilter]);
 
   const [filter, setFilterState] = useState<PlayerFilter>(initialFilter);
 
