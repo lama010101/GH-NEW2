@@ -135,7 +135,7 @@ export default function GrowNavRail() {
     index !== null ? `#${sections[index].id}` : undefined
 
   const controlBase =
-    'flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none'
+    'flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none'
 
   const activeControlClass = `${controlBase} hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)]`
 
@@ -151,11 +151,11 @@ export default function GrowNavRail() {
       <nav
         ref={navRef}
         aria-label="Slide chapters"
-        className={`fixed left-0 right-0 top-16 z-40 flex h-12 items-center justify-center gap-1 border-b border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)]/80 px-3 backdrop-blur-sm md:left-auto md:right-4 md:top-1/2 md:h-auto md:w-12 md:-translate-y-1/2 md:flex-col md:items-center md:justify-center md:rounded-[var(--gh-radius-md)] md:border md:p-2 md:px-0 md:py-2 ${
-          expanded ? 'md:w-64' : ''
+        className={`fixed bottom-0 left-0 right-0 z-40 flex h-14 items-center justify-center gap-1 border-t border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)]/80 px-3 backdrop-blur-sm md:left-auto md:right-4 md:top-1/2 md:bottom-auto md:h-auto md:w-12 md:-translate-y-1/2 md:flex-col md:items-center md:justify-center md:rounded-[var(--gh-radius-md)] md:border md:p-2 md:px-0 md:py-2 ${
+          expanded ? 'md:w-96' : ''
         }`}
       >
-        <div className="flex items-center gap-1 md:flex-col md:gap-1">
+        <div className="flex w-full items-center justify-start gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] md:w-auto md:flex-col md:items-center md:justify-center md:overflow-visible [&::-webkit-scrollbar]:hidden">
           {/* Beginning */}
           {current === 0 ? (
             <span className={disabledControlClass} aria-disabled="true" aria-label="Beginning (already on first slide)">
@@ -187,18 +187,18 @@ export default function GrowNavRail() {
           )}
 
           {/* Section bullets */}
-          <ol className="flex items-center gap-1.5 md:flex-col md:items-center md:gap-1.5" id="grow-toc">
+          <ol className="flex shrink-0 items-center gap-1 md:flex-col md:items-center md:gap-1.5" id="grow-toc">
             {sections.map((section, index) => {
               const isActive = current === index
               const label = `${formatNumber(section.number)} · ${section.headline}`
               return (
-                <li key={section.id} className="md:w-full">
+                <li key={section.id} className="shrink-0 md:w-full">
                   <a
                     href={`#${section.id}`}
                     aria-label={label}
                     aria-current={isActive ? 'true' : undefined}
                     onClick={() => setExpanded(false)}
-                    className={`group relative flex h-8 w-8 items-center justify-center rounded-[var(--gh-radius-md)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none md:h-8 md:w-full ${
+                    className={`group relative flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--gh-radius-md)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none md:h-10 md:w-full ${
                       isActive
                         ? 'text-[#f97316]'
                         : 'text-[var(--gh-text-secondary)] hover:text-[var(--gh-text-primary)]'
@@ -208,7 +208,14 @@ export default function GrowNavRail() {
 
                     {/* Collapsed title tag - desktop / tablet */}
                     {!expanded && (
-                      <span className="pointer-events-none absolute right-full mr-2 top-1/2 z-50 hidden max-h-[2.3em] max-w-[12rem] -translate-y-1/2 overflow-hidden whitespace-normal rounded-[var(--gh-radius-md)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-elevated)] px-2 py-1 text-xs text-[var(--gh-text-primary)] shadow-sm group-hover:block group-focus-visible:block md:max-w-[16rem] lg:max-w-none lg:overflow-visible lg:whitespace-nowrap">
+                      <span className="pointer-events-none absolute right-full mr-2 top-1/2 z-50 hidden -translate-y-1/2 overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-elevated)] px-2 py-1 text-xs text-[var(--gh-text-primary)] shadow-sm md:max-h-[3em] md:max-w-[calc(100vw-6rem)] md:whitespace-normal md:break-words md:group-hover:block md:group-focus-visible:block lg:max-h-none lg:max-w-[calc(100vw-8rem)] lg:overflow-visible lg:whitespace-nowrap">
+                        {label}
+                      </span>
+                    )}
+
+                    {/* Mobile hover/focus title tag */}
+                    {!expanded && (
+                      <span className="fixed left-4 right-4 bottom-16 z-50 hidden max-h-[4.5rem] overflow-hidden whitespace-normal break-words rounded-[var(--gh-radius-md)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-elevated)] px-3 py-2 text-center text-xs text-[var(--gh-text-primary)] shadow-sm group-hover:block group-focus-visible:block md:hidden">
                         {label}
                       </span>
                     )}
@@ -216,7 +223,7 @@ export default function GrowNavRail() {
                     {/* Expanded title */}
                     {expanded && (
                       <span
-                        className={`hidden text-xs break-words md:block md:whitespace-normal ${
+                        className={`hidden text-sm break-words md:block md:whitespace-normal ${
                           isActive
                             ? 'font-medium text-[var(--gh-text-primary)]'
                             : 'text-[var(--gh-text-secondary)]'
@@ -268,7 +275,7 @@ export default function GrowNavRail() {
             aria-expanded={expanded}
             aria-controls="grow-toc"
             aria-label={expanded ? 'Collapse table of contents' : 'Expand table of contents'}
-            className="flex h-8 w-8 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none md:h-10 md:w-10"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none md:h-10 md:w-10"
           >
             <List />
           </button>
@@ -278,29 +285,29 @@ export default function GrowNavRail() {
       {/* Mobile TOC modal */}
       {expanded && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 backdrop-blur-sm md:hidden"
           onClick={() => setExpanded(false)}
           role="presentation"
         >
           <div
-            className="w-full max-w-sm rounded-[var(--gh-radius-lg)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)] p-4 shadow-xl"
+            className="w-full max-w-none rounded-[var(--gh-radius-lg)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)] p-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Table of contents"
           >
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-[var(--gh-text-primary)]">Chapters</span>
+              <span className="text-base font-medium text-[var(--gh-text-primary)]">Chapters</span>
               <button
                 type="button"
                 onClick={() => setExpanded(false)}
                 aria-label="Close table of contents"
-                className="flex h-8 w-8 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316]"
+                className="flex h-10 w-10 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316]"
               >
                 <Close />
               </button>
             </div>
-            <ol className="flex max-h-[70vh] flex-col gap-1 overflow-y-auto">
+            <ol className="flex max-h-[80vh] flex-col gap-1 overflow-y-auto">
               {sections.map((section, index) => {
                 const isActive = current === index
                 const label = `${formatNumber(section.number)} · ${section.headline}`
@@ -309,7 +316,7 @@ export default function GrowNavRail() {
                     <a
                       href={`#${section.id}`}
                       onClick={() => setExpanded(false)}
-                      className={`flex items-center gap-2 rounded-[var(--gh-radius-md)] px-2 py-2 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] ${
+                      className={`flex items-center gap-2 rounded-[var(--gh-radius-md)] px-2 py-3 text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] ${
                         isActive
                           ? 'bg-[var(--gh-bg-elevated)] font-medium text-[#f97316]'
                           : 'text-[var(--gh-text-secondary)] hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)]'
