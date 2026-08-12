@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { investorContent } from '@/lib/investorContent'
 import { useAuthGate } from '@/hooks/useAuthGate'
 import { AuthModal } from '@/components/AuthModal'
 import { useGrowSection } from './GrowSectionContext'
@@ -12,9 +11,8 @@ import { useGrowSection } from './GrowSectionContext'
 export default function InvestorProgress() {
   const router = useRouter()
   const t = useTranslations()
-  const { current, setCurrent } = useGrowSection()
+  const { setCurrent } = useGrowSection()
   const { requireAuth, isModalOpen, closeModal } = useAuthGate()
-  const total = investorContent.sections.length
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -59,10 +57,6 @@ export default function InvestorProgress() {
               priority
             />
           </button>
-
-          <span className="font-mono text-[var(--gh-text-secondary)]">
-            {String(current + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
-          </span>
 
           <button
             type="button"
