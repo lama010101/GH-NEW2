@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import { investorContent } from '@/lib/investorContent'
-import InvestorCTA from './InvestorCTA'
 
 export default function Section01Hook() {
   const section = investorContent.sections[0]
@@ -42,7 +41,6 @@ export default function Section01Hook() {
             {statement}
           </p>
         ))}
-        <InvestorCTA actions={['play', 'register']} className="mt-4" />
       </div>
     </section>
   )

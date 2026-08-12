@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import { investorContent } from '@/lib/investorContent'
-import InvestorCTA from './InvestorCTA'
 import StatusBadge from './StatusBadge'
 
 export default function Section03HumanData() {
@@ -63,7 +62,6 @@ export default function Section03HumanData() {
             </p>
           )}
 
-          <InvestorCTA actions={['play', 'register']} />
         </div>
       </div>
     </section>
