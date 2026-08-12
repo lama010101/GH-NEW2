@@ -2,32 +2,20 @@
 -- Scope: Historian's Journey v1 data model
 -- Do NOT run on prod until v1 validated.
 
--- Host-check safety guard: this migration is only safe on the dev project.
+-- Host-check safety guard: this migration is only safe on the dev Supabase project.
 --
--- Investigation found NO structurally reliable, project-identifying signal that is
--- queryable from inside a PostgreSQL DO block:
+-- Per HJ-FIX-MIGRATION-HOSTGUARD-002, NO structurally reliable, project-identifying
+-- signal is queryable from inside a PostgreSQL DO block:
 --   * current_database() returns 'postgres' on every Supabase project.
 --   * current_setting('app.*') / pg_settings contain no project ref.
 --   * pg_extension / pg_proc expose no Supabase project identifier.
 --   * inet_server_addr() is the shared pooler backend and changes with routing.
---   * No prod-only/absent-on-dev table is known without connecting to prod.
 --
--- The guard therefore falls back to a **SOFT** operational marker: the existence of
--- the public._devin_smoke_test table. That table is present in the dev project but
--- is not part of the application schema. Failure modes: if the table is ever created
--- in prod, or if it is dropped in dev, the guard can false-pass or false-block.
--- This is a backstop, not a substitute for connection-string discipline.
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM information_schema.tables
-    WHERE table_schema = 'public'
-      AND table_name = '_devin_smoke_test'
-  ) THEN
-    RAISE EXCEPTION 'Migration abort: dev-only marker table public._devin_smoke_test is missing. This migration is only safe on the dev project (jfggdhsducvjydnejypg).';
-  END IF;
-END $$;
+-- Therefore project verification is done OUTSIDE this file by the caller. This
+-- migration must be invoked only through scripts/migrate-journey-dev.sh, which
+-- parses the connection string (postgres.<project_ref> or db.<project_ref>.supabase.co)
+-- and aborts before invoking psql if the project is not jfggdhsducvjydnejypg.
+-- Do NOT run this file directly with psql against an untrusted connection string.
 
 CREATE TABLE IF NOT EXISTS public.journey_stages (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
