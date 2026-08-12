@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { investorContent } from '@/lib/investorContent'
+import { useGrowSection } from './GrowSectionContext'
 
 export default function InvestorProgress() {
-  const [current, setCurrent] = useState(0)
+  const { current, setCurrent } = useGrowSection()
   const total = investorContent.sections.length
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function InvestorProgress() {
 
     sections.forEach((section) => observer.observe(section))
     return () => observer.disconnect()
-  }, [])
+  }, [setCurrent])
 
   return (
     <header className="fixed top-0 left-0 z-50 w-full border-b border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)]/80 px-6 py-4 text-sm font-medium text-[var(--gh-text-primary)] backdrop-blur-sm">
