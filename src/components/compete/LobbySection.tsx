@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from 'react-dom';
 import { useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
 import { usePlayerFilter } from '@/hooks/usePlayerFilter';
@@ -1301,8 +1302,8 @@ export default function LobbySection({
           )}
 
           {/* All-players modal */}
-          {showAllModal && (
-            <div className={styles['lobbyAllModal']} onClick={() => setShowAllModal(false)}>
+          {showAllModal && createPortal(
+            <div className={styles['lobbyAllModal']} onClick={() => setShowAllModal(false)} role="dialog" aria-modal="true">
               <div className={styles['lobbyAllModalInner']} onClick={(e) => e.stopPropagation()}>
                 <button type="button" className={styles['lobbyAllModalClose']} onClick={() => setShowAllModal(false)}>×</button>
                 <span className={styles['lobby-subsection-title']}>{t('lobby.all_players', { count: priorityList.length })}</span>
@@ -1370,7 +1371,8 @@ export default function LobbySection({
                   })}
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
           {/* Sub-section B: Players roster */}
