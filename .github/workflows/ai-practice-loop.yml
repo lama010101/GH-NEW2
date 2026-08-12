@@ -1,0 +1,31 @@
+name: AI Practice Loop
+
+# Continuous Practice-mode image-health worker.
+# Target: PROD (gzvixlvkwjsrtmtybtkf)
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ai-practice-loop:
+    name: Run active AI players in Practice mode for image-health QA
+    runs-on: ubuntu-latest
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      SUPABASE_DB_CONNECTION: ${{ secrets.SUPABASE_DB_CONNECTION }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run AI practice loop
+        run: npx tsx scripts/ai-players/practice-loop.ts
