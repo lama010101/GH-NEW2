@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getPlayerFrameColor } from "@/core/competeUtils";
 import { toProxiedImageUrl } from "@/lib/imageProxy";
 import styles from './PlayerAvatar.module.css';
@@ -32,6 +32,7 @@ export default function PlayerAvatar({
   disableProfileNavigation = false,
 }: PlayerAvatarProps) {
   const router = useRouter();
+  const pathname = usePathname() ?? '';
   const [imgError, setImgError] = useState(false);
   const initial = initials ?? (displayName || "?")[0].toUpperCase();
   const { color1, color2 } = playerId ? getPlayerFrameColor(playerId) : { color1: 'var(--gh-border-default)', color2: 'var(--gh-border-default)' };
@@ -49,7 +50,7 @@ export default function PlayerAvatar({
     }
     if (!disableProfileNavigation && playerId) {
       e.stopPropagation();
-      router.push(`/profile?playerId=${playerId}`);
+      router.push(`/profile?playerId=${playerId}&returnTo=${encodeURIComponent(pathname)}`);
     }
   };
 

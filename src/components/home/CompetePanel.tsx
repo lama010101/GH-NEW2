@@ -253,12 +253,13 @@ export function CompetePanel({ onLobby, playerId }: {
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>{invite.inviter_name ?? t('game.unknown_player')}</span>
                     <span className={cpStyles.gameSub}>
-                      {invite.mode
-                        ? t('home.compete_invite_meta', {
-                            mode: invite.mode === 'sync' ? t('home.compete_mode_rush') : t('home.compete_mode_relax'),
-                            time: timeAgo(invite.created_at, t),
-                          })
-                        : t('home.compete_invite_sent', { time: timeAgo(invite.created_at, t) })}
+                      {invite.mode && (
+                        <span className={cpStyles.modeBadgeInline}>
+                          {invite.mode === 'sync' ? t('home.compete_mode_rush') : t('home.compete_mode_relax')}
+                        </span>
+                      )}
+                      {' '}
+                      {t('home.compete_invite_sent', { time: timeAgo(invite.created_at, t) })}
                       {invite.mode === 'async' && invite.session_deadline && (
                         <span className={cpStyles.timeRemaining}> · {timeRemaining(invite.session_deadline, t)}</span>
                       )}
