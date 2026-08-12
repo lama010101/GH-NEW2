@@ -22,7 +22,7 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { HelpCircle, Star, TrendingUp, Trophy } from "lucide-react";
+import { HelpCircle, Star, Trophy } from "lucide-react";
 import styles from "./SessionComplete.module.css";
 
 const BADGE_DIMENSIONS: BadgeDimension[] = ["location", "year", "combo"];
@@ -258,17 +258,16 @@ export default function SessionComplete({
     const totalScore = playerResults.reduce((sum, r) => sum + r.score, 0);
     const totalLocationScore = playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0);
     const totalYearScore = playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0);
-    const bestRoundResult = playerResults.reduce((best, r) => (r.score > best.score ? r : best), playerResults[0]);
-    const bestRoundScore = bestRoundResult.score;
-    const bestRoundAccuracy = ((bestRoundResult.locationScore ?? 0) + (bestRoundResult.timeScore ?? 0)) / 2;
+    const bestWhereRoundAccuracy = Math.max(...playerResults.map(r => r.locationScore ?? 0));
+    const bestWhenRoundAccuracy = Math.max(...playerResults.map(r => r.timeScore ?? 0));
+    const bestRoundAccuracy = Math.max(...playerResults.map(r => ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2));
     const avgAccuracy = playerResults.reduce((sum, r) => sum + ((r.locationScore ?? 0) + (r.timeScore ?? 0)) / 2, 0) / playerResults.length;
     const avgLocationAccuracy = playerResults.reduce((sum, r) => sum + (r.locationScore ?? 0), 0) / playerResults.length;
     const avgYearAccuracy = playerResults.reduce((sum, r) => sum + (r.timeScore ?? 0), 0) / playerResults.length;
-    const avgConsistency = playerResults.reduce((sum, r) => sum + Math.min(r.locationScore ?? 0, r.timeScore ?? 0), 0) / playerResults.length;
     const avgDistanceKm = playerResults.reduce((sum, r) => sum + (r.distanceKm ?? 0), 0) / playerResults.length;
     const avgYearDiff = playerResults.reduce((sum, r) => sum + (r.yearDiff ?? 0), 0) / playerResults.length;
 
-    return { totalScore, totalLocationScore, totalYearScore, bestRoundScore, bestRoundAccuracy, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgConsistency, avgDistanceKm, avgYearDiff };
+    return { totalScore, totalLocationScore, totalYearScore, bestWhereRoundAccuracy, bestWhenRoundAccuracy, bestRoundAccuracy, avgAccuracy, avgLocationAccuracy, avgYearAccuracy, avgDistanceKm, avgYearDiff };
   };
 
   // Helper: compute per-round stats for all players
@@ -334,8 +333,6 @@ export default function SessionComplete({
         const overallXP = myStats?.totalScore ?? 0;
         const whereAccuracy = myStats?.avgLocationAccuracy ?? 0;
         const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
-        const avgDistanceKm = myStats?.avgDistanceKm ?? 0;
-        const avgYearDiff = myStats?.avgYearDiff ?? 0;
 
         const roundWinners = new Map<number, string[]>();
         for (let i = 0; i < snapshot.config.totalRounds; i++) {
@@ -430,10 +427,9 @@ export default function SessionComplete({
         };
 
         const mvpCategories: MvpCategory[] = [
-          { key: 'year', label: tGame('mvp_year'), icon: WhenIcon, getValue: (s: MvpPlayer['stats']) => s.avgYearAccuracy },
-          { key: 'location', label: tGame('mvp_location'), icon: WhereIcon, getValue: (s: MvpPlayer['stats']) => s.avgLocationAccuracy },
-          { key: 'consistency', label: tGame('mvp_consistency'), icon: TrendingUp, getValue: (s: MvpPlayer['stats']) => s.avgConsistency },
-          { key: 'bestRound', label: tGame('mvp_best_round'), icon: Trophy, getValue: (s: MvpPlayer['stats']) => s.bestRoundAccuracy },
+          { key: 'whereBest', label: tGame('mvp_where_best'), icon: WhereIcon, getValue: (s: MvpPlayer['stats']) => s.bestWhereRoundAccuracy },
+          { key: 'whenBest', label: tGame('mvp_when_best'), icon: WhenIcon, getValue: (s: MvpPlayer['stats']) => s.bestWhenRoundAccuracy },
+          { key: 'comboBest', label: tGame('mvp_combo_best'), icon: Trophy, getValue: (s: MvpPlayer['stats']) => s.bestRoundAccuracy },
         ];
 
         const mvpAwards = mvpCategories
@@ -449,7 +445,7 @@ export default function SessionComplete({
               return 0;
             });
             const first = sorted[0];
-            const winners = cat.key === 'bestRound'
+            const winners = ['whereBest', 'whenBest', 'comboBest'].includes(cat.key)
               ? sorted.filter((p) => cat.getValue(p.stats) === cat.getValue(first.stats))
               : sorted.filter((p) => (
                   cat.getValue(p.stats) === cat.getValue(first.stats) &&
@@ -569,11 +565,6 @@ export default function SessionComplete({
 
         const eventsSeenCount = myRoundResults.length;
         const countriesCount = new Set(myRoundResults.map(r => r.region).filter(Boolean)).size;
-
-        // Stats
-        const myScores = myRoundResults.map(r => r.score);
-        const bestRoundScore = myScores.length > 0 ? Math.max(...myScores) : 0;
-        const bestRoundIdx = myRoundResults.findIndex(r => r.score === bestRoundScore);
 
         return (
           <>
@@ -788,9 +779,9 @@ export default function SessionComplete({
                     <div key={award.key} className={styles.mvpRow}>
                       <span
                         className={`${styles.mvpDisk} ${
-                          award.key === 'year'
+                          award.key === 'whenBest'
                             ? styles.mvpDiskYear
-                            : award.key === 'location'
+                            : award.key === 'whereBest'
                             ? styles.mvpDiskLocation
                             : styles.mvpDiskOrange
                         }`}
@@ -862,25 +853,17 @@ export default function SessionComplete({
                   <div className={styles.achievementsBody}>
                     <div className={styles.gameStatsGrid}>
                       <div className={styles.gameStatTile}>
-                        <span className={styles.gameStatVal}>{myStats ? formatDistance(avgDistanceKm, distanceUnit) : '—'}</span>
-                        <span className={styles.gameStatLabel}>{tGame('avg_km_away_label')}</span>
+                        <span className={styles.gameStatVal}><WhereIcon size={14} className={styles.statTileIconWhere} /> {myStats ? Math.ceil(myStats.bestWhereRoundAccuracy) : '—'}<AccuracySuffix /></span>
+                        <span className={styles.gameStatLabel}>{tGame('mvp_where_best')}</span>
                       </div>
                       <div className={styles.gameStatTile}>
-                        <span className={styles.gameStatVal}>{myStats ? Math.round(avgYearDiff) : '—'}</span>
-                        <span className={styles.gameStatLabel}>{tGame('avg_yrs_off_label')}</span>
+                        <span className={styles.gameStatVal}><WhenIcon size={14} className={styles.statTileIconWhen} /> {myStats ? Math.ceil(myStats.bestWhenRoundAccuracy) : '—'}<AccuracySuffix /></span>
+                        <span className={styles.gameStatLabel}>{tGame('mvp_when_best')}</span>
                       </div>
-                      {bestRoundIdx >= 0 && (
-                        <div className={styles.gameStatTile}>
-                          <span className={styles.gameStatVal}>{Math.ceil(((myRoundResults[bestRoundIdx].locationScore ?? 0) + (myRoundResults[bestRoundIdx].timeScore ?? 0)) / 2)}</span>
-                          <span className={styles.gameStatLabel}>{tGame('best_round_pct')}</span>
-                        </div>
-                      )}
-                      {bestRoundIdx >= 0 && (
-                        <div className={styles.gameStatTile}>
-                          <span className={styles.gameStatVal}>{bestRoundScore.toLocaleString()}</span>
-                          <span className={styles.gameStatLabel}>{tGame('best_round_xp')}</span>
-                        </div>
-                      )}
+                      <div className={styles.gameStatTile}>
+                        <span className={styles.gameStatVal}><Trophy size={14} style={{ color: 'var(--gh-orange)', marginRight: 4 }} /> {myStats ? Math.ceil(myStats.bestRoundAccuracy) : '—'}<AccuracySuffix /></span>
+                        <span className={styles.gameStatLabel}>{tGame('mvp_combo_best')}</span>
+                      </div>
                     </div>
                   </div>
                 </section>
