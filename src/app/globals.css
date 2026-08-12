@@ -704,6 +704,10 @@ a {
 @media not (prefers-reduced-motion: reduce) {
   html:has([data-grow-snap]) {
     scroll-snap-type: y mandatory;
+    /* Offset the snap start by the fixed InvestorProgress header so each slide
+       snaps into the visible viewport, not behind the header. The value uses
+       rem so it scales with the root font-size clamp below. */
+    scroll-padding-top: 3.5rem;
     /* Scale the entire /grow page proportionally with viewport height so every
        narrative section stays within one full-viewport slide. Rem-based spacing,
        typography, and max-widths all shrink together on short viewports. */
