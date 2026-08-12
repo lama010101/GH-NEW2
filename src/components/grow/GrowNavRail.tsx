@@ -146,81 +146,129 @@ export default function GrowNavRail() {
   const inactiveDotClass =
     'h-2.5 w-2.5 flex-shrink-0 rounded-full border border-current bg-transparent group-hover:bg-[var(--gh-text-secondary)]/30'
 
+  const tocButton = (
+    <button
+      type="button"
+      onClick={() => setExpanded((v) => !v)}
+      aria-expanded={expanded}
+      aria-controls="grow-toc"
+      aria-label={expanded ? 'Collapse table of contents' : 'Expand table of contents'}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none"
+    >
+      <List />
+    </button>
+  )
+
+  const pageNumberDisplay = (
+    <span
+      aria-live="polite"
+      className="flex h-10 min-w-[4.5rem] shrink-0 items-center justify-center rounded-[var(--gh-radius-md)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-elevated)] px-2 font-mono text-sm text-[var(--gh-text-primary)]"
+    >
+      {formatNumber(current + 1)} / {formatNumber(sections.length)}
+    </span>
+  )
+
   return (
     <>
       <nav
         ref={navRef}
         aria-label="Slide chapters"
-        className={`fixed bottom-0 left-0 right-0 z-40 flex h-14 items-center justify-center gap-1 border-t border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)]/80 px-3 backdrop-blur-sm md:left-auto md:right-4 md:top-1/2 md:bottom-auto md:h-auto md:w-12 md:-translate-y-1/2 md:flex-col md:items-center md:justify-center md:rounded-[var(--gh-radius-md)] md:border md:p-2 md:px-0 md:py-2 ${
-          expanded ? 'md:w-96' : ''
-        }`}
+        className="fixed bottom-0 left-0 right-0 z-40 flex h-14 items-center border-t border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)]/80 px-3 backdrop-blur-sm md:left-auto md:right-4 md:top-1/2 md:bottom-auto md:h-auto md:w-12 md:-translate-y-1/2 md:flex-col md:items-center md:justify-center md:rounded-[var(--gh-radius-md)] md:border md:p-2 md:px-0 md:py-2"
       >
-        <div className="flex w-full items-center justify-start gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] md:w-auto md:flex-col md:items-center md:justify-center md:overflow-visible [&::-webkit-scrollbar]:hidden">
-          {/* Beginning */}
+        {/* Mobile bottom bar */}
+        <div className="flex w-full items-center justify-center gap-1 md:hidden">
+          {tocButton}
+
           {current === 0 ? (
             <span className={disabledControlClass} aria-disabled="true" aria-label="Beginning (already on first slide)">
               <StartIcon />
             </span>
           ) : (
-            <a
-              href={`#${sections[0].id}`}
-              className={activeControlClass}
-              aria-label="Go to beginning"
-            >
+            <a href={`#${sections[0].id}`} className={activeControlClass} aria-label="Go to beginning">
               <StartIcon />
             </a>
           )}
 
-          {/* Previous */}
           {prevIndex === null ? (
             <span className={disabledControlClass} aria-disabled="true" aria-label="Previous slide (unavailable)">
               <PrevIcon />
             </span>
           ) : (
-            <a
-              href={sectionHref(prevIndex)}
-              className={activeControlClass}
-              aria-label="Previous slide"
-            >
+            <a href={sectionHref(prevIndex)} className={activeControlClass} aria-label="Previous slide">
               <PrevIcon />
             </a>
           )}
 
-          {/* Section bullets */}
-          <ol className="flex shrink-0 items-center gap-1 md:flex-col md:items-center md:gap-1.5" id="grow-toc">
+          {pageNumberDisplay}
+
+          {nextIndex === null ? (
+            <span className={disabledControlClass} aria-disabled="true" aria-label="Next slide (unavailable)">
+              <NextIcon />
+            </span>
+          ) : (
+            <a href={sectionHref(nextIndex)} className={activeControlClass} aria-label="Next slide">
+              <NextIcon />
+            </a>
+          )}
+
+          {current === sections.length - 1 ? (
+            <span className={disabledControlClass} aria-disabled="true" aria-label="End (already on last slide)">
+              <EndIcon />
+            </span>
+          ) : (
+            <a href={`#${sections[sections.length - 1].id}`} className={activeControlClass} aria-label="Go to end">
+              <EndIcon />
+            </a>
+          )}
+        </div>
+
+        {/* Desktop / tablet vertical rail */}
+        <div className="hidden w-full items-center gap-1 md:flex md:w-auto md:flex-col">
+          {current === 0 ? (
+            <span className={disabledControlClass} aria-disabled="true" aria-label="Beginning (already on first slide)">
+              <StartIcon />
+            </span>
+          ) : (
+            <a href={`#${sections[0].id}`} className={activeControlClass} aria-label="Go to beginning">
+              <StartIcon />
+            </a>
+          )}
+
+          {prevIndex === null ? (
+            <span className={disabledControlClass} aria-disabled="true" aria-label="Previous slide (unavailable)">
+              <PrevIcon />
+            </span>
+          ) : (
+            <a href={sectionHref(prevIndex)} className={activeControlClass} aria-label="Previous slide">
+              <PrevIcon />
+            </a>
+          )}
+
+          <ol className="flex flex-col items-center gap-1.5" id="grow-toc">
             {sections.map((section, index) => {
               const isActive = current === index
               const label = `${formatNumber(section.number)} · ${section.headline}`
               return (
-                <li key={section.id} className="shrink-0 md:w-full">
+                <li key={section.id} className="w-full">
                   <a
                     href={`#${section.id}`}
                     aria-label={label}
                     aria-current={isActive ? 'true' : undefined}
-                    onClick={() => setExpanded(false)}
-                    className={`group relative flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--gh-radius-md)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none md:h-10 md:w-full ${
+                    onClick={() => window.setTimeout(() => setExpanded(false), 0)}
+                    className={`group relative flex h-10 w-full items-center justify-center rounded-[var(--gh-radius-md)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none ${
                       isActive
                         ? 'text-[#f97316]'
                         : 'text-[var(--gh-text-secondary)] hover:text-[var(--gh-text-primary)]'
-                    } ${expanded ? 'md:justify-start md:gap-2 md:px-2' : 'md:justify-center'}`}
+                    } ${expanded ? 'justify-start gap-2 px-2' : 'justify-center'}`}
                   >
                     <span className={isActive ? activeDotClass : inactiveDotClass} />
 
-                    {/* Collapsed title tag - desktop / tablet */}
                     {!expanded && (
                       <span className="pointer-events-none absolute right-full mr-2 top-1/2 z-50 hidden -translate-y-1/2 overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-elevated)] px-2 py-1 text-xs text-[var(--gh-text-primary)] shadow-sm md:max-h-[3em] md:max-w-[calc(100vw-6rem)] md:whitespace-normal md:break-words md:group-hover:block md:group-focus-visible:block lg:max-h-none lg:max-w-[calc(100vw-8rem)] lg:overflow-visible lg:whitespace-nowrap">
                         {label}
                       </span>
                     )}
 
-                    {/* Mobile hover/focus title tag */}
-                    {!expanded && (
-                      <span className="fixed left-4 right-4 bottom-16 z-50 hidden max-h-[4.5rem] overflow-hidden whitespace-normal break-words rounded-[var(--gh-radius-md)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-elevated)] px-3 py-2 text-center text-xs text-[var(--gh-text-primary)] shadow-sm group-hover:block group-focus-visible:block md:hidden">
-                        {label}
-                      </span>
-                    )}
-
-                    {/* Expanded title */}
                     {expanded && (
                       <span
                         className={`hidden text-sm break-words md:block md:whitespace-normal ${
@@ -238,47 +286,27 @@ export default function GrowNavRail() {
             })}
           </ol>
 
-          {/* Next */}
           {nextIndex === null ? (
             <span className={disabledControlClass} aria-disabled="true" aria-label="Next slide (unavailable)">
               <NextIcon />
             </span>
           ) : (
-            <a
-              href={sectionHref(nextIndex)}
-              className={activeControlClass}
-              aria-label="Next slide"
-            >
+            <a href={sectionHref(nextIndex)} className={activeControlClass} aria-label="Next slide">
               <NextIcon />
             </a>
           )}
 
-          {/* End */}
           {current === sections.length - 1 ? (
             <span className={disabledControlClass} aria-disabled="true" aria-label="End (already on last slide)">
               <EndIcon />
             </span>
           ) : (
-            <a
-              href={`#${sections[sections.length - 1].id}`}
-              className={activeControlClass}
-              aria-label="Go to end"
-            >
+            <a href={`#${sections[sections.length - 1].id}`} className={activeControlClass} aria-label="Go to end">
               <EndIcon />
             </a>
           )}
 
-          {/* Expand/collapse TOC */}
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            aria-expanded={expanded}
-            aria-controls="grow-toc"
-            aria-label={expanded ? 'Collapse table of contents' : 'Expand table of contents'}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--gh-radius-md)] text-[var(--gh-text-secondary)] transition-colors hover:bg-[var(--gh-bg-surface)] hover:text-[var(--gh-text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] motion-reduce:transition-none md:h-10 md:w-10"
-          >
-            <List />
-          </button>
+          {tocButton}
         </div>
       </nav>
 
@@ -286,12 +314,15 @@ export default function GrowNavRail() {
       {expanded && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 backdrop-blur-sm md:hidden"
-          onClick={() => setExpanded(false)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setExpanded(false)
+            }
+          }}
           role="presentation"
         >
           <div
             className="w-full max-w-none rounded-[var(--gh-radius-lg)] border border-[var(--gh-border-subtle)] bg-[var(--gh-bg-base)] p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Table of contents"
@@ -315,7 +346,11 @@ export default function GrowNavRail() {
                   <li key={section.id}>
                     <a
                       href={`#${section.id}`}
-                      onClick={() => setExpanded(false)}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        window.location.hash = section.id
+                        setExpanded(false)
+                      }}
                       className={`flex items-center gap-2 rounded-[var(--gh-radius-md)] px-2 py-3 text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] ${
                         isActive
                           ? 'bg-[var(--gh-bg-elevated)] font-medium text-[#f97316]'
