@@ -696,3 +696,88 @@ a {
   border: 1px solid rgba(234, 122, 28, 0.28);
   color: var(--gh-orange);
 }
+
+/* /grow investor deck: native viewport-snapped cinematic slides.
+   The document (html) is the scroll container; each narrative section
+   snaps to the top of the viewport. The footer intentionally has no
+   snap alignment. Reduced-motion users get normal free scrolling. */
+@media not (prefers-reduced-motion: reduce) {
+  html:has([data-grow-snap]) {
+    scroll-snap-type: y mandatory;
+    /* Offset the snap start by the fixed InvestorProgress header so each slide
+       snaps into the visible viewport, not behind the header. The value uses
+       rem so it scales with the root font-size clamp below. */
+    scroll-padding-top: 3.5rem;
+    /* Scale the entire /grow page proportionally with viewport height so every
+       narrative section stays within one full-viewport slide. Rem-based spacing,
+       typography, and max-widths all shrink together on short viewports. */
+    font-size: clamp(7px, 1.35dvh, 16px);
+  }
+  [data-grow-snap] [data-section-id] {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+  /* The page container's end edge coincides with the document end, giving
+     mandatory snapping a valid rest position at the bottom of the page so
+     the footer (which itself has no snap alignment) is fully reachable. */
+  [data-grow-snap] {
+    scroll-snap-align: end;
+  }
+}
+
+/* Ensure every narrative slide fits within exactly one viewport.
+   The html font-size above already scales spacing/typography with height;
+   these rules cap vertical padding, gaps, and media heights. */
+[data-grow-snap] [data-section-id] {
+  padding-top: clamp(0.5rem, 2dvh, 3rem);
+  padding-bottom: clamp(0.5rem, 2dvh, 3rem);
+  max-height: 100dvh;
+}
+[data-grow-snap] [data-section-id] > div,
+[data-grow-snap] [data-section-id] .flex,
+[data-grow-snap] [data-section-id] .grid {
+  gap: clamp(0.25rem, 1dvh, 1rem);
+}
+[data-grow-snap] [data-section-id] div[class*="aspect-"] {
+  max-height: clamp(120px, 32dvh, 380px);
+}
+[data-grow-snap] [data-section-id] .h-32 {
+  max-height: 22dvh;
+}
+[data-grow-snap] [data-section-id] .space-y-3 > * + * {
+  margin-top: clamp(0.25rem, 0.8dvh, 0.75rem);
+}
+[data-grow-snap] [data-section-id] .rounded-\[var\(--gh-radius-md\)\].p-6,
+[data-grow-snap] [data-section-id] .rounded-\[var\(--gh-radius-md\)\].p-5 {
+  padding: clamp(0.5rem, 1.2dvh, 1.25rem);
+}
+
+/* Collapse the tallest mobile layouts to single-viewport height. */
+@media (max-width: 639px) {
+  [data-grow-snap] [data-section-id="evaluation"] .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  [data-grow-snap] [data-section-id="human-ai"] .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+[data-grow-snap] [data-section-id="insight"] div[class*="aspect-"],
+[data-grow-snap] [data-section-id="moat"] div[class*="aspect-"] {
+  max-height: clamp(120px, 22dvh, 260px);
+}
+[data-grow-snap] [data-section-id="moat"] .space-y-3 > * + * {
+  margin-top: clamp(0.125rem, 0.4dvh, 0.5rem);
+}
+[data-grow-snap] [data-section-id="evaluation"] [class*="rounded-"].p-5,
+[data-grow-snap] [data-section-id="evaluation"] [class*="rounded-"].p-6 {
+  padding: clamp(0.25rem, 0.8dvh, 0.75rem);
+}
+[data-grow-snap] [data-section-id] h1,
+[data-grow-snap] [data-section-id] h2,
+[data-grow-snap] [data-section-id] h3 {
+  line-height: 1.1;
+}
+[data-grow-snap] [data-section-id] p,
+[data-grow-snap] [data-section-id] li {
+  line-height: 1.3;
+}
