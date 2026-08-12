@@ -41,7 +41,7 @@ export default function GrowPage() {
   return (
     <main
       data-grow-snap
-      className={`${dmSans.className} min-h-screen bg-[var(--gh-bg-base)] text-[var(--gh-text-primary)]`}
+      className={`${dmSans.className} min-h-screen bg-[var(--gh-bg-base)] pb-16 text-[var(--gh-text-primary)] md:pb-0`}
     >
       <GrowSectionProvider>
         <InvestorProgress />
