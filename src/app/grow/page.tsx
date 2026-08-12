@@ -3,6 +3,8 @@ import { DM_Sans } from 'next/font/google'
 import { investorContent } from '@/lib/investorContent'
 import InvestorFooter from '@/components/grow/InvestorFooter'
 import InvestorProgress from '@/components/grow/InvestorProgress'
+import GrowNavRail from '@/components/grow/GrowNavRail'
+import { GrowSectionProvider } from '@/components/grow/GrowSectionContext'
 import Section01Hook from '@/components/grow/Section01Hook'
 import Section02Game from '@/components/grow/Section02Game'
 import Section03HumanData from '@/components/grow/Section03HumanData'
@@ -41,20 +43,23 @@ export default function GrowPage() {
       data-grow-snap
       className={`${dmSans.className} min-h-screen bg-[var(--gh-bg-base)] text-[var(--gh-text-primary)]`}
     >
-      <InvestorProgress />
-      <Section01Hook />
-      <Section02Game />
-      <Section03HumanData />
-      <Section04HumanVsAI />
-      <Section05Evaluation />
-      <Section06DataMoat />
-      <Section07TestModel />
-      <Section08RecurringRevenue />
-      <Section09BusinessModel />
-      <Section10Flywheel />
-      <Section11Platform />
-      <Section12Investment />
-      <InvestorFooter />
+      <GrowSectionProvider>
+        <InvestorProgress />
+        <GrowNavRail />
+        <Section01Hook />
+        <Section02Game />
+        <Section03HumanData />
+        <Section04HumanVsAI />
+        <Section05Evaluation />
+        <Section06DataMoat />
+        <Section07TestModel />
+        <Section08RecurringRevenue />
+        <Section09BusinessModel />
+        <Section10Flywheel />
+        <Section11Platform />
+        <Section12Investment />
+        <InvestorFooter />
+      </GrowSectionProvider>
     </main>
   )
 }
