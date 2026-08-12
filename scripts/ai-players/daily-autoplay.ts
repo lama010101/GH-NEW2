@@ -164,7 +164,7 @@ async function main(): Promise<void> {
   console.log(`[DAILY] Challenge events: ${eventIds.length}`);
 
   const playersResult = await pool.query<AiPlayer>(
-    "SELECT id, name, provider, model_id FROM ai_players WHERE is_active = true"
+    "SELECT id, name, provider, model_id FROM ai_players WHERE is_active_daily = true"
   );
   const players = playersResult.rows;
   console.log(`[DAILY] Active AI players: ${players.length}`);
