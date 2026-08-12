@@ -1,7 +1,6 @@
 'use client'
 
 import { investorContent } from '@/lib/investorContent'
-import InvestorCTA from './InvestorCTA'
 import StatusBadge from './StatusBadge'
 
 export default function Section05Evaluation() {
@@ -69,7 +68,6 @@ export default function Section05Evaluation() {
           </p>
         )}
 
-        <InvestorCTA actions={['register', 'play']} />
       </div>
     </section>
   )

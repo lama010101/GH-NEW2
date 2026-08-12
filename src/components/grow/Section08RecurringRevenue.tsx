@@ -1,6 +1,7 @@
 'use client'
 
 import { investorContent } from '@/lib/investorContent'
+import StatusBadge from './StatusBadge'
 
 export default function Section08RecurringRevenue() {
   const section = investorContent.sections[7]
@@ -43,16 +44,24 @@ export default function Section08RecurringRevenue() {
           ))}
         </div>
 
-        <div className="h-32 w-full max-w-2xl rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-elevated)] p-4">
-          <div className="flex h-full items-end gap-2">
-            {[40, 55, 48, 70, 65, 82, 78, 90].map((h, i) => (
-              <div
-                key={i}
-                className="w-full rounded-t bg-gradient-to-t from-[var(--gh-blue)] to-[var(--gh-gold)]"
-                style={{ height: `${h}%` }}
-                aria-hidden="true"
-              />
-            ))}
+        <div className="w-full max-w-2xl">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-medium uppercase tracking-wide text-[var(--gh-text-muted)]">
+              Score per model version
+            </span>
+            <StatusBadge status="illustrative" label="ILLUSTRATIVE" />
+          </div>
+          <div className="h-32 w-full rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-elevated)] p-4">
+            <div className="flex h-full items-end gap-2">
+              {[40, 55, 48, 70, 65, 82, 78, 90].map((h, i) => (
+                <div
+                  key={i}
+                  className="w-full rounded-t bg-gradient-to-t from-[var(--gh-blue)] to-[var(--gh-gold)]"
+                  style={{ height: `${h}%` }}
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
           </div>
         </div>
 
