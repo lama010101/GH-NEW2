@@ -245,7 +245,7 @@ async function main(): Promise<void> {
   const pool = getDbPool();
 
   const playersResult = await pool.query<AiPlayer>(
-    "SELECT id, name, provider, model_id FROM ai_players WHERE is_active = true ORDER BY id"
+    "SELECT id, name, provider, model_id FROM ai_players WHERE is_active_practice = true ORDER BY id"
   );
   const players = playersResult.rows;
   console.log(`[PRACTICE] Active AI players: ${players.length}`);
