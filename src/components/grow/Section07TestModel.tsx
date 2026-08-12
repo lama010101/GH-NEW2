@@ -1,7 +1,6 @@
 'use client'
 
 import { investorContent } from '@/lib/investorContent'
-import InvestorCTA from './InvestorCTA'
 import StatusBadge from './StatusBadge'
 
 export default function Section07TestModel() {
@@ -50,14 +49,6 @@ export default function Section07TestModel() {
             </div>
           ))}
 
-          <button
-            type="button"
-            disabled
-            className="mt-2 w-full rounded-[var(--gh-radius-md)] border border-[var(--gh-blue)]/40 bg-[var(--gh-blue)]/10 py-3 text-sm font-semibold text-[var(--gh-blue)]"
-          >
-            RUN BENCHMARK
-          </button>
-
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {section.visual.metrics?.map((metric) => (
               <div key={metric.label} className="flex items-center justify-between rounded bg-[var(--gh-bg-elevated)] px-3 py-2">
@@ -67,8 +58,6 @@ export default function Section07TestModel() {
             ))}
           </div>
         </div>
-
-        <InvestorCTA actions={section.ctas ?? ['test']} />
 
         {section.finalStatement && (
           <p className="text-lg font-medium text-[var(--gh-text-secondary)]">

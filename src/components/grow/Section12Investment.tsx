@@ -1,7 +1,6 @@
 'use client'
 
 import { investorContent } from '@/lib/investorContent'
-import InvestorCTA from './InvestorCTA'
 
 export default function Section12Investment() {
   const section = investorContent.sections[11]
@@ -42,8 +41,6 @@ export default function Section12Investment() {
             </p>
           ))}
         </div>
-
-        <InvestorCTA actions={section.ctas ?? ['register', 'play']} className="mt-4" />
 
         {section.finalStatement && (
           <p className="text-2xl font-medium text-[var(--gh-gold)] md:text-3xl">
