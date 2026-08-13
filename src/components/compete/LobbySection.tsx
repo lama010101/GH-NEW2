@@ -244,6 +244,16 @@ export default function LobbySection({
   const [modalSearchQuery, setModalSearchQuery] = useState('');
   const [presetsExpanded, setPresetsExpanded] = useState(false);
   const [helpModal, setHelpModal] = useState<'settings' | 'friends' | null>(null);
+  const [comingUpId, setComingUpId] = useState<string | null>(null);
+  const comingUpTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (comingUpTimeoutRef.current) {
+        clearTimeout(comingUpTimeoutRef.current);
+      }
+    };
+  }, []);
 
   /* ── Settings tab UI state ── */
   // Tab is derived from the authoritative snapshot.config.mode (single source of truth).
@@ -655,6 +665,17 @@ export default function LobbySection({
       }, 3000);
     }
   };
+
+  const handleAiComingUp = useCallback((player: PlayerPoolEntry) => {
+    if (comingUpTimeoutRef.current) {
+      clearTimeout(comingUpTimeoutRef.current);
+    }
+    setComingUpId(player.id);
+    comingUpTimeoutRef.current = setTimeout(() => {
+      setComingUpId(null);
+      comingUpTimeoutRef.current = null;
+    }, 2000);
+  }, []);
 
   const handleShareLink = async () => {
     try {
@@ -1248,12 +1269,12 @@ export default function LobbySection({
                       </div>
                       <button
                         type="button"
-                        className={styles['lobbyInviteBtn']}
-                        onClick={() => handleSendInvite(player)}
-                        disabled={player.is_ai || inviteState !== 'idle'}
+                        className={`${styles['lobbyInviteBtn']} ${player.is_ai && comingUpId === player.id ? styles['lobbyInviteBtnComingUp'] : ''}`}
+                        onClick={() => player.is_ai ? handleAiComingUp(player) : handleSendInvite(player)}
+                        disabled={!player.is_ai && inviteState !== 'idle'}
                       >
                         {player.is_ai
-                          ? t('leaderboard.filter_ai')
+                          ? (comingUpId === player.id ? t('lobby.ai_coming_up') : t('leaderboard.filter_ai'))
                           : inviteState === 'pending'
                             ? t('lobby.invite_pending')
                             : inviteState === 'sent'
@@ -1334,12 +1355,12 @@ export default function LobbySection({
                         </div>
                         <button
                           type="button"
-                          className={styles['lobbyInviteBtn']}
-                          onClick={() => handleSendInvite(player)}
-                          disabled={player.is_ai || inviteState !== 'idle'}
+                          className={`${styles['lobbyInviteBtn']} ${player.is_ai && comingUpId === player.id ? styles['lobbyInviteBtnComingUp'] : ''}`}
+                          onClick={() => player.is_ai ? handleAiComingUp(player) : handleSendInvite(player)}
+                          disabled={!player.is_ai && inviteState !== 'idle'}
                         >
                           {player.is_ai
-                            ? t('leaderboard.filter_ai')
+                            ? (comingUpId === player.id ? t('lobby.ai_coming_up') : t('leaderboard.filter_ai'))
                             : inviteState === 'pending'
                               ? t('lobby.invite_pending')
                               : inviteState === 'sent'
