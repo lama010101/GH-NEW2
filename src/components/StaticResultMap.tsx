@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, AttributionControl, Marker, Polyline, Tooltip, useMap } from "react-leaflet";
 import * as L from "leaflet";
 import { toProxiedImageUrl } from "@/lib/imageProxy";
 import "leaflet/dist/leaflet.css";
@@ -140,12 +140,14 @@ export function StaticResultMap({
       boxZoom={false}
       touchZoom={false}
       keyboard={false}
+      attributionControl={false}
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
-      
+      <AttributionControl prefix={false} position="bottomright" />
+
       <MapController
         correctLat={correctLat}
         correctLng={correctLng}
