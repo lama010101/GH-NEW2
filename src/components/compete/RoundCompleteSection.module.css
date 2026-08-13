@@ -214,25 +214,6 @@
   min-height: 32px;
 }
 
-/* Mini XP — value + label */
-.miniXp {
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
-}
-
-.miniXpVal {
-  font-size: var(--font-xs);
-  font-weight: 400;
-  color: var(--gh-text-primary);
-}
-
-.miniXpLabel {
-  font-size: var(--font-2xs);
-  font-weight: 400;
-  color: var(--gh-text-primary);
-}
-
 /* ── Round leaderboard card ── */
 
 .leaderboardCard {
@@ -378,21 +359,6 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-}
-
-.lbYouTag {
-  color: var(--gh-text-muted);
-  font-size: 12px; /* layout-constrained — do not tokenize */
-  margin-left: 4px;
-}
-
-.lbYouPill {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--gh-orange);
-  background: var(--gh-glow-orange);
-  padding: 1px 7px;
-  border-radius: 999px;
 }
 
 .lbNoGuessTag {

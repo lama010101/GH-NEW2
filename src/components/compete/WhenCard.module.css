@@ -256,12 +256,6 @@
   gap: 12px;
 }
 
-.lbYouTag {
-  color: var(--gh-text-muted);
-  font-size: 12px; /* layout-constrained — do not tokenize */
-  margin-left: 4px;
-}
-
 .lbYearsOff {
   color: var(--gh-text-secondary);
   font-size: 12px; /* layout-constrained — do not tokenize */
