@@ -254,12 +254,6 @@
   font-size: var(--font-sm);
 }
 
-.lbYouTag {
-  color: var(--gh-text-muted);
-  font-size: 12px; /* layout-constrained — do not tokenize */
-  margin-left: 4px;
-}
-
 .lbDistance {
   color: var(--gh-text-secondary);
   font-size: var(--font-xs);

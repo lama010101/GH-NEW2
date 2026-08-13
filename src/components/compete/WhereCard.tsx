@@ -22,6 +22,7 @@ interface Hint {
   type: string;
   tier: number;
   content: string;
+  metadata?: Record<string, unknown> | null;
 }
 
 interface WhereCardProps {
@@ -232,7 +233,6 @@ export default function WhereCard({
                       <span style={{ ...getUsernameGradientStyle(r.playerId), fontWeight: r.playerId === playerId ? 600 : 400 }}>
                         {snapshotPlayers.find(p => p.playerId === r.playerId)?.displayName || r.playerId.slice(0, 8)}
                       </span>
-                      {r.playerId === playerId && <span className={styles.lbYouTag}>({t('you')})</span>}
                     </span>
                     <span className={styles.lbDistance}>
                       {distanceKm != null ? t('km_away', { distance: formatDistance(distanceKm, distanceUnit) }) : "—"}
@@ -284,18 +284,25 @@ export default function WhereCard({
                 1: t('hint_continent'), 2: t('hint_remote_landmark'), 3: t('hint_region'),
                 4: t('hint_nearby_landmark'), 5: t('hint_visual_clues')
               };
-              return whereHints.map((hint, idx) => (
-                <div key={hint.id} className={`${styles.hintRow} ${idx < whereHints.length - 1 ? styles.hintRowDivider : ""}`}>
-                  <div className={styles.hintTierLabel}>
-                    <span className={styles.hintTierText}>
-                      {labelMap[hint.tier] ?? t('tier_n', { n: hint.tier })}
-                    </span>
+              return whereHints.map((hint, idx) => {
+                const meta = hint.metadata as { km?: number; years?: number | string } | null;
+                let revealedText = hint.content;
+                if (hint.type === "where" && (hint.tier === 2 || hint.tier === 4) && meta?.km != null) {
+                  revealedText = `${hint.content} • ${t('km_away_short', { distance: formatDistance(meta.km, distanceUnit) })}`;
+                }
+                return (
+                  <div key={hint.id} className={`${styles.hintRow} ${idx < whereHints.length - 1 ? styles.hintRowDivider : ""}`}>
+                    <div className={styles.hintTierLabel}>
+                      <span className={styles.hintTierText}>
+                        {labelMap[hint.tier] ?? t('tier_n', { n: hint.tier })}
+                      </span>
+                    </div>
+                    <div className={styles.hintContent}>
+                      {revealedText}
+                    </div>
                   </div>
-                  <div className={styles.hintContent}>
-                    {hint.content}
-                  </div>
-                </div>
-              ));
+                );
+              });
             })()}
           </div>
         )}

@@ -427,12 +427,6 @@ export default function RoundCompleteSection({
                     const color = getAccuracyColor(locScore);
                     return <MiniRing value={locScore} color={color} />;
                   })()}
-                  <div className={styles.miniXp}>
-                    <span className={styles.miniXpVal} style={!submitted ? { color: 'var(--gh-text-muted)' } : undefined}>
-                      {submitted ? `+${Math.round(myResult?.locationScore ?? 0)}` : '—'}
-                    </span>
-                    {submitted && <span className={styles.miniXpLabel}>{t('xp_unit')}</span>}
-                  </div>
                   <div className={styles.miniBadges}>
                     {(() => {
                       const badge = myResult?.badges?.find(b => b.dimension === 'location');
@@ -466,12 +460,6 @@ export default function RoundCompleteSection({
                     const color = getAccuracyColor(timeScore);
                     return <MiniRing value={timeScore} color={color} />;
                   })()}
-                  <div className={styles.miniXp}>
-                    <span className={styles.miniXpVal} style={!submitted ? { color: 'var(--gh-text-muted)' } : undefined}>
-                      {submitted ? `+${Math.round(myResult?.timeScore ?? 0)}` : '—'}
-                    </span>
-                    {submitted && <span className={styles.miniXpLabel}>{t('xp_unit')}</span>}
-                  </div>
                   <div className={styles.miniBadges}>
                     {(() => {
                       const badge = myResult?.badges?.find(b => b.dimension === 'year');
@@ -541,7 +529,6 @@ export default function RoundCompleteSection({
                           {row.displayName}
                         </span>
                       </span>
-                      {row.isMe && <span className={styles.lbYouPill}>{t('you')}</span>}
                       {isThisRoundNoGuess && <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>}
                     </span>
                     {isThisRoundNoGuess ? (
@@ -570,7 +557,6 @@ export default function RoundCompleteSection({
                             {p.displayName || p.playerId.slice(0, 8)}
                           </span>
                         </span>
-                        {isMe && <span className={styles.lbYouPill}>{t('you')}</span>}
                         <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>
                       </span>
                       <span className={styles.lbAccEmpty}>—</span>
