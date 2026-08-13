@@ -132,7 +132,7 @@ export function StaticResultMap({
     <MapContainer
       center={correctLL}
       zoom={5}
-      style={{ width: "100%", height: "220px", borderRadius: "4px" }}
+      style={{ width: "100%", height: "100%", borderRadius: "4px" }}
       dragging={false}
       zoomControl={false}
       scrollWheelZoom={false}
