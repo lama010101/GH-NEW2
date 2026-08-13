@@ -1252,17 +1252,15 @@ export default function LobbySection({
                     <div key={player.id} className={styles['lobbyPlayerCard']}>
                       <div className={styles['lobbyAvatarWrap']}>
                         <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} playerId={player.id} size={40} isMe={player.id === viewerId} />
-                        {!player.is_ai && (
-                          <button
-                            className={styles['lobbyStarBtn']}
-                            onClick={() => toggleFollow(player.id)}
-                            aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
-                          >
-                            <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
-                              {followedIds.has(player.id) ? '★' : '☆'}
-                            </span>
-                          </button>
-                        )}
+                        <button
+                          className={styles['lobbyStarBtn']}
+                          onClick={() => toggleFollow(player.id)}
+                          aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
+                        >
+                          <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
+                            {followedIds.has(player.id) ? '★' : '☆'}
+                          </span>
+                        </button>
                       </div>
                       <div className={styles['lobbyPlayerCardName']}>
                         <span className={styles['lobbyPlayerCardNameText']}>{player.displayName}</span>
@@ -1338,17 +1336,15 @@ export default function LobbySection({
                       <div key={player.id} className={styles['lobbyPlayerCard']}>
                         <div className={styles['lobbyAvatarWrap']}>
                           <PlayerAvatar avatarUrl={player.avatarUrl} displayName={player.displayName} playerId={player.id} size={40} isMe={player.id === viewerId} />
-                          {!player.is_ai && (
-                            <button
-                              className={styles['lobbyStarBtn']}
-                              onClick={() => toggleFollow(player.id)}
-                              aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
-                            >
-                              <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
-                                {followedIds.has(player.id) ? '★' : '☆'}
-                              </span>
-                            </button>
-                          )}
+                          <button
+                            className={styles['lobbyStarBtn']}
+                            onClick={() => toggleFollow(player.id)}
+                            aria-label={followedIds.has(player.id) ? t('lobby.remove_from_favorites') : t('lobby.add_to_favorites')}
+                          >
+                            <span style={{ color: followedIds.has(player.id) ? 'var(--gh-gold)' : 'var(--gh-text-muted)' }}>
+                              {followedIds.has(player.id) ? '★' : '☆'}
+                            </span>
+                          </button>
                         </div>
                         <div className={styles['lobbyPlayerCardName']}>
                           <span className={styles['lobbyPlayerCardNameText']}>{player.displayName}</span>
