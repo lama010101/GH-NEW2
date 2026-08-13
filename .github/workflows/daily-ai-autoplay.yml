@@ -9,6 +9,7 @@ jobs:
   daily-autoplay:
     name: Run active AI players against today's Daily challenge
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       SUPABASE_DB_CONNECTION: ${{ secrets.SUPABASE_DB_CONNECTION }}
