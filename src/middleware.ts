@@ -47,7 +47,7 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
-function isAdminEmail(email: string | undefined): boolean {
+export function isAdminEmail(email: string | undefined): boolean {
   if (!email) return false;
   const allowlist = (process.env.ADMIN_EMAILS || "laurent.martenot@gmail.com,lama010101@gmail.com,emartin6867@gmail.com")
     .split(",")

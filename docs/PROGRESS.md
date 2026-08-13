@@ -1,6 +1,9 @@
 # GUESS-HISTORY — Implementation Progress
 
+| AIP-FIX-ADMINROUTE-ROLEGATE-001 | IN-REVIEW | src/middleware.ts, src/app/admin/openrouter/actions.ts, docs/PROGRESS.md | Exported `isAdminEmail()` from `src/middleware.ts` and added an admin-email check to `toggleAiPlayerMode`; non-admin authenticated users can no longer invoke the server action. `/admin/openrouter` page render already gated by `isAdminEmail` via `/admin/**` middleware. `npx tsc --noEmit` 0 errors; `npx next lint` exit 0 (pre-existing warnings only); `npm run build` completed successfully. | 2026-08-13 |
+
 | MAP-FIX-AVATAR-EAST180-001 | DONE | src/components/GameMap.tsx, docs/PROGRESS.md | Added `worldCopyJump={true}` to the Leaflet `MapContainer` so map view recenters within the base [-180, 180] world on pan-end, keeping avatar markers visible for clicks east of +180. Merged to main with Playwright smoke test passing. | 2026-08-13 |
+
 | MP-BUILD-BESTAXIS-CARDS-001 | DONE | src/components/compete/SessionComplete.tsx, src/i18n/en.json | Per-round best Where/When/Combo cards on SessionComplete. | 2026-08-13 |
 
 | AIP-FIX-ADMINACTIONS-AUTHCHECK-001 | IN-REVIEW | src/app/admin/openrouter/actions.ts, docs/PROGRESS.md | Added an explicit `createAuthenticatedServerClient()` + `auth.getSession()` check at the top of `toggleAiPlayerMode`; if no session, the server action throws `Error("Unauthorized")` before running the `UPDATE` against `ai_players` via the service-role pool. `npx tsc --noEmit` 0 errors; `npx next lint` 0 errors (pre-existing warnings only); Playwright smoke test confirmed authenticated click flips `is_active_practice` and unauthenticated/cleared-cookie request (HTTP 307 redirect) leaves the DB value unchanged. `ModeToggle.tsx` does not wrap the server-action call in error handling, so an expired-session click may surface a Next.js error overlay rather than a graceful UI message. |
