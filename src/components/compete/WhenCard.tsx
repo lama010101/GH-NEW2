@@ -49,6 +49,12 @@ export default function WhenCard({
   isPractice = false,
 }: WhenCardProps) {
   const t = useTranslations('game');
+
+  const LABEL_PROXIMITY_PCT = 8;
+  const LABEL_STEP_PX = 22;
+  const LABEL_BASE_ABOVE_PX = 44;
+  const MAX_VISIBLE = 4;
+
   // Compute whenRows
   const whenRows = snapshotPlayers
     .map(p => {
@@ -94,6 +100,137 @@ export default function WhenCard({
     if (row.guessYear != null) {
       yearCounts.set(row.guessYear, (yearCounts.get(row.guessYear) || 0) + 1);
     }
+  });
+
+  // Build stacked year-label layer
+  const correctLabelX = Math.max(4, Math.min(96, correctXPercent));
+
+  const yearGroups = (() => {
+    const map = new Map<number, { year: number; xPercent: number; playerIds: string[] }>();
+    whenRows.forEach(row => {
+      if (row.guessYear == null || !hasSubmitted(row)) return;
+      const year = row.guessYear;
+      let g = map.get(year);
+      if (!g) {
+        const xPercent = ((year - timelineMin) / timelineRange) * 100;
+        const clampedXPercent = Math.max(4, Math.min(96, xPercent));
+        g = { year, xPercent: clampedXPercent, playerIds: [] };
+        map.set(year, g);
+      }
+      g.playerIds.push(row.playerId);
+    });
+    return Array.from(map.values()).map(g => ({
+      ...g,
+      maxOffset: (g.playerIds.length - 1) * LABEL_STEP_PX,
+    }));
+  })();
+
+  type LabelNode = {
+    id: string;
+    year: number;
+    xPercent: number;
+    maxOffset: number;
+    isCorrect: boolean;
+    level: number;
+    hidden: boolean;
+  };
+
+  const labelNodes: LabelNode[] = (() => {
+    const nodes: LabelNode[] = [
+      {
+        id: 'correct',
+        year: correctYear,
+        xPercent: correctLabelX,
+        maxOffset: 0,
+        isCorrect: true,
+        level: 0,
+        hidden: false,
+      },
+      ...yearGroups.map(g => ({
+        id: `year-${g.year}`,
+        year: g.year,
+        xPercent: g.xPercent,
+        maxOffset: g.maxOffset,
+        isCorrect: false,
+        level: 0,
+        hidden: false,
+      })),
+    ].sort((a, b) => a.xPercent - b.xPercent);
+
+    const placed: LabelNode[] = [];
+    for (const node of nodes) {
+      const used = new Set<number>();
+      if (!node.isCorrect && Math.abs(node.xPercent - correctLabelX) <= LABEL_PROXIMITY_PCT) {
+        used.add(0);
+      }
+      for (const p of placed) {
+        if (Math.abs(p.xPercent - node.xPercent) <= LABEL_PROXIMITY_PCT) {
+          used.add(p.level);
+        }
+      }
+      let level = 0;
+      while (used.has(level)) level++;
+      placed.push({ ...node, level, hidden: level >= MAX_VISIBLE });
+    }
+    return placed;
+  })();
+
+  const labelClusters = labelNodes.reduce<
+    { nodes: LabelNode[]; hidden: LabelNode[]; visible: LabelNode[]; maxOffset: number }[]
+  >((acc, node) => {
+    const last = acc[acc.length - 1];
+    if (
+      last &&
+      Math.abs(node.xPercent - last.nodes[last.nodes.length - 1].xPercent) <= LABEL_PROXIMITY_PCT
+    ) {
+      last.nodes.push(node);
+      if (node.hidden) {
+        last.hidden.push(node);
+      } else {
+        last.visible.push(node);
+      }
+      last.maxOffset = Math.max(last.maxOffset, node.maxOffset);
+    } else {
+      acc.push({
+        nodes: [node],
+        hidden: node.hidden ? [node] : [],
+        visible: node.hidden ? [] : [node],
+        maxOffset: node.maxOffset,
+      });
+    }
+    return acc;
+  }, []);
+
+  const yearLabelLayer = labelClusters.flatMap((cluster, clusterIdx) => {
+    const visible = cluster.visible
+      .filter(n => !n.isCorrect)
+      .map(node => (
+        <div
+          key={node.id}
+          className={styles.playerYearClusterLabel}
+          style={{
+            left: `${node.xPercent}%`,
+            top: `calc(50% - ${LABEL_BASE_ABOVE_PX + node.maxOffset + node.level * LABEL_STEP_PX}px)`,
+          }}
+        >
+          {node.year}
+        </div>
+      ));
+    if (cluster.hidden.length === 0) return visible;
+    const avgX = cluster.hidden.reduce((sum, n) => sum + n.xPercent, 0) / cluster.hidden.length;
+    return [
+      ...visible,
+      <div
+        key={`more-${clusterIdx}`}
+        className={styles.playerYearClusterLabelMore}
+        style={{
+          left: `${avgX}%`,
+          top: `calc(50% - ${LABEL_BASE_ABOVE_PX + cluster.maxOffset + MAX_VISIBLE * LABEL_STEP_PX}px)`,
+        }}
+      >
+        +{cluster.hidden.length} more
+      </div>,
+    ];
   });
 
   return (
@@ -222,15 +359,15 @@ export default function WhenCard({
                   isMe={row.isMe}
                 />
               </div>
-              <div
-                className={styles.playerYearLabel}
-                style={{ fontSize: row.isMe ? 15 : 10, fontWeight: row.isMe ? 700 : 400 }}
-              >
-                {row.guessYear}
-              </div>
+
             </div>
           );
         })}
+
+        {/* Player year label layer */}
+        <div className={styles.playerYearLabels}>
+          {yearLabelLayer}
+        </div>
       </div>
 
       {/* Leaderboard expandable */}
