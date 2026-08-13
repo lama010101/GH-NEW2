@@ -2565,12 +2565,19 @@ export async function kickCompetePlayer(input: KickCompetePlayerInput): Promise<
     );
 
     // Cancel any pending invitation for the kicked player so it disappears
-    // from their Home page pending-invitation list.
+    // from their Home page pending-invitation list, and mark the corresponding
+    // in-app notification(s) as read.
     await client.query(
       `UPDATE game_invitations
        SET status = 'cancelled'
        WHERE game_id = $1 AND invitee_id = $2 AND status = 'pending'`,
       [gameId, targetPlayerId]
+    );
+    await client.query(
+      `UPDATE notifications
+       SET read = true
+       WHERE user_id = $1 AND type = 'lobby_invite' AND payload->>'game_id' = $2`,
+      [targetPlayerId, gameId]
     );
 
     // Auto-unfavorite: remove the kicked player from the host's follows.
