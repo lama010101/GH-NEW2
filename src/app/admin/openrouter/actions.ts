@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { isAdminEmail } from "@/middleware";
 import { getDbPool } from "@/server/db";
 
 export async function toggleAiPlayerMode(
@@ -14,7 +15,7 @@ export async function toggleAiPlayerMode(
     data: { session },
   } = await authSupabase.auth.getSession();
 
-  if (!session) {
+  if (!session || !isAdminEmail(session.user.email)) {
     throw new Error("Unauthorized");
   }
 
