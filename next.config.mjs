@@ -1,4 +1,9 @@
 import createNextIntlPlugin from 'next-intl/plugin';
+import { injectServiceWorkerVersion } from './scripts/inject-sw-version.mjs';
+
+if (process.env.NODE_ENV === 'production') {
+  injectServiceWorkerVersion();
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -14,6 +19,14 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Expires', value: '0' },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [
