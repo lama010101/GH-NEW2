@@ -1,5 +1,7 @@
 # GUESS-HISTORY — Implementation Progress
 
+| MP-BUILD-SW-LIFECYCLE-PUSHPREP-001 | IN-REVIEW | public/sw.js, scripts/inject-sw-version.mjs, next.config.mjs, src/components/ServiceWorkerRegistration.tsx, src/app/layout.tsx | Replaced kill-switch SW with a persistent, versioned SW (skipWaiting, clients.claim, old-cache cleanup, network-first for nav/API, stale-while-revalidate for static assets, inert push/notificationclick placeholders). Added build-time version injection (VERCEL_GIT_COMMIT_SHA preferred, content-hash fallback), Cache-Control no-cache for /sw.js, and a production-only client registration component that listens for controllerchange without auto-reload. `npx tsc --noEmit` 0 errors; `npx next lint` exit 0 (pre-existing warnings only); SW lifecycle update simulation passed (old -> new version without manual reload); daily and practice Playwright golden paths passed, sync/relax lobby-shell timeouts appear unrelated to SW (SW is dev-disabled; PartyKit/lobby-shell issue needs separate follow-up). | 2026-08-13 |
+
 | MAP-FIX-AVATAR-EAST180-001 | DONE | src/components/GameMap.tsx, docs/PROGRESS.md | Added `worldCopyJump={true}` to the Leaflet `MapContainer` so map view recenters within the base [-180, 180] world on pan-end, keeping avatar markers visible for clicks east of +180. Merged to main with Playwright smoke test passing. | 2026-08-13 |
 | MP-BUILD-BESTAXIS-CARDS-001 | DONE | src/components/compete/SessionComplete.tsx, src/i18n/en.json | Per-round best Where/When/Combo cards on SessionComplete. | 2026-08-13 |
 
