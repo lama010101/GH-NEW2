@@ -148,6 +148,7 @@ class GameMapInner extends Component<GameMapProps, GameMapState> {
             style={{ width: "100%", height: "100%" }}
             zoomControl={!this.props.hideZoomControls}
             scrollWheelZoom={true}
+            worldCopyJump={true}
           >
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
