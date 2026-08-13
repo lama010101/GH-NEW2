@@ -64,6 +64,37 @@ function TrashIcon() {
   )
 }
 
+export async function acceptInvitation(invitationId: string) {
+  await supabaseBrowser
+    .from('game_invitations')
+    .update({ status: 'accepted' })
+    .eq('id', invitationId)
+}
+
+export async function declineInvitation(invitationId: string, playerId: string) {
+  await supabaseBrowser
+    .from('game_invitations')
+    .update({ status: 'declined' })
+    .eq('id', invitationId)
+    .eq('invitee_id', playerId)
+}
+
+async function markNotificationReadByInvitationId(invitationId: string) {
+  const res = await fetch('/api/notifications')
+  if (!res.ok) return
+  const data = await res.json()
+  const match = (data.notifications ?? []).find(
+    (n: { id: string; payload?: { invitation_id?: string } }) =>
+      n.payload?.invitation_id === invitationId
+  )
+  if (!match) return
+  await fetch('/api/notifications', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: [match.id] })
+  })
+}
+
 export function CompetePanel({ onLobby, playerId }: {
   onLobby: (gameId: string) => void
   playerId: string
@@ -163,34 +194,14 @@ export function CompetePanel({ onLobby, playerId }: {
   }, [playerId, fetchInvites])
 
   const handleAccept = async (inviteId: string, gameId: string) => {
-    await supabaseBrowser
-      .from('game_invitations')
-      .update({ status: 'accepted' })
-      .eq('id', inviteId)
-    const res = await fetch('/api/notifications')
-    if (res.ok) {
-      const data = await res.json()
-      const match = (data.notifications ?? []).find(
-        (n: { payload?: { game_id?: string }; id: string }) =>
-          n.payload?.game_id === gameId
-      )
-      if (match) {
-        await fetch('/api/notifications', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: [match.id] })
-        })
-      }
-    }
+    await acceptInvitation(inviteId)
+    await markNotificationReadByInvitationId(inviteId)
     onLobby(gameId)
   }
 
   const handleDecline = async (inviteId: string) => {
-    await supabaseBrowser
-      .from('game_invitations')
-      .update({ status: 'declined' })
-      .eq('id', inviteId)
-      .eq('invitee_id', playerId)
+    await declineInvitation(inviteId, playerId)
+    await markNotificationReadByInvitationId(inviteId)
     setInvites(prev => prev.filter(i => i.id !== inviteId))
   }
 
