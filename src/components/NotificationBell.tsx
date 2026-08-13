@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { acceptInvitation } from '@/components/home/CompetePanel';
 import styles from './NotificationBell.module.css';
 
 interface NotificationBellProps {
@@ -29,25 +30,29 @@ function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) 
 function NotificationItem({
   notification,
   onClose,
+  onMarkRead,
 }: {
   notification: Notification;
   onClose: () => void;
+  onMarkRead: (id: string) => void;
 }) {
   const router = useRouter();
   const t = useTranslations('notifications');
   const tHome = useTranslations('home');
+  const itemClass = `${styles.notifItem} ${notification.read ? styles.read : styles.unread}`;
 
   if (notification.type === 'lobby_invite') {
     const inviterName = (notification.payload.inviter_name as string) ?? t('someone');
     const gameId = notification.payload.game_id as string;
+    const invitationId = notification.payload.invitation_id as string;
     const mode = notification.payload.mode as ('sync' | 'async' | undefined);
     const modeLabel = mode
       ? (mode === 'sync' ? tHome('compete_mode_rush') : tHome('compete_mode_relax'))
       : null;
 
     return (
-      <div className={styles.notifItem}>
-        {notification.read === false && <span className={styles.unreadDot} />}
+      <div className={itemClass}>
+        {!notification.read && <span className={styles.unreadDot} />}
         <div className={styles.notifBody}>
           <div className={styles.notifText}>
             {modeLabel ? `${inviterName} · ${modeLabel}` : inviterName}
@@ -56,7 +61,11 @@ function NotificationItem({
           <button
             type="button"
             className={styles.joinBtn}
-            onClick={() => {
+            onClick={async () => {
+              if (invitationId) {
+                await acceptInvitation(invitationId);
+              }
+              onMarkRead(notification.id);
               router.push(`/compete/${gameId}`);
               onClose();
             }}
@@ -73,8 +82,8 @@ function NotificationItem({
     const gameId = notification.payload.game_id as string;
 
     return (
-      <div className={styles.notifItem}>
-        {notification.read === false && <span className={styles.unreadDot} />}
+      <div className={itemClass}>
+        {!notification.read && <span className={styles.unreadDot} />}
         <div className={styles.notifBody}>
           <div className={styles.notifText}>
             {t('session_complete', { name: completerName })}
@@ -84,6 +93,7 @@ function NotificationItem({
             type="button"
             className={styles.joinBtn}
             onClick={() => {
+              onMarkRead(notification.id);
               router.push(`/compete/${gameId}`);
               onClose();
             }}
@@ -96,8 +106,8 @@ function NotificationItem({
   }
 
   return (
-    <div className={styles.notifItem}>
-      {notification.read === false && <span className={styles.unreadDot} />}
+    <div className={itemClass} onClick={() => onMarkRead(notification.id)} role="button" tabIndex={0}>
+      {!notification.read && <span className={styles.unreadDot} />}
       <div className={styles.notifBody}>
         <div className={styles.notifText}>{notification.type}</div>
         <div className={styles.notifTime}>{timeAgo(notification.created_at, t)}</div>
@@ -126,18 +136,18 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
     }
   }
 
-  async function markAsRead() {
-    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
-    if (unreadIds.length === 0) return;
+  async function markOneRead(id: string) {
+    const target = notifications.find((n) => n.id === id);
+    if (!target || target.read) return;
     try {
       const res = await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: unreadIds }),
+        body: JSON.stringify({ ids: [id] }),
       });
       if (res.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setUnreadCount(0);
+        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch {
       // ignore mark-as-read errors
@@ -164,12 +174,7 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
   }, []);
 
   function toggleOpen() {
-    if (!open) {
-      setOpen(true);
-    } else {
-      markAsRead();
-      setOpen(false);
-    }
+    setOpen((prev) => !prev);
   }
 
   const showBell = !onlyShowWhenUnread || unreadCount > 0;
@@ -201,16 +206,16 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
         <div className={styles.drawer}>
           <div className={styles.drawerHeader}>
             <span>{t('title')}</span>
-            <button type="button" onClick={() => toggleOpen()}>
+            <button type="button" onClick={() => setOpen(false)}>
               ✕
             </button>
           </div>
           <div className={styles.drawerList}>
-            {notifications.filter(n => !n.read).length === 0 && (
+            {notifications.length === 0 && (
               <div className={styles.empty}>{t('empty')}</div>
             )}
-            {notifications.filter(n => !n.read).map((n) => (
-              <NotificationItem key={n.id} notification={n} onClose={() => toggleOpen()} />
+            {notifications.map((n) => (
+              <NotificationItem key={n.id} notification={n} onClose={() => setOpen(false)} onMarkRead={markOneRead} />
             ))}
           </div>
         </div>
