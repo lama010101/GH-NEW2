@@ -295,6 +295,14 @@
   cursor: not-allowed;
 }
 
+.lobbyInviteBtnComingUp,
+.lobbyInviteBtnComingUp:hover:not(:disabled) {
+  background: var(--gh-bg-elevated);
+  color: var(--gh-gold);
+  border-color: var(--gh-gold);
+  cursor: default;
+}
+
 /* ── Avatar wrap for star button positioning ── */
 .lobbyAvatarWrap {
   position: relative;
