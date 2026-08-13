@@ -172,7 +172,7 @@ export default function LobbySection({
   const router = useRouter();
   const t = useTranslations();
   const tGame = useTranslations('game');
-  const { filter, toggleHumans, toggleAi, toggleFriends } = usePlayerFilter({ humans: true, ai: true, friends: true });
+  const { filter, toggleHumans, toggleAi, toggleFriends } = usePlayerFilter();
 
   /* Timer slider transient state — synced from snapshot on every update.
      Local value is ONLY for drag feedback; authority stays in snapshot. */
@@ -591,7 +591,7 @@ export default function LobbySection({
   const matchesFilter = (p: PlayerPoolEntry): boolean => {
     const identitySelected = filter.humans || filter.ai;
     const identityMatch = !identitySelected || (filter.humans && !p.is_ai) || (filter.ai && p.is_ai);
-    const friendsMatch = filter.friends || !followedIds.has(p.id);
+    const friendsMatch = !filter.friends || followedIds.has(p.id);
     return identityMatch && friendsMatch;
   };
 
