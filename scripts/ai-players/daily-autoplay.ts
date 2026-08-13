@@ -10,7 +10,7 @@ config({ path: ".env.local" });
 const WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers-v3.ts");
 const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
 
-const CONCURRENCY = 2;
+const CONCURRENCY = 5;
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [1000, 4000];
 
