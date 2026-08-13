@@ -55,8 +55,22 @@
   display: flex; align-items: flex-start; gap: 10px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--gh-border-subtle);
+  cursor: pointer;
 }
 .notifItem:last-child { border-bottom: none; }
+.notifItem.unread {
+  background: var(--gh-bg-surface);
+}
+.notifItem.unread .notifText {
+  color: var(--gh-modal-text-primary);
+  font-weight: 500;
+}
+.notifItem.read {
+  opacity: 0.85;
+}
+.notifItem.read .notifText {
+  color: var(--gh-modal-text-muted);
+}
 .unreadDot {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--gh-blue); flex-shrink: 0; margin-top: 5px;
