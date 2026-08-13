@@ -47,6 +47,15 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
+function isAdminEmail(email: string | undefined): boolean {
+  if (!email) return false;
+  const allowlist = (process.env.ADMIN_EMAILS || "laurent.martenot@gmail.com,lama010101@gmail.com,emartin6867@gmail.com")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return allowlist.includes(email.trim().toLowerCase());
+}
+
 export async function middleware(request: NextRequest) {
   // Build a mutable response object that Supabase can write refreshed cookies onto.
   let response = NextResponse.next({ request });
@@ -123,6 +132,15 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
+    if (!isAdminEmail(user.email)) {
+      if (pathname.startsWith("/api/admin")) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   return response;
