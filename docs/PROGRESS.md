@@ -3262,3 +3262,5 @@ pm run build exit 0. PR #47. (2026-07-23) |
 | MP-BUILD-HOMECARD-PROFILE-BATCH-001 | Invitation badge styling + profile returnTo nav | CompetePanel.tsx, PlayerAvatar.tsx, profile/page.tsx | DONE | 2026-08-12 |
 
 | MP-BUILD-RESULTSCLEANUP-SIMPLE-001 | Remove (you) labels, add hints delta, remove mini-card XP | RoundCompleteSection.tsx/.css, WhereCard.tsx/.css, WhenCard.tsx/.css | DONE | 2026-08-13 |
+
+| AIP-FIX-DAILYAUTOPLAY-RUNNERSCALE-001 | Add job timeout + raise concurrency for current AI roster scale | daily-ai-autoplay.yml, daily-autoplay.ts | DONE | 2026-08-13 |
