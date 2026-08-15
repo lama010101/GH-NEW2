@@ -1193,7 +1193,7 @@ export default function LobbySection({
                 <span className={styles['lobbyFilterStar']}>
                   {filter.friends ? '★' : '☆'}
                 </span>
-                {t('leaderboard.filter_friends')}
+                {filter.friends ? t('leaderboard.filter_friends') : t('lobby.filter_all')}
               </button>
             </div>
             <div className={styles['lobbySearchWrap']}>
