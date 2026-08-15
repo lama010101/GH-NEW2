@@ -1,7 +1,7 @@
 "use client";
 
 import { Component, type ReactNode, useEffect, useRef } from "react";
-import { MapContainer, TileLayer, useMapEvents, Marker, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, AttributionControl, useMapEvents, Marker, useMap } from "react-leaflet";
 import { useTranslations } from "next-intl";
 import L from "leaflet";
 import type { LatLng } from "@/core/types";
@@ -148,12 +148,14 @@ class GameMapInner extends Component<GameMapProps, GameMapState> {
             style={{ width: "100%", height: "100%" }}
             zoomControl={!this.props.hideZoomControls}
             scrollWheelZoom={true}
+            attributionControl={false}
             worldCopyJump={true}
           >
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             />
+            <AttributionControl prefix={false} position="bottomright" />
             <MapClickHandler onSetLocation={this.props.onSetLocation} />
             <FlyToHandler target={this.props.flyToTarget} />
             {this.props.guessLocation && (
