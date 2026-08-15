@@ -246,6 +246,11 @@ async function main(): Promise<void> {
       imageQualityScore: null,
       imageQualityNotes: null,
       critiqueError: `OpenRouter turn 1 failed: ${turn1.error}`,
+      difficultyScore: null,
+      difficultyNotes: null,
+      authenticityScore: null,
+      authenticityNotes: null,
+      authenticityError: null,
       finalGuess: null,
       error: `OpenRouter turn 1 failed: ${turn1.error}`,
     });
@@ -266,6 +271,11 @@ async function main(): Promise<void> {
       imageQualityScore: null,
       imageQualityNotes: null,
       critiqueError: null,
+      difficultyScore: null,
+      difficultyNotes: null,
+      authenticityScore: null,
+      authenticityNotes: null,
+      authenticityError: null,
       finalGuess: null,
       error: turn1Parse.error,
     });
@@ -326,6 +336,11 @@ async function main(): Promise<void> {
           imageQualityScore: null,
           imageQualityNotes: null,
           critiqueError: `OpenRouter turn 2 failed: ${turn2.error}`,
+          difficultyScore: null,
+          difficultyNotes: null,
+          authenticityScore: null,
+          authenticityNotes: null,
+          authenticityError: null,
           finalGuess: null,
           error: `OpenRouter turn 2 failed: ${turn2.error}`,
         });
@@ -346,6 +361,11 @@ async function main(): Promise<void> {
           imageQualityScore: null,
           imageQualityNotes: null,
           critiqueError: null,
+          difficultyScore: null,
+          difficultyNotes: null,
+          authenticityScore: null,
+          authenticityNotes: null,
+          authenticityError: null,
           finalGuess: null,
           error: turn2Parse.error,
         });
@@ -366,6 +386,11 @@ async function main(): Promise<void> {
           imageQualityScore: null,
           imageQualityNotes: null,
           critiqueError: null,
+          difficultyScore: null,
+          difficultyNotes: null,
+          authenticityScore: null,
+          authenticityNotes: null,
+          authenticityError: null,
           finalGuess: null,
           error: err,
         });
@@ -398,19 +423,32 @@ async function main(): Promise<void> {
   });
   const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls);
   const critiqueParse = critique.error
-    ? { score: null, notes: null, error: `OpenRouter turn 3 failed: ${critique.error}` }
+    ? { imageQualityScore: null as number | null, imageQualityNotes: null as string | null, difficultyScore: null as number | null, difficultyNotes: null as string | null, authenticityScore: null as number | null, authenticityNotes: null as string | null, error: `OpenRouter turn 3 failed: ${critique.error}` }
     : parseCritiqueResponse(critique.content);
 
   let imageQualityScore: number | null = null;
   let imageQualityNotes: string | null = null;
+  let difficultyScore: number | null = null;
+  let difficultyNotes: string | null = null;
+  let authenticityScore: number | null = null;
+  let authenticityNotes: string | null = null;
   let critiqueError: string | null = null;
+  let authenticityError: string | null = null;
 
   if (critiqueParse.error) {
     critiqueError = critiqueParse.error;
     console.warn(`Critique error: ${critiqueParse.error}`);
   } else {
-    imageQualityScore = critiqueParse.score;
-    imageQualityNotes = critiqueParse.notes;
+    imageQualityScore = critiqueParse.imageQualityScore;
+    imageQualityNotes = critiqueParse.imageQualityNotes;
+    difficultyScore = critiqueParse.difficultyScore;
+    difficultyNotes = critiqueParse.difficultyNotes;
+    authenticityScore = critiqueParse.authenticityScore;
+    authenticityNotes = critiqueParse.authenticityNotes;
+    if (critiqueParse.authenticityError) {
+      authenticityError = critiqueParse.authenticityError;
+      console.warn(`Authenticity/difficulty error: ${critiqueParse.authenticityError}`);
+    }
   }
 
   if (timedOut || !finalGuess) {
@@ -439,6 +477,11 @@ async function main(): Promise<void> {
       imageQualityScore,
       imageQualityNotes,
       critiqueError,
+      difficultyScore,
+      difficultyNotes,
+      authenticityScore,
+      authenticityNotes,
+      authenticityError,
       error: null,
     });
 
@@ -515,6 +558,11 @@ async function main(): Promise<void> {
     imageQualityScore,
     imageQualityNotes,
     critiqueError,
+    difficultyScore,
+    difficultyNotes,
+    authenticityScore,
+    authenticityNotes,
+    authenticityError,
     error: null,
   });
 
@@ -595,16 +643,21 @@ function buildCritiqueMessages(
   locationName: string | null
 ): unknown[] {
   const systemPrompt =
-    `You are evaluating how accurately the provided image depicts a known historical event. ` +
-    `You will be shown the image and told the correct answer (where and when). ` +
-    `Provide an integer score from 1 (very inaccurate or misleading) to 10 (highly accurate and representative) and brief explanatory notes.\n\n` +
-    `Respond with JSON only (no markdown): {"imageQualityScore": integer (1-10), "imageQualityNotes": "string"}`;
+    `You are evaluating the provided historical image after the true answer has been revealed. ` +
+    `Assess three things and return a single JSON object with exactly these keys:\n` +
+    `  - imageQualityScore (integer 1-10): how accurately the image depicts the known historical event.\n` +
+    `  - imageQualityNotes (string): brief explanation for the image quality score.\n` +
+    `  - difficultyScore (integer 1-10): how hard the image would be for a skilled player to geolocate and date correctly before seeing the answer, considering visual ambiguity, common/generic subject matter, lack of identifying landmarks, etc.\n` +
+    `  - difficultyNotes (string): brief explanation for the difficulty score.\n` +
+    `  - authenticityScore (integer 1-10): how confident you are that the depicted event is a real historical event, as opposed to a staged photo, movie/TV still, reenactment, or AI-generated image.\n` +
+    `  - authenticityNotes (string): brief explanation for the authenticity score.\n\n` +
+    `Respond with JSON only (no markdown).`;
 
   const locationText = locationName ? ` (${locationName})` : "";
   const userPrompt =
     `The correct answer is: latitude ${trueAnswer.lat}, longitude ${trueAnswer.lng}, year ${trueAnswer.year}${locationText}. ` +
     `Event title: "${title || "unknown"}".\n\n` +
-    `Rate how realistically and accurately the image depicts this historical event.`;
+    `Rate the image quality, guess difficulty, and authenticity of the depicted event. Provide JSON with imageQualityScore, imageQualityNotes, difficultyScore, difficultyNotes, authenticityScore, and authenticityNotes.`;
 
   return [
     { role: "system", content: systemPrompt },
@@ -877,27 +930,68 @@ function parseHintRequests(value: unknown): HintRequest[] {
   return requests;
 }
 
-function parseCritiqueResponse(text: string): { score: number | null; notes: string | null; error?: string } {
+type CritiqueParseResult = {
+  imageQualityScore: number | null;
+  imageQualityNotes: string | null;
+  difficultyScore: number | null;
+  difficultyNotes: string | null;
+  authenticityScore: number | null;
+  authenticityNotes: string | null;
+  error?: string;
+  authenticityError?: string;
+};
+
+function parseCritiqueResponse(text: string): CritiqueParseResult {
   const cleaned = cleanJson(text);
   let parsed: unknown;
   try {
     parsed = JSON.parse(cleaned);
   } catch (err) {
-    return { score: null, notes: null, error: `Failed to parse critique response: ${(err as Error).message}` };
+    return { imageQualityScore: null, imageQualityNotes: null, difficultyScore: null, difficultyNotes: null, authenticityScore: null, authenticityNotes: null, error: `Failed to parse critique response: ${(err as Error).message}` };
   }
 
   if (typeof parsed !== "object" || parsed === null) {
-    return { score: null, notes: null, error: "Critique response is not a JSON object" };
+    return { imageQualityScore: null, imageQualityNotes: null, difficultyScore: null, difficultyNotes: null, authenticityScore: null, authenticityNotes: null, error: "Critique response is not a JSON object" };
   }
 
   const obj = parsed as Record<string, unknown>;
-  const score = toFiniteNumber(obj.imageQualityScore);
-  if (score === null || score < 1 || score > 10 || !Number.isInteger(score)) {
-    return { score: null, notes: null, error: "Critique response has invalid imageQualityScore (must be integer 1-10)" };
+  const imageScore = toFiniteNumber(obj.imageQualityScore);
+  if (imageScore === null || imageScore < 1 || imageScore > 10 || !Number.isInteger(imageScore)) {
+    return { imageQualityScore: null, imageQualityNotes: null, difficultyScore: null, difficultyNotes: null, authenticityScore: null, authenticityNotes: null, error: "Critique response has invalid imageQualityScore (must be integer 1-10)" };
   }
 
-  const notes = typeof obj.imageQualityNotes === "string" ? obj.imageQualityNotes : null;
-  return { score, notes };
+  const imageNotes = typeof obj.imageQualityNotes === "string" ? obj.imageQualityNotes : null;
+  const result: CritiqueParseResult = {
+    imageQualityScore: imageScore,
+    imageQualityNotes: imageNotes,
+    difficultyScore: null,
+    difficultyNotes: null,
+    authenticityScore: null,
+    authenticityNotes: null,
+  };
+
+  const errors: string[] = [];
+
+  const difficultyScore = toFiniteNumber(obj.difficultyScore);
+  if (difficultyScore === null || difficultyScore < 1 || difficultyScore > 10 || !Number.isInteger(difficultyScore)) {
+    errors.push("difficultyScore must be integer 1-10");
+  } else {
+    result.difficultyScore = difficultyScore;
+    result.difficultyNotes = typeof obj.difficultyNotes === "string" ? obj.difficultyNotes : null;
+  }
+
+  const authenticityScore = toFiniteNumber(obj.authenticityScore);
+  if (authenticityScore === null || authenticityScore < 1 || authenticityScore > 10 || !Number.isInteger(authenticityScore)) {
+    errors.push("authenticityScore must be integer 1-10");
+  } else {
+    result.authenticityScore = authenticityScore;
+    result.authenticityNotes = typeof obj.authenticityNotes === "string" ? obj.authenticityNotes : null;
+  }
+
+  if (errors.length > 0) {
+    return { ...result, authenticityError: errors.join("; ") };
+  }
+  return result;
 }
 
 function cleanJson(text: string): string {
@@ -1124,6 +1218,11 @@ type EvalFactInput = {
   imageQualityScore: number | null;
   imageQualityNotes: string | null;
   critiqueError: string | null;
+  difficultyScore: number | null;
+  difficultyNotes: string | null;
+  authenticityScore: number | null;
+  authenticityNotes: string | null;
+  authenticityError: string | null;
   error: string | null;
 };
 
@@ -1143,6 +1242,7 @@ async function writeEvalFact(
       prompt_tokens, completion_tokens, reasoning_tokens, total_tokens, cost,
       reasoning_trace_available, reasoning_trace,
       final_guess, supplied_hints, image_quality_score, image_quality_notes, critique_error,
+      difficulty_score, difficulty_notes, authenticity_score, authenticity_notes, authenticity_error,
       raw_llm_response, error
     ) VALUES (
       $1, $2, $3, $4, $5, $6,
@@ -1150,7 +1250,8 @@ async function writeEvalFact(
       $11, $12, $13, $14, $15,
       $16, $17,
       $18, $19, $20, $21, $22,
-      $23, $24
+      $23, $24, $25, $26, $27,
+      $28, $29
     ) RETURNING evaluation_id`,
     [
       input.eventId,
@@ -1175,6 +1276,11 @@ async function writeEvalFact(
       input.imageQualityScore,
       input.imageQualityNotes,
       input.critiqueError,
+      input.difficultyScore,
+      input.difficultyNotes,
+      input.authenticityScore,
+      input.authenticityNotes,
+      input.authenticityError,
       input.callResult.rawResponse,
       input.error,
     ]
