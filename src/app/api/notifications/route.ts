@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { getDbPool } from "@/server/db";
 
 export const dynamic = "force-dynamic";
 
@@ -13,23 +14,53 @@ export async function GET(_request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const pool = getDbPool();
+
   try {
-    const { data: notifications, error: dbError } = await supabase
-      .from("notifications")
-      .select("id, type, payload, read, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const { rows } = await pool.query<{
+      id: string;
+      type: string;
+      payload: Record<string, unknown>;
+      read: boolean;
+      created_at: Date;
+    }>(
+      `SELECT n.id, n.type, n.payload, n.read, n.created_at
+       FROM notifications n
+       WHERE n.user_id = $1
+         AND (
+           n.type != 'lobby_invite'
+           OR EXISTS (
+             SELECT 1
+             FROM game_invitations gi
+             WHERE gi.status = 'pending'
+               AND gi.expires_at >= now()
+               AND (
+                 gi.id = ((n.payload->>'invitation_id')::uuid)
+                 OR (
+                   (n.payload->>'invitation_id') IS NULL
+                   AND gi.game_id = ((n.payload->>'game_id')::uuid)
+                   AND gi.invitee_id = n.user_id
+                 )
+               )
+           )
+         )
+       ORDER BY n.created_at DESC
+       LIMIT 50`,
+      [user.id]
+    );
 
-    if (dbError) {
-      console.error("[notifications] Database error:", dbError);
-      return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
-    }
+    const notifications = rows.map((row) => ({
+      id: row.id,
+      type: row.type,
+      payload: row.payload,
+      read: row.read,
+      created_at: row.created_at.toISOString(),
+    }));
 
-    const unreadCount = (notifications ?? []).filter((n) => !n.read).length;
+    const unreadCount = notifications.filter((n) => !n.read).length;
 
     return NextResponse.json({
-      notifications: notifications ?? [],
+      notifications,
       unread_count: unreadCount,
     });
   } catch (error) {
