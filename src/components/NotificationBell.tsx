@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { acceptInvitation } from '@/components/home/CompetePanel';
@@ -19,7 +19,7 @@ interface Notification {
   created_at: string;
 }
 
-function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) => string): string {
+function timeAgo(iso: string, t: (key: string, params?: Record<string, number | string>) => string): string {
   const diff = Date.now() - new Date(iso).getTime();
   if (diff < 60000) return t('just_now');
   if (diff < 3600000) return t('m_ago', { n: Math.floor(diff / 60000) });
@@ -109,8 +109,21 @@ function NotificationItem({
     );
   }
 
+  function handleItemKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onMarkRead(notification.id);
+    }
+  }
+
   return (
-    <div className={itemClass} onClick={() => onMarkRead(notification.id)} role="button" tabIndex={0}>
+    <div
+      className={itemClass}
+      onClick={() => onMarkRead(notification.id)}
+      onKeyDown={handleItemKeyDown}
+      role="button"
+      tabIndex={0}
+    >
       {!notification.read && <span className={styles.unreadDot} />}
       <div className={styles.notifBody}>
         <div className={styles.notifText}>{notification.type}</div>
@@ -125,6 +138,7 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   async function fetchNotifications() {
     if (document.hidden) return;
@@ -177,6 +191,30 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
     };
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+
+    function handleMouseDown(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
   function toggleOpen() {
     setOpen((prev) => !prev);
   }
@@ -184,9 +222,16 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
   const showBell = !onlyShowWhenUnread || unreadCount > 0;
 
   return (
-    <div className={`${styles.wrapper} ${className ?? ''}`.trim()}>
+    <div ref={wrapperRef} className={`${styles.wrapper} ${className ?? ''}`.trim()}>
       {showBell && (
-      <button type="button" className={styles.bellBtn} onClick={toggleOpen}>
+      <button
+        type="button"
+        className={styles.bellBtn}
+        onClick={toggleOpen}
+        aria-label={t('title')}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+      >
         <svg
           width="20"
           height="20"
