@@ -63,7 +63,11 @@ function NotificationItem({
             className={styles.joinBtn}
             onClick={async () => {
               if (invitationId) {
-                await acceptInvitation(invitationId);
+                const result = await acceptInvitation(invitationId);
+                if (!result.ok) {
+                  console.error('[NotificationBell] acceptInvitation failed:', result.error, result.code);
+                  return;
+                }
               }
               onMarkRead(notification.id);
               router.push(`/compete/${gameId}`);

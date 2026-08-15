@@ -64,35 +64,38 @@ function TrashIcon() {
   )
 }
 
-export async function acceptInvitation(invitationId: string) {
-  await supabaseBrowser
-    .from('game_invitations')
-    .update({ status: 'accepted' })
-    .eq('id', invitationId)
+export async function acceptInvitation(invitationId: string): Promise<{ ok: boolean; game_id?: string; error?: string; code?: string }> {
+  try {
+    const res = await fetch('/api/invitations/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invitation_id: invitationId }),
+    })
+    const data = await res.json().catch(() => ({ error: 'Request failed' }))
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? 'Request failed', code: data.code }
+    }
+    return { ok: true, game_id: data.game_id }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Request failed' }
+  }
 }
 
-export async function declineInvitation(invitationId: string, playerId: string) {
-  await supabaseBrowser
-    .from('game_invitations')
-    .update({ status: 'declined' })
-    .eq('id', invitationId)
-    .eq('invitee_id', playerId)
-}
-
-async function markNotificationReadByInvitationId(invitationId: string) {
-  const res = await fetch('/api/notifications')
-  if (!res.ok) return
-  const data = await res.json()
-  const match = (data.notifications ?? []).find(
-    (n: { id: string; payload?: { invitation_id?: string } }) =>
-      n.payload?.invitation_id === invitationId
-  )
-  if (!match) return
-  await fetch('/api/notifications', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ids: [match.id] })
-  })
+export async function declineInvitation(invitationId: string): Promise<{ ok: boolean; error?: string; code?: string }> {
+  try {
+    const res = await fetch('/api/invitations/decline', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invitation_id: invitationId }),
+    })
+    const data = await res.json().catch(() => ({ error: 'Request failed' }))
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? 'Request failed', code: data.code }
+    }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Request failed' }
+  }
 }
 
 export function CompetePanel({ onLobby, playerId }: {
@@ -194,14 +197,20 @@ export function CompetePanel({ onLobby, playerId }: {
   }, [playerId, fetchInvites])
 
   const handleAccept = async (inviteId: string, gameId: string) => {
-    await acceptInvitation(inviteId)
-    await markNotificationReadByInvitationId(inviteId)
-    onLobby(gameId)
+    const result = await acceptInvitation(inviteId)
+    if (!result.ok) {
+      console.error('[CompetePanel] acceptInvitation failed:', result.error, result.code)
+      return
+    }
+    onLobby(result.game_id ?? gameId)
   }
 
   const handleDecline = async (inviteId: string) => {
-    await declineInvitation(inviteId, playerId)
-    await markNotificationReadByInvitationId(inviteId)
+    const result = await declineInvitation(inviteId)
+    if (!result.ok) {
+      console.error('[CompetePanel] declineInvitation failed:', result.error, result.code)
+      return
+    }
     setInvites(prev => prev.filter(i => i.id !== inviteId))
   }
 
