@@ -2635,12 +2635,19 @@ export async function cancelCompeteInvite(input: CancelCompeteInviteInput): Prom
       throw new Error("Only the host can cancel invites");
     }
 
-    // Cancel pending invitation for the target invitee
+    // Cancel pending invitation for the target invitee, and mark the corresponding
+    // in-app notification(s) as read.
     await client.query(
       `UPDATE game_invitations
        SET status = 'cancelled'
        WHERE game_id = $1 AND invitee_id = $2 AND status = 'pending'`,
       [gameId, inviteeId]
+    );
+    await client.query(
+      `UPDATE notifications
+       SET read = true
+       WHERE user_id = $1 AND type = 'lobby_invite' AND payload->>'game_id' = $2`,
+      [inviteeId, gameId]
     );
 
     await client.query("COMMIT");
