@@ -4,6 +4,12 @@ import { getDbPool } from "@/server/db";
 
 export const dynamic = "force-dynamic";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUUID(uuid: string): boolean {
+  return UUID_REGEX.test(uuid);
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   const supabase = createAuthenticatedServerClient();
@@ -57,7 +63,32 @@ export async function GET(_request: NextRequest) {
       created_at: row.created_at.toISOString(),
     }));
 
-    const unreadCount = notifications.filter((n) => !n.read).length;
+    const { rows: countRows } = await pool.query<{ count: number }>(
+      `SELECT COUNT(*)::integer as count
+       FROM notifications n
+       WHERE n.user_id = $1
+         AND n.read = false
+         AND (
+           n.type != 'lobby_invite'
+           OR EXISTS (
+             SELECT 1
+             FROM game_invitations gi
+             WHERE gi.status = 'pending'
+               AND gi.expires_at >= now()
+               AND (
+                 gi.id = ((n.payload->>'invitation_id')::uuid)
+                 OR (
+                   (n.payload->>'invitation_id') IS NULL
+                   AND gi.game_id = ((n.payload->>'game_id')::uuid)
+                   AND gi.invitee_id = n.user_id
+                 )
+               )
+           )
+         )`,
+      [user.id]
+    );
+
+    const unreadCount = countRows[0]?.count ?? 0;
 
     return NextResponse.json({
       notifications,
@@ -83,6 +114,10 @@ export async function PATCH(request: NextRequest) {
 
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
     return NextResponse.json({ error: "ids is required and must be a non-empty array" }, { status: 400 });
+  }
+
+  if (ids.some((id) => typeof id !== "string" || !isValidUUID(id))) {
+    return NextResponse.json({ error: "Each id must be a valid UUID" }, { status: 400 });
   }
 
   try {
