@@ -1904,6 +1904,62 @@ export async function createDailySession(input: {
   return snapshot;
 }
 
+export type JoinEligibilityResult =
+  | { ok: true; isActiveRejoiner: boolean }
+  | { ok: false; error: string; code: string };
+
+export async function validateJoinEligibility(
+  client: DbTransactionClient,
+  gameId: string,
+  playerId: string,
+  session: SessionRow,
+  currentSnapshot: CompeteSessionSnapshot | null
+): Promise<JoinEligibilityResult> {
+  if (session.mode === "practice") {
+    return { ok: false, error: "Practice sessions cannot be joined", code: "PRACTICE_NOT_ALLOWED" };
+  }
+
+  await client.query(
+    `SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`,
+    [gameId]
+  );
+
+  const playerRowResult = await client.query<{ kicked: boolean; left_at: Date | null }>(
+    `SELECT kicked, left_at FROM session_players WHERE game_id = $1 AND player_id = $2 FOR UPDATE`,
+    [gameId, playerId]
+  );
+  const playerRow = playerRowResult.rows[0];
+
+  if (playerRow?.kicked === true) {
+    return { ok: false, error: "You were removed from this game by the host", code: "PLAYER_KICKED" };
+  }
+
+  const isActiveRejoiner = playerRow !== undefined && playerRow.left_at === null;
+
+  if (!isActiveRejoiner) {
+    const activeCountResult = await client.query<{ player_id: string }>(
+      `SELECT player_id FROM session_players WHERE game_id = $1 AND left_at IS NULL FOR UPDATE`,
+      [gameId]
+    );
+    const activeCount = activeCountResult.rows.length;
+    if (activeCount >= 8) {
+      return { ok: false, error: "Session is full (8 players max)", code: "SESSION_FULL" };
+    }
+  }
+
+  if (currentSnapshot && currentSnapshot.status !== "LOBBY" && !isActiveRejoiner) {
+    if (session.mode === "async") {
+      if (session.session_deadline !== null && session.session_deadline < new Date()) {
+        return { ok: false, error: "Session deadline has passed", code: "DEADLINE_PASSED" };
+      }
+    } else {
+      return { ok: false, error: "Game already in progress", code: "GAME_IN_PROGRESS" };
+    }
+  }
+
+  return { ok: true, isActiveRejoiner };
+}
+
 export async function joinCompeteSession(input: { gameId: string; displayName: string; playerId: string }): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   const gameId = input.gameId.trim();
   const playerId = input.playerId;
@@ -1956,60 +2012,14 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
     client = await getTransactionClient();
     await client.query("BEGIN");
 
-    await client.query(
-      `SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`,
-      [gameId]
-    );
-
-    const playerRowResult = await client.query<{ kicked: boolean; left_at: Date | null }>(
-      `SELECT kicked, left_at FROM session_players WHERE game_id = $1 AND player_id = $2 FOR UPDATE`,
-      [gameId, playerId]
-    );
-    const playerRow = playerRowResult.rows[0];
-
-    if (playerRow?.kicked === true) {
+    const eligibility = await validateJoinEligibility(client, gameId, playerId, session, currentSnapshot);
+    if (!eligibility.ok) {
       await client.query("ROLLBACK");
-      const err = new Error("You were removed from this game by the host") as Error & { code?: string };
-      err.code = "PLAYER_KICKED";
+      const err = new Error(eligibility.error) as Error & { code?: string };
+      if (eligibility.code === "PLAYER_KICKED") {
+        err.code = eligibility.code;
+      }
       throw err;
-    }
-
-    const isActiveRejoiner = playerRow !== undefined && playerRow.left_at === null;
-
-    // 8-player cap per GAME_MODES_SPEC.md Section 5.13. Active rejoiners are
-    // already counted in the active set and therefore bypass the check.
-    // Computed before the late-join guard so async (Relax) late joins can be
-    // validated against the cap at the same time.
-    let activeCount = 0;
-    if (!isActiveRejoiner) {
-      // Row-level FOR UPDATE on the actual active rows (no aggregate), then
-      // count in application code. Postgres rejects `SELECT COUNT(*) FOR UPDATE`;
-      // this is equivalent and also locks the active set so concurrent
-      // kick/leave cannot mutate it while the cap is evaluated.
-      const activeCountResult = await client.query<{ player_id: string }>(
-        `SELECT player_id FROM session_players WHERE game_id = $1 AND left_at IS NULL FOR UPDATE`,
-        [gameId]
-      );
-      activeCount = activeCountResult.rows.length;
-      if (activeCount >= 8) {
-        await client.query("ROLLBACK");
-        throw new Error("Session is full (8 players max)");
-      }
-    }
-
-    // Late join guard: if the game is no longer in the lobby, only active
-    // reconnecting players are allowed through — except in async (Relax),
-    // where players may join any time before the session deadline and player cap.
-    if (currentSnapshot && currentSnapshot.status !== "LOBBY" && !isActiveRejoiner) {
-      if (session.mode === "async") {
-        if (session.session_deadline !== null && session.session_deadline < new Date()) {
-          await client.query("ROLLBACK");
-          throw new Error("Session deadline has passed");
-        }
-      } else {
-        await client.query("ROLLBACK");
-        throw new Error("Game already in progress");
-      }
     }
 
     verifyLog("INSERT", "session_players", "OK", `joining player_id=${playerId} game_id=${gameId} — executing`);
