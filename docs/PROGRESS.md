@@ -1,5 +1,6 @@
 # GUESS-HISTORY — Implementation Progress
 
+| MP-MERGE-PREPUSH-BOOTSTRAP-001 | DONE | .husky/pre-push, docs/PROGRESS.md | Merged PR #235 (branch `devin/MP-FIX-PREPUSH-ENVLOCAL-BOOTSTRAP-001`, tip `c93ce7910f82dffe03dc9fe9ac80c7c0bc23d1b0`) into `main` via GitHub REST API using `GITHUB_TOKEN`; `main` now at `2031b2773130011de37faa9ca20a2866dade76e6`. `git show origin/main:.husky/pre-push | grep -c "bootstrapping .env.local"` returned 1; `git merge-base --is-ancestor c93ce7910f82dffe03dc9fe9ac80c7c0bc23d1b0 origin/main` exit 0. Post-merge dev stack (Next.js :3000 + PartyKit :1999) started from a fresh `main` checkout; `.husky/pre-push` `sync-golden` golden-path spec passed (`1 passed`, ~56s) against a throwaway `test/prepush-smoke-001` branch with a protected-file touch to `src/core/competeUtils.ts`; branch deleted after verification. |
 | MAP-FIX-AVATAR-EAST180-001 | DONE | src/components/GameMap.tsx, docs/PROGRESS.md | Added `worldCopyJump={true}` to the Leaflet `MapContainer` so map view recenters within the base [-180, 180] world on pan-end, keeping avatar markers visible for clicks east of +180. Merged to main with Playwright smoke test passing. | 2026-08-13 |
 | MP-BUILD-BESTAXIS-CARDS-001 | DONE | src/components/compete/SessionComplete.tsx, src/i18n/en.json | Per-round best Where/When/Combo cards on SessionComplete. | 2026-08-13 |
 
