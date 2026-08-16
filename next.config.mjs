@@ -1,4 +1,28 @@
+import { readFileSync, writeFileSync } from 'fs';
 import createNextIntlPlugin from 'next-intl/plugin';
+
+const SW_PATH = new URL('public/sw.js', import.meta.url);
+const SW_VERSION_PLACEHOLDER = '__SW_VERSION__';
+
+function injectServiceWorkerVersion() {
+  try {
+    const template = readFileSync(SW_PATH, 'utf8');
+    if (!template.includes(SW_VERSION_PLACEHOLDER)) {
+      return;
+    }
+    const version =
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      process.env.GITHUB_SHA ||
+      Date.now().toString();
+    writeFileSync(SW_PATH, template.replace(SW_VERSION_PLACEHOLDER, version), 'utf8');
+  } catch (err) {
+    console.warn('[next.config] Failed to inject SW version:', err.message);
+  }
+}
+
+if (process.argv.includes('build')) {
+  injectServiceWorkerVersion();
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -14,6 +38,15 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [
