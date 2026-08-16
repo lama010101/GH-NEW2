@@ -1,5 +1,9 @@
 name: Deploy PartyKit
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -12,6 +16,7 @@ jobs:
   deploy-partykit:
     name: Deploy PartyKit to Cloudflare
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
