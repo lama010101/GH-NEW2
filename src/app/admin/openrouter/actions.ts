@@ -26,3 +26,28 @@ export async function toggleAiPlayerMode(
   ]);
   revalidatePath("/admin/openrouter");
 }
+
+export async function updateAiPlayerMaxTokens(
+  playerId: string,
+  value: number
+) {
+  const authSupabase = createAuthenticatedServerClient();
+  const {
+    data: { session },
+  } = await authSupabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  if (!Number.isInteger(value) || value < 256 || value > 8192) {
+    throw new Error("max_tokens must be an integer between 256 and 8192");
+  }
+
+  const pool = getDbPool();
+  await pool.query("UPDATE ai_players SET max_tokens = $1 WHERE id = $2", [
+    value,
+    playerId,
+  ]);
+  revalidatePath("/admin/openrouter");
+}
