@@ -45,6 +45,17 @@
   border-bottom: 1px solid var(--gh-modal-divider);
   font-size: var(--font-xs); font-weight: 600; color: var(--gh-modal-text-primary);
 }
+.pushRow {
+  display: flex; justify-content: flex-start; align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--gh-modal-divider);
+}
+.pushRow button {
+  background: none; border: none; color: var(--gh-modal-text-secondary);
+  cursor: pointer; font-size: var(--font-xs); font-weight: 600; padding: 0;
+}
+.pushRow button:hover { color: var(--gh-blue); }
+.pushRow span { color: var(--gh-modal-text-muted); font-size: var(--font-2xs); }
 .drawerHeader button {
   background: none; border: none; color: var(--gh-modal-close-color);
   cursor: pointer; font-size: var(--font-sm);

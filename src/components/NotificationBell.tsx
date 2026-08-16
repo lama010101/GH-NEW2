@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { acceptInvitation } from '@/components/home/CompetePanel';
+import { PushNotificationButton } from './PushNotificationButton';
 import styles from './NotificationBell.module.css';
 
 interface NotificationBellProps {
@@ -258,6 +259,9 @@ export default function NotificationBell({ className, onlyShowWhenUnread }: Noti
             <button type="button" onClick={() => setOpen(false)}>
               ✕
             </button>
+          </div>
+          <div className={styles.pushRow}>
+            <PushNotificationButton />
           </div>
           <div className={styles.drawerList}>
             {notifications.length === 0 && (
