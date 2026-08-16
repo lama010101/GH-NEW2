@@ -8,14 +8,30 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.devin/**'
+      - '.agents/**'
+      - '.vscode/**'
+      - '**/*.log'
   pull_request:
     branches:
       - main
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.devin/**'
+      - '.agents/**'
+      - '.vscode/**'
+      - '**/*.log'
 
 jobs:
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,6 +45,7 @@ jobs:
   auth-tests:
     name: Auth unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,6 +59,7 @@ jobs:
   build:
     name: Next.js build (ESLint + types)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

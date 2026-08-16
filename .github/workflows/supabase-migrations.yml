@@ -1,5 +1,9 @@
 name: Apply Supabase Migrations
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -12,6 +16,7 @@ jobs:
   apply-migrations:
     name: Apply pending migrations to prod
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       SUPABASE_PROJECT_REF: gzvixlvkwjsrtmtybtkf
     steps:
