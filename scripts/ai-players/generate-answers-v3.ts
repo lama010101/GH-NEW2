@@ -73,6 +73,7 @@ function parseArgs(): {
   modelId: string;
   provider: string;
   playerName: string;
+  maxTokens: number;
 } {
   const args = process.argv.slice(2);
   const flags = new Map<string, string>();
@@ -92,6 +93,7 @@ function parseArgs(): {
     modelId: flags.get("model") ?? DEFAULT_MODEL_ID,
     provider: flags.get("provider") ?? DEFAULT_PROVIDER,
     playerName: flags.get("player-name") ?? DEFAULT_AI_PLAYER_NAME,
+    maxTokens: Number.parseInt(flags.get("max-tokens") ?? "1024", 10),
   };
 }
 
@@ -99,6 +101,7 @@ const parsedArgs = parseArgs();
 const MODEL_ID = parsedArgs.modelId;
 const PROVIDER = parsedArgs.provider;
 const AI_PLAYER_NAME = parsedArgs.playerName;
+const MAX_TOKENS = parsedArgs.maxTokens;
 
 async function main(): Promise<void> {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -110,7 +113,7 @@ async function main(): Promise<void> {
   const eventId = parsedArgs.eventId;
   if (!eventId) {
     console.error(
-      "Usage: tsx scripts/ai-players/generate-answers-v3.ts [--model=<slug>] [--provider=<provider>] [--player-name=<name>] <event-id>"
+      "Usage: tsx scripts/ai-players/generate-answers-v3.ts [--model=<slug>] [--provider=<provider>] [--player-name=<name>] [--max-tokens=<count>] <event-id>"
     );
     process.exit(1);
   }
@@ -231,9 +234,9 @@ async function main(): Promise<void> {
     model_id: MODEL_ID,
     messages: turn1Messages,
     temperature: 0.2,
-    max_tokens: 1024,
+    max_tokens: MAX_TOKENS,
   });
-  const turn1 = await callOpenRouter(apiKey, turn1Messages, 1, calls);
+  const turn1 = await callOpenRouter(apiKey, turn1Messages, 1, calls, MAX_TOKENS);
   if (turn1.error) {
     const evaluationId = await writeErrorEvalFact(pool, {
       eventId: row.event_id,
@@ -318,9 +321,9 @@ async function main(): Promise<void> {
         model_id: MODEL_ID,
         messages: turn2Messages,
         temperature: 0.2,
-        max_tokens: 1024,
+        max_tokens: MAX_TOKENS,
       });
-      const turn2 = await callOpenRouter(apiKey, turn2Messages, 2, calls);
+      const turn2 = await callOpenRouter(apiKey, turn2Messages, 2, calls, MAX_TOKENS);
       finalManifestId = turn2ManifestId;
       finalCall = turn2;
 
@@ -419,9 +422,9 @@ async function main(): Promise<void> {
     model_id: MODEL_ID,
     messages: critiqueMessages,
     temperature: 0.2,
-    max_tokens: 1024,
+    max_tokens: MAX_TOKENS,
   });
-  const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls);
+  const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls, MAX_TOKENS);
   const critiqueParse = critique.error
     ? { imageQualityScore: null as number | null, imageQualityNotes: null as string | null, difficultyScore: null as number | null, difficultyNotes: null as string | null, authenticityScore: null as number | null, authenticityNotes: null as string | null, error: `OpenRouter turn 3 failed: ${critique.error}` }
     : parseCritiqueResponse(critique.content);
@@ -681,13 +684,14 @@ async function callOpenRouter(
     response_payload: unknown;
     duration_ms: number;
     error: string | null;
-  }>
+  }>,
+  maxTokens: number
 ): Promise<OpenRouterCallResult> {
   const requestBody = {
     model: MODEL_ID,
     messages,
     temperature: 0.2,
-    max_tokens: 1024,
+    max_tokens: maxTokens,
   };
 
   const requestStartedAt = new Date();
