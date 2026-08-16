@@ -54,6 +54,7 @@ import { TransitionCause } from "@/core/transitionCause";
 import { transition } from "@/server/engine/transition";
 import type { TransitionEvent } from "@/server/engine/transition";
 import { createSupabaseServerClient, createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { sendPushToUser } from "@/server/pushSender";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TRANSITION ENGINE VALIDATION (MP-ARCH-PHASE-1)
@@ -3812,6 +3813,12 @@ export async function advancePlayerRoundAsync(
                VALUES ($1, 'session_complete', $2::jsonb)`,
               [other.player_id, JSON.stringify({ game_id: gameId, completing_player_id: playerId, completing_player_name: completerName })]
             );
+            await sendPushToUser(other.player_id, {
+              title: "Guess History",
+              body: `${completerName} completed their session`,
+              url: `/compete/${gameId}`,
+              tag: `session_complete:${gameId}`,
+            });
           }
         }
       }

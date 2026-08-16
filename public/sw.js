@@ -70,10 +70,39 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  console.log('[SW] push event received', event);
+  let payload = {};
+  try {
+    payload = event.data?.json?.() || {};
+  } catch {
+    console.warn('[SW] push event data could not be parsed as JSON');
+  }
+
+  const title = payload.title || 'Guess History';
+  const options = {
+    body: payload.body || '',
+    icon: payload.icon,
+    badge: payload.badge,
+    tag: payload.tag,
+    data: { url: payload.url || '/' },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] notificationclick event received', event);
   event.notification.close();
+
+  const url = event.notification?.data?.url;
+  if (url) {
+    event.waitUntil(self.clients.openWindow(url));
+  } else {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window' }).then((clientList) => {
+        if (clientList.length > 0) {
+          return clientList[0].focus();
+        }
+        return self.clients.openWindow('/');
+      })
+    );
+  }
 });
