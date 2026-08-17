@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { getDbPool } from "@/server/db";
 import { ModeToggle } from "./ModeToggle";
+import { MaxTokensInput } from "./MaxTokensInput";
 import { ResultsModal } from "./ResultsModal";
 import { ModelFilter } from "./ModelFilter";
 
@@ -18,6 +19,7 @@ type ModelSummaryRow = {
   model_id: string;
   is_active_practice: boolean;
   is_active_daily: boolean;
+  max_tokens: number;
   total_calls: number;
   error_count: number;
   total_cost: string | number | null;
@@ -334,6 +336,7 @@ export default async function OpenRouterAdminPage({
       p.model_id,
       p.is_active_practice,
       p.is_active_daily,
+      p.max_tokens,
       COALESCE(mc.total_calls, 0)::int AS total_calls,
       COALESCE(mc.error_count, 0)::int AS error_count,
       COALESCE(mc.total_cost, 0) AS total_cost,
@@ -542,6 +545,7 @@ export default async function OpenRouterAdminPage({
                           mode="daily"
                           enabled={row.is_active_daily}
                         />
+                        <MaxTokensInput playerId={row.id} value={row.max_tokens} />
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">

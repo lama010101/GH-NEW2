@@ -19,6 +19,7 @@ type AiPlayer = {
   name: string;
   provider: string;
   model_id: string;
+  max_tokens: number;
 };
 
 type WorkItem = {
@@ -51,6 +52,7 @@ function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: strin
         `--model=${item.player.model_id}`,
         `--provider=${item.player.provider}`,
         `--player-name=${item.player.name}`,
+        `--max-tokens=${item.player.max_tokens}`,
       ],
       {
         cwd: process.cwd(),
@@ -173,7 +175,7 @@ async function main(): Promise<void> {
   console.log(`[DAILY] Challenge events: ${eventIds.length}`);
 
   const playersResult = await pool.query<AiPlayer>(
-    "SELECT id, name, provider, model_id FROM ai_players WHERE is_active_daily = true"
+    "SELECT id, name, provider, model_id, max_tokens FROM ai_players WHERE is_active_daily = true"
   );
   const players = playersResult.rows;
   console.log(`[DAILY] Active AI players: ${players.length}`);
@@ -211,7 +213,7 @@ async function main(): Promise<void> {
 
   if (dryRun) {
     for (const item of workItems) {
-      console.log(`[DRY-RUN] would spawn worker: ${item.player.id} ${item.eventId} --model=${item.player.model_id} --provider=${item.player.provider}`);
+      console.log(`[DRY-RUN] would spawn worker: ${item.player.id} ${item.eventId} --model=${item.player.model_id} --provider=${item.player.provider} --max-tokens=${item.player.max_tokens}`);
     }
     await pool.end();
     process.exit(0);
