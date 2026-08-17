@@ -29,29 +29,32 @@ export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
 
+  const checkSubscription = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      setIsSubscribed(false);
+      return;
+    }
+    try {
+      const response = await fetch('/api/push/subscribe');
+      if (!response.ok) {
+        setIsSubscribed(false);
+        return;
+      }
+      const data = await response.json().catch(() => ({ subscribed: false }));
+      setIsSubscribed(Boolean(data.subscribed));
+    } catch {
+      setIsSubscribed(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
       return;
     }
     setIsSupported(true);
     setPermission(Notification.permission);
-
-    let cancelled = false;
-    navigator.serviceWorker.ready
-      .then((registration) => registration.pushManager.getSubscription())
-      .then((subscription) => {
-        if (!cancelled) {
-          setIsSubscribed(!!subscription);
-        }
-      })
-      .catch(() => {
-        // ignore
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    checkSubscription();
+  }, [checkSubscription]);
 
   const subscribe = useCallback(async (): Promise<SubscribeResult> => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -81,6 +84,7 @@ export function usePushNotifications() {
     const json = subscription.toJSON() as unknown as { endpoint: string; keys: PushSubscriptionKeys };
     const { endpoint, keys } = json;
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      console.error('[usePushNotifications] invalid subscription JSON:', JSON.stringify(json));
       return { ok: false, error: 'Invalid push subscription from browser.' };
     }
 
@@ -95,9 +99,9 @@ export function usePushNotifications() {
       return { ok: false, error: data.error || 'Failed to save push subscription.' };
     }
 
-    setIsSubscribed(true);
+    await checkSubscription();
     return { ok: true };
-  }, []);
+  }, [checkSubscription]);
 
   const unsubscribe = useCallback(async (): Promise<SubscribeResult> => {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
@@ -112,16 +116,20 @@ export function usePushNotifications() {
     }
 
     if (endpoint) {
-      await fetch('/api/push/subscribe', {
+      const response = await fetch('/api/push/subscribe', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ endpoint }),
       });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        return { ok: false, error: data.error || 'Failed to remove push subscription.' };
+      }
     }
 
-    setIsSubscribed(false);
+    await checkSubscription();
     return { ok: true };
-  }, []);
+  }, [checkSubscription]);
 
   return { isSupported, permission, isSubscribed, subscribe, unsubscribe };
 }
