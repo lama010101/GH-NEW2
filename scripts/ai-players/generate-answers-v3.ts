@@ -504,6 +504,7 @@ async function main(): Promise<void> {
       rawLlmResponse: finalCall.rawResponse,
     });
     await writeCalls(pool, answerBankId, calls);
+    await writeRawEvents(pool, evaluationId, calls);
 
     console.log("Stored timeout result for event", row.event_id, "ai_player", aiPlayerId, "time_to_guess_ms", timeoutMs);
     await pool.end();
@@ -585,6 +586,7 @@ async function main(): Promise<void> {
     rawLlmResponse: finalGuessResponsePayload,
   });
   await writeCalls(pool, answerBankId, calls);
+  await writeRawEvents(pool, evaluationId, calls);
 
   console.log("Stored v3 answer for event", row.event_id, "ai_player", aiPlayerId, "evaluation_id", evaluationId);
   await pool.end();
@@ -1441,6 +1443,35 @@ async function writeCalls(
   }
 }
 
+async function writeRawEvents(
+  pool: Awaited<ReturnType<typeof getDbPool>>,
+  evaluationId: string,
+  calls: Array<{
+    turn_index: number;
+    request_payload: unknown;
+    response_payload: unknown;
+    duration_ms: number;
+    error: string | null;
+  }>
+): Promise<void> {
+  for (const call of calls) {
+    await pool.query(
+      `INSERT INTO eval_raw_events (evaluation_id, event_type, raw_payload) VALUES ($1, $2, $3)`,
+      [
+        evaluationId,
+        `openrouter_turn_${call.turn_index}`,
+        {
+          turn_index: call.turn_index,
+          request: call.request_payload,
+          response: call.response_payload,
+          duration_ms: call.duration_ms,
+          error: call.error,
+        },
+      ]
+    );
+  }
+}
+
 async function writeErrorResult(
   pool: Awaited<ReturnType<typeof getDbPool>>,
   evaluationId: string,
@@ -1503,6 +1534,7 @@ async function writeErrorResult(
     ]
   );
   await writeCalls(pool, res.rows[0].id, calls);
+  await writeRawEvents(pool, evaluationId, calls);
   console.log("Stored error row for event", eventId, "ai_player", aiPlayerId, "evaluation_id", evaluationId);
 }
 
