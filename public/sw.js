@@ -70,11 +70,17 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('push', (event) => {
+  console.log('[sw] push event received', { hasData: !!event.data, timestamp: Date.now() });
+
   let payload = {};
   try {
     payload = event.data?.json?.() || {};
-  } catch {
+    if (event.data) {
+      console.log('[sw] push payload parsed', payload);
+    }
+  } catch (err) {
     console.warn('[SW] push event data could not be parsed as JSON');
+    console.error('[sw] push payload parse error', { message: err?.message, stack: err?.stack, error: err });
   }
 
   const title = payload.title || 'Guess History';
@@ -86,7 +92,19 @@ self.addEventListener('push', (event) => {
     data: { url: payload.url || '/' },
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  console.log('[sw] calling showNotification', { title, options });
+
+  event.waitUntil(
+    self.registration.showNotification(title, options).then(
+      () => {
+        console.log('[sw] showNotification resolved');
+      },
+      (err) => {
+        console.error('[sw] showNotification REJECTED', { message: err?.message, stack: err?.stack, error: err });
+        throw err;
+      }
+    )
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
