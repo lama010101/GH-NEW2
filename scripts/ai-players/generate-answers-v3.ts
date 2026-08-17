@@ -505,6 +505,17 @@ async function main(): Promise<void> {
     });
     await writeCalls(pool, answerBankId, calls);
     await writeRawEvents(pool, evaluationId, calls);
+    await writeDerivedResult(pool, evaluationId, {
+      outcome: "timeout",
+      error: null,
+      calls,
+      usage: finalCall.usage,
+      locationAccuracy: result.locationAccuracy,
+      yearAccuracy: result.yearAccuracy,
+      roundAccuracy: result.roundAccuracy,
+      distanceKm: result.distanceKm,
+      yearDiff: result.yearDiff,
+    });
 
     console.log("Stored timeout result for event", row.event_id, "ai_player", aiPlayerId, "time_to_guess_ms", timeoutMs);
     await pool.end();
@@ -587,6 +598,17 @@ async function main(): Promise<void> {
   });
   await writeCalls(pool, answerBankId, calls);
   await writeRawEvents(pool, evaluationId, calls);
+  await writeDerivedResult(pool, evaluationId, {
+    outcome: "guess",
+    error: null,
+    calls,
+    usage: finalCall.usage,
+    locationAccuracy: result.locationAccuracy,
+    yearAccuracy: result.yearAccuracy,
+    roundAccuracy: result.roundAccuracy,
+    distanceKm: result.distanceKm,
+    yearDiff: result.yearDiff,
+  });
 
   console.log("Stored v3 answer for event", row.event_id, "ai_player", aiPlayerId, "evaluation_id", evaluationId);
   await pool.end();
@@ -1472,6 +1494,66 @@ async function writeRawEvents(
   }
 }
 
+function classifyError(error: string | null): string | null {
+  if (!error) return null;
+  if (/OpenRouter request failed:\s*429/.test(error)) return "rate_limit";
+  if (/OpenRouter request failed:\s*5\d{2}/.test(error)) return "server_error";
+  if (/OpenRouter request failed:\s*4\d{2}/.test(error)) return "client_error";
+  if (/OpenRouter returned an error envelope/.test(error)) return "envelope_error";
+  if (/^fetch failed/.test(error)) return "network_error";
+  if (/^Failed to parse AI/.test(error)) return "parse_failure";
+  if (/timed? ?out/i.test(error)) return "timeout";
+  return "other";
+}
+
+type DerivedResultInput = {
+  outcome: "guess" | "timeout" | "error";
+  error: string | null;
+  calls: Array<{ turn_index: number; duration_ms: number; error: string | null }>;
+  usage: OpenRouterUsage;
+  locationAccuracy: number | null;
+  yearAccuracy: number | null;
+  roundAccuracy: number | null;
+  distanceKm: number | null;
+  yearDiff: number | null;
+};
+
+async function writeDerivedResult(
+  pool: Awaited<ReturnType<typeof getDbPool>>,
+  evaluationId: string,
+  input: DerivedResultInput
+): Promise<void> {
+  const perTurnLatencyMs = input.calls.map((c) => ({
+    turn_index: c.turn_index,
+    duration_ms: c.duration_ms,
+    error_class: classifyError(c.error),
+  }));
+  const totalLatencyMs = input.calls.reduce((sum, c) => sum + c.duration_ms, 0);
+  const costPerCompletionToken =
+    input.usage.cost !== null && input.usage.completion_tokens
+      ? input.usage.cost / input.usage.completion_tokens
+      : null;
+
+  const content = {
+    outcome: input.outcome,
+    error_class: classifyError(input.error),
+    turn_count: input.calls.length,
+    total_latency_ms: totalLatencyMs,
+    per_turn: perTurnLatencyMs,
+    cost_per_completion_token: costPerCompletionToken,
+    location_accuracy: input.locationAccuracy,
+    year_accuracy: input.yearAccuracy,
+    round_accuracy: input.roundAccuracy,
+    distance_km: input.distanceKm,
+    year_diff: input.yearDiff,
+  };
+
+  await pool.query(
+    `INSERT INTO eval_derived_results (evaluation_id, content) VALUES ($1, $2)`,
+    [evaluationId, content]
+  );
+}
+
 async function writeErrorResult(
   pool: Awaited<ReturnType<typeof getDbPool>>,
   evaluationId: string,
@@ -1535,6 +1617,17 @@ async function writeErrorResult(
   );
   await writeCalls(pool, res.rows[0].id, calls);
   await writeRawEvents(pool, evaluationId, calls);
+  await writeDerivedResult(pool, evaluationId, {
+    outcome: "error",
+    error: errorMsg,
+    calls,
+    usage: nullUsage(),
+    locationAccuracy: null,
+    yearAccuracy: null,
+    roundAccuracy: null,
+    distanceKm: null,
+    yearDiff: null,
+  });
   console.log("Stored error row for event", eventId, "ai_player", aiPlayerId, "evaluation_id", evaluationId);
 }
 
