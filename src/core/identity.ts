@@ -124,9 +124,40 @@ export async function onIdentityReady(): Promise<string> {
   return readyPromise;
 }
 
+async function unsubscribePushBeforeSignOut(): Promise<void> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return;
+  }
+  try {
+    const unsubscribePromise = (async () => {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        return;
+      }
+      const endpoint = subscription.endpoint;
+      await subscription.unsubscribe();
+      if (endpoint) {
+        await fetch('/api/push/subscribe', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint }),
+        });
+      }
+    })();
+    await Promise.race([
+      unsubscribePromise,
+      new Promise<void>((_, reject) => setTimeout(() => reject(new Error('push unsubscribe timeout')), 2000)),
+    ]);
+  } catch {
+    // Best-effort cleanup; never block sign-out.
+  }
+}
+
 export async function signOut(): Promise<void> {
   signingOut = true;
   try {
+    await unsubscribePushBeforeSignOut();
     await supabaseBrowser.auth.signOut({ scope: 'local' });
   } finally {
     forceClearAuthStorage();
