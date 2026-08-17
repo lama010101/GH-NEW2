@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { investorContent } from '@/lib/investorContent'
 import StatusBadge from './StatusBadge'
+import { RevealOnScroll, StaggerGroup, StaggerItem } from './RevealOnScroll'
 
 export default function Section04HumanVsAI() {
   const section = investorContent.sections[3]
@@ -15,22 +16,24 @@ export default function Section04HumanVsAI() {
       className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-24"
     >
       <div className="relative z-10 flex max-w-5xl flex-col items-center gap-8 text-center">
-        <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
-          {section.headline}
-        </h2>
+        <RevealOnScroll className="flex flex-col items-center gap-8">
+          <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
+            {section.headline}
+          </h2>
 
-        {section.body.map((paragraph) => (
-          <p key={paragraph} className="max-w-2xl text-lg text-[var(--gh-text-secondary)] md:text-xl">
-            {paragraph}
-          </p>
-        ))}
+          {section.body.map((paragraph) => (
+            <p key={paragraph} className="max-w-2xl text-lg text-[var(--gh-text-secondary)] md:text-xl">
+              {paragraph}
+            </p>
+          ))}
 
-        {section.status && (
-          <StatusBadge status={section.status} label={section.statusLabel} />
-        )}
+          {section.status && (
+            <StatusBadge status={section.status} label={section.statusLabel} />
+          )}
+        </RevealOnScroll>
 
         {section.visual.src && (
-          <div className="relative aspect-video w-full max-w-3xl overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
+          <RevealOnScroll delay={0.1} className="relative aspect-video w-full max-w-3xl overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
             <Image
               src={section.visual.src}
               alt={section.visual.alt ?? ''}
@@ -39,12 +42,12 @@ export default function Section04HumanVsAI() {
               className="object-cover"
             />
             <div className="absolute inset-0 bg-black/40" />
-          </div>
+          </RevealOnScroll>
         )}
 
-        <div className="grid w-full max-w-3xl gap-6 md:grid-cols-2">
+        <StaggerGroup className="grid w-full max-w-3xl gap-6 md:grid-cols-2">
           {section.visual.columns?.map((column) => (
-            <div
+            <StaggerItem
               key={column.title}
               className="rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] p-6"
             >
@@ -56,9 +59,9 @@ export default function Section04HumanVsAI() {
                   <li key={item}>{item}</li>
                 ))}
               </ul>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerGroup>
 
         {section.finalStatement && (
           <p className="text-2xl font-medium text-[var(--gh-gold)] md:text-3xl">

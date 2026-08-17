@@ -94,7 +94,7 @@ export const investorContent: InvestorContent = {
       number: 2,
       headline: 'A simple game with an unusual data engine.',
       body: [
-        'The visitor should understand the game without reading instructions.',
+        'Look at a historical photograph. Guess where it was taken and when. That is the whole game.',
       ],
       visual: {
         type: 'sequence',
@@ -242,7 +242,7 @@ export const investorContent: InvestorContent = {
       number: 9,
       headline: 'Four ways to monetize the benchmark.',
       body: [
-        'No hypothetical revenue numbers are presented. The four primary products and secondary opportunities are described.',
+        'Every human-verified answer becomes evaluation data a model provider can buy access to, in four distinct products.',
       ],
       visual: {
         type: 'cards',

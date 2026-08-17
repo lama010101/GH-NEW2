@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { investorContent } from '@/lib/investorContent'
+import { RevealOnScroll, StaggerGroup, StaggerItem } from './RevealOnScroll'
 
 export default function Section06DataMoat() {
   const section = investorContent.sections[5]
@@ -15,7 +16,7 @@ export default function Section06DataMoat() {
     >
       <div className="relative z-10 grid max-w-6xl gap-10 md:grid-cols-2 md:items-center">
         {section.visual.src && (
-          <div className="relative aspect-square w-full max-w-md overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
+          <RevealOnScroll y={0} className="relative aspect-square w-full max-w-md overflow-hidden rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)]">
             <Image
               src={section.visual.src}
               alt={section.visual.alt ?? ''}
@@ -23,22 +24,22 @@ export default function Section06DataMoat() {
               sizes="(max-width: 768px) 100vw, 500px"
               className="object-cover"
             />
-          </div>
+          </RevealOnScroll>
         )}
 
-        <div className="flex flex-col gap-6">
+        <RevealOnScroll delay={0.1} className="flex flex-col gap-6">
           <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
             {section.headline}
           </h2>
 
-          <ul className="space-y-3 border-y border-[var(--gh-border-default)] py-6 text-lg text-[var(--gh-text-secondary)]">
+          <StaggerGroup as="ul" className="space-y-3 border-y border-[var(--gh-border-default)] py-6 text-lg text-[var(--gh-text-secondary)]">
             {section.visual.stack?.map((layer) => (
-              <li key={layer} className="flex items-center gap-3">
+              <StaggerItem as="li" key={layer} className="flex items-center gap-3">
                 <span className="text-[var(--gh-gold)]">+</span>
                 <span>{layer}</span>
-              </li>
+              </StaggerItem>
             ))}
-          </ul>
+          </StaggerGroup>
 
           {section.body.map((paragraph) => (
             <p key={paragraph} className="text-[var(--gh-text-secondary)]">
@@ -51,7 +52,7 @@ export default function Section06DataMoat() {
               {section.finalStatement}
             </p>
           )}
-        </div>
+        </RevealOnScroll>
       </div>
     </section>
   )

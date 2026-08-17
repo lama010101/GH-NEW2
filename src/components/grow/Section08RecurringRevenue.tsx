@@ -2,6 +2,7 @@
 
 import { investorContent } from '@/lib/investorContent'
 import StatusBadge from './StatusBadge'
+import { RevealOnScroll } from './RevealOnScroll'
 
 export default function Section08RecurringRevenue() {
   const section = investorContent.sections[7]
@@ -14,24 +15,26 @@ export default function Section08RecurringRevenue() {
       className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-24"
     >
       <div className="relative z-10 flex max-w-4xl flex-col items-center gap-8 text-center">
-        <div className="flex flex-col gap-3">
-          <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
-            {section.headline}
-          </h2>
-          {section.subheadline && (
-            <h3 className="text-2xl font-medium text-[var(--gh-gold)] md:text-3xl">
-              {section.subheadline}
-            </h3>
-          )}
-        </div>
+        <RevealOnScroll className="flex flex-col items-center gap-8">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
+              {section.headline}
+            </h2>
+            {section.subheadline && (
+              <h3 className="text-2xl font-medium text-[var(--gh-gold)] md:text-3xl">
+                {section.subheadline}
+              </h3>
+            )}
+          </div>
 
-        {section.body.map((paragraph) => (
-          <p key={paragraph} className="max-w-2xl text-lg text-[var(--gh-text-secondary)] md:text-xl">
-            {paragraph}
-          </p>
-        ))}
+          {section.body.map((paragraph) => (
+            <p key={paragraph} className="max-w-2xl text-lg text-[var(--gh-text-secondary)] md:text-xl">
+              {paragraph}
+            </p>
+          ))}
+        </RevealOnScroll>
 
-        <div className="w-full max-w-2xl rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] p-6 text-left">
+        <RevealOnScroll delay={0.1} className="w-full max-w-2xl rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] p-6 text-left">
           {section.visual.steps?.map((step, index) => (
             <div
               key={step}
@@ -42,9 +45,9 @@ export default function Section08RecurringRevenue() {
               {step}
             </div>
           ))}
-        </div>
+        </RevealOnScroll>
 
-        <div className="w-full max-w-2xl">
+        <RevealOnScroll delay={0.2} className="w-full max-w-2xl">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-wide text-[var(--gh-text-muted)]">
               Score per model version
@@ -63,7 +66,7 @@ export default function Section08RecurringRevenue() {
               ))}
             </div>
           </div>
-        </div>
+        </RevealOnScroll>
 
         {section.finalStatement && (
           <p className="text-2xl font-medium text-[var(--gh-gold)] md:text-3xl">

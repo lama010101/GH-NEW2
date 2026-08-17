@@ -2,6 +2,7 @@
 
 import { investorContent } from '@/lib/investorContent'
 import StatusBadge from './StatusBadge'
+import { RevealOnScroll, StaggerGroup, StaggerItem } from './RevealOnScroll'
 
 export default function Section05Evaluation() {
   const section = investorContent.sections[4]
@@ -14,23 +15,25 @@ export default function Section05Evaluation() {
       className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden px-4 py-24"
     >
       <div className="relative z-10 flex max-w-4xl flex-col items-center gap-8 text-center">
-        <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
-          {section.headline}
-        </h2>
+        <RevealOnScroll className="flex flex-col items-center gap-8">
+          <h2 className="text-3xl font-light leading-tight text-[var(--gh-text-primary)] md:text-5xl lg:text-6xl">
+            {section.headline}
+          </h2>
 
-        {section.body.map((paragraph) => (
-          <p key={paragraph} className="max-w-2xl text-lg text-[var(--gh-text-secondary)] md:text-xl">
-            {paragraph}
-          </p>
-        ))}
+          {section.body.map((paragraph) => (
+            <p key={paragraph} className="max-w-2xl text-lg text-[var(--gh-text-secondary)] md:text-xl">
+              {paragraph}
+            </p>
+          ))}
 
-        {section.status && (
-          <StatusBadge status={section.status} />
-        )}
+          {section.status && (
+            <StatusBadge status={section.status} />
+          )}
+        </RevealOnScroll>
 
-        <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerGroup className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {section.visual.metrics?.map((metric) => (
-            <div
+            <StaggerItem
               key={metric.label}
               className="rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] p-5 text-left"
             >
@@ -45,12 +48,12 @@ export default function Section05Evaluation() {
                   <StatusBadge status={metric.status} />
                 </div>
               )}
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerGroup>
 
         {section.visual.flow && (
-          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-[var(--gh-text-secondary)]">
+          <RevealOnScroll delay={0.1} className="flex flex-wrap items-center justify-center gap-3 text-sm text-[var(--gh-text-secondary)]">
             {section.visual.flow.map((node, index) => (
               <span key={node} className="flex items-center gap-3">
                 <span className="font-medium text-[var(--gh-gold)]">{node}</span>
@@ -59,7 +62,7 @@ export default function Section05Evaluation() {
                 )}
               </span>
             ))}
-          </div>
+          </RevealOnScroll>
         )}
 
         {section.finalStatement && (
