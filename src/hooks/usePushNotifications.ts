@@ -28,10 +28,13 @@ export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const checkSubscription = useCallback(async () => {
+    setIsLoading(true);
     if (typeof window === 'undefined') {
       setIsSubscribed(false);
+      setIsLoading(false);
       return;
     }
     try {
@@ -44,6 +47,8 @@ export function usePushNotifications() {
       setIsSubscribed(Boolean(data.subscribed));
     } catch {
       setIsSubscribed(false);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -110,26 +115,23 @@ export function usePushNotifications() {
 
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
-    const endpoint = subscription?.endpoint;
     if (subscription) {
       await subscription.unsubscribe();
     }
 
-    if (endpoint) {
-      const response = await fetch('/api/push/subscribe', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint }),
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        return { ok: false, error: data.error || 'Failed to remove push subscription.' };
-      }
+    const response = await fetch('/api/push/subscribe', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: subscription?.endpoint ?? null }),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      return { ok: false, error: data.error || 'Failed to remove push subscription.' };
     }
 
     await checkSubscription();
     return { ok: true };
   }, [checkSubscription]);
 
-  return { isSupported, permission, isSubscribed, subscribe, unsubscribe };
+  return { isSupported, permission, isSubscribed, isLoading, subscribe, unsubscribe };
 }
