@@ -33,6 +33,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     }
 
     if (!vapidInitialized) {
+      console.info('[pushSender] VAPID not initialized for user', userId);
       return;
     }
 
@@ -48,6 +49,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     }
 
     if (!subscriptions || subscriptions.length === 0) {
+      console.info('[pushSender] no subscriptions found for user', userId);
       return;
     }
 
@@ -63,7 +65,8 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
         };
 
         try {
-          await sendNotification(pushSubscription, payloadString);
+          const result = await sendNotification(pushSubscription, payloadString);
+          console.info('[pushSender] sendNotification succeeded for', sub.id, result.statusCode, result.body);
         } catch (error) {
           const webPushError = error as WebPushError;
           const statusCode = webPushError?.statusCode;
@@ -89,6 +92,8 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     const failures = results.filter((r) => r.status === 'rejected').length;
     if (failures > 0) {
       console.error('[pushSender]', failures, 'subscription(s) failed for user', userId);
+    } else {
+      console.info('[pushSender] all subscriptions succeeded for user', userId);
     }
   } catch (error) {
     console.error('[pushSender] sendPushToUser failed for user', userId, error);
