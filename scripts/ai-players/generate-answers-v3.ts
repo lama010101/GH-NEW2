@@ -760,6 +760,30 @@ async function callOpenRouter(
     };
   }
 
+  const envelopeError = extractEnvelopeError(rawResponse);
+  if (envelopeError) {
+    const errorMsg = `OpenRouter returned an error envelope${
+      envelopeError.code !== null ? ` (${envelopeError.code})` : ""
+    }: ${envelopeError.message}`;
+    calls.push({
+      turn_index: turnIndex,
+      request_payload: requestBody,
+      response_payload: rawResponse,
+      duration_ms: durationMs,
+      error: errorMsg,
+    });
+    return {
+      content: "",
+      rawResponse,
+      error: errorMsg,
+      requestStartedAt,
+      responseReceivedAt,
+      usage: extractUsage(rawResponse),
+      reasoning: null,
+      reasoningAvailable: false,
+    };
+  }
+
   calls.push({
     turn_index: turnIndex,
     request_payload: requestBody,
@@ -779,6 +803,17 @@ async function callOpenRouter(
     reasoning,
     reasoningAvailable,
   };
+}
+
+function extractEnvelopeError(raw: unknown): { code: number | null; message: string } | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const maybe = raw as Record<string, unknown>;
+  const err = maybe.error;
+  if (!err || typeof err !== "object") return null;
+  const errObj = err as Record<string, unknown>;
+  const code = typeof errObj.code === "number" ? errObj.code : null;
+  const message = typeof errObj.message === "string" ? errObj.message : JSON.stringify(errObj);
+  return { code, message };
 }
 
 function nullUsage(): OpenRouterUsage {

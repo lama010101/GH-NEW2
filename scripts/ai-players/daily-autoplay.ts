@@ -88,7 +88,7 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
     /OPENROUTER_API_KEY is missing/,
     /No validated event found/,
     /has no image_url/,
-    /Failed to parse AI guess/,
+    /Failed to parse AI (turn 1|final guess|guess) response/,
     /Usage:/,
   ];
   for (const pattern of nonTransientPatterns) {
@@ -99,6 +99,15 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
   if (httpMatch) {
     const status = parseInt(httpMatch[1], 10);
     return status === 429 || (status >= 500 && status < 600);
+  }
+
+  const envelopeMatch = output.match(/OpenRouter returned an error envelope \((\d{3})\)/);
+  if (envelopeMatch) {
+    const code = parseInt(envelopeMatch[1], 10);
+    return code === 429 || (code >= 500 && code < 600);
+  }
+  if (/OpenRouter returned an error envelope/.test(output)) {
+    return true;
   }
 
   const transientNetworkPatterns = [

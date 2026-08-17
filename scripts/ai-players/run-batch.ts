@@ -84,7 +84,7 @@ function isTransientFailure(stderr: string, stdout: string): boolean {
     /OPENROUTER_API_KEY is missing/,
     /No validated event found/,
     /has no image_url/,
-    /Failed to parse AI guess/,
+    /Failed to parse AI (turn 1|final guess|guess) response/,
     /Usage:/,
   ];
   for (const pattern of nonTransientPatterns) {
@@ -102,6 +102,16 @@ function isTransientFailure(stderr: string, stdout: string): boolean {
     }
     // Any other 4xx is a client-side/non-transient failure.
     return false;
+  }
+
+  // OpenRouter error envelope returned with an HTTP 200 status.
+  const envelopeMatch = output.match(/OpenRouter returned an error envelope \((\d{3})\)/);
+  if (envelopeMatch) {
+    const code = parseInt(envelopeMatch[1], 10);
+    return code === 429 || (code >= 500 && code < 600);
+  }
+  if (/OpenRouter returned an error envelope/.test(output)) {
+    return true;
   }
 
   // Network / socket / DNS failures are transient.
