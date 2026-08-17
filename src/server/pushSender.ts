@@ -27,66 +27,70 @@ function initializeVapid() {
 let vapidInitialized = false;
 
 export async function sendPushToUser(userId: string, payload: PushPayload) {
-  if (!vapidInitialized) {
-    vapidInitialized = initializeVapid();
-  }
+  try {
+    if (!vapidInitialized) {
+      vapidInitialized = initializeVapid();
+    }
 
-  if (!vapidInitialized) {
-    return;
-  }
+    if (!vapidInitialized) {
+      return;
+    }
 
-  const supabase = createSupabaseServerClient();
-  const { data: subscriptions, error } = await supabase
-    .from('push_subscriptions')
-    .select('id, endpoint, p256dh, auth')
-    .eq('user_id', userId);
+    const supabase = createSupabaseServerClient();
+    const { data: subscriptions, error } = await supabase
+      .from('push_subscriptions')
+      .select('id, endpoint, p256dh, auth')
+      .eq('user_id', userId);
 
-  if (error) {
-    console.error('[pushSender] failed to load subscriptions for user', userId, error);
-    return;
-  }
+    if (error) {
+      console.error('[pushSender] failed to load subscriptions for user', userId, error);
+      return;
+    }
 
-  if (!subscriptions || subscriptions.length === 0) {
-    return;
-  }
+    if (!subscriptions || subscriptions.length === 0) {
+      return;
+    }
 
-  const payloadString = JSON.stringify(payload);
-  const results = await Promise.allSettled(
-    subscriptions.map(async (sub) => {
-      const pushSubscription = {
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: sub.p256dh,
-          auth: sub.auth,
-        },
-      };
+    const payloadString = JSON.stringify(payload);
+    const results = await Promise.allSettled(
+      subscriptions.map(async (sub) => {
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth,
+          },
+        };
 
-      try {
-        await sendNotification(pushSubscription, payloadString);
-      } catch (error) {
-        const webPushError = error as WebPushError;
-        const statusCode = webPushError?.statusCode;
+        try {
+          await sendNotification(pushSubscription, payloadString);
+        } catch (error) {
+          const webPushError = error as WebPushError;
+          const statusCode = webPushError?.statusCode;
 
-        if (statusCode === 410 || statusCode === 404) {
-          const { error: deleteError } = await supabase
-            .from('push_subscriptions')
-            .delete()
-            .eq('id', sub.id);
+          if (statusCode === 410 || statusCode === 404) {
+            const { error: deleteError } = await supabase
+              .from('push_subscriptions')
+              .delete()
+              .eq('id', sub.id);
 
-          if (deleteError) {
-            console.error('[pushSender] failed to delete stale subscription', sub.id, deleteError);
+            if (deleteError) {
+              console.error('[pushSender] failed to delete stale subscription', sub.id, deleteError);
+            } else {
+              console.info('[pushSender] deleted stale subscription', sub.id, statusCode);
+            }
           } else {
-            console.info('[pushSender] deleted stale subscription', sub.id, statusCode);
+            console.error('[pushSender] sendNotification failed for', sub.id, webPushError?.message || error);
           }
-        } else {
-          console.error('[pushSender] sendNotification failed for', sub.id, webPushError?.message || error);
         }
-      }
-    })
-  );
+      })
+    );
 
-  const failures = results.filter((r) => r.status === 'rejected').length;
-  if (failures > 0) {
-    console.error('[pushSender]', failures, 'subscription(s) failed for user', userId);
+    const failures = results.filter((r) => r.status === 'rejected').length;
+    if (failures > 0) {
+      console.error('[pushSender]', failures, 'subscription(s) failed for user', userId);
+    }
+  } catch (error) {
+    console.error('[pushSender] sendPushToUser failed for user', userId, error);
   }
 }
