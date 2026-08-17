@@ -25,6 +25,7 @@ type ActiveGame = {
   leaderboard_rank?: number
   created_at?: string
   session_deadline?: string
+  session_deadline_days?: number | null
   is_host_opponent?: boolean
   is_host_viewer?: boolean
 }
@@ -35,6 +36,22 @@ function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) 
   if (diff < 3600000) return t('notifications.m_ago', { n: Math.floor(diff / 60000) })
   if (diff < 86400000) return t('notifications.h_ago', { n: Math.floor(diff / 3600000) })
   return t('notifications.d_ago', { n: Math.floor(diff / 86400000) })
+}
+
+// The session's real deadline is only anchored once the first player starts
+// their own round sequence (GAME_MODES_SPEC.md §5.3). Until then, fall back
+// to an estimate off the session's creation time so Relax games always show
+// a time-left indicator instead of none at all.
+function resolveDeadlineIso(
+  sessionDeadline: string | undefined,
+  sessionCreatedAt: string | undefined,
+  sessionDeadlineDays: number | null | undefined
+): string | undefined {
+  if (sessionDeadline) return sessionDeadline
+  if (sessionCreatedAt && sessionDeadlineDays != null) {
+    return new Date(new Date(sessionCreatedAt).getTime() + sessionDeadlineDays * 86400000).toISOString()
+  }
+  return undefined
 }
 
 function timeRemaining(deadlineIso: string, t: (key: string, params?: Record<string, number>) => string): string {
@@ -114,6 +131,8 @@ export function CompetePanel({ onLobby, playerId }: {
     expires_at: string
     mode?: 'sync' | 'async'
     session_deadline?: string
+    session_created_at?: string
+    session_deadline_days?: number | null
   }>>([])
   const [invitesLoading, setInvitesLoading] = useState(true)
   const [tab, setTab] = useState<'invitations'|'your_turn'|'completed'>('invitations')
@@ -258,7 +277,9 @@ export function CompetePanel({ onLobby, playerId }: {
             </div>
           ) : (
             <div className={cpStyles.gameList}>
-              {invites.map(invite => (
+              {invites.map(invite => {
+                const inviteDeadlineIso = resolveDeadlineIso(invite.session_deadline, invite.session_created_at, invite.session_deadline_days)
+                return (
                 <div
                   key={invite.id}
                   className={cpStyles.gameRow}
@@ -280,8 +301,8 @@ export function CompetePanel({ onLobby, playerId }: {
                       )}
                       {' '}
                       {t('home.compete_invite_sent', { time: timeAgo(invite.created_at, t) })}
-                      {invite.mode === 'async' && invite.session_deadline && (
-                        <span className={cpStyles.timeRemaining}> · {timeRemaining(invite.session_deadline, t)}</span>
+                      {invite.mode === 'async' && inviteDeadlineIso && (
+                        <span className={cpStyles.timeRemaining}> · {timeRemaining(inviteDeadlineIso, t)}</span>
                       )}
                     </span>
                   </div>
@@ -302,7 +323,8 @@ export function CompetePanel({ onLobby, playerId }: {
                     <TrashIcon />
                   </button>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )
         )}
@@ -313,7 +335,9 @@ export function CompetePanel({ onLobby, playerId }: {
             <div className={cpStyles.emptyStateCenter}>{t('home.compete_no_your_turn')}</div>
           ) : (
             <div className={cpStyles.gameList}>
-              {yourTurnGames.map(game => (
+              {yourTurnGames.map(game => {
+                const gameDeadlineIso = resolveDeadlineIso(game.session_deadline, game.created_at, game.session_deadline_days)
+                return (
                 <div
                   key={game.id}
                   className={cpStyles.gameRow}
@@ -337,8 +361,8 @@ export function CompetePanel({ onLobby, playerId }: {
                       )}
                       {' '}
                       {t('home.compete_round_label', { current: game.round_current, total: game.round_total })}
-                      {game.mode === 'async' && game.session_deadline && (
-                        <span className={cpStyles.timeRemaining}> · {timeRemaining(game.session_deadline, t)}</span>
+                      {game.mode === 'async' && gameDeadlineIso && (
+                        <span className={cpStyles.timeRemaining}> · {timeRemaining(gameDeadlineIso, t)}</span>
                       )}
                     </span>
                   </div>
@@ -351,7 +375,8 @@ export function CompetePanel({ onLobby, playerId }: {
                     <PlayIcon />
                   </button>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )
         )}

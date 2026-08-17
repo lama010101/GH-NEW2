@@ -29,8 +29,9 @@ export async function GET(_request: NextRequest) {
       mode: string;
       created_at: Date;
       session_deadline: Date | null;
+      session_deadline_days: number | null;
     }>(
-      `SELECT s.game_id, s.total_rounds, s.mode, s.created_at, s.session_deadline
+      `SELECT s.game_id, s.total_rounds, s.mode, s.created_at, s.session_deadline, s.session_deadline_days
        FROM sessions s
        JOIN session_players sp ON sp.game_id = s.game_id
        WHERE sp.player_id = $1
@@ -59,6 +60,7 @@ export async function GET(_request: NextRequest) {
       leaderboard_rank?: number;
       created_at: string;
       session_deadline?: string;
+      session_deadline_days?: number | null;
       completed_at?: string;
     }> = [];
 
@@ -242,6 +244,7 @@ export async function GET(_request: NextRequest) {
         leaderboard_rank: leaderboardRank,
         created_at: new Date(session.created_at).toISOString(),
         session_deadline: session.session_deadline ? new Date(session.session_deadline).toISOString() : undefined,
+        session_deadline_days: session.session_deadline_days,
         completed_at: completedAt,
       });
     }

@@ -33,17 +33,30 @@ export async function GET(_request: NextRequest) {
     // cookie-scoped Supabase client is RLS-bound and may not read sessions,
     // so we use the pool here.
     const gameIds = Array.from(new Set((invitations ?? []).map((i) => i.game_id)));
-    const sessionInfoByGameId = new Map<string, { mode: string; session_deadline: string | null }>();
+    const sessionInfoByGameId = new Map<string, {
+      mode: string;
+      session_deadline: string | null;
+      session_created_at: string;
+      session_deadline_days: number | null;
+    }>();
     if (gameIds.length > 0) {
       const pool = getDbPool();
-      const sessionResult = await pool.query<{ game_id: string; mode: string; session_deadline: Date | null }>(
-        `SELECT game_id, mode, session_deadline FROM sessions WHERE game_id = ANY($1)`,
+      const sessionResult = await pool.query<{
+        game_id: string;
+        mode: string;
+        session_deadline: Date | null;
+        created_at: Date;
+        session_deadline_days: number | null;
+      }>(
+        `SELECT game_id, mode, session_deadline, created_at, session_deadline_days FROM sessions WHERE game_id = ANY($1)`,
         [gameIds]
       );
       for (const row of sessionResult.rows) {
         sessionInfoByGameId.set(row.game_id, {
           mode: row.mode,
           session_deadline: row.session_deadline ? new Date(row.session_deadline).toISOString() : null,
+          session_created_at: new Date(row.created_at).toISOString(),
+          session_deadline_days: row.session_deadline_days,
         });
       }
     }
@@ -76,6 +89,8 @@ export async function GET(_request: NextRequest) {
           avatar_url: profile?.avatar_url ?? undefined,
           mode: sessionInfo?.mode ?? undefined,
           session_deadline: sessionInfo?.session_deadline ?? undefined,
+          session_created_at: sessionInfo?.session_created_at ?? undefined,
+          session_deadline_days: sessionInfo?.session_deadline_days ?? undefined,
         };
       })
     );
