@@ -415,7 +415,7 @@ export default function SessionComplete({
               roundCount: playerResults.length,
             };
           })
-          .filter((p): p is MvpPlayer => p !== null && p.roundCount === snapshot.config.totalRounds);
+          .filter((p): p is MvpPlayer => p !== null && p.roundCount === snapshot.config.totalRounds && p.stats.avgAccuracy > 0);
 
         type IconComponent = React.ComponentType<{ size?: number | string; className?: string }>;
 
