@@ -70,23 +70,39 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  let payload = {};
-  try {
-    payload = event.data?.json?.() || {};
-  } catch {
-    console.warn('[SW] push event data could not be parsed as JSON');
-  }
+  event.waitUntil((async () => {
+    console.log('[sw] push event received', { hasData: !!event.data, timestamp: Date.now() });
 
-  const title = payload.title || 'Guess History';
-  const options = {
-    body: payload.body || '',
-    icon: payload.icon,
-    badge: payload.badge,
-    tag: payload.tag,
-    data: { url: payload.url || '/' },
-  };
+    let payload = {};
+    try {
+      if (event.data) {
+        payload = event.data.json?.() || {};
+        console.log('[sw] push parsed payload', payload);
+      } else {
+        console.log('[sw] push event has no data');
+      }
+    } catch (err) {
+      console.warn('[sw] push event data could not be parsed as JSON', err);
+    }
 
-  event.waitUntil(self.registration.showNotification(title, options));
+    const title = payload.title || 'Guess History';
+    const options = {
+      body: payload.body || '',
+      icon: payload.icon,
+      badge: payload.badge,
+      tag: payload.tag,
+      data: { url: payload.url || '/' },
+    };
+
+    console.log('[sw] calling showNotification', { title, options });
+    try {
+      await self.registration.showNotification(title, options);
+      console.log('[sw] showNotification resolved');
+    } catch (err) {
+      console.error('[sw] showNotification REJECTED', err);
+      throw err;
+    }
+  })());
 });
 
 self.addEventListener('notificationclick', (event) => {
