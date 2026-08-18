@@ -69,7 +69,12 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
             subscriptionId: sub.id,
             endpoint: sub.endpoint,
           });
-          await sendNotification(pushSubscription, payloadString);
+          const result = await sendNotification(pushSubscription, payloadString);
+          console.log('[pushSender] send result', {
+            statusCode: result.statusCode,
+            body: result.body,
+            headers: result.headers,
+          });
         } catch (error) {
           const webPushError = error as WebPushError;
           const statusCode = webPushError?.statusCode;
