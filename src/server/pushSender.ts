@@ -63,6 +63,12 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
         };
 
         try {
+          // Temporary diagnostic log for AIP-FIX-PUSHSEND-ENDPOINTCORRELATION-001
+          console.log('[pushSender] sending to endpoint', {
+            userId,
+            subscriptionId: sub.id,
+            endpoint: sub.endpoint,
+          });
           await sendNotification(pushSubscription, payloadString);
         } catch (error) {
           const webPushError = error as WebPushError;
