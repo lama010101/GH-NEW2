@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, updateCachedAvatarUrl, type IdentityState } from '@/core/identity'
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import { WelcomeModal } from '@/components/WelcomeModal'
+import { PushSoftAsk } from '@/components/PushSoftAsk'
 import { DailyPanel, type DailyStatusPayload } from '@/components/home/DailyPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
 import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
@@ -57,6 +58,7 @@ function HomePageInner() {
   const [welcomeLoading, setWelcomeLoading] = useState(false)
   const welcomeHandledRef = useRef(false)
   const [welcomeCompleted, setWelcomeCompleted] = useState<boolean | null>(null)
+  const [pushSoftAskDismissed, setPushSoftAskDismissed] = useState<boolean | null>(null)
   const [isNewUserForWelcome, setIsNewUserForWelcome] = useState(false)
 
   const triggerAssignAvatar = useCallback(() => {
@@ -167,11 +169,12 @@ function HomePageInner() {
         }
       } catch {}
       try {
-        const { data: profile } = await supabaseBrowser.from('profiles').select('display_name,avatar_url,welcome_completed').eq('id', pid).single()
+        const { data: profile } = await supabaseBrowser.from('profiles').select('display_name,avatar_url,welcome_completed,push_soft_ask_dismissed').eq('id', pid).single()
         if (cancelled) return
         if (profile) {
           setAvatarUrl(profile.avatar_url ?? null)
           setWelcomeCompleted(profile.welcome_completed ?? false)
+          setPushSoftAskDismissed(profile.push_soft_ask_dismissed ?? true)
           if (profile.display_name) setInitials(profile.display_name.slice(0,2).toUpperCase())
           if (profile.display_name && (identity as { displayName?: string }).displayName !== profile.display_name) {
             updateCachedDisplayName(profile.display_name)
@@ -418,6 +421,15 @@ function HomePageInner() {
           avatar={welcomeData.avatar}
           initialDisplayName={welcomeData.displayName}
           onSaved={() => setProfileVersion(v => v + 1)}
+        />
+      )}
+      {welcomeData === null && isNewUserForWelcome && welcomeCompleted === true && pushSoftAskDismissed === false && (
+        <PushSoftAsk
+          playerId={currentPlayerId ?? ''}
+          isNewUserForWelcome={isNewUserForWelcome}
+          welcomeCompleted={welcomeCompleted === true}
+          pushSoftAskDismissed={pushSoftAskDismissed === false ? false : true}
+          onDismissed={() => setPushSoftAskDismissed(true)}
         />
       )}
       <PracticeSettingsModal
