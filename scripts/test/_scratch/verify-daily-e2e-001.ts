@@ -24,6 +24,7 @@ import {
   loadCompeteSessionSnapshot,
 } from "@/server/sessionCore";
 import { startDailyAttempt, getOrCreateDailyChallenge } from "@/server/dailyChallenge";
+import { getDailyChallengeDate } from "@/core/dailyDate";
 import { TransitionCause } from "@/core/transitionCause";
 import { dbPool } from "@/server/db";
 
@@ -45,7 +46,7 @@ async function main(): Promise<void> {
   console.log(" MP-VERIFY-DAILY-E2E-001 — Daily E2E live verification — start");
   console.log("================================================================");
   console.log(` testPlayerId (synthetic, no auth account): ${testPlayerId}`);
-  console.log(` today (UTC ISO date): ${new Date().toISOString().slice(0, 10)}`);
+  console.log(` today (UTC+14 ISO date): ${getDailyChallengeDate()}`);
   console.log("");
 
   // ===========================================================================
@@ -74,7 +75,7 @@ async function main(): Promise<void> {
   const sessionEventIds = sessionCreatedEvent[0]?.payload?.eventIds ?? [];
   log("SESSION_CREATED.payload.eventIds", sessionEventIds);
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = getDailyChallengeDate();
   const challenge = await getOrCreateDailyChallenge(todayIso);
   log("daily_challenges.event_ids", challenge.event_ids);
   log("daily_challenges.date", challenge.date);

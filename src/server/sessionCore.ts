@@ -43,6 +43,7 @@ import {
 } from "@/server/db";
 import { fetchEventById, fetchRandomEventsForSession } from "@/server/events";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
+import { getDailyChallengeDate } from "@/core/dailyDate";
 import { dailySeed } from "@/core/dailySeed";
 import { getGameState, deriveStateFromEventStream, loadPendingInvitees, type ReconstructedGameState } from "@/server/getGameState";
 import {
@@ -1793,9 +1794,9 @@ export async function finalizeDailyStaleAttempt(
 export async function createDailySession(input: {
   playerId: string;
   displayName?: string;
-  dateIso: string;
+  dateIso?: string;
 }): Promise<CompeteSessionSnapshot> {
-  const { playerId, dateIso } = input;
+  const { playerId, dateIso = getDailyChallengeDate() } = input;
 
   // Load or generate the pinned daily challenge (§4.3)
   const challenge = await getOrCreateDailyChallenge(dateIso);
@@ -4434,11 +4435,13 @@ async function dailyGameEndTransaction(
     // DAILY_MODE_SPEC.md §8 are collapsed to streak-only. player_progression_stats,
     // player_accuracy_history, and player_era_stats are intentionally not built.
 
-    // Daily streak evaluation (§9)
+    // Daily streak evaluation (§9). Challenge date was fixed at session start
+    // using the UTC+14 calendar (Pacific/Kiritimati, boundary 10:00 UTC), so
+    // yesterday is simply the previous UTC+14 calendar day.
     const challengeDateMidnight = new Date(challengeDate + "T00:00:00Z");
     const yesterdayDate = new Date(challengeDateMidnight);
     yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
-    const yesterdayIso = yesterdayDate.toISOString().slice(0, 10);
+    const yesterdayIso = `${yesterdayDate.getUTCFullYear()}-${String(yesterdayDate.getUTCMonth() + 1).padStart(2, "0")}-${String(yesterdayDate.getUTCDate()).padStart(2, "0")}`;
 
     const streakRow = await client.query<{
       daily_streak_current: number;

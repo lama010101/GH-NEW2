@@ -23,6 +23,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import pg from 'pg';
 import { TEST_USERS, type TestUser } from '../fixtures/auth';
+import { getDailyChallengeDate } from '@/core/dailyDate';
 
 const { Pool } = pg;
 
@@ -64,7 +65,7 @@ interface SessionBundle {
 const sessionCache = new Map<string, SessionBundle>();
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return getDailyChallengeDate();
 }
 
 async function getSession(user: TestUser): Promise<SessionBundle> {
