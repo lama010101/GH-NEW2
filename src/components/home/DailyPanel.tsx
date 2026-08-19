@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import { getNextDailyRollover } from '@/core/dailyDate'
 import styles from './DailyPanel.module.css'
 
 export type DailyStatusPayload = {
@@ -46,8 +47,8 @@ export function DailyPanel({
   useEffect(() => {
     const compute = () => {
       const now = new Date()
-      const nextUtcMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
-      const diff = Math.max(0, nextUtcMidnight.getTime() - now.getTime())
+      const nextRollover = getNextDailyRollover(now)
+      const diff = Math.max(0, nextRollover.getTime() - now.getTime())
       const h = Math.floor(diff / 3600000)
       const m = Math.floor((diff % 3600000) / 60000)
       return t('common.countdown_hm', { h, m })

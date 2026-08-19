@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { getDailyChallengeDate } from "@/core/dailyDate";
 import { dbPool } from "@/server/db";
 import { resolvePlayerIdentities, type PlayerIdentity } from "@/core/playerIdentity";
 
@@ -165,7 +166,7 @@ async function loadDailyTodayRanked(date: string): Promise<RawRankedRow[]> {
         MAX(a.created_at) AS completed_at,
         MAX(a.round_accuracy)::numeric(5,2) AS best_accuracy
       FROM ai_answer_bank a
-      JOIN ai_players ap ON ap.id = a.ai_player_id AND ap.is_active = true
+      JOIN ai_players ap ON ap.id = a.ai_player_id AND ap.is_active_daily = true
       JOIN daily_challenges dc ON dc.date = $1 AND a.event_id = ANY(dc.event_ids)
       WHERE a.error IS NULL
       GROUP BY a.ai_player_id
@@ -323,7 +324,7 @@ export async function GET(request: Request) {
           case "overall": return loadOverallRanked();
           case "daily_today": {
             const rawDate = searchParams.get("date");
-            const targetDate = rawDate ?? new Date().toISOString().slice(0, 10);
+            const targetDate = rawDate ?? getDailyChallengeDate();
             if (!DATE_REGEX.test(targetDate)) {
               throw new Error("Invalid date format. Use YYYY-MM-DD.");
             }
