@@ -166,7 +166,7 @@ async function loadDailyTodayRanked(date: string): Promise<RawRankedRow[]> {
         MAX(a.created_at) AS completed_at,
         MAX(a.round_accuracy)::numeric(5,2) AS best_accuracy
       FROM ai_answer_bank a
-      JOIN ai_players ap ON ap.id = a.ai_player_id AND ap.is_active = true
+      JOIN ai_players ap ON ap.id = a.ai_player_id AND ap.is_active_daily = true
       JOIN daily_challenges dc ON dc.date = $1 AND a.event_id = ANY(dc.event_ids)
       WHERE a.error IS NULL
       GROUP BY a.ai_player_id
