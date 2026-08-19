@@ -3,6 +3,7 @@ import { spawn } from "child_process";
 import { resolve } from "path";
 import { getDbPool } from "@/server/db";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
+import { getDailyChallengeDate } from "@/core/dailyDate";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -10,7 +11,7 @@ config({ path: ".env.local" });
 const WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers-v3.ts");
 const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
 
-const CONCURRENCY = 5;
+const PLAYER_CONCURRENCY = 3;
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [1000, 4000];
 
@@ -26,8 +27,13 @@ type WorkItem = {
   eventId: string;
 };
 
+type PlayerWork = {
+  player: AiPlayer;
+  missing: string[];
+};
+
 function todayUtcIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return getDailyChallengeDate();
 }
 
 function sleep(ms: number): Promise<void> {
@@ -157,7 +163,7 @@ async function main(): Promise<void> {
   const pool = getDbPool();
 
   const dateIso = todayUtcIso();
-  console.log(`[DAILY] UTC date: ${dateIso}`);
+  console.log(`[DAILY] UTC+14 date: ${dateIso}`);
 
   const challenge = await getOrCreateDailyChallenge(dateIso);
   const eventIds = challenge.event_ids;
@@ -175,7 +181,8 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  const workItems: WorkItem[] = [];
+  const playerQueue: PlayerWork[] = [];
+  let totalWorkItems = 0;
 
   for (const player of players) {
     const doneResult = await pool.query<{ event_id: string }>(
@@ -193,38 +200,45 @@ async function main(): Promise<void> {
 
     if (missing.length === 0) continue;
 
-    for (const eventId of missing) {
-      workItems.push({ player, eventId });
-    }
+    playerQueue.push({ player, missing });
+    totalWorkItems += missing.length;
   }
 
-  console.log(`[DAILY] Work items to process: ${workItems.length}`);
+  console.log(`[DAILY] Work items to process: ${totalWorkItems}`);
 
   if (dryRun) {
-    for (const item of workItems) {
-      console.log(`[DRY-RUN] would spawn worker: ${item.player.id} ${item.eventId} --model=${item.player.model_id} --provider=${item.player.provider}`);
+    for (const pw of playerQueue) {
+      for (const eventId of pw.missing) {
+        console.log(`[DRY-RUN] would spawn worker: ${pw.player.id} ${eventId} --model=${pw.player.model_id} --provider=${pw.player.provider}`);
+      }
     }
     await pool.end();
     process.exit(0);
   }
 
-  let pointer = 0;
+  let queuePointer = 0;
   let succeeded = 0;
   let failed = 0;
 
-  async function worker(): Promise<void> {
-    while (pointer < workItems.length) {
-      const item = workItems[pointer++];
-      const ok = await processOne(item);
-      if (ok) {
-        succeeded++;
-      } else {
-        failed++;
+  async function playerWorker(): Promise<void> {
+    while (queuePointer < playerQueue.length) {
+      const pw = playerQueue[queuePointer++];
+      let playerSucceeded = 0;
+      let playerFailed = 0;
+      for (const eventId of pw.missing) {
+        const ok = await processOne({ player: pw.player, eventId });
+        if (ok) {
+          playerSucceeded++;
+        } else {
+          playerFailed++;
+        }
       }
+      succeeded += playerSucceeded;
+      failed += playerFailed;
     }
   }
 
-  const workers = Array.from({ length: Math.min(CONCURRENCY, workItems.length) }, worker);
+  const workers = Array.from({ length: Math.min(PLAYER_CONCURRENCY, playerQueue.length) }, playerWorker);
   await Promise.all(workers);
 
   await pool.end();
@@ -232,7 +246,7 @@ async function main(): Promise<void> {
   console.log("\n=== Daily autoplay summary ===");
   console.log(`Date: ${dateIso}`);
   console.log(`Players: ${players.length}`);
-  console.log(`Work items: ${workItems.length}`);
+  console.log(`Work items: ${totalWorkItems}`);
   console.log(`Succeeded: ${succeeded}`);
   console.log(`Failed: ${failed}`);
 

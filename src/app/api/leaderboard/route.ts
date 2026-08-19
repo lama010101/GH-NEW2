@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { getDailyChallengeDate } from "@/core/dailyDate";
 import { dbPool } from "@/server/db";
 import { resolvePlayerIdentities, type PlayerIdentity } from "@/core/playerIdentity";
 
@@ -323,7 +324,7 @@ export async function GET(request: Request) {
           case "overall": return loadOverallRanked();
           case "daily_today": {
             const rawDate = searchParams.get("date");
-            const targetDate = rawDate ?? new Date().toISOString().slice(0, 10);
+            const targetDate = rawDate ?? getDailyChallengeDate();
             if (!DATE_REGEX.test(targetDate)) {
               throw new Error("Invalid date format. Use YYYY-MM-DD.");
             }

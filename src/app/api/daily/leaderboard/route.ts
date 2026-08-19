@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { getDailyChallengeDate } from "@/core/dailyDate";
 import { dbPool } from "@/server/db";
 
 export const runtime = "nodejs";
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     const date = searchParams.get("date");
 
     if (view === "today") {
-      const targetDate = date ?? new Date().toISOString().slice(0, 10);
+      const targetDate = date ?? getDailyChallengeDate();
 
       // Top 50 for today
       const topRows = await dbPool.query<{

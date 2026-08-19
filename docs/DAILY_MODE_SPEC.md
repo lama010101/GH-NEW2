@@ -27,7 +27,7 @@ Architecture rule: Daily is a **solo mode on the direct API stack**. No PartyKit
 
 ## 1. PURPOSE
 
-One shared challenge, identical for every player worldwide, refreshing at **00:00 UTC**. One attempt per player per day. Primary daily-active-usage driver, primary Rank/Title progression trigger (with Level Up), and the unlock condition for deferred stats migrations MP-WRITE-STATS-006 / MP-MIG-STATS-005.
+One shared challenge, identical for every player worldwide, refreshing at **UTC+14 midnight (10:00 UTC)**. One attempt per player per day. Primary daily-active-usage driver, primary Rank/Title progression trigger (with Level Up), and the unlock condition for deferred stats migrations MP-WRITE-STATS-006 / MP-MIG-STATS-005.
 
 ---
 
@@ -45,10 +45,10 @@ One shared challenge, identical for every player worldwide, refreshing at **00:0
 | Rounds | 5 |
 | Timer | 90 seconds per round, mandatory |
 | Year range | Full range (−100 to current year) |
-| Events | Same 5 events for all players on a given UTC date |
+| Events | Same 5 events for all players on a given UTC+14 date |
 | Hints | Available, standard tiered penalty (`GAME_MODES_SPEC.md` §1.4) |
 | Deduplication | None — the set is fixed globally |
-| Attempts | Exactly 1 per player per UTC date |
+| Attempts | Exactly 1 per player per UTC+14 date |
 
 The client receives these values from the server. No client-side constants for timer or rounds.
 
@@ -58,13 +58,13 @@ The client receives these values from the server. No client-side constants for t
 
 ### 4.1 Determinism problem and resolution
 
-The naive rule `seed = hash(ISO_date)` with on-demand selection is **not sufficient**: the event pool grows over time, so a player at 08:00 UTC and a player at 20:00 UTC could deterministically select *different* events from a *different-sized* pool. The event set must be **pinned once per date**.
+The naive rule `seed = hash(ISO_date)` with on-demand selection is **not sufficient**: the event pool grows over time, so a player at 10:00 UTC and a player at 22:00 UTC could deterministically select *different* events from a *different-sized* pool. The event set must be **pinned once per date**.
 
 ### 4.2 `daily_challenges` table (pinning mechanism)
 
 ```sql
 CREATE TABLE daily_challenges (
-  date        DATE PRIMARY KEY,          -- UTC date
+  date        DATE PRIMARY KEY,          -- UTC+14 date
   seed        BIGINT NOT NULL,
   event_ids   UUID[] NOT NULL,           -- exactly 5, ordered = round order
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -77,10 +77,10 @@ CREATE TABLE daily_challenges (
 Generated on the **first request** for a given date:
 
 ```
-1. SELECT from daily_challenges WHERE date = today_utc
+1. SELECT from daily_challenges WHERE date = today_utc14
 2. Found → use event_ids as-is
 3. Not found →
-   a. seed = daily_seed(today_utc)          -- §4.4
+   a. seed = daily_seed(today_utc14)          -- §4.4
    b. Select 5 events via seeded PRNG over the full pool,
       full year range, no dedup
    c. INSERT INTO daily_challenges ... ON CONFLICT (date) DO NOTHING
@@ -96,12 +96,12 @@ Concurrency rule: after step (c), the implementation MUST re-read and use the st
 daily_seed(date) = abs(int64 from first 8 bytes of sha256("YYYY-MM-DD"))
 ```
 
-The date string is the UTC date in ISO format, no time component. This function must live in `src/core/` as the single exported implementation (standing rule: any constant/logic referenced in 2+ files lives in exactly one exported location).
+The date string is the UTC+14 date in ISO format, no time component. This function must live in `src/core/` as the single exported implementation (standing rule: any constant/logic referenced in 2+ files lives in exactly one exported location).
 
 ### 4.5 Date boundary
 
-- The challenge date for an attempt is fixed at **session start** using **server UTC time**. Client clocks are never consulted.
-- A session started at 23:58 UTC on day N and finished at 00:05 UTC on day N+1 belongs to **day N** — its leaderboard row is written for day N.
+- The challenge date for an attempt is fixed at **session start** using the **UTC+14 (Pacific/Kiritimati) calendar**, with the boundary at **10:00 UTC**. Client clocks are never consulted.
+- A session started at 09:58 UTC on day D and finished at 10:05 UTC on day D+1 belongs to **day D** — its leaderboard row is written for day D. Start-date is authoritative.
 
 ---
 
@@ -158,7 +158,7 @@ Rationale: mirrors the Relax deadline rule ("unsubmitted rounds score zero"), ke
 1. Player taps "Play Today's Challenge"
 2. Server (single endpoint, authenticated):
    a. Finalize any stale attempt (§5.4)
-   b. Look up daily_attempts for (today_utc, player)
+   b. Look up daily_attempts for (today_utc14, player)
       - completed/expired → return result-view payload (read-only)
       - in_progress       → return resume payload (current round index)
       - none              → continue
@@ -167,7 +167,7 @@ Rationale: mirrors the Relax deadline rule ("unsubmitted rounds score zero"), ke
    e. Create sessions row: mode='daily', seed=daily seed,
       round_timer_sec=90, total_rounds=5, year_min=-100,
       year_max=current year
-   f. Insert daily_attempts (today, player, game_id, 'in_progress')
+   f. Insert daily_attempts (today_utc14, player, game_id, 'in_progress')
       — steps e+f in ONE transaction. PK violation on f → concurrent
       double-start; roll back and return the existing attempt.
 3. Client preloads round 1 image, navigates to
@@ -209,7 +209,7 @@ BEGIN
      -- existing columns only; table is LOCKED
   4. player_progression_stats UPSERT:
        - daily_streak evaluation (§9)
-       - play_streak evaluation (any non-Practice game this UTC day)
+       - play_streak evaluation (any non-Practice game this UTC+14 day)
   5. player_accuracy_history INSERT (per stats-overhaul contract)
   6. player_era_stats UPSERT (per stats-overhaul contract)
   7. Badge aggregates → stats (evaluated per round, aggregated here,
@@ -230,12 +230,12 @@ Notes:
 
 ## 9. DAILY STREAK (PINNED DEFINITION)
 
-- `daily_streak_current` increments when the player **starts** (not necessarily finishes) the challenge on a UTC date, and the previous UTC date also counted.
+- `daily_streak_current` increments when the player **starts** (not necessarily finishes) the challenge on a UTC+14 date, and the previous UTC+14 date also counted.
 - "Starting and failing preserves the streak" — an `in_progress` or `expired` attempt counts for its date.
-- The streak breaks only if a UTC date passes with **no attempt row at all** for that player.
+- The streak breaks only if a UTC+14 date passes with **no attempt row at all** for that player.
 - `daily_streak_best` = max ever reached.
 - Storage: `player_progression_stats`. Never in `player_global_stats`.
-- Distinct from Play Streak (any non-Practice game per UTC day) — both live in `player_progression_stats`, both evaluated in §8 step 4.
+- Distinct from Play Streak (any non-Practice game per UTC+14 day) — both live in `player_progression_stats`, both evaluated in §8 step 4.
 
 Implementation note: because streak increments on *start* but stats writes happen at game end, the attempt-row insert (§6 step 2f) is the streak-qualifying event; the streak *counter update* still happens in the §8 transaction (or §5.4 finalization) to respect the single-writer/game-end rule. The evaluation reads `daily_attempts` dates, so late finalization computes the correct value.
 
@@ -264,7 +264,7 @@ Panel data comes from one read endpoint (§12) — the client performs no rankin
 
 ## 11. RESULT VIEW (READ-ONLY REVISIT)
 
-Any visit to Daily after `completed`/`expired` for today shows the final screen in read-only mode, rebuilt from `round_results` + `leaderboard_daily`. Rank is re-queried live (it changes as more players finish during the day). "Play" CTA replaced by countdown to next challenge (time until 00:00 UTC).
+Any visit to Daily after `completed`/`expired` for today shows the final screen in read-only mode, rebuilt from `round_results` + `leaderboard_daily`. Rank is re-queried live (it changes as more players finish during the day). "Play" CTA replaced by countdown to next challenge (time until UTC+14 midnight at 10:00 UTC).
 
 ---
 
@@ -336,8 +336,8 @@ RLS on all four: SELECT for `authenticated`; no INSERT/UPDATE/DELETE for authent
 
 Daily mode is valid ONLY IF:
 
-- [ ] Two players starting at different times on the same UTC date get identical events in identical order
-- [ ] Concurrent first-requesters at 00:00 UTC converge on one canonical event set
+- [ ] Two players starting at different times on the same UTC+14 date get identical events in identical order
+- [ ] Concurrent first-requesters at 10:00 UTC converge on one canonical event set
 - [ ] Second `POST /start` on the same date returns the existing attempt — never a new session
 - [ ] Refresh mid-round never resets or extends the 90s timer
 - [ ] Duplicate guess submission leaves exactly 1 `round_commits` row

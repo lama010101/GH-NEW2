@@ -5,6 +5,7 @@
 
 import { dbPool } from "./db";
 import { dailySeed, selectDailyEventIds } from "@/core/dailySeed";
+import { getDailyChallengeDate } from "@/core/dailyDate";
 import { VALID_CONTINENTS } from "./events";
 
 export interface DailyChallengeRow {
@@ -62,13 +63,13 @@ export async function getOrCreateDailyChallenge(dateIso: string): Promise<DailyC
  */
 /**
  * Finalize any stale in-progress Daily attempts for a player whose date is
- * strictly before `beforeDate` (defaults to today UTC). Processes rows in
+ * strictly before `beforeDate` (defaults to today's UTC+14 date). Processes rows in
  * chronological order (oldest first) so streak math is correct. Reuses
  * `finalizeDailyStaleAttempt` from sessionCore.
  */
 export async function finalizeStaleDailyAttempts(
   playerId: string,
-  beforeDate: string = new Date().toISOString().slice(0, 10)
+  beforeDate: string = getDailyChallengeDate()
 ): Promise<void> {
   const { finalizeDailyStaleAttempt, getTransactionClient } = await import("./sessionCore");
   const stale = await dbPool.query<{ game_id: string; date: string }>(
@@ -92,7 +93,7 @@ export async function finalizeStaleDailyAttempts(
 
 /**
  * startDailyAttempt — entry point for POST /api/daily/start.
- * Enforces one attempt per player per UTC date via daily_attempts PK.
+ * Enforces one attempt per player per UTC+14 date via daily_attempts PK.
  * Returns { status, gameId }:
  *   - "resume"     → existing in_progress attempt
  *   - "completed"  → existing completed/expired attempt
@@ -103,7 +104,7 @@ export async function finalizeStaleDailyAttempts(
 export async function startDailyAttempt(
   playerId: string
 ): Promise<{ status: "new" | "resume" | "completed"; gameId: string }> {
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = getDailyChallengeDate();
 
   // Finalize any stale in-progress attempts from past dates (D2 lazy finalization)
   await finalizeStaleDailyAttempts(playerId, todayIso);

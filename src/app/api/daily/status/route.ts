@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbPool } from "@/server/db";
 import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { getDailyChallengeDate } from "@/core/dailyDate";
 import { loadCompeteSessionSnapshot } from "@/server/sessionCore";
 import { finalizeStaleDailyAttempts } from "@/server/dailyChallenge";
 
@@ -17,7 +18,7 @@ export async function GET() {
     }
 
     const playerId = user.id;
-    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayIso = getDailyChallengeDate();
 
     // Lazy finalization of stale attempts from past dates (DAILY_MODE_SPEC.md §5.4)
     await finalizeStaleDailyAttempts(playerId, todayIso);
