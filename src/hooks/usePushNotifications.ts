@@ -80,10 +80,24 @@ export function usePushNotifications() {
     const registration = await navigator.serviceWorker.ready;
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
+      try {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+      } catch (error) {
+        const isBravePushBlocked =
+          (error instanceof DOMException && error.name === 'AbortError') ||
+          (error instanceof Error && /push service error/i.test(error.message));
+        if (isBravePushBlocked) {
+          return {
+            ok: false,
+            error:
+              "Push notifications need an extra setting enabled in Brave. Go to brave://settings/privacy and turn on 'Use Google services for push notifications', then try again.",
+          };
+        }
+        throw error;
+      }
     }
 
     const json = subscription.toJSON() as unknown as { endpoint: string; keys: PushSubscriptionKeys };

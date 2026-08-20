@@ -9,10 +9,10 @@ import { cookies } from "next/headers";
  */
 export function createSupabaseServerClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_SECRET_KEY_PROD;
 
   if (!url) throw new Error("NEXT_PUBLIC_SUPABASE_URL is not set");
-  if (!serviceKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
+  if (!serviceKey) throw new Error("SUPABASE_SECRET_KEY_PROD is not set");
 
   return createClient(url, serviceKey, {
     auth: {
@@ -31,7 +31,7 @@ export function createAuthenticatedServerClient(): SupabaseClient {
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
         getAll() {
