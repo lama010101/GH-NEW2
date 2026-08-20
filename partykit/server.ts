@@ -375,9 +375,9 @@ export default class GameServer {
     }
 
     const supabaseUrl = lobby.env.SUPABASE_URL as string | undefined;
-    const serviceKey = lobby.env.SUPABASE_SERVICE_ROLE_KEY as string | undefined;
+    const serviceKey = lobby.env.SUPABASE_SECRET_KEY_PROD as string | undefined;
     if (!supabaseUrl || !serviceKey) {
-      console.error("[PartyKit] onBeforeConnect: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured");
+      console.error("[PartyKit] onBeforeConnect: SUPABASE_URL or SUPABASE_SECRET_KEY_PROD not configured");
       return new Response("Server auth configuration error", { status: 500 });
     }
 

@@ -17,7 +17,7 @@
     "NEXT_PUBLIC_APP_URL": "https://gh-new2-git-main-lolos-projects-dc7e07be.vercel.app",
     "PARTYKIT_SECRET": "${PARTYKIT_SECRET}",
     "SUPABASE_URL": "${SUPABASE_URL}",
-    "SUPABASE_SERVICE_ROLE_KEY": "${SUPABASE_SERVICE_ROLE_KEY}",
+    "SUPABASE_SECRET_KEY_PROD": "${SUPABASE_SECRET_KEY_PROD}",
     "NEXTJS_BASE_URL": "https://guess-history.com"
   }
 }
