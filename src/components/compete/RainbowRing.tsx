@@ -75,17 +75,32 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
   const color = getAccuracyColor(value);
 
   return (
-    <svg viewBox="0 0 200 200" style={{ width: 170, height: 170, display: "block", margin: "0 auto" }}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--gh-border-medium)" strokeWidth={strokeWidth} />
-      <circle
-        cx={cx} cy={cy} r={r} fill="none"
-        stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
-        strokeDasharray={circumference} strokeDashoffset={offset}
-        transform={`rotate(-90 ${cx} ${cy})`}
-      />
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" fill="var(--gh-text-primary)" fontSize={52} fontWeight="bold">
-        <tspan dy="0.05em">{clamped}</tspan>
-      </text>
-    </svg>
+    <div style={{ position: "relative", width: 170, height: 170, margin: "0 auto" }}>
+      <svg viewBox="0 0 200 200" style={{ width: 170, height: 170, display: "block" }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--gh-border-medium)" strokeWidth={strokeWidth} />
+        <circle
+          cx={cx} cy={cy} r={r} fill="none"
+          stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          transform={`rotate(-90 ${cx} ${cy})`}
+        />
+      </svg>
+      <span
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          color: "var(--gh-text-primary)",
+          fontSize: 52,
+          fontWeight: "bold",
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+          pointerEvents: "none",
+        }}
+      >
+        {clamped}
+      </span>
+    </div>
   );
 }
