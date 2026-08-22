@@ -149,7 +149,7 @@ export function CompetePanel({ onLobby, playerId }: {
     }
   }, [playerId])
 
-  const fetchActiveGames = async () => {
+  const fetchActiveGames = useCallback(async () => {
     if (!playerId) return
     try {
       const res = await fetch('/api/compete/active-games')
@@ -157,7 +157,7 @@ export function CompetePanel({ onLobby, playerId }: {
       const { games } = await res.json()
       setActiveGames(games ?? [])
     } catch {}
-  }
+  }, [playerId])
 
   useEffect(() => {
     if (!playerId) {
@@ -184,10 +184,12 @@ export function CompetePanel({ onLobby, playerId }: {
 
     const interval = setInterval(() => {
       fetchInvites()
+      fetchActiveGames()
     }, 15000)
 
     const handleFocus = () => {
       fetchInvites()
+      fetchActiveGames()
     }
     window.addEventListener('focus', handleFocus)
 
@@ -197,7 +199,7 @@ export function CompetePanel({ onLobby, playerId }: {
       window.removeEventListener('focus', handleFocus)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playerId, fetchInvites])
+  }, [playerId, fetchInvites, fetchActiveGames])
 
   const runAccept = async (inviteId: string, gameId: string) => {
     const result = await acceptInvitation(inviteId)
