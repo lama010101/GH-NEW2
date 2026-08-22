@@ -99,36 +99,83 @@ fi
 echo "PRE-PUSH: route warm-up complete (HTTP ${WARMUP_HTTP}). Cold-compile cost absorbed; timed run may proceed."
 
 echo "PRE-PUSH: bootstrapping .env.local from repo secrets for Playwright auth..."
-: > .env.local
-ENV_LOCAL_VARS=0
-if [ -f /run/repo_secrets/lama010101/GH-NEW2/.env.secrets ]; then
-  grep -E '^export [A-Za-z_][A-Za-z0-9_]*=' /run/repo_secrets/lama010101/GH-NEW2/.env.secrets | sed 's/^export //' >> .env.local
-fi
-if [ -f .dev.vars ]; then
-  while IFS= read -r line || [ -n "$line" ]; do
-    case "$line" in
-      ''|\#*) continue ;;
-    esac
-    key="${line%%=*}"
-    if [ -n "$key" ] && ! grep -q "^${key}=" .env.local 2>/dev/null; then
-      echo "$line" >> .env.local
-    fi
-  done < .dev.vars
-fi
+# MP-FIX-PREPUSH-SECRETSFALLBACK-002 — NEVER truncate .env.local before a
+# pre-verified complete replacement is in hand. Order: check → build temp →
+# verify → atomically swap. Truncate-then-check is banned.
+SECRETS_SRC="/run/repo_secrets/lama010101/GH-NEW2/.env.secrets"
+ENV_LOCAL_TMP=".env.local.tmp"
 
-# PartyKit dev reads .env.local into lobby.env, and partykit.json vars use the
-# placeholder ${SUPABASE_URL}. .env.secrets exposes NEXT_PUBLIC_SUPABASE_URL
-# but not the canonical SUPABASE_URL, so derive it here so the DO can verify
-# WebSocket connection tokens during the gate.
-if ! grep -qE '^SUPABASE_URL=' .env.local 2>/dev/null; then
-  NEXT_PUBLIC_SUPABASE_URL_VALUE=$(grep -m1 '^NEXT_PUBLIC_SUPABASE_URL=' .env.local | sed 's/^NEXT_PUBLIC_SUPABASE_URL=//' )
-  if [ -n "$NEXT_PUBLIC_SUPABASE_URL_VALUE" ]; then
-    echo "SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL_VALUE" >> .env.local
+if [ ! -f "$SECRETS_SRC" ]; then
+  # ABSENT: do NOT touch .env.local — no truncate, no write, zero bytes
+  # modified. Use the existing file as-is, but grep-verify it already contains
+  # the two canonical Supabase vars the gate requires.
+  echo "PRE-PUSH: ${SECRETS_SRC} not found on this machine — using existing .env.local as-is (no truncate, no write)."
+  MISSING_VARS=""
+  if ! grep -qE '^SUPABASE_URL=' .env.local 2>/dev/null; then
+    MISSING_VARS="${MISSING_VARS}SUPABASE_URL "
   fi
+  if ! grep -qE '^SUPABASE_SECRET_KEY_PROD=' .env.local 2>/dev/null; then
+    MISSING_VARS="${MISSING_VARS}SUPABASE_SECRET_KEY_PROD "
+  fi
+  if [ -n "$MISSING_VARS" ]; then
+    echo "PRE-PUSH: FAILED — existing .env.local is missing required vars:${MISSING_VARS}"
+    echo "PRE-PUSH: Expected source ${SECRETS_SRC} was not found on this machine (Devin Local)."
+    echo "PRE-PUSH: Refusing to proceed to a partial/broken state. Restore .env.local manually and re-push."
+    exit 1
+  fi
+else
+  # PRESENT: build the full new .env.local content into a TEMP file first.
+  : > "$ENV_LOCAL_TMP"
+  grep -E '^export [A-Za-z_][A-Za-z0-9_]*=' "$SECRETS_SRC" | sed 's/^export //' >> "$ENV_LOCAL_TMP"
+  if [ -f .dev.vars ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in
+        ''|\#*) continue ;;
+      esac
+      key="${line%%=*}"
+      if [ -n "$key" ] && ! grep -q "^${key}=" "$ENV_LOCAL_TMP" 2>/dev/null; then
+        echo "$line" >> "$ENV_LOCAL_TMP"
+      fi
+    done < .dev.vars
+  fi
+
+  # PartyKit dev reads .env.local into lobby.env, and partykit.json vars use the
+  # placeholder ${SUPABASE_URL}. .env.secrets exposes NEXT_PUBLIC_SUPABASE_URL
+  # but not the canonical SUPABASE_URL, so derive it here so the DO can verify
+  # WebSocket connection tokens during the gate.
+  if ! grep -qE '^SUPABASE_URL=' "$ENV_LOCAL_TMP" 2>/dev/null; then
+    NEXT_PUBLIC_SUPABASE_URL_VALUE=$(grep -m1 '^NEXT_PUBLIC_SUPABASE_URL=' "$ENV_LOCAL_TMP" | sed 's/^NEXT_PUBLIC_SUPABASE_URL=//')
+    if [ -n "$NEXT_PUBLIC_SUPABASE_URL_VALUE" ]; then
+      echo "SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL_VALUE" >> "$ENV_LOCAL_TMP"
+    fi
+  fi
+
+  # Verify the temp file is non-empty and contains both required vars BEFORE
+  # touching the original .env.local.
+  if [ ! -s "$ENV_LOCAL_TMP" ]; then
+    rm -f "$ENV_LOCAL_TMP"
+    echo "PRE-PUSH: FAILED — built temp .env.local is empty. Original .env.local left untouched."
+    exit 1
+  fi
+  TMP_MISSING=""
+  if ! grep -qE '^SUPABASE_URL=' "$ENV_LOCAL_TMP" 2>/dev/null; then
+    TMP_MISSING="${TMP_MISSING}SUPABASE_URL "
+  fi
+  if ! grep -qE '^SUPABASE_SECRET_KEY_PROD=' "$ENV_LOCAL_TMP" 2>/dev/null; then
+    TMP_MISSING="${TMP_MISSING}SUPABASE_SECRET_KEY_PROD "
+  fi
+  if [ -n "$TMP_MISSING" ]; then
+    rm -f "$ENV_LOCAL_TMP"
+    echo "PRE-PUSH: FAILED — temp .env.local missing required vars:${TMP_MISSING}Original .env.local left untouched."
+    exit 1
+  fi
+
+  # Verification passed — atomically replace .env.local.
+  mv "$ENV_LOCAL_TMP" .env.local
 fi
 
 ENV_LOCAL_VARS=$(grep -cE '^[A-Za-z_][A-Za-z0-9_]*=' .env.local 2>/dev/null || echo 0)
-echo "PRE-PUSH: wrote ${ENV_LOCAL_VARS} vars to .env.local for this gate run."
+echo "PRE-PUSH: ${ENV_LOCAL_VARS} vars in .env.local for this gate run."
 
 # Load the freshly-written .env.local into this shell so Playwright inherits the
 # repo secrets even when the ambient environment already contains stale keys.
