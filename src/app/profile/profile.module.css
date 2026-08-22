@@ -55,9 +55,7 @@
   background: var(--gh-teal);
 }
 
-.leaderboardViolet {
-  color: var(--gh-violet);
-}
+
 
 .centuryChip {
   background: rgba(var(--gh-orange-rgb), 0.1);
@@ -126,75 +124,25 @@
 }
 
 /* ── Badge collection ── */
-.badgeTierRow {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 12px;
-}
 
-.badgeTier {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 14px 6px 12px;
-  border-radius: 14px;
-}
 
-.badgeTierImg {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
-}
 
-.badgeTierCount {
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1;
-}
 
-.badgeTierLabel {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--gh-text-secondary);
-}
 
-.badgeDimRow {
-  display: flex;
-  gap: 8px;
-}
 
-.badgeDim {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 11px;
-  background: var(--gh-glass-bg);
-  border: 1px solid var(--gh-border-subtle);
-}
 
-.badgeDimImg {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  flex-shrink: 0;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
-}
 
-.badgeDimLabel {
-  font-size: 12px;
-  color: var(--gh-text-secondary);
-  flex: 1;
-}
 
-.badgeDimCount {
-  font-size: 14px;
-  font-weight: 800;
-}
+
+
+
+
+
+
+
+
+
+
 
 /* ── Performance by mode ── */
 .modeRow {
