@@ -14,6 +14,8 @@ import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/
 import { PracticeResumeModal } from '@/components/practice/PracticeResumeModal'
 import { loadPracticeSettings, savePracticeSettings } from '@/components/practice/practiceSettings'
 import { createAsyncCompeteSession } from '@/core/competeCreate'
+import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from '@/core/relaxPwaInterstitial'
+import { RelaxPwaInterstitialModal } from '@/components/compete/RelaxPwaInterstitialModal'
 import styles from './home.module.css'
 import authModalStyles from '@/components/AuthModal.module.css'
 import { NavModal } from '@/components/NavModal'
@@ -486,8 +488,9 @@ function ModeCard({
   const [competeError, setCompeteError] = useState<string | null>(null)
   const [comingSoonOpen, setComingSoonOpen] = useState(false)
   const [dailyStatus, setDailyStatus] = useState<DailyStatusPayload | null>(null)
+  const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
 
-  const handleCompeteCreate = async () => {
+  const runCompeteCreate = async () => {
     if (!playerId) { onRequireAuth(); return }
     setCompeteLoading(true)
     setCompeteError(null)
@@ -499,6 +502,21 @@ function ModeCard({
     } finally {
       setCompeteLoading(false)
     }
+  }
+
+  const handleCompeteCreate = () => {
+    if (shouldShowRelaxPwaInterstitial()) {
+      setPwaInterstitialPending(() => runCompeteCreate)
+      return
+    }
+    void runCompeteCreate()
+  }
+
+  const handlePwaInterstitialSkip = () => {
+    markRelaxPwaInterstitialSkipped()
+    const pending = pwaInterstitialPending
+    setPwaInterstitialPending(null)
+    if (pending) void pending()
   }
 
   const getIconSrc = () => {
@@ -571,6 +589,9 @@ function ModeCard({
             <div style={{ color: 'var(--gh-danger)', fontSize: 'var(--font-2xs)', padding: '4px 20px 12px' }}>
               {competeError}
             </div>
+          )}
+          {pwaInterstitialPending && (
+            <RelaxPwaInterstitialModal onClose={handlePwaInterstitialSkip} />
           )}
         </div>
       </div>
