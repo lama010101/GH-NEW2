@@ -848,21 +848,21 @@ export default function SessionComplete({
                 <section className={styles.card}>
                   <div className={styles.cardHead}>
                     <span className={styles.accentBar} />
-                    <h2 className={styles.cardTitle}>{tGame('game_stats')}</h2>
+                    <h2 className={styles.cardTitle}>{tGame('your_best_scores')}</h2>
                   </div>
                   <div className={styles.achievementsBody}>
                     <div className={styles.gameStatsGrid}>
                       <div className={styles.gameStatTile}>
                         <span className={styles.gameStatVal}><WhereIcon size={14} className={styles.statTileIconWhere} /> {myStats ? Math.ceil(myStats.bestWhereRoundAccuracy) : '—'}<AccuracySuffix /></span>
-                        <span className={styles.gameStatLabel}>{tGame('mvp_where_best')}</span>
+                        <span className={styles.gameStatLabel}>{tGame('stat_where')}</span>
                       </div>
                       <div className={styles.gameStatTile}>
                         <span className={styles.gameStatVal}><WhenIcon size={14} className={styles.statTileIconWhen} /> {myStats ? Math.ceil(myStats.bestWhenRoundAccuracy) : '—'}<AccuracySuffix /></span>
-                        <span className={styles.gameStatLabel}>{tGame('mvp_when_best')}</span>
+                        <span className={styles.gameStatLabel}>{tGame('stat_when')}</span>
                       </div>
                       <div className={styles.gameStatTile}>
                         <span className={styles.gameStatVal}><Trophy size={14} style={{ color: 'var(--gh-orange)', marginRight: 4 }} /> {myStats ? Math.ceil(myStats.bestRoundAccuracy) : '—'}<AccuracySuffix /></span>
-                        <span className={styles.gameStatLabel}>{tGame('mvp_combo_best')}</span>
+                        <span className={styles.gameStatLabel}>{tGame('stat_combo')}</span>
                       </div>
                     </div>
                   </div>
