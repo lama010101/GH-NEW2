@@ -6,6 +6,8 @@ import { useTranslations } from 'next-intl'
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser'
 import { getAccuracyColor } from '@/core/accuracyColor'
 import PlayerAvatar from '@/components/compete/PlayerAvatar'
+import { RelaxPwaInterstitialModal } from '@/components/compete/RelaxPwaInterstitialModal'
+import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from '@/core/relaxPwaInterstitial'
 import cpStyles from "./CompetePanel.module.css";
 
 type ActiveGame = {
@@ -118,6 +120,7 @@ export function CompetePanel({ onLobby, playerId }: {
   const [invitesLoading, setInvitesLoading] = useState(true)
   const [tab, setTab] = useState<'invitations'|'your_turn'|'completed'>('invitations')
   const [activeGames, setActiveGames] = useState<ActiveGame[]>([])
+  const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
 
   const fetchInvites = useCallback(async () => {
     if (!playerId) {
@@ -196,13 +199,28 @@ export function CompetePanel({ onLobby, playerId }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, fetchInvites])
 
-  const handleAccept = async (inviteId: string, gameId: string) => {
+  const runAccept = async (inviteId: string, gameId: string) => {
     const result = await acceptInvitation(inviteId)
     if (!result.ok) {
       console.error('[CompetePanel] acceptInvitation failed:', result.error, result.code)
       return
     }
     onLobby(result.game_id ?? gameId)
+  }
+
+  const handleAccept = (inviteId: string, gameId: string, mode?: 'sync' | 'async') => {
+    if (mode === 'async' && shouldShowRelaxPwaInterstitial()) {
+      setPwaInterstitialPending(() => () => { void runAccept(inviteId, gameId) })
+      return
+    }
+    void runAccept(inviteId, gameId)
+  }
+
+  const handlePwaInterstitialSkip = () => {
+    markRelaxPwaInterstitialSkipped()
+    const pending = pwaInterstitialPending
+    setPwaInterstitialPending(null)
+    if (pending) pending()
   }
 
   const handleDecline = async (inviteId: string) => {
@@ -225,6 +243,9 @@ export function CompetePanel({ onLobby, playerId }: {
 
   return (
     <>
+      {pwaInterstitialPending && (
+        <RelaxPwaInterstitialModal onClose={handlePwaInterstitialSkip} />
+      )}
       {/* Tab bar */}
       <div className={cpStyles.cardSubPanel}>
         <div className={cpStyles.tabBar}>
@@ -287,7 +308,7 @@ export function CompetePanel({ onLobby, playerId }: {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleAccept(invite.id, invite.game_id)}
+                    onClick={() => handleAccept(invite.id, invite.game_id, invite.mode)}
                     className={cpStyles.goBtn}
                     aria-label={t('home.compete_play_aria')}
                   >
