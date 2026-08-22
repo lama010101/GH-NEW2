@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import { ChevronLeft } from 'lucide-react';
 import { useIdentity } from '@/hooks/useIdentity';
 import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity';
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser';
@@ -288,26 +289,12 @@ export default function ProfilePage() {
       {/* 3. BACK BUTTON + HOME BUTTON */}
       <div className="relative z-10 max-w-[820px] mx-auto pt-4 px-6 flex items-center justify-between">
         <button
-          onClick={() => {
-            const returnTo = searchParams?.get('returnTo') || '';
-            const isSafe = returnTo
-              && returnTo.startsWith('/')
-              && !returnTo.startsWith('//')
-              && !returnTo.includes('://')
-              && !returnTo.toLowerCase().startsWith('javascript:')
-              && !returnTo.toLowerCase().startsWith('data:');
-            if (isSafe) {
-              router.push(returnTo);
-            } else {
-              router.push('/home');
-            }
-          }}
-          className="flex items-center gap-2 text-sm text-[var(--gh-text-secondary)] hover:text-[var(--gh-text-primary)] transition-colors cursor-pointer"
+          type="button"
+          onClick={() => router.back()}
+          className={styles.backBtn}
+          aria-label={t('back')}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m15 18-6-6 6-6"/>
-          </svg>
-          {t('back')}
+          <ChevronLeft size={20} />
         </button>
         <button
           onClick={() => router.push('/home')}

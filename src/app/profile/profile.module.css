@@ -11,6 +11,25 @@
   background: var(--gh-bg-base);
 }
 
+.backBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gh-glass-bg);
+  color: var(--gh-text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.backBtn:hover {
+  background: var(--gh-glass-bg-hover);
+}
+
 .statColorOrange {
   color: var(--gh-orange);
 }
