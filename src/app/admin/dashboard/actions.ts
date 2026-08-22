@@ -24,5 +24,5 @@ export async function toggleAiPlayerMode(
     value,
     playerId,
   ]);
-  revalidatePath("/admin/openrouter");
+  revalidatePath("/admin/dashboard");
 }
