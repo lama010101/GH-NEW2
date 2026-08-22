@@ -42,12 +42,12 @@ export interface TestUser {
  * WebSocket URL — onBeforeConnect in partykit/server.ts requires this token
  * to verify the Supabase auth uid before accepting the WS connection.
  *
- * Uses the anon key (NEXT_PUBLIC_SUPABASE_ANON_KEY) which is the same key
+ * Uses the publishable key (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) which is the same key
  * the browser client uses for signInWithPassword.
  */
 export async function fetchAccessToken(user: TestUser): Promise<string> {
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  if (!anonKey) throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY not set');
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
+  if (!anonKey) throw new Error('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY not set');
 
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
@@ -155,8 +155,8 @@ async function globalSetup() {
       const alreadyRegistered = /already.*registered/i.test(error.message || '') || error.code === 'user_already_exists' || error.code === 'email_exists';
       if (alreadyRegistered) {
         console.log(`[PLAYWRIGHT SETUP] User ${user.email} already registered (listUsers likely degraded); recovering ID via password sign-in...`);
-        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-        if (!anonKey) throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY not set; cannot recover existing test user ID');
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
+        if (!anonKey) throw new Error('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY not set; cannot recover existing test user ID');
         const signInRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
           method: 'POST',
           headers: { apikey: anonKey, 'Content-Type': 'application/json' },
