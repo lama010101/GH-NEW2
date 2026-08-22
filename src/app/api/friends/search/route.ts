@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
          OR u.raw_user_meta_data->>'full_name' ILIKE $2
          OR u.raw_user_meta_data->>'name' ILIKE $2
          OR u.raw_user_meta_data->>'username' ILIKE $2
+         OR u.email ILIKE $2
        )
        ORDER BY
          CASE WHEN LOWER(p.display_name) = LOWER($3) THEN 0
