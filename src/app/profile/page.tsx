@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
 import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity';
@@ -33,11 +33,13 @@ export default function ProfilePage() {
   const isOwnProfile = Boolean(playerId) && viewedPlayerId === playerId;
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
+  const tGame = useTranslations('game');
   const locale = useLocale();
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [showNavModal, setShowNavModal] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [progressData, setProgressData] = useState<{
     byCentury: Array<{ century: string; avgAccuracy: number; totalXp: number; roundCount: number }>
     byContinent: Array<{ continent: string; avgAccuracy: number; totalXp: number; roundCount: number }>
@@ -76,7 +78,7 @@ export default function ProfilePage() {
     historicalAvatar: null,
   });
 
-  useEffect(() => {
+  const fetchProfileData = useCallback(async () => {
     if (playerId === undefined) return;
     if (!playerId && !viewedPlayerId) {
       router.replace('/login');
@@ -86,9 +88,9 @@ export default function ProfilePage() {
     const targetPlayerId = viewedPlayerId || playerId;
     if (!targetPlayerId) return;
 
-    const fetchProfileData = async () => {
-      try {
-        let isAiPlayer = false;
+    try {
+      setLoadError(false);
+      let isAiPlayer = false;
 
         let { data: profileResult } = await supabaseBrowser
           .from('profiles')
@@ -114,17 +116,35 @@ export default function ProfilePage() {
           }
         }
 
-        const session = await readSession();
+        // Parallelize independent queries (session + 3 supabase reads share no deps).
+        const [session, statsResult, dailyAlltimeResult, levelupResult] = await Promise.all([
+          readSession(),
+          supabaseBrowser
+            .from('player_global_stats')
+            .select('avg_accuracy, total_xp, rounds_played, games_played')
+            .eq('player_id', targetPlayerId)
+            .limit(1)
+            .single()
+            .then(r => r.data),
+          supabaseBrowser
+            .from('leaderboard_daily_alltime')
+            .select('avg_accuracy, games_played, total_xp')
+            .eq('player_id', targetPlayerId)
+            .limit(1)
+            .single()
+            .then(r => r.data),
+          supabaseBrowser
+            .from('leaderboard_levelup')
+            .select('current_level, best_accuracy')
+            .eq('player_id', targetPlayerId)
+            .limit(1)
+            .single()
+            .then(r => r.data),
+        ]);
+
         const authUser = session?.user;
         const email = isOwnProfile ? (authUser?.email ?? null) : null;
         const createdAt = isOwnProfile ? (authUser?.created_at ?? null) : null;
-
-        const { data: statsResult } = await supabaseBrowser
-          .from('player_global_stats')
-          .select('avg_accuracy, total_xp, rounds_played, games_played')
-          .eq('player_id', targetPlayerId)
-          .limit(1)
-          .single();
 
         if (statsResult) {
           setAccuracy(String(Math.round(Number(statsResult.avg_accuracy))));
@@ -133,21 +153,6 @@ export default function ProfilePage() {
           setAccuracy('--');
           setXp('--');
         }
-
-        // Leaderboard positions
-        const { data: dailyAlltimeResult } = await supabaseBrowser
-          .from('leaderboard_daily_alltime')
-          .select('avg_accuracy, games_played, total_xp')
-          .eq('player_id', targetPlayerId)
-          .limit(1)
-          .single();
-
-        const { data: levelupResult } = await supabaseBrowser
-          .from('leaderboard_levelup')
-          .select('current_level, best_accuracy')
-          .eq('player_id', targetPlayerId)
-          .limit(1)
-          .single();
 
         let historicalAvatar: ProfileHistoricalAvatar | null = null;
         if (!isAiPlayer && profileResult?.avatar_url) {
@@ -222,11 +227,13 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error('Error fetching profile data:', error);
+        setLoadError(true);
       }
-    };
+    }, [viewedPlayerId, playerId, isOwnProfile, router, tCommon]);
 
+  useEffect(() => {
     fetchProfileData();
-  }, [viewedPlayerId, playerId, isOwnProfile, router, tCommon]);
+  }, [fetchProfileData]);
 
   const getInitials = (name: string | null): string => {
     if (!name) return '??';
@@ -238,7 +245,7 @@ export default function ProfilePage() {
   const formatMemberSince = (dateStr: string | null): string => {
     if (!dateStr) return '—';
     const date = new Date(dateStr);
-    return date.toLocaleDateString(locale === 'en' ? 'en-US' : locale, { month: 'numeric', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString(locale === 'en' ? 'en-US' : locale, { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   const handleAvatarClick = () => {
@@ -259,6 +266,7 @@ export default function ProfilePage() {
     }
 
     setProfileData(prev => ({ ...prev, avatarUrl }));
+    if (isOwnProfile) updateCachedAvatarUrl(avatarUrl);
     setAvatarPickerOpen(false);
   };
 
@@ -277,12 +285,18 @@ export default function ProfilePage() {
         onAvatarClick={() => setShowNavModal(true)}
       />
 
-      {/* 3. BACK BUTTON */}
-      <div className="relative z-10 max-w-[820px] mx-auto pt-4 px-6">
+      {/* 3. BACK BUTTON + HOME BUTTON */}
+      <div className="relative z-10 max-w-[820px] mx-auto pt-4 px-6 flex items-center justify-between">
         <button
           onClick={() => {
             const returnTo = searchParams?.get('returnTo') || '';
-            if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//') && !returnTo.includes('://')) {
+            const isSafe = returnTo
+              && returnTo.startsWith('/')
+              && !returnTo.startsWith('//')
+              && !returnTo.includes('://')
+              && !returnTo.toLowerCase().startsWith('javascript:')
+              && !returnTo.toLowerCase().startsWith('data:');
+            if (isSafe) {
               router.push(returnTo);
             } else {
               router.push('/home');
@@ -295,7 +309,36 @@ export default function ProfilePage() {
           </svg>
           {t('back')}
         </button>
+        <button
+          onClick={() => router.push('/home')}
+          className="flex items-center gap-2 text-sm text-[var(--gh-text-secondary)] hover:text-[var(--gh-text-primary)] transition-colors cursor-pointer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          {tCommon('home')}
+        </button>
       </div>
+
+      {/* ERROR STATE BANNER */}
+      {loadError && (
+        <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-4">
+          <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4 flex items-center justify-between gap-3">
+            <span className="text-sm text-[var(--gh-text-secondary)]">{tCommon('no_data_yet')}</span>
+            <button
+              onClick={() => fetchProfileData()}
+              className="flex items-center gap-2 text-sm font-bold text-[var(--gh-orange)] hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+              {tGame('retry')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 4. HERO SECTION */}
       <div className="relative z-10 max-w-[820px] mx-auto pt-16 px-6 flex flex-col items-center text-center">
@@ -361,14 +404,12 @@ export default function ProfilePage() {
       </div>
 
       {/* 5. STAT STRIP */}
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-4 gap-[10px] mb-6">
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 sm:grid-cols-4 gap-[10px] mb-6">
         {[
           {
             value: profileData.avgAccuracy === null
               ? '...'
-              : profileData.avgAccuracy !== null
-                ? String(Math.round(Number(profileData.avgAccuracy)))
-                : '—',
+              : String(Math.round(Number(profileData.avgAccuracy))),
             suffix: '%',
             label: t('avg_accuracy'),
             color: styles.statColorOrange
@@ -412,48 +453,6 @@ export default function ProfilePage() {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* 6. BADGE COLLECTION */}
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
-          <div className={styles.sectionHead}>
-            <span className={styles.sectionAccentBar} />
-            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('badge_collection')}</h3>
-          </div>
-          <div className={styles.badgeTierRow}>
-            {[
-              { label: 'Gold', tier: 'gold', color: 'var(--gh-badge-gold, #ffd700)', bg: 'rgba(255,215,0,0.10)', border: 'rgba(255,215,0,0.30)' },
-              { label: 'Silver', tier: 'silver', color: 'var(--gh-badge-silver, #c0c0c0)', bg: 'rgba(192,192,192,0.10)', border: 'rgba(192,192,192,0.30)' },
-              { label: 'Bronze', tier: 'bronze', color: 'var(--gh-badge-bronze, #cd7f32)', bg: 'rgba(205,127,50,0.10)', border: 'rgba(205,127,50,0.30)' },
-            ].map((b) => (
-              <div
-                key={b.label}
-                className={styles.badgeTier}
-                style={{ background: b.bg, border: `1px solid ${b.border}` }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/badges/combo_${b.tier}.webp`} alt={`${b.label} badge`} className={styles.badgeTierImg} />
-                <span className={styles.badgeTierCount} style={{ color: b.color }}>—</span>
-                <span className={styles.badgeTierLabel}>{b.label}</span>
-              </div>
-            ))}
-          </div>
-          <div className={styles.badgeDimRow}>
-            {[
-              { label: 'Year', dim: 'year', accent: 'var(--gh-violet, #8b5cf6)' },
-              { label: 'Location', dim: 'location', accent: 'var(--gh-teal, #22d3ee)' },
-              { label: 'Combo', dim: 'combo', accent: 'var(--gh-gold, #ffd54a)' },
-            ].map((d) => (
-              <div key={d.label} className={styles.badgeDim}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/badges/${d.dim}_gold.webp`} alt={`${d.label} gold badge`} className={styles.badgeDimImg} />
-                <span className={styles.badgeDimLabel}>{d.label}</span>
-                <span className={styles.badgeDimCount}>—</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* 7. PERFORMANCE BY MODE */}
@@ -533,56 +532,6 @@ export default function ProfilePage() {
               </span>
             </div>
 
-            {/* Compete */}
-            <div
-              className={styles.modeCard}
-              style={{ background: 'rgba(34,211,238,0.10)', border: '1px solid rgba(34,211,238,0.30)' }}
-            >
-              <span className={styles.modeAccent} style={{ background: 'var(--gh-teal, #22d3ee)' }} />
-              <span className={styles.modeName}>{t('compete')}</span>
-              <span className={styles.modeAcc} style={{ color: 'var(--gh-text-muted)' }}>—</span>
-              <span className={styles.modeGames}>{t('coming_soon')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 8. TWO-COLUMN ROW */}
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('leaderboard_positions')}</h3>
-          <div className="flex flex-col gap-3">
-            {/* Daily */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-[var(--gh-text-secondary)]">{t('daily_all_time')}</span>
-              <span className={`font-bebas text-sm font-bold text-blue-400`}>
-                {profileData.dailyAvgAccuracy === null ? '—' : (
-                  <>
-                    {Math.round(Number(profileData.dailyAvgAccuracy))}
-                    <AccuracySuffix />
-                    {' · '}{profileData.dailyGamesPlayed ?? 0} {t('games')}
-                  </>
-                )}
-              </span>
-            </div>
-            {/* Level Up */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-[var(--gh-text-secondary)]">{t('level_up')}</span>
-              <span className={`font-bebas text-sm font-bold ${styles.leaderboardViolet}`}>
-                {profileData.levelUpCurrentLevel === null ? '—' : (
-                  <>
-                    {t('level')} {profileData.levelUpCurrentLevel} · {profileData.levelUpBestAccuracy ?? 0}
-                    <AccuracySuffix /> {t('best')}
-                  </>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
-          <h3 className={`font-bebas text-sm font-bold mb-4`}>{t('score_distribution')}</h3>
-          <div className="flex flex-col items-center gap-2 py-6">
-            <div className="text-sm text-[var(--gh-text-muted)]">{t('coming_soon')}</div>
           </div>
         </div>
       </div>
