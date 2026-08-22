@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
     const prefixPattern = `${query}%`;
     
     const { rows: players } = await pool.query(
-      `SELECT p.id, p.display_name, p.avatar_url
-       FROM public.profiles p
-       JOIN auth.users u ON u.id = p.id
-       WHERE p.id != $1
+      `SELECT u.id, COALESCE(p.display_name, u.email) AS display_name, p.avatar_url
+       FROM auth.users u
+       LEFT JOIN public.profiles p ON p.id = u.id
+       WHERE u.id != $1
        AND (
          p.display_name ILIKE $2
          OR u.raw_user_meta_data->>'display_name' ILIKE $2
@@ -41,9 +41,10 @@ export async function GET(request: NextRequest) {
        ORDER BY
          CASE WHEN LOWER(p.display_name) = LOWER($3) THEN 0
               WHEN p.display_name ILIKE $4 THEN 1
+              WHEN LOWER(u.email) = LOWER($3) THEN 1
               ELSE 2
          END,
-         p.display_name ASC
+         display_name ASC
        LIMIT 50`,
       [user.id, searchPattern, query, prefixPattern]
     );
