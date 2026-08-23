@@ -146,41 +146,41 @@
   width: 100%;
   height: 1.4em;
   font-size: var(--font-2xs);
-  color: var(--gh-modal-text-muted);
+  color: var(--gh-danger);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 8px;
   align-self: flex-start;
   overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
 }
 
-.usernameLabel span {
+.usernameMarqueeTrack {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  opacity: 0;
-  animation: usernameLabelCycle 4.5s ease-in-out infinite;
+  width: max-content;
+  white-space: nowrap;
+  animation: usernameMarquee 14s linear infinite;
 }
 
-.usernameLabel span:nth-child(1) { animation-delay: 0s; }
-.usernameLabel span:nth-child(2) { animation-delay: 1.5s; }
-.usernameLabel span:nth-child(3) { animation-delay: 3s; }
+.usernameMarqueeTrack span {
+  padding-right: 40px;
+}
 
-@keyframes usernameLabelCycle {
-  0%, 6.66% { opacity: 0; }
-  13.33%, 30% { opacity: 1; }
-  36.66%, 100% { opacity: 0; }
+@keyframes usernameMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .usernameLabel span {
+  .usernameMarqueeTrack {
     animation: none;
-    opacity: 0;
   }
-  .usernameLabel span:first-child {
-    opacity: 1;
+  .usernameMarqueeTrack span:nth-child(2) {
+    display: none;
   }
 }
 

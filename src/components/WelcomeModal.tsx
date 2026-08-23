@@ -36,7 +36,22 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
   const [avatarData, setAvatarData] = useState(avatar);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(avatar.image_url);
   const [imgError, setImgError] = useState(false);
-  useEffect(() => { setImgError(false) }, [avatarUrl]);
+  const [imgRetryCount, setImgRetryCount] = useState(0);
+  useEffect(() => { setImgError(false); setImgRetryCount(0) }, [avatarUrl]);
+
+  // The avatar image can be freshly generated at signup time, so the first
+  // request or two may race the CDN/storage propagation and 404. Retry a
+  // few times with backoff before falling back to the initials placeholder.
+  const MAX_IMG_RETRIES = 3;
+  useEffect(() => {
+    if (!imgError || imgRetryCount >= MAX_IMG_RETRIES) return;
+    const delay = 400 * (imgRetryCount + 1);
+    const timer = setTimeout(() => {
+      setImgError(false);
+      setImgRetryCount((n) => n + 1);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [imgError, imgRetryCount]);
 
   if (!isOpen) return null;
 
@@ -95,7 +110,12 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
           {avatarUrl && !imgError ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={toProxiedImageUrl(avatarUrl) ?? ''}
+              key={imgRetryCount}
+              src={
+                imgRetryCount === 0
+                  ? toProxiedImageUrl(avatarUrl) ?? ''
+                  : `${toProxiedImageUrl(avatarUrl) ?? ''}${(toProxiedImageUrl(avatarUrl) ?? '').includes('?') ? '&' : '?'}retry=${imgRetryCount}`
+              }
               alt={fullName}
               className={styles.avatarImg}
               onError={() => setImgError(true)}
@@ -126,9 +146,10 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
         </button>
 
         <div className={styles.usernameLabel} aria-label={t('your_username')}>
-          <span>{t('username_label_1')}</span>
-          <span>{t('username_label_2')}</span>
-          <span>{t('username_label_3')}</span>
+          <div className={styles.usernameMarqueeTrack}>
+            <span>{t('username_label_1')} · {t('username_label_2')} · {t('username_label_3')}</span>
+            <span aria-hidden="true">{t('username_label_1')} · {t('username_label_2')} · {t('username_label_3')}</span>
+          </div>
         </div>
         <input
           type="text"
