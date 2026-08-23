@@ -1,5 +1,5 @@
 .overlay {
-  /* no-op: verifying CI/Preview env secrets */
+  /* no-op: re-verifying CI/Preview env secrets after fix */
   position: fixed;
   inset: 0;
   z-index: 1100;
