@@ -736,7 +736,9 @@ export default function LobbySection({
               disabled={!isHost || busy}
             >
               <span className={styles['lobbyTabContent']}>
-                <Leaf size={18} className={styles['lobbyTabIcon']} />
+                <span className={styles['lobbyTabIconBadge']}>
+                  <Leaf size={14} className={styles['lobbyTabIcon']} />
+                </span>
                 <span className={styles['lobbyTabText']}>
                   <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
                   <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
@@ -749,7 +751,9 @@ export default function LobbySection({
               disabled={!isHost || busy}
             >
               <span className={styles['lobbyTabContent']}>
-                <Zap size={18} className={styles['lobbyTabIcon']} />
+                <span className={styles['lobbyTabIconBadge']}>
+                  <Zap size={14} className={styles['lobbyTabIcon']} />
+                </span>
                 <span className={styles['lobbyTabText']}>
                   <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
                   <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
