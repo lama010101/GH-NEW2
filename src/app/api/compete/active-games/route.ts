@@ -130,7 +130,12 @@ export async function GET(_request: NextRequest) {
           latestEventType === null ||
           latestEventType === "SESSION_CREATED"
         ) {
-          status = "waiting";
+          // Unstarted session: the host created it and left before any round
+          // began — it is the host's turn to start/invite/resume it, so surface
+          // it under "Your Turn" for the host only. Non-host viewers (who have
+          // not joined yet) keep "waiting" — invite-pending handling is out of
+          // scope here.
+          status = isHostViewer ? "your_turn" : "waiting";
         } else if (
           latestEventType === "ROUND_STARTED" ||
           latestEventType === "GUESS_SUBMITTED" ||

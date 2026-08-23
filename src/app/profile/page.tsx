@@ -34,12 +34,18 @@ export default function ProfilePage() {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
   const tGame = useTranslations('game');
+  const tAccount = useTranslations('account');
   const locale = useLocale();
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [showNavModal, setShowNavModal] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [savedName, setSavedName] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [saveNameResult, setSaveNameResult] = useState<'idle' | 'success' | 'error'>('idle');
+  const [usernameError, setUsernameError] = useState<string | null>(null);
   const [progressData, setProgressData] = useState<{
     byCentury: Array<{ century: string; avgAccuracy: number; totalXp: number; roundCount: number }>
     byContinent: Array<{ continent: string; avgAccuracy: number; totalXp: number; roundCount: number }>
@@ -235,6 +241,46 @@ export default function ProfilePage() {
     fetchProfileData();
   }, [fetchProfileData]);
 
+  // Sync the editable username field with the loaded display name (own profile
+  // only). Mirrors the Account page's displayName/savedName pattern.
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const name = profileData.displayName ?? '';
+    setEditName(name);
+    setSavedName(name);
+  }, [isOwnProfile, profileData.displayName]);
+
+  const handleSaveName = async () => {
+    if (!isOwnProfile || editName.trim() === savedName.trim()) return;
+    setSavingName(true);
+    setSaveNameResult('idle');
+    setUsernameError(null);
+    try {
+      const res = await fetch('/api/user/update-username', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ display_name: editName.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 409) {
+          setUsernameError(data.message || "That username is already taken.");
+        }
+        setSaveNameResult('error');
+        return;
+      }
+      setSavedName(editName.trim());
+      updateCachedDisplayName(editName.trim());
+      setProfileData(prev => ({ ...prev, displayName: editName.trim() }));
+      setSaveNameResult('success');
+      setTimeout(() => setSaveNameResult('idle'), 2500);
+    } catch {
+      setSaveNameResult('error');
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   const getInitials = (name: string | null): string => {
     if (!name) return '??';
     const words = name.trim().split(/\s+/);
@@ -371,6 +417,38 @@ export default function ProfilePage() {
           {profileData.displayName ?? ''}
         </h2>
 
+        {/* Editable username (own profile only) — reuses PATCH /api/user/update-username */}
+        {isOwnProfile && (
+          <div className={`${styles.nameEditCard} w-full max-w-[400px] mt-2 mb-4`}>
+            <label className={styles.nameEditLabel}>{tAccount('username')}</label>
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className={styles.nameEditInput}
+              maxLength={40}
+            />
+            <button
+              type="button"
+              onClick={handleSaveName}
+              disabled={editName.trim() === savedName.trim() || savingName}
+              className={styles.nameEditSave}
+              style={{
+                background: editName.trim() === savedName.trim() || savingName ? 'rgba(251,146,60,0.4)' : 'var(--gh-orange)',
+                cursor: editName.trim() === savedName.trim() || savingName ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {savingName ? tAccount('saving') : tAccount('save')}
+            </button>
+            {saveNameResult === 'success' && (
+              <div className={styles.nameEditFeedbackSuccess}>{tAccount('saved')}</div>
+            )}
+            {saveNameResult === 'error' && (
+              <div className={styles.nameEditFeedbackError}>{usernameError || tAccount('err_save_failed')}</div>
+            )}
+          </div>
+        )}
+
         {/* Member since */}
         <p className="text-sm text-[var(--gh-text-muted)] mb-6">
           {t('member_since')} {formatMemberSince(profileData.createdAt)}
@@ -378,7 +456,7 @@ export default function ProfilePage() {
 
         {/* Historical Avatar Card — bio/description renders below avatar, above rank title */}
         {profileData.historicalAvatar && (
-          <div className="bg-[var(--gh-glass-bg)] rounded-2xl py-5 px-6 w-full max-w-[400px] text-center mb-6">
+          <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-default)] rounded-2xl py-5 px-6 w-full max-w-[400px] text-center mb-6">
             <h3 className={`font-bebas text-lg font-bold mb-2 text-[var(--gh-text-primary)]`}>
               {profileData.historicalAvatar.avatarName}
             </h3>
@@ -445,7 +523,7 @@ export default function ProfilePage() {
         ].map((stat, i) => (
           <div
             key={i}
-            className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl py-3.5 px-4 text-center"
+            className="bg-[var(--gh-bg-elevated)] border border-[var(--gh-border-default)] rounded-xl py-3.5 px-4 text-center"
           >
             <div className={`font-bebas text-2xl font-extrabold ${stat.color ?? ''}`}>
               {stat.value}
@@ -460,7 +538,7 @@ export default function ProfilePage() {
 
       {/* 7. PERFORMANCE BY MODE */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-subtle)] rounded-xl p-4">
+        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-default)] rounded-xl p-4">
           <div className={styles.sectionHead}>
             <span className={styles.sectionAccentBar} />
             <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('performance_by_mode')}</h3>
