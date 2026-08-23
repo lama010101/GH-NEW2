@@ -1,10 +1,16 @@
 .page {
   background: var(--gh-bg-base);
   color: var(--gh-text-primary);
+  /* Clear the fixed TopBar (z-index: 900, height ~56px + env(safe-area-inset-top)).
+     Matches leaderboard's 64px on zero-inset devices and scales on notched
+     devices so the back-button row never renders behind TopBar. */
+  padding-top: calc(64px + env(safe-area-inset-top, 0px));
 }
 
 .heroBg {
-  background: var(--gh-bg-elevated);
+  /* Tonal gradient: elevated at top fading into base — gives the hero block
+     depth so it reads as a distinct surface from the flat base page. */
+  background: linear-gradient(180deg, var(--gh-bg-elevated) 0%, var(--gh-bg-base) 100%);
 }
 
 .topBar {
@@ -114,6 +120,60 @@
   cursor: pointer;
   padding: 8px 12px;
   transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+/* ── Editable username card (own profile) ── */
+.nameEditCard {
+  background: var(--gh-bg-elevated);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 16px;
+  padding: 16px 20px;
+  text-align: left;
+}
+
+.nameEditLabel {
+  display: block;
+  font-size: var(--font-2xs);
+  color: var(--gh-text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.nameEditInput {
+  width: 100%;
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-border-default);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--gh-text-primary);
+  font-size: var(--font-sm);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.nameEditSave {
+  margin-top: 10px;
+  width: 100%;
+  color: var(--gh-bg-base);
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 10px;
+  border: none;
+  font-size: var(--font-sm);
+  cursor: pointer;
+}
+
+.nameEditFeedbackSuccess {
+  margin-top: 6px;
+  font-size: var(--font-xs);
+  color: var(--gh-success);
+}
+
+.nameEditFeedbackError {
+  margin-top: 6px;
+  font-size: var(--font-xs);
+  color: var(--gh-danger);
 }
 
 .backBtn:hover {

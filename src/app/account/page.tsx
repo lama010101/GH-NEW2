@@ -10,7 +10,6 @@ import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser'
 import styles from './account.module.css'
 import TopBar from '@/components/layout/TopBar'
-import PlayerAvatar from '@/components/compete/PlayerAvatar'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { LanguageDropdown } from '@/components/layout/LanguageDropdown'
 import { NavModal } from '@/components/NavModal'
@@ -234,36 +233,6 @@ export default function AccountPage() {
         <h1 className={styles.title}>{t('title')}</h1>
         <div className={styles.headerSpacer} />
       </div>
-
-      {/* Avatar card */}
-      {avatarInfo && (
-        <div className={styles.avatarSection}>
-          <div className={styles.card}>
-            <div className={styles.avatarWrap}>
-              <PlayerAvatar
-                avatarUrl={avatarInfo.imageUrl ?? null}
-                displayName={avatarInfo.name}
-                playerId={playerId ?? undefined}
-                size={96}
-                initials={getInitials(avatarInfo.name)}
-                disableProfileNavigation={!playerId}
-              />
-            </div>
-            <div className={styles.avatarName}>{avatarInfo.name}</div>
-            {avatarInfo.description && (
-              <div className={styles.avatarDescription}>
-                {avatarInfo.description}
-              </div>
-            )}
-            {avatarInfo.bornLabel && (
-              <div className={styles.avatarMeta}>{avatarInfo.bornLabel}</div>
-            )}
-            {avatarInfo.diedLabel && (
-              <div className={styles.avatarMetaLast}>{avatarInfo.diedLabel}</div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Profile card — display name / email / member since */}
       <div className={styles.settingsSection}>
