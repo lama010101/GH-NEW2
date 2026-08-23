@@ -244,21 +244,38 @@ export default function RoundCompleteSection({
           ? haversineKm(guessLat, guessLng, correctLat, correctLng)
           : null;
         const accuracy = submitted ? (myResult?.accuracy ?? 0) : 0;
+        // Relax (async): build the leaderboard row list from the FULL roster
+        // (joined players in snapshot.players + invited-but-not-joined players
+        // in snapshot.pendingInvitees), merging in playerRoundResults for those
+        // who have a score this round. Players without a result entry (invited
+        // not joined, joined but not played, or played but not yet submitted)
+        // fall through with pending defaults and render via the existing
+        // no-guess pending-row treatment below. Mirrors the roster-union pattern
+        // already used in SessionComplete.tsx for the final leaderboard.
+        // Rush (non-async) is untouched: it uses roundResults directly below.
         const asyncBaseRows = isAsync
-          ? Object.entries(playerRoundResults).map(([pid, r]) => {
-              const p = snapshot.players.find(x => x.playerId === pid);
-              return {
-                playerId: pid,
-                rank: 0,
-                displayName: p?.displayName || pid.slice(0, 8),
-                accuracy: r.accuracy,
-                isMe: pid === playerId,
-                score: r.score,
-                cumulativeScore: r.cumulativeScore,
-                cumulativeAccuracy: r.cumulativeAccuracy,
-                didSubmit: hasSubmitted(r),
-              };
-            })
+          ? (snapshot.players as Array<{ playerId: string; displayName: string; avatarUrl: string | null }>)
+              .concat(
+                (snapshot.pendingInvitees ?? []).map(pi => ({
+                  playerId: pi.playerId,
+                  displayName: pi.displayName,
+                  avatarUrl: pi.avatarUrl,
+                }))
+              )
+              .map(p => {
+                const r = playerRoundResults[p.playerId];
+                return {
+                  playerId: p.playerId,
+                  rank: 0,
+                  displayName: p.displayName || p.playerId.slice(0, 8),
+                  accuracy: r?.accuracy ?? 0,
+                  isMe: p.playerId === playerId,
+                  score: r?.score ?? 0,
+                  cumulativeScore: r?.cumulativeScore ?? 0,
+                  cumulativeAccuracy: r?.cumulativeAccuracy ?? 0,
+                  didSubmit: r ? hasSubmitted(r) : false,
+                };
+              })
           : [];
 
         const sortByScoreThenPlayer = (a: typeof asyncBaseRows[number], b: typeof asyncBaseRows[number]) => {
