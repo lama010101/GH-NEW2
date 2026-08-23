@@ -55,17 +55,6 @@ function erasToYearRange(eras: Set<EraId>): { yearMin: number; yearMax: number }
   };
 }
 
-function yearsToEras(yearMin: number, yearMax: number): Set<EraId> {
-  // Derive which eras overlap the given year range, for round-tripping prior settings.
-  const result = new Set<EraId>();
-  for (const era of ERAS) {
-    if (era.yearMax >= yearMin && era.yearMin <= yearMax) {
-      result.add(era.id);
-    }
-  }
-  return result.size > 0 ? result : new Set(ALL_ERA_IDS);
-}
-
 interface PracticeSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -87,33 +76,15 @@ export function PracticeSettingsModal({
   const [sliderValue, setSliderValue] = useState<number>(
     typeof initialSettings?.roundTimerSec === "number" ? initialSettings.roundTimerSec : 0
   );
-  const [selectedEras, setSelectedEras] = useState<Set<EraId>>(() => {
-    if (initialSettings?.selectedEras && initialSettings.selectedEras.length > 0) {
-      return new Set(initialSettings.selectedEras as EraId[]);
-    }
-    if (typeof initialSettings?.yearMin === "number" && typeof initialSettings?.yearMax === "number") {
-      return yearsToEras(initialSettings.yearMin, initialSettings.yearMax);
-    }
-    return new Set(ALL_ERA_IDS);
-  });
+  // All eras are preselected by default every time the modal opens — prior
+  // narrow selections are not restored, so a stale/partial saved selection
+  // can never leave the picker looking under-selected.
+  const [selectedEras, setSelectedEras] = useState<Set<EraId>>(() => new Set(ALL_ERA_IDS));
 
   /* ── Region selection state — mirrors Compete > Lobby ── */
-  // Empty selectedRegions (DB/input) means "all regions" (no filter).
-  // Internally we hold a Set of all selected region ids.
-  const continentsToRegionIds = (continents: string[]): Set<RegionId> => {
-    if (!Array.isArray(continents) || continents.length === 0) {
-      return new Set(ALL_REGION_IDS);
-    }
-    const ids = REGIONS.filter(r => r.continents.some(c => continents.includes(c))).map(r => r.id);
-    return ids.length > 0 ? new Set(ids) : new Set(ALL_REGION_IDS);
-  };
-
-  const [selectedRegions, setSelectedRegions] = useState<Set<RegionId>>(() => {
-    if (Array.isArray(initialSettings?.selectedRegions)) {
-      return continentsToRegionIds(initialSettings.selectedRegions);
-    }
-    return new Set(ALL_REGION_IDS);
-  });
+  // All regions are preselected by default every time the modal opens — see
+  // selectedEras above for the same rationale.
+  const [selectedRegions, setSelectedRegions] = useState<Set<RegionId>>(() => new Set(ALL_REGION_IDS));
 
   const [availableRegionContinents, setAvailableRegionContinents] = useState<string[] | null>(null);
   const [starting, setStarting] = useState(false);
@@ -145,18 +116,8 @@ export function PracticeSettingsModal({
   useEffect(() => {
     if (!isOpen) return;
     setSliderValue(typeof initialSettings?.roundTimerSec === "number" ? initialSettings.roundTimerSec : 0);
-    if (initialSettings?.selectedEras && initialSettings.selectedEras.length > 0) {
-      setSelectedEras(new Set(initialSettings.selectedEras as EraId[]));
-    } else if (typeof initialSettings?.yearMin === "number" && typeof initialSettings?.yearMax === "number") {
-      setSelectedEras(yearsToEras(initialSettings.yearMin, initialSettings.yearMax));
-    } else {
-      setSelectedEras(new Set(ALL_ERA_IDS));
-    }
-    setSelectedRegions(
-      Array.isArray(initialSettings?.selectedRegions)
-        ? continentsToRegionIds(initialSettings.selectedRegions)
-        : new Set(ALL_REGION_IDS)
-    );
+    setSelectedEras(new Set(ALL_ERA_IDS));
+    setSelectedRegions(new Set(ALL_REGION_IDS));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
