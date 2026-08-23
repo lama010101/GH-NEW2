@@ -278,6 +278,7 @@ export function PracticeSettingsModal({
           <div className={`${lobbyStyles["lobby-setting-item"]} ${lobbyStyles["lobbySettingRowBlock"]}`}>
             <div className={lobbyStyles["lobbySettingRowHead"]}>
               <span className={lobbyStyles["lobby-setting-label"]}>{tGame("era_presets")}</span>
+              <span className={lobbyStyles["lobby-setting-value"]}>{selectedEras.size} / {ALL_ERA_IDS.length}</span>
               <button type="button" className={lobbyStyles["lobbySelectAllBtn"]} onClick={toggleAllEras}>
                 {allErasSelected ? t("lobby.deselect_all") : t("lobby.select_all")}
               </button>
@@ -313,6 +314,7 @@ export function PracticeSettingsModal({
           <div className={`${lobbyStyles["lobby-setting-item"]} ${lobbyStyles["lobbySettingRowBlock"]}`}>
             <div className={lobbyStyles["lobbySettingRowHead"]}>
               <span className={lobbyStyles["lobby-setting-label"]}>{tGame("region_presets")}</span>
+              <span className={lobbyStyles["lobby-setting-value"]}>{visibleRegions.filter(r => selectedRegions.has(r.id)).length} / {visibleRegions.length}</span>
               <button type="button" className={lobbyStyles["lobbySelectAllBtn"]} onClick={toggleAllRegions}>
                 {allRegionsSelected ? t("lobby.deselect_all") : t("lobby.select_all")}
               </button>
