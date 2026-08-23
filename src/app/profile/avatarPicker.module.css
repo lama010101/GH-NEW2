@@ -125,6 +125,16 @@
   line-height: 1.2;
 }
 
+.avatarDetailRow {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-modal-divider);
+}
+
 .modalFooter {
   padding: 16px 20px;
   border-top: 1px solid var(--gh-modal-divider);
