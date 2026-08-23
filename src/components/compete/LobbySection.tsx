@@ -907,6 +907,7 @@ export default function LobbySection({
                   <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
                     <div className={styles['lobbySettingRowHead']}>
                       <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
+                      <span className={styles['lobby-setting-value']}>{selectedEras.size} / {ERAS.length}</span>
                       {isHost && (
                         <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
                           {allErasSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
@@ -943,6 +944,7 @@ export default function LobbySection({
                   <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
                     <div className={styles['lobbySettingRowHead']}>
                       <span className={styles['lobby-setting-label']}>{tGame('region_presets')}</span>
+                      <span className={styles['lobby-setting-value']}>{visibleRegions.filter(r => selectedRegions.has(r.id)).length} / {visibleRegions.length}</span>
                       {isHost && (
                         <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllRegions}>
                           {allRegionsSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
@@ -1093,6 +1095,7 @@ export default function LobbySection({
                   <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
                     <div className={styles['lobbySettingRowHead']}>
                       <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
+                      <span className={styles['lobby-setting-value']}>{selectedEras.size} / {ERAS.length}</span>
                       {isHost && (
                         <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllEras}>
                           {allErasSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
@@ -1129,6 +1132,7 @@ export default function LobbySection({
                   <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
                     <div className={styles['lobbySettingRowHead']}>
                       <span className={styles['lobby-setting-label']}>{tGame('region_presets')}</span>
+                      <span className={styles['lobby-setting-value']}>{visibleRegions.filter(r => selectedRegions.has(r.id)).length} / {visibleRegions.length}</span>
                       {isHost && (
                         <button type="button" className={styles['lobbySelectAllBtn']} onClick={toggleAllRegions}>
                           {allRegionsSelected ? t('lobby.deselect_all') : t('lobby.select_all')}
