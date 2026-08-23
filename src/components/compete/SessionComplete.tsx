@@ -853,16 +853,25 @@ export default function SessionComplete({
                   <div className={styles.achievementsBody}>
                     <div className={styles.gameStatsGrid}>
                       <div className={styles.gameStatTile}>
-                        <span className={styles.gameStatVal}><WhereIcon size={14} className={styles.statTileIconWhere} /> {myStats ? Math.ceil(myStats.bestWhereRoundAccuracy) : '—'}<AccuracySuffix /></span>
-                        <span className={styles.gameStatLabel}>{tGame('stat_where')}</span>
+                        <span className={`${styles.mvpDisk} ${styles.mvpDiskLocation}`}><WhereIcon size={18} /></span>
+                        <div className={styles.gameStatText}>
+                          <span className={styles.gameStatVal}>{myStats ? Math.ceil(myStats.bestWhereRoundAccuracy) : '—'}<AccuracySuffix /></span>
+                          <span className={styles.gameStatLabel}>{tGame('stat_where')}</span>
+                        </div>
                       </div>
                       <div className={styles.gameStatTile}>
-                        <span className={styles.gameStatVal}><WhenIcon size={14} className={styles.statTileIconWhen} /> {myStats ? Math.ceil(myStats.bestWhenRoundAccuracy) : '—'}<AccuracySuffix /></span>
-                        <span className={styles.gameStatLabel}>{tGame('stat_when')}</span>
+                        <span className={`${styles.mvpDisk} ${styles.mvpDiskYear}`}><WhenIcon size={18} /></span>
+                        <div className={styles.gameStatText}>
+                          <span className={styles.gameStatVal}>{myStats ? Math.ceil(myStats.bestWhenRoundAccuracy) : '—'}<AccuracySuffix /></span>
+                          <span className={styles.gameStatLabel}>{tGame('stat_when')}</span>
+                        </div>
                       </div>
                       <div className={styles.gameStatTile}>
-                        <span className={styles.gameStatVal}><Trophy size={14} style={{ color: 'var(--gh-orange)', marginRight: 4 }} /> {myStats ? Math.ceil(myStats.bestRoundAccuracy) : '—'}<AccuracySuffix /></span>
-                        <span className={styles.gameStatLabel}>{tGame('stat_combo')}</span>
+                        <span className={`${styles.mvpDisk} ${styles.mvpDiskOrange}`}><Trophy size={18} /></span>
+                        <div className={styles.gameStatText}>
+                          <span className={styles.gameStatVal}>{myStats ? Math.ceil(myStats.bestRoundAccuracy) : '—'}<AccuracySuffix /></span>
+                          <span className={styles.gameStatLabel}>{tGame('stat_combo')}</span>
+                        </div>
                       </div>
                     </div>
                   </div>

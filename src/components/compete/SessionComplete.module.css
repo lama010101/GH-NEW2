@@ -623,12 +623,20 @@
 
 .gameStatTile {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
   padding: 12px 14px;
   border-radius: 12px;
   background: var(--gh-mini-card-bg);
   border: 1px solid var(--gh-mini-card-border);
+}
+
+.gameStatText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .gameStatVal {
