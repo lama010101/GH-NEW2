@@ -98,37 +98,45 @@ if [ "$WARMUP_CURL_EXIT" -ne 0 ]; then
 fi
 echo "PRE-PUSH: route warm-up complete (HTTP ${WARMUP_HTTP}). Cold-compile cost absorbed; timed run may proceed."
 
-echo "PRE-PUSH: bootstrapping .env.local from repo secrets for Playwright auth..."
-: > .env.local
-ENV_LOCAL_VARS=0
-if [ -f /run/repo_secrets/lama010101/GH-NEW2/.env.secrets ]; then
-  grep -E '^export [A-Za-z_][A-Za-z0-9_]*=' /run/repo_secrets/lama010101/GH-NEW2/.env.secrets | sed 's/^export //' >> .env.local
-fi
-if [ -f .dev.vars ]; then
-  while IFS= read -r line || [ -n "$line" ]; do
-    case "$line" in
-      ''|\#*) continue ;;
-    esac
-    key="${line%%=*}"
-    if [ -n "$key" ] && ! grep -q "^${key}=" .env.local 2>/dev/null; then
-      echo "$line" >> .env.local
-    fi
-  done < .dev.vars
-fi
-
-# PartyKit dev reads .env.local into lobby.env, and partykit.json vars use the
-# placeholder ${SUPABASE_URL}. .env.secrets exposes NEXT_PUBLIC_SUPABASE_URL
-# but not the canonical SUPABASE_URL, so derive it here so the DO can verify
-# WebSocket connection tokens during the gate.
-if ! grep -qE '^SUPABASE_URL=' .env.local 2>/dev/null; then
-  NEXT_PUBLIC_SUPABASE_URL_VALUE=$(grep -m1 '^NEXT_PUBLIC_SUPABASE_URL=' .env.local | sed 's/^NEXT_PUBLIC_SUPABASE_URL=//' )
-  if [ -n "$NEXT_PUBLIC_SUPABASE_URL_VALUE" ]; then
-    echo "SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL_VALUE" >> .env.local
+# MP-FIX-PREPUSH-ENVLOCAL-NOOPGUARD-001 — guard the .env.local truncate+repopulate
+# block. The Cloud secrets mount path only exists on Devin Cloud; on local/non-Cloud
+# machines it is absent, so truncating .env.local first would wipe SUPABASE_URL /
+# SUPABASE_SECRET_KEY_PROD and break the Playwright auth fixture. When the path is
+# absent, skip the entire bootstrap and leave .env.local untouched.
+SECRETS_PATH="/run/repo_secrets/lama010101/GH-NEW2/.env.secrets"
+if [ ! -f "$SECRETS_PATH" ]; then
+  echo "PRE-PUSH: Cloud secrets path not found ($SECRETS_PATH), leaving .env.local untouched (local/non-Cloud environment)" >&2
+else
+  echo "PRE-PUSH: bootstrapping .env.local from repo secrets for Playwright auth..."
+  : > .env.local
+  ENV_LOCAL_VARS=0
+  grep -E '^export [A-Za-z_][A-Za-z0-9_]*=' "$SECRETS_PATH" | sed 's/^export //' >> .env.local
+  if [ -f .dev.vars ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in
+        ''|\#*) continue ;;
+      esac
+      key="${line%%=*}"
+      if [ -n "$key" ] && ! grep -q "^${key}=" .env.local 2>/dev/null; then
+        echo "$line" >> .env.local
+      fi
+    done < .dev.vars
   fi
-fi
 
-ENV_LOCAL_VARS=$(grep -cE '^[A-Za-z_][A-Za-z0-9_]*=' .env.local 2>/dev/null || echo 0)
-echo "PRE-PUSH: wrote ${ENV_LOCAL_VARS} vars to .env.local for this gate run."
+  # PartyKit dev reads .env.local into lobby.env, and partykit.json vars use the
+  # placeholder ${SUPABASE_URL}. .env.secrets exposes NEXT_PUBLIC_SUPABASE_URL
+  # but not the canonical SUPABASE_URL, so derive it here so the DO can verify
+  # WebSocket connection tokens during the gate.
+  if ! grep -qE '^SUPABASE_URL=' .env.local 2>/dev/null; then
+    NEXT_PUBLIC_SUPABASE_URL_VALUE=$(grep -m1 '^NEXT_PUBLIC_SUPABASE_URL=' .env.local | sed 's/^NEXT_PUBLIC_SUPABASE_URL=//' )
+    if [ -n "$NEXT_PUBLIC_SUPABASE_URL_VALUE" ]; then
+      echo "SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL_VALUE" >> .env.local
+    fi
+  fi
+
+  ENV_LOCAL_VARS=$(grep -cE '^[A-Za-z_][A-Za-z0-9_]*=' .env.local 2>/dev/null || echo 0)
+  echo "PRE-PUSH: wrote ${ENV_LOCAL_VARS} vars to .env.local for this gate run."
+fi
 
 # Load the freshly-written .env.local into this shell so Playwright inherits the
 # repo secrets even when the ambient environment already contains stale keys.
