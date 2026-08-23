@@ -46,6 +46,7 @@ export default function ProfilePage() {
   const [savingName, setSavingName] = useState(false);
   const [saveNameResult, setSaveNameResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
   const [progressData, setProgressData] = useState<{
     byCentury: Array<{ century: string; avgAccuracy: number; totalXp: number; roundCount: number }>
     byContinent: Array<{ continent: string; avgAccuracy: number; totalXp: number; roundCount: number }>
@@ -413,12 +414,30 @@ export default function ProfilePage() {
         </div>
 
         {/* Username */}
-        <h2 className={`font-bebas text-xl font-bold mb-1 bg-gradient-to-r from-pink-300 to-yellow-300 bg-clip-text text-transparent`}>
-          {profileData.displayName ?? ''}
-        </h2>
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <h2 className={`font-bebas text-xl font-bold bg-gradient-to-r from-pink-300 to-yellow-300 bg-clip-text text-transparent`}>
+            {profileData.displayName ?? ''}
+          </h2>
+          {isOwnProfile && (
+            <button
+              type="button"
+              onClick={() => {
+                if (editingName) setEditName(savedName);
+                setEditingName(v => !v);
+              }}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--gh-orange)] text-[var(--gh-btn-text)] border-2 border-[var(--gh-modal-bg)] shadow-sm cursor-pointer hover:opacity-[0.85] transition-opacity duration-200"
+              aria-label={editingName ? 'Cancel editing username' : 'Edit username'}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+              </svg>
+            </button>
+          )}
+        </div>
 
         {/* Editable username (own profile only) — reuses PATCH /api/user/update-username */}
-        {isOwnProfile && (
+        {isOwnProfile && editingName && (
           <div className={`${styles.nameEditCard} w-full max-w-[400px] mt-2 mb-4`}>
             <label className={styles.nameEditLabel}>{tAccount('username')}</label>
             <input
