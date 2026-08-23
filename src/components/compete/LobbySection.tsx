@@ -736,13 +736,13 @@ export default function LobbySection({
               disabled={!isHost || busy}
             >
               <span className={styles['lobbyTabContent']}>
-                <span className={styles['lobbyTabIconBadge']}>
-                  <Leaf size={14} className={styles['lobbyTabIcon']} />
-                </span>
-                <span className={styles['lobbyTabText']}>
+                <span className={styles['lobbyTabTitleRow']}>
+                  <span className={styles['lobbyTabIconBadge']}>
+                    <Leaf size={14} className={styles['lobbyTabIcon']} />
+                  </span>
                   <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
-                  <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
                 </span>
+                <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
               </span>
             </button>
             <button
@@ -751,13 +751,13 @@ export default function LobbySection({
               disabled={!isHost || busy}
             >
               <span className={styles['lobbyTabContent']}>
-                <span className={styles['lobbyTabIconBadge']}>
-                  <Zap size={14} className={styles['lobbyTabIcon']} />
-                </span>
-                <span className={styles['lobbyTabText']}>
+                <span className={styles['lobbyTabTitleRow']}>
+                  <span className={styles['lobbyTabIconBadge']}>
+                    <Zap size={14} className={styles['lobbyTabIcon']} />
+                  </span>
                   <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
-                  <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
                 </span>
+                <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
               </span>
             </button>
           </div>
@@ -1384,7 +1384,7 @@ export default function LobbySection({
           {/* Sub-section B: Players roster */}
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>{t('lobby.players', { current: totalPlayers, total: totalPlayers + (snapshot.pendingInvitees ?? []).length })}</span>
+              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>{t('lobby.players', { current: totalPlayers, total: isAsync ? 8 : 30 })}</span>
               <span className={styles['lobbyReadyIndicator']}>
                 <span
                   className={styles['lobbyReadyDot']}
