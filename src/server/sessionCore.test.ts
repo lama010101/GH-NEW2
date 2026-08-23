@@ -423,6 +423,48 @@ describe("validateJoinEligibility", () => {
     });
   });
 
+  it("rejects the 31st joiner in an async (Relax) session at the 30-player cap", async () => {
+    const { client } = createMockClient({
+      playerRow: null,
+      activePlayers: Array.from({ length: 30 }, (_, i) => `player-${i}`),
+    });
+
+    const result = await validateJoinEligibility(
+      client,
+      GAME_ID,
+      PLAYER_ID,
+      session({ mode: "async", deadline: new Date(Date.now() + 86400000) }),
+      snapshot("LOBBY")
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Session is full (30 players max)",
+      code: "SESSION_FULL",
+    });
+  });
+
+  it("still rejects the 9th joiner in a sync (Rush) session at the unchanged 8-player cap", async () => {
+    const { client } = createMockClient({
+      playerRow: null,
+      activePlayers: Array.from({ length: 8 }, (_, i) => `player-${i}`),
+    });
+
+    const result = await validateJoinEligibility(
+      client,
+      GAME_ID,
+      PLAYER_ID,
+      session({ mode: "sync" }),
+      snapshot("LOBBY")
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Session is full (8 players max)",
+      code: "SESSION_FULL",
+    });
+  });
+
   it("rejects a new joiner in a sync session that is no longer in LOBBY", async () => {
     const { client } = createMockClient({
       playerRow: null,

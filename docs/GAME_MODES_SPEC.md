@@ -520,7 +520,7 @@ Set by the host in the lobby. Other players cannot modify settings.
 | Round Timer | Slider: 10s to 5min | Optional toggle + slider: 10s to 5min (host may leave off) | 2min (Rush) / OFF (Relax) |
 | Session Deadline | N/A | Slider: 1–14 days | 3 days |
 | Year Range | Preset ranges or custom | Same | Full range |
-| Player limit | 2–8 | 2–8 | 8 |
+| Player limit | 2–8 | 2–30 | 8 (Rush) / 30 (Relax) |
 
 **Rush timer slider:** Non-linear scale — 10s, 15s, 20s, 30s, 45s, 60s, 90s, 2min, 3min, 5min.
 
@@ -661,7 +661,7 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 ### 5.13 Rules and Constraints
 
 - Minimum 2 players to start.
-- Maximum 8 players per session.
+- Maximum players per session is mode-dependent: 8 for Compete Rush and Daily, 30 for Compete Relax (raised from 8 per MP-BUILD-RELAXCAP-RAISE30-001; Relax has no shared clock, no live simultaneous-broadcast requirement, and per-round ranking is retroactively recomputed rather than pushed live).
 - All game state server-authoritative.
 - Correct answers never sent before RESULT phase.
 - Hints allowed — individual per player, standard tiered penalty.
@@ -674,7 +674,7 @@ Badges awarded per round per player, server-side. Each player sees their own bad
 
 | Dimension | Practice | Daily | Level Up | Compete Rush | Compete Relax |
 |---|---|---|---|---|---|
-| Players | 1 | 1 | 1 | 2–8 | 2–8 |
+| Players | 1 | 1 | 1 | 2–8 | 2–30 |
 | Rounds | 5 | 5 | 5 | 3, 5, or 10 | Always 5 |
 | Timer | Optional 10s–5min | Mandatory 90s | Mandatory (formula) | Mandatory 10s–5min | Optional (host-enabled, per-player) |
 | Deadline | None | None | None | None | 1–14 days |

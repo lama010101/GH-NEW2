@@ -1944,8 +1944,9 @@ export async function validateJoinEligibility(
       [gameId]
     );
     const activeCount = activeCountResult.rows.length;
-    if (activeCount >= 8) {
-      return { ok: false, error: "Session is full (8 players max)", code: "SESSION_FULL" };
+    const maxPlayers = session.mode === "async" ? 30 : 8;
+    if (activeCount >= maxPlayers) {
+      return { ok: false, error: `Session is full (${maxPlayers} players max)`, code: "SESSION_FULL" };
     }
   }
 

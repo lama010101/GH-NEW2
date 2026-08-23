@@ -361,6 +361,33 @@ describe("POST /api/invitations/accept", () => {
     expect(findQuery("COMMIT")).toBeUndefined();
   });
 
+  it("returns 409 SESSION_FULL with the async 30-player cap message for a full Relax session", async () => {
+    currentMockClient.setInvitation({
+      id: INVITATION_ID,
+      game_id: GAME_ID,
+      invitee_id: USER_ID,
+      status: "pending",
+      expires_at: new Date(Date.now() + 86400000),
+    });
+    mockFns.validateJoinEligibility.mockResolvedValue({
+      ok: false,
+      error: "Session is full (30 players max)",
+      code: "SESSION_FULL",
+    });
+
+    const POST = await loadRoute();
+    const response = await POST(createMockRequest({ invitation_id: INVITATION_ID }));
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Session is full (30 players max)",
+      code: "SESSION_FULL",
+    });
+    expect(findQuery("BEGIN")).toBeDefined();
+    expect(findQuery("ROLLBACK")).toBeDefined();
+    expect(findQuery("COMMIT")).toBeUndefined();
+  });
+
   it("returns 409 GAME_IN_PROGRESS and rolls back when the session is already in progress", async () => {
     currentMockClient.setInvitation({
       id: INVITATION_ID,
