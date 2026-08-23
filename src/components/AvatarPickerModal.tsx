@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from '@/core/supabaseBrowser';
 import { toProxiedImageUrl } from '@/lib/imageProxy';
@@ -159,76 +159,70 @@ export function AvatarPickerModal({
               {filteredAvatars.map((avatar) => {
                 const url = getAvatarUrl(avatar);
                 const name = getAvatarName(avatar);
+                const isSelected = selectedAvatar === url;
                 return (
-                  <div
-                    key={avatar.id}
-                    className={`${avatarPickerStyles.avatarCell} ${selectedAvatar === url ? avatarPickerStyles.selected : ''}`}
-                    onClick={() => { setSelectedAvatar(url); setSelectedAvatarDetail(avatar); }}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={toProxiedImageUrl(url) ?? ''}
-                      alt={name}
-                      className={avatarPickerStyles.avatarImage}
-                    />
-                    <span className={avatarPickerStyles.avatarName}>{name}</span>
-                  </div>
+                  <Fragment key={avatar.id}>
+                    <div
+                      className={`${avatarPickerStyles.avatarCell} ${isSelected ? avatarPickerStyles.selected : ''}`}
+                      onClick={() => { setSelectedAvatar(url); setSelectedAvatarDetail(avatar); }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={toProxiedImageUrl(url) ?? ''}
+                        alt={name}
+                        className={avatarPickerStyles.avatarImage}
+                      />
+                      <span className={avatarPickerStyles.avatarName}>{name}</span>
+                    </div>
+                    {isSelected && selectedAvatarDetail && (
+                      <div className={avatarPickerStyles.avatarDetailRow}>
+                        <div
+                          style={{
+                            fontSize: 'var(--font-lg)',
+                            fontWeight: 600,
+                            color: 'var(--gh-modal-text-primary)',
+                            marginBottom: 8,
+                          }}
+                        >
+                          {getAvatarName(selectedAvatarDetail)}
+                        </div>
+                        {bornLine && (
+                          <div
+                            style={{
+                              fontSize: 'var(--font-sm)',
+                              color: 'var(--gh-modal-text-secondary)',
+                              marginBottom: 4,
+                            }}
+                          >
+                            {commonT('born_prefix')} {bornLine}
+                          </div>
+                        )}
+                        {diedLine && (
+                          <div
+                            style={{
+                              fontSize: 'var(--font-sm)',
+                              color: 'var(--gh-modal-text-secondary)',
+                              marginBottom: 4,
+                            }}
+                          >
+                            {commonT('died_prefix')} {diedLine}
+                          </div>
+                        )}
+                        <div
+                          style={{
+                            fontSize: 'var(--font-sm)',
+                            color: 'var(--gh-modal-text-secondary)',
+                            marginTop: 8,
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {selectedAvatarDetail.description || commonT('no_description')}
+                        </div>
+                      </div>
+                    )}
+                  </Fragment>
                 );
               })}
-            </div>
-          )}
-          {selectedAvatarDetail && (
-            <div
-              style={{
-                marginTop: 16,
-                padding: 16,
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--gh-glass-bg)',
-                border: '1px solid var(--gh-modal-divider)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 'var(--font-lg)',
-                  fontWeight: 600,
-                  color: 'var(--gh-modal-text-primary)',
-                  marginBottom: 8,
-                }}
-              >
-                {getAvatarName(selectedAvatarDetail)}
-              </div>
-              {bornLine && (
-                <div
-                  style={{
-                    fontSize: 'var(--font-sm)',
-                    color: 'var(--gh-modal-text-secondary)',
-                    marginBottom: 4,
-                  }}
-                >
-                  {commonT('born_prefix')} {bornLine}
-                </div>
-              )}
-              {diedLine && (
-                <div
-                  style={{
-                    fontSize: 'var(--font-sm)',
-                    color: 'var(--gh-modal-text-secondary)',
-                    marginBottom: 4,
-                  }}
-                >
-                  {commonT('died_prefix')} {diedLine}
-                </div>
-              )}
-              <div
-                style={{
-                  fontSize: 'var(--font-sm)',
-                  color: 'var(--gh-modal-text-secondary)',
-                  marginTop: 8,
-                  lineHeight: 1.5,
-                }}
-              >
-                {selectedAvatarDetail.description || commonT('no_description')}
-              </div>
             </div>
           )}
         </div>
