@@ -245,11 +245,12 @@ export default async function OpenRouterAdminPage({
   const page = Math.max(1, parseInt(pageRaw || "1", 10) || 1);
 
   const tabRaw = getParam(searchParams, "tab") || "overview";
-  const tab: "overview" | "models" | "analytics" | "compare" | "debug" =
+  const tab: "overview" | "models" | "analytics" | "compare" | "debug" | "events" =
     tabRaw === "models" ||
     tabRaw === "analytics" ||
     tabRaw === "compare" ||
-    tabRaw === "debug"
+    tabRaw === "debug" ||
+    tabRaw === "events"
       ? tabRaw
       : "overview";
 
@@ -537,12 +538,13 @@ export default async function OpenRouterAdminPage({
   const kpiErrorRate24h =
     kpiCalls24h > 0 ? (kpiErrors24h / kpiCalls24h) * 100 : 0;
 
-  const TABS: { key: typeof tab; label: string }[] = [
+  const TABS: { key: typeof tab; label: string; href?: string }[] = [
     { key: "overview", label: "Overview" },
     { key: "models", label: "Models" },
     { key: "analytics", label: "Analytics" },
     { key: "compare", label: "Compare" },
     { key: "debug", label: "Debug" },
+    { key: "events", label: "Events", href: "/admin/dashboard/events" },
   ];
 
   const costTrend: CostTrendRow[] =
@@ -663,7 +665,7 @@ export default async function OpenRouterAdminPage({
           {TABS.map((t) => (
             <Link
               key={t.key}
-              href={tabLink(t.key)}
+              href={t.href ?? tabLink(t.key)}
               className={`rounded-t px-4 py-2 text-sm font-medium ${
                 tab === t.key
                   ? "border-b-2 border-gh-text bg-gh-bg-surface text-gh-text"
