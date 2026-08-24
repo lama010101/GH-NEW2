@@ -4,12 +4,14 @@ import { createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { getDbPool } from "@/server/db";
 import { ModeToggle } from "./ModeToggle";
 import { ResultsModal } from "./ResultsModal";
-import { ModelFilter } from "./ModelFilter";
 import { AddModelModal } from "./models/AddModelModal";
 import { ModelRowActions } from "./models/ModelRowActions";
-import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket } from "./queries";
+import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRosterHealth, fetchRecentActivity, fetchRecentErrors, fetchCostWeek, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RosterHealthRow, type RecentActivityRow, type RecentErrorRow } from "./queries";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import { CallDebugModal } from "./CallDebugModal";
+import { KpiCard, type KpiTone } from "./KpiCard";
+import { RosterHealthTable, type RosterHealthDisplayRow } from "./RosterHealthTable";
+import { ActivityErrorsSplit, type CompactActivityRow, type CompactErrorRow } from "./ActivityErrorsSplit";
 
 export const dynamic = "force-dynamic";
 
@@ -78,26 +80,27 @@ function formatDateTime(iso: string | null | undefined): string {
   }
 }
 
+function formatRelativeTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  try {
+    const ms = Date.now() - new Date(iso).getTime();
+    if (ms < 0) return "just now";
+    const seconds = Math.floor(ms / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  } catch {
+    return "—";
+  }
+}
+
 function formatAccuracy(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   return `${value}%`;
-}
-
-function errorBreakdown(row: ModelSummaryRow): string {
-  const other = Math.max(
-    0,
-    row.final_error_total -
-      row.rate_limit_count -
-      row.not_found_count -
-      row.parse_count
-  );
-  const parts: string[] = [];
-  if (row.rate_limit_count > 0)
-    parts.push(`rate-limit: ${row.rate_limit_count}`);
-  if (row.not_found_count > 0) parts.push(`404: ${row.not_found_count}`);
-  if (row.parse_count > 0) parts.push(`parse: ${row.parse_count}`);
-  if (other > 0) parts.push(`other: ${other}`);
-  return parts.length > 0 ? parts.join(", ") : "—";
 }
 
 function shortError(error: string | null | undefined): string {
@@ -336,16 +339,13 @@ export default async function OpenRouterAdminPage({
     return makeLink({ c_sort: column, c_dir: nextDir });
   }
 
-  const needModelSummary = tab === "overview" || tab === "models";
+  const needModelSummary = tab === "models";
   const needActivity = tab === "overview";
   const needKpi = tab === "overview";
-
-  const { rows: modelOptionsRows } = needActivity
-    ? await pool.query<{ model_id: string }>(
-        `SELECT DISTINCT model_id FROM ai_players ORDER BY model_id`
-      )
-    : { rows: [] as { model_id: string }[] };
-  const modelOptions = modelOptionsRows.map((r) => r.model_id);
+  const needRosterHealth = tab === "overview";
+  const needRecentActivityCompact = tab === "overview";
+  const needRecentErrors = tab === "overview";
+  const needCostWeek = tab === "overview";
 
   const modelOrderBy = modelSortExpression(mSort, mDir);
   const { rows: modelRows } = needModelSummary
@@ -472,45 +472,6 @@ export default async function OpenRouterAdminPage({
     totalCost: toNumber(row.total_cost),
   }));
 
-  const totalCalls = perModel.reduce((sum, row) => sum + row.total_calls, 0);
-  const totalErrors = perModel.reduce((sum, row) => sum + row.error_count, 0);
-  const totalCost = perModel.reduce((sum, row) => sum + row.totalCost, 0);
-  const totalTokens = perModel.reduce((sum, row) => sum + row.total_tokens, 0);
-  const totalRateLimit = perModel.reduce(
-    (sum, row) => sum + row.rate_limit_count,
-    0
-  );
-  const totalNotFound = perModel.reduce(
-    (sum, row) => sum + row.not_found_count,
-    0
-  );
-  const totalParse = perModel.reduce((sum, row) => sum + row.parse_count, 0);
-  const totalFinalErrors = perModel.reduce(
-    (sum, row) => sum + row.final_error_total,
-    0
-  );
-  const totalOther = Math.max(
-    0,
-    totalFinalErrors - totalRateLimit - totalNotFound - totalParse
-  );
-
-  const overallLastCallAt =
-    perModel.length > 0
-      ? formatDateTime(
-          perModel.reduce(
-            (latest, row) =>
-              row.last_call_at && row.last_call_at > latest
-                ? row.last_call_at
-                : latest,
-            perModel[0].last_call_at || ""
-          )
-        )
-      : "—";
-
-  const activeModelCount = perModel.filter(
-    (row) => row.is_active_practice || row.is_active_daily
-  ).length;
-
   const { rows: kpiRows } = needKpi
     ? await pool.query<{
         calls_24h: number;
@@ -537,6 +498,75 @@ export default async function OpenRouterAdminPage({
   const kpiErrors24h = kpi.errors_24h;
   const kpiErrorRate24h =
     kpiCalls24h > 0 ? (kpiErrors24h / kpiCalls24h) * 100 : 0;
+
+  // --- Phase A Overview data (roster health, recent activity, recent errors, cost week) ---
+  const rosterHealthRaw: RosterHealthRow[] = needRosterHealth
+    ? await fetchRosterHealth(pool)
+    : [];
+  const recentActivityRaw: RecentActivityRow[] = needRecentActivityCompact
+    ? await fetchRecentActivity(pool, 10)
+    : [];
+  const recentErrorsRaw: RecentErrorRow[] = needRecentErrors
+    ? await fetchRecentErrors(pool, 5)
+    : [];
+  const costWeek = needCostWeek ? await fetchCostWeek(pool) : 0;
+
+  const activeModelCount = rosterHealthRaw.filter(
+    (row) => row.is_active_practice || row.is_active_daily
+  ).length;
+
+  const lastActivityRaw = rosterHealthRaw.reduce((latest, row) => {
+    if (row.last_call_at && (!latest || row.last_call_at > latest)) {
+      return row.last_call_at;
+    }
+    return latest;
+  }, null as string | null);
+
+  const rosterHealthDisplay: RosterHealthDisplayRow[] = rosterHealthRaw.map(
+    (row) => ({
+      id: row.id,
+      name: row.name,
+      model_id: row.model_id,
+      is_active: row.is_active,
+      is_active_practice: row.is_active_practice,
+      is_active_daily: row.is_active_daily,
+      daily_cost_cap_usd:
+        row.daily_cost_cap_usd !== null
+          ? toNumber(row.daily_cost_cap_usd)
+          : null,
+      calls_24h: row.calls_24h,
+      errors_24h: row.errors_24h,
+      cost_24h: toNumber(row.cost_24h),
+      last_call_at: row.last_call_at,
+      last_seen_relative: formatRelativeTime(row.last_call_at),
+    })
+  );
+
+  const compactActivity: CompactActivityRow[] = recentActivityRaw.map((row) => ({
+    id: row.id,
+    model_name: row.model_name,
+    mode: row.mode,
+    round_accuracy: row.round_accuracy,
+    cost: toNumber(row.cost),
+    created_at: row.created_at,
+    created_at_relative: formatRelativeTime(row.created_at),
+  }));
+
+  const compactErrors: CompactErrorRow[] = recentErrorsRaw.map((row) => ({
+    id: row.id,
+    model_name: row.model_name,
+    error: row.error,
+    error_type: row.error_type,
+    created_at: row.created_at,
+    created_at_relative: formatRelativeTime(row.created_at),
+  }));
+
+  const errorRateTone: KpiTone =
+    kpiErrorRate24h > 5
+      ? "danger"
+      : kpiErrorRate24h >= 1
+      ? "gold"
+      : "success";
 
   const TABS: { key: typeof tab; label: string; href?: string }[] = [
     { key: "overview", label: "Overview" },
@@ -679,189 +709,34 @@ export default async function OpenRouterAdminPage({
 
         {tab === "overview" && (
           <>
-            <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               <KpiCard label="Active models" value={activeModelCount.toLocaleString()} />
-              <KpiCard label="Calls (24h)" value={kpiCalls24h.toLocaleString()} />
-              <KpiCard label="Cost (24h)" value={formatCost(kpiCost24h)} />
+              <KpiCard label="Cost today" value={formatCost(kpiCost24h)} />
+              <KpiCard label="Cost this week" value={formatCost(costWeek)} />
               <KpiCard
                 label="Error rate (24h)"
                 value={`${kpiErrorRate24h.toFixed(1)}%`}
+                tone={errorRateTone}
               />
+              <KpiCard label="Total plays (24h)" value={kpiCalls24h.toLocaleString()} />
+              <KpiCard label="Last activity" value={formatRelativeTime(lastActivityRaw)} />
             </div>
 
-        <section className="mb-10">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-semibold">Per-model summary</h2>
-            <ModelFilter options={modelOptions} />
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-            <table className="w-full border-collapse text-left text-sm">
-              <thead>
-                <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-                  <th className="px-4 py-3 font-semibold">
-                    <SortHeader
-                      href={modelSortLink("name")}
-                      label="Model"
-                      column="name"
-                      sort={mSort}
-                      dir={mDir}
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-center font-semibold">
-                    Modes
-                  </th>
-                  <th className="px-4 py-3 text-right font-semibold">
-                    <SortHeader
-                      href={modelSortLink("total_calls")}
-                      label="Calls"
-                      column="total_calls"
-                      sort={mSort}
-                      dir={mDir}
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-right font-semibold">
-                    <SortHeader
-                      href={modelSortLink("error_count")}
-                      label="Errors"
-                      column="error_count"
-                      sort={mSort}
-                      dir={mDir}
-                    />
-                  </th>
-                  <th className="px-4 py-3 font-semibold">
-                    <SortHeader
-                      href={modelSortLink("final_errors")}
-                      label="Error types"
-                      column="final_errors"
-                      sort={mSort}
-                      dir={mDir}
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-right font-semibold">
-                    <SortHeader
-                      href={modelSortLink("total_cost")}
-                      label="Total Cost"
-                      column="total_cost"
-                      sort={mSort}
-                      dir={mDir}
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-right font-semibold">
-                    <SortHeader
-                      href={modelSortLink("total_tokens")}
-                      label="Total Tokens"
-                      column="total_tokens"
-                      sort={mSort}
-                      dir={mDir}
-                    />
-                  </th>
-                  <th className="px-4 py-3 font-semibold">
-                    <SortHeader
-                      href={modelSortLink("last_call_at")}
-                      label="Last Call"
-                      column="last_call_at"
-                      sort={mSort}
-                      dir={mDir}
-                    />
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {perModel.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-                  >
-                    <td
-                      className="max-w-[220px] truncate px-4 py-3"
-                      title={row.model_id}
-                    >
-                      {row.name}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-center gap-4">
-                        <ModeToggle
-                          playerId={row.id}
-                          mode="practice"
-                          enabled={row.is_active_practice}
-                        />
-                        <ModeToggle
-                          playerId={row.id}
-                          mode="daily"
-                          enabled={row.is_active_daily}
-                        />
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {row.total_calls.toLocaleString()}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {row.error_count.toLocaleString()}
-                    </td>
-                    <td className="max-w-[220px] px-4 py-3 text-xs text-gh-text-sec">
-                      {errorBreakdown(row)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {formatCost(row.totalCost)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {row.total_tokens.toLocaleString()}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gh-text-sec">
-                      {formatDateTime(row.last_call_at)}
-                    </td>
-                  </tr>
-                ))}
-                {!modelFilter && perModel.length > 0 && (
-                  <tr className="bg-gh-bg-elevated font-semibold">
-                    <td className="px-4 py-3">Total</td>
-                    <td className="px-4 py-3" />
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {totalCalls.toLocaleString()}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {totalErrors.toLocaleString()}
-                    </td>
-                    <td className="max-w-[220px] px-4 py-3 text-xs text-gh-text-sec">
-                      {[
-                        totalRateLimit > 0 &&
-                          `rate-limit: ${totalRateLimit}`,
-                        totalNotFound > 0 &&
-                          `404: ${totalNotFound}`,
-                        totalParse > 0 && `parse: ${totalParse}`,
-                        totalOther > 0 && `other: ${totalOther}`,
-                      ]
-                        .filter(Boolean)
-                        .join(", ") || "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {formatCost(totalCost)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {totalTokens.toLocaleString()}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gh-text-sec">
-                      {overallLastCallAt}
-                    </td>
-                  </tr>
-                )}
-                {perModel.length === 0 && (
-                  <tr>
-                    <td
-                      className="px-4 py-6 text-gh-text-sec"
-                      colSpan={8}
-                    >
-                      No models found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        <section className="mb-8">
+          <h2 className="mb-4 text-lg font-semibold">Roster health</h2>
+          <RosterHealthTable rows={rosterHealthDisplay} />
         </section>
 
-        <section>
+        <section className="mb-8">
+          <ActivityErrorsSplit
+            activity={compactActivity}
+            errors={compactErrors}
+            viewAllActivityHref="#activity-results"
+            viewAllErrorsHref={makeLink({ tab: "debug" })}
+          />
+        </section>
+
+        <section id="activity-results">
           <h2 className="mb-4 text-lg font-semibold">Per-activity results</h2>
 
           <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
@@ -1517,17 +1392,6 @@ export default async function OpenRouterAdminPage({
       <AddModelModal />
       <CallDebugModal />
     </main>
-  );
-}
-
-function KpiCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface p-4">
-      <div className="text-xs uppercase tracking-wide text-gh-text-sec">
-        {label}
-      </div>
-      <div className="mt-1 text-xl font-semibold">{value}</div>
-    </div>
   );
 }
 
