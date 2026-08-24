@@ -69,6 +69,7 @@ export default function RoundActiveSection({
   void connectionState;
   const t = useTranslations('game');
   const tNav = useTranslations('nav');
+  const tLobby = useTranslations('lobby');
   const currentEvent = snapshot.rounds?.[snapshot.currentRoundIndex];
   const guessLocation =
     guessLat !== null && guessLng !== null
@@ -391,7 +392,7 @@ export default function RoundActiveSection({
         const data = await res.json();
         setSearchResults(
           (data as Array<{ display_name: string; lat: string; lon: string }>).map((r) => ({
-            displayName: r.display_name.split(",").slice(0, 3).join(",").trim() || 'Player',
+            displayName: r.display_name.split(",").slice(0, 3).join(",").trim() || tLobby('default_player_name'),
             lat: parseFloat(r.lat),
             lng: parseFloat(r.lon),
           }))

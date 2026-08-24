@@ -22,6 +22,7 @@ interface TopBarProps {
 export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick }: TopBarProps) {
   const router = useRouter()
   const t = useTranslations('landing')
+  const tNav = useTranslations('nav')
   const { playerId } = useIdentity()
   const [imgError, setImgError] = useState(false)
   useEffect(() => { setImgError(false) }, [avatarUrl])
@@ -56,7 +57,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
         <button
           onClick={() => { void (isFs ? exitFullscreen() : enterFullscreen()) }}
           className={styles.menuBtn}
-          aria-label={isFs ? 'Exit fullscreen' : 'Enter fullscreen'}
+          aria-label={isFs ? tNav('exit_fullscreen') : tNav('enter_fullscreen')}
           type="button"
         >
           {isFs ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
@@ -75,7 +76,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
         <button
           onClick={onAvatarClick}
           className={styles.menuBtn}
-          aria-label="Menu"
+          aria-label={tNav('menu')}
           type="button"
         >
           <Menu size={20} />

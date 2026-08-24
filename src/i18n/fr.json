@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "failed_to_submit_guess": "Échec de l'envoi de la réponse",
+    "failed_to_advance_round": "Échec du passage à la manche suivante",
+    "username_taken": "Ce nom d'utilisateur est déjà pris.",
+    "connection_not_ready": "Connexion non établie — veuillez patienter"
+  },
   "nav": {
     "notifications": "Notifications",
     "profile": "Profil",
@@ -16,7 +22,10 @@
     "light": "Clair",
     "coming_soon": "{label} — bientôt disponible !",
     "close": "Fermer",
-    "close_fullscreen_view": "Fermer la vue plein écran"
+    "close_fullscreen_view": "Fermer la vue plein écran",
+    "exit_fullscreen": "Quitter le plein écran",
+    "enter_fullscreen": "Plein écran",
+    "menu": "Menu"
   },
   "help": {
     "title": "Centre d'aide",
@@ -193,7 +202,8 @@
     "compete_play_aria": "Jouer",
     "compete_delete_aria": "Supprimer",
     "coming_up_soon": "À venir bientôt",
-    "daily_view_results": "Voir les résultats"
+    "daily_view_results": "Voir les résultats",
+    "level_badge": "Niveau 5"
   },
   "common": {
     "next_round": "Manche suivante",
@@ -553,7 +563,11 @@
     "taking_too_long": "Trop long ?",
     "retry": "Réessayer",
     "region_oceania_antarctica": "Océanie et Antarctique",
-    "game_accuracy_pct": "Précision du jeu (%)"
+    "game_accuracy_pct": "Précision du jeu (%)",
+    "err_session_deadline_passed": "Le délai de la session est dépassé",
+    "err_game_in_progress": "La partie a déjà commencé",
+    "err_session_load_timeout": "Le chargement de la session a expiré. Veuillez réessayer.",
+    "mi_unit": "mi"
   },
   "auth": {
     "sign_in": "Se connecter",
@@ -579,7 +593,8 @@
     "reset_email_sent": "E-mail de réinitialisation envoyé. Vérifie ta boîte de réception.",
     "confirm_email_sent": "Vérifie ton e-mail pour confirmer ton compte.",
     "remember_me": "Se souvenir de moi",
-    "confirm_password": "Confirmer le mot de passe"
+    "confirm_password": "Confirmer le mot de passe",
+    "continue_with_google": "Continuer avec Google"
   },
   "leaderboard": {
     "title": "CLASSEMENT",
@@ -655,7 +670,12 @@
     "countries": "Pays",
     "practice": "Entraînement",
     "daily_all_time": "Quotidien (tous les temps)",
-    "level": "Niveau"
+    "level": "Niveau",
+    "meta_title": "Profil — Guess History",
+    "meta_description": "Consultez votre profil de joueur Guess-History : rang, statistiques et performances par mode de jeu.",
+    "change_avatar": "Changer d'avatar",
+    "cancel_edit_username": "Annuler la modification du nom d'utilisateur",
+    "edit_username": "Modifier le nom d'utilisateur"
   },
   "account": {
     "title": "Compte",
@@ -694,7 +714,27 @@
     "join_game": "Rejoindre",
     "session_complete": "{name} a terminé le jeu",
     "view_results": "Voir les résultats",
-    "someone": "Quelqu'un"
+    "someone": "Quelqu'un",
+    "push_disable": "Désactiver les notifications push",
+    "push_enable": "Activer les notifications push",
+    "push_disabled_toast": "Notifications push désactivées.",
+    "push_enabled_toast": "Notifications push activées.",
+    "push_error": "Une erreur inattendue s'est produite.",
+    "push_pref_failed": "Échec de la mise à jour de la préférence",
+    "push_something_wrong": "Une erreur s'est produite",
+    "push_enable_heading": "Activer les notifications push ?",
+    "push_enable_desc_friend": "Soyez informé lorsqu'un ami vous invite à une partie. Vous pouvez changer cela à tout moment dans les paramètres.",
+    "push_enable_desc_relax": "Soyez informé quand c'est votre tour dans les parties Relax. Vous pouvez changer cela à tout moment dans les paramètres.",
+    "push_not_now": "Pas maintenant",
+    "push_enable_btn": "Activer"
+  },
+  "pwa": {
+    "install_heading": "Installer pour les notifications de tour",
+    "description": "Les parties Relax se jouent par tours. Sur iPhone, les notifications de tour ne fonctionnent que si ce site est ajouté à votre écran d'accueil.",
+    "step_share": "Appuyez sur l'icône <strong>Partager</strong> dans la barre d'outils de Safari.",
+    "step_add_home": "Choisissez <strong>Sur l'écran d'accueil</strong>.",
+    "step_add": "Appuyez sur <strong>Ajouter</strong>, puis ouvrez Guess-History depuis votre écran d'accueil.",
+    "got_it": "J'ai compris"
   },
   "welcome": {
     "title": "Bienvenue sur Guess-History !",

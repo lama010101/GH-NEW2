@@ -30,6 +30,8 @@ export default function AccountPage() {
   const t = useTranslations('account')
   const tNav = useTranslations('nav')
   const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
+  const tGame = useTranslations('game')
   const locale = useLocale()
 
   const [accuracy, setAccuracy] = useState('--')
@@ -173,7 +175,7 @@ export default function AccountPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         if (res.status === 409) {
-          setUsernameError(data.message || "That username is already taken.")
+          setUsernameError(data.message || tErrors('username_taken'))
         }
         setSaveResult('error')
         return
@@ -333,7 +335,7 @@ export default function AccountPage() {
                       : 'bg-transparent text-[var(--gh-text-secondary)] hover:text-[var(--gh-text-primary)]'
                   }`}
                 >
-                  {unit}
+                  {unit === 'km' ? tGame('km_unit') : tGame('mi_unit')}
                 </button>
               ))}
             </div>

@@ -51,6 +51,7 @@ export default function CompeteGamePage() {
   const tLobby = useTranslations('lobby');
   const tCommon = useTranslations('common');
   const tLeaderboard = useTranslations('leaderboard');
+  const tErrors = useTranslations('errors');
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
@@ -400,12 +401,12 @@ export default function CompeteGamePage() {
       // to show the two-button "game ended" screen instead of a raw error + redirect.
       if (message === "Session deadline has passed") {
         setExpiredState('async_deadline');
-        setError(message);
+        setError(t('err_session_deadline_passed'));
         return;
       }
       if (message === "Game already in progress") {
         setExpiredState('sync_in_progress');
-        setError(message);
+        setError(t('err_game_in_progress'));
         return;
       }
       setError(message);
@@ -427,7 +428,7 @@ export default function CompeteGamePage() {
     if (!snapshot) return;
     if (!playerId) return;
     if (connectionState !== "OPEN" || snapshot.status !== "ROUND_COMPLETE") {
-      setError("Connection not ready — please wait");
+      setError(tErrors('connection_not_ready'));
       return;
     }
     setBusy(true);

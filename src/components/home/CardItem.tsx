@@ -1,11 +1,14 @@
 // LEGACY COMPONENT - Not used in vertical card layout (MP-UI-HOME-008)
 // Kept for reference only
+// BUG: "Level 5" is hardcoded — should reflect actual player level dynamically.
 
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { CARD_GRADIENT, CARD_NAME, CARD_SUB, type Mode } from './types'
 import styles from '@/app/home.module.css'
 
 export function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: boolean; onSelect: (m: Mode) => void }) {
+  const t = useTranslations('home')
   return (
     <button
       type="button"
@@ -28,7 +31,7 @@ export function CardItem({ mode, selected, onSelect }: { mode: Mode; selected: b
           />
         </div>
         {mode === 'levelup' && (
-          <div className={styles.cardLevelBadge}>Level 5</div>
+          <div className={styles.cardLevelBadge}>{t('level_badge')}</div>
         )}
       </div>
       <div className={styles.cardLabelBar}>

@@ -28,6 +28,7 @@ export default function PracticeGamePage() {
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
   const t = useTranslations('game');
+  const tErrors = useTranslations('errors');
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
@@ -94,7 +95,7 @@ export default function PracticeGamePage() {
           response = await fetch(`/api/compete/${gameId}?playerId=${playerId}`, { cache: "no-store", signal: _snapshotController.signal })
         } catch (err: unknown) {
           if (err instanceof Error && err.name === 'AbortError') {
-            if (!cancelled) setError('Session load timed out. Please try again.')
+            if (!cancelled) setError(t('err_session_load_timeout'))
             return
           }
           throw err
@@ -321,7 +322,7 @@ export default function PracticeGamePage() {
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
-          throw new Error(data.error ?? 'Failed to submit guess');
+          throw new Error(data.error ?? tErrors('failed_to_submit_guess'));
         }
 
         const data = await response.json();
@@ -330,7 +331,7 @@ export default function PracticeGamePage() {
           setRoundResults(data.results);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to submit guess');
+        setError(err instanceof Error ? err.message : tErrors('failed_to_submit_guess'));
         setLocalSubmitted(false);
         autoSubmitFiredRef.current = false;
       } finally {
@@ -389,7 +390,7 @@ export default function PracticeGamePage() {
         const country = addr.country || "";
         const name = primary && country
           ? `${primary}, ${country}`
-          : primary || country || data.display_name?.split(",").slice(0, 2).join(",").trim() || "Unknown location";
+          : primary || country || data.display_name?.split(",").slice(0, 2).join(",").trim() || t('unknown_location');
         setLocationName(name);
       } catch {
         setLocationName(null);
@@ -444,7 +445,7 @@ export default function PracticeGamePage() {
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
-          throw new Error(data.error ?? 'Failed to submit guess');
+          throw new Error(data.error ?? tErrors('failed_to_submit_guess'));
         }
 
         const data = await response.json();
@@ -453,7 +454,7 @@ export default function PracticeGamePage() {
           setRoundResults(data.results);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to submit guess');
+        setError(err instanceof Error ? err.message : tErrors('failed_to_submit_guess'));
         setLocalSubmitted(false);
       } finally {
         setBusy(false);
@@ -486,13 +487,13 @@ export default function PracticeGamePage() {
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
-          throw new Error(data.error ?? 'Failed to advance round');
+          throw new Error(data.error ?? tErrors('failed_to_advance_round'));
         }
 
         const data = await response.json();
         setSnapshot(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to advance round');
+        setError(err instanceof Error ? err.message : tErrors('failed_to_advance_round'));
       } finally {
         setBusy(false);
       }

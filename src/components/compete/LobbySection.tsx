@@ -428,7 +428,7 @@ export default function LobbySection({
     const players: PlayerPoolEntry[] = (json.players ?? []).map(
       (p: { id: string; display_name: string; avatar_url: string | null }) => ({
         id: p.id,
-        displayName: p.display_name?.trim() || 'Player',
+        displayName: p.display_name?.trim() || t('lobby.default_player_name'),
         avatarUrl: p.avatar_url,
         is_ai: false,
       })
@@ -461,7 +461,7 @@ export default function LobbySection({
       const players: PlayerPoolEntry[] = (json.players ?? []).map(
         (p: { id: string; display_name: string; avatar_url: string | null }) => ({
           id: p.id,
-          displayName: p.display_name?.trim() || 'Player',
+          displayName: p.display_name?.trim() || t('lobby.default_player_name'),
           avatarUrl: p.avatar_url,
           is_ai: false,
         })

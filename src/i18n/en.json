@@ -1,4 +1,10 @@
 {
+  "errors": {
+    "failed_to_submit_guess": "Failed to submit guess",
+    "failed_to_advance_round": "Failed to advance round",
+    "username_taken": "That username is already taken.",
+    "connection_not_ready": "Connection not ready — please wait"
+  },
   "nav": {
     "notifications": "Notifications",
     "profile": "Profile",
@@ -16,7 +22,10 @@
     "light": "Light",
     "coming_soon": "{label} — coming soon!",
     "close": "Close",
-    "close_fullscreen_view": "Close fullscreen view"
+    "close_fullscreen_view": "Close fullscreen view",
+    "exit_fullscreen": "Exit fullscreen",
+    "enter_fullscreen": "Enter fullscreen",
+    "menu": "Menu"
   },
   "help": {
     "title": "Help Center",
@@ -193,7 +202,8 @@
     "compete_play_aria": "Play",
     "compete_delete_aria": "Delete",
     "coming_up_soon": "Coming Up Soon",
-    "daily_view_results": "View results"
+    "daily_view_results": "View results",
+    "level_badge": "Level 5"
   },
   "common": {
     "next_round": "Next Round",
@@ -556,7 +566,11 @@
     "taking_too_long": "Taking too long?",
     "retry": "Retry",
     "region_oceania_antarctica": "Oceania & Antarctica",
-    "game_accuracy_pct": "Game Accuracy (%)"
+    "game_accuracy_pct": "Game Accuracy (%)",
+    "err_session_deadline_passed": "Session deadline has passed",
+    "err_game_in_progress": "Game already in progress",
+    "err_session_load_timeout": "Session load timed out. Please try again.",
+    "mi_unit": "mi"
   },
   "auth": {
     "sign_in": "Sign In",
@@ -582,7 +596,8 @@
     "reset_email_sent": "Password reset email sent. Check your inbox.",
     "confirm_email_sent": "Check your email to confirm your account.",
     "remember_me": "Remember me",
-    "confirm_password": "Confirm Password"
+    "confirm_password": "Confirm Password",
+    "continue_with_google": "Continue with Google"
   },
   "leaderboard": {
     "title": "LEADERBOARD",
@@ -658,7 +673,12 @@
     "countries": "Countries",
     "practice": "Practice",
     "daily_all_time": "Daily (all-time)",
-    "level": "Level"
+    "level": "Level",
+    "meta_title": "Profile — Guess History",
+    "meta_description": "View your Guess History player profile: rank, stats, and performance by game mode.",
+    "change_avatar": "Change avatar",
+    "cancel_edit_username": "Cancel editing username",
+    "edit_username": "Edit username"
   },
   "account": {
     "title": "Account",
@@ -697,7 +717,19 @@
     "join_game": "Join Game",
     "session_complete": "{name} completed the game",
     "view_results": "View Results",
-    "someone": "Someone"
+    "someone": "Someone",
+    "push_disable": "Disable push notifications",
+    "push_enable": "Enable push notifications",
+    "push_disabled_toast": "Push notifications disabled.",
+    "push_enabled_toast": "Push notifications enabled.",
+    "push_error": "An unexpected error occurred.",
+    "push_pref_failed": "Failed to update preference",
+    "push_something_wrong": "Something went wrong",
+    "push_enable_heading": "Enable push notifications?",
+    "push_enable_desc_friend": "Get notified when a friend invites you to a game. You can change this anytime in settings.",
+    "push_enable_desc_relax": "Get notified when it's your turn in Relax games. You can change this anytime in settings.",
+    "push_not_now": "Not now",
+    "push_enable_btn": "Enable"
   },
   "welcome": {
     "title": "Welcome to Guess-History!",
@@ -1291,5 +1323,13 @@
       "section10_title": "10. Contact Us",
       "contact_text": "For questions about these Terms, contact us at: appymanya@gmail.com"
     }
+  },
+  "pwa": {
+    "install_heading": "Install for turn notifications",
+    "description": "Relax games are turn-based. On iPhone, turn notifications only work when this site is added to your Home Screen.",
+    "step_share": "Tap the <strong>Share</strong> icon in Safari's toolbar.",
+    "step_add_home": "Choose <strong>Add to Home Screen</strong>.",
+    "step_add": "Tap <strong>Add</strong>, then open Guess-History from your Home Screen.",
+    "got_it": "Got it"
   }
 }

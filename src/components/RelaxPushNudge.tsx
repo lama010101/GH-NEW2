@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface RelaxPushNudgeProps {
@@ -24,6 +25,7 @@ interface RelaxPushNudgeProps {
  */
 export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
   const { subscribe, isSupported, permission } = usePushNotifications();
+  const t = useTranslations('notifications');
   const [visible, setVisible] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to update preference');
+      throw new Error(data.error || t('push_pref_failed'));
     }
   }
 
@@ -76,7 +78,7 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
       await markDismissed();
       onComplete();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : t('push_something_wrong'));
     } finally {
       setPending(false);
     }
@@ -94,7 +96,7 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
       await markDismissed();
       onComplete();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : t('push_something_wrong'));
     } finally {
       setPending(false);
     }
@@ -130,10 +132,10 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
         }}
       >
         <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 600 }}>
-          Enable push notifications?
+          {t('push_enable_heading')}
         </h2>
         <p style={{ margin: '0 0 24px', fontSize: 14, lineHeight: 1.5, color: '#b8bed4' }}>
-          Get notified when it&apos;s your turn in Relax games. You can change this anytime in settings.
+          {t('push_enable_desc_relax')}
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button
@@ -153,7 +155,7 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
               opacity: pending ? 0.6 : 1,
             }}
           >
-            Not now
+            {t('push_not_now')}
           </button>
           <button
             type="button"
@@ -172,7 +174,7 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
               opacity: pending ? 0.6 : 1,
             }}
           >
-            Enable
+            {t('push_enable_btn')}
           </button>
         </div>
         {error && (

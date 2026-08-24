@@ -35,6 +35,7 @@ export default function ProfilePage() {
   const tCommon = useTranslations('common');
   const tGame = useTranslations('game');
   const tAccount = useTranslations('account');
+  const tErrors = useTranslations('errors');
   const locale = useLocale();
   const [accuracy, setAccuracy] = useState('--');
   const [xp, setXp] = useState('--');
@@ -265,7 +266,7 @@ export default function ProfilePage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         if (res.status === 409) {
-          setUsernameError(data.message || "That username is already taken.");
+          setUsernameError(data.message || tErrors('username_taken'));
         }
         setSaveNameResult('error');
         return;
@@ -393,7 +394,7 @@ export default function ProfilePage() {
               type="button"
               className={styles.avatarEditIcon}
               onClick={handleAvatarClick}
-              aria-label="Change avatar"
+              aria-label={t('change_avatar')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9"/>
@@ -416,7 +417,7 @@ export default function ProfilePage() {
                 setEditingName(v => !v);
               }}
               className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--gh-orange)] text-[var(--gh-btn-text)] border-2 border-[var(--gh-modal-bg)] shadow-sm cursor-pointer hover:opacity-[0.85] transition-opacity duration-200"
-              aria-label={editingName ? 'Cancel editing username' : 'Edit username'}
+              aria-label={editingName ? t('cancel_edit_username') : t('edit_username')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9"/>
