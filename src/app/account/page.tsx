@@ -4,6 +4,7 @@ import { DM_Sans } from 'next/font/google'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
+import { Loader2 } from 'lucide-react'
 import { useIdentity } from '@/hooks/useIdentity'
 import { signOut, updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity'
 import { getDistanceUnitPreference, setDistanceUnitPreference, type DistanceUnit } from '@/lib/distance'
@@ -43,6 +44,7 @@ export default function AccountPage() {
   const [usernameError, setUsernameError] = useState<string | null>(null)
   const [avatarInfo, setAvatarInfo] = useState<AvatarInfo | null>(null)
   const [signOutError, setSignOutError] = useState<string | null>(null)
+  const [signingOut, setSigningOut] = useState(false)
   const [showNavModal, setShowNavModal] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -190,12 +192,15 @@ export default function AccountPage() {
   }
 
   const handleSignOut = async () => {
+    if (signingOut) return
     setSignOutError(null)
+    setSigningOut(true)
     try {
       await signOut()
       window.location.href = '/'
     } catch (err) {
       setSignOutError(err instanceof Error ? err.message : t('sign_out_failed'))
+      setSigningOut(false)
     }
   }
 
@@ -361,8 +366,15 @@ export default function AccountPage() {
         <button
           onClick={handleSignOut}
           className={styles.signOutBtn}
+          disabled={signingOut}
+          aria-busy={signingOut}
+          style={{ opacity: signingOut ? 0.6 : 1, cursor: signingOut ? 'not-allowed' : 'pointer' }}
         >
-          {tNav('sign_out')}
+          {signingOut ? (
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          ) : (
+            tNav('sign_out')
+          )}
         </button>
       </div>
 
