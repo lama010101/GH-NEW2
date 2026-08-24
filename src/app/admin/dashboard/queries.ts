@@ -353,9 +353,17 @@ export async function fetchEventLeaderboard(
         AND ab.round_xp IS NOT NULL
     ),
     combined AS (
-      SELECT * FROM human_side WHERE rn = 1
+      SELECT
+        player_id, player_type, display_name, avatar_url, score,
+        accuracy_pct, location_score, time_score, mode, rank,
+        reasoning, critique_error, image_quality_score, image_quality_notes
+      FROM human_side WHERE rn = 1
       UNION ALL
-      SELECT * FROM ai_side
+      SELECT
+        player_id, player_type, display_name, avatar_url, score,
+        accuracy_pct, location_score, time_score, mode, rank,
+        reasoning, critique_error, image_quality_score, image_quality_notes
+      FROM ai_side
     )
     SELECT
       player_id,
