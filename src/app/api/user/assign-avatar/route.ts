@@ -49,7 +49,7 @@ export async function POST(_request: NextRequest) {
         .single();
 
       if (avatar) {
-        const avatarUrl = avatar.image_url ?? avatar.firebase_url;
+        const avatarUrl = avatar.firebase_url || avatar.image_url;
         return NextResponse.json({
           assigned: false,
           profile: { display_name: profile.display_name },

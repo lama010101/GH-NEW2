@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Settings } from "lucide-react";
+import { Settings, Loader2 } from "lucide-react";
 import styles from "./WelcomeModal.module.css";
 import { AvatarPickerModal } from "./AvatarPickerModal";
 import { updateCachedDisplayName, updateCachedAvatarUrl } from "@/core/identity";
@@ -28,8 +29,10 @@ export interface WelcomeModalProps {
 }
 
 export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSaved }: WelcomeModalProps) {
+  const router = useRouter();
   const t = useTranslations('welcome');
   const tCommon = useTranslations('common');
+  const [isSaving, setIsSaving] = useState(false);
   const [usernameValue, setUsernameValue] = useState(initialDisplayName);
   const [baselineDisplayName, setBaselineDisplayName] = useState(initialDisplayName);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
@@ -86,6 +89,8 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
   }
 
   const handleSave = () => {
+    if (isSaving) return;
+    setIsSaving(true);
     const nextName = usernameValue.trim();
     fetch("/api/user/update-username", {
       method: "PATCH",
@@ -97,8 +102,11 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
         if (avatarUrl) updateCachedAvatarUrl(avatarUrl);
         onSaved?.();
       })
-      .catch(() => {});
-    onClose();
+      .catch(() => {})
+      .finally(() => {
+        onClose();
+        router.push("/home");
+      });
   };
 
   return (
@@ -159,8 +167,13 @@ export function WelcomeModal({ isOpen, onClose, avatar, initialDisplayName, onSa
           maxLength={40}
         />
 
-        <button onClick={handleSave} className={styles.saveButton}>
-          {t('lets_play')}
+        <button
+          onClick={handleSave}
+          className={styles.saveButton}
+          disabled={isSaving}
+          aria-busy={isSaving}
+        >
+          {isSaving ? <Loader2 className={styles.saveSpinner} aria-hidden="true" /> : t('lets_play')}
         </button>
       </div>
 

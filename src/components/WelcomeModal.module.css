@@ -212,10 +212,29 @@
   font-weight: 700;
   cursor: pointer;
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .saveButton:hover {
   background: var(--gh-gold);
+}
+
+.saveButton:disabled {
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+.saveSpinner {
+  width: 18px;
+  height: 18px;
+  animation: saveSpin 0.8s linear infinite;
+}
+
+@keyframes saveSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .skipLink {
