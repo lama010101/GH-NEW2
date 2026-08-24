@@ -22,13 +22,29 @@ fi
 echo "PRE-PUSH: fetched origin/main"
 
 # Determine the diff base: the actual merge target (origin/main). Compare
-# HEAD against the branch's merge target, not the incremental push delta, so
-# every push of a long-lived branch still sees protected files introduced in
-# earlier pushes.
+# each pushed ref's local commit against the merge target, not the
+# checked-out HEAD, so pushing a branch while a DIFFERENT branch is checked
+# out locally still gates on the actually-pushed commits. Git's pre-push
+# protocol provides one stdin line per ref: <local ref> <local sha1>
+# <remote ref> <remote sha1>. The all-zeros sha1 means branch deletion —
+# nothing to gate, skip it.
 DIFF_BASE="origin/main"
 echo "PRE-PUSH: comparing against $DIFF_BASE"
 
-PUSHED_FILES=$(git diff --name-only "$DIFF_BASE"..HEAD 2>/dev/null)
+PUSHED_FILES=""
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # All-zeros sha = branch deletion — nothing to gate, skip this ref.
+  case "$local_sha" in
+    *[!0]*) ;;  # contains a non-zero char → real commit, proceed
+    *) continue ;;  # all zeros → deletion, skip
+  esac
+  REF_FILES=$(git diff --name-only "$DIFF_BASE".."$local_sha" 2>/dev/null)
+  if [ -n "$REF_FILES" ]; then
+    PUSHED_FILES="${PUSHED_FILES}${REF_FILES}
+"
+  fi
+done
+
 if [ -z "$PUSHED_FILES" ]; then
   echo "PRE-PUSH: no pushed files to check — skipping golden-path gate."
   exit 0
