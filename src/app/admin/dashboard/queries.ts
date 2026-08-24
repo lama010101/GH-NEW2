@@ -144,6 +144,274 @@ export type ErrorRow = {
   created_at: string;
 };
 
+// ---------------------------------------------------------------------------
+// Events — per-event aggregate list + unified leaderboard drilldown
+// Task: AIP-BUILD-EVENTLEADERBOARD-001
+// ---------------------------------------------------------------------------
+
+export type EventListRow = {
+  id: string;
+  title: string;
+  event_year: number;
+  total_plays: number;
+  avg_xp: string | number;
+  avg_accuracy: number;
+  human_plays: number;
+  ai_plays: number;
+  modes: string | null;
+  total_count: number;
+};
+
+export async function fetchEventsList(
+  pool: Pool,
+  opts: {
+    mode?: string | null;
+    playerType?: "ai" | "human" | "both" | null;
+    sort?: string;
+    dir?: "asc" | "desc";
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<EventListRow[]> {
+  const mode = opts.mode ?? null;
+  const playerType = opts.playerType ?? null;
+  const sort = opts.sort ?? "total_plays";
+  const dir = opts.dir === "asc" ? "asc" : "desc";
+  const limit = opts.limit ?? 25;
+  const offset = opts.offset ?? 0;
+
+  const nulls = dir === "asc" ? "NULLS FIRST" : "NULLS LAST";
+  const sortExpr = (() => {
+    switch (sort) {
+      case "title": return `e.title ${dir.toUpperCase()}`;
+      case "event_year": return `e.event_year ${dir.toUpperCase()} ${nulls}`;
+      case "avg_xp": return `avg_xp ${dir.toUpperCase()} ${nulls}`;
+      case "avg_accuracy": return `avg_accuracy ${dir.toUpperCase()} ${nulls}`;
+      case "human_plays": return `human_plays ${dir.toUpperCase()} ${nulls}`;
+      case "ai_plays": return `ai_plays ${dir.toUpperCase()} ${nulls}`;
+      default: return `total_plays ${dir.toUpperCase()} ${nulls}`;
+    }
+  })();
+
+  const params: (string | number)[] = [];
+  let paramIdx = 1;
+
+  let modeFilter = "";
+  if (mode) {
+    params.push(mode);
+    modeFilter = `AND ap.mode = $${paramIdx}`;
+    paramIdx++;
+  }
+
+  let playerTypeFilter = "";
+  if (playerType === "ai") {
+    playerTypeFilter = "AND ai_plays > 0 AND human_plays = 0";
+  } else if (playerType === "human") {
+    playerTypeFilter = "AND human_plays > 0 AND ai_plays = 0";
+  } else if (playerType === "both") {
+    playerTypeFilter = "AND ai_plays > 0 AND human_plays > 0";
+  }
+
+  params.push(limit);
+  const limitIdx = paramIdx++;
+  params.push(offset);
+  const offsetIdx = paramIdx++;
+
+  const { rows } = await pool.query<EventListRow>(
+    `
+    WITH human_plays AS (
+      SELECT
+        (re.payload->>'eventId')::uuid AS event_id,
+        rr.score,
+        s.mode
+      FROM round_results rr
+      JOIN round_events re
+        ON re.game_id = rr.game_id
+       AND re.round_index = rr.round_index
+       AND re.event_type = 'ROUND_STARTED'
+      JOIN sessions s ON s.game_id = rr.game_id
+      WHERE re.payload->>'eventId' IS NOT NULL
+        AND rr.score IS NOT NULL
+    ),
+    ai_plays AS (
+      SELECT
+        ab.event_id,
+        ab.round_xp AS score,
+        NULL::varchar AS mode
+      FROM ai_answer_bank ab
+      WHERE ab.round_xp IS NOT NULL
+    ),
+    all_plays AS (
+      SELECT event_id, score, mode FROM human_plays
+      UNION ALL
+      SELECT event_id, score, mode FROM ai_plays
+    )
+    SELECT
+      e.id,
+      e.title,
+      e.event_year,
+      COUNT(*)::int AS total_plays,
+      AVG(ap.score)::numeric(10,2) AS avg_xp,
+      ROUND(AVG(ap.score) / 2)::int AS avg_accuracy,
+      COUNT(*) FILTER (WHERE ap.mode IS NOT NULL)::int AS human_plays,
+      COUNT(*) FILTER (WHERE ap.mode IS NULL)::int AS ai_plays,
+      STRING_AGG(DISTINCT ap.mode, ', ') FILTER (WHERE ap.mode IS NOT NULL) AS modes,
+      COUNT(*) OVER() AS total_count
+    FROM all_plays ap
+    JOIN events e ON e.id = ap.event_id
+    WHERE 1=1 ${modeFilter} ${playerTypeFilter}
+    GROUP BY e.id, e.title, e.event_year
+    ORDER BY ${sortExpr}
+    LIMIT $${limitIdx} OFFSET $${offsetIdx}
+    `,
+    params
+  );
+  return rows;
+}
+
+export type EventLeaderboardRow = {
+  player_id: string;
+  player_type: "human" | "ai";
+  display_name: string;
+  avatar_url: string | null;
+  score: number;
+  accuracy_pct: number;
+  location_score: number | null;
+  time_score: number | null;
+  mode: string | null;
+  rank: number | null;
+  reasoning: string | null;
+  critique_error: string | null;
+  image_quality_score: number | null;
+  image_quality_notes: string | null;
+};
+
+export async function fetchEventLeaderboard(
+  pool: Pool,
+  eventId: string,
+  opts: { playerType?: "ai" | "human" | null } = {}
+): Promise<EventLeaderboardRow[]> {
+  const playerType = opts.playerType ?? null;
+
+  let typeFilter = "";
+  if (playerType === "ai") {
+    typeFilter = "WHERE player_type = 'ai'";
+  } else if (playerType === "human") {
+    typeFilter = "WHERE player_type = 'human'";
+  }
+
+  const { rows } = await pool.query<EventLeaderboardRow>(
+    `
+    WITH human_side AS (
+      SELECT
+        rr.player_id,
+        'human' AS player_type,
+        COALESCE(sp.display_name, '') AS display_name,
+        sp.avatar_url,
+        rr.score,
+        ROUND(rr.score / 2.0)::int AS accuracy_pct,
+        rr.location_score,
+        rr.time_score,
+        s.mode,
+        rr.rank,
+        NULL::text AS reasoning,
+        NULL::text AS critique_error,
+        NULL::int AS image_quality_score,
+        NULL::text AS image_quality_notes,
+        ROW_NUMBER() OVER (PARTITION BY rr.player_id ORDER BY rr.score DESC) AS rn
+      FROM round_results rr
+      JOIN round_events re
+        ON re.game_id = rr.game_id
+       AND re.round_index = rr.round_index
+       AND re.event_type = 'ROUND_STARTED'
+      JOIN sessions s ON s.game_id = rr.game_id
+      LEFT JOIN session_players sp
+        ON sp.game_id = rr.game_id
+       AND sp.player_id = rr.player_id
+      WHERE (re.payload->>'eventId')::uuid = $1::uuid
+        AND rr.score IS NOT NULL
+    ),
+    ai_side AS (
+      SELECT
+        ab.ai_player_id AS player_id,
+        'ai' AS player_type,
+        ap.name AS display_name,
+        ap.avatar_url,
+        ab.round_xp AS score,
+        ab.round_accuracy AS accuracy_pct,
+        ab.location_accuracy AS location_score,
+        ab.year_accuracy AS time_score,
+        NULL::varchar AS mode,
+        NULL::int AS rank,
+        ab.reasoning,
+        ab.critique_error,
+        ab.image_quality_score,
+        ab.image_quality_notes
+      FROM ai_answer_bank ab
+      JOIN ai_players ap ON ap.id = ab.ai_player_id
+      WHERE ab.event_id = $1::uuid
+        AND ab.round_xp IS NOT NULL
+    ),
+    combined AS (
+      SELECT * FROM human_side WHERE rn = 1
+      UNION ALL
+      SELECT * FROM ai_side
+    )
+    SELECT
+      player_id,
+      player_type,
+      display_name,
+      avatar_url,
+      score,
+      accuracy_pct,
+      location_score,
+      time_score,
+      mode,
+      rank,
+      reasoning,
+      critique_error,
+      image_quality_score,
+      image_quality_notes,
+      ROW_NUMBER() OVER (ORDER BY score DESC) AS synthetic_rank
+    FROM combined
+    ${typeFilter}
+    ORDER BY score DESC
+    `,
+    [eventId]
+  );
+  return rows.map((r) => ({ ...r, rank: r.rank }));
+}
+
+export type EventModeBreakdownRow = {
+  mode: string;
+  play_count: number;
+};
+
+export async function fetchEventModeBreakdown(
+  pool: Pool,
+  eventId: string
+): Promise<EventModeBreakdownRow[]> {
+  const { rows } = await pool.query<EventModeBreakdownRow>(
+    `
+    SELECT
+      s.mode,
+      COUNT(*)::int AS play_count
+    FROM round_results rr
+    JOIN round_events re
+      ON re.game_id = rr.game_id
+     AND re.round_index = rr.round_index
+     AND re.event_type = 'ROUND_STARTED'
+    JOIN sessions s ON s.game_id = rr.game_id
+    WHERE (re.payload->>'eventId')::uuid = $1::uuid
+      AND rr.score IS NOT NULL
+    GROUP BY s.mode
+    ORDER BY play_count DESC
+    `,
+    [eventId]
+  );
+  return rows;
+}
+
 export async function fetchErrorBuckets(
   pool: Pool,
   opts: { type?: ErrorBucket | null; limit?: number } = {}
