@@ -16,6 +16,7 @@ import { loadPracticeSettings, savePracticeSettings } from '@/components/practic
 import { createAsyncCompeteSession } from '@/core/competeCreate'
 import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from '@/core/relaxPwaInterstitial'
 import { RelaxPwaInterstitialModal } from '@/components/compete/RelaxPwaInterstitialModal'
+import { RelaxPushNudge } from '@/components/RelaxPushNudge'
 import styles from './home.module.css'
 import authModalStyles from '@/components/AuthModal.module.css'
 import { NavModal } from '@/components/NavModal'
@@ -489,6 +490,7 @@ function ModeCard({
   const [comingSoonOpen, setComingSoonOpen] = useState(false)
   const [dailyStatus, setDailyStatus] = useState<DailyStatusPayload | null>(null)
   const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
+  const [relaxNudgePending, setRelaxNudgePending] = useState<null | (() => void)>(null)
 
   const runCompeteCreate = async () => {
     if (!playerId) { onRequireAuth(); return }
@@ -506,16 +508,22 @@ function ModeCard({
 
   const handleCompeteCreate = () => {
     if (shouldShowRelaxPwaInterstitial()) {
-      setPwaInterstitialPending(() => runCompeteCreate)
+      setPwaInterstitialPending(() => () => setRelaxNudgePending(() => runCompeteCreate))
       return
     }
-    void runCompeteCreate()
+    setRelaxNudgePending(() => runCompeteCreate)
   }
 
   const handlePwaInterstitialSkip = () => {
     markRelaxPwaInterstitialSkipped()
     const pending = pwaInterstitialPending
     setPwaInterstitialPending(null)
+    if (pending) pending()
+  }
+
+  const handleRelaxNudgeComplete = () => {
+    const pending = relaxNudgePending
+    setRelaxNudgePending(null)
     if (pending) void pending()
   }
 
@@ -592,6 +600,9 @@ function ModeCard({
           )}
           {pwaInterstitialPending && (
             <RelaxPwaInterstitialModal onClose={handlePwaInterstitialSkip} />
+          )}
+          {relaxNudgePending && (
+            <RelaxPushNudge onComplete={handleRelaxNudgeComplete} />
           )}
         </div>
       </div>
