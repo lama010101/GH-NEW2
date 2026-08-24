@@ -48,15 +48,6 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
-function isAdminEmail(email: string | undefined): boolean {
-  if (!email) return false;
-  const allowlist = (process.env.ADMIN_EMAILS || "laurent.martenot@gmail.com,lama010101@gmail.com,emartin6867@gmail.com")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  return allowlist.includes(email.trim().toLowerCase());
-}
-
 export async function middleware(request: NextRequest) {
   // Build a mutable response object that Supabase can write refreshed cookies onto.
   let response = NextResponse.next({ request });
@@ -136,7 +127,14 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
-    if (!isAdminEmail(user.email)) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const isAdmin = !profileError && profile?.role === "admin";
+    if (!isAdmin) {
       if (pathname.startsWith("/api/admin")) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }

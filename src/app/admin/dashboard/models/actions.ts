@@ -1,20 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createAuthenticatedServerClient } from "@/core/supabaseServer";
+import { requireAdmin } from "@/core/adminAuth";
 import { getDbPool } from "@/server/db";
 import { callOpenRouterChat } from "@/server/openrouter";
-
-async function requireSession() {
-  const authSupabase = createAuthenticatedServerClient();
-  const {
-    data: { session },
-  } = await authSupabase.auth.getSession();
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-  return session;
-}
 
 export async function addAiPlayer(input: {
   name: string;
@@ -22,7 +11,7 @@ export async function addAiPlayer(input: {
   model_id: string;
   avatar_url?: string | null;
 }) {
-  await requireSession();
+  await requireAdmin();
 
   const name = input.name.trim();
   const provider = input.provider.trim();
@@ -41,7 +30,7 @@ export async function addAiPlayer(input: {
 }
 
 export async function deactivateAiPlayer(playerId: string) {
-  await requireSession();
+  await requireAdmin();
 
   const pool = getDbPool();
   await pool.query(
@@ -52,7 +41,7 @@ export async function deactivateAiPlayer(playerId: string) {
 }
 
 export async function reactivateAiPlayer(playerId: string) {
-  await requireSession();
+  await requireAdmin();
 
   const pool = getDbPool();
   await pool.query(
@@ -74,7 +63,7 @@ export async function testAiPlayerModel(modelId: string): Promise<{
   error: string | null;
   durationMs: number;
 }> {
-  await requireSession();
+  await requireAdmin();
 
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey || apiKey.trim().length === 0) {
