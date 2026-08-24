@@ -9,6 +9,7 @@ import { THEME_COOKIE, type Theme, resolveTheme } from '@/lib/theme';
 import { HapticFeedback } from '@/components/HapticFeedback';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { Analytics } from '@/components/Analytics';
+import AutoFullscreen from '@/components/AutoFullscreen';
 import "./globals.css";
 
 /**
@@ -85,6 +86,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <HapticFeedback />
         <ServiceWorkerRegistration />
         <Analytics />
+        <AutoFullscreen />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </body>
     </html>
