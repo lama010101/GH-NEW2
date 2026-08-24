@@ -3410,3 +3410,5 @@ pm run build exit 0. PR #47. (2026-07-23) |
 | MP-BUILD-READSESSION-TIMERTIMEOUT-001 | MERGED | src/core/supabaseBrowser.ts | Added timer-based timeout to `readSession()` via `Promise.race` against a plain 8s timer (`SESSION_TIMEOUT_MS`), with a `TIMEOUT_SENTINEL` symbol distinguishing timer-fire from null-session, and a `timedOut` late-resolution guard skipping shared-state mutation when the timer won. No second GoTrueClient call (CTO ruling 2026-09-01: would deadlock shared mutex). Build commit 08ab0851 on `origin/merge-work-004`. Merged to main via `--no-ff` as merge commit 375f210d (MP-MERGE-WSBACKOFF-READSESSIONTIMEOUT-003). | 2026-09-01 |
 | AIP-BUILD-EVENTLEADERBOARD-001 | Per-event table + AI/human leaderboard drilldown + AI feedback view | Done | 2026-08-24 |
 | AIP-FIX-EVENTLEADERBOARD-CLICKCRASH-001 | Fix runtime crash on event drilldown click | Done | 2026-08-24 |
+
+| AIP-BUILD-PRODASHBOARD-OVERVIEWKPI-001 | Redesign admin Overview tab with KPI strip, roster health table, and activity/errors split | Done | 2026-08-24 |
