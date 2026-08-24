@@ -3358,3 +3358,4 @@ pm run build exit 0. PR #47. (2026-07-23) |
 | MP-BUILD-AUTOFULLSCREEN-001 | Auto-enter fullscreen on first interaction + topbar toggle | Done | 2026-08-24 |
 | MP-BUILD-RELAXPUSH-NUDGE-001 | Push nudge on Relax session start for unsubscribed users | Done | 2026-08-24 |
 | AIP-BUILD-EVENTLEADERBOARD-001 | Per-event table + AI/human leaderboard drilldown + AI feedback view | Done | 2026-08-24 |
+| AIP-FIX-EVENTLEADERBOARD-CLICKCRASH-001 | Fix runtime crash on event drilldown click | Done | 2026-08-24 |
