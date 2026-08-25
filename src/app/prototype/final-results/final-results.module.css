@@ -46,7 +46,7 @@
 
 .siteTitle {
   color: var(--gh-text-muted);
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -89,14 +89,14 @@
 }
 
 .bannerKicker {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 2.5px;
   color: var(--gh-orange);
 }
 
 .bannerTitle {
-  font-size: 30px;
+  font-size: var(--font-4xl);
   font-weight: 800;
   margin: 8px 0 0;
   letter-spacing: -0.5px;
@@ -112,7 +112,7 @@
 
 .bannerStats {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--gh-text-secondary);
   display: flex;
@@ -150,7 +150,7 @@
 }
 
 .cardTitle {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 700;
   margin: 0;
   color: var(--gh-text-primary);
@@ -172,7 +172,7 @@
 }
 
 .gameAccLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -200,7 +200,7 @@
 }
 
 .totalXpVal {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 800;
   color: var(--gh-text-primary);
 }
@@ -237,7 +237,7 @@
 }
 
 .miniCardTitle {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--gh-text-secondary);
 }
@@ -252,7 +252,7 @@
 
 .miniRingVal {
   position: absolute;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 800;
   line-height: 1;
 }
@@ -285,7 +285,7 @@
 /* ── Dynamic statement ── */
 .dynamicStatement {
   text-align: center;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--gh-text-secondary);
   padding: 2px 12px 6px;
@@ -328,7 +328,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 800;
   color: var(--gh-text-muted);
   flex-shrink: 0;
@@ -352,7 +352,7 @@
 
 .rankName {
   min-width: 0;
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--gh-text-primary);
   white-space: nowrap;
@@ -361,7 +361,7 @@
 }
 
 .youTag {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-teal);
   background: rgba(34, 211, 238, 0.15);
@@ -392,19 +392,19 @@
 }
 
 .rankAcc {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
 }
 
 .rankPctSuffix {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   opacity: 0.7;
   margin-left: 1px;
 }
 
 .rankXp {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-text-muted);
   margin-top: 1px;
@@ -448,7 +448,7 @@
 .mvpLabel {
   flex-shrink: 0;
   width: 78px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--gh-text-secondary);
 }
@@ -486,7 +486,7 @@
 }
 
 .mvpName {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--gh-text-primary);
   white-space: nowrap;
@@ -495,14 +495,14 @@
 }
 
 .mvpValue {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 800;
   margin-left: auto;
   text-align: right;
 }
 
 .mvpAnd {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--gh-text-muted);
 }
 
@@ -519,7 +519,7 @@
 }
 
 .badgeSummaryLabel {
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--gh-text-secondary);
 }
@@ -542,13 +542,13 @@
 }
 
 .badgeTallyCount {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: var(--gh-text-primary);
 }
 
 .badgeTallyTier {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-text-muted);
   text-transform: uppercase;
@@ -574,14 +574,14 @@
 }
 
 .statVal {
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 400;
   color: var(--gh-text-primary);
   line-height: 1;
 }
 
 .statLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-text-muted);
   text-transform: uppercase;
@@ -633,7 +633,7 @@
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.65);
   color: var(--gh-gold);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   line-height: 1;
   display: flex;
@@ -746,7 +746,7 @@
   border: 1px solid var(--gh-border-subtle);
   background: var(--gh-mini-card-bg);
   color: var(--gh-text-secondary);
-  font-size: 13px;
+  font-size: var(--font-xs);
   font-weight: 700;
   cursor: pointer;
 }
@@ -795,7 +795,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: var(--font-xl);
   flex-shrink: 0;
   background: var(--gh-mini-card-bg);
   border: 1px solid var(--gh-mini-card-border);
@@ -816,13 +816,13 @@
 }
 
 .progLabel {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--gh-text-primary);
 }
 
 .progSpan {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--gh-text-muted);
 }
 
@@ -852,14 +852,14 @@
 }
 
 .progXp {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 800;
   color: var(--gh-text-primary);
   white-space: nowrap;
 }
 
 .progRounds {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-text-muted);
   white-space: nowrap;
@@ -899,7 +899,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   background: var(--gh-bg-elevated);
   color: var(--gh-text-secondary);
@@ -914,7 +914,7 @@
 }
 
 .roundTitle {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--gh-text-primary);
   white-space: nowrap;
@@ -923,18 +923,18 @@
 }
 
 .roundMeta {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   color: var(--gh-text-muted);
   margin-top: 2px;
 }
 
 .roundMyAcc {
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 800;
 }
 
 .chev {
-  font-size: 18px;
+  font-size: var(--font-lg);
   color: var(--gh-text-muted);
   transition: transform 0.2s ease;
   flex-shrink: 0;
@@ -977,12 +977,12 @@
 }
 
 .miniVal {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 800;
 }
 
 .miniLabel {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-text-muted);
   text-transform: uppercase;
@@ -990,7 +990,7 @@
 }
 
 .miniLabelWhere {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   color: var(--gh-teal);
   text-transform: uppercase;
@@ -999,7 +999,7 @@
 }
 
 .miniLabelWhen {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   color: var(--gh-violet);
   text-transform: uppercase;
@@ -1014,7 +1014,7 @@
 }
 
 .miniSub {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--gh-text-muted);
   text-align: center;
 }
@@ -1030,7 +1030,7 @@
 }
 
 .bestLabel {
-  font-size: 12px;
+  font-size: var(--font-2xs);
   font-weight: 800;
   color: #ffffff;
   letter-spacing: 0.5px;
@@ -1058,7 +1058,7 @@
 }
 
 .bestName {
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #ffffff;
 }
@@ -1094,7 +1094,7 @@
   border: 1px solid var(--gh-border-default);
   background: var(--gh-bg-elevated);
   color: var(--gh-text-primary);
-  font-size: 14px;
+  font-size: var(--font-sm);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1105,7 +1105,7 @@
   border-radius: 12px;
   border: none;
   cursor: pointer;
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 800;
   color: #06181c;
   background: var(--gh-teal);
@@ -1137,16 +1137,16 @@
   }
 
   .bannerTitle {
-    font-size: 36px;
+    font-size: var(--font-4xl);
   }
 
   .bannerKicker {
-    font-size: 13px;
+    font-size: var(--font-xs);
     letter-spacing: 3px;
   }
 
   .bannerStats {
-    font-size: 16px;
+    font-size: var(--font-base);
     gap: 14px;
   }
 
@@ -1166,7 +1166,7 @@
   .heroCard .gameAccLabel {
     flex: 0 0 100%;
     text-align: center;
-    font-size: 13px;
+    font-size: var(--font-xs);
   }
 
   .heroTop {
@@ -1185,7 +1185,7 @@
   }
 
   .dynamicStatement {
-    font-size: 16px;
+    font-size: var(--font-base);
     padding: 4px 24px 8px;
   }
 
@@ -1223,7 +1223,7 @@
   .homeBtn,
   .playBtn {
     padding: 14px 28px;
-    font-size: 15px;
+    font-size: var(--font-base);
   }
 }
 
@@ -1246,16 +1246,16 @@
   }
 
   .bannerTitle {
-    font-size: 42px;
+    font-size: var(--font-4xl);
   }
 
   .bannerKicker {
-    font-size: 14px;
+    font-size: var(--font-sm);
     letter-spacing: 3.5px;
   }
 
   .bannerStats {
-    font-size: 18px;
+    font-size: var(--font-lg);
     gap: 16px;
   }
 
@@ -1266,11 +1266,11 @@
   }
 
   .heroCard .gameAccLabel {
-    font-size: 14px;
+    font-size: var(--font-sm);
   }
 
   .dynamicStatement {
-    font-size: 18px;
+    font-size: var(--font-lg);
     padding: 6px 32px 10px;
   }
 
@@ -1301,7 +1301,7 @@
   }
 
   .statVal {
-    font-size: 24px;
+    font-size: var(--font-2xl);
   }
 
   /* CTA: wider, centered */
@@ -1313,7 +1313,7 @@
   .homeBtn,
   .playBtn {
     padding: 16px 36px;
-    font-size: 16px;
+    font-size: var(--font-base);
   }
 }
 

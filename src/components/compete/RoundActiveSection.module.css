@@ -113,7 +113,7 @@
   border: 2px solid var(--gh-border-medium);
   background: var(--gh-modal-overlay);
   color: var(--gh-text-primary);
-  font-size: 24px;
+  font-size: var(--font-2xl);
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -332,7 +332,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-text-secondary);
   text-transform: uppercase;
@@ -1093,7 +1093,7 @@
 
 .settingsResumeHint {
   margin: 0 0 20px;
-  font-size: 13px;
+  font-size: var(--font-xs);
   color: var(--gh-text-secondary);
   text-align: center;
 }

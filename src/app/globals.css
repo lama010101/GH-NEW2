@@ -195,6 +195,7 @@ a {
   --font-2xl:   24px;   /* screen/page headings */
   --font-3xl:   28px;   /* card/section titles (large display) */
   --font-4xl:   32px;   /* hero / large display — max for 375px screens */
+  --font-hero:  120px;  /* display-only hero size — landing page oversized year overlay */
 
   /* --- Spacing --- */
   --radius-sm:  6px;
