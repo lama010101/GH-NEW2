@@ -121,6 +121,8 @@ export function CompetePanel({ onLobby, playerId }: {
   const [tab, setTab] = useState<'invitations'|'your_turn'|'completed'>('invitations')
   const [activeGames, setActiveGames] = useState<ActiveGame[]>([])
   const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
+  const [invitePending, setInvitePending] = useState<Record<string, boolean>>({})
+  const [lobbyPending, setLobbyPending] = useState<Record<string, boolean>>({})
 
   const fetchInvites = useCallback(async () => {
     if (!playerId) {
@@ -202,12 +204,17 @@ export function CompetePanel({ onLobby, playerId }: {
   }, [playerId, fetchInvites, fetchActiveGames])
 
   const runAccept = async (inviteId: string, gameId: string) => {
-    const result = await acceptInvitation(inviteId)
-    if (!result.ok) {
-      console.error('[CompetePanel] acceptInvitation failed:', result.error, result.code)
-      return
+    setInvitePending(prev => ({ ...prev, [inviteId]: true }))
+    try {
+      const result = await acceptInvitation(inviteId)
+      if (!result.ok) {
+        console.error('[CompetePanel] acceptInvitation failed:', result.error, result.code)
+        return
+      }
+      onLobby(result.game_id ?? gameId)
+    } finally {
+      setInvitePending(prev => { const next = { ...prev }; delete next[inviteId]; return next })
     }
-    onLobby(result.game_id ?? gameId)
   }
 
   const handleAccept = (inviteId: string, gameId: string, mode?: 'sync' | 'async') => {
@@ -226,12 +233,17 @@ export function CompetePanel({ onLobby, playerId }: {
   }
 
   const handleDecline = async (inviteId: string) => {
-    const result = await declineInvitation(inviteId)
-    if (!result.ok) {
-      console.error('[CompetePanel] declineInvitation failed:', result.error, result.code)
-      return
+    setInvitePending(prev => ({ ...prev, [inviteId]: true }))
+    try {
+      const result = await declineInvitation(inviteId)
+      if (!result.ok) {
+        console.error('[CompetePanel] declineInvitation failed:', result.error, result.code)
+        return
+      }
+      setInvites(prev => prev.filter(i => i.id !== inviteId))
+    } finally {
+      setInvitePending(prev => { const next = { ...prev }; delete next[inviteId]; return next })
     }
-    setInvites(prev => prev.filter(i => i.id !== inviteId))
   }
 
   const yourTurnGames = activeGames.filter(g => g.status === 'your_turn')
@@ -313,16 +325,18 @@ export function CompetePanel({ onLobby, playerId }: {
                     onClick={() => handleAccept(invite.id, invite.game_id, invite.mode)}
                     className={cpStyles.goBtn}
                     aria-label={t('home.compete_play_aria')}
+                    disabled={!!invitePending[invite.id]}
                   >
-                    <PlayIcon />
+                    {invitePending[invite.id] ? '…' : <PlayIcon />}
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleDecline(invite.id) }}
                     className={cpStyles.deleteBtn}
                     aria-label={t('home.compete_delete_aria')}
+                    disabled={!!invitePending[invite.id]}
                   >
-                    <TrashIcon />
+                    {invitePending[invite.id] ? '…' : <TrashIcon />}
                   </button>
                 </div>
               ))}
@@ -367,11 +381,12 @@ export function CompetePanel({ onLobby, playerId }: {
                   </div>
                   <button
                     type="button"
-                    onClick={() => onLobby(game.game_id)}
+                    onClick={() => { setLobbyPending(prev => ({ ...prev, [game.game_id]: true })); onLobby(game.game_id) }}
                     className={cpStyles.goBtn}
                     aria-label={t('home.compete_play_aria')}
+                    disabled={!!lobbyPending[game.game_id]}
                   >
-                    <PlayIcon />
+                    {lobbyPending[game.game_id] ? '…' : <PlayIcon />}
                   </button>
                 </div>
               ))}
@@ -389,7 +404,8 @@ export function CompetePanel({ onLobby, playerId }: {
                 <div
                   key={game.id}
                   className={cpStyles.gameRow}
-                  onClick={() => onLobby(game.game_id)}
+                  onClick={() => { setLobbyPending(prev => ({ ...prev, [game.game_id]: true })); onLobby(game.game_id) }}
+                  aria-disabled={!!lobbyPending[game.game_id]}
                 >
                   <PlayerAvatar
                     avatarUrl={game.opponent_avatar ?? null}
