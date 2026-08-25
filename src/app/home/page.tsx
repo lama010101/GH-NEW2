@@ -491,6 +491,8 @@ function ModeCard({
   const [dailyStatus, setDailyStatus] = useState<DailyStatusPayload | null>(null)
   const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
   const [relaxNudgePending, setRelaxNudgePending] = useState<null | (() => void)>(null)
+  const relaxNudgePendingRef = useRef<null | (() => void)>(null)
+  useEffect(() => { relaxNudgePendingRef.current = relaxNudgePending }, [relaxNudgePending])
 
   const runCompeteCreate = async () => {
     if (!playerId) { onRequireAuth(); return }
@@ -521,11 +523,12 @@ function ModeCard({
     if (pending) pending()
   }
 
-  const handleRelaxNudgeComplete = () => {
-    const pending = relaxNudgePending
+  const handleRelaxNudgeComplete = useCallback(() => {
+    const pending = relaxNudgePendingRef.current
+    relaxNudgePendingRef.current = null
     setRelaxNudgePending(null)
     if (pending) void pending()
-  }
+  }, [])
 
   const getIconSrc = () => {
     switch (mode) {
