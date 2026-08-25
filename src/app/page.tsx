@@ -13,6 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       type: 'website',
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Guess History — Find clues. Become a historian.' }],
     },
     verification: {
       google: '5iOhlzPH0rcqOzd4Lp_PKjsplXIpCSwqFmSw--xby7I',

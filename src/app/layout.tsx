@@ -57,6 +57,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t('meta_title'),
     description: t('meta_description'),
+    openGraph: {
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Guess History — Find clues. Become a historian.' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: ['/og-image.png'],
+    },
   };
 }
 
