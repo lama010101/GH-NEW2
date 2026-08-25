@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface RelaxPushNudgeProps {
@@ -28,6 +28,12 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Keep a ref to the latest onComplete so the mount-only effect below doesn't
+  // re-run when the caller's callback identity changes between renders. This
+  // prevents an infinite fetch loop if the caller does not memoize onComplete.
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
   // On mount, check server-truth subscription state + DB dismissal flag.
   // Only show the nudge if the user is genuinely unsubscribed AND not dismissed.
   useEffect(() => {
@@ -39,23 +45,23 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
           fetch('/api/user/relax-push-nudge'),
         ]);
         if (!subRes.ok || !nudgeRes.ok) {
-          if (!cancelled) onComplete();
+          if (!cancelled) onCompleteRef.current();
           return;
         }
         const subData = await subRes.json().catch(() => ({ subscribed: false }));
         const nudgeData = await nudgeRes.json().catch(() => ({ relax_push_nudge_dismissed: true }));
         if (cancelled) return;
         if (subData.subscribed || nudgeData.relax_push_nudge_dismissed) {
-          onComplete();
+          onCompleteRef.current();
           return;
         }
         setVisible(true);
       } catch {
-        if (!cancelled) onComplete();
+        if (!cancelled) onCompleteRef.current();
       }
     })();
     return () => { cancelled = true; };
-  }, [onComplete]);
+  }, []);
 
   async function markDismissed() {
     const res = await fetch('/api/user/relax-push-nudge', {
