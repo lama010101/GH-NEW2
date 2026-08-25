@@ -45,7 +45,7 @@ export async function GET(_request: NextRequest) {
       id: string;
       game_id: string;
       opponent_id: string;
-      opponent_name: string;
+      opponent_name: string | null;
       opponent_avatar?: string;
       is_host_opponent: boolean;
       is_host_viewer: boolean;
@@ -82,10 +82,11 @@ export async function GET(_request: NextRequest) {
         [gameId, playerId]
       );
 
-      // Skip sessions with no opponent
-      if (opponentResult.rows.length === 0) continue;
-
-      const opponent = opponentResult.rows[0];
+      // No opponent has joined yet — still surface the game (e.g. to the host),
+      // with opponent fields left empty rather than dropping the session.
+      const opponent = opponentResult.rows[0] as
+        | { player_id: string; display_name: string; avatar_url: string | null; is_host: boolean }
+        | undefined;
 
       // Fetch viewer's own is_host status for host badge display.
       const viewerHostResult = await pool.query<{ is_host: boolean }>(
@@ -207,7 +208,7 @@ export async function GET(_request: NextRequest) {
         if (row.player_id === playerId) {
           scoreYou = total;
           accuracyYou = parseInt(row.avg_accuracy ?? "0", 10);
-        } else if (row.player_id === opponent.player_id) {
+        } else if (opponent && row.player_id === opponent.player_id) {
           scoreThem = total;
         }
       }
@@ -232,10 +233,10 @@ export async function GET(_request: NextRequest) {
       games.push({
         id: gameId,
         game_id: gameId,
-        opponent_id: opponent.player_id,
-        opponent_name: opponent.display_name || "Unknown",
-        opponent_avatar: opponent.avatar_url ?? undefined,
-        is_host_opponent: opponent.is_host ?? false,
+        opponent_id: opponent?.player_id ?? "",
+        opponent_name: opponent ? opponent.display_name || "Unknown" : null,
+        opponent_avatar: opponent?.avatar_url ?? undefined,
+        is_host_opponent: opponent?.is_host ?? false,
         is_host_viewer: isHostViewer,
         round_current: currentRoundIndex + 1,
         round_total: session.total_rounds,

@@ -28,7 +28,8 @@ export async function POST(
     try {
       await client.query("BEGIN");
 
-      // 1. Update left_at
+      // Update left_at. is_host is a permanent identity field set at
+      // creation/join time and is never reassigned on leave.
       const result = await client.query<{ player_id: string; is_host: boolean }>(
         `UPDATE session_players
          SET left_at = now()
@@ -44,37 +45,6 @@ export async function POST(
         const snapshot = await loadCompeteSessionSnapshot(gameId, body.playerId);
         if (!snapshot) return NextResponse.json({ error: "Session not found" }, { status: 404 });
         return NextResponse.json(snapshot);
-      }
-
-      // 2. If leaving player was host, reassign to earliest-joined active player
-      if (result.rows[0].is_host) {
-        const newHost = await client.query<{ player_id: string }>(
-          `SELECT player_id
-           FROM session_players
-           WHERE game_id = $1
-             AND left_at IS NULL
-           ORDER BY joined_at ASC
-           LIMIT 1`,
-          [gameId]
-        );
-
-        if (newHost.rows.length > 0) {
-          // Clear old host (partial unique index ensures at most one)
-          await client.query(
-            `UPDATE session_players
-             SET is_host = false
-             WHERE game_id = $1 AND is_host = true`,
-            [gameId]
-          );
-          // Assign new host
-          await client.query(
-            `UPDATE session_players
-             SET is_host = true
-             WHERE game_id = $1 AND player_id = $2`,
-            [gameId, newHost.rows[0].player_id]
-          );
-        }
-        // else: no active players remain — no host assigned (acceptable)
       }
 
       await client.query("COMMIT");
