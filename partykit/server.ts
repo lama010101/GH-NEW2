@@ -1497,16 +1497,9 @@ export default class GameServer {
           }));
         }
       } else {
-        let coldStartAllPlayersReady = false;
-        if (isRuntimeState(this.snapshot)) {
-          const activePlayers = this.snapshot.players.filter(p => p.leftAt === null);
-          coldStartAllPlayersReady =
-            activePlayers.length >= this.minPlayersToStart(this.snapshot.config?.mode ?? "sync") &&
-            activePlayers.every(p => p.ready === true);
-        }
         connection.send(JSON.stringify({
           type: "STATE_UPDATE",
-          snapshot: { ...this.snapshot as Record<string, unknown>, allPlayersReady: coldStartAllPlayersReady, viewerPlayerId: null },
+          snapshot: { ...this.snapshot as Record<string, unknown>, viewerPlayerId: null },
           results: (this.snapshot as RuntimeState)?.roundResultsForClient ?? undefined
         }));
       }
