@@ -41,6 +41,7 @@ function isPublicPath(pathname: string): boolean {
   if (pathname.startsWith("/prototype")) return true;
   if (PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))) return true;
   if (PARTYKIT_SECRET_ROUTES.some((route) => route.test(pathname))) return true;
+  if (/^\/compete\/[0-9a-f-]{36}\/opengraph-image$/.test(pathname)) return true;
   const lastDot = pathname.lastIndexOf(".");
   if (lastDot !== -1 && STATIC_ASSET_EXTENSIONS.includes(pathname.slice(lastDot).toLowerCase())) {
     return true;
