@@ -229,3 +229,122 @@ describe("DO dbVersion gate (per-player comparison)", () => {
     expect(connC.send.mock.calls.length).toBe(callsBeforeStaleRound);
   });
 });
+
+describe("DO status-regression guard (MP-FIX-SNAPSHOTREGRESSION-GUARD-001)", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: async () => "not found",
+      })
+    );
+  });
+
+  // Build a RuntimeState-shaped snapshot WITHOUT a dbVersion field so the
+  // per-player dbVersion freshness gate is bypassed and execution reaches the
+  // status-regression guard directly.
+  function makeRuntimeSnapshot(options: {
+    status: string;
+    currentRoundIndex: number;
+  }) {
+    const { status, currentRoundIndex } = options;
+    return {
+      gameId: GAME_ID,
+      status,
+      config: {
+        mode: "sync",
+        roundTimerSec: 60,
+        totalRounds: 3,
+        yearMin: -400,
+        yearMax: 2025,
+        resultsAutoAdvanceSec: 90,
+        selectedEras: [],
+        selectedRegions: [],
+        hostPlayerId: PLAYER_A,
+        sessionDeadline: null,
+        startedAt: null,
+        completedAt: null,
+      },
+      players: [
+        { playerId: PLAYER_A, displayName: "A", ready: true, isHost: true, hasSubmitted: false, leftAt: null },
+        { playerId: PLAYER_B, displayName: "B", ready: true, isHost: false, hasSubmitted: false, leftAt: null },
+        { playerId: PLAYER_C, displayName: "C", ready: true, isHost: false, hasSubmitted: false, leftAt: null },
+      ],
+      currentRoundIndex,
+      roundEndsAt: null,
+      roundTimerSec: 60,
+      resultsAutoAdvanceSec: 90,
+      resultPhaseStartedAt: null,
+      events: [],
+    };
+  }
+
+  function makeServer() {
+    const connA = makeConnection("A");
+    const connB = makeConnection("B");
+    const connC = makeConnection("C");
+    const room = mockRoom([connA, connB, connC]);
+    const server = new GameServer(room as any);
+    (server as any).connections.set(connA.id, PLAYER_A);
+    (server as any).connections.set(connB.id, PLAYER_B);
+    (server as any).connections.set(connC.id, PLAYER_C);
+    return { server, connA, connB, connC };
+  }
+
+  it("a. ROUND_COMPLETE→ROUND_ACTIVE with next round index greater is ALLOWED", () => {
+    const { server, connA } = makeServer();
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "ROUND_COMPLETE", currentRoundIndex: 0 }));
+    const callsBefore = connA.send.mock.calls.length;
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "ROUND_ACTIVE", currentRoundIndex: 1 }));
+    expect(connA.send.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
+  it("b. ROUND_COMPLETE→ROUND_ACTIVE with same/lower round index is REJECTED", () => {
+    const { server, connA } = makeServer();
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "ROUND_COMPLETE", currentRoundIndex: 1 }));
+    const callsBefore = connA.send.mock.calls.length;
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "ROUND_ACTIVE", currentRoundIndex: 1 }));
+    expect(connA.send.mock.calls.length).toBe(callsBefore);
+  });
+
+  it("c. ROUND_ACTIVE→LOBBY is REJECTED", () => {
+    const { server, connA } = makeServer();
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "ROUND_ACTIVE", currentRoundIndex: 0 }));
+    const callsBefore = connA.send.mock.calls.length;
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "LOBBY", currentRoundIndex: 0 }));
+    expect(connA.send.mock.calls.length).toBe(callsBefore);
+  });
+
+  it("d. LOBBY→ROUND_ACTIVE is ALLOWED", () => {
+    const { server, connA } = makeServer();
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "LOBBY", currentRoundIndex: 0 }));
+    const callsBefore = connA.send.mock.calls.length;
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "ROUND_ACTIVE", currentRoundIndex: 0 }));
+    expect(connA.send.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
+  it("e. null this.snapshot (cold start) always ALLOWED regardless of incoming status", () => {
+    const { server, connA } = makeServer();
+    // Do NOT seed this.snapshot first — leave it null (cold start).
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "ROUND_ACTIVE", currentRoundIndex: 0 }));
+    expect(connA.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("f. SESSION_COMPLETE→LOBBY is REJECTED (stale play-again snapshot)", () => {
+    const { server, connA } = makeServer();
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "SESSION_COMPLETE", currentRoundIndex: 2 }));
+    const callsBefore = connA.send.mock.calls.length;
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "LOBBY", currentRoundIndex: 0 }));
+    expect(connA.send.mock.calls.length).toBe(callsBefore);
+  });
+
+  it("g. same status (ROUND_ACTIVE→ROUND_ACTIVE) is ALLOWED (re-broadcast)", () => {
+    const { server, connA } = makeServer();
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "ROUND_ACTIVE", currentRoundIndex: 0 }));
+    const callsBefore = connA.send.mock.calls.length;
+    (server as any).applySnapshotAndBroadcast(makeRuntimeSnapshot({ status: "ROUND_ACTIVE", currentRoundIndex: 0 }));
+    expect(connA.send.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+});
