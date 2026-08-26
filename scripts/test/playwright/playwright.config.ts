@@ -46,7 +46,7 @@ export default defineConfig({
       name: 'sync-golden',
       testMatch: /sync-compete-golden-path\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
-      timeout: 300000, // 5-min cap — under heavy dev load, login + 2 rounds + play-again needs headroom
+      timeout: 600000, // 10-min cap — 5-round gameplay (204-252s observed) + post-play-again lobby render (20.7s measured) needs headroom for Windows dev-server variance
       retries: 0, // no retries — a slow gate gets bypassed; fix flakiness, don't retry past it
     },
     {
