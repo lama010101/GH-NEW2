@@ -417,7 +417,7 @@ export async function deriveAsyncPlayerHomeState(
  * Maps event type to session status (phase).
  * SINGLE SOURCE OF TRUTH: round_events table ONLY.
  */
-function eventTypeToSessionStatus(eventType: string | null): SessionStatus {
+export function eventTypeToSessionStatus(eventType: string | null): SessionStatus {
   switch (eventType) {
     case "SESSION_CREATED":
       return "LOBBY";
