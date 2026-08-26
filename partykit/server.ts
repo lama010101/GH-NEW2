@@ -655,6 +655,48 @@ export default class GameServer {
       }
     }
 
+    // MP-FIX-SNAPSHOTREGRESSION-GUARD-001: status-regression guard.
+    // Reject stale snapshots that would overwrite fresher in-memory DO state
+    // with a backward status transition. Only applies when BOTH the existing
+    // this.snapshot and the incoming snapshot are valid RuntimeState. A true
+    // cold start (this.snapshot null / not yet loaded) always applies the
+    // incoming snapshot unconditionally — no guard.
+    if (isRuntimeState(this.snapshot) && isRuntimeState(snapshot)) {
+      const prev = this.snapshot;
+      const next = snapshot;
+      const prevStatus = prev.status;
+      const nextStatus = next.status;
+      const prevRoundIndex = prev.currentRoundIndex;
+      const nextRoundIndex = next.currentRoundIndex;
+
+      // Explicit allowed same-or-forward transitions only. Do NOT replace with
+      // a generic numeric status ordinal: ROUND_COMPLETE→ROUND_ACTIVE is
+      // conditionally valid depending on currentRoundIndex and a simple
+      // ordinal comparison cannot express that correctly.
+      const sameStatus = prevStatus === nextStatus;
+      const lobbyToRoundActive = prevStatus === "LOBBY" && nextStatus === "ROUND_ACTIVE";
+      const roundActiveToComplete = prevStatus === "ROUND_ACTIVE" && nextStatus === "ROUND_COMPLETE";
+      const roundCompleteToSessionComplete = prevStatus === "ROUND_COMPLETE" && nextStatus === "SESSION_COMPLETE";
+      const roundCompleteToRoundActiveAdvance =
+        prevStatus === "ROUND_COMPLETE" &&
+        nextStatus === "ROUND_ACTIVE" &&
+        nextRoundIndex > prevRoundIndex;
+
+      const allowed =
+        sameStatus ||
+        lobbyToRoundActive ||
+        roundActiveToComplete ||
+        roundCompleteToSessionComplete ||
+        roundCompleteToRoundActiveAdvance;
+
+      if (!allowed) {
+        console.log(
+          `[SNAPSHOT_REGRESSION_REJECTED] prevStatus=${prevStatus} nextStatus=${nextStatus} prevRoundIndex=${prevRoundIndex} nextRoundIndex=${nextRoundIndex}`
+        );
+        return;
+      }
+    }
+
     this.snapshot = snapshot;
     this.snapshotLoaded = true;
     void this.scheduleRoundTimer();
