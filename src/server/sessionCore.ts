@@ -56,6 +56,7 @@ import { transition } from "@/server/engine/transition";
 import type { TransitionEvent } from "@/server/engine/transition";
 import { createSupabaseServerClient, createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { sendPushToUser } from "@/server/pushSender";
+import { resolveNotificationChannelsBatch } from "@/server/notificationPrefs";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TRANSITION ENGINE VALIDATION (MP-ARCH-PHASE-1)
@@ -3809,18 +3810,30 @@ export async function advancePlayerRoundAsync(
             [gameId, playerId]
           );
           const completerName = completerNameResult.rows[0]?.display_name ?? "Unknown";
+          const channels = await resolveNotificationChannelsBatch(
+            otherPlayersResult.rows.map(r => r.player_id),
+            'session_complete',
+            client
+          );
           for (const other of otherPlayersResult.rows) {
-            await client.query(
-              `INSERT INTO notifications (user_id, type, payload)
-               VALUES ($1, 'session_complete', $2::jsonb)`,
-              [other.player_id, JSON.stringify({ game_id: gameId, completing_player_id: playerId, completing_player_name: completerName })]
-            );
-            await sendPushToUser(other.player_id, {
-              title: "Guess History",
-              body: `${completerName} completed their session`,
-              url: `/compete/${gameId}`,
-              tag: `session_complete:${gameId}`,
-            });
+            const channel = channels.get(other.player_id)!;
+            const shouldInApp = channel === 'in_app' || channel === 'both';
+            const shouldPush = channel === 'push' || channel === 'both';
+            if (shouldInApp) {
+              await client.query(
+                `INSERT INTO notifications (user_id, type, payload)
+                 VALUES ($1, 'session_complete', $2::jsonb)`,
+                [other.player_id, JSON.stringify({ game_id: gameId, completing_player_id: playerId, completing_player_name: completerName })]
+              );
+            }
+            if (shouldPush) {
+              await sendPushToUser(other.player_id, 'session_complete', {
+                title: "Guess History",
+                body: `${completerName} completed their session`,
+                url: `/compete/${gameId}`,
+                tag: `session_complete:${gameId}`,
+              });
+            }
           }
         }
       }

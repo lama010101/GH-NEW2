@@ -1,5 +1,7 @@
 import { sendNotification, setVapidDetails, WebPushError } from 'web-push';
 import { createSupabaseServerClient } from '@/core/supabaseServer';
+import { type NotificationType } from '@/core/notificationTypes';
+import { shouldSendPush } from '@/server/notificationPrefs';
 
 interface PushPayload {
   title: string;
@@ -26,13 +28,17 @@ function initializeVapid() {
 
 let vapidInitialized = false;
 
-export async function sendPushToUser(userId: string, payload: PushPayload) {
+export async function sendPushToUser(userId: string, type: NotificationType, payload: PushPayload) {
   try {
     if (!vapidInitialized) {
       vapidInitialized = initializeVapid();
     }
 
     if (!vapidInitialized) {
+      return;
+    }
+
+    if (!(await shouldSendPush(userId, type))) {
       return;
     }
 
