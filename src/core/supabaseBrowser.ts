@@ -19,6 +19,16 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
   {
     cookieOptions: {
       secure: process.env.NODE_ENV === "production",
+      // Share auth cookies across apex (guess-history.com) and www
+      // (www.guess-history.com). vercel.json force-redirects apex→www on
+      // full page loads, but Next.js soft-navigations issue same-origin RSC
+      // fetches that follow that 308 and lose host-only cookies on the hop.
+      // A leading-dot domain makes the session portable across both hosts.
+      // Omitted in dev so localhost keeps working (browsers reject cookies
+      // whose domain does not match the actual host).
+      ...(process.env.NODE_ENV === "production"
+        ? { domain: ".guess-history.com" }
+        : {}),
     },
   }
 );
