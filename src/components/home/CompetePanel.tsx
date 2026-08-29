@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser'
 import { getAccuracyColor } from '@/core/accuracyColor'
 import PlayerAvatar from '@/components/compete/PlayerAvatar'
 import { RelaxPwaInterstitialModal } from '@/components/compete/RelaxPwaInterstitialModal'
+import { RelaxPushNudge } from '@/components/RelaxPushNudge'
 import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from '@/core/relaxPwaInterstitial'
 import cpStyles from "./CompetePanel.module.css";
 
@@ -121,6 +122,9 @@ export function CompetePanel({ onLobby, playerId }: {
   const [tab, setTab] = useState<'invitations'|'your_turn'|'completed'>('invitations')
   const [activeGames, setActiveGames] = useState<ActiveGame[]>([])
   const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
+  const [relaxNudgePending, setRelaxNudgePending] = useState<null | (() => void)>(null)
+  const relaxNudgePendingRef = useRef<null | (() => void)>(null)
+  useEffect(() => { relaxNudgePendingRef.current = relaxNudgePending }, [relaxNudgePending])
   const [invitePending, setInvitePending] = useState<Record<string, boolean>>({})
   const [lobbyPending, setLobbyPending] = useState<Record<string, boolean>>({})
 
@@ -203,7 +207,7 @@ export function CompetePanel({ onLobby, playerId }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, fetchInvites, fetchActiveGames])
 
-  const runAccept = async (inviteId: string, gameId: string) => {
+  const runAccept = async (inviteId: string, gameId: string, then?: (gameId: string) => void) => {
     setInvitePending(prev => ({ ...prev, [inviteId]: true }))
     try {
       const result = await acceptInvitation(inviteId)
@@ -211,15 +215,21 @@ export function CompetePanel({ onLobby, playerId }: {
         console.error('[CompetePanel] acceptInvitation failed:', result.error, result.code)
         return
       }
-      onLobby(result.game_id ?? gameId)
+      const resolvedGameId = result.game_id ?? gameId
+      if (then) then(resolvedGameId)
+      else onLobby(resolvedGameId)
     } finally {
       setInvitePending(prev => { const next = { ...prev }; delete next[inviteId]; return next })
     }
   }
 
   const handleAccept = (inviteId: string, gameId: string, mode?: 'sync' | 'async') => {
-    if (mode === 'async' && shouldShowRelaxPwaInterstitial()) {
-      setPwaInterstitialPending(() => () => { void runAccept(inviteId, gameId) })
+    if (mode === 'async') {
+      if (shouldShowRelaxPwaInterstitial()) {
+        setPwaInterstitialPending(() => () => { void runAccept(inviteId, gameId, (gid) => setRelaxNudgePending(() => () => onLobby(gid))) })
+        return
+      }
+      void runAccept(inviteId, gameId, (gid) => setRelaxNudgePending(() => () => onLobby(gid)))
       return
     }
     void runAccept(inviteId, gameId)
@@ -231,6 +241,13 @@ export function CompetePanel({ onLobby, playerId }: {
     setPwaInterstitialPending(null)
     if (pending) pending()
   }
+
+  const handleRelaxNudgeComplete = useCallback(() => {
+    const pending = relaxNudgePendingRef.current
+    relaxNudgePendingRef.current = null
+    setRelaxNudgePending(null)
+    if (pending) void pending()
+  }, [])
 
   const handleDecline = async (inviteId: string) => {
     setInvitePending(prev => ({ ...prev, [inviteId]: true }))
@@ -259,6 +276,9 @@ export function CompetePanel({ onLobby, playerId }: {
     <>
       {pwaInterstitialPending && (
         <RelaxPwaInterstitialModal onClose={handlePwaInterstitialSkip} />
+      )}
+      {relaxNudgePending && (
+        <RelaxPushNudge onComplete={handleRelaxNudgeComplete} />
       )}
       {/* Tab bar */}
       <div className={cpStyles.cardSubPanel}>
