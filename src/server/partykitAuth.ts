@@ -15,7 +15,6 @@
  */
 export function verifyPartyKitSecret(headerValue: string | null): boolean {
   const expected = process.env.PARTYKIT_SECRET;
-  console.log('[DIAG-MP-INV-003] PARTYKIT_SECRET defined:', !!expected, 'len:', expected?.length ?? 0, 'headerLen:', headerValue?.length ?? 0);
   if (!headerValue || !expected) return false;
   if (headerValue.length !== expected.length) return false;
 
