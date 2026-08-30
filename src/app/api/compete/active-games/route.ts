@@ -44,11 +44,12 @@ export async function GET(_request: NextRequest) {
     const games: Array<{
       id: string;
       game_id: string;
-      opponent_id: string;
-      opponent_name: string;
+      opponent_id?: string;
+      opponent_name?: string;
       opponent_avatar?: string;
-      is_host_opponent: boolean;
+      is_host_opponent?: boolean;
       is_host_viewer: boolean;
+      opponent_pending: boolean;
       round_current: number;
       round_total: number;
       status: "your_turn" | "waiting" | "completed";
@@ -64,6 +65,15 @@ export async function GET(_request: NextRequest) {
 
     for (const session of sessionsResult.rows) {
       const gameId = session.game_id;
+
+      // Fetch viewer's own is_host status for host badge display.
+      // Runs before the opponent lookup so isHostViewer is available
+      // even when no opponent has joined yet (host-created-unstarted case).
+      const viewerHostResult = await pool.query<{ is_host: boolean }>(
+        `SELECT is_host FROM session_players WHERE game_id = $1 AND player_id = $2`,
+        [gameId, playerId]
+      );
+      const isHostViewer = viewerHostResult.rows[0]?.is_host ?? false;
 
       // Step 2: Get opponent. Prefer an active opponent, but still return one
       // that has left so a session the player can resume is not skipped.
@@ -82,17 +92,10 @@ export async function GET(_request: NextRequest) {
         [gameId, playerId]
       );
 
-      // Skip sessions with no opponent
-      if (opponentResult.rows.length === 0) continue;
-
-      const opponent = opponentResult.rows[0];
-
-      // Fetch viewer's own is_host status for host badge display.
-      const viewerHostResult = await pool.query<{ is_host: boolean }>(
-        `SELECT is_host FROM session_players WHERE game_id = $1 AND player_id = $2`,
-        [gameId, playerId]
-      );
-      const isHostViewer = viewerHostResult.rows[0]?.is_host ?? false;
+      // No opponent joined yet (host-created-unstarted). Proceed with a null
+      // opponent so status derivation can still run and surface the session
+      // under "Your Turn" for the host.
+      const opponent = opponentResult.rows.length > 0 ? opponentResult.rows[0] : null;
 
       // Step 3: Derive current round index and status
       let status: "your_turn" | "waiting" | "completed";
@@ -207,7 +210,7 @@ export async function GET(_request: NextRequest) {
         if (row.player_id === playerId) {
           scoreYou = total;
           accuracyYou = parseInt(row.avg_accuracy ?? "0", 10);
-        } else if (row.player_id === opponent.player_id) {
+        } else if (opponent && row.player_id === opponent.player_id) {
           scoreThem = total;
         }
       }
@@ -232,11 +235,12 @@ export async function GET(_request: NextRequest) {
       games.push({
         id: gameId,
         game_id: gameId,
-        opponent_id: opponent.player_id,
-        opponent_name: opponent.display_name || "Unknown",
-        opponent_avatar: opponent.avatar_url ?? undefined,
-        is_host_opponent: opponent.is_host ?? false,
+        opponent_id: opponent?.player_id,
+        opponent_name: opponent ? (opponent.display_name || "Unknown") : undefined,
+        opponent_avatar: opponent?.avatar_url ?? undefined,
+        is_host_opponent: opponent?.is_host,
         is_host_viewer: isHostViewer,
+        opponent_pending: opponent === null,
         round_current: currentRoundIndex + 1,
         round_total: session.total_rounds,
         status,
