@@ -24,6 +24,11 @@ vi.mock("./supabaseBrowser", () => {
       })),
     },
     readSession: mockReadSession,
+    // identity.ts imports forceClearAuthStorage from ./supabaseBrowser
+    // (MP-FIX-AUTH-REFRESHSTORM-BACKOFF-002 relocated it here). Mock as a
+    // no-op so signOut tests can assert it was called without touching real
+    // storage.
+    forceClearAuthStorage: vi.fn(),
   };
 });
 

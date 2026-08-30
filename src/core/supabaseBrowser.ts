@@ -29,18 +29,53 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
  * Single-flight: concurrent callers share one in-flight `getSession()` call
  * instead of each triggering their own.
  *
+ * Backoff + circuit-breaker (MP-FIX-AUTH-REFRESHSTORM-BACKOFF-002):
+ * - MIN_SESSION_INTERVAL_MS: application-wide cap of 1 getSession() attempt
+ *   per 10s. Calls within the window return the cached lastSession without
+ *   re-entering the SDK's refresh path. Stops 429 retry storms caused by
+ *   multiple useEffects per mount each re-arming the SDK refresh on an
+ *   expired/invalid token.
+ * - MAX_NULL_RESULTS: after 2 consecutive null sessions, forceClearAuthStorage()
+ *   fires once and the counter resets, so the app falls back to the login
+ *   state instead of looping into the rate limit.
+ *
  * Returns session or null on any error (never throws).
- * NO Promise.race, NO timeout, NO retry.
+ * NO Promise.race, NO timeout, NO retry loop.
  */
 let readSessionInFlight: Promise<Session | null> | null = null;
+let lastSessionAttemptMs = 0;
+let lastSession: Session | null = null;
+let consecutiveNullResults = 0;
+const MIN_SESSION_INTERVAL_MS = 10_000;
+const MAX_NULL_RESULTS = 2;
 
 export async function readSession(): Promise<Session | null> {
   if (readSessionInFlight) {
     return readSessionInFlight;
   }
+  // Backoff guard: if we attempted a session read very recently, return the
+  // cached session without re-entering the SDK refresh path. This caps
+  // application-wide refresh entry to <=1 per MIN_SESSION_INTERVAL_MS even
+  // when many effects/mounts call readSession() in quick succession.
+  const now = Date.now();
+  if (now - lastSessionAttemptMs < MIN_SESSION_INTERVAL_MS) {
+    return lastSession;
+  }
+  lastSessionAttemptMs = now;
   readSessionInFlight = (async (): Promise<Session | null> => {
     try {
       const { data: { session } } = await supabaseBrowser.auth.getSession();
+      if (session) {
+        consecutiveNullResults = 0;
+        lastSession = session;
+      } else {
+        consecutiveNullResults += 1;
+        if (consecutiveNullResults >= MAX_NULL_RESULTS) {
+          forceClearAuthStorage();
+          consecutiveNullResults = 0;
+          lastSession = null;
+        }
+      }
       return session;
     } catch {
       return null;
@@ -49,6 +84,35 @@ export async function readSession(): Promise<Session | null> {
     }
   })();
   return readSessionInFlight;
+}
+
+/**
+ * Force-clears all Supabase auth storage (cookies and localStorage) without
+ * calling GoTrue. Lock-free escape hatch for recovery scenarios where auth
+ * methods might deadlock, and circuit-breaker target for readSession().
+ *
+ * Relocated here (MP-FIX-AUTH-REFRESHSTORM-BACKOFF-002) so the backoff guard
+ * can call it without an import cycle. Re-exported by identity.ts.
+ */
+export function forceClearAuthStorage(): void {
+  // Clear all Supabase cookies
+  if (typeof document !== 'undefined') {
+    document.cookie.split(';').forEach((cookie) => {
+      const name = cookie.split('=')[0].trim();
+      if (name.startsWith('sb-')) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+    });
+  }
+
+  // Clear all Supabase localStorage keys
+  if (typeof localStorage !== 'undefined') {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
 }
 
 /**
