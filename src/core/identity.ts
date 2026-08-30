@@ -1,4 +1,10 @@
-import { supabaseBrowser, readSession } from "./supabaseBrowser";
+import { supabaseBrowser, readSession, forceClearAuthStorage } from "./supabaseBrowser";
+
+// Re-export so existing `import { forceClearAuthStorage } from "@/core/identity"`
+// call sites keep working. Implementation now lives in supabaseBrowser.ts
+// (MP-FIX-AUTH-REFRESHSTORM-BACKOFF-002) to break the import cycle that would
+// otherwise form when readSession()'s circuit-breaker needs to call it.
+export { forceClearAuthStorage };
 
 const NEW_USER_WINDOW_MS = 300_000;
 
@@ -191,31 +197,6 @@ export function updateCachedAvatarUrl(url: string | null): void {
   if (cachedState.status !== 'ready') return;
   cachedState = { ...cachedState, avatarUrl: url };
   notifySubscribers(cachedState);
-}
-
-/**
- * Force-clears all Supabase auth storage (cookies and localStorage) without calling GoTrue.
- * This is a lock-free escape hatch for recovery scenarios where auth methods might deadlock.
- */
-export function forceClearAuthStorage(): void {
-  // Clear all Supabase cookies
-  if (typeof document !== 'undefined') {
-    document.cookie.split(';').forEach((cookie) => {
-      const name = cookie.split('=')[0].trim();
-      if (name.startsWith('sb-')) {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-      }
-    });
-  }
-
-  // Clear all Supabase localStorage keys
-  if (typeof localStorage !== 'undefined') {
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('sb-')) {
-        localStorage.removeItem(key);
-      }
-    });
-  }
 }
 
 export function subscribeToIdentityChanges(
