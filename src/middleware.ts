@@ -92,8 +92,16 @@ export async function middleware(request: NextRequest) {
             request.cookies.set(name, value)
           );
           response = NextResponse.next({ request });
+          // Mirror the client-side cookie domain (see supabaseBrowser.ts):
+          // share auth cookies across apex and www in production so the
+          // vercel.json apex→www 308 does not drop the session on
+          // soft-navigation RSC fetches. Omitted in dev for localhost.
+          const cookieDomain =
+            process.env.NODE_ENV === "production"
+              ? { domain: ".guess-history.com" }
+              : {};
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, { ...options, ...cookieDomain })
           );
         },
       },
