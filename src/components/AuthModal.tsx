@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useTranslations } from 'next-intl';
 import { supabaseBrowser } from "@/core/supabaseBrowser";
@@ -18,6 +18,7 @@ interface AuthModalProps {
 export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
   const t = useTranslations('auth');
   const tLanding = useTranslations('landing');
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -99,6 +100,8 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
       if (event === "SIGNED_IN") {
         subscription.unsubscribe();
         signInSubscriptionRef.current = null;
+        const next = searchParams.get("next") || "/home";
+        router.replace(next);
         onClose();
       }
     });
