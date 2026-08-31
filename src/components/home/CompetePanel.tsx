@@ -29,6 +29,9 @@ type ActiveGame = {
   session_deadline?: string
   is_host_opponent?: boolean
   is_host_viewer?: boolean
+  opponent_pending?: boolean
+  viewer_name?: string
+  viewer_avatar?: string
 }
 
 function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) => string): string {
@@ -350,21 +353,36 @@ export function CompetePanel({ onLobby, playerId }: {
             <div className={cpStyles.emptyStateCenter}>{t('home.compete_no_your_turn')}</div>
           ) : (
             <div className={cpStyles.gameList}>
-              {yourTurnGames.map(game => (
+              {yourTurnGames.map(game => {
+                // Host-created-unstarted case: no opponent joined yet, so the
+                // row represents the host's own pending session. Show the
+                // host's own avatar/name (viewer_*) instead of the
+                // "Unknown"/"UN" placeholder that opponent_* would produce.
+                const pendingHost = game.opponent_pending === true;
+                const rowAvatarUrl = pendingHost
+                  ? (game.viewer_avatar ?? null)
+                  : (game.opponent_avatar ?? null);
+                const rowDisplayName = pendingHost
+                  ? (game.viewer_name ?? t('game.unknown_player'))
+                  : (game.opponent_name ?? t('game.unknown_player'));
+                const rowPlayerId = pendingHost
+                  ? (playerId ?? game.opponent_id)
+                  : game.opponent_id;
+                return (
                 <div
                   key={game.id}
                   className={cpStyles.gameRow}
                 >
                   <PlayerAvatar
-                    avatarUrl={game.opponent_avatar ?? null}
-                    displayName={game.opponent_name ?? t('game.unknown_player')}
-                    playerId={game.opponent_id}
+                    avatarUrl={rowAvatarUrl}
+                    displayName={rowDisplayName}
+                    playerId={rowPlayerId}
                     size={28}
-                    initials={(game.opponent_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}
+                    initials={rowDisplayName.slice(0, 2).toUpperCase()}
                   />
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>
-                      {game.opponent_name}
+                      {rowDisplayName}
                     </span>
                     <span className={cpStyles.gameSub}>
                       {game.mode && (
@@ -389,7 +407,8 @@ export function CompetePanel({ onLobby, playerId }: {
                     {lobbyPending[game.game_id] ? '…' : <PlayIcon />}
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )
         )}
