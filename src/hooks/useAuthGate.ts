@@ -37,7 +37,6 @@ export function useAuthGate(): UseAuthGateReturn {
     if (state.status === "ready" && pendingRef.current) {
       const next = pendingRef.current;
       pendingRef.current = null;
-      setIsModalOpen(false);
       router.push(next);
     }
   }, [state.status, router]);
