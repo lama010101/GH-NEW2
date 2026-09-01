@@ -102,7 +102,6 @@ export function AuthModal({ isOpen, onClose, required }: AuthModalProps) {
         signInSubscriptionRef.current = null;
         const next = searchParams.get("next") || "/home";
         router.replace(next);
-        onClose();
       }
     });
     signInSubscriptionRef.current = subscription;
