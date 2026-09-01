@@ -50,7 +50,9 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
  *   state instead of looping into the rate limit.
  *
  * Returns session or null on any error (never throws).
- * NO Promise.race, NO timeout, NO retry loop.
+ * Timer-bounded via Promise.race against a plain timer (CTO ruling
+ * 2026-09-01: never race a second GoTrueClient call — shared-mutex
+ * deadlock). No retry loop.
  */
 let readSessionInFlight: Promise<Session | null> | null = null;
 let lastSessionAttemptMs = 0;
@@ -58,6 +60,11 @@ let lastSession: Session | null = null;
 let consecutiveNullResults = 0;
 const MIN_SESSION_INTERVAL_MS = 10_000;
 const MAX_NULL_RESULTS = 2;
+// Must stay under MIN_SESSION_INTERVAL_MS so a timed-out call still
+// respects the backoff window. CTO ruling 2026-09-01: racing getSession()
+// against a plain timer is authorized (NOT a second GoTrueClient call —
+// that would deadlock the shared mutex).
+const SESSION_TIMEOUT_MS = 8_000;
 
 export async function readSession(): Promise<Session | null> {
   if (readSessionInFlight) {
@@ -73,17 +80,41 @@ export async function readSession(): Promise<Session | null> {
   }
   lastSessionAttemptMs = now;
   readSessionInFlight = (async (): Promise<Session | null> => {
+    // Sentinel distinguishes "timer fired" from "getSession() returned a
+    // null session" — both would otherwise yield null.
+    const TIMEOUT_SENTINEL: unique symbol = Symbol("readSessionTimeout");
+    const timeoutPromise = new Promise<typeof TIMEOUT_SENTINEL>((resolve) => {
+      setTimeout(() => resolve(TIMEOUT_SENTINEL), SESSION_TIMEOUT_MS);
+    });
+    let timedOut = false;
+    let session: Session | null = null;
     try {
-      const { data: { session } } = await supabaseBrowser.auth.getSession();
-      if (session) {
-        consecutiveNullResults = 0;
-        lastSession = session;
+      const raced = await Promise.race([
+        supabaseBrowser.auth.getSession(),
+        timeoutPromise,
+      ]);
+      if (raced === TIMEOUT_SENTINEL) {
+        // Timer won. Do NOT await or cancel the underlying getSession() —
+        // let it resolve in the background and discard its result.
+        timedOut = true;
       } else {
-        consecutiveNullResults += 1;
-        if (consecutiveNullResults >= MAX_NULL_RESULTS) {
-          forceClearAuthStorage();
+        session = raced.data.session;
+      }
+      // Late-resolution guard: if the timer won, the abandoned getSession()
+      // may still resolve after we return and clear readSessionInFlight.
+      // Mutating shared state here would race a subsequent readSession()
+      // call. Skip all mutation when timedOut.
+      if (!timedOut) {
+        if (session) {
           consecutiveNullResults = 0;
-          lastSession = null;
+          lastSession = session;
+        } else {
+          consecutiveNullResults += 1;
+          if (consecutiveNullResults >= MAX_NULL_RESULTS) {
+            forceClearAuthStorage();
+            consecutiveNullResults = 0;
+            lastSession = null;
+          }
         }
       }
       return session;
