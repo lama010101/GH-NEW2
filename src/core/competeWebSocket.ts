@@ -39,6 +39,7 @@ export class CompeteWebSocket {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 20;
   private reconnectDelay = 1000;
+  private static readonly MAX_RECONNECT_DELAY_MS = 30_000; // 30s ceiling
   private manuallyDisconnected = false;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private lastAppliedSnapshotVersion = -1;
@@ -246,7 +247,10 @@ export class CompeteWebSocket {
       return;
     }
     this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    const delay = Math.min(
+      this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+      CompeteWebSocket.MAX_RECONNECT_DELAY_MS
+    );
     this.setConnectionState("RECONNECTING");
     setTimeout(() => this.connectWithFreshToken(), delay);
   }
