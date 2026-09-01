@@ -50,6 +50,8 @@ export async function GET(_request: NextRequest) {
       is_host_opponent?: boolean;
       is_host_viewer: boolean;
       opponent_pending: boolean;
+      viewer_name?: string;
+      viewer_avatar?: string;
       round_current: number;
       round_total: number;
       status: "your_turn" | "waiting" | "completed";
@@ -66,14 +68,24 @@ export async function GET(_request: NextRequest) {
     for (const session of sessionsResult.rows) {
       const gameId = session.game_id;
 
-      // Fetch viewer's own is_host status for host badge display.
+      // Fetch viewer's own is_host status (for host badge display) plus
+      // display_name/avatar_url (for the host-created-unstarted case where
+      // no opponent has joined yet — the Your Turn row then shows the host's
+      // own avatar instead of the "Unknown"/"UN" placeholder).
       // Runs before the opponent lookup so isHostViewer is available
       // even when no opponent has joined yet (host-created-unstarted case).
-      const viewerHostResult = await pool.query<{ is_host: boolean }>(
-        `SELECT is_host FROM session_players WHERE game_id = $1 AND player_id = $2`,
+      const viewerHostResult = await pool.query<{
+        is_host: boolean;
+        display_name: string | null;
+        avatar_url: string | null;
+      }>(
+        `SELECT is_host, display_name, avatar_url
+         FROM session_players WHERE game_id = $1 AND player_id = $2`,
         [gameId, playerId]
       );
       const isHostViewer = viewerHostResult.rows[0]?.is_host ?? false;
+      const viewerName: string | undefined = viewerHostResult.rows[0]?.display_name ?? undefined;
+      const viewerAvatar: string | undefined = viewerHostResult.rows[0]?.avatar_url ?? undefined;
 
       // Step 2: Get opponent. Prefer an active opponent, but still return one
       // that has left so a session the player can resume is not skipped.
@@ -241,6 +253,8 @@ export async function GET(_request: NextRequest) {
         is_host_opponent: opponent?.is_host,
         is_host_viewer: isHostViewer,
         opponent_pending: opponent === null,
+        viewer_name: viewerName,
+        viewer_avatar: viewerAvatar,
         round_current: currentRoundIndex + 1,
         round_total: session.total_rounds,
         status,
