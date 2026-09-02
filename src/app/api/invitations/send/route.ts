@@ -83,32 +83,37 @@ export async function POST(request: NextRequest) {
 
     const mode = sessionData?.mode ?? undefined;
 
-    // Step 4: Insert into notifications
-    const { error: notificationError } = await serviceRoleClient
-      .from("notifications")
-      .insert({
-        user_id: invitee_id,
-        type: "lobby_invite",
-        payload: {
-          game_id,
-          inviter_id: user.id,
-          inviter_name: inviterName,
-          invitation_id: invitationId,
-          mode,
-        },
+    // Async (Anytime/Relax) sessions defer the invite notification to the
+    // session's first round-0 start (see startRelaxPlayer in sessionCore),
+    // so nothing is sent here for them.
+    if (mode !== "async") {
+      // Step 4: Insert into notifications
+      const { error: notificationError } = await serviceRoleClient
+        .from("notifications")
+        .insert({
+          user_id: invitee_id,
+          type: "lobby_invite",
+          payload: {
+            game_id,
+            inviter_id: user.id,
+            inviter_name: inviterName,
+            invitation_id: invitationId,
+            mode,
+          },
+        });
+
+      if (notificationError) {
+        console.error("[invitations/send] Failed to insert notification:", notificationError);
+        return NextResponse.json({ error: "Failed to create notification" }, { status: 500 });
+      }
+
+      await sendPushToUser(invitee_id, {
+        title: "Guess History",
+        body: `${inviterName} invited you to a game`,
+        url: `/compete/${game_id}`,
+        tag: `lobby_invite:${game_id}:${invitee_id}`,
       });
-
-    if (notificationError) {
-      console.error("[invitations/send] Failed to insert notification:", notificationError);
-      return NextResponse.json({ error: "Failed to create notification" }, { status: 500 });
     }
-
-    await sendPushToUser(invitee_id, {
-      title: "Guess History",
-      body: `${inviterName} invited you to a game`,
-      url: `/compete/${game_id}`,
-      tag: `lobby_invite:${game_id}:${invitee_id}`,
-    });
 
     return NextResponse.json({ success: true, invitation_id: invitationId });
   } catch (error) {
