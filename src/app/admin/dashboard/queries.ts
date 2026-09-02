@@ -642,3 +642,137 @@ export async function fetchCostWeek(pool: Pool): Promise<number> {
   const parsed = typeof raw === "string" ? parseFloat(raw) : Number(raw);
   return Number.isFinite(parsed) ? parsed : 0;
 }
+
+// ---------------------------------------------------------------------------
+// Scheduled AI-player mode changes (AIP-BUILD-PRODASHBOARD-FULLUIX-002)
+// ---------------------------------------------------------------------------
+
+export type ScheduledChangeRow = {
+  id: string;
+  ai_player_id: string;
+  player_name: string | null;
+  model_id: string | null;
+  mode: "practice" | "daily";
+  target_value: boolean;
+  apply_at: string;
+  status: "pending" | "applied" | "cancelled";
+  applied_at: string | null;
+  created_at: string;
+};
+
+export async function fetchScheduledChanges(
+  pool: Pool,
+  opts: { limit?: number } = {}
+): Promise<ScheduledChangeRow[]> {
+  const limit = opts.limit ?? 100;
+  const { rows } = await pool.query<ScheduledChangeRow>(
+    `
+    SELECT
+      sc.id,
+      sc.ai_player_id,
+      p.name AS player_name,
+      p.model_id,
+      sc.mode,
+      sc.target_value,
+      sc.apply_at::text AS apply_at,
+      sc.status,
+      sc.applied_at::text AS applied_at,
+      sc.created_at::text AS created_at
+    FROM ai_player_schedule_changes sc
+    LEFT JOIN ai_players p ON p.id = sc.ai_player_id
+    ORDER BY
+      (sc.status = 'pending') DESC,
+      sc.apply_at ASC,
+      sc.created_at DESC
+    LIMIT $1
+    `,
+    [limit]
+  );
+  return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Users list (AIP-BUILD-PRODASHBOARD-FULLUIX-002)
+// ---------------------------------------------------------------------------
+
+export type UserListRow = {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+  role: string;
+  created_at: string;
+  total_count: number;
+};
+
+export async function fetchUsersList(
+  pool: Pool,
+  opts: {
+    sort?: string;
+    dir?: "asc" | "desc";
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<UserListRow[]> {
+  const limit = opts.limit ?? 25;
+  const offset = opts.offset ?? 0;
+  const dir = opts.dir === "asc" ? "ASC" : "DESC";
+  const sortColumns: Record<string, string> = {
+    display_name: "p.display_name",
+    email: "u.email",
+    role: "p.role",
+    created_at: "p.created_at",
+  };
+  const sortColumn = opts.sort ? sortColumns[opts.sort] : undefined;
+  const orderBy = sortColumn
+    ? `${sortColumn} ${dir} NULLS LAST`
+    : `p.created_at ${dir}`;
+
+  const { rows } = await pool.query<UserListRow>(
+    `
+    SELECT
+      p.id,
+      p.display_name,
+      u.email,
+      p.role,
+      p.created_at::text AS created_at,
+      COUNT(*) OVER()::int AS total_count
+    FROM profiles p
+    LEFT JOIN auth.users u ON u.id = p.id
+    ORDER BY ${orderBy}
+    LIMIT $1 OFFSET $2
+    `,
+    [limit, offset]
+  );
+  return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Trashed (soft-deleted) AI players (AIP-BUILD-PRODASHBOARD-FULLUIX-002)
+// ---------------------------------------------------------------------------
+
+export type TrashedPlayerRow = {
+  id: string;
+  name: string;
+  model_id: string;
+  provider: string;
+  deleted_at: string;
+  created_at: string;
+};
+
+export async function fetchTrashedPlayers(pool: Pool): Promise<TrashedPlayerRow[]> {
+  const { rows } = await pool.query<TrashedPlayerRow>(
+    `
+    SELECT
+      id,
+      name,
+      model_id,
+      provider,
+      deleted_at::text AS deleted_at,
+      created_at::text AS created_at
+    FROM ai_players
+    WHERE deleted_at IS NOT NULL
+    ORDER BY deleted_at DESC
+    `
+  );
+  return rows;
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { testAiPlayerModel, deactivateAiPlayer, reactivateAiPlayer } from "./actions";
+import { testAiPlayerModel, deactivateAiPlayer, reactivateAiPlayer, softDeleteAiPlayer } from "./actions";
 
 type TestResult = {
   ok: boolean;
@@ -57,6 +57,14 @@ export function ModelRowActions({
     });
   };
 
+  const handleTrash = () => {
+    if (isPending) return;
+    if (!window.confirm("Move this AI player to trash? It can be restored from the Trash page.")) return;
+    startTransition(async () => {
+      await softDeleteAiPlayer(playerId);
+    });
+  };
+
   return (
     <div className="flex flex-col gap-1">
       <div className="flex gap-2">
@@ -84,6 +92,13 @@ export function ModelRowActions({
             {isPending ? "…" : "Reactivate"}
           </button>
         )}
+        <button
+          onClick={handleTrash}
+          disabled={isPending}
+          className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text-sec hover:text-[var(--gh-danger)] disabled:opacity-50"
+        >
+          {isPending ? "…" : "Trash"}
+        </button>
       </div>
       {testError && (
         <p className="text-xs text-red-500">{testError}</p>

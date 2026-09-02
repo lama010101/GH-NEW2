@@ -7,6 +7,7 @@ import { ResultsModal } from "./ResultsModal";
 import { AddModelModal } from "./models/AddModelModal";
 import { ModelRowActions } from "./models/ModelRowActions";
 import { updateDailyCostCap } from "./models/actions";
+import { scheduleAiPlayerModeChange } from "./scheduling/actions";
 import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRosterHealth, fetchRecentActivity, fetchRecentErrors, fetchCostWeek, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RosterHealthRow, type RecentActivityRow, type RecentErrorRow } from "./queries";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import { CallDebugModal } from "./CallDebugModal";
@@ -28,6 +29,8 @@ type ModelSummaryRow = {
   is_active_practice: boolean;
   is_active_daily: boolean;
   daily_cost_cap_usd: string | number | null;
+  cost_today: string | number | null;
+  cost_week: string | number | null;
   total_calls: number;
   error_count: number;
   total_cost: string | number | null;
@@ -136,6 +139,8 @@ function modelSortExpression(
       return `COALESCE(mae.final_error_total, 0) ${dir} ${nulls}`;
     case "total_cost":
       return `COALESCE(mc.total_cost, 0) ${dir} ${nulls}`;
+    case "cost_today":
+      return `COALESCE(mc.cost_today, 0) ${dir} ${nulls}`;
     case "total_tokens":
       return `COALESCE(mc.total_tokens, 0) ${dir} ${nulls}`;
     case "last_call_at":
@@ -226,6 +231,9 @@ export default async function OpenRouterAdminPage({
   const modelFilter = modelFilterRaw || null;
 
   const mSort = getParam(searchParams, "m_sort") || "total_cost";
+  const capFilterRaw = getParam(searchParams, "cap_filter") || "";
+  const capFilter =
+    capFilterRaw === "capped" || capFilterRaw === "uncapped" ? capFilterRaw : null;
   const mDirRaw = getParam(searchParams, "m_dir") || "desc";
   const mDir: "asc" | "desc" = mDirRaw === "asc" ? "asc" : "desc";
 
@@ -364,6 +372,16 @@ export default async function OpenRouterAdminPage({
           0
         ) AS total_cost,
         COALESCE(
+          SUM((c.response_payload->'usage'->>'cost')::numeric)
+          FILTER (WHERE c.response_payload IS NOT NULL AND c.created_at >= date_trunc('day', now())),
+          0
+        ) AS cost_today,
+        COALESCE(
+          SUM((c.response_payload->'usage'->>'cost')::numeric)
+          FILTER (WHERE c.response_payload IS NOT NULL AND c.created_at >= now() - interval '7 days'),
+          0
+        ) AS cost_week,
+        COALESCE(
           SUM(
             COALESCE((c.response_payload->'usage'->>'prompt_tokens')::int, 0) +
             COALESCE((c.response_payload->'usage'->>'completion_tokens')::int, 0)
@@ -409,6 +427,8 @@ export default async function OpenRouterAdminPage({
       COALESCE(mc.total_calls, 0)::int AS total_calls,
       COALESCE(mc.error_count, 0)::int AS error_count,
       COALESCE(mc.total_cost, 0) AS total_cost,
+      COALESCE(mc.cost_today, 0) AS cost_today,
+      COALESCE(mc.cost_week, 0) AS cost_week,
       COALESCE(mc.total_tokens, 0)::int AS total_tokens,
       mc.last_call_at,
       COALESCE(mae.final_error_total, 0) AS final_error_total,
@@ -418,10 +438,16 @@ export default async function OpenRouterAdminPage({
     FROM ai_players p
     LEFT JOIN model_calls mc ON mc.ai_player_id = p.id
     LEFT JOIN model_answer_errors mae ON mae.ai_player_id = p.id
-    WHERE ($1::text IS NULL OR p.model_id = $1::text)
+    WHERE p.deleted_at IS NULL
+      AND ($1::text IS NULL OR p.model_id = $1::text)
+      AND (
+        $2::text IS NULL
+        OR ($2::text = 'capped' AND p.daily_cost_cap_usd IS NOT NULL)
+        OR ($2::text = 'uncapped' AND p.daily_cost_cap_usd IS NULL)
+      )
     ORDER BY ${modelOrderBy}
     `,
-    [modelFilter]
+    [modelFilter, capFilter]
   )
     : { rows: [] as ModelSummaryRow[] };
 
@@ -473,6 +499,8 @@ export default async function OpenRouterAdminPage({
   const perModel = modelRows.map((row) => ({
     ...row,
     totalCost: toNumber(row.total_cost),
+    costToday: toNumber(row.cost_today),
+    costWeek: toNumber(row.cost_week),
   }));
 
   const { rows: kpiRows } = needKpi
@@ -943,12 +971,40 @@ export default async function OpenRouterAdminPage({
           <section>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-semibold">Manage models</h2>
-              <Link
-                href={makeLink({ tab: "models", addModel: "1" })}
-                className="rounded bg-gh-text px-4 py-2 text-sm text-gh-bg-base hover:opacity-90"
-              >
-                + Add model
-              </Link>
+              <div className="flex items-center gap-3">
+                <form
+                  method="get"
+                  className="flex items-center gap-2 text-sm"
+                  action="/admin/dashboard"
+                >
+                  <input type="hidden" name="tab" value="models" />
+                  <label htmlFor="cap_filter" className="text-gh-text-sec">
+                    Cost cap
+                  </label>
+                  <select
+                    id="cap_filter"
+                    name="cap_filter"
+                    defaultValue={capFilter ?? ""}
+                    className="rounded border border-[var(--gh-border-default)] bg-gh-bg-base px-2 py-1 text-sm text-gh-text"
+                  >
+                    <option value="">All</option>
+                    <option value="capped">Capped only</option>
+                    <option value="uncapped">Uncapped only</option>
+                  </select>
+                  <button
+                    type="submit"
+                    className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text hover:bg-gh-bg-elevated"
+                  >
+                    Filter
+                  </button>
+                </form>
+                <Link
+                  href={makeLink({ tab: "models", addModel: "1" })}
+                  className="rounded bg-gh-text px-4 py-2 text-sm text-gh-bg-base hover:opacity-90"
+                >
+                  + Add model
+                </Link>
+              </div>
             </div>
 
             <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
@@ -983,7 +1039,17 @@ export default async function OpenRouterAdminPage({
                         dir={mDir}
                       />
                     </th>
+                    <th className="px-4 py-3 text-right font-semibold">
+                      <SortHeader
+                        href={modelSortLink("cost_today")}
+                        label="Cost today / 7d"
+                        column="cost_today"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
                     <th className="px-4 py-3 text-right font-semibold">Daily cap</th>
+                    <th className="px-4 py-3 font-semibold">Schedule</th>
                     <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -1019,6 +1085,9 @@ export default async function OpenRouterAdminPage({
                       <td className="whitespace-nowrap px-4 py-3 text-right">
                         {formatCost(row.totalCost)}
                       </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-gh-text-sec">
+                        {formatCost(row.costToday)} / {formatCost(row.costWeek)}
+                      </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <form
                           action={updateDailyCostCap}
@@ -1043,6 +1112,45 @@ export default async function OpenRouterAdminPage({
                         </form>
                       </td>
                       <td className="px-4 py-3">
+                        <details className="text-xs">
+                          <summary className="cursor-pointer text-gh-text-sec hover:text-gh-text">
+                            Schedule…
+                          </summary>
+                          <form
+                            action={scheduleAiPlayerModeChange}
+                            className="mt-2 flex w-56 flex-col gap-2 rounded border border-[var(--gh-border-default)] bg-gh-bg-base p-2"
+                          >
+                            <input type="hidden" name="playerId" value={row.id} />
+                            <select
+                              name="mode"
+                              className="rounded border border-[var(--gh-border-default)] bg-gh-bg-surface px-2 py-1 text-gh-text"
+                            >
+                              <option value="practice">Practice</option>
+                              <option value="daily">Daily</option>
+                            </select>
+                            <select
+                              name="targetValue"
+                              className="rounded border border-[var(--gh-border-default)] bg-gh-bg-surface px-2 py-1 text-gh-text"
+                            >
+                              <option value="enable">Enable</option>
+                              <option value="disable">Disable</option>
+                            </select>
+                            <input
+                              type="datetime-local"
+                              name="applyAt"
+                              required
+                              className="rounded border border-[var(--gh-border-default)] bg-gh-bg-surface px-2 py-1 text-gh-text"
+                            />
+                            <button
+                              type="submit"
+                              className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text hover:bg-gh-bg-elevated"
+                            >
+                              Schedule change
+                            </button>
+                          </form>
+                        </details>
+                      </td>
+                      <td className="px-4 py-3">
                         <ModelRowActions
                           playerId={row.id}
                           modelId={row.model_id}
@@ -1053,7 +1161,7 @@ export default async function OpenRouterAdminPage({
                   ))}
                   {perModel.length === 0 && (
                     <tr>
-                      <td className="px-4 py-6 text-gh-text-sec" colSpan={6}>
+                      <td className="px-4 py-6 text-gh-text-sec" colSpan={8}>
                         No models found.
                       </td>
                     </tr>

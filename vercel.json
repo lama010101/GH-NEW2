@@ -11,5 +11,11 @@
       "destination": "https://www.guess-history.com/$1",
       "permanent": true
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/apply-ai-schedule-changes",
+      "schedule": "* * * * *"
+    }
   ]
 }

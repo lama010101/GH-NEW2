@@ -181,6 +181,13 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Cron routes authenticate with their own CRON_SECRET bearer check
+  // (Vercel Cron sends no Supabase session). See
+  // src/app/api/cron/apply-ai-schedule-changes/route.ts.
+  if (pathname.startsWith("/api/cron")) {
+    return response;
+  }
+
   if (!user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
