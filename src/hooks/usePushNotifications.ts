@@ -32,21 +32,45 @@ export function usePushNotifications() {
 
   const checkSubscription = useCallback(async () => {
     setIsLoading(true);
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
       setIsSubscribed(false);
       setIsLoading(false);
       return;
     }
     try {
-      const response = await fetch('/api/push/subscribe');
-      if (!response.ok) {
-        setIsSubscribed(false);
-        return;
+      const registration = await navigator.serviceWorker.getRegistration();
+      const subscription = registration ? await registration.pushManager.getSubscription() : null;
+      setIsSubscribed(subscription !== null);
+
+      if (subscription) {
+        const response = await fetch('/api/push/subscribe').catch(() => null);
+        if (response?.ok) {
+          const data = await response.json().catch(() => ({ subscribed: false }));
+          if (!data.subscribed) {
+            const json = subscription.toJSON() as unknown as { endpoint: string; keys: PushSubscriptionKeys };
+            const { endpoint, keys } = json;
+            if (endpoint && keys?.p256dh && keys?.auth) {
+              await fetch('/api/push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint, keys }),
+              }).catch(() => null);
+            }
+          }
+        }
       }
-      const data = await response.json().catch(() => ({ subscribed: false }));
-      setIsSubscribed(Boolean(data.subscribed));
     } catch {
-      setIsSubscribed(false);
+      try {
+        const response = await fetch('/api/push/subscribe');
+        if (!response.ok) {
+          setIsSubscribed(false);
+          return;
+        }
+        const data = await response.json().catch(() => ({ subscribed: false }));
+        setIsSubscribed(Boolean(data.subscribed));
+      } catch {
+        setIsSubscribed(false);
+      }
     } finally {
       setIsLoading(false);
     }
