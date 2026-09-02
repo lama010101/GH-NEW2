@@ -7,6 +7,7 @@ import { ResultsModal } from "./ResultsModal";
 import { ModelFilter } from "./ModelFilter";
 import { AddModelModal } from "./models/AddModelModal";
 import { ModelRowActions } from "./models/ModelRowActions";
+import { updateDailyCostCap } from "./models/actions";
 import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket } from "./queries";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import { CallDebugModal } from "./CallDebugModal";
@@ -24,6 +25,7 @@ type ModelSummaryRow = {
   is_active: boolean;
   is_active_practice: boolean;
   is_active_daily: boolean;
+  daily_cost_cap_usd: string | number | null;
   total_calls: number;
   error_count: number;
   total_cost: string | number | null;
@@ -402,6 +404,7 @@ export default async function OpenRouterAdminPage({
       p.is_active,
       p.is_active_practice,
       p.is_active_daily,
+      p.daily_cost_cap_usd,
       COALESCE(mc.total_calls, 0)::int AS total_calls,
       COALESCE(mc.error_count, 0)::int AS error_count,
       COALESCE(mc.total_cost, 0) AS total_cost,
@@ -1103,6 +1106,7 @@ export default async function OpenRouterAdminPage({
                         dir={mDir}
                       />
                     </th>
+                    <th className="px-4 py-3 text-right font-semibold">Daily cap</th>
                     <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -1138,6 +1142,29 @@ export default async function OpenRouterAdminPage({
                       <td className="whitespace-nowrap px-4 py-3 text-right">
                         {formatCost(row.totalCost)}
                       </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <form
+                          action={updateDailyCostCap}
+                          className="flex items-center justify-end gap-2"
+                        >
+                          <input type="hidden" name="playerId" value={row.id} />
+                          <input
+                            type="number"
+                            name="cap"
+                            step="0.000001"
+                            min="0"
+                            defaultValue={row.daily_cost_cap_usd ?? ""}
+                            placeholder="No cap"
+                            className="w-28 rounded border border-[var(--gh-border-default)] bg-gh-bg-base px-2 py-1 text-right text-sm text-gh-text"
+                          />
+                          <button
+                            type="submit"
+                            className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text hover:bg-gh-bg-elevated"
+                          >
+                            Save
+                          </button>
+                        </form>
+                      </td>
                       <td className="px-4 py-3">
                         <ModelRowActions
                           playerId={row.id}
@@ -1149,7 +1176,7 @@ export default async function OpenRouterAdminPage({
                   ))}
                   {perModel.length === 0 && (
                     <tr>
-                      <td className="px-4 py-6 text-gh-text-sec" colSpan={5}>
+                      <td className="px-4 py-6 text-gh-text-sec" colSpan={6}>
                         No models found.
                       </td>
                     </tr>

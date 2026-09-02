@@ -51,6 +51,33 @@ export async function reactivateAiPlayer(playerId: string) {
   revalidatePath("/admin/dashboard");
 }
 
+export async function updateDailyCostCap(formData: FormData) {
+  await requireAdmin();
+
+  const playerId = formData.get("playerId");
+  const capRaw = formData.get("cap");
+
+  if (!playerId || typeof playerId !== "string") {
+    throw new Error("playerId is required");
+  }
+
+  const capValue =
+    capRaw === null || (typeof capRaw === "string" && capRaw.trim() === "")
+      ? null
+      : parseFloat(String(capRaw));
+
+  if (capValue !== null && (!Number.isFinite(capValue) || capValue < 0)) {
+    throw new Error("cap must be a non-negative number");
+  }
+
+  const pool = getDbPool();
+  await pool.query(
+    `UPDATE ai_players SET daily_cost_cap_usd = $1 WHERE id = $2`,
+    [capValue, playerId]
+  );
+  revalidatePath("/admin/dashboard");
+}
+
 export async function testAiPlayerModel(modelId: string): Promise<{
   ok: boolean;
   content: string;
