@@ -71,7 +71,7 @@ export function ModelRowActions({
         <button
           onClick={handleTest}
           disabled={testing}
-          className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text hover:bg-gh-bg-elevated disabled:opacity-50"
+          className="ops-btn disabled:opacity-50"
         >
           {testing ? "Testing…" : "Test"}
         </button>
@@ -79,7 +79,7 @@ export function ModelRowActions({
           <button
             onClick={handleDeactivate}
             disabled={isPending}
-            className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text-sec hover:text-gh-text disabled:opacity-50"
+            className="ops-btn disabled:opacity-50"
           >
             {isPending ? "…" : "Deactivate"}
           </button>
@@ -87,7 +87,7 @@ export function ModelRowActions({
           <button
             onClick={handleReactivate}
             disabled={isPending}
-            className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text hover:bg-gh-bg-elevated disabled:opacity-50"
+            className="ops-btn disabled:opacity-50"
           >
             {isPending ? "…" : "Reactivate"}
           </button>
@@ -95,7 +95,8 @@ export function ModelRowActions({
         <button
           onClick={handleTrash}
           disabled={isPending}
-          className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text-sec hover:text-[var(--gh-danger)] disabled:opacity-50"
+          className="ops-btn disabled:opacity-50"
+          style={{ color: "var(--ops-bad)" }}
         >
           {isPending ? "…" : "Trash"}
         </button>

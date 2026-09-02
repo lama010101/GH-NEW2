@@ -1,0 +1,836 @@
+/* Ops Console, daylight — scoped design system for /admin/dashboard/**.
+   Task: AIP-BUILD-DASHBOARDREDESIGN-FULLUIX-002 (implements approved Phase A plan
+   AIP-BUILD-DASHBOARDREDESIGN-FULLUIX-001).
+
+   Everything is nested under .ops-console so no token or rule can leak into
+   game-facing pages. The --ops-* values are pinned literals (NOT aliased to
+   --gh-*) so the admin look is deterministic regardless of the gh_theme cookie.
+   The --gh-* shadows at the bottom exist only to keep legacy shared components
+   (home/Toggle, modals) legible on the light canvas; they apply exclusively
+   inside .ops-console and never modify the global token definitions. */
+
+.ops-console {
+  /* Base palette (approved plan §3.1) */
+  --ops-canvas: #e9edf2;
+  --ops-panel: #ffffff;
+  --ops-ink: #14202b;
+  --ops-mute: #5a6b80;
+  --ops-line: #c6d0dc;
+  --ops-accent: #0d5b8f;
+  /* Status semantic layer */
+  --ops-ok: #177245;
+  --ops-warn: #9a6a00;
+  --ops-bad: #b3261e;
+  --ops-hover: #f3f6f9;
+
+  background: var(--ops-canvas);
+  color: var(--ops-ink);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------------- shell */
+
+.ops-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 16px;
+  background: var(--ops-panel);
+  border-bottom: 1px solid var(--ops-line);
+}
+
+.ops-brand {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+
+.ops-env {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ops-mute);
+  border: 1px solid var(--ops-line);
+  border-radius: 2px;
+  padding: 1px 6px;
+}
+
+.ops-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ops-line);
+  border-radius: 2px;
+  background: var(--ops-panel);
+  color: var(--ops-ink);
+  cursor: pointer;
+}
+
+.ops-body {
+  display: flex;
+  align-items: flex-start;
+}
+
+.ops-main {
+  flex: 1;
+  min-width: 0;
+  padding: 20px 24px 48px;
+}
+
+/* -------------------------------------------------------------- sidebar */
+
+.ops-sidebar {
+  flex-shrink: 0;
+  width: 240px;
+  position: fixed;
+  top: 48px;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  overflow-y: auto;
+  padding: 12px 8px;
+  background: var(--ops-canvas);
+  border-right: 1px solid var(--ops-line);
+  transform: translateX(-100%);
+  transition: transform 160ms ease;
+}
+
+.ops-sidebar-open {
+  transform: translateX(0);
+}
+
+.ops-scrim {
+  position: fixed;
+  inset: 0;
+  top: 48px;
+  z-index: 35;
+  background: rgba(20, 32, 43, 0.4);
+}
+
+.ops-navgroup {
+  margin-bottom: 16px;
+}
+
+.ops-navheading {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ops-mute);
+  padding: 0 10px 4px;
+}
+
+.ops-navlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ops-navlink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px 6px 8px;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  color: var(--ops-ink);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ops-navlink:hover {
+  background: var(--ops-hover);
+}
+
+.ops-navlink-active {
+  background: rgba(13, 91, 143, 0.08);
+  border-left-color: var(--ops-accent);
+  color: var(--ops-accent);
+  font-weight: 600;
+}
+
+.ops-navicon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--ops-mute);
+}
+
+.ops-navlink-active .ops-navicon {
+  color: var(--ops-accent);
+}
+
+/* ≥1024px: docked icon rail (tooltips via title attr) */
+@media (min-width: 1024px) {
+  .ops-sidebar {
+    position: sticky;
+    transform: none;
+    width: 56px;
+    height: calc(100vh - 48px);
+    padding: 12px 4px;
+  }
+
+  .ops-navheading,
+  .ops-navlabel {
+    display: none;
+  }
+
+  .ops-navlink {
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .ops-burger {
+    display: none;
+  }
+}
+
+/* ≥1280px: full 232px sidebar with labels */
+@media (min-width: 1280px) {
+  .ops-sidebar {
+    width: 232px;
+    padding: 12px 8px;
+  }
+
+  .ops-navheading {
+    display: block;
+  }
+
+  .ops-navlabel {
+    display: inline;
+  }
+
+  .ops-navlink {
+    justify-content: flex-start;
+    padding: 6px 8px;
+  }
+}
+
+/* <1024px: off-canvas drawer + hamburger */
+@media (max-width: 1023px) {
+  .ops-burger {
+    display: inline-flex;
+  }
+}
+
+/* ------------------------------------------------------------ page head */
+
+.ops-pagehead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ops-h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ops-ink);
+}
+
+.ops-pagesub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ops-mute);
+}
+
+/* ---------------------------------------------------------------- panels */
+
+.ops-panel {
+  background: var(--ops-panel);
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+}
+
+.ops-panel-pad {
+  padding: 12px 16px;
+}
+
+.ops-panel-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ops-ink);
+}
+
+.ops-panel-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ops-mute);
+}
+
+.ops-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--ops-line);
+  font-size: 12px;
+  color: var(--ops-mute);
+}
+
+/* ------------------------------------------------------------ KPI strip */
+
+.ops-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--ops-line);
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 768px) {
+  .ops-kpi-strip {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.ops-kpi {
+  background: var(--ops-panel);
+  padding: 12px 16px;
+}
+
+.ops-kpi-label {
+  font-size: 12px;
+  color: var(--ops-mute);
+}
+
+.ops-kpi-value {
+  margin-top: 2px;
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+/* ----------------------------------------------------------------- grid */
+
+.ops-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .ops-grid-2col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.ops-stack {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+/* ---------------------------------------------------------------- tables */
+
+.ops-panel-flush {
+  background: var(--ops-panel);
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  /* No overflow:hidden here — it would become the sticky containing block
+     and pin the thead inside the panel instead of the viewport. */
+}
+
+.ops-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.ops-table th {
+  position: sticky;
+  top: 48px;
+  z-index: 10;
+  background: var(--ops-panel);
+  border-bottom: 1px solid var(--ops-line);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ops-mute);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ops-table td {
+  border-bottom: 1px solid var(--ops-line);
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+
+.ops-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ops-table tbody tr:hover td {
+  background: var(--ops-hover);
+}
+
+.ops-table a {
+  color: inherit;
+}
+
+/* status left-edge bar (2px transparent default keeps columns aligned) */
+.ops-table tbody td:first-child {
+  border-left: 2px solid transparent;
+}
+
+.ops-table tbody tr[data-status="ok"] td:first-child {
+  border-left-color: var(--ops-ok);
+}
+
+.ops-table tbody tr[data-status="warn"] td:first-child {
+  border-left-color: var(--ops-warn);
+}
+
+.ops-table tbody tr[data-status="bad"] td:first-child {
+  border-left-color: var(--ops-bad);
+}
+
+.ops-table tbody tr[data-status="off"] td:first-child {
+  border-left-color: var(--ops-line);
+}
+
+.ops-num,
+.ops-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ops-table .num {
+  text-align: right;
+}
+
+.ops-celllink {
+  display: block;
+  margin: -8px -12px;
+  padding: 8px 12px;
+  text-decoration: none;
+}
+
+.ops-celllink:hover .ops-cellname {
+  text-decoration: underline;
+}
+
+.ops-cellname {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ops-rank {
+  display: inline-block;
+  min-width: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ops-mute);
+  font-size: 12px;
+}
+
+.ops-truncate {
+  display: inline-block;
+  vertical-align: bottom;
+  max-width: 240px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Columns hidden below 1280px to keep tables within the rail breakpoint;
+   they return in the stacked reflow below 1024px. */
+@media (max-width: 1279px) {
+  .ops-table .ops-col-xl {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------- chips and dots */
+
+.ops-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.ops-dot-ok {
+  background: var(--ops-ok);
+}
+
+.ops-dot-warn {
+  background: var(--ops-warn);
+}
+
+.ops-dot-bad {
+  background: var(--ops-bad);
+}
+
+.ops-dot-off {
+  background: var(--ops-mute);
+}
+
+.ops-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--ops-line);
+  border-radius: 2px;
+  font-size: 11px;
+  color: var(--ops-ink);
+  white-space: nowrap;
+}
+
+.ops-chip-ok {
+  color: var(--ops-ok);
+  border-color: var(--ops-ok);
+}
+
+.ops-chip-warn {
+  color: var(--ops-warn);
+  border-color: var(--ops-warn);
+}
+
+.ops-chip-bad {
+  color: var(--ops-bad);
+  border-color: var(--ops-bad);
+}
+
+.ops-chip-muted {
+  color: var(--ops-mute);
+}
+
+/* P/D mode marks */
+.ops-mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--ops-line);
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ops-line);
+  background: var(--ops-panel);
+}
+
+.ops-mode-on {
+  color: var(--ops-panel);
+  background: var(--ops-ok);
+  border-color: var(--ops-ok);
+}
+
+/* ------------------------------------------------------------------ mono */
+
+.ops-mono {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+}
+
+/* ----------------------------------------------------------- mini rows */
+
+.ops-minirow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ops-line);
+  font-size: 13px;
+}
+
+.ops-minirow:last-child {
+  border-bottom: none;
+}
+
+.ops-minirow-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ops-minirow-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--ops-mute);
+  font-size: 12px;
+}
+
+.ops-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--ops-mute);
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------- buttons/inputs */
+
+.ops-btn {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px solid var(--ops-line);
+  border-radius: 2px;
+  background: var(--ops-panel);
+  color: var(--ops-ink);
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ops-btn:hover {
+  background: var(--ops-hover);
+}
+
+.ops-btn-primary {
+  background: var(--ops-accent);
+  border-color: var(--ops-accent);
+  color: #ffffff;
+}
+
+.ops-btn-primary:hover {
+  background: #0a4a75;
+}
+
+.ops-input {
+  padding: 4px 8px;
+  border: 1px solid var(--ops-line);
+  border-radius: 2px;
+  background: var(--ops-panel);
+  color: var(--ops-ink);
+  font-size: 13px;
+}
+
+.ops-links {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.ops-footnote {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--ops-mute);
+}
+
+.ops-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--ops-mute);
+}
+
+/* ---------------------------------------------------------------- drawer */
+
+.ops-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(20, 32, 43, 0.4);
+}
+
+.ops-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  width: 480px;
+  max-width: 100vw;
+  background: var(--ops-panel);
+  border-left: 1px solid var(--ops-line);
+  overflow-y: auto;
+  animation: ops-drawer-in 160ms ease;
+}
+
+@keyframes ops-drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.ops-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--ops-line);
+}
+
+.ops-drawer-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ops-drawer-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ops-mute);
+}
+
+.ops-drawer-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ops-line);
+}
+
+.ops-fields {
+  margin: 0;
+  padding: 8px 16px 16px;
+}
+
+.ops-field {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--ops-line);
+}
+
+.ops-field:last-child {
+  border-bottom: none;
+}
+
+.ops-field-label {
+  font-size: 12px;
+  color: var(--ops-mute);
+}
+
+.ops-field-value {
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.ops-field-value.ops-mono {
+  user-select: all;
+}
+
+/* ------------------------------------------------- stacked reflow <1024px */
+
+@media (max-width: 1023px) {
+  .ops-table thead {
+    display: none;
+  }
+
+  .ops-table,
+  .ops-table tbody,
+  .ops-table tr,
+  .ops-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .ops-table tbody tr {
+    border-bottom: 1px solid var(--ops-line);
+    padding: 6px 0;
+  }
+
+  .ops-table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .ops-table tbody td {
+    border: none;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 3px 12px;
+  }
+
+  .ops-table tbody td::before {
+    content: attr(data-label);
+    color: var(--ops-mute);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .ops-table tbody td:first-child {
+    border-left: none;
+  }
+
+  .ops-table tbody tr[data-status="ok"] td:first-child {
+    border-left: none;
+  }
+
+  .ops-table .num {
+    text-align: right;
+  }
+
+  .ops-celllink {
+    margin: 0;
+    padding: 0;
+  }
+
+  .ops-table tbody td:first-child::before {
+    content: none;
+  }
+}
+
+/* --------------------------------------------------- legacy gh-* shadows */
+
+/* Keeps legacy shared components (home/Toggle, modals) legible on the light
+   canvas. Scoped to .ops-console only; global definitions are untouched. */
+.ops-console {
+  --gh-bg-base: #e9edf2;
+  --gh-bg-surface: #ffffff;
+  --gh-bg-elevated: #ffffff;
+  --gh-bg-input: rgba(20, 32, 43, 0.06);
+  --gh-mini-card-bg: #ffffff;
+  --gh-text-primary: #14202b;
+  --gh-text-secondary: #5a6b80;
+  --gh-text-muted: #5a6b80;
+  --gh-text-tertiary: #7b8ca1;
+  --gh-text-sec: #5a6b80;
+  --gh-border-default: #c6d0dc;
+  --gh-border-subtle: #dde4ec;
+  --gh-success: #177245;
+  --gh-danger: #b3261e;
+  --gh-gold: #9a6a00;
+  --gh-orange: #0d5b8f;
+  --gh-blue: #0d5b8f;
+}
+
+/* ------------------------------------------------------------- focus */
+
+.ops-console :focus-visible {
+  outline: 2px solid var(--ops-accent);
+  outline-offset: 1px;
+}

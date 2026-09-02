@@ -1,5 +1,6 @@
 import { getDbPool } from "@/server/db";
 import { fetchUsersList } from "../queries";
+import { RecordDrawer, type DrawerField } from "../components/RecordDrawer";
 
 export const dynamic = "force-dynamic";
 
@@ -60,29 +61,53 @@ export default async function UsersPage({
     return sort === column ? (dir === "desc" ? " ↓" : " ↑") : "";
   }
 
-  return (
-    <section>
-      <h1 className="mb-1 text-lg font-semibold">Users</h1>
-      <p className="mb-4 text-sm text-gh-text-sec">
-        {totalCount.toLocaleString()} registered users
-      </p>
+  // Shared RecordDrawer state (?drawer=<userId>).
+  const drawerId = getParam(searchParams, "drawer");
+  const drawerRow = drawerId ? rows.find((u) => u.id === drawerId) ?? null : null;
+  const drawerCloseHref = makeLink({ drawer: undefined });
+  const drawerFields: DrawerField[] | undefined = drawerRow
+    ? [
+        { label: "User ID", value: drawerRow.id, mono: true },
+        { label: "Email", value: drawerRow.email ?? "—" },
+        { label: "Role", value: drawerRow.role },
+        {
+          label: "Joined",
+          value: drawerRow.created_at
+            ? new Date(drawerRow.created_at).toLocaleDateString("en-US", {
+                dateStyle: "medium",
+              })
+            : "—",
+        },
+      ]
+    : undefined;
 
-      <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-        <table className="w-full border-collapse text-left text-sm">
+  return (
+    <div className="ops-page">
+      <header className="ops-pagehead">
+        <div>
+          <h1 className="ops-h1">Users</h1>
+          <p className="ops-pagesub">
+            {totalCount.toLocaleString()} registered users
+          </p>
+        </div>
+      </header>
+
+      <div className="ops-panel-flush">
+        <table className="ops-table">
           <thead>
-            <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-              <th className="px-4 py-3 font-semibold">
+            <tr>
+              <th>
                 <a href={sortLink("display_name")}>
                   Display name{sortIndicator("display_name")}
                 </a>
               </th>
-              <th className="px-4 py-3 font-semibold">
+              <th>
                 <a href={sortLink("email")}>Email{sortIndicator("email")}</a>
               </th>
-              <th className="px-4 py-3 font-semibold">
+              <th>
                 <a href={sortLink("role")}>Role{sortIndicator("role")}</a>
               </th>
-              <th className="px-4 py-3 font-semibold">
+              <th>
                 <a href={sortLink("created_at")}>
                   Joined{sortIndicator("created_at")}
                 </a>
@@ -91,29 +116,31 @@ export default async function UsersPage({
           </thead>
           <tbody>
             {rows.map((u) => (
-              <tr
-                key={u.id}
-                className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-              >
-                <td className="px-4 py-3">{u.display_name || "—"}</td>
-                <td className="px-4 py-3 text-gh-text-sec">{u.email ?? "—"}</td>
-                <td className="px-4 py-3">
+              <tr key={u.id}>
+                <td data-label="Display name">
+                  <a
+                    href={makeLink({ drawer: u.id })}
+                    className="ops-celllink"
+                    title="Open record"
+                  >
+                    <span className="ops-cellname">
+                      <span className="ops-truncate">{u.display_name || "—"}</span>
+                    </span>
+                  </a>
+                </td>
+                <td data-label="Email" style={{ color: "var(--ops-mute)" }}>
+                  {u.email ?? "—"}
+                </td>
+                <td data-label="Role">
                   <span
-                    className={`rounded px-2 py-0.5 text-xs ${
-                      u.role === "admin"
-                        ? "bg-[var(--gh-gold-rgb)] text-gh-text"
-                        : "bg-gh-bg-base text-gh-text-sec"
+                    className={`ops-chip ${
+                      u.role === "admin" ? "ops-chip-warn" : "ops-chip-muted"
                     }`}
-                    style={
-                      u.role === "admin"
-                        ? { background: "rgba(var(--gh-gold-rgb), 0.2)" }
-                        : undefined
-                    }
                   >
                     {u.role}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-gh-text-sec">
+                <td data-label="Joined" style={{ color: "var(--ops-mute)" }}>
                   {u.created_at
                     ? new Date(u.created_at).toLocaleDateString("en-US", {
                         dateStyle: "medium",
@@ -124,7 +151,7 @@ export default async function UsersPage({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td className="px-4 py-6 text-gh-text-sec" colSpan={4}>
+                <td colSpan={4}>
                   No users found.
                 </td>
               </tr>
@@ -134,32 +161,33 @@ export default async function UsersPage({
       </div>
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm">
+        <div className="ops-pagination">
           {page > 1 ? (
-            <a
-              className="text-gh-text-sec hover:text-gh-text"
-              href={makeLink({ page: String(page - 1) })}
-            >
-              ← Previous
+            <a className="ops-btn" href={makeLink({ page: String(page - 1) })}>
+              Previous
             </a>
           ) : (
             <span />
           )}
-          <span className="text-gh-text-sec">
+          <span>
             Page {page} of {totalPages}
           </span>
           {page < totalPages ? (
-            <a
-              className="text-gh-text-sec hover:text-gh-text"
-              href={makeLink({ page: String(page + 1) })}
-            >
-              Next →
+            <a className="ops-btn" href={makeLink({ page: String(page + 1) })}>
+              Next
             </a>
           ) : (
             <span />
           )}
         </div>
       )}
-    </section>
+
+      <RecordDrawer
+        open={drawerRow != null}
+        closeHref={drawerCloseHref}
+        title={drawerRow?.display_name || "User"}
+        fields={drawerFields}
+      />
+    </div>
   );
 }

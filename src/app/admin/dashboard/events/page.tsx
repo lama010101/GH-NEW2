@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getDbPool } from "@/server/db";
 import { fetchEventsList, type EventListRow } from "../queries";
 import { EventsFilters } from "./EventsFilters";
+import { RecordDrawer, type DrawerField } from "../components/RecordDrawer";
 
 export const dynamic = "force-dynamic";
 
@@ -82,107 +83,124 @@ export default async function EventsListPage({
     return dir === "asc" ? " ↑" : " ↓";
   }
 
+  // Shared RecordDrawer state (?drawer=<eventId>).
+  const drawerId = getParam(searchParams, "drawer");
+  const drawerRow = drawerId
+    ? rows.find((r) => r.id === drawerId) ?? null
+    : null;
+  const drawerCloseHref = makeLink({ drawer: undefined });
+  const drawerFields: DrawerField[] | undefined = drawerRow
+    ? [
+        { label: "Event ID", value: drawerRow.id, mono: true },
+        { label: "Year", value: drawerRow.event_year },
+        { label: "Total plays", value: drawerRow.total_plays.toLocaleString() },
+        { label: "Human plays", value: drawerRow.human_plays.toLocaleString() },
+        { label: "AI plays", value: drawerRow.ai_plays.toLocaleString() },
+        { label: "Modes", value: drawerRow.modes || "—" },
+        { label: "Avg XP (0-100)", value: toNumber(drawerRow.avg_xp).toFixed(2) },
+        { label: "Avg accuracy", value: `${drawerRow.avg_accuracy}%` },
+      ]
+    : undefined;
+
   return (
-    <main className="min-h-screen bg-gh-bg-base p-6 text-gh-text">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-4 flex items-center gap-4">
-          <Link
-            href="/admin/dashboard"
-            className="text-gh-text-sec hover:text-gh-text text-sm"
-          >
-            ← Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold">Events</h1>
+    <div className="ops-page">
+      <header className="ops-pagehead">
+        <div>
+          <h1 className="ops-h1">Events</h1>
+          <p className="ops-pagesub">
+            {totalCount.toLocaleString()} events with recorded plays
+          </p>
         </div>
+      </header>
 
         <EventsFilters currentMode={mode} currentType={playerType} />
 
-        <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-          <table className="w-full border-collapse text-left text-sm">
+        <div className="ops-panel-flush">
+          <table className="ops-table">
             <thead>
-              <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-                <th className="px-4 py-3 font-semibold">
+              <tr>
+                <th>
                   <Link href={sortLink("title")} className="hover:underline">
                     Event{sortIndicator("title")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 text-right font-semibold">
+                <th className="num">
                   <Link href={sortLink("event_year")} className="hover:underline">
                     Year{sortIndicator("event_year")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 text-right font-semibold">
+                <th className="num">
                   <Link href={sortLink("avg_xp")} className="hover:underline">
                     Avg XP{sortIndicator("avg_xp")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 text-right font-semibold">
+                <th className="num">
                   <Link href={sortLink("avg_accuracy")} className="hover:underline">
                     Avg Acc%{sortIndicator("avg_accuracy")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 text-right font-semibold">
+                <th className="num">
                   <Link href={sortLink("total_plays")} className="hover:underline">
                     Plays{sortIndicator("total_plays")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 text-right font-semibold">
+                <th className="num">
                   <Link href={sortLink("human_plays")} className="hover:underline">
                     Human{sortIndicator("human_plays")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 text-right font-semibold">
+                <th className="num">
                   <Link href={sortLink("ai_plays")} className="hover:underline">
                     AI{sortIndicator("ai_plays")}
                   </Link>
                 </th>
-                <th className="px-4 py-3 font-semibold">Modes</th>
-                <th className="px-4 py-3 font-semibold">Drilldown</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row: EventListRow) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-                >
-                  <td className="max-w-[280px] truncate px-4 py-3" title={row.title}>
-                    {row.title}
+                <tr key={row.id}>
+                  <td data-label="Event">
+                    <Link
+                      href={makeLink({ drawer: row.id })}
+                      className="ops-celllink"
+                      title="Open record"
+                    >
+                      <span className="ops-cellname">
+                        <span>
+                          <span className="ops-truncate">{row.title}</span>
+                          <span
+                            className="block text-xs"
+                            style={{ color: "var(--ops-mute)" }}
+                          >
+                            {row.modes || "—"}
+                          </span>
+                        </span>
+                      </span>
+                    </Link>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td className="num" data-label="Year">
                     {row.event_year}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td className="num" data-label="Avg XP">
                     {toNumber(row.avg_xp).toFixed(1)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td className="num" data-label="Avg Acc%">
                     {row.avg_accuracy}%
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td className="num" data-label="Plays">
                     {row.total_plays.toLocaleString()}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td className="num" data-label="Human">
                     {row.human_plays.toLocaleString()}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td className="num" data-label="AI">
                     {row.ai_plays.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gh-text-sec">
-                    {row.modes || "—"}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <Link
-                      href={`/admin/dashboard/events/${row.id}`}
-                      className="text-gh-text-sec hover:underline"
-                    >
-                      View →
-                    </Link>
                   </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td className="px-4 py-6 text-gh-text-sec" colSpan={9}>
+                  <td colSpan={7}>
                     No events found for the current filters.
                   </td>
                 </tr>
@@ -192,39 +210,50 @@ export default async function EventsListPage({
         </div>
 
         {totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-between text-sm">
-            <div className="text-gh-text-sec">
+          <div className="ops-pagination">
+            <div>
               Page {page} of {totalPages} ({totalCount.toLocaleString()} events)
             </div>
             <div className="flex items-center gap-2">
               {page > 1 ? (
-                <Link
-                  href={makeLink({ page: String(page - 1) })}
-                  className="rounded border border-[var(--gh-border-default)] bg-gh-bg-surface px-3 py-1 text-gh-text hover:bg-gh-bg-elevated"
-                >
+                <Link href={makeLink({ page: String(page - 1) })} className="ops-btn">
                   Previous
                 </Link>
               ) : (
-                <span className="rounded border border-[var(--gh-border-default)] px-3 py-1 text-gh-text-sec opacity-50">
+                <span className="ops-btn" style={{ opacity: 0.5 }}>
                   Previous
                 </span>
               )}
               {page < totalPages ? (
-                <Link
-                  href={makeLink({ page: String(page + 1) })}
-                  className="rounded border border-[var(--gh-border-default)] bg-gh-bg-surface px-3 py-1 text-gh-text hover:bg-gh-bg-elevated"
-                >
+                <Link href={makeLink({ page: String(page + 1) })} className="ops-btn">
                   Next
                 </Link>
               ) : (
-                <span className="rounded border border-[var(--gh-border-default)] px-3 py-1 text-gh-text-sec opacity-50">
+                <span className="ops-btn" style={{ opacity: 0.5 }}>
                   Next
                 </span>
               )}
             </div>
           </div>
         )}
+
+        <RecordDrawer
+          open={drawerRow != null}
+          closeHref={drawerCloseHref}
+          title={drawerRow?.title ?? ""}
+          subtitle={drawerRow ? `${drawerRow.avg_accuracy}% avg accuracy` : undefined}
+          fields={drawerFields}
+          actions={
+            drawerRow ? (
+              <Link
+                href={`/admin/dashboard/events/${drawerRow.id}`}
+                className="ops-btn ops-btn-primary"
+              >
+                Open full drilldown
+              </Link>
+            ) : undefined
+          }
+        />
       </div>
-    </main>
   );
 }

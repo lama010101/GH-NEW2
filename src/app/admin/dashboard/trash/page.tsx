@@ -24,44 +24,50 @@ export default async function TrashPage() {
   const rows = await fetchTrashedPlayers(pool);
 
   return (
-    <section>
-      <h1 className="mb-1 text-lg font-semibold">Trash</h1>
-      <p className="mb-4 text-sm text-gh-text-sec">
-        {rows.length} trashed AI player{rows.length === 1 ? "" : "s"} · trashed
-        players are excluded from the roster and catalog until restored
-      </p>
+    <div className="ops-page">
+      <header className="ops-pagehead">
+        <div>
+          <h1 className="ops-h1">Trash</h1>
+          <p className="ops-pagesub">
+            {rows.length} trashed AI player{rows.length === 1 ? "" : "s"} ·
+            trashed players are excluded from the roster and catalog until
+            restored
+          </p>
+        </div>
+      </header>
 
-      <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-        <table className="w-full border-collapse text-left text-sm">
+      <div className="ops-panel-flush">
+        <table className="ops-table">
           <thead>
-            <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-              <th className="px-4 py-3 font-semibold">AI player</th>
-              <th className="px-4 py-3 font-semibold">Model</th>
-              <th className="px-4 py-3 font-semibold">Provider</th>
-              <th className="px-4 py-3 font-semibold">Trashed at</th>
-              <th className="px-4 py-3 font-semibold">Actions</th>
+            <tr>
+              <th>AI player</th>
+              <th>Model</th>
+              <th>Provider</th>
+              <th>Trashed at</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr
-                key={r.id}
-                className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-              >
-                <td className="px-4 py-3">{r.name}</td>
-                <td className="px-4 py-3 text-gh-text-sec">{r.model_id}</td>
-                <td className="px-4 py-3">{r.provider}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-gh-text-sec">
+              <tr key={r.id}>
+                <td data-label="AI player">{r.name}</td>
+                <td data-label="Model">
+                  <span className="ops-mono" style={{ color: "var(--ops-mute)" }}>
+                    {r.model_id}
+                  </span>
+                </td>
+                <td data-label="Provider">{r.provider}</td>
+                <td data-label="Trashed at" style={{ color: "var(--ops-mute)" }}>
                   {formatDate(r.deleted_at)}
                 </td>
-                <td className="px-4 py-3">
+                <td data-label="Actions">
                   <RestorePlayerButton playerId={r.id} />
                 </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td className="px-4 py-6 text-gh-text-sec" colSpan={5}>
+                <td colSpan={5}>
                   Trash is empty.
                 </td>
               </tr>
@@ -69,6 +75,6 @@ export default async function TrashPage() {
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   );
 }

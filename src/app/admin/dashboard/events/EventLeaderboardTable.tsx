@@ -27,20 +27,18 @@ export function EventLeaderboardTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-      <table className="w-full border-collapse text-left text-sm">
+    <div className="ops-panel-flush">
+      <table className="ops-table">
         <thead>
-          <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-            <th className="px-4 py-3 text-right font-semibold">#</th>
-            <th className="px-4 py-3 font-semibold">Type</th>
-            <th className="px-4 py-3 font-semibold">Player</th>
-            <th className="px-4 py-3 text-right font-semibold">XP (0-200)</th>
-            <th className="px-4 py-3 text-right font-semibold">Acc% (0-100)</th>
-            <th className="px-4 py-3 text-right font-semibold">Loc</th>
-            <th className="px-4 py-3 text-right font-semibold">Time/Yr</th>
-            <th className="px-4 py-3 font-semibold">Mode</th>
-            <th className="px-4 py-3 font-semibold">Session rank</th>
-            <th className="px-4 py-3 font-semibold">AI feedback</th>
+          <tr>
+            <th>Player</th>
+            <th className="num">XP (0-200)</th>
+            <th className="num">Acc% (0-100)</th>
+            <th className="num">Loc</th>
+            <th className="num">Time/Yr</th>
+            <th>Mode</th>
+            <th className="num">Session rank</th>
+            <th>AI feedback</th>
           </tr>
         </thead>
         <tbody>
@@ -56,86 +54,79 @@ export function EventLeaderboardTable({
             const isOpen = expanded.has(rowKey);
             return (
               <Fragment key={rowKey}>
-                <tr
-                  className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-                >
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-gh-text-sec">
-                    {idx + 1}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs font-medium ${
-                        isAi
-                          ? "bg-[var(--gh-accent-soft)] text-[var(--gh-accent-text)]"
-                          : "bg-[var(--gh-bg-elevated)] text-gh-text"
-                      }`}
-                    >
-                      {isAi ? "AI" : "Human"}
+                <tr>
+                  <td data-label="Player">
+                    <span className="ops-cellname">
+                      <span className="ops-rank">{idx + 1}</span>
+                      <span
+                        className={`ops-chip ${isAi ? "ops-chip-muted" : ""}`}
+                        style={isAi ? { borderColor: "var(--ops-accent)", color: "var(--ops-accent)" } : undefined}
+                      >
+                        {isAi ? "AI" : "Human"}
+                      </span>
+                      <span className="ops-truncate" title={row.display_name}>
+                        {row.display_name || "—"}
+                      </span>
                     </span>
                   </td>
-                  <td className="max-w-[200px] truncate px-4 py-3" title={row.display_name}>
-                    {row.display_name || (
-                      <span className="text-gh-text-sec">—</span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold">
+                  <td className="num" data-label="XP (0-200)" style={{ fontWeight: 600 }}>
                     {row.score}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td className="num" data-label="Acc% (0-100)">
                     {row.accuracy_pct}%
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-gh-text-sec">
+                  <td className="num" data-label="Loc" style={{ color: "var(--ops-mute)" }}>
                     {row.location_score ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-gh-text-sec">
+                  <td className="num" data-label="Time/Yr" style={{ color: "var(--ops-mute)" }}>
                     {row.time_score ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-xs text-gh-text-sec">
-                    {row.mode || "—"}
+                  <td data-label="Mode">
+                    <span className="ops-chip ops-chip-muted">{row.mode || "—"}</span>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-gh-text-sec">
+                  <td className="num" data-label="Session rank" style={{ color: "var(--ops-mute)" }}>
                     {row.rank ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                  <td data-label="AI feedback">
                     {hasFeedback ? (
                       <button
                         type="button"
                         onClick={() => toggle(rowKey)}
-                        className="text-gh-text-sec hover:underline"
+                        className="ops-btn"
                       >
                         {isOpen ? "Hide" : "Show"}
                       </button>
                     ) : (
-                      <span className="text-gh-text-sec">—</span>
+                      <span style={{ color: "var(--ops-mute)" }}>—</span>
                     )}
                   </td>
                 </tr>
                 {isOpen && hasFeedback && (
-                  <tr className="border-b border-[var(--gh-border-subtle)]">
-                    <td colSpan={10} className="bg-gh-bg-elevated px-6 py-4">
+                  <tr>
+                    <td colSpan={8} style={{ background: "var(--ops-canvas)" }}>
                       <div className="space-y-2 text-xs">
                         {row.reasoning && (
                           <div>
-                            <span className="font-semibold text-gh-text-sec">Reasoning: </span>
-                            <span className="text-gh-text">{row.reasoning}</span>
+                            <span className="font-semibold" style={{ color: "var(--ops-mute)" }}>Reasoning: </span>
+                            <span>{row.reasoning}</span>
                           </div>
                         )}
                         {row.critique_error && (
                           <div>
-                            <span className="font-semibold text-gh-text-sec">Critique error: </span>
-                            <span className="text-gh-text">{row.critique_error}</span>
+                            <span className="font-semibold" style={{ color: "var(--ops-mute)" }}>Critique error: </span>
+                            <span>{row.critique_error}</span>
                           </div>
                         )}
                         {row.image_quality_notes && (
                           <div>
-                            <span className="font-semibold text-gh-text-sec">Image quality notes: </span>
-                            <span className="text-gh-text">{row.image_quality_notes}</span>
+                            <span className="font-semibold" style={{ color: "var(--ops-mute)" }}>Image quality notes: </span>
+                            <span>{row.image_quality_notes}</span>
                           </div>
                         )}
                         {row.image_quality_score != null && (
                           <div>
-                            <span className="font-semibold text-gh-text-sec">Image quality score: </span>
-                            <span className="text-gh-text">{row.image_quality_score}</span>
+                            <span className="font-semibold" style={{ color: "var(--ops-mute)" }}>Image quality score: </span>
+                            <span>{row.image_quality_score}</span>
                           </div>
                         )}
                       </div>
@@ -147,7 +138,7 @@ export function EventLeaderboardTable({
           })}
           {filtered.length === 0 && (
             <tr>
-              <td className="px-4 py-6 text-gh-text-sec" colSpan={10}>
+              <td colSpan={8}>
                 No rows for this filter.
               </td>
             </tr>
@@ -176,11 +167,7 @@ export function LeaderboardTypeFilter({
         <a
           key={o.value}
           href={`${basePath}?ptype=${o.value}`}
-          className={`rounded px-3 py-1.5 text-sm ${
-            current === o.value
-              ? "bg-gh-text text-gh-bg-base"
-              : "bg-gh-bg-surface text-gh-text-sec hover:text-gh-text"
-          }`}
+          className={`ops-btn ${current === o.value ? "ops-btn-primary" : ""}`}
         >
           {o.label}
         </a>

@@ -49,7 +49,7 @@ export async function fetchCostTrend(
     JOIN ai_answer_bank_calls c ON c.ai_answer_bank_id = ab.id
     JOIN ai_players p ON p.id = ab.ai_player_id
     WHERE c.created_at >= now() - ($1::int || ' days')::interval
-    GROUP BY 1, 2, 3, 4, 5
+    GROUP BY 1, 2, 3, 4, 7
     ORDER BY 1 ASC, 3 ASC
     `,
     [days]

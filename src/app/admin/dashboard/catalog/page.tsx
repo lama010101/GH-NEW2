@@ -99,21 +99,26 @@ export default async function CatalogPage({
   }
 
   return (
-    <section>
-      <h1 className="mb-1 text-lg font-semibold">Add AI</h1>
-      <p className="mb-4 text-sm text-gh-text-sec">
-        {catalog.length} models available from the OpenRouter catalog ·{" "}
-        {totalCount} shown
-      </p>
+    <div className="ops-page">
+      <header className="ops-pagehead">
+        <div>
+          <h1 className="ops-h1">Add AI</h1>
+          <p className="ops-pagesub">
+            {catalog.length} models available from the OpenRouter catalog ·{" "}
+            {totalCount} shown
+          </p>
+        </div>
+      </header>
 
       <form
         method="get"
         action="/admin/dashboard/catalog"
-        className="mb-4 rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface p-4"
+        className="ops-panel ops-panel-pad"
+        style={{ marginBottom: 16 }}
       >
         <input type="hidden" name="sort" value={sort} />
         <input type="hidden" name="dir" value={dirRaw} />
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gh-text-sec">
+        <p className="ops-kpi-label" style={{ marginBottom: 8, fontWeight: 600 }}>
           Providers
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -133,42 +138,37 @@ export default async function CatalogPage({
           ))}
         </div>
         <div className="mt-3 flex gap-2">
-          <button
-            type="submit"
-            className="rounded bg-gh-text px-3 py-1 text-xs text-gh-bg-base hover:opacity-90"
-          >
+          <button type="submit" className="ops-btn ops-btn-primary">
             Apply filter
           </button>
           <a
             href={makeLink({ providers: undefined, page: undefined })}
-            className="rounded border border-[var(--gh-border-default)] px-3 py-1 text-xs text-gh-text-sec hover:text-gh-text"
+            className="ops-btn"
           >
             Clear
           </a>
         </div>
       </form>
 
-      <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-        <table className="w-full border-collapse text-left text-sm">
+      <div className="ops-panel-flush">
+        <table className="ops-table">
           <thead>
-            <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-              <th className="px-4 py-3 font-semibold">
+            <tr>
+              <th>
                 <a href={sortLink("name")}>Model{sortIndicator("name")}</a>
               </th>
-              <th className="px-4 py-3 font-semibold">
+              <th>
                 <a href={sortLink("provider")}>
                   Provider{sortIndicator("provider")}
                 </a>
               </th>
-              <th className="px-4 py-3 text-right font-semibold">
+              <th className="num">
                 <a href={sortLink("price")}>
                   Input $/M tok{sortIndicator("price")}
                 </a>
               </th>
-              <th className="px-4 py-3 text-right font-semibold">
-                Output $/M tok
-              </th>
-              <th className="px-4 py-3 font-semibold">Actions</th>
+              <th className="num">Output $/M tok</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -177,26 +177,23 @@ export default async function CatalogPage({
               const inputPrice = pricePerMillion(m.pricing?.prompt);
               const outputPrice = pricePerMillion(m.pricing?.completion);
               return (
-                <tr
-                  key={m.id}
-                  className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-                >
-                  <td className="max-w-[320px] px-4 py-3">
-                    <div className="truncate" title={m.id}>
+                <tr key={m.id}>
+                  <td data-label="Model">
+                    <div className="ops-truncate" title={m.id}>
                       {m.name}
                     </div>
-                    <div className="truncate text-xs text-gh-text-sec" title={m.id}>
+                    <div className="ops-mono ops-truncate" title={m.id} style={{ color: "var(--ops-mute)" }}>
                       {m.id}
                     </div>
                   </td>
-                  <td className="px-4 py-3">{provider}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td data-label="Provider">{provider}</td>
+                  <td className="num" data-label="Input $/M tok">
                     {inputPrice != null ? `$${inputPrice.toFixed(2)}` : "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                  <td className="num" data-label="Output $/M tok">
                     {outputPrice != null ? `$${outputPrice.toFixed(2)}` : "—"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Actions">
                     <CatalogAddButton
                       modelId={m.id}
                       name={m.name}
@@ -208,7 +205,7 @@ export default async function CatalogPage({
             })}
             {pageRows.length === 0 && (
               <tr>
-                <td className="px-4 py-6 text-gh-text-sec" colSpan={5}>
+                <td colSpan={5}>
                   No catalog models match the current filter.
                 </td>
               </tr>
@@ -218,32 +215,26 @@ export default async function CatalogPage({
       </div>
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm">
+        <div className="ops-pagination">
           {page > 1 ? (
-            <a
-              className="text-gh-text-sec hover:text-gh-text"
-              href={makeLink({ page: String(page - 1) })}
-            >
-              ← Previous
+            <a className="ops-btn" href={makeLink({ page: String(page - 1) })}>
+              Previous
             </a>
           ) : (
             <span />
           )}
-          <span className="text-gh-text-sec">
+          <span>
             Page {page} of {totalPages}
           </span>
           {page < totalPages ? (
-            <a
-              className="text-gh-text-sec hover:text-gh-text"
-              href={makeLink({ page: String(page + 1) })}
-            >
-              Next →
+            <a className="ops-btn" href={makeLink({ page: String(page + 1) })}>
+              Next
             </a>
           ) : (
             <span />
           )}
         </div>
       )}
-    </section>
+    </div>
   );
 }

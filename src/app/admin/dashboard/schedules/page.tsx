@@ -27,51 +27,54 @@ export default async function SchedulesPage() {
   const done = rows.filter((r) => r.status !== "pending");
 
   return (
-    <section>
-      <h1 className="mb-1 text-lg font-semibold">Scheduled mode changes</h1>
-      <p className="mb-4 text-sm text-gh-text-sec">
-        {pending.length} pending · applied by the cron route every minute
-      </p>
+    <div className="ops-page">
+      <header className="ops-pagehead">
+        <div>
+          <h1 className="ops-h1">Scheduled mode changes</h1>
+          <p className="ops-pagesub">
+            {pending.length} pending · applied by the cron route every minute
+          </p>
+        </div>
+      </header>
 
-      <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-        <table className="w-full border-collapse text-left text-sm">
+      <div className="ops-panel-flush">
+        <table className="ops-table">
           <thead>
-            <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-              <th className="px-4 py-3 font-semibold">AI player</th>
-              <th className="px-4 py-3 font-semibold">Mode</th>
-              <th className="px-4 py-3 font-semibold">Change</th>
-              <th className="px-4 py-3 font-semibold">Apply at</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Actions</th>
+            <tr>
+              <th>AI player</th>
+              <th>Mode</th>
+              <th>Change</th>
+              <th>Apply at</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr
-                key={r.id}
-                className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-              >
-                <td className="px-4 py-3">
-                  {r.player_name ?? r.ai_player_id}
+              <tr key={r.id}>
+                <td data-label="AI player">
+                  <span className="ops-truncate">{r.player_name ?? r.ai_player_id}</span>
                   {r.model_id && (
-                    <div className="text-xs text-gh-text-sec">{r.model_id}</div>
+                    <div className="ops-mono" style={{ color: "var(--ops-mute)" }}>
+                      {r.model_id}
+                    </div>
                   )}
                 </td>
-                <td className="px-4 py-3 capitalize">{r.mode}</td>
-                <td className="px-4 py-3">
+                <td data-label="Mode">{r.mode}</td>
+                <td data-label="Change">
                   {r.target_value ? "Enable" : "Disable"}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-gh-text-sec">
+                <td data-label="Apply at" style={{ color: "var(--ops-mute)" }}>
                   {formatDate(r.apply_at)}
                 </td>
-                <td className="px-4 py-3">
+                <td data-label="Status">
                   <span
-                    className={`rounded px-2 py-0.5 text-xs ${
+                    className={`ops-chip ${
                       r.status === "pending"
-                        ? "text-[var(--gh-gold)]"
+                        ? "ops-chip-warn"
                         : r.status === "applied"
-                          ? "text-[var(--gh-success)]"
-                          : "text-gh-text-sec"
+                        ? "ops-chip-ok"
+                        : "ops-chip-muted"
                     }`}
                   >
                     {r.status}
@@ -80,7 +83,7 @@ export default async function SchedulesPage() {
                       : ""}
                   </span>
                 </td>
-                <td className="px-4 py-3">
+                <td data-label="Actions">
                   {r.status === "pending" && (
                     <CancelScheduleButton changeId={r.id} />
                   )}
@@ -89,8 +92,8 @@ export default async function SchedulesPage() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td className="px-4 py-6 text-gh-text-sec" colSpan={6}>
-                  No scheduled changes. Create one from the AI Roster tab
+                <td colSpan={6}>
+                  No scheduled changes. Create one from the Models page
                   (&quot;Schedule…&quot; per row).
                 </td>
               </tr>
@@ -100,11 +103,11 @@ export default async function SchedulesPage() {
       </div>
 
       {done.length > 0 && (
-        <p className="mt-3 text-xs text-gh-text-sec">
+        <p className="ops-footnote">
           Showing {rows.length} rows ({pending.length} pending, {done.length}{" "}
           applied/cancelled).
         </p>
       )}
-    </section>
+    </div>
   );
 }
