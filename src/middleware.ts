@@ -188,6 +188,15 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Dev-only admin gate bypass (AIP-FIX-ADMINGATE-LOCALHOSTBYPASS-001): only
+  // active when NODE_ENV !== "production"; Vercel production and preview
+  // builds always set NODE_ENV="production", so this cannot leak there.
+  const isAdminPath =
+    pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
+  if (isAdminPath && process.env.NODE_ENV !== "production") {
+    return response;
+  }
+
   if (!user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
