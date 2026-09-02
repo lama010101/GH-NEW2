@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { Loader2 } from 'lucide-react'
 import styles from './NavModal.module.css'
 import PlayerAvatar from '@/components/compete/PlayerAvatar'
 import { useIdentity } from '@/hooks/useIdentity'
@@ -22,6 +23,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
   const t = useTranslations('nav')
   const { playerId } = useIdentity()
   const [imgError, setImgError] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
   useEffect(() => { setImgError(false) }, [avatarUrl])
 
   useEffect(() => {
@@ -107,7 +109,11 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
 
         <button
           className={styles.signOutBtn}
+          disabled={signingOut}
+          aria-busy={signingOut}
           onClick={async () => {
+            if (signingOut) return
+            setSigningOut(true)
             try {
               const { signOut } = await import('@/core/identity')
               await signOut()
@@ -118,7 +124,9 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
             }
           }}
         >
-          <span className={styles.signOutIcon}>{SIGNOUT_ICON}</span>
+          <span className={styles.signOutIcon}>
+            {signingOut ? <Loader2 className={styles.signOutSpinner} aria-hidden="true" /> : SIGNOUT_ICON}
+          </span>
           {t('sign_out')}
         </button>
 

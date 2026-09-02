@@ -163,7 +163,10 @@ async function unsubscribePushBeforeSignOut(): Promise<void> {
 export async function signOut(): Promise<void> {
   signingOut = true;
   try {
-    await unsubscribePushBeforeSignOut();
+    // Fire-and-forget (MP-FIX-SIGNOUT-LOADINGSTATE-SPEED-001): best-effort
+    // cleanup must not block sign-out for up to its 2s timeout. The DELETE
+    // fetch dispatches with the auth cookie before auth.signOut() clears it.
+    void unsubscribePushBeforeSignOut();
     await supabaseBrowser.auth.signOut({ scope: 'local' });
   } finally {
     forceClearAuthStorage();
