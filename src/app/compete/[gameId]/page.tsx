@@ -862,7 +862,7 @@ export default function CompeteGamePage() {
 
         {snapshot.status === "LOBBY" ? (
           <>
-            <div className={pageStyles.lobbyTopBarSpacer} style={{ height: 40 }} />
+            <div className={pageStyles.lobbyTopBarSpacer} style={{ height: 0 }} />
             <LobbySection
               snapshot={snapshot}
               viewer={viewer}
