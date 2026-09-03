@@ -1147,26 +1147,39 @@ async function resolveGroundTruthVersion(
   };
   const contentHash = sha256(stableStringify(content));
 
-  const existing = await pool.query<{ id: string }>(
-    "SELECT id FROM ground_truth_versions WHERE event_id = $1 AND content_hash = $2 LIMIT 1",
-    [row.event_id, contentHash]
-  );
-  if (existing.rows.length > 0) {
-    return existing.rows[0].id;
+  const MAX_ATTEMPTS = 5;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const existing = await pool.query<{ id: string }>(
+      "SELECT id FROM ground_truth_versions WHERE event_id = $1 AND content_hash = $2 LIMIT 1",
+      [row.event_id, contentHash]
+    );
+    if (existing.rows.length > 0) {
+      return existing.rows[0].id;
+    }
+
+    const versionResult = await pool.query<{ next_version: number }>(
+      "SELECT COALESCE(MAX(version), 0) + 1 AS next_version FROM ground_truth_versions WHERE event_id = $1",
+      [row.event_id]
+    );
+    const version = versionResult.rows[0].next_version;
+
+    try {
+      const inserted = await pool.query<{ id: string }>(
+        `INSERT INTO ground_truth_versions (event_id, version, content_hash, content)
+         VALUES ($1, $2, $3, $4) RETURNING id`,
+        [row.event_id, version, contentHash, content]
+      );
+      return inserted.rows[0].id;
+    } catch (err) {
+      if (attempt < MAX_ATTEMPTS && (err as { code?: string })?.code === "23505") {
+        continue;
+      }
+      throw err;
+    }
   }
 
-  const versionResult = await pool.query<{ next_version: number }>(
-    "SELECT COALESCE(MAX(version), 0) + 1 AS next_version FROM ground_truth_versions WHERE event_id = $1",
-    [row.event_id]
-  );
-  const version = versionResult.rows[0].next_version;
-
-  const inserted = await pool.query<{ id: string }>(
-    `INSERT INTO ground_truth_versions (event_id, version, content_hash, content)
-     VALUES ($1, $2, $3, $4) RETURNING id`,
-    [row.event_id, version, contentHash, content]
-  );
-  return inserted.rows[0].id;
+  throw new Error("resolveGroundTruthVersion: exhausted retries on unique constraint conflict");
 }
 
 async function resolveStimulus(
@@ -1199,10 +1212,23 @@ async function resolveStimulus(
 
   const inserted = await pool.query<{ id: string }>(
     `INSERT INTO eval_stimuli (stimulus_hash, source_url, source_bytes_sha256, detail_mode)
-     VALUES ($1, $2, $3, $4) RETURNING id`,
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (stimulus_hash) DO NOTHING
+     RETURNING id`,
     [stimulusHash, imageUrl, sourceBytesSha256, detailMode]
   );
-  return inserted.rows[0].id;
+  if (inserted.rows.length > 0) {
+    return inserted.rows[0].id;
+  }
+
+  const winner = await pool.query<{ id: string }>(
+    "SELECT id FROM eval_stimuli WHERE stimulus_hash = $1 LIMIT 1",
+    [stimulusHash]
+  );
+  if (winner.rows.length > 0) {
+    return winner.rows[0].id;
+  }
+  throw new Error(`resolveStimulus: stimulus_hash ${stimulusHash} has no row after ON CONFLICT`);
 }
 
 type EvalFactInput = {
