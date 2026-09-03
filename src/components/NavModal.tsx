@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import styles from './NavModal.module.css'
 import PlayerAvatar from '@/components/compete/PlayerAvatar'
 import { useIdentity } from '@/hooks/useIdentity'
+import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { ThemeToggle } from './layout/ThemeToggle'
 import { LanguageDropdown } from './layout/LanguageDropdown'
 
@@ -22,7 +23,22 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
   const t = useTranslations('nav')
   const { playerId } = useIdentity()
   const [imgError, setImgError] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   useEffect(() => { setImgError(false) }, [avatarUrl])
+
+  useEffect(() => {
+    if (!playerId) { setIsAdmin(false); return }
+    let cancelled = false
+    supabaseBrowser
+      .from('profiles')
+      .select('role')
+      .eq('id', playerId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setIsAdmin(data?.role === 'admin')
+      })
+    return () => { cancelled = true }
+  }, [playerId])
 
   useEffect(() => {
     if (!isOpen) return
@@ -43,6 +59,7 @@ export function NavModal({ isOpen, onClose, avatarUrl, initials, displayName }: 
     { id: 'leaderboard',  label: t('leaderboard'),   icon: LEADERBOARD_ICON,   action: () => navigate('/leaderboard') },
     { id: 'profile_stats',label: t('profile_stats'), icon: PROFILE_ICON,       action: () => navigate('/progress') },
     { id: 'account',      label: t('account'), icon: ACCOUNT_ICON,       action: () => navigate('/account') },
+    ...(isAdmin ? [{ id: 'admin_dashboard', label: 'Admin Dashboard', icon: ADMIN_ICON, action: () => navigate('/admin/dashboard') }] : []),
     { id: 'help',         label: t('help'),           icon: HELP_ICON,          action: () => navigate('/help') },
   ]
 
@@ -153,6 +170,13 @@ const ACCOUNT_ICON = (
     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
     <circle cx="19" cy="5" r="3" stroke="currentColor"/>
     <path d="M19 4v2m-1-1h2" strokeLinecap="round"/>
+  </svg>
+)
+
+const ADMIN_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M12 2l7 3v6c0 4.97-3.13 8.86-7 10-3.87-1.14-7-5.03-7-10V5l7-3z"/>
+    <circle cx="12" cy="11" r="2.5"/>
   </svg>
 )
 
