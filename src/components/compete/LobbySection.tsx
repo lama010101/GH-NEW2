@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from 'react-dom';
 import { useRouter } from "next/navigation";
 import { useTranslations } from 'next-intl';
@@ -10,7 +10,7 @@ import { ImageButton } from "@/components/shared/ImageButton";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import styles from './LobbySection.module.css';
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
-import { Zap, Leaf, ChevronDown, Timer, HelpCircle } from 'lucide-react';
+import { ChevronDown, Timer, HelpCircle } from 'lucide-react';
 import { CompeteWebSocket, type ConnectionState } from "@/core/competeWebSocket";
 
 interface LobbySectionProps {
@@ -38,10 +38,10 @@ const LS_MAX = 10;
 const ROUND_TIMER_DEFAULT_SEC = 120;
 const ROUND_TIMER_TICKS = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300];
 const ROUND_TIMER_MAJOR_TICKS = ROUND_TIMER_TICKS.filter((v) => v % 60 === 0);
-const RUSH_ROUND_TIMER_TICKS = [60, 120, 180, 240, 300];
 const RESULTS_TIMER_TICKS = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300];
 const RESULTS_TIMER_MAJOR_TICKS = RESULTS_TIMER_TICKS.filter((v) => v % 60 === 0);
 const DEADLINE_TICKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+const DEADLINE_MAJOR_TICKS = [1, 5, 10, 14];
 
 function readLastInvited(): LastInvitedPlayer[] {
   if (typeof window === "undefined") return [];
@@ -81,18 +81,13 @@ type RangeSliderProps = {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   format: (value: number) => string;
   ticks?: number[];
+  majorTicks?: number[];
 };
 
-function RangeSlider({ className, min, max, step, value, disabled, onChange, format, ticks }: RangeSliderProps) {
+function RangeSlider({ className, min, max, step, value, disabled, onChange, format, ticks, majorTicks }: RangeSliderProps) {
   const [dragging, setDragging] = useState(false);
   const percent = max === min ? 0 : ((value - min) / (max - min)) * 100;
-
-  useEffect(() => {
-    if (!dragging) return;
-    const handlePointerUp = () => setDragging(false);
-    document.addEventListener('pointerup', handlePointerUp);
-    return () => document.removeEventListener('pointerup', handlePointerUp);
-  }, [dragging]);
+  const majorSet = useMemo(() => new Set(majorTicks ?? []), [majorTicks]);
 
   return (
     <>
@@ -102,10 +97,11 @@ function RangeSlider({ className, min, max, step, value, disabled, onChange, for
             .filter((v) => v >= min && v <= max)
             .map((v) => {
               const tickPercent = max === min ? 0 : ((v - min) / (max - min)) * 100;
+              const isMajor = majorSet.has(v);
               return (
                 <span
                   key={v}
-                  className={styles['slider-tick']}
+                  className={`${styles['slider-tick']} ${isMajor ? styles['slider-tick-major'] : ''}`}
                   style={{ left: `${tickPercent}%` }}
                 />
               );
@@ -122,6 +118,9 @@ function RangeSlider({ className, min, max, step, value, disabled, onChange, for
         disabled={disabled}
         onChange={onChange}
         onPointerDown={() => setDragging(true)}
+        onPointerUp={() => setDragging(false)}
+        onPointerCancel={() => setDragging(false)}
+        onLostPointerCapture={() => setDragging(false)}
       />
       <span
         className={`${styles['sliderBubble']} ${dragging ? styles['sliderBubbleVisible'] : ''}`}
@@ -243,7 +242,14 @@ export default function LobbySection({
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllModal, setShowAllModal] = useState(false);
   const [modalSearchQuery, setModalSearchQuery] = useState('');
-  const [presetsExpanded, setPresetsExpanded] = useState(false);
+  const [presetsExpanded, setPresetsExpanded] = useState(true);
+
+  // Era/region presets expanded by default on tablet/desktop only (769px matches
+  // the layout breakpoint @media (max-width: 768px)); collapses before paint on mobile.
+  useLayoutEffect(() => {
+    const m = window.matchMedia("(min-width: 769px)");
+    setPresetsExpanded(m.matches);
+  }, []);
   const [helpModal, setHelpModal] = useState<'settings' | 'friends' | null>(null);
   const [comingUpId, setComingUpId] = useState<string | null>(null);
   const comingUpTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -739,7 +745,7 @@ export default function LobbySection({
               <span className={styles['lobbyTabContent']}>
                 <span className={styles['lobbyTabTitleRow']}>
                   <span className={styles['lobbyTabIconBadge']}>
-                    <Leaf size={14} className={styles['lobbyTabIcon']} />
+                    <img src="/icons/level.webp" alt="" width={20} height={20} className={styles['lobbyTabIconImg']} draggable={false} />
                   </span>
                   <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
                 </span>
@@ -754,7 +760,7 @@ export default function LobbySection({
               <span className={styles['lobbyTabContent']}>
                 <span className={styles['lobbyTabTitleRow']}>
                   <span className={styles['lobbyTabIconBadge']}>
-                    <Zap size={14} className={styles['lobbyTabIcon']} />
+                    <img src="/icons/practice.webp" alt="" width={20} height={20} className={styles['lobbyTabIconImg']} draggable={false} />
                   </span>
                   <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
                 </span>
@@ -788,7 +794,7 @@ export default function LobbySection({
                   </button>
                   {sliderValue > 0 ? (
                     <span className={styles['lobbyRowLeft']}>
-                      <span className={`${styles['lobby-timer-slider-wrap']} ${styles['lobbyRushTimerWrap']}`}>
+                      <span className={`${styles['lobby-timer-slider-wrap']} ${styles['lobbyRushTimerWrap']} ${styles['lobbySliderRuler']}`}>
                         <div className={styles['lobby-timer-slider-track']} />
                         <div
                           className={styles['lobby-timer-slider-fill']}
@@ -811,7 +817,8 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
-                          ticks={RUSH_ROUND_TIMER_TICKS}
+                          ticks={ROUND_TIMER_TICKS}
+                          majorTicks={ROUND_TIMER_MAJOR_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
@@ -855,7 +862,7 @@ export default function LobbySection({
                   </button>
                   {resultsTimerValue > 0 ? (
                     <span className={styles['lobbyRowLeft']}>
-                      <span className={styles['lobby-timer-slider-wrap']}>
+                      <span className={`${styles['lobby-timer-slider-wrap']} ${styles['lobbySliderRuler']}`}>
                         <div className={styles['lobby-timer-slider-track']} />
                         <div
                           className={styles['lobby-timer-slider-fill']}
@@ -878,7 +885,8 @@ export default function LobbySection({
                               onSetResultsTimer?.(val);
                             }, 400);
                           }}
-                          ticks={RESULTS_TIMER_MAJOR_TICKS}
+                          ticks={RESULTS_TIMER_TICKS}
+                          majorTicks={RESULTS_TIMER_MAJOR_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
@@ -1011,7 +1019,7 @@ export default function LobbySection({
                   </button>
                   {sliderValue > 0 ? (
                     <span className={styles['lobbyRowLeft']}>
-                      <span className={styles['lobby-timer-slider-wrap']}>
+                      <span className={`${styles['lobby-timer-slider-wrap']} ${styles['lobbySliderRuler']}`}>
                         <div className={styles['lobby-timer-slider-track']} />
                         <div
                           className={styles['lobby-timer-slider-fill']}
@@ -1034,7 +1042,8 @@ export default function LobbySection({
                               onSetTimer?.(val);
                             }, 400);
                           }}
-                          ticks={ROUND_TIMER_MAJOR_TICKS}
+                          ticks={ROUND_TIMER_TICKS}
+                          majorTicks={ROUND_TIMER_MAJOR_TICKS}
                           format={(v) => formatTimerDisplay(v, '')}
                         />
                       </span>
@@ -1058,7 +1067,7 @@ export default function LobbySection({
                 <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> {t('common.game')}</span>
                 {isHost ? (
                 <span className={styles['lobbyRowLeft']}>
-                  <span className={styles['lobby-timer-slider-wrap']}>
+                  <span className={`${styles['lobby-timer-slider-wrap']} ${styles['lobbySliderRuler']}`}>
                     <div className={styles['lobby-timer-slider-track']} />
                     <div className={styles['lobby-timer-slider-fill']} style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }} />
                     <RangeSlider
@@ -1077,6 +1086,7 @@ export default function LobbySection({
                         }, 400);
                       }}
                       ticks={DEADLINE_TICKS}
+                      majorTicks={DEADLINE_MAJOR_TICKS}
                       format={(v) => (v === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: v }))}
                     />
                   </span>
@@ -1214,17 +1224,22 @@ export default function LobbySection({
               >
                 {t('leaderboard.filter_ai')}
               </button>
-              <button
-                type="button"
-                className={`${styles['lobbyFilterBtn']} ${filter.friends ? styles['lobbyFilterBtnActive'] : ''}`}
-                onClick={toggleFriends}
-                aria-pressed={filter.friends}
-              >
+              <span className={`${styles['lobbyFilterBtn']} ${styles['lobbyFilterSwitchWrap']}`}>
                 <span className={styles['lobbyFilterStar']}>
                   {filter.friends ? '★' : '☆'}
                 </span>
                 {filter.friends ? t('leaderboard.filter_friends') : t('lobby.filter_all')}
-              </button>
+                <button
+                  type="button"
+                  onClick={toggleFriends}
+                  role="switch"
+                  aria-checked={filter.friends}
+                  aria-label={t('leaderboard.filter_friends')}
+                  className={filter.friends ? styles['lobbyToggleBtnOn'] : styles['lobbyToggleBtnOff']}
+                >
+                  <span className={styles['lobbyToggleKnob']} style={{ left: filter.friends ? 22 : 2 }} />
+                </button>
+              </span>
             </div>
             <div className={styles['lobbySearchWrap']}>
               <svg className={styles['lobbySearchIcon']} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

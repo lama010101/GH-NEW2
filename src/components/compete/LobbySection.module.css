@@ -691,6 +691,44 @@
   transform: scale(1.1);
 }
 
+/* ── Ruler-style slider (lobby only; scoped so the practice modal is untouched) ── */
+.lobbySliderRuler .lobby-timer-slider { height: 30px; }
+.lobbySliderRuler .lobby-timer-slider-track { height: 2px; background: var(--gh-border-default); border-radius: 1px; }
+.lobbySliderRuler .lobby-timer-slider-fill { background: transparent; }
+.lobbySliderRuler .lobby-timer-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13.3px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--gh-orange);
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  cursor: pointer;
+  margin-top: 0;
+  transition: none;
+}
+.lobbySliderRuler .lobby-timer-slider::-webkit-slider-thumb:hover,
+.lobbySliderRuler .lobby-timer-slider::-webkit-slider-thumb:active {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+.lobbySliderRuler .lobby-timer-slider::-moz-range-thumb {
+  width: 13.3px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--gh-orange);
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  cursor: pointer;
+  transition: none;
+}
+.lobbySliderRuler .lobby-timer-slider::-moz-range-thumb:hover,
+.lobbySliderRuler .lobby-timer-slider::-moz-range-thumb:active {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
 @media (max-width: 768px) {
   .lobby-grid {
     grid-template-columns: 1fr;
@@ -905,6 +943,8 @@
   color: var(--gh-orange);
   border: 1px solid rgba(var(--gh-orange-rgb), 0.35);
 }
+.lobbyFilterSwitchWrap { cursor: default; gap: 6px; }
+.lobbyFilterSwitchWrap > button { flex-shrink: 0; }
 
 .lobbyFilterStar {
   color: var(--gh-gold);
@@ -1105,8 +1145,8 @@
 .lobbyTabContent { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; width: 100%; }
 .lobbyTabTitleRow { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; min-width: 0; width: 100%; }
 .lobbyTabIconBadge { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--gh-glass-bg-strong, rgba(255,255,255,0.08)); color: var(--gh-text-secondary); transition: background 0.18s, color 0.18s; }
-.lobbyTabBtnActive .lobbyTabIconBadge { background: var(--gh-orange); color: #1a1a1a; }
-.lobbyTabIcon { flex-shrink: 0; color: currentColor; }
+.lobbyTabBtnActive .lobbyTabIconBadge { background: var(--gh-glass-bg-strong, rgba(255,255,255,0.10)); color: var(--gh-text-secondary); }
+.lobbyTabIconImg { width: 20px; height: 20px; object-fit: contain; display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35)); }
 .lobbyTabMain { font-size: var(--font-sm, 13px); font-weight: 800; letter-spacing: 0.2px; color: currentColor; text-transform: uppercase; overflow-wrap: break-word; hyphens: auto; line-height: 1.2; }
 .lobbyTabSub { font-size: var(--font-2xs); font-weight: 500; color: var(--gh-text-secondary); opacity: 0.9; overflow-wrap: break-word; line-height: 1.2; text-align: center; }
 .lobbySettingRowBlock { flex-direction: column; align-items: stretch; gap: 0; min-width: 0; max-width: 100%; width: 100%; box-sizing: border-box; }
@@ -1166,15 +1206,16 @@
   position: absolute;
   top: 50%;
   width: 2px;
-  height: 6px;
-  background: var(--gh-border-medium);
+  height: 4px;
+  background: var(--gh-text-muted);
   border-radius: 1px;
   transform: translate(-50%, -50%);
+  opacity: 0.85;
 }
-.lobbyRushTimerWrap .slider-tick {
-  background: var(--gh-text-primary);
-  opacity: 0.7;
-  height: 8px;
+.slider-tick-major {
+  height: 10px;
+  background: var(--gh-text-secondary);
+  opacity: 1;
 }
 
 /* ── Collapsible era/region presets ── */
