@@ -148,6 +148,17 @@
   flex-shrink: 0;
 }
 
+.signOutSpinner {
+  width: 20px;
+  height: 20px;
+  animation: signOutSpin 0.8s linear infinite;
+}
+
+@keyframes signOutSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ── Language toggle ── */
 
 .navLangItem {

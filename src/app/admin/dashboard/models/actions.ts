@@ -51,6 +51,30 @@ export async function reactivateAiPlayer(playerId: string) {
   revalidatePath("/admin/dashboard");
 }
 
+export async function softDeleteAiPlayer(playerId: string) {
+  await requireAdmin();
+
+  const pool = getDbPool();
+  await pool.query(
+    `UPDATE ai_players SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL`,
+    [playerId]
+  );
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/dashboard/trash");
+}
+
+export async function restoreAiPlayer(playerId: string) {
+  await requireAdmin();
+
+  const pool = getDbPool();
+  await pool.query(
+    `UPDATE ai_players SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL`,
+    [playerId]
+  );
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/dashboard/trash");
+}
+
 export async function updateDailyCostCap(formData: FormData) {
   await requireAdmin();
 

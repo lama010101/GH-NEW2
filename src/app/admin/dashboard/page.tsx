@@ -7,12 +7,14 @@ import { ResultsModal } from "./ResultsModal";
 import { AddModelModal } from "./models/AddModelModal";
 import { ModelRowActions } from "./models/ModelRowActions";
 import { updateDailyCostCap } from "./models/actions";
-import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRosterHealth, fetchRecentActivity, fetchRecentErrors, fetchCostWeek, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RosterHealthRow, type RecentActivityRow, type RecentErrorRow } from "./queries";
+import { scheduleAiPlayerModeChange } from "./scheduling/actions";
+import { fetchCostTrend, fetchLeaderboard, fetchErrorBuckets, fetchRosterHealth, fetchRecentErrors, fetchCostWeek, fetchScheduledChanges, type CostTrendRow, type LeaderboardRow, type ErrorRow, type ErrorBucket, type RosterHealthRow, type RecentErrorRow, type ScheduledChangeRow } from "./queries";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import { CallDebugModal } from "./CallDebugModal";
 import { KpiCard, type KpiTone } from "./KpiCard";
-import { RosterHealthTable, type RosterHealthDisplayRow } from "./RosterHealthTable";
-import { ActivityErrorsSplit, type CompactActivityRow, type CompactErrorRow } from "./ActivityErrorsSplit";
+import { StatusBadge } from "./StatusBadge";
+import { deriveStatus, statusTier, type RosterHealthDisplayRow } from "./rosterStatus";
+import { RecordDrawer, type DrawerField } from "./components/RecordDrawer";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,8 @@ type ModelSummaryRow = {
   is_active_practice: boolean;
   is_active_daily: boolean;
   daily_cost_cap_usd: string | number | null;
+  cost_today: string | number | null;
+  cost_week: string | number | null;
   total_calls: number;
   error_count: number;
   total_cost: string | number | null;
@@ -136,6 +140,8 @@ function modelSortExpression(
       return `COALESCE(mae.final_error_total, 0) ${dir} ${nulls}`;
     case "total_cost":
       return `COALESCE(mc.total_cost, 0) ${dir} ${nulls}`;
+    case "cost_today":
+      return `COALESCE(mc.cost_today, 0) ${dir} ${nulls}`;
     case "total_tokens":
       return `COALESCE(mc.total_tokens, 0) ${dir} ${nulls}`;
     case "last_call_at":
@@ -226,6 +232,9 @@ export default async function OpenRouterAdminPage({
   const modelFilter = modelFilterRaw || null;
 
   const mSort = getParam(searchParams, "m_sort") || "total_cost";
+  const capFilterRaw = getParam(searchParams, "cap_filter") || "";
+  const capFilter =
+    capFilterRaw === "capped" || capFilterRaw === "uncapped" ? capFilterRaw : null;
   const mDirRaw = getParam(searchParams, "m_dir") || "desc";
   const mDir: "asc" | "desc" = mDirRaw === "asc" ? "asc" : "desc";
 
@@ -309,26 +318,6 @@ export default async function OpenRouterAdminPage({
     return makeLink({ page: String(pageNum) });
   }
 
-  function tabLink(target: string): string {
-    const next = new URLSearchParams(currentParams.toString());
-    // Clear tab-specific params so switching tabs starts clean.
-    next.delete("page");
-    next.delete("m_sort");
-    next.delete("m_dir");
-    next.delete("a_sort");
-    next.delete("a_dir");
-    next.delete("c_sort");
-    next.delete("c_dir");
-    next.delete("model");
-    next.delete("errType");
-    next.delete("addModel");
-    next.delete("calls");
-    // Keep "detail" so ResultsModal can stay open across tabs.
-    next.set("tab", target);
-    const qs = next.toString();
-    return `/admin/dashboard${qs ? `?${qs}` : ""}`;
-  }
-
   function compareSortLink(column: string): string {
     const nextDir =
       cSort === column
@@ -342,12 +331,12 @@ export default async function OpenRouterAdminPage({
   }
 
   const needModelSummary = tab === "models";
-  const needActivity = tab === "overview";
+  const needActivity = tab === "analytics";
   const needKpi = tab === "overview";
-  const needRosterHealth = tab === "overview";
-  const needRecentActivityCompact = tab === "overview";
+  const needRosterHealth = tab === "overview" || tab === "models";
   const needRecentErrors = tab === "overview";
   const needCostWeek = tab === "overview";
+  const needScheduled = tab === "overview";
 
   const modelOrderBy = modelSortExpression(mSort, mDir);
   const { rows: modelRows } = needModelSummary
@@ -363,6 +352,16 @@ export default async function OpenRouterAdminPage({
           FILTER (WHERE c.response_payload IS NOT NULL),
           0
         ) AS total_cost,
+        COALESCE(
+          SUM((c.response_payload->'usage'->>'cost')::numeric)
+          FILTER (WHERE c.response_payload IS NOT NULL AND c.created_at >= date_trunc('day', now())),
+          0
+        ) AS cost_today,
+        COALESCE(
+          SUM((c.response_payload->'usage'->>'cost')::numeric)
+          FILTER (WHERE c.response_payload IS NOT NULL AND c.created_at >= now() - interval '7 days'),
+          0
+        ) AS cost_week,
         COALESCE(
           SUM(
             COALESCE((c.response_payload->'usage'->>'prompt_tokens')::int, 0) +
@@ -409,6 +408,8 @@ export default async function OpenRouterAdminPage({
       COALESCE(mc.total_calls, 0)::int AS total_calls,
       COALESCE(mc.error_count, 0)::int AS error_count,
       COALESCE(mc.total_cost, 0) AS total_cost,
+      COALESCE(mc.cost_today, 0) AS cost_today,
+      COALESCE(mc.cost_week, 0) AS cost_week,
       COALESCE(mc.total_tokens, 0)::int AS total_tokens,
       mc.last_call_at,
       COALESCE(mae.final_error_total, 0) AS final_error_total,
@@ -418,10 +419,16 @@ export default async function OpenRouterAdminPage({
     FROM ai_players p
     LEFT JOIN model_calls mc ON mc.ai_player_id = p.id
     LEFT JOIN model_answer_errors mae ON mae.ai_player_id = p.id
-    WHERE ($1::text IS NULL OR p.model_id = $1::text)
+    WHERE p.deleted_at IS NULL
+      AND ($1::text IS NULL OR p.model_id = $1::text)
+      AND (
+        $2::text IS NULL
+        OR ($2::text = 'capped' AND p.daily_cost_cap_usd IS NOT NULL)
+        OR ($2::text = 'uncapped' AND p.daily_cost_cap_usd IS NULL)
+      )
     ORDER BY ${modelOrderBy}
     `,
-    [modelFilter]
+    [modelFilter, capFilter]
   )
     : { rows: [] as ModelSummaryRow[] };
 
@@ -473,6 +480,8 @@ export default async function OpenRouterAdminPage({
   const perModel = modelRows.map((row) => ({
     ...row,
     totalCost: toNumber(row.total_cost),
+    costToday: toNumber(row.cost_today),
+    costWeek: toNumber(row.cost_week),
   }));
 
   const { rows: kpiRows } = needKpi
@@ -502,17 +511,18 @@ export default async function OpenRouterAdminPage({
   const kpiErrorRate24h =
     kpiCalls24h > 0 ? (kpiErrors24h / kpiCalls24h) * 100 : 0;
 
-  // --- Phase A Overview data (roster health, recent activity, recent errors, cost week) ---
+  // --- Ops Overview data (fleet exceptions, scheduled changes, recent errors) ---
   const rosterHealthRaw: RosterHealthRow[] = needRosterHealth
     ? await fetchRosterHealth(pool)
-    : [];
-  const recentActivityRaw: RecentActivityRow[] = needRecentActivityCompact
-    ? await fetchRecentActivity(pool, 10)
     : [];
   const recentErrorsRaw: RecentErrorRow[] = needRecentErrors
     ? await fetchRecentErrors(pool, 5)
     : [];
   const costWeek = needCostWeek ? await fetchCostWeek(pool) : 0;
+  const scheduledRaw: ScheduledChangeRow[] = needScheduled
+    ? await fetchScheduledChanges(pool, { limit: 5 })
+    : [];
+  const pendingScheduled = scheduledRaw.filter((r) => r.status === "pending");
 
   const activeModelCount = rosterHealthRaw.filter(
     (row) => row.is_active_practice || row.is_active_daily
@@ -545,22 +555,29 @@ export default async function OpenRouterAdminPage({
     })
   );
 
-  const compactActivity: CompactActivityRow[] = recentActivityRaw.map((row) => ({
-    id: row.id,
-    model_name: row.model_name,
-    mode: row.mode,
-    round_accuracy: row.round_accuracy,
-    cost: toNumber(row.cost),
-    created_at: row.created_at,
-    created_at_relative: formatRelativeTime(row.created_at),
-  }));
+  // Fleet exceptions only (approved plan §4): erroring, disabled, or ≥80% of
+  // daily cap. A healthy fleet renders as a single line.
+  const fleetExceptions = rosterHealthDisplay
+    .map((row) => {
+      const status = deriveStatus(row);
+      const capPct =
+        row.daily_cost_cap_usd && row.daily_cost_cap_usd > 0
+          ? (row.cost_24h / row.daily_cost_cap_usd) * 100
+          : null;
+      return { ...row, status, capPct };
+    })
+    .filter(
+      (r) =>
+        r.status === "erroring" ||
+        r.status === "disabled" ||
+        (r.capPct ?? 0) >= 80
+    );
 
-  const compactErrors: CompactErrorRow[] = recentErrorsRaw.map((row) => ({
+  const recentErrors = recentErrorsRaw.map((row) => ({
     id: row.id,
     model_name: row.model_name,
     error: row.error,
     error_type: row.error_type,
-    created_at: row.created_at,
     created_at_relative: formatRelativeTime(row.created_at),
   }));
 
@@ -570,15 +587,6 @@ export default async function OpenRouterAdminPage({
       : kpiErrorRate24h >= 1
       ? "gold"
       : "success";
-
-  const TABS: { key: typeof tab; label: string; href?: string }[] = [
-    { key: "overview", label: "Overview" },
-    { key: "models", label: "Models" },
-    { key: "analytics", label: "Analytics" },
-    { key: "compare", label: "Compare" },
-    { key: "debug", label: "Debug" },
-    { key: "events", label: "Events", href: "/admin/dashboard/events" },
-  ];
 
   const costTrend: CostTrendRow[] =
     tab === "analytics" ? await fetchCostTrend(pool, { days: 30 }) : [];
@@ -689,64 +697,297 @@ export default async function OpenRouterAdminPage({
       ? await fetchErrorBuckets(pool, { type: errType, limit: 50 })
       : [];
 
-  return (
-    <main className="min-h-screen bg-gh-bg-base p-6 text-gh-text">
-      <div className="mx-auto max-w-7xl">
-        <h1 className="mb-6 text-2xl font-bold">AI Model Dashboard</h1>
+  // Shared RecordDrawer state (?drawer=<id>, closed by stripping the param).
+  const drawerId = getParam(searchParams, "drawer");
+  const drawerCloseHref = makeLink({ drawer: undefined });
+  const modelDrawerRow =
+    tab === "models" && drawerId
+      ? perModel.find((r) => r.id === drawerId) ?? null
+      : null;
+  const modelDrawerHealth = modelDrawerRow
+    ? rosterHealthDisplay.find((r) => r.id === modelDrawerRow.id) ?? null
+    : null;
+  const healthByPlayer = new Map(
+    rosterHealthDisplay.map((r) => [r.id, r] as const)
+  );
+  const compareDrawerRow =
+    tab === "compare" && drawerId
+      ? leaderboard.find((r) => r.ai_player_id === drawerId) ?? null
+      : null;
 
-        <nav className="mb-6 flex flex-wrap gap-1 border-b border-[var(--gh-border-default)]">
-          {TABS.map((t) => (
-            <Link
-              key={t.key}
-              href={t.href ?? tabLink(t.key)}
-              className={`rounded-t px-4 py-2 text-sm font-medium ${
-                tab === t.key
-                  ? "border-b-2 border-gh-text bg-gh-bg-surface text-gh-text"
-                  : "text-gh-text-sec hover:text-gh-text"
-              }`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </nav>
+  const pageTitle =
+    tab === "models"
+      ? "Models"
+      : tab === "analytics"
+      ? "Analytics"
+      : tab === "compare"
+      ? "Compare"
+      : tab === "debug"
+      ? "Debug"
+      : "Overview";
+
+  const modelDrawerFields: DrawerField[] | undefined = modelDrawerRow
+    ? [
+        { label: "Model ID", value: modelDrawerRow.model_id, mono: true },
+        {
+          label: "Status",
+          value: modelDrawerHealth ? (
+            <StatusBadge status={deriveStatus(modelDrawerHealth)} />
+          ) : (
+            "—"
+          ),
+        },
+        {
+          label: "Modes",
+          value: `${modelDrawerRow.is_active_practice ? "Practice on" : "Practice off"} · ${modelDrawerRow.is_active_daily ? "Daily on" : "Daily off"}`,
+        },
+        {
+          label: "Calls (total)",
+          value: modelDrawerRow.total_calls.toLocaleString(),
+        },
+        {
+          label: "Errors (total)",
+          value: modelDrawerRow.error_count.toLocaleString(),
+        },
+        {
+          label: "Cost today / 7d",
+          value: `${formatCost(modelDrawerRow.costToday)} / ${formatCost(modelDrawerRow.costWeek)}`,
+        },
+        { label: "Cost (total)", value: formatCost(modelDrawerRow.totalCost) },
+        {
+          label: "Daily cap (USD)",
+          value: modelDrawerRow.daily_cost_cap_usd ?? "No cap",
+        },
+        {
+          label: "Tokens (total)",
+          value: modelDrawerRow.total_tokens.toLocaleString(),
+        },
+        {
+          label: "Last call",
+          value: formatDateTime(modelDrawerRow.last_call_at),
+        },
+      ]
+    : undefined;
+
+  const compareDrawerFields: DrawerField[] | undefined = compareDrawerRow
+    ? [
+        { label: "Model ID", value: compareDrawerRow.model_id, mono: true },
+        {
+          label: "Answers",
+          value: (compareDrawerRow.total_answers ?? 0).toLocaleString(),
+        },
+        {
+          label: "Error rate",
+          value: `${(compareDrawerRow.error_rate * 100).toFixed(1)}%`,
+        },
+        {
+          label: "Cost / call",
+          value:
+            compareDrawerRow.cost_per_call != null
+              ? formatCost(toNumber(compareDrawerRow.cost_per_call))
+              : "—",
+        },
+        {
+          label: "Cost / accuracy point",
+          value:
+            compareDrawerRow.cost_per_accuracy_point != null
+              ? formatCost(toNumber(compareDrawerRow.cost_per_accuracy_point))
+              : "—",
+        },
+        {
+          label: "Total cost",
+          value: formatCost(toNumber(compareDrawerRow.total_cost)),
+        },
+      ]
+    : undefined;
+
+  return (
+    <div className="ops-page">
+      <header className="ops-pagehead">
+        <div>
+          <h1 className="ops-h1">{pageTitle}</h1>
+          {tab === "overview" && (
+            <p className="ops-pagesub">
+              Last call {formatRelativeTime(lastActivityRaw)}
+            </p>
+          )}
+        </div>
+      </header>
 
         {tab === "overview" && (
           <>
-            <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="ops-kpi-strip">
               <KpiCard label="Active models" value={activeModelCount.toLocaleString()} />
-              <KpiCard label="Cost today" value={formatCost(kpiCost24h)} />
-              <KpiCard label="Cost this week" value={formatCost(costWeek)} />
+              <KpiCard label="Total plays (24h)" value={kpiCalls24h.toLocaleString()} />
               <KpiCard
                 label="Error rate (24h)"
                 value={`${kpiErrorRate24h.toFixed(1)}%`}
                 tone={errorRateTone}
               />
-              <KpiCard label="Total plays (24h)" value={kpiCalls24h.toLocaleString()} />
-              <KpiCard label="Last activity" value={formatRelativeTime(lastActivityRaw)} />
+              <KpiCard label="Cost today" value={formatCost(kpiCost24h)} />
+              <KpiCard label="Cost this week" value={formatCost(costWeek)} />
             </div>
 
-        <section className="mb-8">
-          <h2 className="mb-4 text-lg font-semibold">Roster health</h2>
-          <RosterHealthTable rows={rosterHealthDisplay} />
-        </section>
+            <div className="ops-grid-2col">
+              <section className="ops-panel">
+                <div className="ops-toolbar">
+                  <h2 className="ops-panel-title">Fleet exceptions</h2>
+                  <Link href={makeLink({ tab: "models" })} className="ops-btn">
+                    Models
+                  </Link>
+                </div>
+                <div className="ops-panel-pad">
+                  {fleetExceptions.length === 0 ? (
+                    <div className="ops-minirow">
+                      <span className="ops-minirow-main">
+                        <span className="ops-dot ops-dot-ok" />
+                        All {rosterHealthDisplay.length} models healthy
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      {fleetExceptions.slice(0, 8).map((row) => (
+                        <div key={row.id} className="ops-minirow">
+                          <span className="ops-minirow-main">
+                            <span
+                              className={`ops-dot ${
+                                row.status === "erroring"
+                                  ? "ops-dot-bad"
+                                  : row.status === "disabled"
+                                  ? "ops-dot-off"
+                                  : "ops-dot-warn"
+                              }`}
+                            />
+                            <span className="ops-truncate" title={row.model_id}>
+                              {row.name}
+                            </span>
+                            <StatusBadge status={row.status} />
+                          </span>
+                          <span className="ops-minirow-side">
+                            <span>
+                              {row.calls_24h > 0
+                                ? `${((row.errors_24h / row.calls_24h) * 100).toFixed(1)}%`
+                                : "—"}
+                            </span>
+                            <span>
+                              {row.capPct != null
+                                ? `${row.capPct.toFixed(0)}% cap`
+                                : "no cap"}
+                            </span>
+                            <span>{row.last_seen_relative}</span>
+                          </span>
+                        </div>
+                      ))}
+                      {fleetExceptions.length > 8 && (
+                        <div className="ops-minirow">
+                          <span className="ops-minirow-main">
+                            <span style={{ color: "var(--ops-mute)" }}>
+                              + {fleetExceptions.length - 8} more
+                            </span>
+                          </span>
+                          <span className="ops-minirow-side">
+                            <Link
+                              href={makeLink({ tab: "models" })}
+                              className="ops-btn"
+                            >
+                              Models
+                            </Link>
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </section>
 
-        <section className="mb-8">
-          <ActivityErrorsSplit
-            activity={compactActivity}
-            errors={compactErrors}
-            viewAllActivityHref="#activity-results"
-            viewAllErrorsHref={makeLink({ tab: "debug" })}
-          />
-        </section>
+              <div className="ops-stack">
+                <section className="ops-panel">
+                  <div className="ops-toolbar">
+                    <h2 className="ops-panel-title">Next scheduled changes</h2>
+                    <Link href="/admin/dashboard/schedules" className="ops-btn">
+                      Schedules
+                    </Link>
+                  </div>
+                  <div className="ops-panel-pad">
+                    {pendingScheduled.length === 0 ? (
+                      <p className="ops-empty" style={{ padding: "8px 0" }}>
+                        No pending changes.
+                      </p>
+                    ) : (
+                      pendingScheduled.map((r) => (
+                        <div key={r.id} className="ops-minirow">
+                          <span className="ops-minirow-main">
+                            <span className="ops-truncate">
+                              {r.player_name ?? r.ai_player_id}
+                            </span>
+                          </span>
+                          <span className="ops-minirow-side">
+                            <span>
+                              {r.mode} {r.target_value ? "enable" : "disable"}
+                            </span>
+                            <span>{formatDateTime(r.apply_at)}</span>
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
 
+                <section className="ops-panel">
+                  <div className="ops-toolbar">
+                    <h2 className="ops-panel-title">Recent errors</h2>
+                    <Link href={makeLink({ tab: "debug" })} className="ops-btn">
+                      Debug
+                    </Link>
+                  </div>
+                  <div className="ops-panel-pad">
+                    {recentErrors.length === 0 ? (
+                      <p className="ops-empty" style={{ padding: "8px 0" }}>
+                        No recent errors.
+                      </p>
+                    ) : (
+                      recentErrors.map((row) => (
+                        <div key={row.id} className="ops-minirow">
+                          <span className="ops-minirow-main">
+                            <span className="ops-chip ops-chip-bad">
+                              {row.error_type}
+                            </span>
+                            <span className="ops-truncate" title={row.error}>
+                              {row.model_name}
+                            </span>
+                          </span>
+                          <span className="ops-minirow-side">
+                            <span>{row.created_at_relative}</span>
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <div className="ops-links">
+              <Link href={makeLink({ tab: "models" })} className="ops-btn">
+                Full roster
+              </Link>
+              <Link href="/admin/dashboard/events" className="ops-btn">
+                All events
+              </Link>
+            </div>
+          </>
+        )}
+
+        {tab === "analytics" && (
+          <>
         <section id="activity-results">
           <h2 className="mb-4 text-lg font-semibold">Per-activity results</h2>
 
-          <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-            <table className="w-full border-collapse text-left text-sm">
+          <div className="ops-panel-flush">
+            <table className="ops-table">
               <thead>
-                <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-                  <th className="px-4 py-3 font-semibold">
+                <tr>
+                  <th>
                     <SortHeader
                       href={activitySortLink("model_name")}
                       label="Model"
@@ -755,16 +996,7 @@ export default async function OpenRouterAdminPage({
                       dir={aDir}
                     />
                   </th>
-                  <th className="px-4 py-3 font-semibold">
-                    <SortHeader
-                      href={activitySortLink("mode")}
-                      label="Mode"
-                      column="mode"
-                      sort={aSort}
-                      dir={aDir}
-                    />
-                  </th>
-                  <th className="px-4 py-3 font-semibold">
+                  <th>
                     <SortHeader
                       href={activitySortLink("event_title")}
                       label="Event"
@@ -773,35 +1005,33 @@ export default async function OpenRouterAdminPage({
                       dir={aDir}
                     />
                   </th>
-                  <th className="px-4 py-3 text-center font-semibold">
-                    <div className="flex flex-col">
-                      <span>Accuracy</span>
-                      <span className="flex justify-center gap-2 text-xs font-normal">
-                        <SortHeader
-                          href={activitySortLink("round_accuracy")}
-                          label="combo"
-                          column="round_accuracy"
-                          sort={aSort}
-                          dir={aDir}
-                        />
-                        <SortHeader
-                          href={activitySortLink("location_accuracy")}
-                          label="where"
-                          column="location_accuracy"
-                          sort={aSort}
-                          dir={aDir}
-                        />
-                        <SortHeader
-                          href={activitySortLink("year_accuracy")}
-                          label="when"
-                          column="year_accuracy"
-                          sort={aSort}
-                          dir={aDir}
-                        />
-                      </span>
-                    </div>
+                  <th>
+                    <span>Accuracy</span>
+                    <span className="flex gap-2 text-xs font-normal">
+                      <SortHeader
+                        href={activitySortLink("round_accuracy")}
+                        label="combo"
+                        column="round_accuracy"
+                        sort={aSort}
+                        dir={aDir}
+                      />
+                      <SortHeader
+                        href={activitySortLink("location_accuracy")}
+                        label="where"
+                        column="location_accuracy"
+                        sort={aSort}
+                        dir={aDir}
+                      />
+                      <SortHeader
+                        href={activitySortLink("year_accuracy")}
+                        label="when"
+                        column="year_accuracy"
+                        sort={aSort}
+                        dir={aDir}
+                      />
+                    </span>
                   </th>
-                  <th className="px-4 py-3 text-right font-semibold">
+                  <th className="num">
                     <SortHeader
                       href={activitySortLink("cost")}
                       label="Cost"
@@ -810,7 +1040,7 @@ export default async function OpenRouterAdminPage({
                       dir={aDir}
                     />
                   </th>
-                  <th className="px-4 py-3 font-semibold">
+                  <th className="ops-col-xl">
                     <SortHeader
                       href={activitySortLink("error")}
                       label="Error"
@@ -819,7 +1049,7 @@ export default async function OpenRouterAdminPage({
                       dir={aDir}
                     />
                   </th>
-                  <th className="px-4 py-3 font-semibold">
+                  <th className="ops-col-xl">
                     <SortHeader
                       href={activitySortLink("created_at")}
                       label="Created"
@@ -828,54 +1058,39 @@ export default async function OpenRouterAdminPage({
                       dir={aDir}
                     />
                   </th>
-                  <th className="px-4 py-3 font-semibold">Results</th>
+                  <th>Results</th>
                 </tr>
               </thead>
               <tbody>
                 {activityRows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-                  >
-                    <td
-                      className="max-w-[180px] truncate px-4 py-3"
-                      title={row.model_id}
-                    >
-                      {row.model_name}
+                  <tr key={row.id}>
+                    <td data-label="Model" title={row.model_id}>
+                      <span className="ops-cellname">
+                        <span className="ops-chip ops-chip-muted">{row.mode}</span>
+                        <span className="ops-truncate">{row.model_name}</span>
+                      </span>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gh-text-sec">
-                      {row.mode}
+                    <td data-label="Event" title={row.event_title}>
+                      <span className="ops-truncate">{row.event_title}</span>
                     </td>
-                    <td
-                      className="max-w-[220px] truncate px-4 py-3"
-                      title={row.event_title}
-                    >
-                      {row.event_title}
+                    <td data-label="Accuracy">
+                      <span className="ops-num">
+                        {formatAccuracy(row.round_accuracy)} / {formatAccuracy(row.location_accuracy)} / {formatAccuracy(row.year_accuracy)}
+                      </span>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center">
-                      <div className="flex flex-col text-xs">
-                        <span>{formatAccuracy(row.round_accuracy)}</span>
-                        <span>{formatAccuracy(row.location_accuracy)}</span>
-                        <span>{formatAccuracy(row.year_accuracy)}</span>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                    <td className="num" data-label="Cost">
                       {formatCost(toNumber(row.cost))}
                     </td>
-                    <td
-                      className="max-w-[260px] truncate px-4 py-3 text-xs text-gh-text-sec"
-                      title={row.error || undefined}
-                    >
-                      {shortError(row.error)}
+                    <td className="ops-col-xl" data-label="Error" title={row.error || undefined}>
+                      <span className="ops-truncate ops-mono" style={{ color: "var(--ops-mute)" }}>
+                        {shortError(row.error)}
+                      </span>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gh-text-sec">
+                    <td className="ops-col-xl" data-label="Created" style={{ color: "var(--ops-mute)" }}>
                       {formatDateTime(row.created_at)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <Link
-                        href={detailLink(row.id)}
-                        className="text-gh-text-sec hover:underline"
-                      >
+                    <td data-label="Results">
+                      <Link href={detailLink(row.id)} className="ops-btn">
                         View results
                       </Link>
                     </td>
@@ -883,10 +1098,7 @@ export default async function OpenRouterAdminPage({
                 ))}
                 {activityRows.length === 0 && (
                   <tr>
-                    <td
-                      className="px-4 py-6 text-gh-text-sec"
-                      colSpan={8}
-                    >
+                    <td colSpan={7}>
                       No activity results found.
                     </td>
                   </tr>
@@ -896,32 +1108,26 @@ export default async function OpenRouterAdminPage({
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between text-sm">
-              <div className="text-gh-text-sec">
+            <div className="ops-pagination">
+              <div>
                 Page {page} of {totalPages} ({totalCount.toLocaleString()} rows)
               </div>
               <div className="flex items-center gap-2">
                 {page > 1 ? (
-                  <Link
-                    href={pageLink(page - 1)}
-                    className="rounded border border-[var(--gh-border-default)] bg-gh-bg-surface px-3 py-1 text-gh-text hover:bg-gh-bg-elevated"
-                  >
+                  <Link href={pageLink(page - 1)} className="ops-btn">
                     Previous
                   </Link>
                 ) : (
-                  <span className="rounded border border-[var(--gh-border-default)] px-3 py-1 text-gh-text-sec opacity-50">
+                  <span className="ops-btn" style={{ opacity: 0.5 }}>
                     Previous
                   </span>
                 )}
                 {page < totalPages ? (
-                  <Link
-                    href={pageLink(page + 1)}
-                    className="rounded border border-[var(--gh-border-default)] bg-gh-bg-surface px-3 py-1 text-gh-text hover:bg-gh-bg-elevated"
-                  >
+                  <Link href={pageLink(page + 1)} className="ops-btn">
                     Next
                   </Link>
                 ) : (
-                  <span className="rounded border border-[var(--gh-border-default)] px-3 py-1 text-gh-text-sec opacity-50">
+                  <span className="ops-btn" style={{ opacity: 0.5 }}>
                     Next
                   </span>
                 )}
@@ -929,7 +1135,7 @@ export default async function OpenRouterAdminPage({
             </div>
           )}
 
-          <p className="mt-4 text-xs text-gh-text-sec">
+          <p className="ops-footnote">
             * Daily/Practice mode is inferred: a row is labeled Daily only when
             its event_id appears in daily_challenges.event_ids for its creation
             date; otherwise it is labeled Practice by elimination. This is a
@@ -941,21 +1147,48 @@ export default async function OpenRouterAdminPage({
 
         {tab === "models" && (
           <section>
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-semibold">Manage models</h2>
-              <Link
-                href={makeLink({ tab: "models", addModel: "1" })}
-                className="rounded bg-gh-text px-4 py-2 text-sm text-gh-bg-base hover:opacity-90"
-              >
-                + Add model
-              </Link>
+            <div className="ops-toolbar" style={{ border: "1px solid var(--ops-line)", borderRadius: 4, marginBottom: 16 }}>
+              <span>
+                {perModel.length} models
+              </span>
+              <div className="flex items-center gap-3">
+                <form
+                  method="get"
+                  className="flex items-center gap-2 text-sm"
+                  action="/admin/dashboard"
+                >
+                  <input type="hidden" name="tab" value="models" />
+                  <label htmlFor="cap_filter" className="ops-kpi-label">
+                    Cost cap
+                  </label>
+                  <select
+                    id="cap_filter"
+                    name="cap_filter"
+                    defaultValue={capFilter ?? ""}
+                    className="ops-input"
+                  >
+                    <option value="">All</option>
+                    <option value="capped">Capped only</option>
+                    <option value="uncapped">Uncapped only</option>
+                  </select>
+                  <button type="submit" className="ops-btn">
+                    Filter
+                  </button>
+                </form>
+                <Link
+                  href={makeLink({ tab: "models", addModel: "1" })}
+                  className="ops-btn ops-btn-primary"
+                >
+                  + Add model
+                </Link>
+              </div>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-              <table className="w-full border-collapse text-left text-sm">
+            <div className="ops-panel-flush">
+              <table className="ops-table">
                 <thead>
-                  <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-                    <th className="px-4 py-3 font-semibold">
+                  <tr>
+                    <th>
                       <SortHeader
                         href={modelSortLink("name")}
                         label="Model"
@@ -964,8 +1197,8 @@ export default async function OpenRouterAdminPage({
                         dir={mDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold">Modes</th>
-                    <th className="px-4 py-3 text-right font-semibold">
+                    <th>Modes</th>
+                    <th className="num">
                       <SortHeader
                         href={modelSortLink("total_calls")}
                         label="Calls"
@@ -974,7 +1207,7 @@ export default async function OpenRouterAdminPage({
                         dir={mDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold">
+                    <th className="num">
                       <SortHeader
                         href={modelSortLink("total_cost")}
                         label="Total Cost"
@@ -983,24 +1216,51 @@ export default async function OpenRouterAdminPage({
                         dir={mDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold">Daily cap</th>
-                    <th className="px-4 py-3 font-semibold">Actions</th>
+                    <th className="num ops-col-xl">
+                      <SortHeader
+                        href={modelSortLink("cost_today")}
+                        label="Cost today / 7d"
+                        column="cost_today"
+                        sort={mSort}
+                        dir={mDir}
+                      />
+                    </th>
+                    <th className="num">Daily cap</th>
+                    <th className="ops-col-xl">Schedule</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {perModel.map((row) => (
+                  {perModel.map((row) => {
+                    const health = healthByPlayer.get(row.id);
+                    const st = health ? deriveStatus(health) : null;
+                    const dotCls =
+                      st === "active" || st === "idle"
+                        ? "ops-dot-ok"
+                        : st === "erroring"
+                        ? "ops-dot-bad"
+                        : st === "disabled"
+                        ? "ops-dot-off"
+                        : "";
+                    return (
                     <tr
                       key={row.id}
-                      className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
+                      data-status={st ? statusTier(st) : undefined}
                     >
-                      <td
-                        className="max-w-[220px] truncate px-4 py-3"
-                        title={row.model_id}
-                      >
-                        {row.name}
+                      <td data-label="Model" title={row.model_id}>
+                        <Link
+                          href={makeLink({ drawer: row.id })}
+                          className="ops-celllink"
+                          title="Open record"
+                        >
+                          <span className="ops-cellname">
+                            <span className={`ops-dot ${dotCls}`} />
+                            <span className="ops-truncate">{row.name}</span>
+                          </span>
+                        </Link>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-center gap-4">
+                      <td data-label="Modes">
+                        <div className="flex gap-3">
                           <ModeToggle
                             playerId={row.id}
                             mode="practice"
@@ -1013,13 +1273,20 @@ export default async function OpenRouterAdminPage({
                           />
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <td className="num" data-label="Calls">
                         {row.total_calls.toLocaleString()}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <td className="num" data-label="Total Cost">
                         {formatCost(row.totalCost)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3">
+                      <td
+                        className="num ops-col-xl"
+                        data-label="Cost today / 7d"
+                        style={{ color: "var(--ops-mute)" }}
+                      >
+                        {formatCost(row.costToday)} / {formatCost(row.costWeek)}
+                      </td>
+                      <td data-label="Daily cap">
                         <form
                           action={updateDailyCostCap}
                           className="flex items-center justify-end gap-2"
@@ -1032,17 +1299,48 @@ export default async function OpenRouterAdminPage({
                             min="0"
                             defaultValue={row.daily_cost_cap_usd ?? ""}
                             placeholder="No cap"
-                            className="w-28 rounded border border-[var(--gh-border-default)] bg-gh-bg-base px-2 py-1 text-right text-sm text-gh-text"
+                            className="ops-input"
+                            style={{ width: 112, textAlign: "right" }}
                           />
-                          <button
-                            type="submit"
-                            className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text hover:bg-gh-bg-elevated"
-                          >
+                          <button type="submit" className="ops-btn">
                             Save
                           </button>
                         </form>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="ops-col-xl" data-label="Schedule">
+                        <details className="text-xs">
+                          <summary
+                            className="cursor-pointer"
+                            style={{ color: "var(--ops-mute)" }}
+                          >
+                            Schedule…
+                          </summary>
+                          <form
+                            action={scheduleAiPlayerModeChange}
+                            className="ops-panel ops-panel-pad mt-2 flex w-56 flex-col gap-2"
+                          >
+                            <input type="hidden" name="playerId" value={row.id} />
+                            <select name="mode" className="ops-input">
+                              <option value="practice">Practice</option>
+                              <option value="daily">Daily</option>
+                            </select>
+                            <select name="targetValue" className="ops-input">
+                              <option value="enable">Enable</option>
+                              <option value="disable">Disable</option>
+                            </select>
+                            <input
+                              type="datetime-local"
+                              name="applyAt"
+                              required
+                              className="ops-input"
+                            />
+                            <button type="submit" className="ops-btn">
+                              Schedule change
+                            </button>
+                          </form>
+                        </details>
+                      </td>
+                      <td data-label="Actions">
                         <ModelRowActions
                           playerId={row.id}
                           modelId={row.model_id}
@@ -1050,10 +1348,11 @@ export default async function OpenRouterAdminPage({
                         />
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                   {perModel.length === 0 && (
                     <tr>
-                      <td className="px-4 py-6 text-gh-text-sec" colSpan={6}>
+                      <td colSpan={8}>
                         No models found.
                       </td>
                     </tr>
@@ -1069,24 +1368,21 @@ export default async function OpenRouterAdminPage({
             <h2 className="mb-4 text-lg font-semibold">Cost &amp; usage trend (30 days)</h2>
 
             {costTrend.length === 0 ? (
-              <p className="rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface p-8 text-center text-gh-text-sec">
+              <p className="ops-panel ops-panel-pad ops-empty">
                 No call data in the last 30 days.
               </p>
             ) : (
               <div className="space-y-4">
                 {Array.from(trendByModelWithGaps.entries()).map(([playerId, entry]) => (
-                  <div
-                    key={playerId}
-                    className="rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface p-4"
-                  >
+                  <div key={playerId} className="ops-panel ops-panel-pad">
                     <div className="mb-3 flex items-center justify-between">
                       <div>
                         <span className="font-semibold">{entry.model_name}</span>
-                        <span className="ml-2 text-xs text-gh-text-sec">
+                        <span className="ops-mono ml-2" style={{ color: "var(--ops-mute)" }}>
                           {entry.model_id}
                         </span>
                       </div>
-                      <div className="text-sm text-gh-text-sec">
+                      <div className="ops-num" style={{ color: "var(--ops-mute)", fontSize: 13 }}>
                         30d cost: {formatCost(entry.totalCost)}
                       </div>
                     </div>
@@ -1094,22 +1390,23 @@ export default async function OpenRouterAdminPage({
                     {entry.daily_cost_cap_usd !== null &&
                       entry.daily_cost_cap_usd > 0 && (
                         <div className="mb-3">
-                          <div className="mb-1 flex justify-between text-xs text-gh-text-sec">
+                          <div className="mb-1 flex justify-between text-xs" style={{ color: "var(--ops-mute)" }}>
                             <span>Avg daily cost vs cap</span>
                             <span>
                               {formatCost(entry.totalCost / 30)} /{" "}
                               {formatCost(entry.daily_cost_cap_usd)} per day
                             </span>
                           </div>
-                          <div className="h-2 overflow-hidden rounded bg-gh-bg-base">
+                          <div className="h-2 overflow-hidden rounded" style={{ background: "var(--ops-canvas)" }}>
                             <div
-                              className="h-full rounded bg-gh-text"
+                              className="h-full rounded"
                               style={{
                                 width: `${Math.min(
                                   100,
                                   (entry.totalCost / 30 / entry.daily_cost_cap_usd) *
                                     100
                                 )}%`,
+                                background: "var(--ops-accent)",
                               }}
                             />
                           </div>
@@ -1124,16 +1421,17 @@ export default async function OpenRouterAdminPage({
                           <div
                             key={d.day}
                             title={`${d.day}: ${formatCost(d.cost)} · ${d.tokens} tokens`}
-                            className="flex-1 rounded-t bg-gh-text-sec"
+                            className="flex-1 rounded-t"
                             style={{
                               height: `${Math.max(2, widthPct)}%`,
+                              background: "var(--ops-accent)",
                               opacity: d.cost > 0 ? 1 : 0.15,
                             }}
                           />
                         );
                       })}
                     </div>
-                    <div className="mt-1 flex justify-between text-xs text-gh-text-sec">
+                    <div className="mt-1 flex justify-between text-xs" style={{ color: "var(--ops-mute)" }}>
                       <span>{entry.days[0]?.day}</span>
                       <span>{entry.days[entry.days.length - 1]?.day}</span>
                     </div>
@@ -1148,12 +1446,11 @@ export default async function OpenRouterAdminPage({
           <section>
             <h2 className="mb-4 text-lg font-semibold">Model leaderboard</h2>
 
-            <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-              <table className="w-full border-collapse text-left text-sm">
+            <div className="ops-panel-flush">
+              <table className="ops-table">
                 <thead>
-                  <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-                    <th className="px-4 py-3 text-center font-semibold">#</th>
-                    <th className="px-4 py-3 font-semibold">
+                  <tr>
+                    <th>
                       <SortHeader
                         href={compareSortLink("model_name")}
                         label="Model"
@@ -1162,7 +1459,7 @@ export default async function OpenRouterAdminPage({
                         dir={cDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold">
+                    <th className="num">
                       <SortHeader
                         href={compareSortLink("total_answers")}
                         label="Answers"
@@ -1171,7 +1468,7 @@ export default async function OpenRouterAdminPage({
                         dir={cDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold">
+                    <th className="num">
                       <SortHeader
                         href={compareSortLink("avg_round_accuracy")}
                         label="Combo"
@@ -1180,7 +1477,7 @@ export default async function OpenRouterAdminPage({
                         dir={cDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold">
+                    <th className="num">
                       <SortHeader
                         href={compareSortLink("avg_location_accuracy")}
                         label="Where"
@@ -1189,7 +1486,7 @@ export default async function OpenRouterAdminPage({
                         dir={cDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold">
+                    <th className="num">
                       <SortHeader
                         href={compareSortLink("avg_year_accuracy")}
                         label="When"
@@ -1198,7 +1495,7 @@ export default async function OpenRouterAdminPage({
                         dir={cDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold">
+                    <th className="num">
                       <SortHeader
                         href={compareSortLink("error_rate")}
                         label="Error %"
@@ -1207,7 +1504,7 @@ export default async function OpenRouterAdminPage({
                         dir={cDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold">
+                    <th className="num">
                       <SortHeader
                         href={compareSortLink("total_cost")}
                         label="Total Cost"
@@ -1216,101 +1513,77 @@ export default async function OpenRouterAdminPage({
                         dir={cDir}
                       />
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold">
-                      <SortHeader
-                        href={compareSortLink("cost_per_call")}
-                        label="Cost/Call"
-                        column="cost_per_call"
-                        sort={cSort}
-                        dir={cDir}
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-right font-semibold">
-                      <SortHeader
-                        href={compareSortLink("cost_per_accuracy_point")}
-                        label="Cost/Acc"
-                        column="cost_per_accuracy_point"
-                        sort={cSort}
-                        dir={cDir}
-                      />
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {leaderboard.map((row, idx) => (
-                    <tr
-                      key={row.ai_player_id}
-                      className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-                    >
-                      <td className="px-4 py-3 text-center font-semibold">
-                        {idx + 1}
+                    <tr key={row.ai_player_id}>
+                      <td data-label="Model" title={row.model_id}>
+                        <Link
+                          href={makeLink({ drawer: row.ai_player_id })}
+                          className="ops-celllink"
+                          title="Open record"
+                        >
+                          <span className="ops-cellname">
+                            <span className="ops-rank">{idx + 1}</span>
+                            <span className="ops-truncate">{row.model_name}</span>
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="num" data-label="Answers">
+                        {(row.total_answers ?? 0).toLocaleString()}
                       </td>
                       <td
-                        className="max-w-[200px] truncate px-4 py-3"
-                        title={row.model_id}
-                      >
-                        {row.model_name}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        {row.total_answers.toLocaleString()}
-                      </td>
-                      <td
-                        className="whitespace-nowrap px-4 py-3 text-right font-semibold"
+                        className="num"
+                        data-label="Combo"
                         style={{
+                          fontWeight: 600,
                           color: row.avg_round_accuracy != null
-                            ? getAccuracyColor(row.avg_round_accuracy)
+                            ? getAccuracyColor(toNumber(row.avg_round_accuracy))
                             : undefined,
                         }}
                       >
                         {row.avg_round_accuracy != null
-                          ? `${row.avg_round_accuracy.toFixed(1)}%`
+                          ? `${toNumber(row.avg_round_accuracy).toFixed(1)}%`
                           : "—"}
                       </td>
                       <td
-                        className="whitespace-nowrap px-4 py-3 text-right"
+                        className="num"
+                        data-label="Where"
                         style={{
                           color: row.avg_location_accuracy != null
-                            ? getAccuracyColor(row.avg_location_accuracy)
+                            ? getAccuracyColor(toNumber(row.avg_location_accuracy))
                             : undefined,
                         }}
                       >
                         {row.avg_location_accuracy != null
-                          ? `${row.avg_location_accuracy.toFixed(1)}%`
+                          ? `${toNumber(row.avg_location_accuracy).toFixed(1)}%`
                           : "—"}
                       </td>
                       <td
-                        className="whitespace-nowrap px-4 py-3 text-right"
+                        className="num"
+                        data-label="When"
                         style={{
                           color: row.avg_year_accuracy != null
-                            ? getAccuracyColor(row.avg_year_accuracy)
+                            ? getAccuracyColor(toNumber(row.avg_year_accuracy))
                             : undefined,
                         }}
                       >
                         {row.avg_year_accuracy != null
-                          ? `${row.avg_year_accuracy.toFixed(1)}%`
+                          ? `${toNumber(row.avg_year_accuracy).toFixed(1)}%`
                           : "—"}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <td className="num" data-label="Error %">
                         {(row.error_rate * 100).toFixed(1)}%
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <td className="num" data-label="Total Cost">
                         {formatCost(toNumber(row.total_cost))}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        {row.cost_per_call != null
-                          ? formatCost(toNumber(row.cost_per_call))
-                          : "—"}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        {row.cost_per_accuracy_point != null
-                          ? formatCost(toNumber(row.cost_per_accuracy_point))
-                          : "—"}
                       </td>
                     </tr>
                   ))}
                   {leaderboard.length === 0 && (
                     <tr>
-                      <td className="px-4 py-6 text-gh-text-sec" colSpan={10}>
+                      <td colSpan={7}>
                         No model data available.
                       </td>
                     </tr>
@@ -1340,10 +1613,8 @@ export default async function OpenRouterAdminPage({
                         tab: "debug",
                         errType: opt.key ?? undefined,
                       })}
-                      className={`rounded px-3 py-1 text-sm ${
-                        errType === opt.key
-                          ? "bg-gh-text text-gh-bg-base"
-                          : "border border-[var(--gh-border-default)] text-gh-text-sec hover:text-gh-text"
+                      className={`ops-btn ${
+                        errType === opt.key ? "ops-btn-primary" : ""
                       }`}
                     >
                       {opt.label}
@@ -1353,48 +1624,41 @@ export default async function OpenRouterAdminPage({
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-[var(--gh-border-default)] bg-gh-bg-surface">
-              <table className="w-full border-collapse text-left text-sm">
+            <div className="ops-panel-flush">
+              <table className="ops-table">
                 <thead>
-                  <tr className="border-b border-[var(--gh-border-default)] text-gh-text-sec">
-                    <th className="px-4 py-3 font-semibold">Model</th>
-                    <th className="px-4 py-3 font-semibold">Event</th>
-                    <th className="px-4 py-3 font-semibold">Error</th>
-                    <th className="px-4 py-3 font-semibold">Created</th>
-                    <th className="px-4 py-3 font-semibold">Calls</th>
+                  <tr>
+                    <th>Model</th>
+                    <th>Event</th>
+                    <th>Error</th>
+                    <th>Created</th>
+                    <th>Calls</th>
                   </tr>
                 </thead>
                 <tbody>
                   {errorRows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b border-[var(--gh-border-subtle)] last:border-b-0"
-                    >
-                      <td
-                        className="max-w-[160px] truncate px-4 py-3"
-                        title={row.model_id}
-                      >
-                        {row.model_name}
+                    <tr key={row.id}>
+                      <td data-label="Model" title={row.model_id}>
+                        <span className="ops-truncate">{row.model_name}</span>
                       </td>
-                      <td
-                        className="max-w-[200px] truncate px-4 py-3"
-                        title={row.event_title}
-                      >
-                        {row.event_title}
+                      <td data-label="Event" title={row.event_title}>
+                        <span className="ops-truncate">{row.event_title}</span>
                       </td>
-                      <td
-                        className="max-w-[300px] truncate px-4 py-3 text-xs text-gh-text-sec"
-                        title={row.error}
-                      >
-                        {row.error}
+                      <td data-label="Error" title={row.error}>
+                        <span
+                          className="ops-truncate ops-mono"
+                          style={{ color: "var(--ops-mute)" }}
+                        >
+                          {row.error}
+                        </span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gh-text-sec">
+                      <td data-label="Created" style={{ color: "var(--ops-mute)" }}>
                         {formatDateTime(row.created_at)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3">
+                      <td data-label="Calls">
                         <Link
                           href={makeLink({ tab: "debug", calls: row.id })}
-                          className="text-gh-text-sec hover:underline"
+                          className="ops-btn"
                         >
                           View calls
                         </Link>
@@ -1403,7 +1667,7 @@ export default async function OpenRouterAdminPage({
                   ))}
                   {errorRows.length === 0 && (
                     <tr>
-                      <td className="px-4 py-6 text-gh-text-sec" colSpan={5}>
+                      <td colSpan={5}>
                         No error rows found for this filter.
                       </td>
                     </tr>
@@ -1413,12 +1677,40 @@ export default async function OpenRouterAdminPage({
             </div>
           </section>
         )}
-      </div>
 
       <ResultsModal />
       <AddModelModal />
       <CallDebugModal />
-    </main>
+
+      {tab === "models" && (
+        <RecordDrawer
+          open={modelDrawerRow != null}
+          closeHref={drawerCloseHref}
+          title={modelDrawerRow?.name ?? ""}
+          subtitle={modelDrawerRow?.model_id}
+          fields={modelDrawerFields}
+          actions={
+            modelDrawerRow ? (
+              <ModelRowActions
+                playerId={modelDrawerRow.id}
+                modelId={modelDrawerRow.model_id}
+                isActive={modelDrawerRow.is_active}
+              />
+            ) : undefined
+          }
+        />
+      )}
+
+      {tab === "compare" && (
+        <RecordDrawer
+          open={compareDrawerRow != null}
+          closeHref={drawerCloseHref}
+          title={compareDrawerRow?.model_name ?? ""}
+          subtitle={compareDrawerRow?.model_id}
+          fields={compareDrawerFields}
+        />
+      )}
+    </div>
   );
 }
 

@@ -152,6 +152,17 @@
   cursor: pointer;
 }
 
+.signOutSpinner {
+  width: 18px;
+  height: 18px;
+  animation: signOutSpin 0.8s linear infinite;
+}
+
+@keyframes signOutSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ── Preferences card (sound / vibrate / theme / language) ── */
 
 .settingsCardTitle {

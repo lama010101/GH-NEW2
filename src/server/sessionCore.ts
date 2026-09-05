@@ -2760,6 +2760,46 @@ async function startRelaxPlayer(input: { gameId: string; playerId: string; cause
       );
     }
 
+    // First round-0 start of this async session: deliver the deferred invite
+    // notification to still-pending invitees. Async mode suppresses the
+    // invite-time notification in /api/invitations/send, so this is the only
+    // emission point. Same lobby_invite type/payload as the sync-mode invite
+    // notification; the invitation is still pending so Join keeps working.
+    if (!firstStartResult.rows[0].exists) {
+      const starterNameResult = await client.query<{ display_name: string }>(
+        `SELECT display_name FROM session_players WHERE game_id = $1 AND player_id = $2`,
+        [gameId, playerId]
+      );
+      const starterName = starterNameResult.rows[0]?.display_name ?? "Unknown";
+      const pendingInviteesResult = await client.query<{ id: string; invitee_id: string }>(
+        `SELECT id, invitee_id FROM game_invitations
+         WHERE game_id = $1 AND status = 'pending' AND invitee_id != $2 AND expires_at >= now()`,
+        [gameId, playerId]
+      );
+      for (const invitee of pendingInviteesResult.rows) {
+        await client.query(
+          `INSERT INTO notifications (user_id, type, payload)
+           VALUES ($1, 'lobby_invite', $2::jsonb)`,
+          [
+            invitee.invitee_id,
+            JSON.stringify({
+              game_id: gameId,
+              inviter_id: playerId,
+              inviter_name: starterName,
+              invitation_id: invitee.id,
+              mode: session.mode,
+            }),
+          ]
+        );
+        await sendPushToUser(invitee.invitee_id, {
+          title: "Guess History",
+          body: `${starterName} invited you to a game`,
+          url: `/compete/${gameId}`,
+          tag: `lobby_invite:${gameId}:${invitee.invitee_id}`,
+        });
+      }
+    }
+
     const startNow = new Date();
     const startStartedAt = startNow.toISOString();
     const startPhaseEndsAt = session.round_timer_sec > 0

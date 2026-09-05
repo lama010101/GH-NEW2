@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { testAiPlayerModel, deactivateAiPlayer, reactivateAiPlayer } from "./actions";
+import { testAiPlayerModel, deactivateAiPlayer, reactivateAiPlayer, softDeleteAiPlayer } from "./actions";
 
 type TestResult = {
   ok: boolean;
@@ -57,13 +57,21 @@ export function ModelRowActions({
     });
   };
 
+  const handleTrash = () => {
+    if (isPending) return;
+    if (!window.confirm("Move this AI player to trash? It can be restored from the Trash page.")) return;
+    startTransition(async () => {
+      await softDeleteAiPlayer(playerId);
+    });
+  };
+
   return (
     <div className="flex flex-col gap-1">
       <div className="flex gap-2">
         <button
           onClick={handleTest}
           disabled={testing}
-          className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text hover:bg-gh-bg-elevated disabled:opacity-50"
+          className="ops-btn disabled:opacity-50"
         >
           {testing ? "Testing…" : "Test"}
         </button>
@@ -71,7 +79,7 @@ export function ModelRowActions({
           <button
             onClick={handleDeactivate}
             disabled={isPending}
-            className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text-sec hover:text-gh-text disabled:opacity-50"
+            className="ops-btn disabled:opacity-50"
           >
             {isPending ? "…" : "Deactivate"}
           </button>
@@ -79,11 +87,19 @@ export function ModelRowActions({
           <button
             onClick={handleReactivate}
             disabled={isPending}
-            className="rounded border border-[var(--gh-border-default)] px-2 py-1 text-xs text-gh-text hover:bg-gh-bg-elevated disabled:opacity-50"
+            className="ops-btn disabled:opacity-50"
           >
             {isPending ? "…" : "Reactivate"}
           </button>
         )}
+        <button
+          onClick={handleTrash}
+          disabled={isPending}
+          className="ops-btn disabled:opacity-50"
+          style={{ color: "var(--ops-bad)" }}
+        >
+          {isPending ? "…" : "Trash"}
+        </button>
       </div>
       {testError && (
         <p className="text-xs text-red-500">{testError}</p>

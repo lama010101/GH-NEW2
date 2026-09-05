@@ -1,666 +1,1404 @@
 "use client";
 
 // ============================================================================
-// STANDALONE PROTOTYPE — Compete Lobby (improved UI)
-// Route: /prototype/lobby   (direct access, fully self-contained)
+// STANDALONE PROTOTYPE — Compete Lobby (mirrors prod LobbySection UI)
+// Route: /prototype/lobby   (direct access, UI-only)
 //
-// - Visual language follows the home page (dark background image + overlay,
-//   rounded gradient cards) and the guess-modal prototype (self-contained
-//   <style jsx>, proto bar, cyan/violet accents).
-// - All data is MOCK and held in local state. No WebSocket, no Supabase,
-//   no real network. Host controls, ready toggles, invites, and kick all
-//   mutate local state so the layout/interactions can be reviewed in isolation.
+// Visual structure + styling are an exact mirror of the production lobby
+// (src/components/compete/LobbySection.tsx + LobbySection.module.css).
+// It reuses the prod CSS module, PlayerAvatar, ImageButton, era/region
+// stock images, and lucide icons so the pixels match 1:1.
 //
-// Does NOT touch or import any existing app files.
+// All data is MOCK and held in local state. No WebSocket, no Supabase,
+// no real network. Host controls, ready toggles, tab switching, era/region
+// selection, and sliders mutate local state only — UIX, not functionalities.
+//
+// Only this file is modified. No other app files are touched.
 // ============================================================================
 
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
+import { ChevronDown, Timer, HelpCircle } from "lucide-react";
+import PlayerAvatar from "@/components/compete/PlayerAvatar";
+import { ImageButton } from "@/components/shared/ImageButton";
+import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
+import { TIMER_MIN_SEC, TIMER_MAX_SEC } from "@/core/types";
+import styles from "@/components/compete/LobbySection.module.css";
 
-type Player = {
-  id: string;
-  name: string;
+// ── Mock data ──
+const VIEWER_ID = "p1";
+const ROOM_CODE = "BERLIN";
+
+type MockPlayer = {
+  playerId: string;
+  displayName: string;
+  avatarUrl: string | null;
   ready: boolean;
   isHost: boolean;
+  leftAt: string | null;
+  roundStatus?: "joined" | "ready" | "playing" | "finished";
 };
 
-type PoolPlayer = {
+type MockPoolEntry = {
   id: string;
-  name: string;
+  displayName: string;
+  avatarUrl: string | null;
+  is_ai: boolean;
 };
 
-const YEAR_MIN_BOUND = 1850;
-const YEAR_MAX_BOUND = 2025;
-const TIMER_MIN = 30;
-const TIMER_MAX = 300;
-
-const VIEWER_ID = "p1";
-
-const INITIAL_PLAYERS: Player[] = [
-  { id: "p1", name: "Alex Rivera", ready: false, isHost: true },
-  { id: "p2", name: "Mina Kovač", ready: true, isHost: false },
-  { id: "p3", name: "Theo Lambert", ready: false, isHost: false },
-  { id: "p4", name: "Sara Bianchi", ready: true, isHost: false },
+const INITIAL_PLAYERS: MockPlayer[] = [
+  { playerId: "p1", displayName: "Alex Rivera", avatarUrl: null, ready: false, isHost: true, leftAt: null },
+  { playerId: "p2", displayName: "Mina Kovač", avatarUrl: null, ready: true, isHost: false, leftAt: null },
+  { playerId: "p3", displayName: "Theo Lambert", avatarUrl: null, ready: false, isHost: false, leftAt: null },
+  { playerId: "p4", displayName: "Sara Bianchi", avatarUrl: null, ready: true, isHost: false, leftAt: null },
 ];
 
-const INVITE_POOL: PoolPlayer[] = [
-  { id: "u10", name: "Liang Wei" },
-  { id: "u11", name: "Nora Hansen" },
-  { id: "u12", name: "Omar Farouk" },
-  { id: "u13", name: "Priya Nair" },
-  { id: "u14", name: "Diego Santos" },
-  { id: "u15", name: "Yuki Tanaka" },
-  { id: "u16", name: "Elena Popescu" },
-  { id: "u17", name: "Marcus Webb" },
+const MOCK_POOL: MockPoolEntry[] = [
+  { id: "u10", displayName: "Liang Wei", avatarUrl: null, is_ai: false },
+  { id: "u11", displayName: "Nora Hansen", avatarUrl: null, is_ai: false },
+  { id: "u12", displayName: "Omar Farouk", avatarUrl: null, is_ai: false },
+  { id: "u13", displayName: "Priya Nair", avatarUrl: null, is_ai: false },
+  { id: "u14", displayName: "Diego Santos", avatarUrl: null, is_ai: false },
+  { id: "u15", displayName: "Yuki Tanaka", avatarUrl: null, is_ai: false },
+  { id: "u16", displayName: "Elena Popescu", avatarUrl: null, is_ai: false },
+  { id: "u17", displayName: "Marcus Webb", avatarUrl: null, is_ai: false },
+  { id: "ai1", displayName: "Hermes AI", avatarUrl: null, is_ai: true },
+  { id: "ai2", displayName: "Athena AI", avatarUrl: null, is_ai: true },
+  { id: "ai3", displayName: "Odin AI", avatarUrl: null, is_ai: true },
+  { id: "ai4", displayName: "Freya AI", avatarUrl: null, is_ai: true },
 ];
 
-// Deterministic gradient from an id (used for avatar fallbacks + name tint).
-function gradientFor(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-  const h1 = hash % 360;
-  const h2 = (h1 + 48) % 360;
-  return `linear-gradient(135deg, hsl(${h1} 70% 55%), hsl(${h2} 70% 42%))`;
-}
+const MOCK_FOLLOWED = new Set<string>(["u11", "u14"]);
+const MOCK_PENDING_INVITEES: MockPlayer[] = [];
 
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  return (parts[0]?.[0] ?? "?") + (parts[1]?.[0] ?? "");
-}
+type EraId = "ancient" | "medieval" | "earlymodern" | "modern" | "contemporary";
+const ERAS: { id: EraId; label: string; span: string; icon: string; stockImg: string; yearMin: number; yearMax: number }[] = [
+  { id: "ancient", label: "Ancient", span: "-3000 – 476", icon: "🏛️", stockImg: ERA_STOCK_IMAGES.ancient, yearMin: -3000, yearMax: 476 },
+  { id: "medieval", label: "Medieval", span: "476 – 1492", icon: "⚔️", stockImg: ERA_STOCK_IMAGES.medieval, yearMin: 476, yearMax: 1492 },
+  { id: "earlymodern", label: "Early Modern", span: "1492 – 1789", icon: "⛵", stockImg: ERA_STOCK_IMAGES.earlymodern, yearMin: 1492, yearMax: 1789 },
+  { id: "modern", label: "Modern", span: "1789 – 1945", icon: "🏭", stockImg: ERA_STOCK_IMAGES.modern, yearMin: 1789, yearMax: 1945 },
+  { id: "contemporary", label: "Contemporary", span: "1945 – 2025", icon: "🚀", stockImg: ERA_STOCK_IMAGES.contemporary, yearMin: 1945, yearMax: 2025 },
+];
 
-function formatTimer(sec: number): string {
-  if (sec === 0) return "OFF";
+type RegionId = "africa" | "asia" | "europe" | "north_america" | "oceania_antarctica" | "south_america";
+const REGIONS: { id: RegionId; label: string; icon: string; stockImg: string }[] = [
+  { id: "europe", label: "Europe", icon: "🏰", stockImg: REGION_STOCK_IMAGES.europe },
+  { id: "asia", label: "Asia", icon: "🏯", stockImg: REGION_STOCK_IMAGES.asia },
+  { id: "north_america", label: "North America", icon: "🗽", stockImg: REGION_STOCK_IMAGES.north_america },
+  { id: "south_america", label: "South America", icon: "🦜", stockImg: REGION_STOCK_IMAGES.south_america },
+  { id: "africa", label: "Africa", icon: "🌍", stockImg: REGION_STOCK_IMAGES.africa },
+  { id: "oceania_antarctica", label: "Oceania & Antarctica", icon: "🏝️", stockImg: REGION_STOCK_IMAGES.oceania_antarctica },
+];
+
+const ROUND_TIMER_DEFAULT_SEC = 120;
+const ROUND_TIMER_TICKS = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300];
+const ROUND_TIMER_MAJOR_TICKS = ROUND_TIMER_TICKS.filter((v) => v % 60 === 0);
+const RESULTS_TIMER_TICKS = ROUND_TIMER_TICKS;
+const RESULTS_TIMER_MAJOR_TICKS = RESULTS_TIMER_TICKS.filter((v) => v % 60 === 0);
+const DEADLINE_TICKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+const DEADLINE_MAJOR_TICKS = [1, 5, 10, 14];
+
+// ── i18n strings (inlined from en.json so the prototype stays self-contained text-wise) ──
+const T = {
+  back: "Back",
+  mode_challenge: "CHALLENGE",
+  label: "lobby",
+  create_game: "Create Game",
+  join_game: "Join Game",
+  game_settings: "Game Settings",
+  turn_by_turn: "ANYTIME",
+  turn_by_turn_sub: "Play at your own pace",
+  realtime: "LIVE",
+  realtime_sub: "Play all at the same time",
+  round: "Round",
+  game: "Game",
+  results_timer: "Results",
+  timer_off: "OFF",
+  era_region_presets: "Era & Region Presets",
+  era_presets: "Era Presets",
+  region_presets: "Region Presets",
+  select_all: "Select all",
+  deselect_all: "Deselect all",
+  invite_players: "Invite Players",
+  copy_link: "Share link",
+  link_copied: "Link copied!",
+  filter_humans: "Humans",
+  filter_ai: "AI",
+  filter_friends: "Friends",
+  filter_all: "All",
+  search_players: "Search players...",
+  clear_search: "Clear search",
+  no_players_found: "No players found",
+  no_favorites_yet: "No favorites yet — click the star on a player's avatar to add them here.",
+  view_all: "View all ({count})",
+  all_players: "All Players ({count})",
+  invite: "Invite",
+  invite_pending: "…",
+  invite_sent: "Sent ✓",
+  invite_failed: "Failed",
+  ai_coming_up: "Coming Up",
+  players: "Players ({current}/{total})",
+  ready_count: "{count} ready",
+  you: "You",
+  host: "Host",
+  ready: "Ready",
+  not_ready: "Not Ready",
+  invited: "INVITED",
+  no_players_yet: "No players yet",
+  kick_player: "Kick player",
+  remove_invite: "Remove invite",
+  relax_start_my_game: "Start my game",
+  ready_waiting: "Ready — waiting for others",
+  im_ready: "I'm ready",
+  players_ready: "({ready}/{total} players ready)",
+  starting_soon: " · starting soon",
+  "1_day": "1 day",
+  n_days: "{n} days",
+  add_to_favorites: "Add to favorites",
+  remove_from_favorites: "Remove from favorites",
+  help: "Help",
+  help_game_settings:
+    "Choose how this Compete session plays out.\n\nANYTIME (Own Pace) — Asynchronous. Each player plays all 5 rounds independently, at their own speed — no waiting on anyone else. The session stays open for the deadline you set below (1–14 days). You can optionally turn on a per-round timer; if a player runs out of time on a round, only that round auto-submits for them — nobody else is affected.\n\nLIVE (Live Challenge) — Synchronous. Everyone plays the same round at the same time. Each round has an optional countdown timer (15 seconds to 5 minutes). After everyone submits, results are shown to all players together, with an auto-advance timer to the next round.\n\nRound Timer — Optional. How long each player has to submit a guess for a round.\nResults Timer — The maximum time available to view the round results before automatically advancing to the next round.\nGame Timer (Anytime only) — The overall deadline for the whole session, from 1 to 14 days after you start the game.",
+  help_invite_players:
+    "Add 2 to 8 players to this game.\n\nSearch for players by name, or use Share Link to send a join link to anyone — they don't need to already be a friend to join.\n\nAs host, you can click the star on a player's avatar to mark them as a favorite, making them easier to find next time.\n\nPlayers you invite will appear in the lobby once they accept. As host, you can remove a player from the lobby at any time before the game starts.",
+  era_ancient: "Ancient",
+  era_medieval: "Medieval",
+  era_earlymodern: "Early Modern",
+  era_modern: "Modern",
+  era_contemporary: "Contemporary",
+  region_europe: "Europe",
+  region_asia: "Asia",
+  region_north_america: "North America",
+  region_south_america: "South America",
+  region_africa: "Africa",
+  region_oceania_antarctica: "Oceania & Antarctica",
+};
+
+function formatTimerDisplay(sec: number, offLabel: string): string {
+  if (sec === 0) return offLabel;
   const m = Math.floor(sec / 60);
   const s = sec % 60;
-  return m > 0 ? `${m}m ${s.toString().padStart(2, "0")}s` : `${s}s`;
+  return `${m}m ${s.toString().padStart(2, "0")}s`;
+}
+
+function fmt(key: string, vars: Record<string, string | number>): string {
+  return key.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
+}
+
+// ── Slider style overrides (makes the lobby sliders match the requested screenshot design:
+// vertical orange pill thumb, dark track, ruler-style major/minor ticks) ──
+const SLIDER_OVERRIDE_CSS = `
+  .protoSliderWrap > div:nth-child(1) {
+    background: var(--gh-border-default) !important;
+    height: 2px !important;
+    border-radius: 1px;
+  }
+  .protoSliderWrap > div:nth-child(2) {
+    background: transparent !important;
+  }
+  .protoSliderWrap input[type="range"] {
+    height: 30px;
+  }
+  .protoSliderWrap input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13.3px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--gh-orange) !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+    cursor: pointer;
+    margin-top: 0;
+    transition: none !important;
+  }
+  .protoSliderWrap input[type="range"]::-webkit-slider-thumb:hover,
+  .protoSliderWrap input[type="range"]::-webkit-slider-thumb:active {
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+  }
+  .protoSliderWrap input[type="range"]::-moz-range-thumb {
+    width: 13.3px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--gh-orange) !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+    cursor: pointer;
+    transition: none !important;
+  }
+  .protoSliderWrap input[type="range"]::-moz-range-thumb:hover,
+  .protoSliderWrap input[type="range"]::-moz-range-thumb:active {
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+  }
+  .protoSliderTicks {
+    position: absolute !important;
+    top: 50% !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 0 !important;
+    transform: translateY(-50%) !important;
+    pointer-events: none;
+  }
+  .protoSliderTicks > span {
+    width: 2px !important;
+    height: 4px !important;
+    border-radius: 1px;
+    background: var(--gh-text-muted) !important;
+    opacity: 0.85;
+  }
+  .protoSliderTicks > span.protoSliderTickMajor {
+    height: 10px !important;
+    background: var(--gh-text-secondary) !important;
+    opacity: 1;
+  }
+`;
+
+// ── Tab icon overrides (Game Settings ANYTIME/LIVE tabs use custom webp art icons;
+// neutral glass badge in both states so the colorful icons read clearly) ──
+const TAB_OVERRIDE_CSS = `
+  .protoTabIconBadge {
+    background: rgba(255, 255, 255, 0.10) !important;
+  }
+  .protoTabIconImg {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+  }
+`;
+
+// ── Invite filter switch (All/Friends slot is a pill switch reusing the prod
+// timer-toggle classes; wrapper keeps the filter-btn slot sizing/typography) ──
+const FILTER_SWITCH_CSS = `
+  .protoFilterSwitchWrap {
+    cursor: default;
+    gap: 6px;
+  }
+  .protoFilterSwitchWrap > button {
+    flex-shrink: 0;
+  }
+`;
+
+// ── RangeSlider (visual drag bubble) — mirrors prod RangeSlider ──
+type RangeSliderProps = {
+  className: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  disabled?: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  format: (value: number) => string;
+  ticks?: number[];
+  majorTicks?: number[];
+};
+
+function RangeSlider({ className, min, max, step, value, disabled, onChange, format, ticks, majorTicks }: RangeSliderProps) {
+  const [dragging, setDragging] = useState(false);
+  const percent = max === min ? 0 : ((value - min) / (max - min)) * 100;
+  const majorSet = useMemo(() => new Set(majorTicks ?? []), [majorTicks]);
+  return (
+    <>
+      {ticks && ticks.length > 0 && (
+        <div className={`${styles["slider-ticks"]} protoSliderTicks`}>
+          {ticks
+            .filter((v) => v >= min && v <= max)
+            .map((v) => {
+              const tickPercent = max === min ? 0 : ((v - min) / (max - min)) * 100;
+              const isMajor = majorSet.has(v);
+              return (
+                <span
+                  key={v}
+                  className={`${styles["slider-tick"]} ${isMajor ? "protoSliderTickMajor" : ""}`}
+                  style={{ left: `${tickPercent}%` }}
+                />
+              );
+            })}
+        </div>
+      )}
+      <input
+        type="range"
+        className={className}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+        onPointerDown={() => setDragging(true)}
+        onPointerUp={() => setDragging(false)}
+        onPointerCancel={() => setDragging(false)}
+        onLostPointerCapture={() => setDragging(false)}
+      />
+      <span
+        className={`${styles["sliderBubble"]} ${dragging ? styles["sliderBubbleVisible"] : ""}`}
+        style={{ left: `${percent}%` }}
+      >
+        {format(value)}
+      </span>
+    </>
+  );
 }
 
 export default function LobbyPrototypePage() {
-  const [players, setPlayers] = useState<Player[]>(INITIAL_PLAYERS);
-  const [roomCode] = useState("BERLIN");
+  // ── Mock lobby state (local only) ──
+  const [players, setPlayers] = useState<MockPlayer[]>(INITIAL_PLAYERS);
+  const [pendingInvitees] = useState<MockPlayer[]>(MOCK_PENDING_INVITEES);
+  const [mode, setMode] = useState<"sync" | "async">("sync");
 
-  // Host-controlled settings
-  const [timerSec, setTimerSec] = useState(120);
-  const [yearMin, setYearMin] = useState(1900);
-  const [yearMax, setYearMax] = useState(2025);
-  const [resultsSec, setResultsSec] = useState(30);
+  // Settings (host-controlled, local only)
+  const [sliderValue, setSliderValue] = useState(120);
+  const [resultsTimerValue, setResultsTimerValue] = useState(30);
+  const [maxTurnDays, setMaxTurnDays] = useState(3);
+  const [selectedEras, setSelectedEras] = useState<Set<EraId>>(new Set(ERAS.map((e) => e.id)));
+  const [selectedRegions, setSelectedRegions] = useState<Set<RegionId>>(new Set(REGIONS.map((r) => r.id)));
+  const [presetsExpanded, setPresetsExpanded] = useState(true);
+  const [helpModal, setHelpModal] = useState<"settings" | "friends" | null>(null);
+
+  // Collapse era/region presets on mobile before first paint so they are
+  // expanded by default on tablet/desktop only (no mobile flash).
+  // 769px matches the prod layout breakpoint (@media (max-width: 768px) stacks the grid).
+  useLayoutEffect(() => {
+    const m = window.matchMedia("(min-width: 769px)");
+    setPresetsExpanded(m.matches);
+  }, []);
 
   // Invite panel
-  const [search, setSearch] = useState("");
-  const [invited, setInvited] = useState<Set<string>>(new Set());
-  const [copied, setCopied] = useState<"link" | "code" | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [inviteStates, setInviteStates] = useState<Record<string, "idle" | "pending" | "sent" | "error">>({});
+  const [comingUpId, setComingUpId] = useState<string | null>(null);
+  const [showAllModal, setShowAllModal] = useState(false);
+  const [modalSearchQuery, setModalSearchQuery] = useState("");
 
-  const viewer = players.find((p) => p.id === VIEWER_ID) ?? null;
+  // Filter + follows (local only)
+  const [filter, setFilter] = useState({ humans: false, ai: false, friends: false });
+  const [followedIds, setFollowedIds] = useState<Set<string>>(new Set(MOCK_FOLLOWED));
+
+  const toggleHumans = () => setFilter((f) => ({ ...f, humans: !f.humans }));
+  const toggleAi = () => setFilter((f) => ({ ...f, ai: !f.ai }));
+  const toggleFriends = () => setFilter((f) => ({ ...f, friends: !f.friends }));
+
+  const toggleFollow = (playerId: string) => {
+    setFollowedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(playerId)) next.delete(playerId);
+      else next.add(playerId);
+      return next;
+    });
+  };
+
+  // ── Derived display values (mirror prod render-only derivation) ──
+  const viewer = players.find((p) => p.playerId === VIEWER_ID) ?? null;
   const isHost = viewer?.isHost ?? false;
   const isReady = viewer?.ready ?? false;
-  const readyCount = players.filter((p) => p.ready).length;
-  const totalPlayers = players.length;
-  const allReady = totalPlayers > 0 && readyCount === totalPlayers;
+  const isAsync = mode === "async";
+  const settingsTab: "realtime" | "turnturn" = isAsync ? "turnturn" : "realtime";
 
-  const filteredPool = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const joinedIds = new Set(players.map((p) => p.id));
-    return INVITE_POOL.filter(
-      (p) => !joinedIds.has(p.id) && (q === "" || p.name.toLowerCase().includes(q))
-    ).slice(0, q === "" ? 6 : 12);
-  }, [search, players]);
+  const activePlayers = players.filter((p) => p.leftAt === null);
+  const totalPlayers = activePlayers.length;
+  const readyCount = activePlayers.filter((p) => p.ready).length;
+  const allPlayersReady = totalPlayers > 0 && readyCount === totalPlayers;
+
+  // ── Invite pool derivation (mirror prod) ──
+  const inLobbyIds = new Set(activePlayers.map((p) => p.playerId));
+  const pendingInviteeIds = new Set(pendingInvitees.map((p) => p.playerId));
+  const viewerId = VIEWER_ID;
+
+  const matchesFilter = (p: MockPoolEntry): boolean => {
+    const identitySelected = filter.humans || filter.ai;
+    const identityMatch = !identitySelected || (filter.humans && !p.is_ai) || (filter.ai && p.is_ai);
+    const friendsMatch = !filter.friends || followedIds.has(p.id);
+    return identityMatch && friendsMatch;
+  };
+
+  const priorityList: MockPoolEntry[] = MOCK_POOL.filter(
+    (p) => !inLobbyIds.has(p.id) && p.id !== viewerId && !pendingInviteeIds.has(p.id)
+  );
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const searchResults: MockPoolEntry[] = trimmedQuery.length >= 1
+    ? MOCK_POOL.filter(
+        (p) => !inLobbyIds.has(p.id) && p.id !== viewerId && p.displayName.toLowerCase().includes(trimmedQuery)
+      )
+    : [];
+  const displayList: MockPoolEntry[] = (trimmedQuery.length >= 1 ? searchResults : priorityList)
+    .filter(matchesFilter)
+    .sort((a, b) => {
+      const aFav = followedIds.has(a.id) ? 0 : 1;
+      const bFav = followedIds.has(b.id) ? 0 : 1;
+      return aFav - bFav;
+    })
+    .slice(0, trimmedQuery.length >= 1 ? 20 : 10);
+  const hasMore = trimmedQuery.length === 0 && priorityList.filter(matchesFilter).length > 10;
+
+  const modalTrimmedQuery = modalSearchQuery.trim().toLowerCase();
+  const modalFilteredList: MockPoolEntry[] = (modalTrimmedQuery.length >= 1
+    ? priorityList.filter((p) => p.displayName.toLowerCase().includes(modalTrimmedQuery))
+    : priorityList
+  ).filter(matchesFilter);
+
+  // ── Local handlers (UIX only — no network) ──
+  const handleSendInvite = (player: MockPoolEntry) => {
+    if (player.is_ai) return;
+    setInviteStates((prev) => ({ ...prev, [player.id]: "pending" }));
+    setTimeout(() => {
+      setInviteStates((prev) => ({ ...prev, [player.id]: "sent" }));
+      setTimeout(() => setInviteStates((prev) => ({ ...prev, [player.id]: "idle" })), 3000);
+    }, 600);
+  };
+
+  const handleAiComingUp = (player: MockPoolEntry) => {
+    setComingUpId(player.id);
+    setTimeout(() => setComingUpId(null), 2000);
+  };
+
+  const handleShareLink = () => {
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
 
   const toggleReady = () => {
-    setPlayers((prev) =>
-      prev.map((p) => (p.id === VIEWER_ID ? { ...p, ready: !p.ready } : p))
-    );
+    setPlayers((prev) => prev.map((p) => (p.playerId === VIEWER_ID ? { ...p, ready: !p.ready } : p)));
   };
 
   const kickPlayer = (id: string) => {
-    setPlayers((prev) => prev.filter((p) => p.id !== id));
+    setPlayers((prev) => prev.filter((p) => p.playerId !== id));
   };
 
-  const sendInvite = (id: string) => {
-    setInvited((prev) => new Set(prev).add(id));
-    setTimeout(() => {
-      setInvited((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }, 2500);
+  // Era/region toggles (local only)
+  const allErasSelected = selectedEras.size === ERAS.length;
+  const toggleEra = (id: EraId) => {
+    setSelectedEras((prev) => {
+      if (prev.has(id) && prev.size === 1) return prev;
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
-
-  const copy = (kind: "link" | "code") => {
-    const text = kind === "code" ? roomCode : `https://guess-history.app/compete/${roomCode}`;
-    try {
-      navigator.clipboard?.writeText(text);
-    } catch {
-      /* ignore */
+  const toggleAllEras = () => {
+    if (allErasSelected) {
+      const last = ERAS[ERAS.length - 1];
+      setSelectedEras(new Set([last.id]));
+    } else {
+      setSelectedEras(new Set(ERAS.map((e) => e.id)));
     }
-    setCopied(kind);
-    setTimeout(() => setCopied(null), 1800);
   };
 
-  const yearPct = (v: number) =>
-    ((v - YEAR_MIN_BOUND) / (YEAR_MAX_BOUND - YEAR_MIN_BOUND)) * 100;
-  const timerPct = (v: number) => ((v - TIMER_MIN) / (TIMER_MAX - TIMER_MIN)) * 100;
+  const allRegionsSelected = REGIONS.every((r) => selectedRegions.has(r.id));
+  const toggleRegion = (id: RegionId) => {
+    setSelectedRegions((prev) => {
+      if (prev.has(id) && prev.size === 1) return prev;
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleAllRegions = () => {
+    if (allRegionsSelected) {
+      const last = REGIONS[REGIONS.length - 1];
+      setSelectedRegions(new Set([last.id]));
+    } else {
+      setSelectedRegions(new Set(REGIONS.map((r) => r.id)));
+    }
+  };
+
+  const switchTab = (next: "sync" | "async") => {
+    if (!isHost) return;
+    setMode(next);
+    // Mirror prod: entering async resets per-round timer to OFF
+    if (next === "async" && sliderValue > 0) setSliderValue(0);
+  };
+
+  const eraLabel = (id: EraId) => (T as Record<string, string>)[`era_${id}`];
+  const regionLabel = (id: RegionId) => (T as Record<string, string>)[`region_${id}`];
+
+  const rosterTotal = isAsync ? 30 : 8;
 
   return (
-    <main className="screen">
-      {/* Proto bar (matches guess-modal prototype) */}
-      <div className="protoBar">
-        <span className="protoTitle">Compete Lobby — Prototype</span>
-        <span className="protoHint">Mock data · host = you</span>
+    <main className="app-shell" style={{ position: "relative", minHeight: "100dvh" }}>
+      {/* Proto bar (prototype-only identifier) */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 200,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: "8px 14px",
+          background: "rgba(10,10,12,0.6)",
+          backdropFilter: "blur(8px)",
+          flexWrap: "wrap",
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.3px", opacity: 0.85, color: "#fff" }}>
+          Compete Lobby — Prototype (mirrors prod UI)
+        </span>
+        <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.55, color: "#fff" }}>Mock data · host = you</span>
       </div>
 
-      {/* Background */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/home_background.webp" alt="" className="bgImg" draggable={false} />
-      <div className="bgScrim" />
+      {/* Background (mirrors compete page shell) */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          backgroundImage: "url(/desktop-home_background.webp)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1,
+          background: "rgba(0, 0, 0, 0.4)",
+          pointerEvents: "none",
+        }}
+      />
 
-      <div className="scroll">
-        {/* ── Header ── */}
-        <header className="header">
-          <div className="headerTop">
-            <button className="backBtn" onClick={() => window.history.back()} aria-label="Back">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <span className="modeBadge">COMPETE</span>
-            <span className="statusChip">
-              <span className="statusDot" />
-              Waiting for players
-            </span>
-          </div>
-          <h1 className="title">Game Lobby</h1>
-        </header>
+      <div style={{ position: "relative", zIndex: 2, paddingTop: 0 }}>
+        <div className="shell-grid">
+          <div style={{ height: 0 }} />
 
-        {/* ── Invite card ── */}
-        {isHost && (
-          <section className="card inviteCard">
-            <div className="cardHead">
-              <span className="accentBar" />
-              <h2 className="cardTitle">Invite players</h2>
-              <div className="shareGroup">
-                <button className="shareBtn" onClick={() => copy("link")}>
-                  {copied === "link" ? "Copied!" : "Copy link"}
+          <div className={styles["lobby-shell"]} data-testid="lobby-shell">
+            <header className={styles["lobby-header"]}>
+              <div className={styles["lobby-header-top"]}>
+                <button
+                  className={styles["lobby-back-btn"]}
+                  onClick={() => typeof window !== "undefined" && window.history.back()}
+                  aria-label={T.back}
+                  data-testid="lobby-back-btn"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
                 </button>
-                <button className="shareBtn" onClick={() => copy("code")}>
-                  {copied === "code" ? "Copied!" : "Copy code"}
-                </button>
+                <span className={styles["lobby-mode-badge"]}>{T.mode_challenge}</span>
+                <div className={styles["lobby-header-meta"]}>
+                  <span className={styles["lobby-status-chip"]}>
+                    <span className={styles["lobby-status-dot"]} />
+                    {T.label}{" "}
+                    <span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--gh-text-primary)", letterSpacing: "1px" }}>
+                      {ROOM_CODE}
+                    </span>
+                  </span>
+                </div>
               </div>
-            </div>
+              <h1 className={styles["lobby-title-h1"]}>{isHost ? T.create_game : T.join_game}</h1>
+            </header>
 
-            <div className="searchWrap">
-              <svg className="searchIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <circle cx="11" cy="11" r="7" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                className="searchField"
-                placeholder="Search players…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-
-            <div className="rail">
-              {filteredPool.length === 0 ? (
-                <div className="emptyRail">No players found</div>
-              ) : (
-                filteredPool.map((p) => {
-                  const sent = invited.has(p.id);
-                  return (
-                    <div key={p.id} className="poolCard">
-                      <span className="avatar" style={{ background: gradientFor(p.id) }}>
-                        {initialsOf(p.name)}
+            {/* Main Grid */}
+            <div className={styles["lobby-grid"]}>
+              {/* ── Game Settings Card ── */}
+              <div className={`${styles["lobby-card"]} ${styles["lobby-settings"]}`}>
+                <div className={styles["lobby-card-header"]}>
+                  <h3>
+                    <span className={styles["lobby-section-number"]}>1</span>
+                    {T.game_settings}
+                  </h3>
+                  <button type="button" className={styles["lobbyHelpBtn"]} onClick={() => setHelpModal("settings")} aria-label={T.help}>
+                    <HelpCircle size={16} />
+                  </button>
+                </div>
+                <div className={styles["lobbyTabRow"]}>
+                  <button
+                    className={`${styles["lobbyTabBtn"]} ${settingsTab === "turnturn" ? styles["lobbyTabBtnActive"] : ""}`}
+                    onClick={() => switchTab("async")}
+                    disabled={!isHost}
+                  >
+                    <span className={styles["lobbyTabContent"]}>
+                      <span className={styles["lobbyTabTitleRow"]}>
+                        <span className={`${styles["lobbyTabIconBadge"]} protoTabIconBadge`}>
+                          <img src="/icons/level.webp" alt="" width={20} height={20} className="protoTabIconImg" draggable={false} />
+                        </span>
+                        <span className={styles["lobbyTabMain"]}>{T.turn_by_turn}</span>
                       </span>
-                      <span className="poolName">{p.name}</span>
-                      <button
-                        className={`inviteBtn ${sent ? "inviteBtnSent" : ""}`}
-                        onClick={() => sendInvite(p.id)}
-                        disabled={sent}
-                      >
-                        {sent ? "Sent ✓" : "Invite"}
+                      <span className={styles["lobbyTabSub"]}>{T.turn_by_turn_sub}</span>
+                    </span>
+                  </button>
+                  <button
+                    className={`${styles["lobbyTabBtn"]} ${settingsTab === "realtime" ? styles["lobbyTabBtnActive"] : ""}`}
+                    onClick={() => switchTab("sync")}
+                    disabled={!isHost}
+                  >
+                    <span className={styles["lobbyTabContent"]}>
+                      <span className={styles["lobbyTabTitleRow"]}>
+                        <span className={`${styles["lobbyTabIconBadge"]} protoTabIconBadge`}>
+                          <img src="/icons/practice.webp" alt="" width={20} height={20} className="protoTabIconImg" draggable={false} />
+                        </span>
+                        <span className={styles["lobbyTabMain"]}>{T.realtime}</span>
+                      </span>
+                      <span className={styles["lobbyTabSub"]}>{T.realtime_sub}</span>
+                    </span>
+                  </button>
+                </div>
+                <div className={styles["lobby-settings-grid"]}>
+                  {settingsTab === "realtime" && (
+                    <>
+                      <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
+                        <span className={styles["lobby-setting-label"]}>
+                          <Timer size={18} aria-hidden="true" /> {T.round}
+                        </span>
+                        {isHost ? (
+                          <span className={styles["lobbyRowLeftWrap"]}>
+                            <button
+                              type="button"
+                              onClick={() => setSliderValue((v) => (v > 0 ? 0 : ROUND_TIMER_DEFAULT_SEC))}
+                              className={sliderValue > 0 ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
+                            >
+                              <span className={styles["lobbyToggleKnob"]} style={{ left: sliderValue > 0 ? 22 : 2 }} />
+                            </button>
+                            {sliderValue > 0 ? (
+                              <span className={styles["lobbyRowLeft"]}>
+                                <span className={`${styles["lobby-timer-slider-wrap"]} ${styles["lobbyRushTimerWrap"]} protoSliderWrap`}>
+                                  <div className={styles["lobby-timer-slider-track"]} />
+                                  <div
+                                    className={styles["lobby-timer-slider-fill"]}
+                                    style={{ width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%` }}
+                                  />
+                                  <RangeSlider
+                                    className={styles["lobby-timer-slider"]}
+                                    min={TIMER_MIN_SEC}
+                                    max={TIMER_MAX_SEC}
+                                    step={15}
+                                    value={sliderValue}
+                                    onChange={(e) => setSliderValue(Number(e.target.value))}
+                                    ticks={ROUND_TIMER_TICKS}
+                                    majorTicks={ROUND_TIMER_MAJOR_TICKS}
+                                    format={(v) => formatTimerDisplay(v, "")}
+                                  />
+                                </span>
+                                <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                                  {formatTimerDisplay(sliderValue, T.timer_off)}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>{T.timer_off}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className={styles["lobby-setting-value"]}>
+                            {sliderValue === 0 ? T.timer_off : formatTimerDisplay(sliderValue, T.timer_off)}
+                          </span>
+                        )}
+                      </div>
+                      <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
+                        <span className={styles["lobby-setting-label"]}>
+                          <Timer size={16} aria-hidden="true" /> {T.results_timer}
+                        </span>
+                        {isHost ? (
+                          <span className={styles["lobbyRowLeftWrap"]}>
+                            <button
+                              type="button"
+                              onClick={() => setResultsTimerValue((v) => (v > 0 ? 0 : Math.max(TIMER_MIN_SEC, v || TIMER_MIN_SEC)))}
+                              className={resultsTimerValue > 0 ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
+                            >
+                              <span className={styles["lobbyToggleKnob"]} style={{ left: resultsTimerValue > 0 ? 22 : 2 }} />
+                            </button>
+                            {resultsTimerValue > 0 ? (
+                              <span className={styles["lobbyRowLeft"]}>
+                                <span className={`${styles["lobby-timer-slider-wrap"]} protoSliderWrap`}>
+                                  <div className={styles["lobby-timer-slider-track"]} />
+                                  <div
+                                    className={styles["lobby-timer-slider-fill"]}
+                                    style={{ width: `${((resultsTimerValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%` }}
+                                  />
+                                  <RangeSlider
+                                    className={styles["lobby-timer-slider"]}
+                                    min={TIMER_MIN_SEC}
+                                    max={TIMER_MAX_SEC}
+                                    step={15}
+                                    value={resultsTimerValue}
+                                    onChange={(e) => setResultsTimerValue(Number(e.target.value))}
+                                    ticks={RESULTS_TIMER_TICKS}
+                                    majorTicks={RESULTS_TIMER_MAJOR_TICKS}
+                                    format={(v) => formatTimerDisplay(v, "")}
+                                  />
+                                </span>
+                                <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                                  {formatTimerDisplay(resultsTimerValue, T.timer_off)}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>{T.timer_off}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className={styles["lobby-setting-value"]}>
+                            {resultsTimerValue === 0 ? T.timer_off : formatTimerDisplay(resultsTimerValue, T.timer_off)}
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles["lobby-presets-disclosure"]}>
+                        <button type="button" className={styles["lobby-presets-header"]} onClick={() => setPresetsExpanded((v) => !v)}>
+                          <span className={styles["lobby-setting-label"]}>{T.era_region_presets}</span>
+                          <ChevronDown
+                            size={16}
+                            className={`${styles["lobby-presets-chevron"]} ${presetsExpanded ? styles["lobby-presets-chevron-open"] : ""}`}
+                          />
+                        </button>
+                        {presetsExpanded && (
+                          <div className={styles["lobby-presets-content"]}>
+                            <div className={`${styles["lobby-setting-item"]} ${styles["lobbySettingRowBlock"]}`}>
+                              <div className={styles["lobbySettingRowHead"]}>
+                                <span className={styles["lobby-setting-label"]}>{T.era_presets}</span>
+                                <span className={styles["lobby-setting-value"]}>
+                                  {selectedEras.size} / {ERAS.length}
+                                </span>
+                                {isHost && (
+                                  <button type="button" className={styles["lobbySelectAllBtn"]} onClick={toggleAllEras}>
+                                    {allErasSelected ? T.deselect_all : T.select_all}
+                                  </button>
+                                )}
+                              </div>
+                              <div className={styles["lobbyEraRail"]}>
+                                {ERAS.map((era) => {
+                                  const on = selectedEras.has(era.id);
+                                  return (
+                                    <ImageButton
+                                      key={era.id}
+                                      label={eraLabel(era.id)}
+                                      sublabel={era.span}
+                                      stockImg={era.stockImg}
+                                      emoji={era.icon}
+                                      selected={on}
+                                      disabled={!isHost}
+                                      onClick={() => isHost && toggleEra(era.id)}
+                                      className={styles["lobbyImgBtn"]}
+                                      onClassName={styles["lobbyImgBtnOn"]}
+                                      offClassName={styles["lobbyImgBtnOff"]}
+                                      imgClassName={styles["lobbyImgPhoto"]}
+                                      overlayClassName={styles["lobbyImgOverlay"]}
+                                      fallbackClassName={styles["lobbyImgFallback"]}
+                                      captionClassName={styles["lobbyImgCaption"]}
+                                      labelClassName={styles["lobbyImgLabel"]}
+                                      sublabelClassName={styles["lobbyImgSpan"]}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                            <div className={`${styles["lobby-setting-item"]} ${styles["lobbySettingRowBlock"]}`}>
+                              <div className={styles["lobbySettingRowHead"]}>
+                                <span className={styles["lobby-setting-label"]}>{T.region_presets}</span>
+                                <span className={styles["lobby-setting-value"]}>
+                                  {REGIONS.filter((r) => selectedRegions.has(r.id)).length} / {REGIONS.length}
+                                </span>
+                                {isHost && (
+                                  <button type="button" className={styles["lobbySelectAllBtn"]} onClick={toggleAllRegions}>
+                                    {allRegionsSelected ? T.deselect_all : T.select_all}
+                                  </button>
+                                )}
+                              </div>
+                              <div className={styles["lobbyEraRail"]}>
+                                {REGIONS.map((region) => {
+                                  const on = selectedRegions.has(region.id);
+                                  return (
+                                    <ImageButton
+                                      key={region.id}
+                                      label={regionLabel(region.id)}
+                                      stockImg={region.stockImg}
+                                      emoji={region.icon}
+                                      selected={on}
+                                      disabled={!isHost}
+                                      onClick={() => isHost && toggleRegion(region.id)}
+                                      className={styles["lobbyImgBtn"]}
+                                      onClassName={styles["lobbyImgBtnOn"]}
+                                      offClassName={styles["lobbyImgBtnOff"]}
+                                      imgClassName={styles["lobbyImgPhoto"]}
+                                      overlayClassName={styles["lobbyImgOverlay"]}
+                                      fallbackClassName={styles["lobbyImgFallback"]}
+                                      captionClassName={styles["lobbyImgCaption"]}
+                                      labelClassName={styles["lobbyImgLabel"]}
+                                      sublabelClassName={styles["lobbyImgSpan"]}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                  {settingsTab === "turnturn" && (
+                    <>
+                      <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
+                        <span className={styles["lobby-setting-label"]}>
+                          <Timer size={18} aria-hidden="true" /> {T.round}
+                        </span>
+                        {isHost ? (
+                          <span className={styles["lobbyRowLeftWrap"]}>
+                            <button
+                              type="button"
+                              onClick={() => setSliderValue((v) => (v > 0 ? 0 : ROUND_TIMER_DEFAULT_SEC))}
+                              className={sliderValue > 0 ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
+                            >
+                              <span className={styles["lobbyToggleKnob"]} style={{ left: sliderValue > 0 ? 22 : 2 }} />
+                            </button>
+                            {sliderValue > 0 ? (
+                              <span className={styles["lobbyRowLeft"]}>
+                                <span className={`${styles["lobby-timer-slider-wrap"]} protoSliderWrap`}>
+                                  <div className={styles["lobby-timer-slider-track"]} />
+                                  <div
+                                    className={styles["lobby-timer-slider-fill"]}
+                                    style={{ width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%` }}
+                                  />
+                                  <RangeSlider
+                                    className={styles["lobby-timer-slider"]}
+                                    min={TIMER_MIN_SEC}
+                                    max={TIMER_MAX_SEC}
+                                    step={15}
+                                    value={sliderValue}
+                                    onChange={(e) => setSliderValue(Number(e.target.value))}
+                                    ticks={ROUND_TIMER_TICKS}
+                                    majorTicks={ROUND_TIMER_MAJOR_TICKS}
+                                    format={(v) => formatTimerDisplay(v, "")}
+                                  />
+                                </span>
+                                <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                                  {formatTimerDisplay(sliderValue, T.timer_off)}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>{T.timer_off}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className={styles["lobby-setting-value"]}>
+                            {sliderValue === 0 ? T.timer_off : formatTimerDisplay(sliderValue, T.timer_off)}
+                          </span>
+                        )}
+                      </div>
+                      <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
+                        <span className={styles["lobby-setting-label"]}>
+                          <Timer size={18} aria-hidden="true" /> {T.game}
+                        </span>
+                        {isHost ? (
+                          <span className={styles["lobbyRowLeft"]}>
+                            <span className={`${styles["lobby-timer-slider-wrap"]} protoSliderWrap`}>
+                              <div className={styles["lobby-timer-slider-track"]} />
+                              <div
+                                className={styles["lobby-timer-slider-fill"]}
+                                style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }}
+                              />
+                              <RangeSlider
+                                className={styles["lobby-timer-slider"]}
+                                min={1}
+                                max={14}
+                                step={1}
+                                value={maxTurnDays}
+                                onChange={(e) => setMaxTurnDays(Number(e.target.value))}
+                                ticks={DEADLINE_TICKS}
+                                majorTicks={DEADLINE_MAJOR_TICKS}
+                                format={(v) => (v === 1 ? T["1_day"] : fmt(T.n_days, { n: v }))}
+                              />
+                            </span>
+                            <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                              {maxTurnDays === 1 ? T["1_day"] : fmt(T.n_days, { n: maxTurnDays })}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                            {maxTurnDays === 1 ? T["1_day"] : fmt(T.n_days, { n: maxTurnDays })}
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles["lobby-presets-disclosure"]}>
+                        <button type="button" className={styles["lobby-presets-header"]} onClick={() => setPresetsExpanded((v) => !v)}>
+                          <span className={styles["lobby-setting-label"]}>{T.era_region_presets}</span>
+                          <ChevronDown
+                            size={16}
+                            className={`${styles["lobby-presets-chevron"]} ${presetsExpanded ? styles["lobby-presets-chevron-open"] : ""}`}
+                          />
+                        </button>
+                        {presetsExpanded && (
+                          <div className={styles["lobby-presets-content"]}>
+                            <div className={`${styles["lobby-setting-item"]} ${styles["lobbySettingRowBlock"]}`}>
+                              <div className={styles["lobbySettingRowHead"]}>
+                                <span className={styles["lobby-setting-label"]}>{T.era_presets}</span>
+                                <span className={styles["lobby-setting-value"]}>
+                                  {selectedEras.size} / {ERAS.length}
+                                </span>
+                                {isHost && (
+                                  <button type="button" className={styles["lobbySelectAllBtn"]} onClick={toggleAllEras}>
+                                    {allErasSelected ? T.deselect_all : T.select_all}
+                                  </button>
+                                )}
+                              </div>
+                              <div className={styles["lobbyEraRail"]}>
+                                {ERAS.map((era) => {
+                                  const on = selectedEras.has(era.id);
+                                  return (
+                                    <ImageButton
+                                      key={era.id}
+                                      label={eraLabel(era.id)}
+                                      sublabel={era.span}
+                                      stockImg={era.stockImg}
+                                      emoji={era.icon}
+                                      selected={on}
+                                      disabled={!isHost}
+                                      onClick={() => isHost && toggleEra(era.id)}
+                                      className={styles["lobbyImgBtn"]}
+                                      onClassName={styles["lobbyImgBtnOn"]}
+                                      offClassName={styles["lobbyImgBtnOff"]}
+                                      imgClassName={styles["lobbyImgPhoto"]}
+                                      overlayClassName={styles["lobbyImgOverlay"]}
+                                      fallbackClassName={styles["lobbyImgFallback"]}
+                                      captionClassName={styles["lobbyImgCaption"]}
+                                      labelClassName={styles["lobbyImgLabel"]}
+                                      sublabelClassName={styles["lobbyImgSpan"]}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                            <div className={`${styles["lobby-setting-item"]} ${styles["lobbySettingRowBlock"]}`}>
+                              <div className={styles["lobbySettingRowHead"]}>
+                                <span className={styles["lobby-setting-label"]}>{T.region_presets}</span>
+                                <span className={styles["lobby-setting-value"]}>
+                                  {REGIONS.filter((r) => selectedRegions.has(r.id)).length} / {REGIONS.length}
+                                </span>
+                                {isHost && (
+                                  <button type="button" className={styles["lobbySelectAllBtn"]} onClick={toggleAllRegions}>
+                                    {allRegionsSelected ? T.deselect_all : T.select_all}
+                                  </button>
+                                )}
+                              </div>
+                              <div className={styles["lobbyEraRail"]}>
+                                {REGIONS.map((region) => {
+                                  const on = selectedRegions.has(region.id);
+                                  return (
+                                    <ImageButton
+                                      key={region.id}
+                                      label={regionLabel(region.id)}
+                                      stockImg={region.stockImg}
+                                      emoji={region.icon}
+                                      selected={on}
+                                      disabled={!isHost}
+                                      onClick={() => isHost && toggleRegion(region.id)}
+                                      className={styles["lobbyImgBtn"]}
+                                      onClassName={styles["lobbyImgBtnOn"]}
+                                      offClassName={styles["lobbyImgBtnOff"]}
+                                      imgClassName={styles["lobbyImgPhoto"]}
+                                      overlayClassName={styles["lobbyImgOverlay"]}
+                                      fallbackClassName={styles["lobbyImgFallback"]}
+                                      captionClassName={styles["lobbyImgCaption"]}
+                                      labelClassName={styles["lobbyImgLabel"]}
+                                      sublabelClassName={styles["lobbyImgSpan"]}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Invite + Roster Card (merged) ── */}
+              <div className={`${styles["lobby-card"]} ${styles["lobby-roster-card"]}`}>
+                {/* Sub-section A: Invite Players */}
+                {isHost && (
+                  <div className={styles["lobby-subsection"]}>
+                    <div className={styles["lobby-subsection-header"]}>
+                      <span className={styles["lobby-subsection-title"]}>
+                        <span className={styles["lobby-section-number"]}>2</span>
+                        {T.invite_players}
+                      </span>
+                      <span className={styles["lobbyShareBtnGroup"]}>
+                        <button type="button" className={styles["lobbyShareBtn"]} onClick={handleShareLink} data-testid="lobby-share-link">
+                          {T.copy_link}
+                        </button>
+                      </span>
+                      <button type="button" className={styles["lobbyHelpBtn"]} onClick={() => setHelpModal("friends")} aria-label={T.help}>
+                        <HelpCircle size={16} />
                       </button>
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </section>
-        )}
+                    {linkCopied && <span className={styles["lobbyCopiedToast"]}>{T.link_copied}</span>}
+                    <div className={styles["lobbyFilterRow"]}>
+                      <button
+                        type="button"
+                        className={`${styles["lobbyFilterBtn"]} ${filter.humans ? styles["lobbyFilterBtnActive"] : ""}`}
+                        onClick={toggleHumans}
+                        aria-pressed={filter.humans}
+                      >
+                        {T.filter_humans}
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles["lobbyFilterBtn"]} ${filter.ai ? styles["lobbyFilterBtnActive"] : ""}`}
+                        onClick={toggleAi}
+                        aria-pressed={filter.ai}
+                      >
+                        {T.filter_ai}
+                      </button>
+                      <span className={`${styles["lobbyFilterBtn"]} protoFilterSwitchWrap`}>
+                        <span className={styles["lobbyFilterStar"]}>{filter.friends ? "★" : "☆"}</span>
+                        {filter.friends ? T.filter_friends : T.filter_all}
+                        <button
+                          type="button"
+                          onClick={toggleFriends}
+                          role="switch"
+                          aria-checked={filter.friends}
+                          aria-label={T.filter_friends}
+                          className={filter.friends ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
+                        >
+                          <span className={styles["lobbyToggleKnob"]} style={{ left: filter.friends ? 22 : 2 }} />
+                        </button>
+                      </span>
+                    </div>
+                    <div className={styles["lobbySearchWrap"]}>
+                      <svg className={styles["lobbySearchIcon"]} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <circle cx="11" cy="11" r="7" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                      <input
+                        type="text"
+                        className={`${styles["lobbyInviteSearch"]} ${searchQuery ? styles["lobbyInviteSearchWithClear"] : ""}`}
+                        placeholder={T.search_players}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                      {searchQuery && (
+                        <button type="button" className={styles["lobbySearchClearBtn"]} onClick={() => setSearchQuery("")} aria-label={T.clear_search}>
+                          ×
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles["lobbyRail"]}>
+                      {displayList.length === 0 ? (
+                        <div className={`${styles["lobbyPlayerCard"]} ${styles["lobbyPlayerCardEmpty"]}`}>
+                          <span className={styles["lobbyEmptyRailText"]}>
+                            {filter.friends ? T.no_favorites_yet : T.no_players_found}
+                          </span>
+                        </div>
+                      ) : (
+                        displayList.map((player) => {
+                          const inviteState = inviteStates[player.id] ?? "idle";
+                          return (
+                            <div key={player.id} className={styles["lobbyPlayerCard"]}>
+                              <div className={styles["lobbyAvatarWrap"]}>
+                                <PlayerAvatar
+                                  avatarUrl={player.avatarUrl}
+                                  displayName={player.displayName}
+                                  playerId={player.id}
+                                  size={40}
+                                  isMe={player.id === viewerId}
+                                  disableProfileNavigation
+                                />
+                                <button
+                                  className={styles["lobbyStarBtn"]}
+                                  onClick={() => toggleFollow(player.id)}
+                                  aria-label={followedIds.has(player.id) ? T.remove_from_favorites : T.add_to_favorites}
+                                >
+                                  <span style={{ color: followedIds.has(player.id) ? "var(--gh-gold)" : "var(--gh-text-muted)" }}>
+                                    {followedIds.has(player.id) ? "★" : "☆"}
+                                  </span>
+                                </button>
+                              </div>
+                              <div className={styles["lobbyPlayerCardName"]}>
+                                <span className={styles["lobbyPlayerCardNameText"]}>{player.displayName}</span>
+                              </div>
+                              <button
+                                type="button"
+                                className={`${styles["lobbyInviteBtn"]} ${player.is_ai && comingUpId === player.id ? styles["lobbyInviteBtnComingUp"] : ""}`}
+                                onClick={() => (player.is_ai ? handleAiComingUp(player) : handleSendInvite(player))}
+                                disabled={!player.is_ai && inviteState !== "idle"}
+                              >
+                                {player.is_ai
+                                  ? comingUpId === player.id
+                                    ? T.ai_coming_up
+                                    : T.filter_ai
+                                  : inviteState === "pending"
+                                    ? T.invite_pending
+                                    : inviteState === "sent"
+                                      ? T.invite_sent
+                                      : inviteState === "error"
+                                        ? T.invite_failed
+                                        : T.invite}
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                      {hasMore && (
+                        <div
+                          className={`${styles["lobbyPlayerCard"]} ${styles["lobbyViewAllCard"]}`}
+                          onClick={() => setShowAllModal(true)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => e.key === "Enter" && setShowAllModal(true)}
+                        >
+                          <span className={styles["lobbyViewAllText"]}>{fmt(T.view_all, { count: priorityList.length })}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-        {/* ── Players roster card ── */}
-        <section className="card">
-          <div className="cardHead">
-            <span className="accentBar" />
-            <h2 className="cardTitle">
-              Players <span className="countDim">({totalPlayers})</span>
-            </h2>
-            <span className="readyIndicator">
-              <span
-                className="readyDot"
-                style={{ background: readyCount > 0 ? "#4ade80" : "rgba(255,255,255,0.25)" }}
-              />
-              {readyCount} ready
-            </span>
-          </div>
+                {/* All-players modal */}
+                {showAllModal && (
+                  <div className={styles["lobbyAllModal"]} onClick={() => setShowAllModal(false)} role="dialog" aria-modal="true">
+                    <div className={styles["lobbyAllModalInner"]} onClick={(e) => e.stopPropagation()}>
+                      <button type="button" className={styles["lobbyAllModalClose"]} onClick={() => setShowAllModal(false)}>
+                        ×
+                      </button>
+                      <span className={styles["lobby-subsection-title"]}>{fmt(T.all_players, { count: priorityList.length })}</span>
+                      <div className={styles["lobbyAllModalSearchWrap"]}>
+                        <input
+                          type="text"
+                          className={styles["lobbyAllModalSearch"]}
+                          placeholder={T.search_players}
+                          value={modalSearchQuery}
+                          onChange={(e) => setModalSearchQuery(e.target.value)}
+                          autoFocus
+                        />
+                        {modalSearchQuery && (
+                          <button type="button" className={styles["lobbySearchClearBtn"]} onClick={() => setModalSearchQuery("")} aria-label={T.clear_search}>
+                            ×
+                          </button>
+                        )}
+                      </div>
+                      <div className={styles["lobbyAllModalList"]}>
+                        {modalFilteredList.length === 0 && (
+                          <span className={styles["lobbyAllModalEmpty"]}>{T.no_players_found}</span>
+                        )}
+                        {modalFilteredList.map((player) => {
+                          const inviteState = inviteStates[player.id] ?? "idle";
+                          return (
+                            <div key={player.id} className={styles["lobbyPlayerCard"]}>
+                              <div className={styles["lobbyAvatarWrap"]}>
+                                <PlayerAvatar
+                                  avatarUrl={player.avatarUrl}
+                                  displayName={player.displayName}
+                                  playerId={player.id}
+                                  size={40}
+                                  isMe={player.id === viewerId}
+                                  disableProfileNavigation
+                                />
+                                <button
+                                  className={styles["lobbyStarBtn"]}
+                                  onClick={() => toggleFollow(player.id)}
+                                  aria-label={followedIds.has(player.id) ? T.remove_from_favorites : T.add_to_favorites}
+                                >
+                                  <span style={{ color: followedIds.has(player.id) ? "var(--gh-gold)" : "var(--gh-text-muted)" }}>
+                                    {followedIds.has(player.id) ? "★" : "☆"}
+                                  </span>
+                                </button>
+                              </div>
+                              <div className={styles["lobbyPlayerCardName"]}>
+                                <span className={styles["lobbyPlayerCardNameText"]}>{player.displayName}</span>
+                              </div>
+                              <button
+                                type="button"
+                                className={`${styles["lobbyInviteBtn"]} ${player.is_ai && comingUpId === player.id ? styles["lobbyInviteBtnComingUp"] : ""}`}
+                                onClick={() => (player.is_ai ? handleAiComingUp(player) : handleSendInvite(player))}
+                                disabled={!player.is_ai && inviteState !== "idle"}
+                              >
+                                {player.is_ai
+                                  ? comingUpId === player.id
+                                    ? T.ai_coming_up
+                                    : T.filter_ai
+                                  : inviteState === "pending"
+                                    ? T.invite_pending
+                                    : inviteState === "sent"
+                                      ? T.invite_sent
+                                      : inviteState === "error"
+                                        ? T.invite_failed
+                                        : T.invite}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-          <div className="roster">
-            {players.map((p) => (
-              <div key={p.id} className={`rosterRow ${p.ready ? "rosterRowReady" : ""}`}>
-                <span className="avatar" style={{ background: gradientFor(p.id) }}>
-                  {initialsOf(p.name)}
-                </span>
-                <div className="rosterMeta">
-                  <span className="rosterName">
-                    {p.name}
-                    {p.id === VIEWER_ID && <span className="youTag">You</span>}
-                  </span>
-                  {p.isHost && <span className="hostBadge">♛ Host</span>}
+                {/* Sub-section B: Players roster */}
+                <div className={styles["lobby-subsection"]}>
+                  <div className={styles["lobby-subsection-header"]}>
+                    <span className={styles["lobby-accent-bar-sm"]} />
+                    <span className={styles["lobby-subsection-title"]}>{fmt(T.players, { current: totalPlayers, total: rosterTotal })}</span>
+                    <span className={styles["lobbyReadyIndicator"]}>
+                      <span
+                        className={styles["lobbyReadyDot"]}
+                        style={{ background: readyCount > 0 ? "var(--gh-success)" : "var(--gh-border-default)" }}
+                      />
+                      {fmt(T.ready_count, { count: readyCount })}
+                    </span>
+                  </div>
+                  <div className={styles["lobbyRosterList"]} data-testid="lobby-roster">
+                    {activePlayers.map((p) => {
+                      const isViewerPlayer = p.playerId === viewer?.playerId;
+                      return (
+                        <div
+                          key={p.playerId}
+                          className={`${styles["lobbyRosterRow"]} ${p.ready ? styles["lobbyRosterRowReady"] : ""}`}
+                          data-testid={`lobby-player-${p.playerId}`}
+                          data-ready={p.ready ? "true" : "false"}
+                          data-host={p.isHost ? "true" : "false"}
+                        >
+                          <div className={styles["lobbyAvatarWrap"]}>
+                            <PlayerAvatar
+                              avatarUrl={p.avatarUrl}
+                              displayName={p.displayName}
+                              playerId={p.playerId}
+                              size={40}
+                              isMe={isViewerPlayer}
+                              disableProfileNavigation
+                            />
+                            {!isViewerPlayer && (
+                              <button
+                                className={styles["lobbyStarBtn"]}
+                                onClick={() => toggleFollow(p.playerId)}
+                                aria-label={followedIds.has(p.playerId) ? T.remove_from_favorites : T.add_to_favorites}
+                              >
+                                <span style={{ color: followedIds.has(p.playerId) ? "var(--gh-gold)" : "var(--gh-text-muted)" }}>
+                                  {followedIds.has(p.playerId) ? "★" : "☆"}
+                                </span>
+                              </button>
+                            )}
+                          </div>
+                          <div className={styles["lobbyRosterMeta"]}>
+                            <span className={styles["lobbyRosterName"]}>
+                              {p.displayName}
+                              {isViewerPlayer && <span className={styles["lobbyYouTag"]}>{T.you}</span>}
+                            </span>
+                            {p.isHost && <span className={styles["lobbyHostInline"]}>♛ {T.host}</span>}
+                          </div>
+                          {isAsync ? (
+                            (() => {
+                              switch (p.roundStatus) {
+                                case "finished":
+                                  return <span className={styles["lobbyStatusPillGreen"]}>Finished</span>;
+                                case "playing":
+                                  return (
+                                    <span className={styles["lobbyStatusPillAmber"]} style={{ background: "rgba(var(--gh-blue-rgb), 0.18)", color: "var(--gh-blue)" }}>
+                                      Playing
+                                    </span>
+                                  );
+                                case "ready":
+                                  return <span className={styles["lobbyStatusPillGreen"]}>{T.ready}</span>;
+                                case "joined":
+                                  return <span className={styles["lobbyStatusPillGrey"]}>Joined</span>;
+                                default:
+                                  return (
+                                    <span className={p.ready ? styles["lobbyStatusPillGreen"] : styles["lobbyStatusPillGrey"]}>
+                                      {p.ready ? T.ready : T.not_ready}
+                                    </span>
+                                  );
+                              }
+                            })()
+                          ) : (
+                            <span className={p.ready ? styles["lobbyStatusPillGreen"] : styles["lobbyStatusPillGrey"]}>
+                              {p.ready ? T.ready : T.not_ready}
+                            </span>
+                          )}
+                          {isHost && !p.isHost && (
+                            <button
+                              type="button"
+                              className={styles["lobby-kick-btn"]}
+                              onClick={() => kickPlayer(p.playerId)}
+                              title={T.kick_player}
+                              data-testid={`lobby-kick-${p.playerId}`}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {pendingInvitees.map((p) => (
+                      <div key={p.playerId} className={styles["lobbyRosterRow"]}>
+                        <PlayerAvatar
+                          avatarUrl={p.avatarUrl}
+                          displayName={p.displayName}
+                          playerId={p.playerId}
+                          size={40}
+                          isMe={p.playerId === viewerId}
+                          disableProfileNavigation
+                        />
+                        <div className={styles["lobbyRosterMeta"]}>
+                          <span className={styles["lobbyRosterName"]}>{p.displayName}</span>
+                        </div>
+                        <span className={styles["lobbyStatusPillAmber"]}>{T.invited}</span>
+                        {isHost && (
+                          <button type="button" className={styles["lobby-kick-btn"]} title={T.remove_invite}>
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {activePlayers.length === 0 && pendingInvitees.length === 0 && (
+                      <div className={styles["lobbyRosterEmpty"]}>{T.no_players_yet}</div>
+                    )}
+                  </div>
                 </div>
-                <span className={`statusPill ${p.ready ? "pillReady" : "pillIdle"}`}>
-                  {p.ready ? "READY" : "NOT READY"}
-                </span>
-                {isHost && !p.isHost && (
-                  <button className="kickBtn" onClick={() => kickPlayer(p.id)} aria-label="Kick player">
-                    ×
+              </div>
+            </div>
+
+            {/* Bottom Dock — READY CTA (sync) or START MY GAME (async) */}
+            <div className={styles["lobby-dock"]} data-testid="lobby-dock">
+              <div className={styles["lobby-dock-content"]}>
+                {isAsync ? (
+                  <button
+                    type="button"
+                    className={styles["lobbyReadyBtnNotReady"]}
+                    onClick={toggleReady}
+                    data-testid="lobby-ready-btn"
+                  >
+                    {T.relax_start_my_game}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={isReady ? styles["lobbyReadyBtnIsReady"] : styles["lobbyReadyBtnNotReady"]}
+                    onClick={toggleReady}
+                    data-testid="lobby-ready-btn"
+                  >
+                    {isReady ? T.ready_waiting : T.im_ready}
                   </button>
                 )}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Game settings card ── */}
-        <section className="card">
-          <div className="cardHead">
-            <span className="accentBar" />
-            <h2 className="cardTitle">Game settings</h2>
-            <span className="relaxTag">RELAX MODE</span>
-          </div>
-
-          {/* Round timer */}
-          <div className="setting">
-            <div className="settingTop">
-              <span className="settingLabel">Round timer</span>
-              <span className="settingValue">{formatTimer(timerSec)}</span>
-            </div>
-            {isHost ? (
-              <div className="settingControl">
-                <button
-                  className={`toggle ${timerSec > 0 ? "toggleOn" : "toggleOff"}`}
-                  onClick={() => setTimerSec((v) => (v > 0 ? 0 : 120))}
-                  aria-label="Toggle timer"
-                >
-                  <span className="toggleKnob" style={{ left: timerSec > 0 ? 22 : 2 }} />
-                </button>
-                {timerSec > 0 && (
-                  <div className="sliderWrap">
-                    <div className="sliderTrack" />
-                    <div className="sliderFill" style={{ width: `${timerPct(timerSec)}%` }} />
-                    <input
-                      type="range"
-                      className="slider"
-                      min={TIMER_MIN}
-                      max={TIMER_MAX}
-                      step={5}
-                      value={timerSec}
-                      onChange={(e) => setTimerSec(Number(e.target.value))}
-                    />
-                  </div>
+                {!isAsync && (
+                  <span className={styles["lobby-ready-count"]} data-testid="lobby-ready-count">
+                    {fmt(T.players_ready, { ready: readyCount, total: totalPlayers })}
+                    {allPlayersReady && totalPlayers > 0 && <span className={styles["lobbyAllReadyTag"]}>{T.starting_soon}</span>}
+                  </span>
                 )}
               </div>
-            ) : null}
-          </div>
-
-          {/* Year range */}
-          <div className="setting">
-            <div className="settingTop">
-              <span className="settingLabel">Year range</span>
-              <span className="settingValue">
-                {yearMin} – {yearMax}
-              </span>
             </div>
-            {isHost ? (
-              <div className="rangeWrap">
-                <div className="sliderTrack" />
-                <div
-                  className="rangeFill"
-                  style={{ left: `${yearPct(yearMin)}%`, right: `${100 - yearPct(yearMax)}%` }}
-                />
-                <input
-                  type="range"
-                  min={YEAR_MIN_BOUND}
-                  max={YEAR_MAX_BOUND}
-                  step={1}
-                  value={yearMin}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    if (v < yearMax - 1) setYearMin(v);
-                  }}
-                  className="rangeInput"
-                />
-                <input
-                  type="range"
-                  min={YEAR_MIN_BOUND}
-                  max={YEAR_MAX_BOUND}
-                  step={1}
-                  value={yearMax}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    if (v > yearMin + 1) setYearMax(v);
-                  }}
-                  className="rangeInput rangeInputTop"
-                />
+
+            {helpModal && (
+              <div className={styles["lobbyHelpModalBackdrop"]} onClick={() => setHelpModal(null)}>
+                <div className={styles["lobbyHelpModal"]} onClick={(e) => e.stopPropagation()}>
+                  <button type="button" className={styles["lobbyHelpModalClose"]} onClick={() => setHelpModal(null)} aria-label={T.help}>
+                    ×
+                  </button>
+                  <h4>{helpModal === "settings" ? T.game_settings : T.invite_players}</h4>
+                  <p>{helpModal === "settings" ? T.help_game_settings : T.help_invite_players}</p>
+                </div>
               </div>
-            ) : null}
+            )}
           </div>
-
-          {/* Results auto-advance */}
-          <div className="setting">
-            <div className="settingTop">
-              <span className="settingLabel">Results auto-advance</span>
-              <span className="settingValue">{formatTimer(resultsSec)}</span>
-            </div>
-            {isHost ? (
-              <div className="settingControl">
-                <button
-                  className={`toggle ${resultsSec > 0 ? "toggleOn" : "toggleOff"}`}
-                  onClick={() => setResultsSec((v) => (v > 0 ? 0 : 30))}
-                  aria-label="Toggle results auto-advance"
-                >
-                  <span className="toggleKnob" style={{ left: resultsSec > 0 ? 22 : 2 }} />
-                </button>
-                {resultsSec > 0 && (
-                  <div className="sliderWrap">
-                    <div className="sliderTrack" />
-                    <div className="sliderFill" style={{ width: `${timerPct(resultsSec)}%` }} />
-                    <input
-                      type="range"
-                      className="slider"
-                      min={TIMER_MIN}
-                      max={TIMER_MAX}
-                      step={5}
-                      value={resultsSec}
-                      onChange={(e) => setResultsSec(Number(e.target.value))}
-                    />
-                  </div>
-                )}
-              </div>
-            ) : null}
-          </div>
-        </section>
-
-        <div className="dockSpacer" />
+        </div>
       </div>
-
-      {/* ── Bottom dock ── */}
-      <div className="dock">
-        <button
-          className={`readyBtn ${isReady ? "readyBtnOn" : ""}`}
-          onClick={toggleReady}
-        >
-          {isReady ? "Ready — waiting for others" : "I'm ready"}
-        </button>
-        <span className="dockCount">
-          {readyCount}/{totalPlayers} players ready
-          {allReady && <span className="allReadyTag"> · starting soon</span>}
-        </span>
-      </div>
-
-      <style jsx global>{`
-        html, body { margin: 0; padding: 0; background: #0a0a0a; }
-      `}</style>
-
-      <style jsx>{`
-        .screen {
-          position: fixed; inset: 0; overflow: hidden;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          color: #fff;
-        }
-        .bgImg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-        .bgScrim { position: absolute; inset: 0; z-index: 1; background: rgba(0,0,0,0.82); }
-
-        .protoBar {
-          position: absolute; top: 0; left: 0; right: 0; z-index: 60;
-          display: flex; align-items: center; justify-content: space-between; gap: 12px;
-          padding: 10px 14px; background: rgba(10,10,12,0.6);
-          backdrop-filter: blur(8px); flex-wrap: wrap;
-        }
-        .protoTitle { font-size: 13px; font-weight: 600; letter-spacing: 0.3px; opacity: 0.85; }
-        .protoHint { font-size: 12px; font-weight: 600; opacity: 0.55; }
-
-        .scroll {
-          position: absolute; inset: 0; z-index: 2; overflow-y: auto;
-          padding: 56px 16px calc(120px + env(safe-area-inset-bottom));
-          display: flex; flex-direction: column; gap: 16px;
-          max-width: 520px; margin: 0 auto; box-sizing: border-box;
-        }
-
-        /* ── Header ── */
-        .header { padding: 8px 4px 0; }
-        .headerTop { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .modeBadge {
-          font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
-          color: #22d3ee; background: rgba(34,211,238,0.12);
-          border: 1px solid rgba(34,211,238,0.35);
-          padding: 4px 10px; border-radius: 999px;
-        }
-        .statusChip {
-          display: inline-flex; align-items: center; gap: 7px;
-          font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
-        }
-        .statusDot {
-          width: 8px; height: 8px; border-radius: 50%; background: #22d3ee;
-          box-shadow: 0 0 8px rgba(34,211,238,0.7);
-          animation: pulseDot 1.8s ease-in-out infinite;
-        }
-        @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
-        .title { font-size: 30px; font-weight: 800; margin: 12px 0 0; letter-spacing: -0.5px; text-align: center; }
-        .backBtn {
-          display: flex; align-items: center; justify-content: center;
-          width: 36px; height: 36px; border-radius: 10px;
-          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-          color: #fff; cursor: pointer; transition: background 0.15s;
-        }
-        .backBtn:hover { background: rgba(255,255,255,0.15); }
-
-        /* ── Cards ── */
-        .card {
-          background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 18px; padding: 18px;
-          backdrop-filter: blur(10px);
-          box-shadow: 0 8px 30px rgba(0,0,0,0.35);
-        }
-        .cardHead { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-        .accentBar { width: 4px; height: 18px; border-radius: 999px; background: #22d3ee; }
-        .cardTitle { font-size: 16px; font-weight: 700; margin: 0; }
-        .countDim { color: rgba(255,255,255,0.45); font-weight: 600; }
-        .relaxTag {
-          margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: 1px;
-          color: #a78bfa; background: rgba(139,92,246,0.14);
-          border: 1px solid rgba(139,92,246,0.35); padding: 3px 9px; border-radius: 999px;
-        }
-        .readyIndicator {
-          margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
-          font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.75);
-        }
-        .readyDot { width: 9px; height: 9px; border-radius: 50%; }
-
-        /* ── Invite ── */
-        .shareGroup { margin-left: auto; display: flex; gap: 8px; }
-        .shareBtn {
-          font-size: 12px; font-weight: 600; color: #fff;
-          background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
-          border-radius: 9px; padding: 6px 10px; cursor: pointer; white-space: nowrap;
-          transition: background 0.15s;
-        }
-        .shareBtn:hover { background: rgba(255,255,255,0.18); }
-        .searchWrap { position: relative; margin-bottom: 12px; }
-        .searchIcon {
-          position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-          color: rgba(255,255,255,0.5); pointer-events: none;
-        }
-        .searchField {
-          width: 100%; box-sizing: border-box;
-          background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.18);
-          border-radius: 12px; color: #fff; font-size: 14px;
-          padding: 11px 14px 11px 40px; outline: none;
-        }
-        .searchField:focus { border-color: rgba(34,211,238,0.6); }
-        .searchField::placeholder { color: rgba(255,255,255,0.45); }
-
-        .rail {
-          display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;
-          scrollbar-width: none;
-        }
-        .rail::-webkit-scrollbar { display: none; }
-        .poolCard {
-          flex: 0 0 auto; width: 110px;
-          display: flex; flex-direction: column; align-items: center; gap: 8px;
-          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 14px; padding: 14px 10px;
-        }
-        .poolName {
-          font-size: 12px; font-weight: 600; text-align: center;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
-        }
-        .inviteBtn {
-          width: 100%; font-size: 12px; font-weight: 700; color: #06181c;
-          background: #22d3ee; border: none; border-radius: 9px; padding: 7px 0;
-          cursor: pointer; transition: opacity 0.15s;
-        }
-        .inviteBtn:hover { opacity: 0.9; }
-        .inviteBtnSent { background: rgba(74,222,128,0.25); color: #4ade80; cursor: default; }
-        .emptyRail {
-          padding: 20px; width: 100%; text-align: center;
-          font-size: 13px; color: rgba(255,255,255,0.4);
-        }
-
-        /* ── Avatars ── */
-        .avatar {
-          flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 14px; font-weight: 700; color: #fff;
-          text-transform: uppercase; border: 2px solid rgba(255,255,255,0.25);
-        }
-
-        /* ── Roster ── */
-        .roster { display: flex; flex-direction: column; gap: 8px; }
-        .rosterRow {
-          display: flex; align-items: center; gap: 12px;
-          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 14px; padding: 10px 12px; transition: border-color 0.2s, background 0.2s;
-        }
-        .rosterRowReady { border-color: rgba(74,222,128,0.35); background: rgba(74,222,128,0.06); }
-        .rosterMeta { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-        .rosterName {
-          font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 7px;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .youTag {
-          font-size: 10px; font-weight: 700; color: #22d3ee;
-          background: rgba(34,211,238,0.15); padding: 1px 7px; border-radius: 999px;
-        }
-        .hostBadge { font-size: 11px; font-weight: 600; color: #f0c060; }
-        .statusPill {
-          font-size: 10px; font-weight: 800; letter-spacing: 0.6px;
-          padding: 4px 10px; border-radius: 999px; white-space: nowrap;
-        }
-        .pillReady { background: rgba(74,222,128,0.2); color: #4ade80; }
-        .pillIdle { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.55); }
-        .kickBtn {
-          flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
-          border: 1px solid rgba(239,68,68,0.4); background: rgba(239,68,68,0.12);
-          color: #f87171; font-size: 18px; line-height: 1; cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .kickBtn:hover { background: rgba(239,68,68,0.25); }
-
-        /* ── Settings ── */
-        .setting { padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.07); }
-        .setting:first-of-type { border-top: none; padding-top: 4px; }
-        .settingTop { display: flex; align-items: center; justify-content: space-between; }
-        .settingLabel { font-size: 14px; font-weight: 600; }
-        .settingValue { font-size: 14px; font-weight: 700; color: #22d3ee; }
-        .settingControl { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
-
-        .toggle {
-          position: relative; flex-shrink: 0; width: 44px; height: 24px;
-          border-radius: 999px; border: none; cursor: pointer; transition: background 0.2s;
-        }
-        .toggleOn { background: #22d3ee; }
-        .toggleOff { background: rgba(255,255,255,0.18); }
-        .toggleKnob {
-          position: absolute; top: 2px; width: 20px; height: 20px; border-radius: 50%;
-          background: #fff; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-        }
-
-        .sliderWrap { position: relative; flex: 1; height: 20px; display: flex; align-items: center; }
-        .sliderTrack {
-          position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
-          height: 4px; border-radius: 999px; background: rgba(255,255,255,0.15);
-        }
-        .sliderFill {
-          position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-          height: 4px; border-radius: 999px; background: #22d3ee;
-        }
-        .slider {
-          position: relative; width: 100%; -webkit-appearance: none; appearance: none;
-          background: transparent; outline: none; margin: 0;
-        }
-        .slider::-webkit-slider-thumb {
-          -webkit-appearance: none; appearance: none;
-          width: 18px; height: 18px; border-radius: 50%; background: #fff;
-          border: 2px solid #22d3ee; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-        }
-        .slider::-moz-range-thumb {
-          width: 18px; height: 18px; border-radius: 50%; background: #fff;
-          border: 2px solid #22d3ee; cursor: pointer;
-        }
-
-        .rangeWrap { position: relative; height: 22px; margin-top: 12px; display: flex; align-items: center; }
-        .rangeFill {
-          position: absolute; top: 50%; transform: translateY(-50%);
-          height: 4px; border-radius: 999px; background: #22d3ee;
-        }
-        .rangeInput {
-          position: absolute; left: 0; width: 100%; height: 4px;
-          -webkit-appearance: none; appearance: none; background: transparent;
-          pointer-events: none; outline: none; top: 50%; transform: translateY(-50%); margin: 0;
-        }
-        .rangeInput::-webkit-slider-thumb {
-          -webkit-appearance: none; appearance: none; pointer-events: all;
-          width: 18px; height: 18px; border-radius: 50%; background: #fff;
-          border: 2px solid #22d3ee; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-        }
-        .rangeInput::-moz-range-thumb {
-          pointer-events: all; width: 18px; height: 18px; border-radius: 50%;
-          background: #fff; border: 2px solid #22d3ee; cursor: pointer;
-        }
-
-        .dockSpacer { height: 4px; }
-
-        /* ── Bottom dock ── */
-        .dock {
-          position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
-          display: flex; flex-direction: column; align-items: center; gap: 6px;
-          padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
-          background: linear-gradient(180deg, rgba(10,10,12,0), rgba(10,10,12,0.85) 40%);
-        }
-        .readyBtn {
-          width: 100%; max-width: 488px; padding: 16px;
-          border-radius: 14px; border: none; cursor: pointer;
-          font-size: 16px; font-weight: 800; color: #06181c; background: #22d3ee;
-          box-shadow: 0 6px 22px rgba(34,211,238,0.35); transition: all 0.2s;
-        }
-        .readyBtn:hover { opacity: 0.95; }
-        .readyBtnOn {
-          background: rgba(74,222,128,0.18); color: #4ade80;
-          border: 1px solid rgba(74,222,128,0.5); box-shadow: none;
-        }
-        .dockCount { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); }
-        .allReadyTag { color: #4ade80; }
-      `}</style>
+      <style dangerouslySetInnerHTML={{ __html: SLIDER_OVERRIDE_CSS + TAB_OVERRIDE_CSS + FILTER_SWITCH_CSS }} />
     </main>
   );
 }
