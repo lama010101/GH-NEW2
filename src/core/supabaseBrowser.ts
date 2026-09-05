@@ -45,9 +45,10 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
  *   re-entering the SDK's refresh path. Stops 429 retry storms caused by
  *   multiple useEffects per mount each re-arming the SDK refresh on an
  *   expired/invalid token.
- * - MAX_NULL_RESULTS: after 2 consecutive null sessions, forceClearAuthStorage()
- *   fires once and the counter resets, so the app falls back to the login
- *   state instead of looping into the rate limit.
+ * - MAX_NULL_RESULTS: after 2 consecutive null results (resolved-null session
+ *   OR a thrown getSession() auth error — both provably-bad-token signals),
+ *   forceClearAuthStorage() fires once and the counter resets, so the app
+ *   falls back to the login state instead of looping into the rate limit.
  *
  * Returns session or null on any error (never throws).
  * Timer-bounded via Promise.race against a plain timer (CTO ruling
@@ -65,6 +66,20 @@ const MAX_NULL_RESULTS = 2;
 // against a plain timer is authorized (NOT a second GoTrueClient call —
 // that would deadlock the shared mutex).
 const SESSION_TIMEOUT_MS = 8_000;
+
+// Shared null-result bookkeeping for the circuit-breaker: both a resolved
+// null session and a thrown getSession() (provably-bad token) funnel through
+// here so the threshold check and forceClearAuthStorage() live in exactly one
+// place. The timeout case never reaches this — it skips all mutation
+// (late-resolution guard in readSession()).
+function recordNullSessionResult(): void {
+  consecutiveNullResults += 1;
+  if (consecutiveNullResults >= MAX_NULL_RESULTS) {
+    forceClearAuthStorage();
+    consecutiveNullResults = 0;
+    lastSession = null;
+  }
+}
 
 export async function readSession(): Promise<Session | null> {
   if (readSessionInFlight) {
@@ -87,6 +102,7 @@ export async function readSession(): Promise<Session | null> {
       setTimeout(() => resolve(TIMEOUT_SENTINEL), SESSION_TIMEOUT_MS);
     });
     let timedOut = false;
+    let authError = false;
     let session: Session | null = null;
     try {
       const raced = await Promise.race([
@@ -100,29 +116,28 @@ export async function readSession(): Promise<Session | null> {
       } else {
         session = raced.data.session;
       }
-      // Late-resolution guard: if the timer won, the abandoned getSession()
-      // may still resolve after we return and clear readSessionInFlight.
-      // Mutating shared state here would race a subsequent readSession()
-      // call. Skip all mutation when timedOut.
-      if (!timedOut) {
-        if (session) {
-          consecutiveNullResults = 0;
-          lastSession = session;
-        } else {
-          consecutiveNullResults += 1;
-          if (consecutiveNullResults >= MAX_NULL_RESULTS) {
-            forceClearAuthStorage();
-            consecutiveNullResults = 0;
-            lastSession = null;
-          }
-        }
-      }
-      return session;
     } catch {
-      return null;
+      // getSession() threw (e.g. AuthApiError refresh_token_already_used) —
+      // the stored token is provably bad, distinct from a timeout (a timeout
+      // may still hold a valid token). Recorded as a null result below so the
+      // circuit-breaker can fire and clear the poisoned storage.
+      authError = true;
     } finally {
       readSessionInFlight = null;
     }
+    // Late-resolution guard: if the timer won, the abandoned getSession()
+    // may still resolve after we return and clear readSessionInFlight.
+    // Mutating shared state here would race a subsequent readSession()
+    // call. Skip all mutation when timedOut.
+    if (!timedOut) {
+      if (session) {
+        consecutiveNullResults = 0;
+        lastSession = session;
+      } else {
+        recordNullSessionResult();
+      }
+    }
+    return authError ? null : session;
   })();
   return readSessionInFlight;
 }
