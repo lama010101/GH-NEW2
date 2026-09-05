@@ -116,12 +116,21 @@ export async function middleware(request: NextRequest) {
   const SESSION_TIMEOUT_MS = 5000;
   // Distinguish a timeout (transient slow-network signal — cookie may still
   // be valid, so we must NOT clear it) from a real getSession() resolution
-  // that returned null (cookie present but no session => poisoned). A bare
-  // module-level counter is unreliable across Edge isolates, so the breaker
-  // is stateless: clear on the first real null-with-cookie failure.
+  // that returned null (cookie present but no session => poisoned) and from
+  // a getSession() rejection (e.g. AuthApiError refresh_token_already_used —
+  // also provably poisoned). A bare module-level counter is unreliable
+  // across Edge isolates, so the breaker is stateless: clear on the first
+  // real null-with-cookie or auth-error-with-cookie failure.
   let sessionTimedOut = false;
+  let sessionAuthError = false;
   const sessionResult = await Promise.race([
-    supabase.auth.getSession(),
+    supabase.auth.getSession().catch(() => {
+      // A thrown/rejected getSession() means the stored refresh token is
+      // provably bad (same treatment as a real null resolution, but tracked
+      // distinctly from the timeout case above — timeout must NOT clear).
+      sessionAuthError = true;
+      return { data: { session: null }, error: null };
+    }),
     new Promise<{ data: { session: null } }>((resolve) =>
       setTimeout(() => {
         sessionTimedOut = true;
@@ -132,17 +141,18 @@ export async function middleware(request: NextRequest) {
   const user = sessionResult.data.session?.user ?? null;
 
   // Stateless circuit-breaker: a request carrying an sb- auth cookie whose
-  // real (non-timeout) getSession() returned no session is holding a
-  // poisoned/stale token that will re-trigger Supabase's refresh endpoint on
-  // every navigation. Clear it from the response now so the next navigation
-  // has no stored token and makes no refresh call. Applied to the shared
-  // `response` (covers all `return response` paths) and re-applied to the
-  // /login redirect below, which builds a fresh NextResponse that would
-  // otherwise drop the clear and keep the loop alive on protected routes.
+  // real (non-timeout) getSession() returned no session or threw an auth
+  // error is holding a poisoned/stale token that will re-trigger Supabase's
+  // refresh endpoint on every navigation. Clear it from the response now so
+  // the next navigation has no stored token and makes no refresh call.
+  // Applied to the shared `response` (covers all `return response` paths)
+  // and re-applied to the /login redirect below, which builds a fresh
+  // NextResponse that would otherwise drop the clear and keep the loop
+  // alive on protected routes.
   const requestCookies = request.cookies.getAll();
   const poisonedAuthCookie =
     !sessionTimedOut &&
-    !user &&
+    (sessionAuthError || !user) &&
     requestCookies.some(({ name }) => name.startsWith("sb-"));
   if (poisonedAuthCookie) {
     clearPoisonedAuthCookies(response, requestCookies);
