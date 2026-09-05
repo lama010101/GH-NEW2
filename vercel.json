@@ -15,7 +15,7 @@
   "crons": [
     {
       "path": "/api/cron/apply-ai-schedule-changes",
-      "schedule": "* * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
