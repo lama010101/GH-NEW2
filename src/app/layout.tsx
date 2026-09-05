@@ -9,7 +9,7 @@ import { THEME_COOKIE, type Theme, resolveTheme } from '@/lib/theme';
 import { HapticFeedback } from '@/components/HapticFeedback';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { Analytics } from '@/components/Analytics';
-import AutoFullscreen from '@/components/AutoFullscreen';
+import FullscreenPwaModal from '@/components/FullscreenPwaModal';
 import "./globals.css";
 
 /**
@@ -57,6 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t('meta_title'),
     description: t('meta_description'),
+    manifest: '/manifest.json',
     openGraph: {
       images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Guess History — Find clues. Become a historian.' }],
     },
@@ -93,7 +94,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <HapticFeedback />
         <ServiceWorkerRegistration />
         <Analytics />
-        <AutoFullscreen />
+        <FullscreenPwaModal />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </body>
     </html>
