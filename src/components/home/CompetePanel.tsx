@@ -419,7 +419,18 @@ export function CompetePanel({ onLobby, playerId }: {
             <div className={cpStyles.emptyStateCenter}>{t('home.compete_no_completed')}</div>
           ) : (
             <div className={cpStyles.gameList}>
-              {completedGames.map(game => (
+              {completedGames.map(game => {
+                const pendingHost = game.opponent_pending === true;
+                const rowAvatarUrl = pendingHost
+                  ? (game.viewer_avatar ?? null)
+                  : (game.opponent_avatar ?? null);
+                const rowDisplayName = pendingHost
+                  ? (game.viewer_name ?? t('game.unknown_player'))
+                  : (game.opponent_name ?? t('game.unknown_player'));
+                const rowPlayerId = pendingHost
+                  ? (playerId ?? game.opponent_id)
+                  : game.opponent_id;
+                return (
                 <div
                   key={game.id}
                   className={cpStyles.gameRow}
@@ -427,15 +438,15 @@ export function CompetePanel({ onLobby, playerId }: {
                   aria-disabled={!!lobbyPending[game.game_id]}
                 >
                   <PlayerAvatar
-                    avatarUrl={game.opponent_avatar ?? null}
-                    displayName={game.opponent_name ?? t('game.unknown_player')}
-                    playerId={game.opponent_id}
+                    avatarUrl={rowAvatarUrl}
+                    displayName={rowDisplayName}
+                    playerId={rowPlayerId}
                     size={28}
-                    initials={(game.opponent_name ?? t('game.unknown_player')).slice(0, 2).toUpperCase()}
+                    initials={rowDisplayName.slice(0, 2).toUpperCase()}
                   />
                   <div className={cpStyles.gameInfo}>
                     <span className={cpStyles.gameName}>
-                      {game.opponent_name}
+                      {rowDisplayName}
                     </span>
                     <span className={cpStyles.gameSub}>
                       {game.mode && (
@@ -465,7 +476,8 @@ export function CompetePanel({ onLobby, playerId }: {
                     <TrashIcon />
                   </button>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )
         )}
