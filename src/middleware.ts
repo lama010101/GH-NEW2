@@ -49,6 +49,25 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
+// MP-FIX-MIDDLEWARE-STATICSKIP-EARLYRETURN-001: narrow subset of isPublicPath()
+// checked at the very top of middleware, before createServerClient/getSession(),
+// so static assets and infra paths never trigger an auth call. Excludes
+// PUBLIC_PATHS, PUBLIC_API_ROUTES, and PARTYKIT_SECRET_ROUTES — those have
+// downstream redirect/auth logic that depends on `user` and must remain at
+// their existing later position. Reuses STATIC_ASSET_EXTENSIONS (single
+// canonical list) — does not duplicate the extension list.
+function isStaticOrInfraPath(pathname: string): boolean {
+  if (pathname.startsWith("/_next/")) return true;
+  if (pathname.startsWith("/favicon")) return true;
+  if (pathname.startsWith("/prototype")) return true;
+  if (/^\/compete\/[0-9a-f-]{36}\/opengraph-image$/.test(pathname)) return true;
+  const lastDot = pathname.lastIndexOf(".");
+  if (lastDot !== -1 && STATIC_ASSET_EXTENSIONS.includes(pathname.slice(lastDot).toLowerCase())) {
+    return true;
+  }
+  return false;
+}
+
 // Edge-Middleware equivalent of supabaseBrowser.ts forceClearAuthStorage()
 // (MP-FIX-MIDDLEWARE-AUTHCIRCUITBREAKER-001). Module-level in-memory state is
 // NOT reliable across Edge Middleware isolates (see Step 1 findings), so the
@@ -79,6 +98,14 @@ function clearPoisonedAuthCookies(
 export async function middleware(request: NextRequest) {
   // Build a mutable response object that Supabase can write refreshed cookies onto.
   let response = NextResponse.next({ request });
+
+  const { pathname } = request.nextUrl;
+  // MP-FIX-MIDDLEWARE-STATICSKIP-EARLYRETURN-001: static assets and infra
+  // paths never need a session — return before createServerClient/getSession()
+  // so a poisoned cookie can't trigger AuthApiError on every asset request.
+  if (isStaticOrInfraPath(pathname)) {
+    return response;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -158,8 +185,6 @@ export async function middleware(request: NextRequest) {
   if (poisonedAuthCookie) {
     clearPoisonedAuthCookies(response, requestCookies);
   }
-
-  const { pathname } = request.nextUrl;
 
   // Root path: signed-in users go to /home. Signed-out users see the
   // public landing page rendered by src/app/page.tsx (handled below by
