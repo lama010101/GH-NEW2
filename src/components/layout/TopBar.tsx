@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Menu, Maximize2, Minimize2 } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { rankForXp } from '@/core/rank'
 import { getAccuracyColor } from '@/core/accuracyColor'
 import { useIdentity } from '@/hooks/useIdentity'
-import { enterFullscreen, exitFullscreen, isFullscreen } from '@/lib/fullscreen'
 import NotificationBell from '@/components/NotificationBell'
 import PlayerAvatar from '@/components/compete/PlayerAvatar'
 import styles from './TopBar.module.css'
@@ -26,16 +25,6 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
   const [imgError, setImgError] = useState(false)
   useEffect(() => { setImgError(false) }, [avatarUrl])
 
-  // Keep the fullscreen toggle icon in sync with the browser fullscreen state,
-  // including exits via Esc key or browser UI (not just the button itself).
-  const [isFs, setIsFs] = useState(false)
-  useEffect(() => {
-    setIsFs(isFullscreen())
-    const onChange = () => setIsFs(isFullscreen())
-    document.addEventListener('fullscreenchange', onChange)
-    return () => document.removeEventListener('fullscreenchange', onChange)
-  }, [])
-
   // Derive rank tier from xp string for the "Rank" badge.
   // xp may be "--" (loading) or a locale-formatted number like "32 500".
   const xpNum = Number(xp.replace(/[^\d]/g, ''))
@@ -53,14 +42,6 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
         </div>
       </div>
       <div className={styles.topbarRight}>
-        <button
-          onClick={() => { void (isFs ? exitFullscreen() : enterFullscreen()) }}
-          className={styles.menuBtn}
-          aria-label={isFs ? 'Exit fullscreen' : 'Enter fullscreen'}
-          type="button"
-        >
-          {isFs ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-        </button>
         <NotificationBell />
         <div className={styles.avatarBtn}>
           <PlayerAvatar
