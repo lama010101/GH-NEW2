@@ -17,6 +17,10 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY,
   {
+    // MP-FIX-AUTOREFRESH-DEADLOOP-001: disable the SDK's autonomous refresh timer — it bypasses the readSession() single-flight/circuit-breaker and loops forever on a dead (already-used) token.
+    auth: {
+      autoRefreshToken: false,
+    },
     cookieOptions: {
       secure: process.env.NODE_ENV === "production",
       // Share auth cookies across apex (guess-history.com) and www
