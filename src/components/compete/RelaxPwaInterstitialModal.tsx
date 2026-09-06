@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from 'next-intl';
 import modalStyles from "@/components/AuthModal.module.css";
 
 // iOS Safari non-PWA interstitial shown before Relax (async) create/join.
@@ -7,6 +8,8 @@ import modalStyles from "@/components/AuthModal.module.css";
 // card #2e3144, border rgba(255,255,255,0.13)) via AuthModal.module.css.
 // Both the close (X) and the "Got it" CTA resolve to onClose (skip + proceed).
 export function RelaxPwaInterstitialModal({ onClose }: { onClose: () => void }) {
+  const tLobby = useTranslations('lobby');
+  const tNav = useTranslations('nav');
   return (
     <div className={modalStyles.overlay} role="dialog" aria-modal="true" onClick={onClose}>
       <div className={modalStyles.card} onClick={(e) => e.stopPropagation()}>
@@ -14,13 +17,13 @@ export function RelaxPwaInterstitialModal({ onClose }: { onClose: () => void }) 
           type="button"
           className={modalStyles.closeButton}
           onClick={onClose}
-          aria-label="Close"
+          aria-label={tNav('close')}
         >
           ×
         </button>
-        <h2 className={modalStyles.title}>Install for turn notifications</h2>
+        <h2 className={modalStyles.title}>{tLobby('pwa_install_title')}</h2>
         <p className={modalStyles.tagline} style={{ marginBottom: 16 }}>
-          Relax games are turn-based. On iPhone, turn notifications only work when this site is added to your Home Screen.
+          {tLobby('pwa_install_desc')}
         </p>
         <ol
           style={{
@@ -31,16 +34,16 @@ export function RelaxPwaInterstitialModal({ onClose }: { onClose: () => void }) 
             lineHeight: 1.5,
           }}
         >
-          <li>Tap the <strong>Share</strong> icon in Safari&apos;s toolbar.</li>
-          <li>Choose <strong>Add to Home Screen</strong>.</li>
-          <li>Tap <strong>Add</strong>, then open Guess-History from your Home Screen.</li>
+          <li>{tLobby.rich('pwa_step_share', { strong: (chunks) => <strong>{chunks}</strong> })}</li>
+          <li>{tLobby.rich('pwa_step_home', { strong: (chunks) => <strong>{chunks}</strong> })}</li>
+          <li>{tLobby.rich('pwa_step_open', { strong: (chunks) => <strong>{chunks}</strong> })}</li>
         </ol>
         <button
           type="button"
           className={modalStyles.submitButton}
           onClick={onClose}
         >
-          Got it
+          {tLobby('pwa_got_it')}
         </button>
       </div>
     </div>

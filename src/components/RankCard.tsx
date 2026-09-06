@@ -37,6 +37,7 @@ const RANK_IMAGE: Record<number, string> = {
 // open controls expand/collapse of the full module body.
 export default function RankCard({ totalXp, open, sessionXp, inline = false, bare = false, variant = 'default' }: RankCardProps) {
   const t = useTranslations('rank');
+  const tGame = useTranslations('game');
 
   const xp = (totalXp === null || totalXp === undefined || Number.isNaN(totalXp))
     ? 0
@@ -51,17 +52,17 @@ export default function RankCard({ totalXp, open, sessionXp, inline = false, bar
       <div className={styles.rankMedallion}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imgSrc} alt={title} className={styles.rankMedImg} draggable={false} />
-        <span className={styles.rankMedTier}><span className={styles.rankMedTierText}>T{info.tier}</span></span>
+        <span className={styles.rankMedTier}><span className={styles.rankMedTierText}>{t('tier_prefix')}{info.tier}</span></span>
       </div>
       <div className={styles.rankBody}>
         <div className={styles.rankHead}>
           <div className={styles.rankTitleWrap}>
             <h3 className={styles.rankTitle}>{title}</h3>
             {sessionXp != null && sessionXp > 0 && (
-              <span className={styles.rankSessionXp}>+{Math.floor(sessionXp).toLocaleString()}<i>XP</i></span>
+              <span className={styles.rankSessionXp}>+{Math.floor(sessionXp).toLocaleString()}<i>{tGame('xp_unit')}</i></span>
             )}
           </div>
-          <span className={styles.rankXp}>{Math.floor(xp).toLocaleString()}<i>XP</i></span>
+          <span className={styles.rankXp}>{Math.floor(xp).toLocaleString()}<i>{tGame('xp_unit')}</i></span>
         </div>
         <div className={styles.rankNextLine}>
           <span className={styles.rankNextLabel}>{t('next_label')}</span>

@@ -21,6 +21,7 @@ interface TopBarProps {
 export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClick }: TopBarProps) {
   const router = useRouter()
   const t = useTranslations('landing')
+  const tNav = useTranslations('nav')
   const { playerId } = useIdentity()
   const [imgError, setImgError] = useState(false)
   useEffect(() => { setImgError(false) }, [avatarUrl])
@@ -56,7 +57,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
         <button
           onClick={onAvatarClick}
           className={styles.menuBtn}
-          aria-label="Menu"
+          aria-label={tNav('menu')}
           type="button"
         >
           <Menu size={20} />

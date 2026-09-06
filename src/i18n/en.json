@@ -16,7 +16,10 @@
     "light": "Light",
     "coming_soon": "{label} — coming soon!",
     "close": "Close",
-    "close_fullscreen_view": "Close fullscreen view"
+    "close_fullscreen_view": "Close fullscreen view",
+    "enter_fullscreen": "Enter fullscreen",
+    "exit_fullscreen": "Exit fullscreen",
+    "menu": "Menu"
   },
   "help": {
     "title": "Help Center",
@@ -272,6 +275,12 @@
     "relax_playing": "Playing",
     "relax_finished": "Finished",
     "relax_joined": "Joined",
+    "pwa_install_title": "Install for turn notifications",
+    "pwa_install_desc": "Relax games are turn-based. On iPhone, turn notifications only work when this site is added to your Home Screen.",
+    "pwa_step_share": "Tap the <strong>Share</strong> icon in Safari's toolbar.",
+    "pwa_step_home": "Choose <strong>Add to Home Screen</strong>.",
+    "pwa_step_open": "Tap <strong>Add</strong>, then open Guess-History from your Home Screen.",
+    "pwa_got_it": "Got it",
     "players_ready": "({ready}/{total} players ready)",
     "select_all": "Select all",
     "deselect_all": "Deselect all",
@@ -537,6 +546,8 @@
     "no_game_id_response": "No gameId in response",
     "failed_start_practice": "Failed to start practice",
     "failed_load_session": "Failed to load session",
+    "connection_not_ready": "Connection not ready — please wait",
+    "load_session_timed_out": "Session load timed out. Please try again.",
     "failed_start_game": "Failed to start game",
     "bc_suffix": "BC",
     "decade_suffix": "s",
@@ -639,6 +650,9 @@
     "compete": "Compete",
     "back": "Back",
     "avatar_alt": "Avatar",
+    "change_avatar": "Change avatar",
+    "edit_username": "Edit username",
+    "cancel_edit_username": "Cancel editing username",
     "avg_accuracy": "Avg accuracy",
     "total_xp": "Total XP",
     "games_played": "Games played",
@@ -697,6 +711,11 @@
     "join_game": "Join Game",
     "session_complete": "{name} completed the game",
     "view_results": "View Results",
+    "enable_title": "Enable push notifications?",
+    "invite_desc": "Get notified when a friend invites you to a game. You can change this anytime in settings.",
+    "turn_desc": "Get notified when it's your turn in Relax games. You can change this anytime in settings.",
+    "not_now": "Not now",
+    "enable": "Enable",
     "someone": "Someone"
   },
   "welcome": {
@@ -729,6 +748,7 @@
   },
   "rank": {
     "rank_label": "Rank",
+    "tier_prefix": "T",
     "next_label": "Next",
     "rank_1": "Wanderer",
     "rank_2": "Pathfinder",
