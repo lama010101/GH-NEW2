@@ -94,7 +94,7 @@ export default function PracticeGamePage() {
           response = await fetch(`/api/compete/${gameId}?playerId=${playerId}`, { cache: "no-store", signal: _snapshotController.signal })
         } catch (err: unknown) {
           if (err instanceof Error && err.name === 'AbortError') {
-            if (!cancelled) setError('Session load timed out. Please try again.')
+            if (!cancelled) setError(t('load_session_timed_out'))
             return
           }
           throw err

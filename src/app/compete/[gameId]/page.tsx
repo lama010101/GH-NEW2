@@ -427,7 +427,7 @@ export default function CompeteGamePage() {
     if (!snapshot) return;
     if (!playerId) return;
     if (connectionState !== "OPEN" || snapshot.status !== "ROUND_COMPLETE") {
-      setError("Connection not ready — please wait");
+      setError(t('connection_not_ready'));
       return;
     }
     setBusy(true);
@@ -738,7 +738,7 @@ export default function CompeteGamePage() {
                 className={btnStyles.button}
                 style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999 }}
               >
-                {t('game.retry')}
+                {t('retry')}
               </button>
               <button
                 type="button"
@@ -746,20 +746,20 @@ export default function CompeteGamePage() {
                 className={btnStyles.button}
                 style={{ marginTop: 8, padding: '10px 24px', borderRadius: 999, background: 'rgba(255,100,100,0.3)' }}
               >
-                {t('game.clear_session_restart')}
+                {t('clear_session_restart')}
               </button>
             </>
           )}
           {identity.status !== 'ready' && identity.status !== 'error' && showLoadingTimeout && (
             <>
-              <div style={{ marginTop: 8, fontSize: 'var(--font-sm)', opacity: 0.8 }}>{t('game.taking_too_long')}</div>
+              <div style={{ marginTop: 8, fontSize: 'var(--font-sm)', opacity: 0.8 }}>{t('taking_too_long')}</div>
               <button
                 type="button"
                 onClick={handleForceClear}
                 className={btnStyles.button}
                 style={{ marginTop: 16, padding: '10px 24px', borderRadius: 999, background: 'rgba(255,100,100,0.3)' }}
               >
-                {t('game.clear_session_restart')}
+                {t('clear_session_restart')}
               </button>
             </>
           )}

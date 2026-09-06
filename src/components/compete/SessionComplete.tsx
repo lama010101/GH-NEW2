@@ -75,7 +75,7 @@ export default function SessionComplete({
   const tRank = useTranslations('rank');
   const tLobby = useTranslations('lobby');
   const tHelp = useTranslations('help');
-  const tCommon = useTranslations('common');
+  const tNav = useTranslations('nav');
   const distanceUnit = getDistanceUnitPreference();
   const isPractice = snapshot.config.mode === "practice";
   const isDaily = snapshot.config.mode === "daily";
@@ -891,7 +891,7 @@ export default function SessionComplete({
                   return (
                     <div className={styles.customRankCard}>
                       <div className={styles.customRankMedallion}>
-                        <span className={styles.customRankTier}>T{info.tier}</span>
+                        <span className={styles.customRankTier}>{tRank('tier_prefix')}{info.tier}</span>
                         <span className={styles.customRankStars}>
                           {Array.from({ length: info.tier }, (_, i) => (
                             <Star key={i} size={8} fill="var(--gh-gold)" color="var(--gh-gold)" />
@@ -1117,7 +1117,7 @@ export default function SessionComplete({
                 type="button"
                 className={styles.helpClose}
                 onClick={() => setHelpOpen(false)}
-                aria-label={tCommon('close')}
+                aria-label={tNav('close')}
               >
                 ×
               </button>

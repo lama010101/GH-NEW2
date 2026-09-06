@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface PushSoftAskProps {
@@ -12,6 +13,7 @@ interface PushSoftAskProps {
 }
 
 export function PushSoftAsk(props: PushSoftAskProps) {
+  const tNotif = useTranslations('notifications');
   const { subscribe, isSupported, permission, isSubscribed, isLoading } = usePushNotifications();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,10 +100,10 @@ export function PushSoftAsk(props: PushSoftAskProps) {
         }}
       >
         <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 600 }}>
-          Enable push notifications?
+          {tNotif('enable_title')}
         </h2>
         <p style={{ margin: '0 0 24px', fontSize: 14, lineHeight: 1.5, color: '#b8bed4' }}>
-          Get notified when a friend invites you to a game. You can change this anytime in settings.
+          {tNotif('invite_desc')}
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button
@@ -121,7 +123,7 @@ export function PushSoftAsk(props: PushSoftAskProps) {
               opacity: pending ? 0.6 : 1,
             }}
           >
-            Not now
+            {tNotif('not_now')}
           </button>
           <button
             type="button"
@@ -140,7 +142,7 @@ export function PushSoftAsk(props: PushSoftAskProps) {
               opacity: pending ? 0.6 : 1,
             }}
           >
-            Enable
+            {tNotif('enable')}
           </button>
         </div>
         {error && (

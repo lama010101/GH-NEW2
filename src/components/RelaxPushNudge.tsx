@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface RelaxPushNudgeProps {
@@ -23,6 +24,7 @@ interface RelaxPushNudgeProps {
  * push_soft_ask_dismissed). The two flows are completely independent.
  */
 export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
+  const tNotif = useTranslations('notifications');
   const { subscribe, isSupported, permission } = usePushNotifications();
   const [visible, setVisible] = useState(false);
   const [pending, setPending] = useState(false);
@@ -136,10 +138,10 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
         }}
       >
         <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 600 }}>
-          Enable push notifications?
+          {tNotif('enable_title')}
         </h2>
         <p style={{ margin: '0 0 24px', fontSize: 14, lineHeight: 1.5, color: '#b8bed4' }}>
-          Get notified when it&apos;s your turn in Relax games. You can change this anytime in settings.
+          {tNotif('turn_desc')}
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button
@@ -159,7 +161,7 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
               opacity: pending ? 0.6 : 1,
             }}
           >
-            Not now
+            {tNotif('not_now')}
           </button>
           <button
             type="button"
@@ -178,7 +180,7 @@ export function RelaxPushNudge({ onComplete }: RelaxPushNudgeProps) {
               opacity: pending ? 0.6 : 1,
             }}
           >
-            Enable
+            {tNotif('enable')}
           </button>
         </div>
         {error && (
