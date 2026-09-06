@@ -184,3 +184,8 @@ export async function getValidAccessToken(): Promise<string | null> {
   const s = await readSession();
   return s?.access_token ?? null;
 }
+
+// MP-FIX-SESSIONKEEPALIVE-INTERVAL-001: with autoRefreshToken disabled (MP-FIX-AUTOREFRESH-DEADLOOP-001), proactively call readSession() every 5 min so idle tabs stay authenticated. 300_000ms is safely under Supabase's default 3600s JWT expiry; routes through readSession()'s single-flight/circuit-breaker, not around it.
+if (typeof window !== "undefined") {
+  setInterval(() => { void readSession(); }, 300_000);
+}
