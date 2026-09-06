@@ -737,36 +737,40 @@ export default function LobbySection({
             <h3><span className={styles['lobby-section-number']}>1</span>{t('lobby.game_settings')}</h3><button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('settings')} aria-label={t('nav.help')}><HelpCircle size={16} /></button>
           </div>
           <div className={styles['lobbyTabRow']}>
-            <button
-              className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`}
-              onClick={() => isHost && onSetSubMode?.("async", maxTurnDays)}
-              disabled={!isHost || busy}
-            >
-              <span className={styles['lobbyTabContent']}>
-                <span className={styles['lobbyTabTitleRow']}>
-                  <span className={styles['lobbyTabIconBadge']}>
-                    <img src="/icons/level.webp" alt="" width={20} height={20} className={styles['lobbyTabIconImg']} draggable={false} />
+            <div className={styles['lobbyTabCell']}>
+              <button
+                className={`${styles['lobbyTabBtn']} ${styles['lobbyTabBtnAnytime']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`}
+                onClick={() => isHost && onSetSubMode?.("async", maxTurnDays)}
+                disabled={!isHost || busy}
+              >
+                <span className={styles['lobbyTabContent']}>
+                  <span className={styles['lobbyTabTitleRow']}>
+                    <span className={styles['lobbyTabIconBadge']}>
+                      <img src="/icons/anytime_256.png" alt="" width={30} height={30} className={styles['lobbyTabIconImg']} draggable={false} />
+                    </span>
+                    <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
                   </span>
-                  <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
                 </span>
-                <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
-              </span>
-            </button>
-            <button
-              className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
-              onClick={() => isHost && onSetSubMode?.("sync", maxTurnDays)}
-              disabled={!isHost || busy}
-            >
-              <span className={styles['lobbyTabContent']}>
-                <span className={styles['lobbyTabTitleRow']}>
-                  <span className={styles['lobbyTabIconBadge']}>
-                    <img src="/icons/practice.webp" alt="" width={20} height={20} className={styles['lobbyTabIconImg']} draggable={false} />
+              </button>
+              <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
+            </div>
+            <div className={styles['lobbyTabCell']}>
+              <button
+                className={`${styles['lobbyTabBtn']} ${styles['lobbyTabBtnLive']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
+                onClick={() => isHost && onSetSubMode?.("sync", maxTurnDays)}
+                disabled={!isHost || busy}
+              >
+                <span className={styles['lobbyTabContent']}>
+                  <span className={styles['lobbyTabTitleRow']}>
+                    <span className={styles['lobbyTabIconBadge']}>
+                      <img src="/icons/live_256.png" alt="" width={30} height={30} className={styles['lobbyTabIconImg']} draggable={false} />
+                    </span>
+                    <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
                   </span>
-                  <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
                 </span>
-                <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
-              </span>
-            </button>
+              </button>
+              <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
+            </div>
           </div>
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
