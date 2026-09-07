@@ -746,7 +746,7 @@ export default function LobbySection({
                 <span className={styles['lobbyTabContent']}>
                   <span className={styles['lobbyTabTitleRow']}>
                     <span className={styles['lobbyTabIconBadge']}>
-                      <img src="/icons/anytime_256.png" alt="" width={30} height={30} className={styles['lobbyTabIconImg']} draggable={false} />
+                      <img src="/icons/anytime_256.png" alt="" width={44} height={44} className={styles['lobbyTabIconImg']} draggable={false} />
                     </span>
                     <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
                   </span>
@@ -763,7 +763,7 @@ export default function LobbySection({
                 <span className={styles['lobbyTabContent']}>
                   <span className={styles['lobbyTabTitleRow']}>
                     <span className={styles['lobbyTabIconBadge']}>
-                      <img src="/icons/live_256.png" alt="" width={30} height={30} className={styles['lobbyTabIconImg']} draggable={false} />
+                      <img src="/icons/live_256.png" alt="" width={44} height={44} className={styles['lobbyTabIconImg']} draggable={false} />
                     </span>
                     <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
                   </span>
