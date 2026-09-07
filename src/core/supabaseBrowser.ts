@@ -37,6 +37,39 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
   }
 );
 
+// MP-FIX-AUTHREFRESH-DEADTOKENLOOP-001: the SDK's internal refresh-token
+// retry loop (dead token -> _removeSession -> _notifyAllSubscribers ->
+// re-enter _acquireLock/getSession -> _callRefreshToken again) fires hundreds
+// of /auth/v1/token calls before any app code calls readSession(), so the
+// readSession() circuit-breaker cannot intercept it. This reactive listener
+// watches for the loop's observable symptom from the JS side — repeated
+// SIGNED_OUT events in rapid succession (each _removeSession() emits one) —
+// and force-clears storage exactly once, breaking the loop before it can
+// iterate more than twice. It never calls any GoTrueClient method (no
+// getSession/getUser/refreshSession), so it cannot re-enter the SDK; it only
+// reacts to the event stream and calls the existing forceClearAuthStorage()
+// escape hatch.
+let signedOutCount = 0;
+let signedOutWindowStartMs = 0;
+let deadTokenLoopHandled = false;
+if (typeof window !== "undefined") {
+  supabaseBrowser.auth.onAuthStateChange((event) => {
+    if (deadTokenLoopHandled || event !== "SIGNED_OUT") {
+      return;
+    }
+    const now = Date.now();
+    if (now - signedOutWindowStartMs > 3_000) {
+      signedOutWindowStartMs = now;
+      signedOutCount = 0;
+    }
+    signedOutCount += 1;
+    if (signedOutCount > 2) {
+      deadTokenLoopHandled = true;
+      forceClearAuthStorage();
+    }
+  });
+}
+
 /**
  * Reads the current session from the auth cookie.
  *
