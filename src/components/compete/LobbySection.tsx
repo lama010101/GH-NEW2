@@ -140,6 +140,10 @@ const ERAS: { id: EraId; label: string; span: string; icon: string; stockImg: st
   { id: 'modern',      label: 'Modern',       span: '1789 – 1945',  icon: '🏭', stockImg: ERA_STOCK_IMAGES.modern,      yearMin: 1789,  yearMax: 1945 },
   { id: 'contemporary',label: 'Contemporary', span: '1945 – 2025',  icon: '🚀', stockImg: ERA_STOCK_IMAGES.contemporary, yearMin: 1945,  yearMax: new Date().getFullYear() },
 ];
+const VALID_ERA_IDS = new Set<EraId>(ERAS.map(e => e.id));
+// Drop stale ids from persisted config (e.g. an era removed since the game was
+// created) so the "N / total" count can never exceed ERAS.length.
+const sanitizeEraIds = (ids: EraId[]): EraId[] => ids.filter(id => VALID_ERA_IDS.has(id));
 
 type RegionId = 'africa' | 'asia' | 'europe' | 'north_america' | 'oceania_antarctica' | 'south_america';
 const REGIONS: { id: RegionId; label: string; icon: string; stockImg: string; continents: string[] }[] = [
@@ -216,7 +220,7 @@ export default function LobbySection({
   // Sync selected eras to authoritative snapshot value whenever it changes externally.
   // Use a stable string key to avoid firing on every broadcast (JSON arrays are always
   // new references). Skip sync if local state already matches incoming value.
-  const snapshotErasKey = (snapshot.config.selectedEras ?? ERAS.map(e => e.id))
+  const snapshotErasKey = sanitizeEraIds((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[])
     .slice()
     .sort()
     .join(',');
@@ -225,7 +229,7 @@ export default function LobbySection({
       suppressEraSyncRef.current = false;
       return;
     }
-    const incoming = (snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[];
+    const incoming = sanitizeEraIds((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[]);
     const incomingKey = incoming.slice().sort().join(',');
     const localKey = [...selectedEras].sort().join(',');
     if (incomingKey === localKey) return; // already in sync, skip
@@ -278,7 +282,7 @@ export default function LobbySection({
   }, [snapshot.config.sessionDeadlineDays]);
 
   const [selectedEras, setSelectedEras] = useState<Set<EraId>>(
-    () => new Set((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[])
+    () => new Set(sanitizeEraIds((snapshot.config.selectedEras ?? ERAS.map(e => e.id)) as EraId[]))
   );
   const suppressEraSyncRef = useRef(false);
 
