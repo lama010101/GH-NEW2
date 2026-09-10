@@ -105,6 +105,17 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
+    heading: "Content",
+    items: [
+      {
+        label: "Journey",
+        href: "/admin/dashboard/journey",
+        match: "/admin/dashboard/journey",
+        icon: <Icon d="M3 5h18v16H3zM8 3v4M16 3v4M3 10h18" />,
+      },
+    ],
+  },
+  {
     heading: "System",
     items: [
       {
