@@ -17,9 +17,9 @@ export async function approveCandidate(jseId: string) {
   const pool = getDbPool();
   await pool.query(
     `UPDATE public.journey_stage_events
-     SET approved_by = $1, approved_at = now(), updated_at = now()
-     WHERE id = $2::uuid AND approved_by IS NULL`,
-    [session.user.id, jseId]
+     SET approved_by = $1, approved_by_email = $2, approved_at = now(), updated_at = now()
+     WHERE id = $3::uuid AND approved_by IS NULL`,
+    [session.user.id, session.user.email ?? null, jseId]
   );
   revalidatePath("/admin/dashboard/journey");
 }

@@ -99,8 +99,13 @@ export default async function JourneyStageDrilldownPage({
                   {row.celebrity ? "Yes" : "No"}
                 </td>
                 <td data-label="Status">
-                  {row.approved_by ? (
-                    <span className="ops-chip">Approved</span>
+                  {row.approved_at ? (
+                    <span className="ops-chip">
+                      Approved
+                      {row.approved_by_email
+                        ? ` by ${row.approved_by_email}`
+                        : " (admin account since removed)"}
+                    </span>
                   ) : (
                     <span className="ops-chip">Pending</span>
                   )}
@@ -108,7 +113,7 @@ export default async function JourneyStageDrilldownPage({
                 <td data-label="Actions">
                   <CandidateRowActions
                     jseId={row.id}
-                    approved={row.approved_by !== null}
+                    approved={row.approved_at !== null}
                   />
                 </td>
               </tr>

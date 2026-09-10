@@ -50,6 +50,7 @@ export type CandidateRow = {
   id: string;
   event_id: string;
   approved_by: string | null;
+  approved_by_email: string | null;
   approved_at: string | null;
   stale_flag: boolean;
   title: string;
@@ -72,6 +73,7 @@ export async function fetchStageCandidates(
       jse.id,
       jse.event_id,
       jse.approved_by,
+      jse.approved_by_email,
       jse.approved_at,
       jse.stale_flag,
       e.title,
