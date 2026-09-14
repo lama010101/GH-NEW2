@@ -10,7 +10,7 @@ import { ImageButton } from "@/components/shared/ImageButton";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import styles from './LobbySection.module.css';
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
-import { ChevronDown, Timer, HelpCircle } from 'lucide-react';
+import { ChevronDown, Timer, HelpCircle, Play } from 'lucide-react';
 import { CompeteWebSocket, type ConnectionState } from "@/core/competeWebSocket";
 
 interface LobbySectionProps {
@@ -1409,7 +1409,7 @@ export default function LobbySection({
           {/* Sub-section B: Players roster */}
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
-              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>{t('lobby.players', { current: totalPlayers, total: isAsync ? 30 : 8 })}</span>
+              <span className={styles['lobby-accent-bar-sm']} /><span className={styles['lobby-subsection-title']}>{t('lobby.players', { current: totalPlayers + (snapshot.pendingInvitees ?? []).length, total: isAsync ? 30 : 8 })}</span>
               <span className={styles['lobbyReadyIndicator']}>
                 <span
                   className={styles['lobbyReadyDot']}
@@ -1514,7 +1514,7 @@ export default function LobbySection({
               disabled={busy || connectionState !== "OPEN"}
               data-testid="lobby-ready-btn"
             >
-              {t('lobby.relax_start_my_game')}
+              <Play size={18} aria-hidden="true" /> {t('lobby.relax_start_my_game')}
             </button>
           ) : (
             <button
@@ -1524,7 +1524,7 @@ export default function LobbySection({
               disabled={busy || connectionState !== "OPEN"}
               data-testid="lobby-ready-btn"
             >
-              {isReady ? t('lobby.ready_waiting') : t('lobby.im_ready')}
+              <Play size={18} aria-hidden="true" /> {isReady ? t('lobby.ready_waiting') : t('lobby.im_ready')}
             </button>
           )}
           {!isAsync && (
