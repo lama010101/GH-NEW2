@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { enterFullscreen, isFullscreen } from '@/lib/fullscreen'
+import { enterFullscreen, exitFullscreen, isFullscreen } from '@/lib/fullscreen'
 import { isIOsSafariNonPwa } from '@/core/relaxPwaInterstitial'
 import {
   INSTALL_PROMPT_CAPTURED_EVENT,
@@ -107,6 +107,15 @@ export default function FullscreenPwaModal() {
     return () => window.removeEventListener(OPEN_FULLSCREEN_PWA_MODAL_EVENT, onOpen)
   }, [])
 
+  // Keep the Enter/Exit button honest if fullscreen changes while the modal is
+  // open (e.g. user presses Esc or uses the browser's own exit control).
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return
+    const onFsChange = () => setFsActive(isFullscreen())
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
+  }, [open])
+
   // Keep the Install button honest if the capture lands while the modal is open.
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -119,6 +128,12 @@ export default function FullscreenPwaModal() {
     // Mark seen without touching an existing 'auto' remember flag.
     if (readChoice() == null) writeChoice('seen')
     setOpen(false)
+  }
+
+  const handleExitFullscreen = () => {
+    void exitFullscreen()
+    setFsActive(false)
+    handleDismiss()
   }
 
   const handleEnterFullscreen = () => {
@@ -153,16 +168,9 @@ export default function FullscreenPwaModal() {
         </p>
 
         {fsActive ? (
-          <p
-            style={{
-              color: 'var(--gh-modal-text-secondary)',
-              fontSize: 'var(--font-sm)',
-              margin: '0 0 16px 0',
-              textAlign: 'center',
-            }}
-          >
-            Fullscreen is already active.
-          </p>
+          <button type="button" className={modalStyles.submitButton} onClick={handleExitFullscreen}>
+            Exit Fullscreen
+          </button>
         ) : (
           <button type="button" className={modalStyles.submitButton} onClick={handleEnterFullscreen}>
             Enter Fullscreen
