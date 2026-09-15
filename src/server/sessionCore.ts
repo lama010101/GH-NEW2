@@ -2683,6 +2683,7 @@ async function startRelaxPlayer(input: { gameId: string; playerId: string; cause
   const { gameId, playerId, cause } = input;
   const client = await getTransactionClient();
   let clientReleased = false;
+  const pendingPushes: Array<{ userId: string; payload: { title: string; body: string; url: string; tag: string } }> = [];
 
   try {
     await client.query("BEGIN");
@@ -2791,11 +2792,14 @@ async function startRelaxPlayer(input: { gameId: string; playerId: string; cause
             }),
           ]
         );
-        await sendPushToUser(invitee.invitee_id, {
-          title: "Guess History",
-          body: `${starterName} invited you to a game`,
-          url: `/compete/${gameId}`,
-          tag: `lobby_invite:${gameId}:${invitee.invitee_id}`,
+        pendingPushes.push({
+          userId: invitee.invitee_id,
+          payload: {
+            title: "Guess History",
+            body: `${starterName} invited you to a game`,
+            url: `/compete/${gameId}`,
+            tag: `lobby_invite:${gameId}:${invitee.invitee_id}`,
+          },
         });
       }
     }
@@ -2824,6 +2828,13 @@ async function startRelaxPlayer(input: { gameId: string; playerId: string; cause
     await client.query("COMMIT");
     clientReleased = true;
     client.release();
+
+    // Fire deferred push notifications only after the transaction has committed.
+    // sendPushToUser catches its own errors internally, so a push failure cannot
+    // crash this request after the in-app notification row is already durable.
+    for (const p of pendingPushes) {
+      await sendPushToUser(p.userId, p.payload);
+    }
 
     const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, dbPool);
     const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
@@ -3783,6 +3794,7 @@ export async function advancePlayerRoundAsync(
 
   const client = await getTransactionClient();
   let clientReleased = false;
+  const pendingPushes: Array<{ userId: string; payload: { title: string; body: string; url: string; tag: string } }> = [];
   try {
     await client.query("BEGIN");
 
@@ -3855,11 +3867,14 @@ export async function advancePlayerRoundAsync(
                VALUES ($1, 'session_complete', $2::jsonb)`,
               [other.player_id, JSON.stringify({ game_id: gameId, completing_player_id: playerId, completing_player_name: completerName })]
             );
-            await sendPushToUser(other.player_id, {
-              title: "Guess History",
-              body: `${completerName} completed their session`,
-              url: `/compete/${gameId}`,
-              tag: `session_complete:${gameId}`,
+            pendingPushes.push({
+              userId: other.player_id,
+              payload: {
+                title: "Guess History",
+                body: `${completerName} completed their session`,
+                url: `/compete/${gameId}`,
+                tag: `session_complete:${gameId}`,
+              },
             });
           }
         }
@@ -3870,6 +3885,14 @@ export async function advancePlayerRoundAsync(
     await client.query("COMMIT");
     client.release();
     clientReleased = true;
+
+    // Fire deferred push notifications only after the transaction has committed.
+    // sendPushToUser catches its own errors internally, so a push failure cannot
+    // crash this request after the in-app notification row is already durable.
+    for (const p of pendingPushes) {
+      await sendPushToUser(p.userId, p.payload);
+    }
+
     const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);
     const actingPlayerSnapshot = playerSnapshots[playerId];
     if (!actingPlayerSnapshot) throw new Error("Session not found");
