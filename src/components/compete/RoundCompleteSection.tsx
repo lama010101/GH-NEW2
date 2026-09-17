@@ -240,6 +240,9 @@ export default function RoundCompleteSection({
         const effectiveRoundResults = isAsync ? asyncRoundResults : roundResults;
         const myResult = effectiveRoundResults?.find(r => r.playerId === playerId);
         const submitted = hasSubmitted(myResult);
+        const hintsUsedCount = myResult?.hintsUsedCount ?? submittedHintPenaltyRef.current.purchasedIds.length;
+        const whenAccPenalty = myResult?.accPenaltyWhenRate ?? submittedHintPenaltyRef.current.whenAccPenalty;
+        const whereAccPenalty = myResult?.accPenaltyWhereRate ?? submittedHintPenaltyRef.current.whereAccPenalty;
         const myDistanceKm = (submitted && guessLat != null && guessLng != null)
           ? haversineKm(guessLat, guessLng, correctLat, correctLng)
           : null;
@@ -418,7 +421,7 @@ export default function RoundCompleteSection({
                     );
                   })()}
                 </div>
-                {submittedHintPenaltyRef.current.xpPenalty > 0 && (
+                {hintsUsedCount > 0 && (
                   <div className={styles.hintPenaltyBadge}>
                     <span className={styles.hintPenaltyBadgeInner}>{t('hint_penalties')}</span>
                   </div>
@@ -654,7 +657,7 @@ export default function RoundCompleteSection({
                     correctLat={correctLat}
                     correctLng={correctLng}
                     correctName={correctName}
-                    whereAccPenalty={submittedHintPenaltyRef.current.whereAccPenalty}
+                    whereAccPenalty={whereAccPenalty}
                     guessLat={submitted ? guessLat : null}
                     guessLng={submitted ? guessLng : null}
                     myDistanceKm={myDistanceKm}
@@ -676,7 +679,7 @@ export default function RoundCompleteSection({
                     roundResults={effectiveRoundResults}
                     playerId={playerId}
                     correctYear={correctYear}
-                    whenAccPenalty={submittedHintPenaltyRef.current.whenAccPenalty}
+                    whenAccPenalty={whenAccPenalty}
                     whenLbExpanded={whenLbExpanded}
                     setWhenLbExpanded={setWhenLbExpanded}
                     whenCluesExpanded={whenCluesExpanded}
@@ -691,7 +694,7 @@ export default function RoundCompleteSection({
             </div>
 
             {/* HINTS USED CARD */}
-            {submittedHintPenaltyRef.current.purchasedIds.length > 0 && (() => {
+            {hintsUsedCount > 0 && (() => {
               const usedHints = (snapshot?.rounds?.[snapshot.currentRoundIndex]?.hints ?? [])
                 .filter(h => submittedHintPenaltyRef.current.purchasedIds.includes(h.id))
                 .sort((a, b) => {

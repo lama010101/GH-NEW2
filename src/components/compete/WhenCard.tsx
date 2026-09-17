@@ -50,6 +50,7 @@ export default function WhenCard({
   isPractice = false,
 }: WhenCardProps) {
   const t = useTranslations('game');
+  const effectiveWhenAccPenalty = roundResults?.find(r => r.playerId === playerId)?.accPenaltyWhenRate ?? whenAccPenalty;
   // Compute whenRows
   const whenRows = snapshotPlayers
     .map(p => {
@@ -152,10 +153,10 @@ export default function WhenCard({
       )}
 
       {/* Hint penalty */}
-      {!bare && whenAccPenalty > 0 && (
+      {!bare && effectiveWhenAccPenalty > 0 && (
         <div>
           <span className={styles.hintPenalty}>
-            −{Math.round(whenAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
+            −{Math.round(effectiveWhenAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
           </span>
         </div>
       )}

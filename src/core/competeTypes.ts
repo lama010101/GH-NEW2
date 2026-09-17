@@ -13,6 +13,9 @@ export type RoundResult = {
   nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>;
   cumulativeScore: number;
   cumulativeAccuracy: number;
+  hintsUsedCount?: number;
+  accPenaltyWhenRate?: number;
+  accPenaltyWhereRate?: number;
 };
 
 export type AllRoundResult = {

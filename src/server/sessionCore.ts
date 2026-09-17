@@ -449,7 +449,9 @@ type PlayerRoundState = {
   submittedRounds: Set<number>;
 };
 
-type RoundResultDetail = { score: number; locationScore: number; timeScore: number; guessYear: number | null; guessLat: number | null; guessLng: number | null; distanceKm: number | null; yearDiff: number | null; absent: boolean; };
+type RoundResultDetail = { score: number; locationScore: number; timeScore: number; guessYear: number | null; guessLat: number | null; guessLng: number | null; distanceKm: number | null; yearDiff: number | null; absent: boolean; hintsUsedCount: number; accPenaltyWhenRate: number; accPenaltyWhereRate: number; };
+
+type PlayerRoundResultWithPenalty = PlayerRoundResult & { hintsUsedCount: number; accPenaltyWhenRate: number; accPenaltyWhereRate: number; };
 
 type AsyncSnapshotBase = {
   session: SessionRow;
@@ -551,11 +553,15 @@ async function loadRoundResultScoresForAsync(
     distance_km: number | null;
     year_diff: number | null;
     absent: boolean | null;
+    hints_used: number | null;
+    acc_penalty_when_rate: number | null;
+    acc_penalty_where_rate: number | null;
   }>(
     `SELECT rr.player_id, rr.round_index, rr.score, rr.location_score, rr.time_score,
             rr.distance_km, rr.year_diff,
             rc.year_guess, rc.location_lat, rc.location_lng,
-            COALESCE(rc.absent, FALSE) AS absent
+            COALESCE(rc.absent, FALSE) AS absent,
+            rc.hints_used, rc.acc_penalty_when_rate, rc.acc_penalty_where_rate
      FROM round_results rr
      LEFT JOIN round_commits rc
        ON rc.game_id = rr.game_id
@@ -577,6 +583,9 @@ async function loadRoundResultScoresForAsync(
       distanceKm: row.distance_km ?? null,
       yearDiff: row.year_diff ?? null,
       absent: row.absent ?? false,
+      hintsUsedCount: row.hints_used ?? 0,
+      accPenaltyWhenRate: row.acc_penalty_when_rate ?? 0,
+      accPenaltyWhereRate: row.acc_penalty_where_rate ?? 0,
     });
   }
   return map;
@@ -803,10 +812,10 @@ function buildAsyncPlayerSnapshotFromBase(
     roundResultDetailsByPlayer.set(playerId, arr);
   }
 
-  const playerRoundResultsByRound = new Map<string, Map<number, PlayerRoundResult>>();
+  const playerRoundResultsByRound = new Map<string, Map<number, PlayerRoundResultWithPenalty>>();
   for (const [playerId, rows] of roundResultDetailsByPlayer.entries()) {
     rows.sort((a, b) => a.roundIndex - b.roundIndex);
-    const byRound = new Map<number, PlayerRoundResult>();
+    const byRound = new Map<number, PlayerRoundResultWithPenalty>();
     let cumulativeScore = 0;
     let cumulativeAccRawSum = 0;
     for (let i = 0; i < rows.length; i++) {
@@ -840,6 +849,9 @@ function buildAsyncPlayerSnapshotFromBase(
         yearDiff: row.yearDiff,
         region: revealAnswer ? ev?.region ?? null : null,
         absent: row.absent,
+        hintsUsedCount: row.hintsUsedCount,
+        accPenaltyWhenRate: row.accPenaltyWhenRate,
+        accPenaltyWhereRate: row.accPenaltyWhereRate,
         rank: 0,
         badges,
         nearMisses,
@@ -848,7 +860,7 @@ function buildAsyncPlayerSnapshotFromBase(
     playerRoundResultsByRound.set(playerId, byRound);
   }
 
-  const getPlayerRoundResult = (playerId: string, roundIndex: number): PlayerRoundResult => {
+  const getPlayerRoundResult = (playerId: string, roundIndex: number): PlayerRoundResultWithPenalty => {
     const byRound = playerRoundResultsByRound.get(playerId);
     const exact = byRound?.get(roundIndex);
     if (exact) return exact;
@@ -872,6 +884,9 @@ function buildAsyncPlayerSnapshotFromBase(
       yearDiff: null,
       region: null,
       absent: false,
+      hintsUsedCount: 0,
+      accPenaltyWhenRate: 0,
+      accPenaltyWhereRate: 0,
       rank: 0,
       badges: [],
       nearMisses: [],
@@ -4996,7 +5011,7 @@ export async function recordReadyNext(input: {
 export async function getRoundResults(
   gameId: string,
   roundIndex: number
-): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>; cumulativeScore: number; cumulativeAccuracy: number }>> {
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>; cumulativeScore: number; cumulativeAccuracy: number; hintsUsedCount: number; accPenaltyWhenRate: number; accPenaltyWhereRate: number }>> {
   const result = await dbPool.query<{
     player_id: string;
     score: number;
@@ -5006,6 +5021,9 @@ export async function getRoundResults(
     year_guess: number | null;
     location_lat: number | null;
     location_lng: number | null;
+    hints_used: number | null;
+    acc_penalty_when_rate: number | null;
+    acc_penalty_where_rate: number | null;
   }>(
     `SELECT
       sp.player_id,
@@ -5015,7 +5033,10 @@ export async function getRoundResults(
       rr.time_score,
       rc.year_guess,
       rc.location_lat,
-      rc.location_lng
+      rc.location_lng,
+      rc.hints_used,
+      rc.acc_penalty_when_rate,
+      rc.acc_penalty_where_rate
     FROM session_players sp
     LEFT JOIN round_results rr
       ON rr.game_id = $1
@@ -5077,6 +5098,9 @@ export async function getRoundResults(
       nearMisses,
       cumulativeScore: cumulativeMap.get(row.player_id) ?? 0,
       cumulativeAccuracy: cumulativeAccuracyMap.get(row.player_id) ?? 0,
+      hintsUsedCount: row.hints_used ?? 0,
+      accPenaltyWhenRate: row.acc_penalty_when_rate ?? 0,
+      accPenaltyWhereRate: row.acc_penalty_where_rate ?? 0,
     };
   });
 }

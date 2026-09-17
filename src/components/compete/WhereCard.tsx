@@ -71,6 +71,7 @@ export default function WhereCard({
   const t = useTranslations('game');
   const distanceUnit = getDistanceUnitPreference();
   const myResult = roundResults?.find(r => r.playerId === playerId);
+  const effectiveWhereAccPenalty = myResult?.accPenaltyWhereRate ?? whereAccPenalty;
 
   return (
     <div className={bare ? styles.cardBare : styles.card}>
@@ -123,10 +124,10 @@ export default function WhereCard({
         })()}
       </div>
       )}
-      {!bare && whereAccPenalty > 0 && (
+      {!bare && effectiveWhereAccPenalty > 0 && (
         <div className={styles.hintPenaltyWrap}>
           <span className={styles.hintPenalty}>
-            −{Math.round(whereAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
+            −{Math.round(effectiveWhereAccPenalty)}<span className={styles.hintPenaltySuffix}>%</span> {t('hints_suffix')}
           </span>
         </div>
       )}
