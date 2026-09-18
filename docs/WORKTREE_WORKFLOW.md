@@ -13,6 +13,15 @@ We use git worktrees to avoid file-collision incidents between concurrent tracks
    ```bash
    ./scripts/dev/new-uix-worktree.sh css-theme
    ```
+   This already runs `npm install` and then `scripts/dev/check-hooks-installed.sh`
+   for you. If you created the worktree by any other means (e.g. an ad-hoc
+   `git worktree add`), run the check yourself right after `npm install`:
+   ```bash
+   bash scripts/dev/check-hooks-installed.sh
+   ```
+   Git hooks (`core.hooksPath` → `.husky/_/`) are generated per-worktree and
+   are NOT committed. If they're missing, pushes silently skip all safety
+   gates with no error — this check fails loudly instead.
 2. Do normal development in `../GH-NEW-uix-css-theme`.
 3. Before merging, run the overlap check from the main checkout:
    ```bash
