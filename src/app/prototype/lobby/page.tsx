@@ -204,7 +204,7 @@ const SLIDER_OVERRIDE_CSS = `
     width: 13.3px;
     height: 30px;
     border-radius: 999px;
-    background: var(--gh-orange) !important;
+    background: linear-gradient(180deg, var(--gh-orange), #e6502b) !important;
     border: none !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
     cursor: pointer;
@@ -220,7 +220,7 @@ const SLIDER_OVERRIDE_CSS = `
     width: 13.3px;
     height: 30px;
     border-radius: 999px;
-    background: var(--gh-orange) !important;
+    background: linear-gradient(180deg, var(--gh-orange), #e6502b) !important;
     border: none !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
     cursor: pointer;
@@ -254,18 +254,130 @@ const SLIDER_OVERRIDE_CSS = `
   }
 `;
 
-// ── Tab icon overrides (Game Settings ANYTIME/LIVE tabs use custom webp art icons;
-// neutral glass badge in both states so the colorful icons read clearly) ──
+// ── Tab overrides (match the reference screenshot): two separate pill
+// buttons with the icon inside, left of the label; ANYTIME = blue gradient,
+// LIVE = pink gradient (module color classes); unselected pill is dark navy
+// with an inset border, colored icon and muted label; subtitle under the
+// button. CSS-module classes are hashed -> [class*="..."] selectors. ──
 const TAB_OVERRIDE_CSS = `
-  .protoTabIconBadge {
-    background: rgba(255, 255, 255, 0.10) !important;
+  [class*="lobbyTabRow"] {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 14px !important;
+    margin-bottom: 18px !important;
+  }
+  [class*="lobbyTabCell"] {
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  [class*="lobbyTabSub"] {
+    font-size: 14px !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    text-align: center !important;
+    font-weight: 500 !important;
+  }
+
+  [class*="lobbyTabBtn"] {
+    position: relative;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 70px !important; /* one icon width between icon and title */
+    height: 74px !important;
+    padding: 0 18px 0 6px !important;
+    border-radius: 9999px !important;
+    border: none !important;
+    width: 100%;
+    overflow: visible;
+    transition: transform 0.1s, box-shadow 0.18s, opacity 0.18s;
+  }
+  [class*="lobbyTabBtn"]:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  [class*="lobbyTabBtn"]:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed;
+  }
+
+  [class*="lobbyTabBtn"] [class*="lobbyTabIconBadge"] {
+    width: 70px !important;
+    height: 70px !important;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
   }
   .protoTabIconImg {
-    width: 20px;
-    height: 20px;
+    width: 70px;
+    height: 70px;
     object-fit: contain;
     display: block;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
+  }
+  [class*="lobbyTabMain"] {
+    flex: none;
+    text-align: center;
+    font-size: 26px !important;
+    font-weight: 900 !important;
+    letter-spacing: 1px !important;
+    color: #fff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Selected ANYTIME: dark navy pill with cyan icon/text */
+  [class*="lobbyTabBtnAnytime"][class*="lobbyTabBtnActive"] {
+    background: linear-gradient(145deg, #232b3a, #1a202c) !important;
+    box-shadow: 0 0 0 2px rgba(61, 220, 245, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    opacity: 1 !important;
+  }
+  /* Selected LIVE: pink gradient pill */
+  [class*="lobbyTabBtnLive"][class*="lobbyTabBtnActive"] {
+    background: linear-gradient(135deg, #fb64b4, #e11d8f) !important;
+    box-shadow: 0 0 22px rgba(236, 72, 153, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    opacity: 1 !important;
+  }
+
+  /* Unselected: grey pill lighter than the page background; icon + title greyed out */
+  [class*="lobbyTabBtn"]:not([class*="lobbyTabBtnActive"]) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+    filter: none !important;
+    opacity: 1;
+  }
+  [class*="lobbyTabBtn"]:not([class*="lobbyTabBtnActive"]) .protoTabIconImg {
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35)) grayscale(1) opacity(0.6);
+  }
+  [class*="lobbyTabBtn"]:not([class*="lobbyTabBtnActive"]) [class*="lobbyTabMain"] {
+    color: rgba(255, 255, 255, 0.45) !important;
+    text-shadow: none;
+  }
+
+  @media (max-width: 768px) {
+    [class*="lobbyTabRow"] {
+      gap: 10px !important;
+    }
+    [class*="lobbyTabBtn"] {
+      height: 58px !important;
+      padding: 0 12px 0 4px !important;
+      gap: 54px !important; /* one icon width between icon and title */
+    }
+    [class*="lobbyTabBtn"] [class*="lobbyTabIconBadge"] {
+      width: 54px !important;
+      height: 54px !important;
+    }
+    .protoTabIconImg {
+      width: 54px;
+      height: 54px;
+    }
+    [class*="lobbyTabMain"] {
+      font-size: 18px !important;
+      letter-spacing: 0.6px !important;
+    }
+    [class*="lobbyTabSub"] {
+      font-size: 12px !important;
+    }
   }
 `;
 
@@ -278,6 +390,101 @@ const FILTER_SWITCH_CSS = `
   }
   .protoFilterSwitchWrap > button {
     flex-shrink: 0;
+  }
+`;
+
+// ── Orange → gradient (#e6502b) overrides for this prototype page.
+// Injected here only (never touches the shared prod module): solid orange
+// fills become gradients ending in #e6502b; standalone orange texts become
+// gradient-clipped text. Tinted-pill badges, 1px borders and hover glows stay
+// solid on purpose (gradient clip would destroy the pill fill). ──
+const ORANGE_GRADIENT_CSS = `
+  [class*="lobbyToggleBtnOn"] {
+    background: linear-gradient(90deg, var(--gh-orange), #e6502b);
+  }
+  [class*="lobbyReadyBtnNotReady"] {
+    background: linear-gradient(135deg, var(--gh-orange), #e6502b);
+  }
+  [class*="lobby-section-number"] {
+    background: linear-gradient(135deg, var(--gh-orange), #e6502b);
+  }
+  [class*="lobby-accent-bar-sm"] {
+    background: linear-gradient(180deg, var(--gh-orange), #e6502b);
+  }
+  [class*="lobby-status-dot"] {
+    background: linear-gradient(135deg, var(--gh-orange), #e6502b);
+  }
+  [class*="lobby-setting-value"],
+  [class*="lobbyViewAllText"],
+  [class*="lobbySelectAllBtn"] {
+    background: linear-gradient(135deg, var(--gh-orange), #e6502b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+`;
+
+// ── Settings summary boxes = head of the collapsible presets window
+// (match the reference screenshot): four boxes (label over value) in a
+// 4-column row, 2x2 on mobile; a chevron on the right toggles the window.
+// Hashed module classes are targeted via [class*="..."]. ──
+const SETTINGS_SUMMARY_CSS = `
+  .lobby-settings-summary {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--gh-border-subtle);
+    cursor: pointer;
+  }
+  .lobby-settings-pair {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 12px;
+    padding: 10px 12px;
+    min-width: 0;
+  }
+  .lobby-settings-pair [class*="lobby-setting-value"] {
+    font-size: var(--font-base, 16px);
+  }
+  .lobby-settings-summary-chevron {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    margin-top: -9px; /* half the 18px icon */
+    color: rgba(255, 255, 255, 0.6);
+    transition: transform 0.2s ease;
+  }
+  .lobby-settings-summary-chevron-open {
+    transform: rotate(180deg);
+  }
+  [class*="lobby-presets-disclosure"] {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 14px;
+  }
+  [class*="lobby-presets-content"] {
+    padding: 0 20px 12px;
+  }
+  @media (max-width: 768px) {
+    .lobby-settings-summary {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 12px 12px;
+    }
+    .lobby-settings-pair {
+      padding: 8px 4px;
+    }
+    .lobby-settings-summary-chevron {
+      right: 8px;
+    }
   }
 `;
 
@@ -612,144 +819,170 @@ export default function LobbyPrototypePage() {
                   </button>
                 </div>
                 <div className={styles["lobbyTabRow"]}>
-                  <button
-                    className={`${styles["lobbyTabBtn"]} ${settingsTab === "turnturn" ? styles["lobbyTabBtnActive"] : ""}`}
-                    onClick={() => switchTab("async")}
-                    disabled={!isHost}
-                  >
-                    <span className={styles["lobbyTabContent"]}>
-                      <span className={styles["lobbyTabTitleRow"]}>
-                        <span className={`${styles["lobbyTabIconBadge"]} protoTabIconBadge`}>
-                          <img src="/icons/level.webp" alt="" width={20} height={20} className="protoTabIconImg" draggable={false} />
-                        </span>
-                        <span className={styles["lobbyTabMain"]}>{T.turn_by_turn}</span>
+                  <div className={styles["lobbyTabCell"]}>
+                    <button
+                      type="button"
+                      className={`${styles["lobbyTabBtn"]} ${styles["lobbyTabBtnAnytime"]} ${settingsTab === "turnturn" ? styles["lobbyTabBtnActive"] : ""}`}
+                      onClick={() => switchTab("async")}
+                      disabled={!isHost}
+                      aria-pressed={settingsTab === "turnturn"}
+                    >
+                      <span className={`${styles["lobbyTabIconBadge"]} protoTabIconBadge`}>
+                        <img src="/icons/anytime.png" alt="" width={64} height={64} className="protoTabIconImg" draggable={false} />
                       </span>
-                      <span className={styles["lobbyTabSub"]}>{T.turn_by_turn_sub}</span>
-                    </span>
-                  </button>
-                  <button
-                    className={`${styles["lobbyTabBtn"]} ${settingsTab === "realtime" ? styles["lobbyTabBtnActive"] : ""}`}
-                    onClick={() => switchTab("sync")}
-                    disabled={!isHost}
-                  >
-                    <span className={styles["lobbyTabContent"]}>
-                      <span className={styles["lobbyTabTitleRow"]}>
-                        <span className={`${styles["lobbyTabIconBadge"]} protoTabIconBadge`}>
-                          <img src="/icons/practice.webp" alt="" width={20} height={20} className="protoTabIconImg" draggable={false} />
-                        </span>
-                        <span className={styles["lobbyTabMain"]}>{T.realtime}</span>
+                      <span className={styles["lobbyTabMain"]}>{T.turn_by_turn}</span>
+                    </button>
+                    <span className={styles["lobbyTabSub"]}>{T.turn_by_turn_sub}</span>
+                  </div>
+                  <div className={styles["lobbyTabCell"]}>
+                    <button
+                      type="button"
+                      className={`${styles["lobbyTabBtn"]} ${styles["lobbyTabBtnLive"]} ${settingsTab === "realtime" ? styles["lobbyTabBtnActive"] : ""}`}
+                      onClick={() => switchTab("sync")}
+                      disabled={!isHost}
+                      aria-pressed={settingsTab === "realtime"}
+                    >
+                      <span className={`${styles["lobbyTabIconBadge"]} protoTabIconBadge`}>
+                        <img src="/icons/live.png" alt="" width={64} height={64} className="protoTabIconImg" draggable={false} />
                       </span>
-                      <span className={styles["lobbyTabSub"]}>{T.realtime_sub}</span>
-                    </span>
-                  </button>
+                      <span className={styles["lobbyTabMain"]}>{T.realtime}</span>
+                    </button>
+                    <span className={styles["lobbyTabSub"]}>{T.realtime_sub}</span>
+                  </div>
                 </div>
                 <div className={styles["lobby-settings-grid"]}>
                   {settingsTab === "realtime" && (
                     <>
-                      <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
-                        <span className={styles["lobby-setting-label"]}>
-                          <Timer size={18} aria-hidden="true" /> {T.round}
-                        </span>
-                        {isHost ? (
-                          <span className={styles["lobbyRowLeftWrap"]}>
-                            <button
-                              type="button"
-                              onClick={() => setSliderValue((v) => (v > 0 ? 0 : ROUND_TIMER_DEFAULT_SEC))}
-                              className={sliderValue > 0 ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
-                            >
-                              <span className={styles["lobbyToggleKnob"]} style={{ left: sliderValue > 0 ? 22 : 2 }} />
-                            </button>
-                            {sliderValue > 0 ? (
-                              <span className={styles["lobbyRowLeft"]}>
-                                <span className={`${styles["lobby-timer-slider-wrap"]} ${styles["lobbyRushTimerWrap"]} protoSliderWrap`}>
-                                  <div className={styles["lobby-timer-slider-track"]} />
-                                  <div
-                                    className={styles["lobby-timer-slider-fill"]}
-                                    style={{ width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%` }}
-                                  />
-                                  <RangeSlider
-                                    className={styles["lobby-timer-slider"]}
-                                    min={TIMER_MIN_SEC}
-                                    max={TIMER_MAX_SEC}
-                                    step={15}
-                                    value={sliderValue}
-                                    onChange={(e) => setSliderValue(Number(e.target.value))}
-                                    ticks={ROUND_TIMER_TICKS}
-                                    majorTicks={ROUND_TIMER_MAJOR_TICKS}
-                                    format={(v) => formatTimerDisplay(v, "")}
-                                  />
-                                </span>
-                                <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
-                                  {formatTimerDisplay(sliderValue, T.timer_off)}
-                                </span>
-                              </span>
-                            ) : (
-                              <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>{T.timer_off}</span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className={styles["lobby-setting-value"]}>
-                            {sliderValue === 0 ? T.timer_off : formatTimerDisplay(sliderValue, T.timer_off)}
-                          </span>
-                        )}
-                      </div>
-                      <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
-                        <span className={styles["lobby-setting-label"]}>
-                          <Timer size={16} aria-hidden="true" /> {T.results_timer}
-                        </span>
-                        {isHost ? (
-                          <span className={styles["lobbyRowLeftWrap"]}>
-                            <button
-                              type="button"
-                              onClick={() => setResultsTimerValue((v) => (v > 0 ? 0 : Math.max(TIMER_MIN_SEC, v || TIMER_MIN_SEC)))}
-                              className={resultsTimerValue > 0 ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
-                            >
-                              <span className={styles["lobbyToggleKnob"]} style={{ left: resultsTimerValue > 0 ? 22 : 2 }} />
-                            </button>
-                            {resultsTimerValue > 0 ? (
-                              <span className={styles["lobbyRowLeft"]}>
-                                <span className={`${styles["lobby-timer-slider-wrap"]} protoSliderWrap`}>
-                                  <div className={styles["lobby-timer-slider-track"]} />
-                                  <div
-                                    className={styles["lobby-timer-slider-fill"]}
-                                    style={{ width: `${((resultsTimerValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%` }}
-                                  />
-                                  <RangeSlider
-                                    className={styles["lobby-timer-slider"]}
-                                    min={TIMER_MIN_SEC}
-                                    max={TIMER_MAX_SEC}
-                                    step={15}
-                                    value={resultsTimerValue}
-                                    onChange={(e) => setResultsTimerValue(Number(e.target.value))}
-                                    ticks={RESULTS_TIMER_TICKS}
-                                    majorTicks={RESULTS_TIMER_MAJOR_TICKS}
-                                    format={(v) => formatTimerDisplay(v, "")}
-                                  />
-                                </span>
-                                <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
-                                  {formatTimerDisplay(resultsTimerValue, T.timer_off)}
-                                </span>
-                              </span>
-                            ) : (
-                              <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>{T.timer_off}</span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className={styles["lobby-setting-value"]}>
-                            {resultsTimerValue === 0 ? T.timer_off : formatTimerDisplay(resultsTimerValue, T.timer_off)}
-                          </span>
-                        )}
-                      </div>
+                      {/* Settings summary (label + value) is the head of the
+                          collapsible presets window; chevron toggles it */}
                       <div className={styles["lobby-presets-disclosure"]}>
-                        <button type="button" className={styles["lobby-presets-header"]} onClick={() => setPresetsExpanded((v) => !v)}>
-                          <span className={styles["lobby-setting-label"]}>{T.era_region_presets}</span>
+                        <div
+                          className="lobby-settings-summary"
+                          data-testid="lobby-settings-summary"
+                          onClick={() => setPresetsExpanded((v) => !v)}
+                        >
+                          <div className="lobby-settings-pair">
+                            <span className={styles["lobby-setting-label"]}>Rounds</span>
+                            <span className={styles["lobby-setting-value"]}>{formatTimerDisplay(sliderValue, T.timer_off)}</span>
+                          </div>
+                          <div className="lobby-settings-pair">
+                            <span className={styles["lobby-setting-label"]}>Results</span>
+                            <span className={styles["lobby-setting-value"]}>{formatTimerDisplay(resultsTimerValue, T.timer_off)}</span>
+                          </div>
+                          <div className="lobby-settings-pair">
+                            <span className={styles["lobby-setting-label"]}>Eras</span>
+                            <span className={styles["lobby-setting-value"]}>
+                              {selectedEras.size}/{ERAS.length}
+                            </span>
+                          </div>
+                          <div className="lobby-settings-pair">
+                            <span className={styles["lobby-setting-label"]}>Regions</span>
+                            <span className={styles["lobby-setting-value"]}>
+                              {REGIONS.filter((r) => selectedRegions.has(r.id)).length}/{REGIONS.length}
+                            </span>
+                          </div>
                           <ChevronDown
-                            size={16}
-                            className={`${styles["lobby-presets-chevron"]} ${presetsExpanded ? styles["lobby-presets-chevron-open"] : ""}`}
+                            size={18}
+                            aria-hidden="true"
+                            className={`lobby-settings-summary-chevron ${presetsExpanded ? "lobby-settings-summary-chevron-open" : ""}`}
                           />
-                        </button>
+                        </div>
                         {presetsExpanded && (
                           <div className={styles["lobby-presets-content"]}>
+                            <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
+                              <span className={styles["lobby-setting-label"]}>
+                                <Timer size={18} aria-hidden="true" /> {T.round}
+                              </span>
+                              {isHost ? (
+                                <span className={styles["lobbyRowLeftWrap"]}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSliderValue((v) => (v > 0 ? 0 : ROUND_TIMER_DEFAULT_SEC))}
+                                    className={sliderValue > 0 ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
+                                  >
+                                    <span className={styles["lobbyToggleKnob"]} style={{ left: sliderValue > 0 ? 22 : 2 }} />
+                                  </button>
+                                  {sliderValue > 0 ? (
+                                    <span className={styles["lobbyRowLeft"]}>
+                                      <span className={`${styles["lobby-timer-slider-wrap"]} ${styles["lobbyRushTimerWrap"]} protoSliderWrap`}>
+                                        <div className={styles["lobby-timer-slider-track"]} />
+                                        <div
+                                          className={styles["lobby-timer-slider-fill"]}
+                                          style={{ width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%` }}
+                                        />
+                                        <RangeSlider
+                                          className={styles["lobby-timer-slider"]}
+                                          min={TIMER_MIN_SEC}
+                                          max={TIMER_MAX_SEC}
+                                          step={15}
+                                          value={sliderValue}
+                                          onChange={(e) => setSliderValue(Number(e.target.value))}
+                                          ticks={ROUND_TIMER_TICKS}
+                                          majorTicks={ROUND_TIMER_MAJOR_TICKS}
+                                          format={(v) => formatTimerDisplay(v, "")}
+                                        />
+                                      </span>
+                                      <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                                        {formatTimerDisplay(sliderValue, T.timer_off)}
+                                      </span>
+                                    </span>
+                                  ) : (
+                                    <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>{T.timer_off}</span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className={styles["lobby-setting-value"]}>
+                                  {sliderValue === 0 ? T.timer_off : formatTimerDisplay(sliderValue, T.timer_off)}
+                                </span>
+                              )}
+                            </div>
+                            <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
+                              <span className={styles["lobby-setting-label"]}>
+                                <Timer size={16} aria-hidden="true" /> {T.results_timer}
+                              </span>
+                              {isHost ? (
+                                <span className={styles["lobbyRowLeftWrap"]}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setResultsTimerValue((v) => (v > 0 ? 0 : Math.max(TIMER_MIN_SEC, v || TIMER_MIN_SEC)))}
+                                    className={resultsTimerValue > 0 ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
+                                  >
+                                    <span className={styles["lobbyToggleKnob"]} style={{ left: resultsTimerValue > 0 ? 22 : 2 }} />
+                                  </button>
+                                  {resultsTimerValue > 0 ? (
+                                    <span className={styles["lobbyRowLeft"]}>
+                                      <span className={`${styles["lobby-timer-slider-wrap"]} protoSliderWrap`}>
+                                        <div className={styles["lobby-timer-slider-track"]} />
+                                        <div
+                                          className={styles["lobby-timer-slider-fill"]}
+                                          style={{ width: `${((resultsTimerValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%` }}
+                                        />
+                                        <RangeSlider
+                                          className={styles["lobby-timer-slider"]}
+                                          min={TIMER_MIN_SEC}
+                                          max={TIMER_MAX_SEC}
+                                          step={15}
+                                          value={resultsTimerValue}
+                                          onChange={(e) => setResultsTimerValue(Number(e.target.value))}
+                                          ticks={RESULTS_TIMER_TICKS}
+                                          majorTicks={RESULTS_TIMER_MAJOR_TICKS}
+                                          format={(v) => formatTimerDisplay(v, "")}
+                                        />
+                                      </span>
+                                      <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                                        {formatTimerDisplay(resultsTimerValue, T.timer_off)}
+                                      </span>
+                                    </span>
+                                  ) : (
+                                    <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>{T.timer_off}</span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className={styles["lobby-setting-value"]}>
+                                  {resultsTimerValue === 0 ? T.timer_off : formatTimerDisplay(resultsTimerValue, T.timer_off)}
+                                </span>
+                              )}
+                            </div>
                             <div className={`${styles["lobby-setting-item"]} ${styles["lobbySettingRowBlock"]}`}>
                               <div className={styles["lobbySettingRowHead"]}>
                                 <span className={styles["lobby-setting-label"]}>{T.era_presets}</span>
@@ -834,97 +1067,125 @@ export default function LobbyPrototypePage() {
                   )}
                   {settingsTab === "turnturn" && (
                     <>
-                      <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
-                        <span className={styles["lobby-setting-label"]}>
-                          <Timer size={18} aria-hidden="true" /> {T.round}
-                        </span>
-                        {isHost ? (
-                          <span className={styles["lobbyRowLeftWrap"]}>
-                            <button
-                              type="button"
-                              onClick={() => setSliderValue((v) => (v > 0 ? 0 : ROUND_TIMER_DEFAULT_SEC))}
-                              className={sliderValue > 0 ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
-                            >
-                              <span className={styles["lobbyToggleKnob"]} style={{ left: sliderValue > 0 ? 22 : 2 }} />
-                            </button>
-                            {sliderValue > 0 ? (
-                              <span className={styles["lobbyRowLeft"]}>
-                                <span className={`${styles["lobby-timer-slider-wrap"]} protoSliderWrap`}>
-                                  <div className={styles["lobby-timer-slider-track"]} />
-                                  <div
-                                    className={styles["lobby-timer-slider-fill"]}
-                                    style={{ width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%` }}
-                                  />
-                                  <RangeSlider
-                                    className={styles["lobby-timer-slider"]}
-                                    min={TIMER_MIN_SEC}
-                                    max={TIMER_MAX_SEC}
-                                    step={15}
-                                    value={sliderValue}
-                                    onChange={(e) => setSliderValue(Number(e.target.value))}
-                                    ticks={ROUND_TIMER_TICKS}
-                                    majorTicks={ROUND_TIMER_MAJOR_TICKS}
-                                    format={(v) => formatTimerDisplay(v, "")}
-                                  />
-                                </span>
-                                <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
-                                  {formatTimerDisplay(sliderValue, T.timer_off)}
-                                </span>
-                              </span>
-                            ) : (
-                              <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>{T.timer_off}</span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className={styles["lobby-setting-value"]}>
-                            {sliderValue === 0 ? T.timer_off : formatTimerDisplay(sliderValue, T.timer_off)}
-                          </span>
-                        )}
-                      </div>
-                      <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
-                        <span className={styles["lobby-setting-label"]}>
-                          <Timer size={18} aria-hidden="true" /> {T.game}
-                        </span>
-                        {isHost ? (
-                          <span className={styles["lobbyRowLeft"]}>
-                            <span className={`${styles["lobby-timer-slider-wrap"]} protoSliderWrap`}>
-                              <div className={styles["lobby-timer-slider-track"]} />
-                              <div
-                                className={styles["lobby-timer-slider-fill"]}
-                                style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }}
-                              />
-                              <RangeSlider
-                                className={styles["lobby-timer-slider"]}
-                                min={1}
-                                max={14}
-                                step={1}
-                                value={maxTurnDays}
-                                onChange={(e) => setMaxTurnDays(Number(e.target.value))}
-                                ticks={DEADLINE_TICKS}
-                                majorTicks={DEADLINE_MAJOR_TICKS}
-                                format={(v) => (v === 1 ? T["1_day"] : fmt(T.n_days, { n: v }))}
-                              />
-                            </span>
-                            <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                      {/* Settings summary (label + value) is the head of the
+                          collapsible presets window; chevron toggles it */}
+                      <div className={styles["lobby-presets-disclosure"]}>
+                        <div
+                          className="lobby-settings-summary"
+                          data-testid="lobby-settings-summary"
+                          onClick={() => setPresetsExpanded((v) => !v)}
+                        >
+                          <div className="lobby-settings-pair">
+                            <span className={styles["lobby-setting-label"]}>Rounds</span>
+                            <span className={styles["lobby-setting-value"]}>{formatTimerDisplay(sliderValue, T.timer_off)}</span>
+                          </div>
+                          <div className="lobby-settings-pair">
+                            <span className={styles["lobby-setting-label"]}>Game</span>
+                            <span className={styles["lobby-setting-value"]}>
                               {maxTurnDays === 1 ? T["1_day"] : fmt(T.n_days, { n: maxTurnDays })}
                             </span>
-                          </span>
-                        ) : (
-                          <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
-                            {maxTurnDays === 1 ? T["1_day"] : fmt(T.n_days, { n: maxTurnDays })}
-                          </span>
-                        )}
-                      </div>
-                      <div className={styles["lobby-presets-disclosure"]}>
-                        <button type="button" className={styles["lobby-presets-header"]} onClick={() => setPresetsExpanded((v) => !v)}>
-                          <span className={styles["lobby-setting-label"]}>{T.era_region_presets}</span>
+                          </div>
+                          <div className="lobby-settings-pair">
+                            <span className={styles["lobby-setting-label"]}>Eras</span>
+                            <span className={styles["lobby-setting-value"]}>
+                              {selectedEras.size}/{ERAS.length}
+                            </span>
+                          </div>
+                          <div className="lobby-settings-pair">
+                            <span className={styles["lobby-setting-label"]}>Regions</span>
+                            <span className={styles["lobby-setting-value"]}>
+                              {REGIONS.filter((r) => selectedRegions.has(r.id)).length}/{REGIONS.length}
+                            </span>
+                          </div>
                           <ChevronDown
-                            size={16}
-                            className={`${styles["lobby-presets-chevron"]} ${presetsExpanded ? styles["lobby-presets-chevron-open"] : ""}`}
+                            size={18}
+                            aria-hidden="true"
+                            className={`lobby-settings-summary-chevron ${presetsExpanded ? "lobby-settings-summary-chevron-open" : ""}`}
                           />
-                        </button>
+                        </div>
                         {presetsExpanded && (
                           <div className={styles["lobby-presets-content"]}>
+                            <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
+                              <span className={styles["lobby-setting-label"]}>
+                                <Timer size={18} aria-hidden="true" /> {T.round}
+                              </span>
+                              {isHost ? (
+                                <span className={styles["lobbyRowLeftWrap"]}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSliderValue((v) => (v > 0 ? 0 : ROUND_TIMER_DEFAULT_SEC))}
+                                    className={sliderValue > 0 ? styles["lobbyToggleBtnOn"] : styles["lobbyToggleBtnOff"]}
+                                  >
+                                    <span className={styles["lobbyToggleKnob"]} style={{ left: sliderValue > 0 ? 22 : 2 }} />
+                                  </button>
+                                  {sliderValue > 0 ? (
+                                    <span className={styles["lobbyRowLeft"]}>
+                                      <span className={`${styles["lobby-timer-slider-wrap"]} protoSliderWrap`}>
+                                        <div className={styles["lobby-timer-slider-track"]} />
+                                        <div
+                                          className={styles["lobby-timer-slider-fill"]}
+                                          style={{ width: `${((sliderValue - TIMER_MIN_SEC) / (TIMER_MAX_SEC - TIMER_MIN_SEC)) * 100}%` }}
+                                        />
+                                        <RangeSlider
+                                          className={styles["lobby-timer-slider"]}
+                                          min={TIMER_MIN_SEC}
+                                          max={TIMER_MAX_SEC}
+                                          step={15}
+                                          value={sliderValue}
+                                          onChange={(e) => setSliderValue(Number(e.target.value))}
+                                          ticks={ROUND_TIMER_TICKS}
+                                          majorTicks={ROUND_TIMER_MAJOR_TICKS}
+                                          format={(v) => formatTimerDisplay(v, "")}
+                                        />
+                                      </span>
+                                      <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                                        {formatTimerDisplay(sliderValue, T.timer_off)}
+                                      </span>
+                                    </span>
+                                  ) : (
+                                    <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>{T.timer_off}</span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className={styles["lobby-setting-value"]}>
+                                  {sliderValue === 0 ? T.timer_off : formatTimerDisplay(sliderValue, T.timer_off)}
+                                </span>
+                              )}
+                            </div>
+                            <div className={`${styles["lobby-setting-item"]} ${styles["lobbyRowWrap"]}`}>
+                              <span className={styles["lobby-setting-label"]}>
+                                <Timer size={18} aria-hidden="true" /> {T.game}
+                              </span>
+                              {isHost ? (
+                                <span className={styles["lobbyRowLeft"]}>
+                                  <span className={`${styles["lobby-timer-slider-wrap"]} protoSliderWrap`}>
+                                    <div className={styles["lobby-timer-slider-track"]} />
+                                    <div
+                                      className={styles["lobby-timer-slider-fill"]}
+                                      style={{ width: `${((maxTurnDays - 1) / 13) * 100}%` }}
+                                    />
+                                    <RangeSlider
+                                      className={styles["lobby-timer-slider"]}
+                                      min={1}
+                                      max={14}
+                                      step={1}
+                                      value={maxTurnDays}
+                                      onChange={(e) => setMaxTurnDays(Number(e.target.value))}
+                                      ticks={DEADLINE_TICKS}
+                                      majorTicks={DEADLINE_MAJOR_TICKS}
+                                      format={(v) => (v === 1 ? T["1_day"] : fmt(T.n_days, { n: v }))}
+                                    />
+                                  </span>
+                                  <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                                    {maxTurnDays === 1 ? T["1_day"] : fmt(T.n_days, { n: maxTurnDays })}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className={`${styles["lobby-setting-value"]} ${styles["lobbyNoWrap"]}`}>
+                                  {maxTurnDays === 1 ? T["1_day"] : fmt(T.n_days, { n: maxTurnDays })}
+                                </span>
+                              )}
+                            </div>
                             <div className={`${styles["lobby-setting-item"]} ${styles["lobbySettingRowBlock"]}`}>
                               <div className={styles["lobbySettingRowHead"]}>
                                 <span className={styles["lobby-setting-label"]}>{T.era_presets}</span>
@@ -1398,7 +1659,7 @@ export default function LobbyPrototypePage() {
           </div>
         </div>
       </div>
-      <style dangerouslySetInnerHTML={{ __html: SLIDER_OVERRIDE_CSS + TAB_OVERRIDE_CSS + FILTER_SWITCH_CSS }} />
+      <style dangerouslySetInnerHTML={{ __html: SLIDER_OVERRIDE_CSS + TAB_OVERRIDE_CSS + FILTER_SWITCH_CSS + ORANGE_GRADIENT_CSS + SETTINGS_SUMMARY_CSS }} />
     </main>
   );
 }
