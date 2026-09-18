@@ -1,0 +1,639 @@
+/* ============================================================================
+   PROTOTYPE RANK MODULE — horizontal level rail styles
+   100 levels -> 20 technology ranks -> 5 titles per rank (I-V).
+   Dark theme matching other prototypes (#080c14).
+   ============================================================================ */
+
+.screen {
+  min-height: 100vh;
+  background: #080c14;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 60px 16px 40px;
+  box-sizing: border-box;
+}
+
+/* ── Proto bar ── */
+.protoBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(10, 10, 12, 0.6);
+  backdrop-filter: blur(8px);
+  flex-wrap: wrap;
+}
+
+.protoTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  opacity: 0.85;
+}
+
+.protoLinks {
+  display: flex;
+  gap: 8px;
+}
+
+.protoLink {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gh-teal);
+  text-decoration: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.15s;
+}
+
+.protoLink:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ── Header ── */
+.header {
+  max-width: 900px;
+  margin: 0 auto 20px;
+  text-align: center;
+}
+
+.headerTitle {
+  font-size: 30px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  font-family: "Bebas Neue", sans-serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.headerSub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Current level hero ── */
+.hero {
+  max-width: 760px;
+  margin: 0 auto 14px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 22px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+}
+
+.heroIconWrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex: none;
+}
+
+.heroIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+}
+
+.heroBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.heroLevel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--gh-orange);
+}
+
+.heroName {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 2px 0 4px;
+  font-family: "Bebas Neue", sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+
+.heroRank {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.heroNext {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.heroNextIcon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+.heroNextText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.heroNextLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.heroNextName {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ── XP progress bar (under the rail) ── */
+.progressModule {
+  max-width: 760px;
+  margin: 20px auto 0;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
+}
+
+.progressRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.progressLeft {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressCurrent {
+  color: var(--gh-orange);
+}
+
+.progressTarget {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.progressRight {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--gh-orange);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressBar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gh-teal), var(--gh-orange));
+  box-shadow: 0 0 12px rgba(251, 146, 60, 0.45);
+  transition: width 0.3s ease;
+}
+
+/* ── Mock controls ── */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  max-width: 760px;
+  margin: 0 auto 26px;
+  padding: 10px 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.mockTag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #080c14;
+  background: var(--gh-orange);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.controlLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.control input[type="range"] {
+  width: 150px;
+  accent-color: var(--gh-orange);
+}
+
+.controlVal {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 74px;
+}
+
+/* ── Horizontal rail ── */
+.railWrap {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.railWrap::before,
+.railWrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.railWrap::before {
+  left: 0;
+  background: linear-gradient(90deg, #080c14, transparent);
+}
+
+.railWrap::after {
+  right: 0;
+  background: linear-gradient(270deg, #080c14, transparent);
+}
+
+.rail {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 18px max(16px, calc(50% - 540px));
+  scroll-snap-type: x proximity;
+  cursor: grab;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  touch-action: pan-x pan-y;
+}
+
+.railDragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+
+.rail::-webkit-scrollbar {
+  height: 8px;
+}
+
+.rail::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+/* ── Rank divider chips (one per 5-level rank group) ── */
+.rankDivider {
+  scroll-snap-align: center;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 46px;
+  padding: 10px 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dividerIcon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.dividerName {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+.dividerRank {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Level cards ── */
+.card {
+  scroll-snap-align: center;
+  flex: none;
+  width: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  user-select: none;
+  transition: opacity 0.2s, box-shadow 0.2s;
+}
+
+.card[data-state="past"] {
+  opacity: 0.82;
+}
+
+.card[data-state="current"] {
+  border-color: rgba(251, 146, 60, 0.8);
+  box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.4), 0 8px 30px rgba(251, 146, 60, 0.18);
+  background: linear-gradient(180deg, rgba(251, 146, 60, 0.14), rgba(251, 146, 60, 0.04));
+}
+
+.cardRank {
+  display: none;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.cardXpCurrent {
+  color: var(--gh-orange);
+  font-weight: 700;
+}
+
+.cardXpTarget {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+
+.card[data-state="future"] {
+  opacity: 0.45;
+  filter: grayscale(0.9);
+}
+
+.cardIconWrap {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.cardIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.romanBadge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: rgba(8, 12, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 5px;
+  line-height: 1.4;
+}
+
+.checkBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gh-teal);
+  color: #04222a;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 18px;
+}
+
+.cardLevel {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.card[data-state="current"] .cardLevel {
+  color: var(--gh-orange);
+}
+
+.cardName {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.15;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.cardXp {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+
+
+.cardSegBar {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.cardSegFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gh-orange);
+}
+
+/* ── Footnote ── */
+.footNote {
+  max-width: 900px;
+  margin: 18px auto 0;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.6;
+}
+
+/* ── Load-in animation (whole module) ── */
+@keyframes moduleIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.header {
+  animation: moduleIn 0.6s ease both;
+}
+
+.hero {
+  animation: moduleIn 0.6s ease 0.12s both;
+}
+
+.controls {
+  animation: moduleIn 0.6s ease 0.24s both;
+}
+
+.railWrap {
+  animation: moduleIn 0.6s ease 0.36s both;
+}
+
+.progressModule {
+  animation: moduleIn 0.6s ease 0.48s both;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .hero {
+    flex-wrap: wrap;
+  }
+
+  .heroName {
+    font-size: 24px;
+  }
+
+  .heroNext {
+    width: 100%;
+  }
+
+  /* The current tile fills the full mobile rail width and is fully visible
+     (hero-style, icon left of text). The next tile is off-screen to the
+     right; subtle chevrons hint that the rail is swipeable. */
+  .card {
+    scroll-snap-align: start;
+  }
+
+  .rankDivider {
+    scroll-snap-align: none;
+  }
+
+  .card[data-state="current"] {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: repeat(5, auto);
+    column-gap: 12px;
+    row-gap: 2px;
+    align-items: center;
+    text-align: left;
+    padding: 14px 16px;
+  }
+
+  .card[data-state="current"] .cardIconWrap {
+    grid-row: 1 / 6;
+    grid-column: 1;
+    width: 64px;
+    height: 64px;
+  }
+
+  .card[data-state="current"] .cardLevel,
+  .card[data-state="current"] .cardName,
+  .card[data-state="current"] .cardRank,
+  .card[data-state="current"] .cardXp,
+  .card[data-state="current"] .cardSegBar {
+    grid-column: 2;
+  }
+
+  .card[data-state="current"] .cardRank {
+    display: block;
+  }
+
+  .card[data-state="current"] .cardName {
+    font-family: "Bebas Neue", sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1.05;
+    min-height: 0;
+  }
+
+  /* Subtle swipe hint chevrons — only on mobile. */
+  .rail::before,
+  .rail::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 11px;
+    height: 11px;
+    border-style: solid;
+    border-width: 2px 2px 0 0;
+    border-color: rgba(255, 255, 255, 0.45);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .rail::before {
+    left: 8px;
+    transform: translateY(-50%) rotate(225deg);
+  }
+
+  .rail::after {
+    right: 8px;
+    transform: translateY(-50%) rotate(45deg);
+  }
+}

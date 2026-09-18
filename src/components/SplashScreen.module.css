@@ -1,0 +1,156 @@
+/* Splash overlay — matches manifest.json background_color. Pure-CSS timeline;
+   after the fade completes, fill-mode forwards keeps it hidden + unclickable. */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: #080c14;
+  animation: splashFade 0.45s ease 2.05s forwards;
+}
+
+/* Purple ambient halo behind the emblem — strong during build, gone by idle. */
+.bloom {
+  position: absolute;
+  width: min(70vw, 420px);
+  height: min(70vw, 420px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.5), transparent 65%);
+  animation: bloomPulse 1.8s ease-out both;
+}
+
+.emblem {
+  width: min(44vw, 240px);
+  height: auto;
+  overflow: visible;
+}
+
+.emblemBody {
+  transform-box: view-box;
+  transform-origin: 256px 256px;
+}
+
+/* --- Phase 1: dot pops in with purple glow (0.00-0.25s) --- */
+.dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: dotIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0s forwards;
+}
+
+/* --- Phase 2: ring draws on (0.20-0.55s) --- */
+.ring {
+  stroke-dasharray: 459; /* 2π × 73 */
+  stroke-dashoffset: 459;
+  transform-box: view-box;
+  transform-origin: 256px 256px;
+  transform: rotate(-90deg);
+  animation: ringDraw 0.38s ease-out 0.22s forwards;
+}
+
+/* --- Phases 2-4: twin purple arcs orbit the ring, then fade --- */
+.orbitSpin {
+  transform-box: view-box;
+  transform-origin: 256px 256px;
+  animation: orbitRotate 0.95s linear 0.2s both;
+}
+
+.orbitArcs {
+  stroke-dasharray: 75 214; /* 2 × 75px arcs on r=92 (C≈578) */
+  opacity: 0;
+  filter: drop-shadow(0 0 14px rgba(139, 92, 246, 0.9));
+  animation: orbitArcVis 0.95s linear 0.2s both;
+}
+
+/* --- Phases 3/4: rays pop in, staggered via inline animation-delay --- */
+.ray {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: rayPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* --- Phase 5: purple gloss arc sweeps the ring (0.90-1.60s) --- */
+.glossSpin {
+  transform-box: view-box;
+  transform-origin: 256px 256px;
+  animation: glossRotate 0.72s cubic-bezier(0.4, 0, 0.2, 1) 0.9s both;
+}
+
+.glossArc {
+  stroke-dasharray: 45 414; /* single 45px arc on r=73 (C≈459) */
+  opacity: 0;
+  filter: drop-shadow(0 0 18px rgba(167, 139, 250, 0.95));
+  animation: glossVis 0.78s linear 0.9s both;
+}
+
+@keyframes dotIn {
+  0% { opacity: 0; transform: scale(0.2); filter: drop-shadow(0 0 34px rgba(139, 92, 246, 0.95)); }
+  70% { opacity: 1; transform: scale(1.14); }
+  100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.55)); }
+}
+
+@keyframes ringDraw {
+  0% { stroke-dashoffset: 459; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); }
+  100% { stroke-dashoffset: 0; filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.25)); }
+}
+
+@keyframes orbitRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(600deg); }
+}
+
+@keyframes orbitArcVis {
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  78% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes rayPop {
+  0% { opacity: 0; transform: scale(0); }
+  60% { opacity: 1; transform: scale(1.14); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glossRotate {
+  0% { transform: rotate(-90deg); }
+  100% { transform: rotate(270deg); }
+}
+
+@keyframes glossVis {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  72% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes bloomPulse {
+  0% { opacity: 0.9; transform: scale(0.4); }
+  45% { opacity: 0.55; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+
+@keyframes splashFade {
+  0% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+/* Reduced motion: land on the idle frame immediately, quick overlay fade. */
+@media (prefers-reduced-motion: reduce) {
+  .splash { animation-duration: 0.2s; animation-delay: 0.3s; }
+  .bloom { animation: none; opacity: 0; }
+  .dot,
+  .ring,
+  .orbitSpin,
+  .orbitArcs,
+  .ray,
+  .glossSpin,
+  .glossArc {
+    animation-duration: 0.01s;
+    animation-delay: 0s;
+  }
+  .orbitArcs,
+  .glossArc { opacity: 0; }
+}
