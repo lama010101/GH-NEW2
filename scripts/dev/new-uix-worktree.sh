@@ -33,5 +33,10 @@ git worktree add "$WORKTREE_DIR" -b "$BRANCH"
 cd "$WORKTREE_DIR"
 npm install
 
+# MP-BUILD-HOOKSINSTALLGUARD-001 — confirm hooks actually installed in the
+# new worktree before handing it off; fails loudly instead of letting a
+# later push silently skip every safety gate.
+bash scripts/dev/check-hooks-installed.sh
+
 echo "Created worktree: $WORKTREE_DIR"
 echo "Branch: $BRANCH"

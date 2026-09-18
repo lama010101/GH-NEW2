@@ -3,6 +3,15 @@
 # Runs the golden-path Playwright spec ONLY when the push touches a
 # protected file. Fails loudly if the dev stack is down — never a silent pass.
 
+# MP-BUILD-HOOKSINSTALLGUARD-001 — belt-and-suspenders hooks-installed check.
+# This only runs if this hook file itself was already invoked by git, which
+# requires .husky/_/ to be present in THIS worktree — so it cannot catch the
+# case where hooks were never installed at all. The real protection is the
+# check being wired into worktree bootstrap (new-uix-worktree.sh /
+# WORKTREE_WORKFLOW.md) so the gap is caught immediately after
+# `git worktree add`, not discovered later as a silently-skipped push gate.
+bash scripts/dev/check-hooks-installed.sh || exit 1
+
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
