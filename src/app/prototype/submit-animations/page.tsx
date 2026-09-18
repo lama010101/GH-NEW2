@@ -7,50 +7,54 @@
 // Goal: call the user to action AFTER they have made their WHERE + WHEN
 // guesses. The button is therefore shown in its "ready" (orange) state.
 //
-// Shows 4 ALTERNATIVE animations, distinct from the current production
+// Shows 5 ALTERNATIVE animations, distinct from the current production
 // animation (ripplePulse box-shadow + rotating conic glow + shine sweep):
 //
-//   A. Breathe     — button scales 1.0 <-> 1.08 (breathing pulse)
 //   B. Aura        — soft blurred radial halo fading in/out behind button
-//   C. Sonar       — staggered concentric expanding rings emanating outward
-//   D. Arrow Bob   — the send-arrow icon wiggles inside the button
+//   C. Shake       — periodic side-to-side shake (attention nudge)
+//   D. Heartbeat   — double-thump scale pulse (lub-dub rhythm)
+//   E. March Ring  — dashed ring marching around the button border
+//   F. Turbo       — Heartbeat (D) + March Ring (E) + soft pulse combined
 //
 // Does NOT touch any existing files. Reuses the production send-arrow SVG
 // and the orange ready color (var(--gh-orange, #f59e0b)).
 // ============================================================================
 
 const VARIANTS = [
-  { id: "breathe", label: "A · Breathe", desc: "Button scales 1.0 ↔ 1.08 — a breathing pulse." },
   { id: "aura", label: "B · Aura", desc: "Soft blurred radial halo fading in/out behind." },
-  { id: "sonar", label: "C · Sonar", desc: "Staggered concentric expanding rings outward." },
-  { id: "arrow", label: "D · Arrow Bob", desc: "Send-arrow icon wiggles inside the button." },
-  { id: "combo", label: "E · Breathe + Sonar + Arrow", desc: "Combined: button breathes + sonar rings expand + arrow wiggles." },
+  { id: "shake", label: "C · Shake", desc: "Periodic side-to-side shake — an attention nudge." },
+  { id: "heartbeat", label: "D · Heartbeat", desc: "Double-thump scale pulse (lub-dub rhythm)." },
+  { id: "dashring", label: "E · March Ring", desc: "Dashed ring marching around the button border." },
+  { id: "turbo", label: "F · Turbo", desc: "Heartbeat (D) + March Ring (E) + soft pulse combined." },
 ] as const;
 
-// Scenarios F-H focus on the WHERE/WHEN buttons BEFORE all guesses are made.
-// Sonar animation draws attention to buttons that still need input; once a
-// guess is made, the answer tag appears above the button and animation stops.
+// Scenarios F-H focus on the HINTS button (leftmost) while guesses are still
+// incomplete. Each version applies a different attention animation to the hint
+// button only; WHERE/WHEN show answer tags but do not animate.
 const SCENARIOS = [
   {
     id: "neither",
     label: "F · Neither guessed",
-    desc: "Both WHERE + WHEN buttons breathe + sonar. No answer tags. Submit disabled.",
+    desc: "Hints button with marching ring. No answer tags. Submit disabled.",
     whenGuessed: false,
     whereGuessed: false,
+    hintClass: "hintBtnMarch",
   },
   {
     id: "when-only",
     label: "G · Only WHEN guessed",
-    desc: "WHEN shows answer tag + stops. WHERE keeps breathing + sonar. Submit still disabled.",
+    desc: "Hints button with a soft pulse. WHEN shows answer tag. Submit still disabled.",
     whenGuessed: true,
     whereGuessed: false,
+    hintClass: "hintBtnPulse",
   },
   {
     id: "where-only",
     label: "H · Only WHERE guessed",
-    desc: "WHERE shows answer tag + stops. WHEN keeps breathing + sonar. Submit still disabled.",
+    desc: "Hints button with ripple rings. WHERE shows answer tag. Submit still disabled.",
     whenGuessed: false,
     whereGuessed: true,
+    hintClass: "hintBtnRipple",
   },
 ] as const;
 
@@ -79,7 +83,7 @@ export default function SubmitAnimationsPrototypePage() {
     <main className="screen">
       <div className="protoBar">
         <span className="protoTitle">Submit Button — CTA Animation Alternatives</span>
-        <span className="protoHint">Ready state · 4 alternatives</span>
+        <span className="protoHint">Ready state · 5 alternatives</span>
       </div>
 
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -129,7 +133,7 @@ export default function SubmitAnimationsPrototypePage() {
                 aria-label="Submit"
               >
                 <svg
-                  className={v.id === "arrow" || v.id === "combo" ? "sendIcon sendIconBob" : "sendIcon"}
+                  className="sendIcon"
                   width="18"
                   height="18"
                   viewBox="0 0 24 24"
@@ -150,9 +154,9 @@ export default function SubmitAnimationsPrototypePage() {
         ))}
       </div>
 
-      {/* ════ Scenarios F-H: WHERE/WHEN buttons in pre-submit states ════ */}
+      {/* ════ Scenarios F-H: HINTS button attention while guesses are incomplete ════ */}
       <div className="hintLine">
-        Guesses in progress — sonar draws attention to buttons that still need input.
+        Guesses in progress — hint button draws attention until the round is ready.
       </div>
 
       <div className="grid">
@@ -161,7 +165,11 @@ export default function SubmitAnimationsPrototypePage() {
             <div className="cardLabel">{s.label}</div>
 
             <div className="navbar">
-              <button type="button" className="circleBtn hintsBtn" aria-label="Hints">
+              <button
+                type="button"
+                className={`circleBtn hintsBtn ${s.hintClass}`}
+                aria-label="Hints"
+              >
                 <span className="hintsCount">0</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9.663 17h4.673M12 3v1m0 16v1M4.22 4.22l.707.707M19.778 19.778l-.707-.707M3 12h1m16 0h1M4.22 19.778l.707-.707M19.778 4.22l-.707.707M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
@@ -175,7 +183,7 @@ export default function SubmitAnimationsPrototypePage() {
                 )}
                 <button
                   type="button"
-                  className={`circleBtn whenBtn ${!s.whenGuessed ? "whenBtnSonar" : ""}`}
+                  className="circleBtn whenBtn"
                   aria-label="When"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -190,7 +198,7 @@ export default function SubmitAnimationsPrototypePage() {
                 )}
                 <button
                   type="button"
-                  className={`circleBtn whereBtn ${!s.whereGuessed ? "whereBtnSonar" : ""}`}
+                  className="circleBtn whereBtn"
                   aria-label="Where"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -398,10 +406,7 @@ export default function SubmitAnimationsPrototypePage() {
         }
         .sendIcon { display: block; }
 
-        /* ============================================================ */
-        /* Variant A — Breathe (scale pulse)                            */
-        /* ============================================================ */
-        .variant-breathe { animation: breathe 1.6s ease-in-out infinite; }
+        /* Shared keyframes — also used by scenarios F-H and variant K  */
         @keyframes breathe {
           0%, 100% { transform: scale(1); }
           50%      { transform: scale(1.08); }
@@ -424,85 +429,107 @@ export default function SubmitAnimationsPrototypePage() {
           50%      { opacity: 0.9;  transform: scale(1.25); }
         }
 
-        /* ============================================================ */
-        /* Variant C — Sonar (staggered concentric expanding rings)     */
-        /* ============================================================ */
-        .variant-sonar::before,
-        .variant-sonar::after {
-          content: "";
-          position: absolute; inset: 0;
-          border-radius: 50%;
-          border: 2px solid rgba(245,158,11,0.7);
-          pointer-events: none;
-          animation: sonar 2s ease-out infinite;
-        }
-        .variant-sonar::after { animation-delay: 1s; }
         @keyframes sonar {
           0%   { transform: scale(1);   opacity: 0.8; }
           100% { transform: scale(2.2); opacity: 0; }
         }
 
         /* ============================================================ */
-        /* Variant D — Arrow Bob (send icon wiggles)                    */
+        /* Variant C — Shake (periodic side-to-side attention nudge)    */
         /* ============================================================ */
-        .sendIconBob { animation: arrowBob 1.4s ease-in-out infinite; }
-        @keyframes arrowBob {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25%      { transform: translate(2px, -2px) rotate(-8deg); }
-          50%      { transform: translate(4px, 0)  rotate(0deg); }
-          75%      { transform: translate(2px, 2px)  rotate(8deg); }
+        .variant-shake { animation: shake 2.2s ease-in-out infinite; }
+        @keyframes shake {
+          0%, 60%, 100% { transform: translateX(0) rotate(0deg); }
+          64%           { transform: translateX(-3px) rotate(-4deg); }
+          68%           { transform: translateX(3px) rotate(4deg); }
+          72%           { transform: translateX(-3px) rotate(-4deg); }
+          76%           { transform: translateX(3px) rotate(4deg); }
+          80%           { transform: translateX(0) rotate(0deg); }
         }
 
         /* ============================================================ */
-        /* Variant E — Combo: Breathe (A) + Sonar (C) + Arrow Bob (D)   */
+        /* Variant D — Heartbeat (double-thump scale pulse)             */
         /* ============================================================ */
-        .variant-combo { animation: breathe 1.6s ease-in-out infinite; }
-        .variant-combo::before,
-        .variant-combo::after {
+        .variant-heartbeat { animation: heartbeat 1.8s ease-in-out infinite; }
+        @keyframes heartbeat {
+          0%, 100% { transform: scale(1); }
+          14%      { transform: scale(1.12); }
+          28%      { transform: scale(1); }
+          42%      { transform: scale(1.12); }
+          56%      { transform: scale(1); }
+        }
+
+        /* ============================================================ */
+        /* Variant E — March Ring (dashed ring marching around border)  */
+        /* ============================================================ */
+        .variant-dashring::before {
+          content: "";
+          position: absolute; inset: -7px;
+          border-radius: 50%;
+          border: 2px dashed rgba(245,158,11,0.9);
+          pointer-events: none;
+          animation: dashring 4s linear infinite;
+        }
+        @keyframes dashring {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+
+        /* ============================================================ */
+        /* Variant F — Turbo: Heartbeat (D) + March Ring (E) + soft pulse */
+        /* ============================================================ */
+        .variant-turbo { animation: turbo 2.2s ease-in-out infinite; }
+        .variant-turbo::before {
+          content: "";
+          position: absolute; inset: -7px;
+          border-radius: 50%;
+          border: 2px dashed rgba(245,158,11,0.9);
+          pointer-events: none;
+          animation: dashring 4s linear infinite;
+        }
+        @keyframes turbo {
+          0%, 100% { transform: scale(1); }
+          8%       { transform: scale(1.12); }
+          16%      { transform: scale(1); }
+          24%      { transform: scale(1.12); }
+          32%      { transform: scale(1); }
+          50%      { transform: scale(1.04); }
+          68%      { transform: scale(1); }
+        }
+
+        /* ============================================================ */
+        /* Scenarios F-H — Hints button (leftmost) attention animations   */
+        /* Each applies only to the hint button while guesses are pending.*/
+        /* ============================================================ */
+
+        /* F — Hints button with March Ring */
+        .hintBtnMarch::before {
+          content: "";
+          position: absolute; inset: -7px;
+          border-radius: 50%;
+          border: 2px dashed rgba(255,255,255,0.9);
+          pointer-events: none;
+          animation: dashring 4s linear infinite;
+        }
+
+        /* G — Hints button with a soft pulse */
+        .hintBtnPulse { animation: smallPulse 1.4s ease-in-out infinite; }
+        @keyframes smallPulse {
+          0%, 100% { transform: scale(1); }
+          50%      { transform: scale(1.06); }
+        }
+
+        /* H — Hints button with ripple rings */
+        .hintBtnRipple::before,
+        .hintBtnRipple::after {
           content: "";
           position: absolute; inset: 0;
           border-radius: 50%;
-          border: 2px solid rgba(245,158,11,0.7);
+          border: 2px solid rgba(255,255,255,0.7);
           pointer-events: none;
           animation: sonar 2s ease-out infinite;
         }
-        .variant-combo::after { animation-delay: 1s; }
-
-        /* ============================================================ */
-        /* Scenarios F-H — WHERE/WHEN breathe + sonar (pre-submit)      */
-        /* Un-guessed buttons breathe (A) + sonar-pulse (C) to call     */
-        /* user to action. Guessed buttons show answer tag + stop.     */
-        /* ============================================================ */
-
-        /* WHEN — breathe (A) + sonar (C) */
-        .whenBtnSonar {
-          animation: breathe 1.6s ease-in-out infinite;
-        }
-        .whenBtnSonar::before,
-        .whenBtnSonar::after {
-          content: "";
-          position: absolute; inset: 0;
-          border-radius: 50%;
-          border: 2px solid rgba(139, 92, 246, 0.7);
-          pointer-events: none;
-          animation: sonar 2s ease-out infinite;
-        }
-        .whenBtnSonar::after { animation-delay: 1s; }
-
-        /* WHERE — breathe (A) + sonar (C) */
-        .whereBtnSonar {
-          animation: breathe 1.6s ease-in-out infinite;
-        }
-        .whereBtnSonar::before,
-        .whereBtnSonar::after {
-          content: "";
-          position: absolute; inset: 0;
-          border-radius: 50%;
-          border: 2px solid rgba(6, 182, 212, 0.7);
-          pointer-events: none;
-          animation: sonar 2s ease-out infinite;
-        }
-        .whereBtnSonar::after { animation-delay: 1s; }
+        .hintBtnRipple::after { animation-delay: 1s; }
 
         /* Submit disabled state (not all guesses made) */
         .submitDisabled {
