@@ -31,6 +31,8 @@ import activeStyles from "./RoundActiveSection.module.css";
 import AccuracySuffix from "@/components/AccuracySuffix";
 import { getAccuracyColor } from "@/core/accuracyColor";
 import type { ConnectionState } from "@/core/competeWebSocket";
+import { rankForXp } from "@/core/rank";
+import { supabaseBrowser } from "@/core/supabaseBrowser";
 
 interface RoundCompleteSectionProps {
   snapshot: CompeteSessionSnapshot;
@@ -83,6 +85,9 @@ export function MiniRing({ value, color }: { value: number; color: string }) {
     </div>
   );
 }
+
+// An earned badge as present in myResult.badges, in fixed display order.
+type EarnedBadge = { dimension: 'combo' | 'location' | 'year'; badge: RoundResult['badges'][number] };
 
 export default function RoundCompleteSection({
   snapshot,
@@ -141,6 +146,7 @@ export default function RoundCompleteSection({
   });
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(() => getDistanceUnitPreference());
   const [localePending, startLocaleTransition] = useTransition();
+  const [totalXp, setTotalXp] = useState<number | null>(null);
 
   // Scroll round results to top whenever they become visible.
   useEffect(() => {
@@ -219,6 +225,25 @@ export default function RoundCompleteSection({
   useEffect(() => {
     setDistanceUnitPreference(distanceUnit);
   }, [distanceUnit]);
+
+  // Fetch viewer's global total XP for the badge-earned XP progress bar
+  // (single source of truth: player_global_stats.total_xp → rankForXp).
+  useEffect(() => {
+    if (!playerId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: stats } = await supabaseBrowser
+          .from('player_global_stats')
+          .select('total_xp')
+          .eq('player_id', playerId)
+          .single();
+        if (cancelled) return;
+        if (stats) setTotalXp(Number(stats.total_xp));
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [playerId]);
 
   return (
     <div className={styles.container} data-testid="round-complete-section" data-status={snapshot.status} data-round-index={snapshot.currentRoundIndex}>
@@ -801,23 +826,58 @@ export default function RoundCompleteSection({
               </div>
             </div>
 
-            {/* BADGE POPUPS — sequential, 1.5s each, triggered after ring animation */}
+            {/* BADGE POPUPS — sequential (combo → location → year, whatever is
+                present in myResult.badges), triggered after the ring animation.
+                Every popup bursts confetti; the FIRST one also shows the XP
+                progress bar + counter, animated in sync (bar and both counters
+                derive from the same rAF progress in BadgePopup). */}
             {(() => {
               const trigger = isAccuracyVisible && isRingDone;
-              const comboBadge = myResult?.badges?.find(b => b.dimension === 'combo');
-              const locBadge = myResult?.badges?.find(b => b.dimension === 'location');
-              const yearBadge = myResult?.badges?.find(b => b.dimension === 'year');
+              const earned = (["combo", "location", "year"] as const)
+                .map((dimension) => ({ dimension, badge: myResult?.badges?.find(b => b.dimension === dimension) }))
+                .filter((e): e is EarnedBadge => e.badge != null);
+
+              // Per-round XP = location + time (matches player_global_stats
+              // updates). No combo bonus is computed here.
+              const roundXp = submitted ? (myResult?.locationScore ?? 0) + (myResult?.timeScore ?? 0) : 0;
+
+              // Progress within the viewer's current rank tier span. Clamped to
+              // 100 so a tier-up fills the bar instead of jumping backwards.
+              let progressBeforePct = 0;
+              let progressAfterPct = 0;
+              if (totalXp != null) {
+                const beforeInfo = rankForXp(totalXp);
+                const span = beforeInfo.nextThreshold != null ? beforeInfo.nextThreshold - beforeInfo.threshold : 1;
+                progressBeforePct = span > 0 ? (beforeInfo.xpIntoTier / span) * 100 : 100;
+                progressAfterPct = span > 0 ? Math.min(100, ((totalXp + roundXp - beforeInfo.threshold) / span) * 100) : 100;
+              }
+
+              // Stagger delays off the ACTUAL popup count so popups never
+              // overlap: the first carries the XP bar (3.2s), the rest 1.8s.
+              const delays: number[] = [];
+              let cursor = 0;
+              earned.forEach((_, i) => {
+                delays.push(cursor);
+                cursor += i === 0 ? 3400 : 2000;
+              });
+
               return (
                 <>
-                  {comboBadge && (
-                    <BadgePopup dimension="combo" tier={comboBadge.tier as 'gold' | 'silver' | 'bronze'} triggered={trigger} delay={0} />
-                  )}
-                  {locBadge && (
-                    <BadgePopup dimension="location" tier={locBadge.tier as 'gold' | 'silver' | 'bronze'} triggered={trigger} delay={1500} />
-                  )}
-                  {yearBadge && (
-                    <BadgePopup dimension="year" tier={yearBadge.tier as 'gold' | 'silver' | 'bronze'} triggered={trigger} delay={3000} />
-                  )}
+                  {earned.map(({ dimension, badge }, i) => (
+                    <BadgePopup
+                      key={dimension}
+                      dimension={dimension}
+                      tier={badge.tier}
+                      triggered={trigger}
+                      delay={delays[i]}
+                      showXpBar={i === 0}
+                      xpBefore={totalXp}
+                      xpAfter={(totalXp ?? 0) + roundXp}
+                      progressBeforePct={progressBeforePct}
+                      progressAfterPct={progressAfterPct}
+                      xpGain={roundXp}
+                    />
+                  ))}
                 </>
               );
             })()}
