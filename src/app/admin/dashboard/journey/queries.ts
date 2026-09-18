@@ -15,6 +15,7 @@ export type StageSummaryRow = {
   stage_number: number;
   min_accuracy_pct: string;
   pool_size: number;
+  status: string;
   total_candidates: number;
   approved_candidates: number;
   pending_candidates: number;
@@ -30,12 +31,13 @@ export async function fetchStageSummary(
       s.stage_number,
       s.min_accuracy_pct::text AS min_accuracy_pct,
       s.pool_size,
+      s.status,
       COUNT(jse.id)::int AS total_candidates,
       COUNT(jse.id) FILTER (WHERE jse.approved_by IS NOT NULL)::int AS approved_candidates,
       COUNT(jse.id) FILTER (WHERE jse.approved_by IS NULL)::int AS pending_candidates
     FROM public.journey_stages s
     LEFT JOIN public.journey_stage_events jse ON jse.stage_id = s.id
-    GROUP BY s.id, s.stage_number, s.min_accuracy_pct, s.pool_size
+    GROUP BY s.id, s.stage_number, s.min_accuracy_pct, s.pool_size, s.status
     ORDER BY s.stage_number ASC
     `
   );
