@@ -1251,6 +1251,8 @@
     "back_to_journey": "Back to Journey",
     "stage_unavailable": "This stage isn't available yet.",
     "stage_locked": "Complete the previous stage to unlock this one.",
+    "guest_gate_title": "Create a free account to continue",
+    "guest_gate_body": "You played Stage 1 as a guest. Create a free account to save your progress and unlock Stage {number}.",
     "gate_label": "Gate",
     "difficulty_label": "Difficulty",
     "difficulty_value": "{rating}/10",

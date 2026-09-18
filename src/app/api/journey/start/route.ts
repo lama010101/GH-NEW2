@@ -23,6 +23,7 @@ export async function POST(request: Request) {
     const result = await startJourneyPlaythrough({
       playerId: user.id,
       stageId: body.stageId,
+      isAnonymous: user.is_anonymous ?? false,
     });
 
     return NextResponse.json(result);

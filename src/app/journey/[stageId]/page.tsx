@@ -31,6 +31,7 @@ import {
 } from "@/core/identity";
 import type { CompleteJourneyPlaythroughResult } from "@/server/journeyCore";
 import { JourneyBadge } from "../_components/JourneyBadge";
+import { GuestConversionModal } from "../_components/GuestConversionModal";
 import {
   clearActivePlaythrough,
   readActivePlaythrough,
@@ -67,6 +68,7 @@ export default function JourneyStagePage() {
   const [recap, setRecap] = useState<CompleteJourneyPlaythroughResult | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [showGuestGate, setShowGuestGate] = useState(false);
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
   const completingRef = useRef(false);
   const resolvingRef = useRef(false);
@@ -280,7 +282,7 @@ export default function JourneyStagePage() {
       progress?.status === "completed" ||
       completedStageNumbers.has(stage.stage_number - 1));
 
-  const handleStart = useCallback(async () => {
+  const startPlaythrough = useCallback(async () => {
     if (!stage || starting) return;
     setStarting(true);
     setActionError(null);
@@ -309,6 +311,19 @@ export default function JourneyStagePage() {
       setStarting(false);
     }
   }, [stage, starting, router, t]);
+
+  // Guest gate (spec §0.5 / HJ-BUILD-GUESTGATE-INVESTPLUS-001): stage 1 is
+  // playable as a guest; stage 2+ requires converting the anonymous session
+  // to a permanent account first, so this intercepts before the server call
+  // rather than surfacing a raw 403 with no path forward.
+  const handleStart = useCallback(() => {
+    if (!stage || starting) return;
+    if (stage.stage_number >= 2 && identity.status === "ready" && identity.isAnonymous) {
+      setShowGuestGate(true);
+      return;
+    }
+    void startPlaythrough();
+  }, [stage, starting, identity, startPlaythrough]);
 
   const isLoading =
     identityLoading || identity.status === "loading" || (playerId !== null && !stageChecked);
@@ -402,6 +417,15 @@ export default function JourneyStagePage() {
             )}
           </section>
         </div>
+        <GuestConversionModal
+          isOpen={showGuestGate}
+          stageNumber={stage?.stage_number ?? recap.stageNumber}
+          onClose={() => setShowGuestGate(false)}
+          onConverted={() => {
+            setShowGuestGate(false);
+            void startPlaythrough();
+          }}
+        />
       </main>
     );
   }
@@ -548,6 +572,15 @@ export default function JourneyStagePage() {
           </div>
         </section>
       </div>
+      <GuestConversionModal
+        isOpen={showGuestGate}
+        stageNumber={stage.stage_number}
+        onClose={() => setShowGuestGate(false)}
+        onConverted={() => {
+          setShowGuestGate(false);
+          void startPlaythrough();
+        }}
+      />
     </main>
   );
 }
