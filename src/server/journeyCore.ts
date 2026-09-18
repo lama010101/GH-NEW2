@@ -303,3 +303,224 @@ export async function startJourneyPlaythrough(
     client.release();
   }
 }
+
+export type CompleteJourneyPlaythroughInput = {
+  playerId: string;
+  playthroughId: string;
+};
+
+export type JourneyBadge = "gold" | "silver" | "bronze" | "completion";
+
+export type CompleteJourneyPlaythroughResult = {
+  playthroughId: string;
+  stageId: string;
+  stageNumber: number;
+  accuracyPct: number;
+  badgeAwarded: JourneyBadge | null;
+  gatePassed: boolean;
+  minAccuracyPct: number;
+};
+
+// "Better than" ranking for badges (spec §7): Gold > Silver > Bronze >
+// Completion > null. Written out explicitly — alphabetical/enum order does
+// not match this ranking (bronze < completion alphabetically, for example).
+const JOURNEY_BADGE_RANK: Record<JourneyBadge, number> = {
+  gold: 4,
+  silver: 3,
+  bronze: 2,
+  completion: 1,
+};
+
+function journeyBadgeRank(badge: JourneyBadge | null): number {
+  return badge ? JOURNEY_BADGE_RANK[badge] : 0;
+}
+
+// Badge thresholds (spec §7, kept from original doc — do not alter). Below
+// min_accuracy_pct: no badge, and the stage is not marked completed (spec §6
+// — below-threshold attempts are not punitive, just don't unlock the next stage).
+function journeyBadgeForAccuracy(
+  accuracyPct: number,
+  minAccuracyPct: number
+): JourneyBadge | null {
+  if (accuracyPct >= 100) return "gold";
+  if (accuracyPct >= 95) return "silver";
+  if (accuracyPct >= 90) return "bronze";
+  if (accuracyPct >= minAccuracyPct) return "completion";
+  return null;
+}
+
+/**
+ * Complete a Historian's Journey playthrough for `playerId` on `playthroughId`.
+ *
+ * Steps (single transaction):
+ *   1. Load journey_playthroughs row (FOR UPDATE). Not found → throw. Already
+ *      has completed_at → throw (idempotency guard — runs exactly once per
+ *      playthrough).
+ *   2. Load the linked journey_stages row for min_accuracy_pct/stage_number.
+ *   3. Compute overall accuracy the SAME way Practice mode's own results
+ *      screen does it (SessionComplete.tsx computePlayerStats: average of
+ *      per-round (location_score + time_score) / 2 across round_results) —
+ *      scoped to this playthrough's session_id. XP is denormalized straight
+ *      from the existing XP engine's ledger (round_results.score, summed —
+ *      the same column SessionComplete.tsx sums for its own XP display and
+ *      updatePlayerGlobalStats adds into player_global_stats.total_xp), not
+ *      recomputed (spec §8: 100% reuse of the existing XP engine).
+ *   4. Determine badge per spec §7 thresholds.
+ *   5. Update journey_playthroughs with the computed outcome, gated or not.
+ *   6. If gated pass: update journey_player_progress — best_accuracy_pct via
+ *      GREATEST, best_badge only if strictly better (see journeyBadgeRank),
+ *      status='completed', first_completed_at set only if currently NULL. A
+ *      below-threshold attempt touches nothing here — no downgrade, no
+ *      punitive lockout (spec §6).
+ *
+ * Throws Error on any guard failure; callers map to HTTP per route convention.
+ */
+export async function completeJourneyPlaythrough(
+  input: CompleteJourneyPlaythroughInput
+): Promise<CompleteJourneyPlaythroughResult> {
+  const playerId = input.playerId.trim();
+  const playthroughId = input.playthroughId.trim();
+  if (playerId.length === 0) {
+    throw new Error("playerId is required");
+  }
+  if (playthroughId.length === 0) {
+    throw new Error("playthroughId is required");
+  }
+
+  const client: DbTransactionClient = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+
+    // Step 1 — playthrough must exist, belong to this player, and not
+    // already be completed (idempotency: this function runs exactly once
+    // per playthrough).
+    const playthroughResult = await client.query<{
+      id: string;
+      stage_id: string;
+      session_id: string | null;
+      completed_at: Date | null;
+    }>(
+      `SELECT id, stage_id, session_id, completed_at
+       FROM public.journey_playthroughs
+       WHERE id = $1 AND player_id = $2
+       FOR UPDATE`,
+      [playthroughId, playerId]
+    );
+    if (playthroughResult.rows.length === 0) {
+      throw new Error("Journey playthrough not found");
+    }
+    const playthrough = playthroughResult.rows[0];
+    if (playthrough.completed_at !== null) {
+      throw new Error("Journey playthrough already completed");
+    }
+    if (!playthrough.session_id) {
+      throw new Error("Journey playthrough has no linked session");
+    }
+
+    // Step 2 — linked stage's gate threshold.
+    const stageResult = await client.query<{
+      id: string;
+      stage_number: number;
+      min_accuracy_pct: string;
+    }>(
+      `SELECT id, stage_number, min_accuracy_pct
+       FROM public.journey_stages
+       WHERE id = $1
+       FOR UPDATE`,
+      [playthrough.stage_id]
+    );
+    if (stageResult.rows.length === 0) {
+      throw new Error("Journey stage not found");
+    }
+    const stage = stageResult.rows[0];
+    const minAccuracyPct = Number(stage.min_accuracy_pct);
+
+    // Step 3 — overall accuracy + XP, both derived from round_results for
+    // this playthrough's session (see function doc above for the exact
+    // Practice-mode source each mirrors).
+    const scoreResult = await client.query<{
+      round_count: number;
+      avg_accuracy: string | null;
+      total_xp: number;
+    }>(
+      `SELECT
+         COUNT(*)::int AS round_count,
+         AVG((location_score + time_score) / 2.0) AS avg_accuracy,
+         COALESCE(SUM(score), 0)::int AS total_xp
+       FROM round_results
+       WHERE game_id = $1`,
+      [playthrough.session_id]
+    );
+    const scoreRow = scoreResult.rows[0];
+    if (scoreRow.round_count === 0 || scoreRow.avg_accuracy === null) {
+      throw new Error("No round results found for journey playthrough");
+    }
+    const accuracyPct = Number(scoreRow.avg_accuracy);
+    const xpAwarded = scoreRow.total_xp;
+
+    // Step 4 — badge per spec §7 thresholds.
+    const badgeAwarded = journeyBadgeForAccuracy(accuracyPct, minAccuracyPct);
+    const gatePassed = badgeAwarded !== null;
+
+    // Step 5 — playthrough row records the outcome regardless of gate result.
+    await client.query(
+      `UPDATE public.journey_playthroughs
+       SET accuracy_pct = $2, badge_awarded = $3, xp_awarded = $4, completed_at = now()
+       WHERE id = $1`,
+      [playthroughId, accuracyPct, badgeAwarded, xpAwarded]
+    );
+
+    // Step 6 — progress upsert, gated pass only (spec §6: below-threshold
+    // attempts never downgrade an existing 'completed' status or best_*).
+    if (gatePassed) {
+      const progressResult = await client.query<{
+        best_accuracy_pct: string | null;
+        best_badge: JourneyBadge | null;
+      }>(
+        `SELECT best_accuracy_pct, best_badge
+         FROM public.journey_player_progress
+         WHERE player_id = $1 AND stage_id = $2
+         FOR UPDATE`,
+        [playerId, playthrough.stage_id]
+      );
+      if (progressResult.rows.length === 0) {
+        throw new Error("Journey progress record not found");
+      }
+      const progress = progressResult.rows[0];
+      const existingBestAccuracy =
+        progress.best_accuracy_pct !== null ? Number(progress.best_accuracy_pct) : 0;
+      const newBestAccuracy = Math.max(existingBestAccuracy, accuracyPct);
+      const newBestBadge =
+        journeyBadgeRank(badgeAwarded) > journeyBadgeRank(progress.best_badge)
+          ? badgeAwarded
+          : progress.best_badge;
+
+      await client.query(
+        `UPDATE public.journey_player_progress
+         SET best_accuracy_pct = $3,
+             best_badge = $4,
+             status = 'completed',
+             first_completed_at = COALESCE(first_completed_at, now()),
+             updated_at = now()
+         WHERE player_id = $1 AND stage_id = $2`,
+        [playerId, playthrough.stage_id, newBestAccuracy, newBestBadge]
+      );
+    }
+
+    await client.query("COMMIT");
+    return {
+      playthroughId,
+      stageId: playthrough.stage_id,
+      stageNumber: stage.stage_number,
+      accuracyPct,
+      badgeAwarded,
+      gatePassed,
+      minAccuracyPct,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
