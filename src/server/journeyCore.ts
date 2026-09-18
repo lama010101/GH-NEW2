@@ -61,6 +61,11 @@ export type StartJourneyPlaythroughInput = {
   playerId: string;
   stageId: string;
   displayName?: string;
+  // Caller's is_anonymous claim, read once by the route layer from its own
+  // single auth.getUser() call (spec §0.5 / HJ-BUILD-GUESTGATE-INVESTPLUS-001).
+  // Never re-fetch this here — a second sequential GoTrueClient call risks
+  // the shared-mutex deadlock the CTO ruling in supabaseBrowser.ts warns about.
+  isAnonymous: boolean;
 };
 
 export type StartJourneyPlaythroughResult = {
@@ -146,6 +151,17 @@ export async function startJourneyPlaythrough(
           `Journey stage ${stage.stage_number} is locked — complete stage ${stage.stage_number - 1} first`
         );
       }
+    }
+
+    // Step 2.5 — guest gate (spec §0.5 / HJ-BUILD-GUESTGATE-INVESTPLUS-001):
+    // a guest may play stage 1 fully, but stage 2+ requires a permanent
+    // account. isAnonymous is passed in by the route layer's single
+    // auth.getUser() read — never re-fetched here (shared-mutex deadlock
+    // rule, see StartJourneyPlaythroughInput).
+    if (stage.stage_number >= 2 && input.isAnonymous) {
+      throw new Error(
+        "Journey stage requires a permanent account — convert your guest session first"
+      );
     }
 
     // Step 3 — draw pool_size approved, non-stale candidate events at random.
