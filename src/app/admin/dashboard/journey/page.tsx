@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDbPool } from "@/server/db";
 import { fetchStageSummary, type StageSummaryRow } from "./queries";
+import { StageStatusActions } from "./StageStatusActions";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default async function JourneyStageListPage() {
               <th className="num">Stage</th>
               <th className="num">Min accuracy</th>
               <th className="num">Pool size</th>
+              <th className="num">Status</th>
               <th className="num">Approved</th>
               <th className="num">Pending</th>
               <th className="num">Total</th>
@@ -55,6 +57,9 @@ export default async function JourneyStageListPage() {
                 <td className="num" data-label="Pool size">
                   {row.pool_size}
                 </td>
+                <td className="num" data-label="Status">
+                  <StageStatusActions stageId={row.id} status={row.status} />
+                </td>
                 <td className="num" data-label="Approved">
                   {row.approved_candidates}
                 </td>
@@ -68,7 +73,7 @@ export default async function JourneyStageListPage() {
             ))}
             {stages.length === 0 && (
               <tr>
-                <td colSpan={6}>No journey stages found.</td>
+                <td colSpan={7}>No journey stages found.</td>
               </tr>
             )}
           </tbody>
