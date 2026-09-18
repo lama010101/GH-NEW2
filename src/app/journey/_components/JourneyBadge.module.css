@@ -1,0 +1,87 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: var(--gh-radius-pill);
+  border: 1px solid var(--gh-border-default);
+  background: var(--gh-glass-bg);
+  font-size: var(--font-sm, 13px);
+  color: var(--gh-text-secondary);
+  white-space: nowrap;
+}
+
+.badge.lg {
+  padding: 10px 20px;
+  gap: 10px;
+  font-size: var(--font-base, 16px);
+}
+
+.disc {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--gh-text-muted);
+  flex: none;
+}
+
+.lg .disc {
+  width: 16px;
+  height: 16px;
+}
+
+.label {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--gh-text-primary);
+}
+
+.accuracy {
+  color: var(--gh-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.tierGold {
+  border-color: rgba(var(--gh-gold-rgb), 0.55);
+}
+.tierGold .disc {
+  background: var(--gh-gold);
+  box-shadow: 0 0 10px rgba(var(--gh-gold-rgb), 0.7);
+}
+.tierGold .label {
+  color: var(--gh-gold);
+}
+
+.tierSilver .disc {
+  background: #c7cede;
+  box-shadow: 0 0 10px rgba(199, 206, 222, 0.6);
+}
+.tierSilver .label {
+  color: #c7cede;
+}
+
+.tierBronze .disc {
+  background: #cd7f32;
+  box-shadow: 0 0 10px rgba(205, 127, 50, 0.6);
+}
+.tierBronze .label {
+  color: #cd7f32;
+}
+
+.tierCompletion {
+  border-color: rgba(var(--gh-teal-rgb), 0.45);
+}
+.tierCompletion .disc {
+  background: var(--gh-teal);
+  box-shadow: 0 0 10px rgba(var(--gh-teal-rgb), 0.6);
+}
+.tierCompletion .label {
+  color: var(--gh-teal);
+}
+
+.tierNone {
+  border-style: dashed;
+}
+.tierNone .label {
+  color: var(--gh-text-muted);
+}
