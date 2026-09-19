@@ -32,6 +32,7 @@ import {
 import { MAX_ROUNDS, TIMER_MAX_SEC, TIMER_MIN_SEC } from "@/core/types";
 import { calculateBadges, evaluateNearMisses, evaluateRound } from "@/core/rules";
 import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
+import { resolvePlayerIdentities, type PlayerIdentity } from "@/core/playerIdentity";
 import {
   dbPool,
   generateVerificationToken,
@@ -283,8 +284,11 @@ type CompeteSessionSnapshotWithPlayerSnapshots = CompeteSessionSnapshot & {
  * for (game_id, player_id, currentRoundIndex)?) and therefore CANNOT be
  * inferred from session_players alone. The caller must pass it explicitly
  * so we never fabricate this field.
+ *
+ * `isAi` is resolved via resolvePlayerIdentities (profiles ∪ ai_players)
+ * and likewise CANNOT be inferred from session_players alone.
  */
-export function mapSessionPlayerRowToPlayer(row: SessionPlayerRow, hasSubmitted: boolean): SessionPlayer {
+export function mapSessionPlayerRowToPlayer(row: SessionPlayerRow, hasSubmitted: boolean, isAi: boolean): SessionPlayer {
   if (row.joined_at === null) {
     throw new Error(`[DB_INTEGRITY] session_players.joined_at is NULL for player_id=${row.player_id} game_id=${row.game_id}`);
   }
@@ -295,6 +299,7 @@ export function mapSessionPlayerRowToPlayer(row: SessionPlayerRow, hasSubmitted:
     leftAt: toIsoString(row.left_at),
     ready: row.ready,
     isHost: row.is_host,
+    isAi,
     avatarUrl: row.avatar_url ?? null,
     hasSubmitted
   };
@@ -465,6 +470,7 @@ type AsyncSnapshotBase = {
   eventContentMap: Map<string, RoundEventContent>;
   roundEventsForViewer: (viewerPlayerId: string) => PlayerRoundEvent[];
   pendingInvitees: PendingInvitee[];
+  playerIdentities: Map<string, PlayerIdentity>;
   dbVersion: {
     roundEventVersion: number;
     playerEventVersions: Record<string, number>;
@@ -771,7 +777,7 @@ function buildAsyncPlayerSnapshotFromBase(
   viewerPlayerId: string,
   base: AsyncSnapshotBase
 ): CompeteSessionSnapshot {
-  const { session, players: playerRows, eventIds, globalRoundStartedAt, globalPhaseEndsAt, allPlayerEvents, roundResultScores, eventContentMap } = base;
+  const { session, players: playerRows, eventIds, globalRoundStartedAt, globalPhaseEndsAt, allPlayerEvents, roundResultScores, eventContentMap, playerIdentities } = base;
   const viewerEvents = allPlayerEvents.get(viewerPlayerId) ?? [];
   const playerState = derivePlayerRoundState(viewerEvents, globalRoundStartedAt, globalPhaseEndsAt, gameId, viewerPlayerId);
 
@@ -782,7 +788,7 @@ function buildAsyncPlayerSnapshotFromBase(
     const events = allPlayerEvents.get(row.player_id) ?? [];
     const state = derivePlayerRoundState(events, globalRoundStartedAt, globalPhaseEndsAt, gameId, row.player_id);
     const hasSubmitted = state.submittedRounds.has(playerState.currentRound);
-    const player = mapSessionPlayerRowToPlayer(row, hasSubmitted);
+    const player = mapSessionPlayerRowToPlayer(row, hasSubmitted, playerIdentities.get(row.player_id)?.is_ai ?? false);
 
     if (state.reachedRounds.size === 0) {
       return { ...player, roundStatus: row.ready ? 'ready' : 'joined', currentRoundIndex: null };
@@ -967,6 +973,8 @@ async function loadAsyncSnapshotBase(
     throw new Error(`[loadAsyncSnapshotBase] Session not found: ${gameId}`);
   }
 
+  const playerIdentities = await resolvePlayerIdentities(executor, players.map(p => p.player_id));
+
   const eventContentMap = new Map(roundEventContent.map(r => [r.eventId, r]));
 
   const playerEventVersions: Record<string, number> = {};
@@ -998,6 +1006,7 @@ async function loadAsyncSnapshotBase(
     eventContentMap,
     roundEventsForViewer: (viewerPlayerId: string) => allPlayerEvents.get(viewerPlayerId) ?? [],
     pendingInvitees,
+    playerIdentities,
     dbVersion,
   };
 }
@@ -1126,7 +1135,7 @@ async function buildAsyncPlayerSnapshotsForActivePlayers(
   return buildAsyncPlayerSnapshotsFromBase(gameId, base);
 }
 
-function buildAsyncBaseSnapshot(gameState: ReconstructedGameState): CompeteSessionSnapshot {
+function buildAsyncBaseSnapshot(gameState: ReconstructedGameState, playerIdentities: Map<string, PlayerIdentity>): CompeteSessionSnapshot {
   const session = gameState.session;
   const { currentRound, currentPhase: phaseEventType } = deriveStateFromEventStream(gameState.events);
   const status = eventTypeToSessionStatus(phaseEventType);
@@ -1137,6 +1146,7 @@ function buildAsyncBaseSnapshot(gameState: ReconstructedGameState): CompeteSessi
     leftAt: p.leftAt,
     ready: p.ready,
     isHost: p.isHost,
+    isAi: playerIdentities.get(p.playerId)?.is_ai ?? false,
     avatarUrl: p.avatarUrl ?? null,
     hasSubmitted: false,
   }));
@@ -1220,7 +1230,8 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     if (viewerPlayerId) {
       return buildAsyncPlayerSnapshotForViewer(gameId, viewerPlayerId, dbPool);
     }
-    return buildAsyncBaseSnapshot(gameState);
+    const playerIdentities = await resolvePlayerIdentities(dbPool, gameState.players.map(p => p.playerId));
+    return buildAsyncBaseSnapshot(gameState, playerIdentities);
   }
 
   // STEP 2: Derive phase from event stream (ONLY valid method per spec)
@@ -1231,6 +1242,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
   // `hasSubmitted` derives from round_commits for the current round.
   const currentRoundSubmissions = gameState.rounds.find(r => r.roundIndex === currentRound)?.submissions ?? [];
   const submittedPlayerIds = new Set(currentRoundSubmissions.map(s => s.playerId));
+  const playerIdentities = await resolvePlayerIdentities(dbPool, gameState.players.map(p => p.playerId));
   const players: SessionPlayer[] = gameState.players.map((p) => ({
     playerId: p.playerId,
     displayName: p.displayName || p.playerId.slice(0, 8),
@@ -1238,6 +1250,7 @@ export async function loadCompeteSessionSnapshot(gameId: string, viewerPlayerId?
     leftAt: p.leftAt,
     ready: p.ready,
     isHost: p.isHost,
+    isAi: playerIdentities.get(p.playerId)?.is_ai ?? false,
     avatarUrl: p.avatarUrl ?? null,
     hasSubmitted: submittedPlayerIds.has(p.playerId)
   }));

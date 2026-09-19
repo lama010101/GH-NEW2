@@ -734,6 +734,7 @@ export default function RoundActiveSection({
                     playerId={p.playerId}
                     size={42}
                     submitted={p.hasSubmitted}
+                    isAi={p.isAi}
                   />
                 </div>
               ))
