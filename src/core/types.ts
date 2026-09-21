@@ -154,6 +154,12 @@ export type SessionPlayer = {
   leftAt: string | null;
   ready: boolean;
   isHost: boolean;
+  /**
+   * Resolved per snapshot via resolvePlayerIdentities (profiles vs ai_players).
+   * NOT stored in session_players. Optional for producers that predate
+   * identity wiring (prototype mocks); treat undefined as non-AI.
+   */
+  isAi?: boolean;
   avatarUrl: string | null;
   /**
    * Derived per snapshot: true iff a row exists in round_commits for

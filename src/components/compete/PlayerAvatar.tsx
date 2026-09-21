@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { getPlayerFrameColor } from "@/core/competeUtils";
 import { toProxiedImageUrl } from "@/lib/imageProxy";
 import styles from './PlayerAvatar.module.css';
@@ -13,6 +14,7 @@ interface PlayerAvatarProps {
   size?: number;
   submitted?: boolean;
   isMe?: boolean;
+  isAi?: boolean;
   className?: string;
   initials?: string;
   onClick?: (e: React.MouseEvent) => void;
@@ -26,6 +28,7 @@ export default function PlayerAvatar({
   size = 26,
   submitted = false,
   isMe = false,
+  isAi = false,
   className,
   initials,
   onClick,
@@ -33,6 +36,7 @@ export default function PlayerAvatar({
 }: PlayerAvatarProps) {
   const router = useRouter();
   const pathname = usePathname() ?? '';
+  const t = useTranslations();
   const [imgError, setImgError] = useState(false);
   const initial = initials ?? (displayName || "?")[0].toUpperCase();
   const { color1, color2 } = playerId ? getPlayerFrameColor(playerId) : { color1: 'var(--gh-border-default)', color2: 'var(--gh-border-default)' };
@@ -135,6 +139,27 @@ export default function PlayerAvatar({
     zIndex: 1,
   };
 
+  // AI identity chip — same absolute-overlay approach as the isMe dot, pinned
+  // to the opposite corner so both can coexist. Palette mirrors the
+  // leaderboard .aiBadge (orange on translucent orange).
+  const aiBadgeStyle: React.CSSProperties = {
+    position: "absolute",
+    bottom: -3,
+    left: -3,
+    height: Math.max(11, Math.round(size / 3)),
+    padding: "0 4px",
+    borderRadius: 4,
+    background: "rgba(var(--gh-orange-rgb), 0.92)",
+    color: "var(--gh-bg-base)",
+    border: "1px solid var(--gh-bg-base)",
+    fontSize: Math.max(8, Math.round(size / 5)),
+    fontWeight: 700,
+    lineHeight: 1,
+    display: "inline-flex",
+    alignItems: "center",
+    zIndex: 1,
+  };
+
   const content = (
     <span style={frameStyle}>
       <span style={gapStyle}>
@@ -166,6 +191,7 @@ export default function PlayerAvatar({
       >
         {content}
         {isMe && <span style={dotStyle} aria-hidden="true" />}
+        {isAi && <span style={aiBadgeStyle} aria-hidden="true">{t('leaderboard.filter_ai')}</span>}
       </button>
     );
   }
@@ -174,6 +200,7 @@ export default function PlayerAvatar({
     <span className={className} style={containerStyle}>
       {content}
       {isMe && <span style={dotStyle} aria-hidden="true" />}
+      {isAi && <span style={aiBadgeStyle} aria-hidden="true">{t('leaderboard.filter_ai')}</span>}
     </span>
   );
 }

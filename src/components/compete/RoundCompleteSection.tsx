@@ -561,6 +561,7 @@ export default function RoundCompleteSection({
                 const accForHue = leaderboardTab === 'thisRound' ? row.accuracy : row.cumulativeAccuracy;
                 const accColor = getAccuracyColor(accForHue);
                 const avatarUrl = snapshot.players.find(p => p.playerId === row.playerId)?.avatarUrl ?? null;
+                const isAi = snapshot.players.find(p => p.playerId === row.playerId)?.isAi ?? false;
                 const displayValue = leaderboardTab === 'thisRound' ? Math.round(row.accuracy) : Math.round(row.cumulativeAccuracy);
                 return (
                   <div key={row.rank} className={`${styles.lbRow} ${row.isMe ? styles.lbRowSelfAccent : ""}`}>
@@ -569,7 +570,7 @@ export default function RoundCompleteSection({
                     </span>
                     <span className={styles.lbNameCell}>
                       <span className={styles.lbNameInner}>
-                        <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} playerId={row.playerId} size={40} isMe={row.isMe} />
+                        <PlayerAvatar avatarUrl={avatarUrl} displayName={row.displayName} playerId={row.playerId} size={40} isMe={row.isMe} isAi={isAi} />
                         <span style={{ ...getUsernameGradientStyle(row.playerId), fontWeight: row.isMe ? 700 : 500 }}>
                           {row.displayName}
                         </span>
@@ -597,7 +598,7 @@ export default function RoundCompleteSection({
                       <span className={styles.lbRank}>—</span>
                       <span className={styles.lbNameCell}>
                         <span className={styles.lbNameInner}>
-                          <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} playerId={p.playerId} size={40} isMe={isMe} />
+                          <PlayerAvatar avatarUrl={p.avatarUrl} displayName={p.displayName || p.playerId.slice(0, 8)} playerId={p.playerId} size={40} isMe={isMe} isAi={p.isAi} />
                           <span style={{ ...getUsernameGradientStyle(p.playerId), fontWeight: isMe ? 700 : 500 }}>
                             {p.displayName || p.playerId.slice(0, 8)}
                           </span>
@@ -778,7 +779,7 @@ export default function RoundCompleteSection({
                         const name = p?.displayName ?? pid.slice(0, 8);
                         return (
                           <span key={pid} className={styles.readyName}>
-                            <PlayerAvatar avatarUrl={p?.avatarUrl ?? null} displayName={name} playerId={pid} size={24} isMe={pid === playerId} />
+                            <PlayerAvatar avatarUrl={p?.avatarUrl ?? null} displayName={name} playerId={pid} size={24} isMe={pid === playerId} isAi={p?.isAi ?? false} />
                             <span style={getUsernameGradientStyle(pid)}>{name}</span> ✓
                           </span>
                         );
