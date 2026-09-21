@@ -2151,6 +2151,166 @@ export async function joinCompeteSession(input: { gameId: string; displayName: s
   return snapshot;
 }
 
+export async function addAiPlayerToSession(input: { gameId: string; aiPlayerId: string; requestingPlayerId: string }): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
+  const gameId = input.gameId.trim();
+  const aiPlayerId = input.aiPlayerId;
+  const requestingPlayerId = input.requestingPlayerId;
+
+  if (gameId.length === 0) {
+    throw new Error("gameId is required");
+  }
+
+  const session = await loadSessionRow(gameId);
+  if (!session) {
+    throw new Error("Session not found");
+  }
+
+  // Scope: sync (Rush) sessions only. Async/Relax AI injection is unsupported.
+  if (session.mode !== "sync") {
+    throw new Error("AI players can only join sync sessions");
+  }
+
+  // Late join guard snapshot: same role as in joinCompeteSession — evaluated
+  // inside the transaction under the advisory lock to avoid repeated heavy
+  // state reconstruction.
+  const currentSnapshot = await loadCompeteSessionSnapshot(gameId, null);
+
+  // Resolve AI identity outside the transaction to keep the lock short
+  // (mirrors the profile resolution in joinCompeteSession). Eligibility gate:
+  // is_active is the general-purpose flag — resolvePlayerIdentities and the
+  // overall leaderboard (the lobby's AI pool source) both gate on it — and
+  // deleted_at excludes soft-deleted players.
+  const aiPlayerResult = await dbPool.query<{ name: string; avatar_url: string | null }>(
+    `SELECT name, avatar_url
+     FROM public.ai_players
+     WHERE id = $1 AND is_active = true AND deleted_at IS NULL`,
+    [aiPlayerId]
+  );
+  const aiPlayerRow = aiPlayerResult.rows[0];
+  if (!aiPlayerRow) {
+    throw new Error("AI player not found or not eligible");
+  }
+
+  // session_players.display_name is VARCHAR(32); clamp before the standard
+  // display-name assertion so an over-long AI name cannot fail the INSERT.
+  const aiDisplayName = assertValidDisplayName(aiPlayerRow.name.trim().slice(0, 32));
+  let aiAvatarUrl = aiPlayerRow.avatar_url;
+  if (!aiAvatarUrl) {
+    const fallbackResult = await dbPool.query<{ avatar_url: string }>(
+      `SELECT COALESCE(firebase_url, image_url) AS avatar_url
+       FROM public.avatars WHERE ready = true ORDER BY random() LIMIT 1`
+    );
+    aiAvatarUrl = fallbackResult.rows[0]?.avatar_url ?? null;
+  }
+
+  // Atomic join transaction — identical shape to joinCompeteSession:
+  // advisory lock (inside validateJoinEligibility) serializes all joins for
+  // this game; the active-count FOR UPDATE in validateJoinEligibility enforces
+  // the existing 8-player sync cap against a stable snapshot.
+  let client: DbTransactionClient | null = null;
+  try {
+    client = await getTransactionClient();
+    await client.query("BEGIN");
+
+    // Host authority: only the active host may add an AI player — matches the
+    // lobby UI (invite panel renders for viewer.isHost only) and the DO's host
+    // gate on SYNC_INVITES. Checked inside the transaction so the authority
+    // decision and the write are atomic.
+    const hostCheck = await client.query<{ player_id: string }>(
+      `SELECT player_id FROM session_players
+       WHERE game_id = $1 AND player_id = $2 AND is_host = true AND left_at IS NULL`,
+      [gameId, requestingPlayerId]
+    );
+    if (hostCheck.rows.length === 0) {
+      await client.query("ROLLBACK");
+      const err = new Error("Only the host can add an AI player") as Error & { code?: string };
+      err.code = "NOT_HOST";
+      throw err;
+    }
+
+    const eligibility = await validateJoinEligibility(client, gameId, aiPlayerId, session, currentSnapshot);
+    if (!eligibility.ok) {
+      await client.query("ROLLBACK");
+      const err = new Error(eligibility.error) as Error & { code?: string };
+      if (eligibility.code === "PLAYER_KICKED") {
+        err.code = eligibility.code;
+      }
+      throw err;
+    }
+
+    verifyLog("INSERT", "session_players", "OK", `joining ai_player_id=${aiPlayerId} game_id=${gameId} — executing`);
+
+    // AI players join ready = true: they have no client to toggle ready with,
+    // and startCompeteSession requires every active player to be ready (same
+    // precedent as practice sessions auto-readying the host at creation).
+    // ON CONFLICT re-asserts ready = true so a rejoining AI can never wedge
+    // the lobby in a not-ready state.
+    await client.query(
+      `INSERT INTO session_players (game_id, player_id, display_name, joined_at, left_at, ready, is_host, avatar_url)
+       VALUES ($1, $2, $3, now(), NULL, true, false, $4)
+       ON CONFLICT (game_id, player_id) DO UPDATE
+         SET left_at = NULL,
+             ready = true,
+             display_name = CASE
+               WHEN EXCLUDED.display_name <> '' THEN EXCLUDED.display_name
+               ELSE session_players.display_name
+             END,
+             avatar_url = EXCLUDED.avatar_url`,
+      [gameId, aiPlayerId, aiDisplayName, aiAvatarUrl]
+    );
+
+    // No host self-heal: the requesting player was just verified as the active
+    // host under the advisory lock, so the NOT EXISTS branch could never fire —
+    // and promoting an AI to host would leave the lobby without a real driver.
+
+    // Mark any pending invitation for this AI as accepted so it cannot appear
+    // as both an active player and a pending invitee (same dedup as the human
+    // join path).
+    await client.query(
+      `UPDATE public.game_invitations
+       SET status = 'accepted'
+       WHERE game_id = $1
+         AND invitee_id = $2
+         AND status = 'pending'`,
+      [gameId, aiPlayerId]
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client?.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client?.release();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ZERO-TRUST: Cross-connection verification AFTER write (MP-CORE-LOOP-003)
+  // ─────────────────────────────────────────────────────────────────────────────
+  await verifyWriteCrossConnection(
+    "session_players",
+    "game_id = $1 AND player_id = $2",
+    [gameId, aiPlayerId],
+    "addAiPlayerToSession",
+    { game_id: gameId, player_id: aiPlayerId }
+  );
+
+  // NOTE: PLAYER_JOINED event removed — not defined in EVENT_STREAM_SPEC.md.
+  // Player joins are tracked via session_players table only.
+  // Phase authority remains exclusively with round_events per spec.
+
+  // No auto-favorite: a player_follows edge to an ai_players id is meaningless
+  // (AI players cannot be followed back) and could pollute the favorites UI.
+
+  // Snapshot is returned from the requesting (host) player's perspective —
+  // the HTTP response goes to the inviter, not to the AI.
+  const snapshot = await loadCompeteSessionSnapshot(gameId, requestingPlayerId);
+  if (!snapshot) {
+    throw new Error("Session not found");
+  }
+
+  return snapshot;
+}
+
 export async function setCompetePlayerReady(input: SetCompeteReadyInput): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   const gameId = input.gameId.trim();
   const playerId = input.playerId.trim();
