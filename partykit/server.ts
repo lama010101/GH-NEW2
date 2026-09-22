@@ -205,7 +205,7 @@ const ServerMessageSchema = z.discriminatedUnion("type", [
 type RuntimeState = {
   gameId: string;
   status: string;
-  players: Array<{ playerId: string; displayName: string; ready: boolean; isHost: boolean; hasSubmitted: boolean; leftAt: string | null }>;
+  players: Array<{ playerId: string; displayName: string; ready: boolean; isHost: boolean; hasSubmitted: boolean; leftAt: string | null; isAi?: boolean }>;
   currentRoundIndex: number;
   roundEndsAt: string | null;
   roundTimerSec: number;
@@ -285,6 +285,14 @@ export default class GameServer {
   private static readonly LEAVE_GRACE_MS = 15_000;
   private static readonly ROUND_EXPIRY_SUBMIT_GRACE_MS = 1_000;
 
+  // AI live-injection timing window (AIP-BUILD-LIVEROUNDINJECTION-PIECE6-001).
+  // Randomized per AI per round so submissions carry no fixed timing signature
+  // and the first-submission pressure clamp never fires at t≈0 every round.
+  private static readonly AI_SUBMIT_MIN_DELAY_MS = 4_000;
+  private static readonly AI_SUBMIT_MAX_DELAY_MS = 30_000;
+  private static readonly AI_SUBMIT_UNTIMED_MAX_DELAY_MS = 15_000;
+  private static readonly AI_SUBMIT_EXPIRY_BUFFER_MS = 5_000;
+
   // Mode-aware minimum players to start: sync requires 2, all other modes
   // (async, practice, daily) require 1. Reverts the temporary solo-start
   // override (MP-FIX-COMPETE-SOLO-START-TEMP-001) for sync specifically.
@@ -324,6 +332,14 @@ export default class GameServer {
   // Per-player in-flight submission tracking to deduplicate concurrent SUBMIT_GUESS
   // messages for the same player+round before the first API call returns.
   private submitInFlightPlayers = new Set<string>();
+
+  // AI live-injection timers (AIP-BUILD-LIVEROUNDINJECTION-PIECE6-001), keyed
+  // `${roundIndex}:${playerId}` — one pending banked-guess submission per AI
+  // player per round. Scheduled in scheduleRoundTimer (the single
+  // ROUND_ACTIVE-observed hook), reconciled when the round/status moves on,
+  // and swept in triggerRoundExpiry so a lost timer can never leave an AI
+  // unsubmitted when /complete marks absences.
+  private aiSubmitTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   // In-flight lock for triggerRoundExpiry to prevent concurrent expiry handling.
   // Prevents duplicate ROUND_STARTED → ROUND_STARTED transitions when scheduleRoundTimer
@@ -781,6 +797,11 @@ export default class GameServer {
 
     if (!this.snapshot || !isRuntimeState(this.snapshot)) return;
 
+    // AI live-injection: drop pending AI submit timers for any round that is no
+    // longer live. Current-round timers survive re-schedules so each AI's
+    // randomized delay stays anchored to when it was first scheduled.
+    this.reconcileAiSubmitTimers();
+
     // Determine sub-mode from snapshot config (async = Relax, sync = Rush)
     const snapshotConfig = (this.snapshot as Record<string, unknown>)?.config as Record<string, unknown> | undefined;
     const mode = (snapshotConfig?.["mode"] as string) ?? "sync";
@@ -817,6 +838,12 @@ export default class GameServer {
     const expectedRoundIndex = this.snapshot.currentRoundIndex;
     const roundEndsAtMs = this.snapshot.roundEndsAt ? new Date(this.snapshot.roundEndsAt).getTime() : null;
 
+    // AI live-injection (AIP-BUILD-LIVEROUNDINJECTION-PIECE6-001): schedule each
+    // eligible AI roster member's banked-guess submission. Runs before the
+    // roundEndsAt null-check so untimed sync rounds still get AI guesses —
+    // untimed rounds complete on all-submitted, so the AI must still fire.
+    this.scheduleAiSubmissions(expectedRoundIndex, roundEndsAtMs);
+
     if (roundEndsAtMs === null) return; // no expiry mechanism available (sync with no timer)
 
     const delay = roundEndsAtMs - now;
@@ -832,6 +859,215 @@ export default class GameServer {
         this.roundTimerHandle = null;
         this.triggerRoundExpiry(expectedRoundIndex);
       }, delay);
+    }
+  }
+
+  /**
+   * AI live-injection: drop pending AI submit timers for any round that is no
+   * longer live (status moved past ROUND_ACTIVE or a new round started).
+   * Current-round timers are kept so a mid-round snapshot re-apply does not
+   * re-randomize an already-scheduled delay.
+   */
+  private reconcileAiSubmitTimers(): void {
+    if (this.aiSubmitTimers.size === 0) return;
+    const liveRound = isRuntimeState(this.snapshot) && this.snapshot.status === "ROUND_ACTIVE"
+      ? this.snapshot.currentRoundIndex
+      : null;
+    for (const [key, handle] of this.aiSubmitTimers) {
+      if (liveRound === null || !key.startsWith(`${liveRound}:`)) {
+        clearTimeout(handle);
+        this.aiSubmitTimers.delete(key);
+      }
+    }
+  }
+
+  /**
+   * AI live-injection: schedule one banked-guess submission per eligible AI
+   * roster member for the given round. Eligibility is read from the
+   * DB-authoritative snapshot (isAi via resolvePlayerIdentities, leftAt,
+   * hasSubmitted). Idempotent per `${roundIndex}:${playerId}` — safe to call
+   * on every ROUND_ACTIVE observation.
+   */
+  private scheduleAiSubmissions(roundIndex: number, roundEndsAtMs: number | null): void {
+    if (!isRuntimeState(this.snapshot)) return;
+    for (const p of this.snapshot.players) {
+      if (p.isAi !== true || p.leftAt !== null || p.hasSubmitted) continue;
+      const key = `${roundIndex}:${p.playerId}`;
+      if (this.aiSubmitTimers.has(key)) continue;
+      const playerId = p.playerId;
+      const delay = this.computeAiSubmitDelayMs(roundEndsAtMs);
+      const handle = setTimeout(() => {
+        this.aiSubmitTimers.delete(key);
+        void this.fireAiGuess(playerId, roundIndex);
+      }, delay);
+      this.aiSubmitTimers.set(key, handle);
+      console.log(`[PartyKit] AI submit scheduled: player=${playerId.slice(0, 8)} round=${roundIndex} delay=${Math.round(delay / 1000)}s`);
+    }
+  }
+
+  /**
+   * AI live-injection: randomized "thinking" delay before an AI player's banked
+   * guess is submitted. Uniform in [AI_SUBMIT_MIN_DELAY_MS, min(remaining -
+   * AI_SUBMIT_EXPIRY_BUFFER_MS, AI_SUBMIT_MAX_DELAY_MS)] for timed rounds, and
+   * [MIN, AI_SUBMIT_UNTIMED_MAX_DELAY_MS] for untimed rounds. An instant submit
+   * would carry a trivial timing signature and would fire the first-submission
+   * pressure clamp at t≈0 every round. The triggerRoundExpiry sweep guarantees
+   * the submit still lands if this timer is lost (DO eviction) or outlives a
+   * clamped round end — the AI can never be the reason a round fails to expire.
+   */
+  private computeAiSubmitDelayMs(roundEndsAtMs: number | null): number {
+    if (roundEndsAtMs === null) {
+      return GameServer.AI_SUBMIT_MIN_DELAY_MS +
+        Math.random() * (GameServer.AI_SUBMIT_UNTIMED_MAX_DELAY_MS - GameServer.AI_SUBMIT_MIN_DELAY_MS);
+    }
+    const remaining = roundEndsAtMs - Date.now();
+    const upper = Math.max(
+      GameServer.AI_SUBMIT_MIN_DELAY_MS,
+      Math.min(remaining - GameServer.AI_SUBMIT_EXPIRY_BUFFER_MS, GameServer.AI_SUBMIT_MAX_DELAY_MS)
+    );
+    return GameServer.AI_SUBMIT_MIN_DELAY_MS +
+      Math.random() * Math.max(0, upper - GameServer.AI_SUBMIT_MIN_DELAY_MS);
+  }
+
+  /**
+   * AI live-injection: fire one AI player's banked-guess submission via
+   * /ai-guess. The request body is only {playerId, roundIndex} — a pure
+   * trigger; the answer is looked up from ai_answer_bank server-side and
+   * written through submitGuess (single write path). A `submitted:false`
+   * response means no usable banked answer exists — nothing is written and
+   * the AI takes the normal absent path at round completion. Reuses
+   * submitInFlightPlayers/submitInFlight so triggerRoundExpiry's in-flight
+   * wait also covers in-flight AI submissions.
+   */
+  private async fireAiGuess(playerId: string, roundIndex: number): Promise<void> {
+    if (!isRuntimeState(this.snapshot)) return;
+    if (this.snapshot.status !== "ROUND_ACTIVE" || this.snapshot.currentRoundIndex !== roundIndex) return;
+    const player = this.snapshot.players.find(p => p.playerId === playerId);
+    if (!player || player.isAi !== true || player.leftAt !== null || player.hasSubmitted) return;
+
+    const submitKey = `${playerId}:${roundIndex}`;
+    if (this.submitInFlightPlayers.has(submitKey)) return;
+    this.submitInFlightPlayers.add(submitKey);
+    this.submitInFlight++;
+    try {
+      const apiUrl = `${this.getNextJsBaseUrl()}/api/compete/${encodeURIComponent(this.gameId)}/ai-guess`;
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
+        },
+        body: JSON.stringify({ playerId, roundIndex })
+      });
+      if (!response.ok) {
+        const body = await response.text();
+        console.error(`[AI_GUESS] API error ${response.status}: ${body}`);
+        return;
+      }
+      const fullResponse = await response.json();
+      if ((fullResponse as { submitted?: boolean }).submitted !== true) {
+        console.log(`[AI_GUESS] no banked answer — player=${playerId.slice(0, 8)} round=${roundIndex} reason=${(fullResponse as { reason?: string }).reason ?? "unknown"} (absent path applies)`);
+        return;
+      }
+      this.handleGuessApiResponse(fullResponse, playerId, roundIndex);
+    } catch (err) {
+      console.error(`[AI_GUESS] submit failed — player=${playerId.slice(0, 8)} round=${roundIndex}:`, err instanceof Error ? err.message : err);
+    } finally {
+      this.submitInFlightPlayers.delete(submitKey);
+      this.submitInFlight--;
+    }
+  }
+
+  /**
+   * AI live-injection expiry sweep: gives every still-unsubmitted active AI
+   * player a final banked-guess attempt immediately before /complete marks
+   * absences. Sequential so each fireAiGuess observes the freshest snapshot.
+   * Never throws — a failed AI submit must not block round completion.
+   */
+  private async submitDueAiGuesses(roundIndex: number): Promise<void> {
+    if (!isRuntimeState(this.snapshot)) return;
+    const due = this.snapshot.players.filter(p => p.isAi === true && p.leftAt === null && !p.hasSubmitted);
+    for (const p of due) {
+      await this.fireAiGuess(p.playerId, roundIndex);
+    }
+  }
+
+  /**
+   * Shared /guess + /ai-guess response handling: pending results, ROUND_COMPLETE
+   * detection (cancel round timer, hold expiry re-entry), TIMER_CLAMPED UX flash
+   * from the DB-authoritative PRESSURE_APPLIED event, snapshot apply+broadcast,
+   * PLAYER_SUBMITTED broadcast. Single path so AI and human submissions produce
+   * identical downstream behavior.
+   */
+  private handleGuessApiResponse(fullResponse: unknown, playerId: string, roundIndex: number): void {
+    const results = Array.isArray((fullResponse as { results?: unknown }).results)
+      ? (fullResponse as { results: unknown[] }).results
+      : null;
+    this.pendingResults = results;
+
+    // MP-FIX-SYNC-DESYNC-001: If the submit completed the round early (all
+    // players submitted before timer expiry), cancel the pending
+    // roundTimerHandle so triggerRoundExpiry cannot fire a second /complete
+    // call for the same round. Also set completeInFlight to block
+    // triggerRoundExpiry's re-entry guard. Populate roundResultsForClient on
+    // the snapshot so the broadcastStateUpdate fallback
+    // (this.pendingResults ?? roundResultsForClient) yields results even if a
+    // racy second broadcast occurs after pendingResults is cleared.
+    if (isRuntimeState(fullResponse) && fullResponse.status === "ROUND_COMPLETE") {
+      if (this.roundTimerHandle !== null) {
+        clearTimeout(this.roundTimerHandle);
+        this.roundTimerHandle = null;
+      }
+      this.completeInFlight = true;
+      if (results !== null) {
+        fullResponse.roundResultsForClient = results;
+      }
+    }
+
+    // Clamp is applied atomically inside submitGuess (sessionCore.ts) and
+    // persisted as a PRESSURE_APPLIED event in the same transaction as the
+    // first round_commit. The guess-response snapshot already carries the
+    // clamped roundEndsAt (derived from PRESSURE_APPLIED.payload.newRoundEndsAt
+    // by loadCompeteSessionSnapshot). No separate clamp write, no in-memory
+    // mutation — DB is the single source of truth.
+    //
+    // Detect the clamp from the DB-authoritative snapshot to fire the
+    // TIMER_CLAMPED UX flash (visual only; correctness is already in the
+    // broadcast snapshot).
+    if (isRuntimeState(fullResponse) &&
+        fullResponse.status === "ROUND_ACTIVE" &&
+        fullResponse.currentRoundIndex === roundIndex &&
+        Array.isArray(fullResponse.events) &&
+        fullResponse.events.some(e =>
+          e.eventType === "PRESSURE_APPLIED" &&
+          e.roundIndex === roundIndex)) {
+      const timerClampedMsg: ClientMessage = {
+        type: "TIMER_CLAMPED",
+        newPhaseEndsAt: fullResponse.roundEndsAt as string,
+        clampedToSec: 30
+      };
+      for (const connection of this.room.getConnections()) {
+        connection.send(JSON.stringify(timerClampedMsg));
+      }
+      console.log(`[PartyKit] TIMER_CLAMPED UX flash fired from DB-authoritative PRESSURE_APPLIED event`);
+    }
+
+    // Apply snapshot (roundEndsAt already clamped in the snapshot from DB)
+    this.applySnapshotAndBroadcast(fullResponse);
+
+    // Broadcast PLAYER_SUBMITTED to all clients
+    if (isRuntimeState(this.snapshot)) {
+      const submittingPlayer = this.snapshot.players.find(p => p.playerId === playerId);
+      if (submittingPlayer) {
+        const playerSubmittedMsg: ClientMessage = {
+          type: "PLAYER_SUBMITTED",
+          playerId,
+          playerName: submittingPlayer.displayName
+        };
+        for (const connection of this.room.getConnections()) {
+          connection.send(JSON.stringify(playerSubmittedMsg));
+        }
+      }
     }
   }
 
@@ -1079,6 +1315,19 @@ export default class GameServer {
       if (!waited) {
         console.warn("[PartyKit] Timed out waiting for in-flight submissions — proceeding with round expiry");
       }
+    }
+
+    // AI live-injection sweep (AIP-BUILD-LIVEROUNDINJECTION-PIECE6-001): any
+    // active AI player still without a commit gets a final banked-guess
+    // attempt before /complete marks absences. Covers lost timers (DO
+    // eviction, cold start) and delays that outlived a clamped round end.
+    // Never blocks completion — submitDueAiGuesses swallows its own errors.
+    await this.submitDueAiGuesses(roundIndex);
+    // The sweep itself may have completed the round (last unsubmitted player
+    // was an AI whose commit closed the round) — re-check before /complete.
+    if (!isRuntimeState(this.snapshot) || this.snapshot.status !== "ROUND_ACTIVE" || this.snapshot.currentRoundIndex !== expectedRoundIndex) {
+      this.completeInFlight = false;
+      return;
     }
 
     try {
@@ -1949,73 +2198,12 @@ export default class GameServer {
               break;
             }
             const fullResponse = await response.json();
-            const results = Array.isArray(fullResponse.results) ? fullResponse.results : null;
-            this.pendingResults = results;
-
-            // MP-FIX-SYNC-DESYNC-001: If /guess completed the round early (all players
-            // submitted before timer expiry), cancel the pending roundTimerHandle so
-            // triggerRoundExpiry cannot fire a second /complete call for the same round.
-            // Also set completeInFlight to block triggerRoundExpiry's re-entry guard.
-            // Populate roundResultsForClient on the snapshot so the broadcastStateUpdate
-            // fallback (this.pendingResults ?? roundResultsForClient) yields results even
-            // if a racy second broadcast occurs after pendingResults is cleared.
-            if (isRuntimeState(fullResponse) && fullResponse.status === "ROUND_COMPLETE") {
-              if (this.roundTimerHandle !== null) {
-                clearTimeout(this.roundTimerHandle);
-                this.roundTimerHandle = null;
-              }
-              this.completeInFlight = true;
-              if (results !== null) {
-                fullResponse.roundResultsForClient = results;
-              }
-            }
-
-            // Clamp is now applied atomically inside submitGuess (sessionCore.ts)
-            // and persisted as a PRESSURE_APPLIED event in the same transaction as
-            // the first round_commit. The /guess response snapshot already carries
-            // the clamped roundEndsAt (derived from PRESSURE_APPLIED.payload.
-            // newRoundEndsAt by loadCompeteSessionSnapshot). No separate clamp
-            // write, no in-memory mutation — DB is the single source of truth.
-            //
-            // Detect the clamp from the DB-authoritative snapshot to fire the
-            // TIMER_CLAMPED UX flash (visual only; correctness is already in the
-            // broadcast snapshot).
-            if (isRuntimeState(fullResponse) &&
-                fullResponse.status === "ROUND_ACTIVE" &&
-                fullResponse.currentRoundIndex === data.roundIndex &&
-                Array.isArray(fullResponse.events) &&
-                fullResponse.events.some(e =>
-                  e.eventType === "PRESSURE_APPLIED" &&
-                  e.roundIndex === data.roundIndex)) {
-              const timerClampedMsg: ClientMessage = {
-                type: "TIMER_CLAMPED",
-                newPhaseEndsAt: fullResponse.roundEndsAt as string,
-                clampedToSec: 30
-              };
-              for (const connection of this.room.getConnections()) {
-                connection.send(JSON.stringify(timerClampedMsg));
-              }
-              console.log(`[PartyKit] TIMER_CLAMPED UX flash fired from DB-authoritative PRESSURE_APPLIED event`);
-            }
-
-            // Apply snapshot (roundEndsAt already clamped in the snapshot from DB)
+            // Response handling (pending results, ROUND_COMPLETE detection,
+            // TIMER_CLAMPED flash, snapshot apply+broadcast, PLAYER_SUBMITTED)
+            // is shared with the AI live-injection path via
+            // handleGuessApiResponse — single path, identical behavior.
             console.log(`[SUBMIT_GUESS] response status=${(fullResponse as {status?: string}).status} isRuntimeState=${isRuntimeState(fullResponse)}`);
-            this.applySnapshotAndBroadcast(fullResponse);
-
-            // Broadcast PLAYER_SUBMITTED to all clients
-            if (isRuntimeState(this.snapshot)) {
-              const submittingPlayer = this.snapshot.players.find(p => p.playerId === data.playerId);
-              if (submittingPlayer) {
-                const playerSubmittedMsg: ClientMessage = {
-                  type: "PLAYER_SUBMITTED",
-                  playerId: data.playerId,
-                  playerName: submittingPlayer.displayName
-                };
-                for (const connection of this.room.getConnections()) {
-                  connection.send(JSON.stringify(playerSubmittedMsg));
-                }
-              }
-            }
+            this.handleGuessApiResponse(fullResponse, data.playerId, data.roundIndex);
           } finally {
             this.submitInFlightPlayers.delete(submitKey);
             this.submitInFlight--;
@@ -2152,9 +2340,15 @@ export default class GameServer {
           //   via insertMissingCommits when the round completes.
           // - sync (Rush): ALL active players must tap "Next" (existing behavior).
           const activePlayers = runtimeSnapshot.players.filter(p => p.leftAt === null);
+          // AI live-injection (AIP-BUILD-LIVEROUNDINJECTION-PIECE6-001): invited
+          // AI players have no client to send READY_NEXT — count only non-AI
+          // active players so an AI can never stall the result phase (for the
+          // full resultsAutoAdvanceSec, or forever when it is 0). READY_NEXT
+          // events remain human-written; nothing is fabricated for the AI.
+          const readyRequiredCount = activePlayers.filter(p => p.isAi !== true).length;
           const shouldAdvance = isAsyncReadyNext
             ? this.readyForNext.size >= 1
-            : this.readyForNext.size === activePlayers.length;
+            : readyRequiredCount > 0 && this.readyForNext.size >= readyRequiredCount;
           if (shouldAdvance) {
             console.log(`[PartyKit] ${isAsyncReadyNext ? "Async" : "Sync"} advance triggered — ready: ${this.readyForNext.size}/${activePlayers.length}`);
             // Clear any existing result timer
