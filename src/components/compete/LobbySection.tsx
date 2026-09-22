@@ -780,7 +780,7 @@ export default function LobbySection({
           <div className={styles['lobbyTabRow']}>
             <div className={styles['lobbyTabCell']}>
               <button
-                className={`${styles['lobbyTabBtn']} ${styles['lobbyTabBtnAnytime']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`}
+                className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`}
                 onClick={() => isHost && onSetSubMode?.("async", maxTurnDays)}
                 disabled={!isHost || busy}
               >
@@ -797,7 +797,7 @@ export default function LobbySection({
             </div>
             <div className={styles['lobbyTabCell']}>
               <button
-                className={`${styles['lobbyTabBtn']} ${styles['lobbyTabBtnLive']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
+                className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
                 onClick={() => isHost && onSetSubMode?.("sync", maxTurnDays)}
                 disabled={!isHost || busy}
               >
@@ -815,6 +815,34 @@ export default function LobbySection({
           </div>
           <div className={styles['lobby-settings-grid']}>
             {settingsTab === 'realtime' && (<>
+            <div className={styles['lobby-presets-disclosure']}>
+              <button
+                type="button"
+                className={`${styles['lobby-presets-header']} ${styles['lobby-summary']}`}
+                onClick={() => setPresetsExpanded(v => !v)}
+                aria-expanded={presetsExpanded}
+                data-testid="lobby-settings-summary"
+              >
+                <span className={styles['lobby-summary-pair']}>
+                  <span className={styles['lobby-summary-label']}>{t('common.round')}</span>
+                  <span className={styles['lobby-summary-value']}>{formatTimerDisplay(sliderValue, t('lobby.timer_off'))}</span>
+                </span>
+                <span className={styles['lobby-summary-pair']}>
+                  <span className={styles['lobby-summary-label']}>{t('lobby.results_timer')}</span>
+                  <span className={styles['lobby-summary-value']}>{formatTimerDisplay(resultsTimerValue, t('lobby.timer_off'))}</span>
+                </span>
+                <span className={styles['lobby-summary-pair']}>
+                  <span className={styles['lobby-summary-label']}>{t('profile.era')}</span>
+                  <span className={styles['lobby-summary-value']}>{selectedEras.size} / {ERAS.length}</span>
+                </span>
+                <span className={styles['lobby-summary-pair']}>
+                  <span className={styles['lobby-summary-label']}>{t('profile.regions')}</span>
+                  <span className={styles['lobby-summary-value']}>{visibleRegions.filter(r => selectedRegions.has(r.id)).length} / {visibleRegions.length}</span>
+                </span>
+                <ChevronDown size={16} className={`${styles['lobby-presets-chevron']} ${presetsExpanded ? styles['lobby-presets-chevron-open'] : ''}`} />
+              </button>
+              {presetsExpanded && (
+                <div className={styles['lobby-presets-content']}>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
               <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> {t('common.round')}</span>
               {isHost ? (
@@ -951,17 +979,6 @@ export default function LobbySection({
                 </span>
               )}
             </div>
-            <div className={styles['lobby-presets-disclosure']}>
-              <button
-                type="button"
-                className={styles['lobby-presets-header']}
-                onClick={() => setPresetsExpanded(v => !v)}
-              >
-                <span className={styles['lobby-setting-label']}>{t('lobby.era_region_presets')}</span>
-                <ChevronDown size={16} className={`${styles['lobby-presets-chevron']} ${presetsExpanded ? styles['lobby-presets-chevron-open'] : ''}`} />
-              </button>
-              {presetsExpanded && (
-                <div className={styles['lobby-presets-content']}>
                   <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
                     <div className={styles['lobbySettingRowHead']}>
                       <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
@@ -1040,6 +1057,34 @@ export default function LobbySection({
             </div>
             </>)}
             {settingsTab === 'turnturn' && (<>
+            <div className={styles['lobby-presets-disclosure']}>
+              <button
+                type="button"
+                className={`${styles['lobby-presets-header']} ${styles['lobby-summary']}`}
+                onClick={() => setPresetsExpanded(v => !v)}
+                aria-expanded={presetsExpanded}
+                data-testid="lobby-settings-summary"
+              >
+                <span className={styles['lobby-summary-pair']}>
+                  <span className={styles['lobby-summary-label']}>{t('common.round')}</span>
+                  <span className={styles['lobby-summary-value']}>{formatTimerDisplay(sliderValue, t('lobby.timer_off'))}</span>
+                </span>
+                <span className={styles['lobby-summary-pair']}>
+                  <span className={styles['lobby-summary-label']}>{t('common.game')}</span>
+                  <span className={styles['lobby-summary-value']}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
+                </span>
+                <span className={styles['lobby-summary-pair']}>
+                  <span className={styles['lobby-summary-label']}>{t('profile.era')}</span>
+                  <span className={styles['lobby-summary-value']}>{selectedEras.size} / {ERAS.length}</span>
+                </span>
+                <span className={styles['lobby-summary-pair']}>
+                  <span className={styles['lobby-summary-label']}>{t('profile.regions')}</span>
+                  <span className={styles['lobby-summary-value']}>{visibleRegions.filter(r => selectedRegions.has(r.id)).length} / {visibleRegions.length}</span>
+                </span>
+                <ChevronDown size={16} className={`${styles['lobby-presets-chevron']} ${presetsExpanded ? styles['lobby-presets-chevron-open'] : ''}`} />
+              </button>
+              {presetsExpanded && (
+                <div className={styles['lobby-presets-content']}>
             <div className={`${styles['lobby-setting-item']} ${styles['lobbyRowWrap']}`}>
               <span className={styles['lobby-setting-label']}><Timer size={18} aria-hidden="true" /> {t('common.round')}</span>
               {isHost ? (
@@ -1141,17 +1186,6 @@ export default function LobbySection({
                   <span className={`${styles['lobby-setting-value']} ${styles['lobbyNoWrap']}`}>{maxTurnDays === 1 ? t('lobby.1_day') : t('lobby.n_days', { n: maxTurnDays })}</span>
                 )}
               </div>
-            <div className={styles['lobby-presets-disclosure']}>
-              <button
-                type="button"
-                className={styles['lobby-presets-header']}
-                onClick={() => setPresetsExpanded(v => !v)}
-              >
-                <span className={styles['lobby-setting-label']}>{t('lobby.era_region_presets')}</span>
-                <ChevronDown size={16} className={`${styles['lobby-presets-chevron']} ${presetsExpanded ? styles['lobby-presets-chevron-open'] : ''}`} />
-              </button>
-              {presetsExpanded && (
-                <div className={styles['lobby-presets-content']}>
                   <div className={`${styles['lobby-setting-item']} ${styles['lobbySettingRowBlock']}`}>
                     <div className={styles['lobbySettingRowHead']}>
                       <span className={styles['lobby-setting-label']}>{tGame('era_presets')}</span>
@@ -1270,10 +1304,9 @@ export default function LobbySection({
                 {t('leaderboard.filter_ai')}
               </button>
               <span className={`${styles['lobbyFilterBtn']} ${styles['lobbyFilterSwitchWrap']}`}>
-                <span className={styles['lobbyFilterStar']}>
-                  {filter.friends ? '★' : '☆'}
+                <span className={`${styles['lobbyFilterSwitchLabel']} ${!filter.friends ? styles['lobbyFilterSwitchLabelOn'] : ''}`}>
+                  {t('lobby.filter_all')}
                 </span>
-                {filter.friends ? t('leaderboard.filter_friends') : t('lobby.filter_all')}
                 <button
                   type="button"
                   onClick={toggleFriends}
@@ -1284,6 +1317,9 @@ export default function LobbySection({
                 >
                   <span className={styles['lobbyToggleKnob']} style={{ left: filter.friends ? 22 : 2 }} />
                 </button>
+                <span className={`${styles['lobbyFilterSwitchLabel']} ${filter.friends ? styles['lobbyFilterSwitchLabelOn'] : ''}`}>
+                  {t('leaderboard.filter_friends')}
+                </span>
               </span>
             </div>
             <div className={styles['lobbySearchWrap']}>
