@@ -678,6 +678,8 @@ export default function LobbySection({
   };
 
   const handleAiComingUp = useCallback((player: PlayerPoolEntry) => {
+    if (!player.is_ai) return;
+    if (comingUpId === player.id) return; // join already in flight
     if (comingUpTimeoutRef.current) {
       clearTimeout(comingUpTimeoutRef.current);
     }
@@ -686,7 +688,42 @@ export default function LobbySection({
       setComingUpId(null);
       comingUpTimeoutRef.current = null;
     }, 2000);
-  }, []);
+
+    // AI join is synchronous — the AI lands in session_players immediately,
+    // there is no pending-acceptance state like a human invite. On success the
+    // roster refresh rides the existing SYNC_INVITES → loadFromDB → broadcast
+    // path. Errors surface via inviteStates ('error' → idle after 3s, same
+    // lifecycle as handleSendInvite) — never 'sent', since no second party
+    // accepts.
+    (async () => {
+      try {
+        const token = await getValidAccessToken();
+        const res = await fetch('/api/compete/invite-ai', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ game_id: snapshot.gameId, ai_player_id: player.id }),
+        });
+        if (res.ok) {
+          CompeteWebSocket.syncInvites(snapshot.gameId);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          console.error("[AI_INVITE_FAIL]", res.status, errData);
+          setInviteStates(prev => ({ ...prev, [player.id]: 'error' }));
+          setTimeout(() => {
+            setInviteStates(prev => ({ ...prev, [player.id]: 'idle' }));
+          }, 3000);
+        }
+      } catch {
+        setInviteStates(prev => ({ ...prev, [player.id]: 'error' }));
+        setTimeout(() => {
+          setInviteStates(prev => ({ ...prev, [player.id]: 'idle' }));
+        }, 3000);
+      }
+    })();
+  }, [comingUpId, snapshot.gameId]);
 
   const handleShareLink = async () => {
     try {
@@ -1304,7 +1341,7 @@ export default function LobbySection({
                         disabled={!player.is_ai && inviteState !== 'idle'}
                       >
                         {player.is_ai
-                          ? (comingUpId === player.id ? t('lobby.ai_coming_up') : t('leaderboard.filter_ai'))
+                          ? (comingUpId === player.id ? t('lobby.ai_coming_up') : inviteState === 'error' ? t('lobby.invite_failed') : t('leaderboard.filter_ai'))
                           : inviteState === 'pending'
                             ? t('lobby.invite_pending')
                             : inviteState === 'sent'
@@ -1388,7 +1425,7 @@ export default function LobbySection({
                           disabled={!player.is_ai && inviteState !== 'idle'}
                         >
                           {player.is_ai
-                            ? (comingUpId === player.id ? t('lobby.ai_coming_up') : t('leaderboard.filter_ai'))
+                            ? (comingUpId === player.id ? t('lobby.ai_coming_up') : inviteState === 'error' ? t('lobby.invite_failed') : t('leaderboard.filter_ai'))
                             : inviteState === 'pending'
                               ? t('lobby.invite_pending')
                               : inviteState === 'sent'
