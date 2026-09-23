@@ -3682,6 +3682,129 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// AI LIVE-INJECTION — AIP-BUILD-LIVEROUNDINJECTION-PIECE6-001
+// ═════════════════════════════════════════════════════════════════════════════
+// Read-only guard + ai_answer_bank lookup, then delegates to submitGuess — the
+// single write path — so every invariant (advisory lock, round guards,
+// GUESS_SUBMITTED event, pressure clamp, all-active-submitted → ROUND_COMPLETE
+// → computeAndWriteRoundResults) applies identically to AI submissions.
+//
+// The banked guess_* columns supply the ANSWER only. Scoring is recomputed
+// live by evaluateRound inside submitGuess — banked round_xp/distance_km are
+// offline-pipeline artifacts computed against a different reference_year
+// context and are deliberately NOT reused. hintsUsed is always [] — the
+// banked hints_requested metadata is generation audit data, not consumable
+// live hint-catalog rows.
+//
+// Returns { submitted: false, reason } with ZERO writes when no usable banked
+// answer exists — the AI then takes the normal absent path
+// (insertMissingCommits at round completion), exactly like a human no-show.
+// ═════════════════════════════════════════════════════════════════════════════
+export async function submitAiGuessForRound(input: {
+  gameId: string;
+  playerId: string;
+  roundIndex: number;
+  _executionContext?: "partykit" | "api";
+}): Promise<
+  | { submitted: true; snapshot: CompeteSessionSnapshotWithPlayerSnapshots }
+  | { submitted: false; reason: string }
+> {
+  assertValidExecutionContext(input);
+  const { gameId, playerId, roundIndex } = input;
+
+  if (!Number.isInteger(roundIndex) || roundIndex < 0 || roundIndex >= MAX_ROUNDS) {
+    throw new Error("roundIndex must be an integer between 0 and 4");
+  }
+
+  // Single read-only guard query: session mode, AI eligibility (same
+  // is_active + deleted_at gate as addAiPlayerToSession), active membership
+  // (left/kicked AI must never be submitted for), the round's event_id (same
+  // SESSION_CREATED payload.eventIds source submitGuess uses), and the banked
+  // answer itself. No writes happen here — submitGuess remains the sole write
+  // path (MP-DO-AUTHORITATIVE-006: callers only trigger a DB-sourced write).
+  const guardResult = await dbPool.query<{
+    mode: SessionRow["mode"] | null;
+    ai_eligible: boolean;
+    active_member: boolean;
+    event_id: string | null;
+    guess_year: number | null;
+    guess_lat: number | null;
+    guess_lng: number | null;
+  }>(
+    `WITH session_meta AS (
+       SELECT mode FROM sessions WHERE game_id = $1
+     ),
+     session_created AS (
+       SELECT payload FROM round_events
+       WHERE game_id = $1 AND event_type = 'SESSION_CREATED'
+       ORDER BY id ASC LIMIT 1
+     ),
+     round_event AS (
+       SELECT ((SELECT payload FROM session_created)->'eventIds'->>$3::int)::uuid AS event_id
+     ),
+     bank AS (
+       SELECT ab.guess_year, ab.guess_lat, ab.guess_lng
+       FROM ai_answer_bank ab
+       WHERE ab.event_id = (SELECT event_id FROM round_event)
+         AND ab.ai_player_id = $2
+         AND ab.error IS NULL
+       LIMIT 1
+     )
+     SELECT
+       (SELECT mode FROM session_meta) AS mode,
+       EXISTS(SELECT 1 FROM ai_players
+              WHERE id = $2 AND is_active = true AND deleted_at IS NULL) AS ai_eligible,
+       EXISTS(SELECT 1 FROM session_players
+              WHERE game_id = $1 AND player_id = $2
+                AND left_at IS NULL AND kicked IS NOT TRUE) AS active_member,
+       (SELECT event_id FROM round_event) AS event_id,
+       (SELECT guess_year FROM bank) AS guess_year,
+       (SELECT guess_lat FROM bank) AS guess_lat,
+       (SELECT guess_lng FROM bank) AS guess_lng`,
+    [gameId, playerId, roundIndex]
+  );
+
+  const guard = guardResult.rows[0];
+  if (!guard || guard.mode === null) {
+    throw new Error("Session not found");
+  }
+  if (guard.mode !== "sync") {
+    return { submitted: false, reason: "not_sync_session" };
+  }
+  if (!guard.ai_eligible) {
+    return { submitted: false, reason: "ai_not_eligible" };
+  }
+  if (!guard.active_member) {
+    return { submitted: false, reason: "not_active_member" };
+  }
+  if (!guard.event_id) {
+    return { submitted: false, reason: "no_event_for_round" };
+  }
+  if (guard.guess_year === null && (guard.guess_lat === null || guard.guess_lng === null)) {
+    // No usable banked answer (missing row, error row, or fully-null guess).
+    // ZERO writes — the AI goes absent via insertMissingCommits at round
+    // completion, identical to a human who never answered.
+    return { submitted: false, reason: "no_bank_answer" };
+  }
+
+  const snapshot = await submitGuess({
+    gameId,
+    playerId,
+    roundIndex,
+    yearGuess: guard.guess_year,
+    locationGuess:
+      guard.guess_lat !== null && guard.guess_lng !== null
+        ? { lat: guard.guess_lat, lng: guard.guess_lng }
+        : null,
+    hintsUsed: [],
+    _executionContext: input._executionContext,
+    sessionMode: "sync"
+  });
+
+  return { submitted: true, snapshot };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // ASYNC (RELAX) PER-PLAYER ROUND AUTHORITY — MP-FEAT-RELAX-SOLO-PACING-PHASE1-001
 // All functions below write ONLY to player_round_events and shared tables;
 // they never write to round_events and never read other players' state.
