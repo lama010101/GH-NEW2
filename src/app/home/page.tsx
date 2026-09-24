@@ -9,6 +9,7 @@ import { WelcomeModal } from '@/components/WelcomeModal'
 import { PushSoftAsk } from '@/components/PushSoftAsk'
 import { DailyPanel, type DailyStatusPayload } from '@/components/home/DailyPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
+import { JourneyCard } from '@/components/home/JourneyCard'
 import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
 import { PracticeResumeModal } from '@/components/practice/PracticeResumeModal'
@@ -18,7 +19,6 @@ import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from 
 import { RelaxPwaInterstitialModal } from '@/components/compete/RelaxPwaInterstitialModal'
 import { RelaxPushNudge } from '@/components/RelaxPushNudge'
 import styles from './home.module.css'
-import authModalStyles from '@/components/AuthModal.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
 import RankCard from '@/components/RankCard'
@@ -395,17 +395,26 @@ function HomePageInner() {
         {/* Vertical card stack */}
         <div className={styles['cards-stack']}>
           {VERTICAL_CARD_ORDER.map(mode => (
-            <ModeCard
-              key={mode}
-              mode={mode}
-              playerId={playerId}
-              displayName={displayName}
-              onRequireAuth={() => {}}
-              onNavigate={handleNav}
-              onLobby={(gameId) => router.push(`/compete/${gameId}`)}
-              onPracticeStart={handlePracticeTileClick}
-              practiceLoading={practiceTileLoading}
-            />
+            mode === 'journey' ? (
+              <JourneyCard
+                key={mode}
+                playerId={playerId}
+                totalXp={totalXpNum}
+                onNavigate={handleNav}
+              />
+            ) : (
+              <ModeCard
+                key={mode}
+                mode={mode}
+                playerId={playerId}
+                displayName={displayName}
+                onRequireAuth={() => {}}
+                onNavigate={handleNav}
+                onLobby={(gameId) => router.push(`/compete/${gameId}`)}
+                onPracticeStart={handlePracticeTileClick}
+                practiceLoading={practiceTileLoading}
+              />
+            )
           ))}
         </div>
       </div>
@@ -487,7 +496,6 @@ function ModeCard({
   const [navigating, setNavigating] = useState(false)
   const [competeLoading, setCompeteLoading] = useState(false)
   const [competeError, setCompeteError] = useState<string | null>(null)
-  const [comingSoonOpen, setComingSoonOpen] = useState(false)
   const [dailyStatus, setDailyStatus] = useState<DailyStatusPayload | null>(null)
   const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
   const [relaxNudgePending, setRelaxNudgePending] = useState<null | (() => void)>(null)
@@ -534,7 +542,6 @@ function ModeCard({
     switch (mode) {
       case 'compete': return '/icons/compete_large.webp'
       case 'daily': return '/icons/daily_large.webp'
-      case 'levelup': return '/icons/levels_large.webp'
       case 'practice': return '/icons/practice_large.webp'
       default: return '/icons/daily_large.webp'
     }
@@ -542,7 +549,6 @@ function ModeCard({
 
   const handlePlay = () => {
     if (mode === 'daily') { setNavigating(true); onNavigate('/daily') }
-    else if (mode === 'levelup') { setComingSoonOpen(true) }
     else if (mode === 'practice') { onPracticeStart() }
   }
 
@@ -614,92 +620,74 @@ function ModeCard({
 
   // Non-compete card: icon-left, text-middle, play-right
   return (
-    <>
-      <div className={styles['mode-card']}>
-        <div className={styles['card-bg']} style={{ background: gradient }}>
-          <div className={styles.cardInnerHorizontal}>
-            {/* Icon thumbnail on the LEFT */}
-            <div className={styles.cardIconThumb} aria-hidden="true">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={getIconSrc()} alt="" className={styles.cardIconThumbImg} draggable={false} />
-            </div>
+    <div className={styles['mode-card']}>
+      <div className={styles['card-bg']} style={{ background: gradient }}>
+        <div className={styles.cardInnerHorizontal}>
+          {/* Icon thumbnail on the LEFT */}
+          <div className={styles.cardIconThumb} aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={getIconSrc()} alt="" className={styles.cardIconThumbImg} draggable={false} />
+          </div>
 
-            {/* Title + description in the MIDDLE */}
-            <div className={styles.cardTextCol}>
-              <h2 className={styles.cardTitleLeft}>{title}</h2>
-              <p className={styles.cardDescLeft}>
-                {desc.split('\n').map((line, i) => (
-                  <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
-                ))}
-              </p>
-              {/* Daily card: timer inline below description */}
-              {mode === 'daily' && (
-                <DailyPanel onStatusChange={setDailyStatus} />
-              )}
-            </div>
-
-            {/* Play pill button on the RIGHT (triangle icon + i18n play label) */}
-            {mode === 'daily' && (dailyStatus?.status === 'completed' || dailyStatus?.status === 'expired') ? (
-              <button
-                type="button"
-                className={styles.playPill}
-                onClick={() => {
-                  setNavigating(true)
-                  onNavigate(`/daily/game/${dailyStatus?.gameId}/results`)
-                }}
-                disabled={navigating}
-                aria-label={t('home.daily_view_results')}
-              >
-                {navigating ? (
-                  <span className={styles.playPillSpinner} aria-hidden="true" />
-                ) : (
-                  <>
-                    <Trophy width={22} height={22} aria-hidden="true" />
-                    {`${Math.round(Number(dailyStatus?.avgAccuracy ?? 0))}%`}
-                  </>
-                )}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className={styles.playPill}
-                data-testid={mode === 'practice' ? 'home-practice-play-btn' : undefined}
-                onClick={handlePlay}
-                disabled={navigating || (mode === 'practice' && practiceLoading)}
-                aria-label={t('home.play_mode_aria', { mode: title })}
-              >
-                {navigating || (mode === 'practice' && practiceLoading) ? (
-                  <span className={styles.playPillSpinner} aria-hidden="true" />
-                ) : (
-                  <>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M8 5v14l11-7z" fill="currentColor" />
-                    </svg>
-                    {t('home.compete_play')}
-                  </>
-                )}
-              </button>
+          {/* Title + description in the MIDDLE */}
+          <div className={styles.cardTextCol}>
+            <h2 className={styles.cardTitleLeft}>{title}</h2>
+            <p className={styles.cardDescLeft}>
+              {desc.split('\n').map((line, i) => (
+                <span key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</span>
+              ))}
+            </p>
+            {/* Daily card: timer inline below description */}
+            {mode === 'daily' && (
+              <DailyPanel onStatusChange={setDailyStatus} />
             )}
           </div>
-        </div>
-      </div>
 
-      {comingSoonOpen && (
-        <div className={authModalStyles.overlay} onClick={() => setComingSoonOpen(false)}>
-          <div className={authModalStyles.card} onClick={(e) => e.stopPropagation()}>
+          {/* Play pill button on the RIGHT (triangle icon + i18n play label) */}
+          {mode === 'daily' && (dailyStatus?.status === 'completed' || dailyStatus?.status === 'expired') ? (
             <button
               type="button"
-              className={authModalStyles.closeButton}
-              onClick={() => setComingSoonOpen(false)}
-              aria-label={t('nav.close')}
+              className={styles.playPill}
+              onClick={() => {
+                setNavigating(true)
+                onNavigate(`/daily/game/${dailyStatus?.gameId}/results`)
+              }}
+              disabled={navigating}
+              aria-label={t('home.daily_view_results')}
             >
-              ×
+              {navigating ? (
+                <span className={styles.playPillSpinner} aria-hidden="true" />
+              ) : (
+                <>
+                  <Trophy width={22} height={22} aria-hidden="true" />
+                  {`${Math.round(Number(dailyStatus?.avgAccuracy ?? 0))}%`}
+                </>
+              )}
             </button>
-            <h2 className={authModalStyles.title}>{t('home.coming_up_soon')}</h2>
-          </div>
+          ) : (
+            <button
+              type="button"
+              className={styles.playPill}
+              data-testid={mode === 'practice' ? 'home-practice-play-btn' : undefined}
+              onClick={handlePlay}
+              disabled={navigating || (mode === 'practice' && practiceLoading)}
+              aria-label={t('home.play_mode_aria', { mode: title })}
+            >
+              {navigating || (mode === 'practice' && practiceLoading) ? (
+                <span className={styles.playPillSpinner} aria-hidden="true" />
+              ) : (
+                <>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" fill="currentColor" />
+                  </svg>
+                  {t('home.compete_play')}
+                </>
+              )}
+            </button>
+          )}
         </div>
-      )}
-    </>
+      </div>
+    </div>
   )
 }
 

@@ -11,7 +11,11 @@ export const CARD_NAME: Record<string, string> = {
 export const CARD_SUB: Record<string, string> = {
   daily: "Today's challenge", practice: 'Solo warm-up', levelup: 'Progressive runs', compete: 'Friends lobby'
 }
-export const MODES = ['daily', 'practice', 'levelup', 'compete'] as const
+// 'levelup' is retired from the home card stack (replaced by 'journey',
+// HOME-BUILD-JOURNEYCARD-001) but stays in Mode/MODES because the legacy
+// CardItem.tsx — kept for reference — still compiles `mode === 'levelup'`
+// against this union. It is no longer in VERTICAL_CARD_ORDER.
+export const MODES = ['daily', 'practice', 'levelup', 'compete', 'journey'] as const
 export type Mode = typeof MODES[number]
 
 // New vertical card layout exports (MP-UI-HOME-008)
@@ -20,6 +24,7 @@ export const MODE_CARD_GRADIENT: Record<string, string> = {
   daily:    'linear-gradient(135deg, #7a0a0a 0%, #b01010 50%, #c81818 100%)',
   levelup:  'linear-gradient(135deg, #2d1060 0%, #5b21b6 50%, #7c3aed 100%)',
   practice: 'linear-gradient(135deg, #7c3008 0%, #c05010 50%, #ea6820 100%)',
+  journey:  'linear-gradient(135deg, #172554 0%, #1d4ed8 55%, #3b82f6 100%)',
 }
 
 export const MODE_CARD_TITLE: Record<string, string> = {
@@ -37,4 +42,4 @@ export const MODE_CARD_SUBTITLE: Record<string, string> = {
 }
 
 // Card order for vertical layout (top to bottom)
-export const VERTICAL_CARD_ORDER: Mode[] = ['compete', 'daily', 'practice', 'levelup']
+export const VERTICAL_CARD_ORDER: Mode[] = ['journey', 'compete', 'daily', 'practice']
