@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense, Fragment } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { bootstrapIdentity, subscribeToIdentityChanges, forceClearAuthStorage, updateCachedDisplayName, updateCachedAvatarUrl, type IdentityState } from '@/core/identity'
@@ -9,6 +9,7 @@ import { WelcomeModal } from '@/components/WelcomeModal'
 import { PushSoftAsk } from '@/components/PushSoftAsk'
 import { DailyPanel, type DailyStatusPayload } from '@/components/home/DailyPanel'
 import { CompetePanel } from '@/components/home/CompetePanel'
+import { StageCard } from '@/components/home/StageCard'
 import { MODE_CARD_GRADIENT, VERTICAL_CARD_ORDER, type Mode } from '@/components/home/types'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
 import { PracticeResumeModal } from '@/components/practice/PracticeResumeModal'
@@ -18,7 +19,6 @@ import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from 
 import { RelaxPwaInterstitialModal } from '@/components/compete/RelaxPwaInterstitialModal'
 import { RelaxPushNudge } from '@/components/RelaxPushNudge'
 import styles from './home.module.css'
-import authModalStyles from '@/components/AuthModal.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
 import RankCard from '@/components/RankCard'
@@ -382,30 +382,40 @@ function HomePageInner() {
 
       {/* Scrollable content area — rank card scrolls with the page (inline, not fixed) */}
       <div className={`${styles['page-scroll']} ${styles.pageScrollRankOpen}`}>
-        {/* Rank title progress card — inline, scrolls with content */}
-        <div className={styles.rankCardInline}>
-          <RankCard totalXp={totalXpNum} open inline />
-        </div>
-
         {/* Tagline */}
         <div className={styles.tagline}>
           {t('home.tagline')}
         </div>
 
-        {/* Vertical card stack */}
+        {/* Vertical card stack — Stage card (Historian's Journey progress) is
+            first; the XP Rank card sits directly beneath it, near the top but
+            visually subordinate to the stage card. */}
         <div className={styles['cards-stack']}>
           {VERTICAL_CARD_ORDER.map(mode => (
-            <ModeCard
-              key={mode}
-              mode={mode}
-              playerId={playerId}
-              displayName={displayName}
-              onRequireAuth={() => {}}
-              onNavigate={handleNav}
-              onLobby={(gameId) => router.push(`/compete/${gameId}`)}
-              onPracticeStart={handlePracticeTileClick}
-              practiceLoading={practiceTileLoading}
-            />
+            <Fragment key={mode}>
+              {mode === 'stage' ? (
+                <StageCard
+                  playerId={playerId}
+                  onNavigate={handleNav}
+                />
+              ) : (
+                <ModeCard
+                  mode={mode}
+                  playerId={playerId}
+                  displayName={displayName}
+                  onRequireAuth={() => {}}
+                  onNavigate={handleNav}
+                  onLobby={(gameId) => router.push(`/compete/${gameId}`)}
+                  onPracticeStart={handlePracticeTileClick}
+                  practiceLoading={practiceTileLoading}
+                />
+              )}
+              {mode === 'stage' && (
+                <div className={styles.rankCardInline}>
+                  <RankCard totalXp={totalXpNum} open inline />
+                </div>
+              )}
+            </Fragment>
           ))}
         </div>
       </div>
@@ -487,7 +497,6 @@ function ModeCard({
   const [navigating, setNavigating] = useState(false)
   const [competeLoading, setCompeteLoading] = useState(false)
   const [competeError, setCompeteError] = useState<string | null>(null)
-  const [comingSoonOpen, setComingSoonOpen] = useState(false)
   const [dailyStatus, setDailyStatus] = useState<DailyStatusPayload | null>(null)
   const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
   const [relaxNudgePending, setRelaxNudgePending] = useState<null | (() => void)>(null)
@@ -534,7 +543,6 @@ function ModeCard({
     switch (mode) {
       case 'compete': return '/icons/compete_large.webp'
       case 'daily': return '/icons/daily_large.webp'
-      case 'levelup': return '/icons/levels_large.webp'
       case 'practice': return '/icons/practice_large.webp'
       default: return '/icons/daily_large.webp'
     }
@@ -542,7 +550,6 @@ function ModeCard({
 
   const handlePlay = () => {
     if (mode === 'daily') { setNavigating(true); onNavigate('/daily') }
-    else if (mode === 'levelup') { setComingSoonOpen(true) }
     else if (mode === 'practice') { onPracticeStart() }
   }
 
@@ -683,22 +690,6 @@ function ModeCard({
           </div>
         </div>
       </div>
-
-      {comingSoonOpen && (
-        <div className={authModalStyles.overlay} onClick={() => setComingSoonOpen(false)}>
-          <div className={authModalStyles.card} onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className={authModalStyles.closeButton}
-              onClick={() => setComingSoonOpen(false)}
-              aria-label={t('nav.close')}
-            >
-              ×
-            </button>
-            <h2 className={authModalStyles.title}>{t('home.coming_up_soon')}</h2>
-          </div>
-        </div>
-      )}
     </>
   )
 }
