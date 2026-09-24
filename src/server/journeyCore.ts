@@ -164,10 +164,48 @@ export async function startJourneyPlaythrough(
       );
     }
 
-    // Step 3 — draw pool_size approved, non-stale candidate events at random.
-    // stale_flag rows are excluded: the flag means the underlying event changed
-    // after approval and is pending re-review (spec §3 re-review trigger), so it
-    // is not safe to serve to players until re-approved.
+    // Step 3 — draw pool_size approved, non-stale candidate events at random,
+    // constrained so the drawn set's year spread (max - min) never exceeds
+    // capYears = 10 * stage_number (HJ-BUILD-YEARSPANCAP-005). Anchor-and-window
+    // approach: one random anchor is picked from the pool, then pool_size - 1
+    // further events are drawn whose event_year falls inside
+    // [anchorYear - capYears, anchorYear + capYears] — a 2*capYears-wide window
+    // centered on the anchor, so the anchor can end up anywhere in the final
+    // set's spread. stale_flag rows are excluded: the flag means the
+    // underlying event changed after approval and is pending re-review (spec §3
+    // re-review trigger), so it is not safe to serve to players until
+    // re-approved.
+    const capYears = 10 * stage.stage_number;
+    const anchorResult = await client.query<{
+      event_id: string;
+      event_year: number;
+      total_approved: number;
+    }>(
+      `SELECT jse.event_id, e.event_year,
+              COUNT(*) OVER ()::int AS total_approved
+       FROM public.journey_stage_events jse
+       JOIN public.events e ON e.id = jse.event_id
+       WHERE jse.stage_id = $1
+         AND jse.approved_at IS NOT NULL
+         AND jse.stale_flag = false
+       ORDER BY random()
+       LIMIT 1`,
+      [stageId]
+    );
+    if (anchorResult.rows.length === 0) {
+      throw new Error(
+        `Insufficient approved content for journey stage ${stage.stage_number}: ` +
+        `0 approved event(s), ${stage.pool_size} required`
+      );
+    }
+    const anchor = anchorResult.rows[0];
+    if (anchor.total_approved < stage.pool_size) {
+      throw new Error(
+        `Insufficient approved content for journey stage ${stage.stage_number}: ` +
+        `${anchor.total_approved} approved event(s), ${stage.pool_size} required`
+      );
+    }
+    const anchorYear = anchor.event_year;
     const drawResult = await client.query<{
       event_id: string;
       event_year: number;
@@ -178,19 +216,36 @@ export async function startJourneyPlaythrough(
        WHERE jse.stage_id = $1
          AND jse.approved_at IS NOT NULL
          AND jse.stale_flag = false
+         AND jse.event_id <> $2
+         AND e.event_year BETWEEN $3 AND $4
        ORDER BY random()
-       LIMIT $2`,
-      [stageId, stage.pool_size]
+       LIMIT $5`,
+      [
+        stageId,
+        anchor.event_id,
+        anchorYear - capYears,
+        anchorYear + capYears,
+        stage.pool_size - 1,
+      ]
     );
-    if (drawResult.rows.length < stage.pool_size) {
+    if (drawResult.rows.length < stage.pool_size - 1) {
       throw new Error(
-        `Insufficient approved content for journey stage ${stage.stage_number}: ` +
-        `${drawResult.rows.length} approved event(s), ${stage.pool_size} required`
+        `Insufficient approved content within a ${capYears}-year window for journey ` +
+        `stage ${stage.stage_number} (anchor year ${anchorYear}): ` +
+        `${drawResult.rows.length + 1} available, ${stage.pool_size} required`
       );
     }
-    const drawnEventIds = drawResult.rows.map((r) => r.event_id);
-    const yearMin = Math.min(...drawResult.rows.map((r) => r.event_year));
-    const yearMax = Math.max(...drawResult.rows.map((r) => r.event_year));
+    const drawnRows = [anchor, ...drawResult.rows];
+    const drawnEventIds = drawnRows.map((r) => r.event_id);
+    const yearMin = Math.min(...drawnRows.map((r) => r.event_year));
+    const yearMax = Math.max(...drawnRows.map((r) => r.event_year));
+    if (yearMax - yearMin > capYears) {
+      throw new Error(
+        `Insufficient approved content within a ${capYears}-year window for journey ` +
+        `stage ${stage.stage_number} (anchor year ${anchorYear}): ` +
+        `drawn set year spread ${yearMax - yearMin} exceeds cap`
+      );
+    }
 
     // Step 4 — practice-shaped session (createDailySession shape: pinned
     // eventIds, host session_players row with ready=true so the practice
