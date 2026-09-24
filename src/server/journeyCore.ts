@@ -50,12 +50,25 @@ function assertJourneyDisplayName(displayName: string): string {
 }
 
 // Practice-mode session defaults reused for journey sessions:
-// - round_timer_sec 120 = clampRoundTimer(undefined) for non-async modes.
+// - round_timer_sec is per-stage via journeyRoundTimerSec below (replaces the
+//   former flat 120s = clampRoundTimer(undefined) non-async default).
 // - results_auto_advance_sec 90 = RESULTS_AUTO_ADVANCE_DEFAULT / column default.
 // - session_deadline_days NULL (async-only field).
-const JOURNEY_ROUND_TIMER_SEC = 120;
 const JOURNEY_RESULTS_AUTO_ADVANCE_SEC = 90;
 const ROOM_CODE_MAX_ATTEMPTS = 5;
+
+// Per-stage round timer, linear decay (HJ-BUILD-RECENCYFILTER-TIMERCURVE-001):
+//   timerSec(N) = 300 - 30 * (N - 1)   →   300s at stage 1 … 30s at stage 10.
+// Stored on sessions.round_timer_sec at playthrough start; enforcement is the
+// practice play page's existing auto-submit-on-expiry (journey sessions are
+// mode='practice' and reuse that page unchanged — no client-side code needed).
+// Exported per this repo's single-source rule: any other consumer (e.g. a
+// journey card previewing the timer before a playthrough starts) imports it
+// from this one location, never re-declares. N-parameterized so it extends
+// unchanged if the stage count ever expands beyond the v1 lock of 10.
+export function journeyRoundTimerSec(stageNumber: number): number {
+  return 300 - 30 * (stageNumber - 1);
+}
 
 export type StartJourneyPlaythroughInput = {
   playerId: string;
@@ -85,7 +98,9 @@ export type StartJourneyPlaythroughResult = {
  *      unlocked; stage N>1 requires journey_player_progress.status='completed'
  *      on stage N-1.
  *   3. Draw pool_size event_ids at random from the stage's APPROVED,
- *      non-stale journey_stage_events. Fewer than pool_size approved → throw
+ *      non-stale journey_stage_events within the stage's recency window —
+ *      eligible iff (current calendar year - event_year) < stage_number * 10,
+ *      computed live in the draw query. Fewer than pool_size eligible → throw
  *      (never silently short the round count).
  *   4. Create a practice-shaped session (mode='practice', pinned eventIds).
  *   5. Insert journey_playthroughs (session_id, drawn_event_ids).
@@ -165,47 +180,37 @@ export async function startJourneyPlaythrough(
     }
 
     // Step 3 — draw pool_size approved, non-stale candidate events at random,
-    // constrained so the drawn set's year spread (max - min) never exceeds
-    // capYears = 10 * stage_number (HJ-BUILD-YEARSPANCAP-005). Anchor-and-window
-    // approach: one random anchor is picked from the pool, then pool_size - 1
-    // further events are drawn whose event_year falls inside
-    // [anchorYear - capYears, anchorYear + capYears] — a 2*capYears-wide window
-    // centered on the anchor, so the anchor can end up anywhere in the final
-    // set's spread. stale_flag rows are excluded: the flag means the
-    // underlying event changed after approval and is pending re-review (spec §3
-    // re-review trigger), so it is not safe to serve to players until
-    // re-approved.
-    const capYears = 10 * stage.stage_number;
-    const anchorResult = await client.query<{
-      event_id: string;
-      event_year: number;
-      total_approved: number;
-    }>(
-      `SELECT jse.event_id, e.event_year,
-              COUNT(*) OVER ()::int AS total_approved
+    // filtered by an ABSOLUTE recency window (HJ-BUILD-RECENCYFILTER-
+    // TIMERCURVE-001 — replaces the removed anchor-window year-spread cap):
+    // an event is eligible iff (current calendar year - event_year) <
+    // stage_number * 10. The current year is computed live inside the draw
+    // query via EXTRACT(YEAR FROM now()) — the same now() pattern as
+    // scoring_reference_year in the sessions INSERT below — so the eligible
+    // window drifts forward each calendar year with no code change.
+    // stale_flag rows are excluded: the flag means the underlying event
+    // changed after approval and is pending re-review (spec §3 re-review
+    // trigger), so it is not safe to serve to players until re-approved.
+    const approvedCountResult = await client.query<{ total_approved: number }>(
+      `SELECT COUNT(*)::int AS total_approved
        FROM public.journey_stage_events jse
-       JOIN public.events e ON e.id = jse.event_id
        WHERE jse.stage_id = $1
          AND jse.approved_at IS NOT NULL
-         AND jse.stale_flag = false
-       ORDER BY random()
-       LIMIT 1`,
+         AND jse.stale_flag = false`,
       [stageId]
     );
-    if (anchorResult.rows.length === 0) {
+    const totalApproved = approvedCountResult.rows[0]?.total_approved ?? 0;
+    if (totalApproved === 0) {
       throw new Error(
         `Insufficient approved content for journey stage ${stage.stage_number}: ` +
         `0 approved event(s), ${stage.pool_size} required`
       );
     }
-    const anchor = anchorResult.rows[0];
-    if (anchor.total_approved < stage.pool_size) {
+    if (totalApproved < stage.pool_size) {
       throw new Error(
         `Insufficient approved content for journey stage ${stage.stage_number}: ` +
-        `${anchor.total_approved} approved event(s), ${stage.pool_size} required`
+        `${totalApproved} approved event(s), ${stage.pool_size} required`
       );
     }
-    const anchorYear = anchor.event_year;
     const drawResult = await client.query<{
       event_id: string;
       event_year: number;
@@ -216,36 +221,22 @@ export async function startJourneyPlaythrough(
        WHERE jse.stage_id = $1
          AND jse.approved_at IS NOT NULL
          AND jse.stale_flag = false
-         AND jse.event_id <> $2
-         AND e.event_year BETWEEN $3 AND $4
+         AND (EXTRACT(YEAR FROM now())::int - e.event_year) < $2 * 10
        ORDER BY random()
-       LIMIT $5`,
-      [
-        stageId,
-        anchor.event_id,
-        anchorYear - capYears,
-        anchorYear + capYears,
-        stage.pool_size - 1,
-      ]
+       LIMIT $3`,
+      [stageId, stage.stage_number, stage.pool_size]
     );
-    if (drawResult.rows.length < stage.pool_size - 1) {
+    if (drawResult.rows.length < stage.pool_size) {
       throw new Error(
-        `Insufficient approved content within a ${capYears}-year window for journey ` +
-        `stage ${stage.stage_number} (anchor year ${anchorYear}): ` +
-        `${drawResult.rows.length + 1} available, ${stage.pool_size} required`
+        `Insufficient approved content within the recency window for journey ` +
+        `stage ${stage.stage_number} (events younger than ` +
+        `${stage.stage_number * 10} years required): ` +
+        `${drawResult.rows.length} available, ${stage.pool_size} required`
       );
     }
-    const drawnRows = [anchor, ...drawResult.rows];
-    const drawnEventIds = drawnRows.map((r) => r.event_id);
-    const yearMin = Math.min(...drawnRows.map((r) => r.event_year));
-    const yearMax = Math.max(...drawnRows.map((r) => r.event_year));
-    if (yearMax - yearMin > capYears) {
-      throw new Error(
-        `Insufficient approved content within a ${capYears}-year window for journey ` +
-        `stage ${stage.stage_number} (anchor year ${anchorYear}): ` +
-        `drawn set year spread ${yearMax - yearMin} exceeds cap`
-      );
-    }
+    const drawnEventIds = drawResult.rows.map((r) => r.event_id);
+    const yearMin = Math.min(...drawResult.rows.map((r) => r.event_year));
+    const yearMax = Math.max(...drawResult.rows.map((r) => r.event_year));
 
     // Step 4 — practice-shaped session (createDailySession shape: pinned
     // eventIds, host session_players row with ready=true so the practice
@@ -268,7 +259,7 @@ export async function startJourneyPlaythrough(
            VALUES ($1, 'practice', $2, $3, $4, $5, $6, $7, $8, EXTRACT(YEAR FROM now())::INT)`,
           [
             gameId,
-            JOURNEY_ROUND_TIMER_SEC,
+            journeyRoundTimerSec(stage.stage_number),
             drawnEventIds.length,
             yearMin,
             yearMax,

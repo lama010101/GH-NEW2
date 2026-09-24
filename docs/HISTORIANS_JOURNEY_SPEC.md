@@ -72,7 +72,7 @@ Suggested order: **Historian's Journey → Daily Challenge → Practice → Comp
 **In scope for v1:**
 - 10 sequential stages, single era arc: **Modern World** (1900–present). Chosen because it has the deepest pool of well-photographed, well-attributed, unambiguous events already in the events table — minimizes content-pipeline risk for a first cut.
 - Linear unlock: complete stage N at the minimum threshold to unlock N+1. No skipping.
-- Each stage: a curated pool of events (pool size TBD by content audit, §5), a subset drawn per playthrough.
+- Each stage: a curated pool of events (pool size TBD by content audit, §5), a subset drawn per playthrough (recency-filtered per §5.1).
 - Scoring: 100% reuse of existing scoring engine. No Journey-specific scoring.
 - XP: 100% reuse of existing XP engine. No Journey-specific XP rules.
 - Badges: Gold/Silver/Bronze/Completion per stage, per the original thresholds (below), reusing the existing badge system's award/display plumbing, extended with a stage reference.
@@ -163,9 +163,27 @@ journey_playthroughs
 The original doc's dimensions still apply, scoped down to what's achievable within one era for 10 stages:
 
 - **Image ambiguity:** early stages favor iconic, unambiguous photos; later stages (7–10) can include less globally famous but still well-attributed Modern World events.
-- **Time pressure:** generous timers early, tightening by stage 10, within whatever timer bounds already exist for Practice mode (reuse `TIMER_MIN_SEC` and existing constants — do not introduce a new timer constant, per §7 architecture rule).
+- **Time pressure:** per-stage linear-decay round timer — locked formula in §5.1 below (300s at stage 1 → 30s at stage 10). This supersedes this bullet's earlier "reuse existing Practice timer constants, do not introduce a new timer constant" guidance; the per-stage decay is the v1 timer design.
 - **Accuracy threshold:** `min_accuracy_pct` increases stage-over-stage per the locked curve in §0.4 (linear, 50% → 75% across stages 1–10).
 - Geography and cultural-similarity dimensions are **not meaningfully exercisable within a single era** — deferred to Phase 2 when additional eras exist.
+
+## 5.1 v1 draw filter & round timer — locked formulas (HJ-BUILD-RECENCYFILTER-TIMERCURVE-001)
+
+Two per-stage formulas govern behavior at play time. Both are parameterized by `journey_stages.stage_number` (N; v1: 1–10, sequential, no gaps — the DB still hard-locks to exactly 10 stages), so both extend correctly without a rewrite whenever the stage count is actually expanded in a future, separately-scoped task.
+
+**Draw recency filter — absolute, recomputed live.** An event is eligible for a stage-N playthrough draw iff:
+
+    (current_year − event_year) < N * 10
+
+`current_year` is the real-world calendar year at play time, computed inside the draw query itself (`EXTRACT(YEAR FROM now())`) — never snapshotted or cached — so the eligible window drifts forward each calendar year with no code change. Stage 1 draws only events from the last <10 years, stage 10 the last <100. This **replaces** an earlier relative "year-span cap" (anchor-window) implementation, which was a misread of the intended rule — removed entirely, not kept as a fallback.
+
+**Round timer — per-stage linear decay, hard-enforced.**
+
+    timerSec(N) = 300 − 30 × (N − 1)   →   300s (5:00) at stage 1 … 30s at stage 10
+
+Stored on `sessions.round_timer_sec` when the playthrough's session is created; enforcement is the existing practice-page auto-submit-on-expiry (journey sessions are `mode='practice'` per §4), which submits whatever the player has — including a null guess — the moment the timer reaches zero.
+
+**Flagged, not decided:** product intent is to eventually cover history back to ~3000 years via additional stages beyond the current v1 lock of 10 (previously discussed as possibly ~300 total stages). That expansion is NOT in scope for v1 — `journey_stages.stage_number` remains exactly 1–10 — but it is why both formulas are written N-parameterized rather than as fixed lookup tables. Both formulas' concrete shapes (recency window size per stage, timer curve endpoints/slope) are explicitly flagged as subject to future adjustment — product-judgment anchors, not derived values, same honesty convention as the accuracy-threshold curve in §0 item 3.
 
 ## 6. Progression Gates (v1)
 
