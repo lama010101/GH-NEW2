@@ -10,9 +10,7 @@
 //
 // All queries run through the service-role pg pool / transaction client —
 // journey tables have no authenticated-write policies by design (score-forgery
-// guard), so this module is server-only. journey_stage_events additionally has
-// NO select policy at all on prod; draws must filter approved_at IS NOT NULL
-// explicitly here rather than rely on RLS.
+// guard), so this module is server-only.
 
 import { randomUUID, randomBytes } from "crypto";
 import {
@@ -20,6 +18,8 @@ import {
   type DbTransactionClient,
 } from "@/server/sessionCore";
 import { appendEvent } from "@/server/eventStore";
+import { fetchRandomEventsForSession } from "@/server/events";
+import { MAX_ROUNDS } from "@/core/types";
 
 // Identical to the sessionCore-local room-code generator — sessionCore.ts is
 // protected-baseline so it cannot gain an export; the LCG is duplicated here
@@ -57,17 +57,36 @@ function assertJourneyDisplayName(displayName: string): string {
 const JOURNEY_RESULTS_AUTO_ADVANCE_SEC = 90;
 const ROOM_CODE_MAX_ATTEMPTS = 5;
 
-// Per-stage round timer, linear decay (HJ-BUILD-RECENCYFILTER-TIMERCURVE-001):
-//   timerSec(N) = 300 - 30 * (N - 1)   →   300s at stage 1 … 30s at stage 10.
-// Stored on sessions.round_timer_sec at playthrough start; enforcement is the
-// practice play page's existing auto-submit-on-expiry (journey sessions are
-// mode='practice' and reuse that page unchanged — no client-side code needed).
-// Exported per this repo's single-source rule: any other consumer (e.g. a
-// journey card previewing the timer before a playthrough starts) imports it
-// from this one location, never re-declares. N-parameterized so it extends
-// unchanged if the stage count ever expands beyond the v1 lock of 10.
+// Stage draw shape (HJ-BUILD-STAGE100-NOAPPROVAL-001): every stage draws
+// exactly MAX_ROUNDS events — the same 5-round session shape
+// Compete/Practice/Daily produce — via fetchRandomEventsForSession.
+const JOURNEY_DRAW_SIZE = MAX_ROUNDS;
+// Recency window: stage N is eligible for events from the last N*40 years
+// (stage 1 → 40y, stage 100 → 4000y). Implemented as minYear/maxYear on the
+// shared draw function, current year computed live at draw time.
+const JOURNEY_RECENCY_YEARS_PER_STAGE = 40;
+// No-repeat horizon (Journey-only — NOT shared with Compete/Practice/Daily):
+// exclude event IDs shown in this player's last 100 Journey rounds. Each
+// journey_playthroughs row stores its drawn set in drawn_event_ids
+// (JOURNEY_DRAW_SIZE events per playthrough), so 100 rounds = the 20 most
+// recent playthroughs.
+const JOURNEY_NO_REPEAT_ROUNDS = 100;
+const JOURNEY_NO_REPEAT_PLAYTHROUGH_LIMIT =
+  JOURNEY_NO_REPEAT_ROUNDS / JOURNEY_DRAW_SIZE;
+
+// Per-stage round timer, ramp-then-flat (HJ-BUILD-STAGE100-NOAPPROVAL-001 —
+// replaces the 10-stage linear decay, which reached <=0 past stage 10):
+//   timerSec(N) = 300 - 270 * min(N-1, 49) / 49
+//   → 300s at stage 1, linear decay to 30s at stage 50, flat 30s at 51-100.
+// sessions.round_timer_sec is INT, so mid-ramp values are Math.round'ed to
+// whole seconds. Stored on sessions.round_timer_sec at playthrough start;
+// enforcement is the practice play page's existing auto-submit-on-expiry
+// (journey sessions are mode='practice' and reuse that page unchanged — no
+// client-side code needed). Exported per this repo's single-source rule: any
+// other consumer (e.g. a journey card previewing the timer before a
+// playthrough starts) imports it from this one location, never re-declares.
 export function journeyRoundTimerSec(stageNumber: number): number {
-  return 300 - 30 * (stageNumber - 1);
+  return Math.round(300 - (270 * Math.min(stageNumber - 1, 49)) / 49);
 }
 
 export type StartJourneyPlaythroughInput = {
@@ -97,11 +116,14 @@ export type StartJourneyPlaythroughResult = {
  *   2. Unlock rule (spec §2 linear unlock, no skipping): stage 1 is always
  *      unlocked; stage N>1 requires journey_player_progress.status='completed'
  *      on stage N-1.
- *   3. Draw pool_size event_ids at random from the stage's APPROVED,
- *      non-stale journey_stage_events within the stage's recency window —
- *      eligible iff (current calendar year - event_year) < stage_number * 10,
- *      computed live in the draw query. Fewer than pool_size eligible → throw
- *      (never silently short the round count).
+ *   3. Draw JOURNEY_DRAW_SIZE (5) event_ids via fetchRandomEventsForSession —
+ *      the same draw Compete/Practice/Daily use — over the stage's absolute
+ *      recency window: event_year >= current_year - stage_number * 40, with
+ *      current_year computed live. There is NO per-stage approval gate:
+ *      every status='validated' event is eligible. Journey-only no-repeat:
+ *      events shown in this player's last 100 Journey rounds are excluded,
+ *      falling back to allowing repeats if exclusion starves the pool.
+ *      Fewer than 5 eligible → throw (never silently short the round count).
  *   4. Create a practice-shaped session (mode='practice', pinned eventIds).
  *   5. Insert journey_playthroughs (session_id, drawn_event_ids).
  *   6. Upsert journey_player_progress: attempts_count+1, last_played_at=now(),
@@ -131,9 +153,8 @@ export async function startJourneyPlaythrough(
       id: string;
       stage_number: number;
       status: string;
-      pool_size: number;
     }>(
-      `SELECT id, stage_number, status, pool_size
+      `SELECT id, stage_number, status
        FROM public.journey_stages
        WHERE id = $1
        FOR UPDATE`,
@@ -179,64 +200,77 @@ export async function startJourneyPlaythrough(
       );
     }
 
-    // Step 3 — draw pool_size approved, non-stale candidate events at random,
-    // filtered by an ABSOLUTE recency window (HJ-BUILD-RECENCYFILTER-
-    // TIMERCURVE-001 — replaces the removed anchor-window year-spread cap):
-    // an event is eligible iff (current calendar year - event_year) <
-    // stage_number * 10. The current year is computed live inside the draw
-    // query via EXTRACT(YEAR FROM now()) — the same now() pattern as
-    // scoring_reference_year in the sessions INSERT below — so the eligible
-    // window drifts forward each calendar year with no code change.
-    // stale_flag rows are excluded: the flag means the underlying event
-    // changed after approval and is pending re-review (spec §3 re-review
-    // trigger), so it is not safe to serve to players until re-approved.
-    const approvedCountResult = await client.query<{ total_approved: number }>(
-      `SELECT COUNT(*)::int AS total_approved
-       FROM public.journey_stage_events jse
-       WHERE jse.stage_id = $1
-         AND jse.approved_at IS NOT NULL
-         AND jse.stale_flag = false`,
-      [stageId]
+    // Step 3 — draw the stage's event set via fetchRandomEventsForSession,
+    // the same shared draw Compete/Practice/Daily use. Since
+    // HJ-BUILD-STAGE100-NOAPPROVAL-001 there is no per-stage content approval
+    // gate: journey_stage_events is no longer read here — every
+    // status='validated' event (the draw function's baseline filter, plus its
+    // always-on VALID_CONTINENTS location filter) is eligible, scoped by an
+    // ABSOLUTE recency window mapped onto minYear/maxYear:
+    //   event_year >= current_year - stage_number * 40.
+    // current_year is computed live via new Date().getFullYear() — never
+    // snapshotted or cached — so the eligible window drifts forward each
+    // calendar year with no code change.
+    //
+    // No-repeat exclusion — NEW behavior unique to Journey (Compete/Practice/
+    // Daily do not exclude previously-shown events; none of the existing
+    // fetchRandomEventsForSession call sites in sessionCore.ts pass
+    // excludeEventIds). Source of "shown" history:
+    // journey_playthroughs.drawn_event_ids — each playthrough row records its
+    // own drawn set (JOURNEY_DRAW_SIZE events), so the last
+    // JOURNEY_NO_REPEAT_ROUNDS rounds = the last
+    // JOURNEY_NO_REPEAT_PLAYTHROUGH_LIMIT playthroughs' drawn_event_ids.
+    // If exclusion leaves fewer than JOURNEY_DRAW_SIZE eligible events the
+    // draw retries WITHOUT exclusion — repeats are allowed rather than
+    // failing the draw — and the fallback is logged.
+    const currentYear = new Date().getFullYear();
+    const minYear =
+      currentYear - stage.stage_number * JOURNEY_RECENCY_YEARS_PER_STAGE;
+    const maxYear = currentYear;
+
+    const recentDrawnResult = await client.query<{ event_id: string }>(
+      `SELECT DISTINCT t.event_id::text AS event_id
+       FROM (
+         SELECT drawn_event_ids
+         FROM public.journey_playthroughs
+         WHERE player_id = $1
+         ORDER BY created_at DESC
+         LIMIT $2
+       ) recent
+       CROSS JOIN LATERAL unnest(recent.drawn_event_ids) AS t(event_id)`,
+      [playerId, JOURNEY_NO_REPEAT_PLAYTHROUGH_LIMIT]
     );
-    const totalApproved = approvedCountResult.rows[0]?.total_approved ?? 0;
-    if (totalApproved === 0) {
-      throw new Error(
-        `Insufficient approved content for journey stage ${stage.stage_number}: ` +
-        `0 approved event(s), ${stage.pool_size} required`
+    const excludeEventIds = recentDrawnResult.rows.map((r) => r.event_id);
+
+    let drawnEvents = await fetchRandomEventsForSession(JOURNEY_DRAW_SIZE, {
+      minYear,
+      maxYear,
+      excludeEventIds,
+    });
+    if (drawnEvents.length < JOURNEY_DRAW_SIZE && excludeEventIds.length > 0) {
+      console.warn(
+        `[journey] no-repeat exclusion left ${drawnEvents.length}/` +
+        `${JOURNEY_DRAW_SIZE} eligible events for stage ` +
+        `${stage.stage_number} (player ${playerId}) — retrying draw ` +
+        `without exclusion`
       );
+      drawnEvents = await fetchRandomEventsForSession(JOURNEY_DRAW_SIZE, {
+        minYear,
+        maxYear,
+      });
     }
-    if (totalApproved < stage.pool_size) {
+    if (drawnEvents.length < JOURNEY_DRAW_SIZE) {
       throw new Error(
-        `Insufficient approved content for journey stage ${stage.stage_number}: ` +
-        `${totalApproved} approved event(s), ${stage.pool_size} required`
-      );
-    }
-    const drawResult = await client.query<{
-      event_id: string;
-      event_year: number;
-    }>(
-      `SELECT jse.event_id, e.event_year
-       FROM public.journey_stage_events jse
-       JOIN public.events e ON e.id = jse.event_id
-       WHERE jse.stage_id = $1
-         AND jse.approved_at IS NOT NULL
-         AND jse.stale_flag = false
-         AND (EXTRACT(YEAR FROM now())::int - e.event_year) < $2 * 10
-       ORDER BY random()
-       LIMIT $3`,
-      [stageId, stage.stage_number, stage.pool_size]
-    );
-    if (drawResult.rows.length < stage.pool_size) {
-      throw new Error(
-        `Insufficient approved content within the recency window for journey ` +
+        `Insufficient content within the recency window for journey ` +
         `stage ${stage.stage_number} (events younger than ` +
-        `${stage.stage_number * 10} years required): ` +
-        `${drawResult.rows.length} available, ${stage.pool_size} required`
+        `${stage.stage_number * JOURNEY_RECENCY_YEARS_PER_STAGE} years ` +
+        `required): ${drawnEvents.length} available, ` +
+        `${JOURNEY_DRAW_SIZE} required`
       );
     }
-    const drawnEventIds = drawResult.rows.map((r) => r.event_id);
-    const yearMin = Math.min(...drawResult.rows.map((r) => r.event_year));
-    const yearMax = Math.max(...drawResult.rows.map((r) => r.event_year));
+    const drawnEventIds = drawnEvents.map((e) => e.id);
+    const yearMin = Math.min(...drawnEvents.map((e) => e.year));
+    const yearMax = Math.max(...drawnEvents.map((e) => e.year));
 
     // Step 4 — practice-shaped session (createDailySession shape: pinned
     // eventIds, host session_players row with ready=true so the practice
