@@ -15,9 +15,21 @@ type EventPageProps = {
 
 // Pre-render every currently-eligible event at build time; any event added
 // later (or newly eligible) is rendered on first request and cached (ISR).
+// If the DB isn't reachable at build time (e.g. a CI build job that only has
+// public env vars, no DB credentials), degrade to an empty param list rather
+// than failing the whole build — every page still renders correctly and gets
+// cached on its first real request, since dynamicParams defaults to true.
 export async function generateStaticParams() {
-  const slugs = await fetchAllEligibleSlugs();
-  return slugs.map(({ slug }) => ({ slug }));
+  try {
+    const slugs = await fetchAllEligibleSlugs();
+    return slugs.map(({ slug }) => ({ slug }));
+  } catch (error) {
+    console.warn(
+      "[events/[slug]] generateStaticParams: DB unavailable at build time, skipping pre-render",
+      error instanceof Error ? error.message : error
+    );
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: EventPageProps): Promise<Metadata> {

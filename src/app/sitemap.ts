@@ -13,7 +13,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/events`, changeFrequency: "daily", priority: 0.8 },
   ];
 
-  const eligible = await fetchAllEligibleSlugs();
+  let eligible: Awaited<ReturnType<typeof fetchAllEligibleSlugs>> = [];
+  try {
+    eligible = await fetchAllEligibleSlugs();
+  } catch (error) {
+    // DB unreachable (e.g. a build-time pass with no DB credentials) — fall
+    // back to the static entries only; the live route always re-reads the DB.
+    console.warn(
+      "[sitemap] DB unavailable, returning static entries only",
+      error instanceof Error ? error.message : error
+    );
+  }
 
   const eventEntries: MetadataRoute.Sitemap = eligible.map(({ slug, updatedAt }) => ({
     url: `${SITE_URL}/events/${slug}`,
