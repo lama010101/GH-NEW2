@@ -1,52 +1,47 @@
 "use client";
 
 // ============================================================================
-// STANDALONE PROTOTYPE — Home restructure: bottom nav + mode toggle + streak
+// STANDALONE PROTOTYPE — Home restructure: 2-tab nav, Historian hero card
 // Route: /prototype/homenav   (direct access, self-contained, UI-only)
 //
-// UIX-BUILD-HOMENAV-001. Restructures the prod /home single-scroll layout into
-// a GeoGuessr-style tabbed shell:
+// UIX-BUILD-HOMENAV-002 — revision of the -001 pass after visual review.
+// This spec supersedes the -001 nav/card structure:
 //
-//   1. PERSISTENT BOTTOM NAV — Home / Play / Challenge / Profile.
-//      - Home      = today's home content post-restructure (Journey card,
-//                    Cartographer rank strip, Daily card, Practice card,
-//                    Challenge entry card that points at the Challenge tab).
-//      - Play      = mode-selection screen (does NOT launch a game directly):
-//                    SOLO | MULTIPLAYER segmented toggle. SOLO shows the
-//                    Historian's Journey card, Cartographer rank strip and
-//                    Daily card; MULTIPLAYER shows a Challenge entry card that
-//                    points at the Challenge tab (pointer chosen over
-//                    duplicating the whole Challenge panel inside Play).
-//      - Challenge = the existing friends feature (CompetePanel) relocated
-//                    here: create-game head + Invitations / Your Turn /
-//                    Completed sub-tabs. Internal logic untouched (mocked).
-//      - Profile   = represents the existing /profile screen (real route
-//                    exists: src/app/profile/page.tsx; /progress + /account
-//                    also exist via NavModal). Mock profile surface here.
-//      The hamburger keeps secondary/settings items (Leaderboard, Stats,
-//      Account, Help, Install, Sign out).
+//   1. BOTTOM NAV — exactly 2 tabs: SINGLEPLAYER | MULTIPLAYER.
+//      - Singleplayer (default) = 3 cards only: Historian's Journey, Daily,
+//        Practice. Singleplayer icon = /icons/play_large.webp.
+//      - Multiplayer = the friends feature surface (Invitations / Your Turn /
+//        Completed + Create) — same icon as the previous Challenge tab.
+//      - No Profile tab: profile access stays exactly where it already is —
+//        topbar avatar + hamburger menu (both unchanged per spec #7).
 //
-//   2. DAILY CARD -> STREAK FRAMING — the "Next in: Xh Ym" countdown is
-//      replaced by a 7-day streak row (day-of-week checkboxes, current day
-//      highlighted). REAL backing exists, none invented:
-//      player_daily_streak.daily_streak_current / _best / last_attempt_date
-//      (written by sessionCore.ts §8 step 4) + daily_attempts rows for the
-//      per-day checkmarks. Mock values used here.
+//   2. CARTOGRAPHER / XP-TIER CARD REMOVED — deliberate product decision.
+//      The XP/tier system still lives in the topbar rank pill and the
+//      hamburger "Profile stats" entry; no replacement UI created.
 //
-//   3. HERO BAND — the historical-photo collage (same /mobile|desktop-
-//      home_background.webp the prod page uses as a faint full-page bg) is
-//      pulled forward into a fixed ~200px band behind the top header row
-//      (logo / rank pill / bell / avatar / hamburger). Header content is
-//      unchanged; the page body below is flat dark.
+//   3. HISTORIAN'S JOURNEY CARD — first card, primary CTA: stage icon as the
+//      main visual, user avatar as a small inset badge on the icon corner,
+//      stage title + stage progress only (no XP/tier text), prominent PLAY.
+//
+//   4. SPACING FIX — the oversized band area under the topbar is reduced to a
+//      slim header backdrop so the tagline follows at normal spacing.
+//
+//   5. DAILY CARD — keeps the -001 7-day streak row (real backing:
+//      player_daily_streak + daily_attempts). Daily/Practice card content
+//      unchanged; only order/position touched.
+//
+//   6. MULTIPLAYER CREATE FLOW — Create now offers "Anytime" or "Live",
+//      then lands in a lobby where the mode can still be switched pre-game.
+//      LOCAL UI STATE ONLY — no session/backend wiring (spec #6).
 //
 // All data is MOCK and held in local state. No Supabase, no auth, no
-// network. Only this file is created. No other app files are touched.
+// network. Only this file is touched (plus docs/PROGRESS.md bookkeeping).
 // ============================================================================
 
 import { useEffect, useState } from "react";
 
-type TabId = "home" | "play" | "challenge" | "profile";
-type PlayMode = "solo" | "multiplayer";
+type TabId = "singleplayer" | "multiplayer";
+type LobbyMode = "anytime" | "live";
 type ChallengeTab = "invitations" | "your_turn" | "completed";
 
 // ── Mock profile (real backing: profiles + player_global_stats.total_xp) ──
@@ -54,12 +49,9 @@ const PROFILE = {
   displayName: "Alex Rivera",
   initials: "AR",
   avgAccuracy: 87,
-  // 32,500 XP -> rankForXp tier 4 "Cartographer" (next: Explorer @ 50,000).
+  // total_xp -> rankForXp tier 4 "Cartographer"; shown in the topbar rank pill
+  // and the hamburger header — its dedicated card was removed per spec #2.
   totalXp: 32500,
-  xpToNext: 17500,
-  nextTitle: "Explorer",
-  rankProgressPct: 42,
-  gamesPlayed: 138,
   // player_daily_streak.daily_streak_current / daily_streak_best.
   dayStreak: 5,
   bestStreak: 12,
@@ -143,43 +135,25 @@ function JourneyCard() {
   return (
     <div className="hn-card" style={{ background: "linear-gradient(135deg, #172554 0%, #1d4ed8 55%, #3b82f6 100%)" }}>
       <div className="hn-cardInner">
+        {/* Stage icon is the card's main visual (replaces any generic levelup
+            icon). The user avatar is a small inset badge in the icon's corner —
+            secondary/personalizing, not competing for primary weight. */}
         <div className="hn-cardThumb" aria-hidden="true">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={JOURNEY.icon} alt="" className="hn-cardThumbImg" draggable={false} />
+          <span className="hn-avaBadge">{PROFILE.initials}</span>
         </div>
         <div className="hn-cardText">
           <h2 className="hn-cardTitle">HISTORIAN&apos;S JOURNEY</h2>
           <p className="hn-cardDesc"><b>{JOURNEY.tierTitle}</b></p>
           <p className="hn-cardDesc">{JOURNEY.completed} of {JOURNEY.total} stages completed</p>
         </div>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="hn-cardChevron">
-          <path d="M9 6l6 6-6 6" />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function RankStrip() {
-  return (
-    <div className="hn-rankStrip">
-      <div className="hn-rankMed">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/images/rank-titles/cartographer.jpg" alt="Cartographer" className="hn-rankMedImg" draggable={false} />
-        <span className="hn-rankMedTier"><span>T4</span></span>
-      </div>
-      <div className="hn-rankBody">
-        <div className="hn-rankHead">
-          <h3 className="hn-rankTitle">Cartographer</h3>
-          <span className="hn-rankXp">{fmtXp(PROFILE.totalXp)}<i> XP</i></span>
-        </div>
-        <div className="hn-rankNext">
-          <span className="hn-rankNextLabel">Next:</span>
-          <span className="hn-rankNextTitle">{fmtXp(PROFILE.xpToNext)} XP to {PROFILE.nextTitle}</span>
-        </div>
-        <div className="hn-rankBar">
-          <span className="hn-rankBarFill" style={{ width: `${PROFILE.rankProgressPct}%` }} />
-        </div>
+        <button type="button" className="hn-ctaPlay" aria-label="Continue Historian's Journey">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M8 5v14l11-7z" fill="currentColor" />
+          </svg>
+          PLAY
+        </button>
       </div>
     </div>
   );
@@ -232,94 +206,128 @@ function PracticeCard() {
   );
 }
 
-function ChallengeEntryCard({ onOpen }: { onOpen: () => void }) {
-  return (
-    <div className="hn-card" style={{ background: "linear-gradient(135deg, #0369a1 0%, #0891b2 40%, #22d3ee 100%)" }}>
-      <div className="hn-cardInner">
-        <div className="hn-cardThumb" aria-hidden="true">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/compete_large.webp" alt="" className="hn-cardThumbImg" draggable={false} />
-        </div>
-        <div className="hn-cardText">
-          <h2 className="hn-cardTitle">CHALLENGE</h2>
-          <p className="hn-cardDesc">Play with your friends.<br />Real-time or Turn-based</p>
-        </div>
-        <button type="button" className="hn-pill" onClick={onOpen} aria-label="Open Challenge tab">
-          OPEN
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M9 6l6 6-6 6" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── Tab content panels ──
-function HomeTab({ onOpenChallenge }: { onOpenChallenge: () => void }) {
+
+// SINGLEPLAYER — spec #4: exactly 3 cards, this order. Nothing else.
+function SingleplayerTab() {
   return (
     <>
       <div className="hn-tagline">Where &amp; When — guess the moment that shaped history.</div>
       <JourneyCard />
-      <RankStrip />
       <DailyCard />
       <PracticeCard />
-      <ChallengeEntryCard onOpen={onOpenChallenge} />
     </>
   );
 }
 
-function PlayTab({ onOpenChallenge }: { onOpenChallenge: () => void }) {
-  const [mode, setMode] = useState<PlayMode>("solo");
-  return (
-    <>
-      <div className="hn-segWrap">
-        <div className="hn-seg" role="tablist" aria-label="Play mode">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "solo"}
-            className={`hn-segBtn ${mode === "solo" ? "hn-segBtnOn" : ""}`}
-            onClick={() => setMode("solo")}
-          >
-            SOLO
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "multiplayer"}
-            className={`hn-segBtn ${mode === "multiplayer" ? "hn-segBtnOn" : ""}`}
-            onClick={() => setMode("multiplayer")}
-          >
-            MULTIPLAYER
-          </button>
-        </div>
-      </div>
-      {mode === "solo" ? (
-        <>
-          <JourneyCard />
-          <RankStrip />
-          <DailyCard />
-        </>
-      ) : (
-        <>
-          <ChallengeEntryCard onOpen={onOpenChallenge} />
-          <p className="hn-hint">
-            Invitations, your-turn games and results live in the Challenge tab.
-          </p>
-        </>
-      )}
-    </>
-  );
-}
-
-function ChallengeTabPanel() {
+// MULTIPLAYER — the friends surface (previous Challenge tab content) plus the
+// Create -> Anytime|Live -> lobby flow. Create/lobby phase + mode are LOCAL
+// UI state only; no session/backend wiring (spec #6).
+function MultiplayerTabPanel() {
+  const [phase, setPhase] = useState<"list" | "choose" | "lobby">("list");
+  const [lobbyMode, setLobbyMode] = useState<LobbyMode>("anytime");
   const [tab, setTab] = useState<ChallengeTab>("invitations");
   const tabs: Array<{ key: ChallengeTab; label: string; count: number }> = [
     { key: "invitations", label: "Invitations", count: MOCK_INVITES.length },
     { key: "your_turn", label: "Your Turn", count: MOCK_YOUR_TURN.length },
     { key: "completed", label: "Completed", count: MOCK_COMPLETED.length },
   ];
+
+  // ── Create flow: pick Anytime|Live first (spec #6) ──
+  if (phase === "choose") {
+    return (
+      <div className="hn-lobbyCard">
+        <div className="hn-lobbyHead">
+          <button type="button" className="hn-backBtn" aria-label="Back to challenges" onClick={() => setPhase("list")}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <h2 className="hn-lobbyTitle">NEW GAME</h2>
+        </div>
+        <p className="hn-hint" style={{ marginTop: 0 }}>Choose a mode for this challenge.</p>
+        <button type="button" className="hn-modeOpt" onClick={() => { setLobbyMode("anytime"); setPhase("lobby"); }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/anytime_256.png" alt="" className="hn-modeOptImg" draggable={false} />
+          <span className="hn-modeOptTxt">
+            <span className="hn-modeOptName">Anytime</span>
+            <span className="hn-modeOptSub">Turn-based · up to 14 days</span>
+          </span>
+        </button>
+        <button type="button" className="hn-modeOpt" onClick={() => { setLobbyMode("live"); setPhase("lobby"); }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/live_256.png" alt="" className="hn-modeOptImg" draggable={false} />
+          <span className="hn-modeOptTxt">
+            <span className="hn-modeOptName">Live</span>
+            <span className="hn-modeOptSub">Real-time · up to 5 mins</span>
+          </span>
+        </button>
+      </div>
+    );
+  }
+
+  // ── Lobby (pre-game): mode is still switchable here — mock local state ──
+  if (phase === "lobby") {
+    return (
+      <div className="hn-lobbyCard">
+        <div className="hn-lobbyHead">
+          <button type="button" className="hn-backBtn" aria-label="Back to challenges" onClick={() => setPhase("list")}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <h2 className="hn-lobbyTitle">LOBBY</h2>
+        </div>
+        <div className="hn-seg" role="tablist" aria-label="Lobby mode">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={lobbyMode === "anytime"}
+            className={`hn-segBtn ${lobbyMode === "anytime" ? "hn-segBtnOn" : ""}`}
+            onClick={() => setLobbyMode("anytime")}
+          >
+            ANYTIME
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={lobbyMode === "live"}
+            className={`hn-segBtn ${lobbyMode === "live" ? "hn-segBtnOn" : ""}`}
+            onClick={() => setLobbyMode("live")}
+          >
+            LIVE
+          </button>
+        </div>
+        <p className="hn-hint" style={{ marginTop: 0 }}>
+          {lobbyMode === "anytime"
+            ? "Turn-based · up to 14 days — mode can be switched until the game starts."
+            : "Real-time · up to 5 mins — mode can be switched until the game starts."}
+        </p>
+        <div className="hn-gameList">
+          <div className="hn-gameRow">
+            <span className="hn-ava">{PROFILE.initials}</span>
+            <div className="hn-gameInfo">
+              <span className="hn-gameName">{PROFILE.displayName} (you)</span>
+              <span className="hn-gameSub">Host</span>
+            </div>
+            <span className="hn-readyBadge">Ready</span>
+          </div>
+          {["Invite a friend", "Invite a friend"].map((label, i) => (
+            <div key={i} className="hn-gameRow hn-gameRowEmpty">
+              <span className="hn-ava hn-avaEmpty">?</span>
+              <div className="hn-gameInfo">
+                <span className="hn-gameName">{label}</span>
+                <span className="hn-gameSub">Waiting…</span>
+              </div>
+              <button type="button" className="hn-inviteBtn">Invite</button>
+            </div>
+          ))}
+        </div>
+        <button type="button" className="hn-startBtn">Start when everyone is ready</button>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Play-with-friends head (same content as the prod compete card row) */}
@@ -333,7 +341,7 @@ function ChallengeTabPanel() {
             <h2 className="hn-cardTitle">CHALLENGE</h2>
             <p className="hn-cardDesc">Play with your friends.<br />Real-time or Turn-based</p>
           </div>
-          <button type="button" className="hn-pill" aria-label="Create game">
+          <button type="button" className="hn-pill" aria-label="Create game" onClick={() => setPhase("choose")}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -418,90 +426,36 @@ function ChallengeTabPanel() {
   );
 }
 
-// Mock of the existing /profile screen (display name, level, stats, account
-// entries) — represents the real route this tab would host.
-function ProfileTabPanel() {
-  const menu = ["Profile stats", "Account settings", "Leaderboard", "Help", "Install app"];
+// ── Bottom nav icons ──
+function NavIcon({ id }: { id: TabId }) {
+  if (id === "singleplayer") {
+    // Spec #5: reuse the existing public asset for the Singleplayer tab.
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src="/icons/play_large.webp" alt="" className="hn-navIconImg" draggable={false} />
+    );
+  }
+  // MULTIPLAYER — same trophy icon the previous iteration's Challenge tab used.
   return (
-    <>
-      <div className="hn-profHero">
-        <span className="hn-profAva">{PROFILE.initials}</span>
-        <h2 className="hn-profName">{PROFILE.displayName}</h2>
-        <span className="hn-profSub">Cartographer · LV 14</span>
-      </div>
-      <div className="hn-profStats">
-        <div className="hn-profStat"><span className="hn-profVal" style={{ color: accColor(PROFILE.avgAccuracy) }}>{PROFILE.avgAccuracy}%</span><span className="hn-profLabel">Accuracy</span></div>
-        <div className="hn-profStat"><span className="hn-profVal" style={{ color: "#ffd54a" }}>{fmtXp(PROFILE.totalXp)}</span><span className="hn-profLabel">Total XP</span></div>
-        <div className="hn-profStat"><span className="hn-profVal">{PROFILE.gamesPlayed}</span><span className="hn-profLabel">Games</span></div>
-        <div className="hn-profStat"><span className="hn-profVal" style={{ color: "#fb923c" }}>{PROFILE.dayStreak}</span><span className="hn-profLabel">Day streak</span></div>
-      </div>
-      <div className="hn-profMenu">
-        {menu.map((m) => (
-          <button key={m} type="button" className="hn-profRow">
-            <span>{m}</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
-          </button>
-        ))}
-        <button type="button" className="hn-profRow hn-profRowDanger">
-          <span>Sign out</span>
-        </button>
-      </div>
-    </>
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z" />
+      <path d="M7 6H4a1 1 0 0 0-1 1c0 2.2 1.8 4 4 4M17 6h3a1 1 0 0 1 1 1c0 2.2-1.8 4-4 4" />
+    </svg>
   );
 }
 
-// ── Bottom nav icons ──
-function NavIcon({ id, active }: { id: TabId; active: boolean }) {
-  const common = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", "aria-hidden": true as const };
-  const stroke = { stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  switch (id) {
-    case "home":
-      return (
-        <svg {...common} {...stroke}>
-          <path d="M3 10.5 12 3l9 7.5" />
-          <path d="M5 9.5V21h5v-6h4v6h5V9.5" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.2 : 0} />
-        </svg>
-      );
-    case "play":
-      return (
-        <svg {...common} {...stroke}>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M10 8.5v7l5.5-3.5z" fill="currentColor" stroke="none" />
-        </svg>
-      );
-    case "challenge":
-      return (
-        <svg {...common} {...stroke}>
-          <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z" />
-          <path d="M7 6H4a1 1 0 0 0-1 1c0 2.2 1.8 4 4 4M17 6h3a1 1 0 0 1 1 1c0 2.2-1.8 4-4 4" />
-        </svg>
-      );
-    case "profile":
-      return (
-        <svg {...common} {...stroke}>
-          <circle cx="12" cy="8" r="4" />
-          <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.2 : 0} />
-        </svg>
-      );
-  }
-}
-
 const NAV_ITEMS: Array<{ id: TabId; label: string }> = [
-  { id: "home", label: "Home" },
-  { id: "play", label: "Play" },
-  { id: "challenge", label: "Challenge" },
-  { id: "profile", label: "Profile" },
+  { id: "singleplayer", label: "SINGLEPLAYER" },
+  { id: "multiplayer", label: "MULTIPLAYER" },
 ];
 
 export default function HomeNavPrototypePage() {
-  const [tab, setTab] = useState<TabId>("home");
+  const [tab, setTab] = useState<TabId>("singleplayer");
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    document.title = "Home Nav — Guess-History Prototype";
+    document.title = "Home Nav v2 — Guess-History Prototype";
   }, []);
-
-  const openChallenge = () => setTab("challenge");
 
   return (
     <>
@@ -509,12 +463,12 @@ export default function HomeNavPrototypePage() {
       <main className="hn-screen">
         {/* Proto bar */}
         <div className="hn-protoBar">
-          <span className="hn-protoTitle">Home — Bottom Nav restructure</span>
+          <span className="hn-protoTitle">Home — 2-Tab Nav (v2)</span>
           <span className="hn-protoHint">Mock data</span>
         </div>
 
-        {/* ── Hero band: the page-background collage pulled forward into a
-            ~200px band behind the header row ── */}
+        {/* ── Hero band: slim collage backdrop behind the header row (the
+            -001 200px band left a large empty gap under the topbar — spec #1) ── */}
         <div className="hn-hero">
           <div className="hn-heroImg" aria-hidden="true" />
           <div className="hn-heroScrim" aria-hidden="true" />
@@ -554,14 +508,12 @@ export default function HomeNavPrototypePage() {
         {/* Scrollable tab content */}
         <div className="hn-scroll">
           <div className="hn-content">
-            {tab === "home" && <HomeTab onOpenChallenge={openChallenge} />}
-            {tab === "play" && <PlayTab onOpenChallenge={openChallenge} />}
-            {tab === "challenge" && <ChallengeTabPanel />}
-            {tab === "profile" && <ProfileTabPanel />}
+            {tab === "singleplayer" && <SingleplayerTab />}
+            {tab === "multiplayer" && <MultiplayerTabPanel />}
           </div>
         </div>
 
-        {/* Persistent bottom nav */}
+        {/* Persistent bottom nav — exactly 2 tabs (spec #5) */}
         <nav className="hn-nav" aria-label="Primary">
           <div className="hn-navInner">
             {NAV_ITEMS.map((item) => (
@@ -572,9 +524,9 @@ export default function HomeNavPrototypePage() {
                 aria-current={tab === item.id ? "page" : undefined}
                 onClick={() => setTab(item.id)}
               >
-                <NavIcon id={item.id} active={tab === item.id} />
+                <NavIcon id={item.id} />
                 <span className="hn-navLabel">{item.label}</span>
-                {item.id === "challenge" && <span className="hn-navDot" aria-hidden="true" />}
+                {item.id === "multiplayer" && <span className="hn-navDot" aria-hidden="true" />}
               </button>
             ))}
           </div>
@@ -642,10 +594,11 @@ const PROTOTYPE_CSS = `
   }
   .hn-protoHint { font-weight: 600; opacity: 0.75; text-transform: none; }
 
-  /* ── Hero band (~200px) behind the header ── */
+  /* ── Hero band: slim collage backdrop behind the header (was 200px in
+        -001 — the oversized band read as a large empty gap under the topbar) ── */
   .hn-hero {
     position: relative;
-    height: 200px;
+    height: 100px;
     flex-shrink: 0;
     overflow: hidden;
   }
@@ -801,7 +754,6 @@ const PROTOTYPE_CSS = `
     line-height: 1.4;
     margin: 0;
   }
-  .hn-cardChevron { color: #fff; opacity: 0.8; flex-shrink: 0; }
   .hn-pill {
     display: flex;
     align-items: center;
@@ -829,73 +781,48 @@ const PROTOTYPE_CSS = `
     .hn-cardThumb { width: 80px; height: 80px; }
   }
 
-  /* ── Cartographer rank strip (RankCard, inline variant) ── */
-  .hn-rankStrip {
+  /* ── Historian's Journey card: user-avatar inset badge on the stage icon ── */
+  .hn-avaBadge {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+    border: 2px solid #fff;
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 12px 16px;
-    border-radius: 16px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.1);
-    backdrop-filter: blur(8px);
-  }
-  .hn-rankMed {
-    position: relative;
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    overflow: visible;
-    flex-shrink: 0;
-  }
-  .hn-rankMedImg {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(255,213,74,0.7);
-  }
-  .hn-rankMedTier {
-    position: absolute;
-    bottom: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #ffd54a;
-    color: #1c1005;
+    justify-content: center;
     font-size: 9px;
     font-weight: 800;
-    padding: 1px 7px;
-    border-radius: 999px;
-    letter-spacing: 0.5px;
+    color: #fff;
+    z-index: 2;
   }
-  .hn-rankBody { flex: 1; min-width: 0; }
-  .hn-rankHead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-  .hn-rankTitle {
-    margin: 0;
-    font-size: 20px;
+
+  /* ── Primary PLAY CTA — the Historian card is the page's main action ── */
+  .hn-ctaPlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    background: #ffffff;
+    color: #172554;
+    font-size: 14px;
     font-weight: 800;
-    color: #ffd54a;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    font-family: "Bebas Neue", -apple-system, sans-serif;
-  }
-  .hn-rankXp { font-size: 13px; font-weight: 800; color: #fff; white-space: nowrap; }
-  .hn-rankXp i { font-style: normal; font-size: 9px; opacity: 0.7; margin-left: 2px; }
-  .hn-rankNext { display: flex; gap: 6px; font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 2px; }
-  .hn-rankNextLabel { font-weight: 700; }
-  .hn-rankBar {
-    margin-top: 6px;
-    height: 6px;
+    letter-spacing: 0.6px;
+    padding: 13px 20px;
     border-radius: 999px;
-    background: rgba(255,255,255,0.12);
-    overflow: hidden;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
   }
-  .hn-rankBarFill {
-    display: block;
-    height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #ffd54a, #fb923c);
-  }
+  .hn-ctaPlay:hover { transform: scale(1.06); }
+  .hn-ctaPlay:active { transform: scale(0.94); }
 
   /* ── Daily streak row (replaces "Next in" countdown) ── */
   .hn-streakWrap { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
@@ -938,8 +865,7 @@ const PROTOTYPE_CSS = `
   .hn-streakDow { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.65); }
   .hn-streakDayToday .hn-streakDow { color: #ffd54a; }
 
-  /* ── Play tab segmented toggle ── */
-  .hn-segWrap { padding: 4px 0 8px; }
+  /* ── Segmented toggle track (lobby Anytime|Live switch) ── */
   .hn-seg {
     display: flex;
     gap: 4px;
@@ -1074,66 +1000,109 @@ const PROTOTYPE_CSS = `
   .hn-gameAcc { font-size: 13px; font-weight: 800; }
   .hn-gameRank { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.6); }
 
-  /* ── Profile tab ── */
-  .hn-profHero {
+  /* ── Danger text (hamburger Sign out) ── */
+  .hn-profRowDanger { color: #f87171; }
+
+  /* ── Multiplayer create chooser + lobby (mock, UI-only) ── */
+  .hn-lobbyCard {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 20px 16px;
+    gap: 12px;
+    padding: 16px;
     border-radius: 16px;
     background: rgba(255,255,255,0.07);
     border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(8px);
   }
-  .hn-profAva {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+  .hn-lobbyHead { display: flex; align-items: center; gap: 10px; }
+  .hn-lobbyTitle {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: "Bebas Neue", -apple-system, sans-serif;
+    line-height: 1;
+  }
+  .hn-backBtn {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    font-weight: 800;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
   }
-  .hn-profName { margin: 4px 0 0; font-size: 20px; font-weight: 800; }
-  .hn-profSub { font-size: 12px; color: rgba(255,255,255,0.6); }
-  .hn-profStats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .hn-profStat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: 10px 4px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.1);
-  }
-  .hn-profVal { font-size: 15px; font-weight: 800; }
-  .hn-profLabel { font-size: 9px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.4px; }
-  .hn-profMenu {
-    border-radius: 16px;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.1);
-    overflow: hidden;
-  }
-  .hn-profRow {
+  .hn-modeOpt {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 12px;
     width: 100%;
     padding: 14px 16px;
-    background: none;
-    border: none;
-    border-top: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
     color: #fff;
-    font-size: 13px;
-    font-weight: 600;
     cursor: pointer;
     text-align: left;
+    transition: background 0.15s, transform 0.15s;
   }
-  .hn-profRow:first-child { border-top: none; }
-  .hn-profRowDanger { color: #f87171; }
+  .hn-modeOpt:hover { background: rgba(255,255,255,0.12); transform: scale(1.01); }
+  .hn-modeOptImg { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
+  .hn-modeOptTxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .hn-modeOptName { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+  .hn-modeOptSub { font-size: 11px; color: rgba(255,255,255,0.6); }
+  .hn-readyBadge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(34,197,94,0.18);
+    color: #4ade80;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+  }
+  .hn-gameRowEmpty { opacity: 0.75; }
+  .hn-avaEmpty {
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.4);
+    border: 1px dashed rgba(255,255,255,0.25);
+  }
+  .hn-inviteBtn {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(34,211,238,0.5);
+    background: rgba(34,211,238,0.12);
+    color: #67e8f9;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .hn-startBtn {
+    width: 100%;
+    padding: 14px 0;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #0369a1 0%, #0891b2 40%, #22d3ee 100%);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+    transition: transform 0.15s, filter 0.15s;
+  }
+  .hn-startBtn:hover { transform: scale(1.02); filter: brightness(1.1); }
+  .hn-startBtn:active { transform: scale(0.97); }
 
   /* ── Persistent bottom nav ── */
   .hn-nav {
@@ -1158,7 +1127,7 @@ const PROTOTYPE_CSS = `
     padding: 9px 0 8px;
     background: none;
     border: none;
-    color: rgba(255,255,255,0.55);
+    color: rgba(255,255,255,0.78);
     cursor: pointer;
     font-family: inherit;
   }
@@ -1174,7 +1143,8 @@ const PROTOTYPE_CSS = `
   }
   .hn-navBtnOn { color: #ffd54a; }
   .hn-navBtnOn::before { background: #ffd54a; }
-  .hn-navLabel { font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
+  .hn-navLabel { font-size: 12px; font-weight: 800; letter-spacing: 0.5px; }
+  .hn-navIconImg { width: 24px; height: 24px; object-fit: contain; display: block; }
   .hn-navDot {
     position: absolute;
     top: 8px;
