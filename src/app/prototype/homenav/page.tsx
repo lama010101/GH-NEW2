@@ -4,14 +4,23 @@
 // STANDALONE PROTOTYPE — Home restructure: 2-tab nav, Historian hero card
 // Route: /prototype/homenav   (direct access, self-contained, UI-only)
 //
+// UIX-BUILD-HOMENAV-003 — corrective pass on the -002 revision after review:
+//      - Nav tabs render REAL icon files: play_large.webp (singleplayer) and
+//        compete_large.webp (multiplayer — same file prod Challenge uses).
+//      - Multiplayer tab shows a red count badge when Invitations/Your Turn
+//        have pending items (hidden at 0).
+//      - Historian's Journey card is now the purple hero card: taller, bigger
+//        stage icon/title, and a "Next title" preview derived from the real
+//        STAGE_RANK_NAMES/STAGE_SUB_TITLES arrays in StageCard.tsx.
+//
 // UIX-BUILD-HOMENAV-002 — revision of the -001 pass after visual review.
 // This spec supersedes the -001 nav/card structure:
 //
 //   1. BOTTOM NAV — exactly 2 tabs: SINGLEPLAYER | MULTIPLAYER.
 //      - Singleplayer (default) = 3 cards only: Historian's Journey, Daily,
-//        Practice. Singleplayer icon = /icons/play_large.webp.
+//        Practice.
 //      - Multiplayer = the friends feature surface (Invitations / Your Turn /
-//        Completed + Create) — same icon as the previous Challenge tab.
+//        Completed + Create + Anytime|Live lobby flow).
 //      - No Profile tab: profile access stays exactly where it already is —
 //        topbar avatar + hamburger menu (both unchanged per spec #7).
 //
@@ -65,6 +74,10 @@ const JOURNEY = {
   total: 100,
   tierTitle: "Steam Engine Apprentice",
   icon: "/icons/ranks/rank-09.png",
+  // "Next title" = stage 43's title, derived from the real arrays in
+  // src/components/home/StageCard.tsx: STAGE_RANK_NAMES[(43-1)/5=8] =
+  // "Steam Engine" + STAGE_SUB_TITLES[(43-1)%5=2] = "Adept". No invented names.
+  nextTierTitle: "Steam Engine Adept",
 };
 
 // ── Mock Challenge data (mirrors CompetePanel row shapes, UI-only) ──
@@ -133,21 +146,27 @@ function StreakRow() {
 //    text middle, pill/chevron right). All CTAs are inert in the prototype. ──
 function JourneyCard() {
   return (
-    <div className="hn-card" style={{ background: "linear-gradient(135deg, #172554 0%, #1d4ed8 55%, #3b82f6 100%)" }}>
-      <div className="hn-cardInner">
+    // Purple hero treatment — the page's primary/hero card (spec #3).
+    <div className="hn-card hn-cardHero" style={{ background: "linear-gradient(135deg, #3b0764 0%, #7e22ce 55%, #a855f7 100%)" }}>
+      <div className="hn-cardInner hn-heroInner">
         {/* Stage icon is the card's main visual (replaces any generic levelup
             icon). The user avatar is a small inset badge in the icon's corner —
             secondary/personalizing, not competing for primary weight. */}
-        <div className="hn-cardThumb" aria-hidden="true">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={JOURNEY.icon} alt="" className="hn-cardThumbImg" draggable={false} />
-          <span className="hn-avaBadge">{PROFILE.initials}</span>
+        <div className="hn-heroRow">
+          <div className="hn-cardThumb" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={JOURNEY.icon} alt="" className="hn-cardThumbImg" draggable={false} />
+            <span className="hn-avaBadge">{PROFILE.initials}</span>
+          </div>
+          <div className="hn-cardText">
+            <h2 className="hn-cardTitle">HISTORIAN&apos;S JOURNEY</h2>
+            <p className="hn-cardDesc"><b>{JOURNEY.tierTitle}</b></p>
+            <p className="hn-cardDesc">{JOURNEY.completed} of {JOURNEY.total} stages completed</p>
+            <p className="hn-cardNext">Next title: <b>{JOURNEY.nextTierTitle}</b></p>
+          </div>
         </div>
-        <div className="hn-cardText">
-          <h2 className="hn-cardTitle">HISTORIAN&apos;S JOURNEY</h2>
-          <p className="hn-cardDesc"><b>{JOURNEY.tierTitle}</b></p>
-          <p className="hn-cardDesc">{JOURNEY.completed} of {JOURNEY.total} stages completed</p>
-        </div>
+        {/* Full-width PLAY — the page's primary CTA sits below the hero row so
+            the stage text isn't squeezed beside it. */}
         <button type="button" className="hn-ctaPlay" aria-label="Continue Historian's Journey">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M8 5v14l11-7z" fill="currentColor" />
@@ -426,21 +445,16 @@ function MultiplayerTabPanel() {
   );
 }
 
-// ── Bottom nav icons ──
+// ── Bottom nav icons — real asset files already used by the app ──
 function NavIcon({ id }: { id: TabId }) {
-  if (id === "singleplayer") {
-    // Spec #5: reuse the existing public asset for the Singleplayer tab.
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src="/icons/play_large.webp" alt="" className="hn-navIconImg" draggable={false} />
-    );
-  }
-  // MULTIPLAYER — same trophy icon the previous iteration's Challenge tab used.
+  // SINGLEPLAYER -> /icons/play_large.webp (specified asset)
+  // MULTIPLAYER  -> /icons/compete_large.webp — the exact icon file the
+  //   production Challenge feature renders (src/app/home/page.tsx:544 —
+  //   'compete' ModeCard). Same file, no new/duplicated icon.
+  const src = id === "singleplayer" ? "/icons/play_large.webp" : "/icons/compete_large.webp";
   return (
-    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z" />
-      <path d="M7 6H4a1 1 0 0 0-1 1c0 2.2 1.8 4 4 4M17 6h3a1 1 0 0 1 1 1c0 2.2-1.8 4-4 4" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className="hn-navIconImg" draggable={false} />
   );
 }
 
@@ -452,6 +466,9 @@ const NAV_ITEMS: Array<{ id: TabId; label: string }> = [
 export default function HomeNavPrototypePage() {
   const [tab, setTab] = useState<TabId>("singleplayer");
   const [menuOpen, setMenuOpen] = useState(false);
+  // Spec #2: Multiplayer tab badge = pending Invitations + Your Turn counts.
+  // Same convention as the topbar bell's red count dot. Hidden when 0.
+  const pendingMultiplayer = MOCK_INVITES.length + MOCK_YOUR_TURN.length;
 
   useEffect(() => {
     document.title = "Home Nav v2 — Guess-History Prototype";
@@ -463,7 +480,7 @@ export default function HomeNavPrototypePage() {
       <main className="hn-screen">
         {/* Proto bar */}
         <div className="hn-protoBar">
-          <span className="hn-protoTitle">Home — 2-Tab Nav (v2)</span>
+          <span className="hn-protoTitle">Home — 2-Tab Nav (v3)</span>
           <span className="hn-protoHint">Mock data</span>
         </div>
 
@@ -526,7 +543,9 @@ export default function HomeNavPrototypePage() {
               >
                 <NavIcon id={item.id} />
                 <span className="hn-navLabel">{item.label}</span>
-                {item.id === "multiplayer" && <span className="hn-navDot" aria-hidden="true" />}
+                {item.id === "multiplayer" && pendingMultiplayer > 0 && (
+                  <span className="hn-navBadge" aria-hidden="true">{pendingMultiplayer}</span>
+                )}
               </button>
             ))}
           </div>
@@ -776,9 +795,28 @@ const PROTOTYPE_CSS = `
   .hn-pill:hover { background: rgba(255,255,255,0.36); transform: scale(1.06); }
   .hn-pill:active { transform: scale(0.94); }
 
+  /* ── Historian's Journey hero card (spec #3): taller than siblings so the
+        stage icon + title read as the page's primary element; purple gradient
+        is applied inline on the card. Column layout: icon+text row on top,
+        full-width PLAY below. ── */
+  .hn-heroInner { flex-direction: column; align-items: stretch; padding: 20px; gap: 16px; }
+  .hn-heroRow { display: flex; align-items: center; gap: 16px; }
+  .hn-cardHero .hn-cardThumb { width: 112px; height: 112px; border-radius: 20px; }
+  .hn-cardHero .hn-cardTitle { font-size: 26px; }
+  .hn-cardHero .hn-cardDesc { font-size: 15px; }
+  .hn-cardHero .hn-avaBadge { width: 30px; height: 30px; font-size: 10px; right: 6px; bottom: 6px; }
+  .hn-cardHero .hn-ctaPlay { width: 100%; padding: 15px 0; font-size: 15px; }
+  .hn-cardNext {
+    margin: 3px 0 0;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  .hn-cardNext b { color: #f5d0fe; font-weight: 700; }
+
   @media (max-width: 380px) {
     .hn-cardInner { padding: 12px 14px; gap: 10px; }
     .hn-cardThumb { width: 80px; height: 80px; }
+    .hn-cardHero .hn-cardThumb { width: 96px; height: 96px; }
   }
 
   /* ── Historian's Journey card: user-avatar inset badge on the stage icon ── */
@@ -1144,15 +1182,32 @@ const PROTOTYPE_CSS = `
   .hn-navBtnOn { color: #ffd54a; }
   .hn-navBtnOn::before { background: #ffd54a; }
   .hn-navLabel { font-size: 12px; font-weight: 800; letter-spacing: 0.5px; }
-  .hn-navIconImg { width: 24px; height: 24px; object-fit: contain; display: block; }
-  .hn-navDot {
+  .hn-navIconImg {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+    /* The brand webps are dark-on-transparent — lift them off the dark bar */
+    filter: drop-shadow(0 0 3px rgba(255,255,255,0.35)) drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+  }
+  /* Multiplayer pending-activity badge — same look as the topbar bell dot
+     (.hn-bellDot): red pill with a count, shown only when count > 0. */
+  .hn-navBadge {
     position: absolute;
-    top: 8px;
-    right: calc(50% - 20px);
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
+    top: 6px;
+    right: calc(50% - 22px);
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
     background: #ef4444;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 2px #0a0f18;
   }
 
   /* ── Hamburger sheet (secondary/settings items) ── */
