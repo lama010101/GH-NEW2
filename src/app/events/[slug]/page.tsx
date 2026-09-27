@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchSeoEventBySlug, fetchRelatedSeoEvents, fetchAllEligibleSlugs } from "@/server/seoEvents";
 import { SITE_URL } from "@/server/seoConfig";
 import { EventCard } from "../EventCard";
+import { EventsMap } from "../EventsMap";
+import { HeroImage } from "../HeroImage";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import styles from "../events.module.css";
 
 export const revalidate = 3600;
@@ -77,8 +79,8 @@ export default async function EventDetailPage({ params }: EventPageProps) {
     notFound();
   }
 
-  const related = await fetchRelatedSeoEvents(event, 4);
   const place = event.location.name || event.location.country || "Unknown location";
+  const related = await fetchRelatedSeoEvents(event, 12);
   const canonical = `${SITE_URL}/events/${event.slug}`;
 
   const jsonLd = {
@@ -135,30 +137,40 @@ export default async function EventDetailPage({ params }: EventPageProps) {
           <Link href="/events">Events</Link>
           <span>/</span>
           <span className={styles.breadcrumbCurrent}>{event.title}</span>
+          <span className={styles.breadcrumbToggle}>
+            <ThemeToggle />
+          </span>
         </nav>
 
         {event.imageUrl ? (
-          <div className={styles.heroImageWrap}>
-            <Image
-              src={event.imageUrl}
-              alt={event.title}
-              fill
-              priority
-              sizes="(max-width: 960px) 100vw, 960px"
-              className={styles.heroImage}
-            />
-          </div>
+          <HeroImage src={event.imageUrl} alt={event.title} />
         ) : null}
 
         <h1 className={styles.pageTitle}>{event.title}</h1>
 
         <div className={styles.metaRow}>
-          <span className={styles.metaPill}>{event.year}</span>
-          <span className={styles.metaPill}>{place}</span>
+          <span className={`${styles.metaPill} ${styles.metaPillAccent}`}>{event.year}</span>
+          <span className={`${styles.metaPill} ${styles.metaPillAccent}`}>{place}</span>
           {event.category ? <span className={styles.metaPill}>{event.category}</span> : null}
         </div>
 
         <p className={styles.body}>{event.description}</p>
+
+        {Number.isFinite(event.location.lat) && Number.isFinite(event.location.lng) ? (
+          <EventsMap
+            markers={[
+              {
+                slug: event.slug,
+                title: event.title,
+                year: event.year,
+                lat: event.location.lat,
+                lng: event.location.lng,
+              },
+            ]}
+            height={300}
+            linkMarkers={false}
+          />
+        ) : null}
 
         <div className={styles.cta}>
           <div className={styles.ctaText}>
@@ -174,10 +186,14 @@ export default async function EventDetailPage({ params }: EventPageProps) {
 
         {related.length > 0 ? (
           <section>
-            <h2 className={styles.sectionTitle}>Related events</h2>
-            <div className={styles.relatedGrid}>
+            <h2 className={styles.sectionTitle}>
+              Events with same category ({event.category})
+            </h2>
+            <div className={styles.relatedRail}>
               {related.map((r) => (
-                <EventCard key={r.slug} event={r} />
+                <div key={r.slug} className={styles.relatedRailItem}>
+                  <EventCard event={r} />
+                </div>
               ))}
             </div>
           </section>

@@ -4,6 +4,7 @@ import styles from "./events.module.css";
 import type { SeoEventSummary } from "@/server/seoEvents";
 
 export function EventCard({ event }: { event: SeoEventSummary }) {
+  const meta = [event.continent, event.category].filter(Boolean).join(" · ");
   return (
     <Link href={`/events/${event.slug}`} className={styles.card}>
       <div className={styles.cardImageWrap}>
@@ -16,11 +17,13 @@ export function EventCard({ event }: { event: SeoEventSummary }) {
             className={styles.cardImage}
           />
         ) : null}
+        <span className={styles.cardYearBadge}>
+          {event.year < 0 ? `${-event.year} BC` : event.year}
+        </span>
       </div>
       <div className={styles.cardBody}>
-        <div className={styles.cardYear}>{event.year}</div>
         <h3 className={styles.cardTitle}>{event.title}</h3>
-        {event.category ? <div className={styles.cardMeta}>{event.category}</div> : null}
+        {meta ? <div className={styles.cardMeta}>{meta}</div> : null}
       </div>
     </Link>
   );
