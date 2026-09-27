@@ -1,21 +1,7 @@
--- Target: dev Supabase project jfggdhsducvjydnejypg
--- Scope: Historian's Journey v1 data model
--- Do NOT run on prod until v1 validated.
-
--- Host-check safety guard: this migration is only safe on the dev Supabase project.
---
--- Per HJ-FIX-MIGRATION-HOSTGUARD-002, NO structurally reliable, project-identifying
--- signal is queryable from inside a PostgreSQL DO block:
---   * current_database() returns 'postgres' on every Supabase project.
---   * current_setting('app.*') / pg_settings contain no project ref.
---   * pg_extension / pg_proc expose no Supabase project identifier.
---   * inet_server_addr() is the shared pooler backend and changes with routing.
---
--- Therefore project verification is done OUTSIDE this file by the caller. This
--- migration must be invoked only through scripts/migrate-journey-dev.sh, which
--- parses the connection string (postgres.<project_ref> or db.<project_ref>.supabase.co)
--- and aborts before invoking psql if the project is not jfggdhsducvjydnejypg.
--- Do NOT run this file directly with psql against an untrusted connection string.
+-- Historian's Journey v1 data model.
+-- Applied to prod (gzvixlvkwjsrtmtybtkf) — CTO ruling 2026-09-26:
+-- dedicated dev project (jfggdhsducvjydnejypg) dropped, prod is the
+-- sole target for Journey work. (Superseded HJ-FIX-MIGRATION-HOSTGUARD-002/003.)
 
 CREATE TABLE IF NOT EXISTS public.journey_stages (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,14 +1,8 @@
--- Target: dev Supabase project jfggdhsducvjydnejypg
--- Scope: HJ-BUILD-STAGE100-NOAPPROVAL-001 — expand journey_stages to 100 rows
+-- Historian's Journey v1 data model — expand journey_stages to 100 rows
 -- (stage_number 1-100) and re-derive min_accuracy_pct on the new locked curve.
--- Do NOT run on prod until v1 validated.
---
--- Host-check safety guard: same constraint as 20260811000001_create_journey_tables.sql
--- — no structurally reliable, project-identifying signal is queryable from inside
--- a PostgreSQL DO block, so project verification is done OUTSIDE this file by the
--- caller. Invoke only through scripts/migrate-journey-dev.sh (which enforces the
--- jfggdhsducvjydnejypg project ref) or against a connection string you have
--- independently verified is the dev project.
+-- Target: prod (gzvixlvkwjsrtmtybtkf) — CTO ruling 2026-09-26:
+-- dedicated dev project (jfggdhsducvjydnejypg) dropped, prod is the
+-- sole target for Journey work. (Superseded HJ-FIX-MIGRATION-HOSTGUARD-002/003.)
 
 -- New locked accuracy-gate curve (spec §5.1):
 --   min_accuracy_pct(N) = 50 + 25 * LEAST(N-1, 39) / 39
