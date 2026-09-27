@@ -57,6 +57,7 @@ import { transition } from "@/server/engine/transition";
 import type { TransitionEvent } from "@/server/engine/transition";
 import { createSupabaseServerClient, createAuthenticatedServerClient } from "@/core/supabaseServer";
 import { sendPushToUser } from "@/server/pushSender";
+import { sendFcmPushToUser } from "@/server/fcmSender";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TRANSITION ENGINE VALIDATION (MP-ARCH-PHASE-1)
@@ -3021,7 +3022,10 @@ async function startRelaxPlayer(input: { gameId: string; playerId: string; cause
     // sendPushToUser catches its own errors internally, so a push failure cannot
     // crash this request after the in-app notification row is already durable.
     for (const p of pendingPushes) {
-      await sendPushToUser(p.userId, p.payload);
+      await Promise.allSettled([
+        sendPushToUser(p.userId, p.payload),
+        sendFcmPushToUser(p.userId, p.payload),
+      ]);
     }
 
     const base = await loadAsyncSnapshotBaseForActivePlayers(gameId, dbPool);
@@ -4201,7 +4205,10 @@ export async function advancePlayerRoundAsync(
     // sendPushToUser catches its own errors internally, so a push failure cannot
     // crash this request after the in-app notification row is already durable.
     for (const p of pendingPushes) {
-      await sendPushToUser(p.userId, p.payload);
+      await Promise.allSettled([
+        sendPushToUser(p.userId, p.payload),
+        sendFcmPushToUser(p.userId, p.payload),
+      ]);
     }
 
     const playerSnapshots = buildAsyncPlayerSnapshotsFromBase(gameId, base);

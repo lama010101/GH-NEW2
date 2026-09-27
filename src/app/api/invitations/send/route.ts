@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthenticatedServerClient, createSupabaseServerClient } from "@/core/supabaseServer";
 import { sendPushToUser } from "@/server/pushSender";
+import { sendFcmPushToUser } from "@/server/fcmSender";
 
 export const dynamic = "force-dynamic";
 
@@ -107,12 +108,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Failed to create notification" }, { status: 500 });
       }
 
-      await sendPushToUser(invitee_id, {
-        title: "Guess History",
-        body: `${inviterName} invited you to a game`,
-        url: `/compete/${game_id}`,
-        tag: `lobby_invite:${game_id}:${invitee_id}`,
-      });
+      await Promise.allSettled([
+        sendPushToUser(invitee_id, {
+          title: "Guess History",
+          body: `${inviterName} invited you to a game`,
+          url: `/compete/${game_id}`,
+          tag: `lobby_invite:${game_id}:${invitee_id}`,
+        }),
+        sendFcmPushToUser(invitee_id, {
+          title: "Guess History",
+          body: `${inviterName} invited you to a game`,
+          url: `/compete/${game_id}`,
+          tag: `lobby_invite:${game_id}:${invitee_id}`,
+        }),
+      ]);
     }
 
     return NextResponse.json({ success: true, invitation_id: invitationId });
