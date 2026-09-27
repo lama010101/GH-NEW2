@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "697906711901",
+    "project_id": "historify-ai",
+    "storage_bucket": "historify-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:697906711901:android:91d7e9ee60df600a882cb4",
+        "android_client_info": {
+          "package_name": "com.guesshistory.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "697906711901-4gm235rnolo8ltj9g35ue3l9pma80t3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsSXhJkOjl_hmLIIcvVrOcoIJ-EvPThhs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "697906711901-4gm235rnolo8ltj9g35ue3l9pma80t3i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
