@@ -9,7 +9,13 @@ import { verifyPartyKitSecret } from "@/server/partykitAuth";
 // /sw.js is a self-unregistering kill-switch service worker served as a static
 // file from public/. It must be reachable without auth so stale SWs from prior
 // deployments can update/unregister instead of receiving a /login HTML redirect.
-const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/privacy", "/terms", "/sw.js", "/grow"];
+// /sitemap.xml, /robots.txt and /events(+/*) are public for crawlability —
+// anonymous crawlers must reach the SEO surface or nothing can be indexed.
+// "/events" is an exact match; the "/events/" prefix below covers slugs.
+const PUBLIC_PATHS = [
+  "/", "/login", "/auth/callback", "/help", "/privacy", "/terms", "/sw.js", "/grow",
+  "/sitemap.xml", "/robots.txt", "/events",
+];
 
 // Public API routes that must remain reachable without authentication.
 // All other /api/* routes are required to pass the middleware auth check.
@@ -39,6 +45,7 @@ function isPublicPath(pathname: string): boolean {
   if (pathname.startsWith("/_next/")) return true;
   if (pathname.startsWith("/favicon")) return true;
   if (pathname.startsWith("/prototype")) return true;
+  if (pathname.startsWith("/events/")) return true;
   if (PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))) return true;
   if (PARTYKIT_SECRET_ROUTES.some((route) => route.test(pathname))) return true;
   if (/^\/compete\/[0-9a-f-]{36}\/opengraph-image$/.test(pathname)) return true;
