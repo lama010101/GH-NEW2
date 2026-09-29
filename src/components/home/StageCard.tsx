@@ -25,7 +25,6 @@
 import { useEffect, useState, type KeyboardEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
-import { MODE_CARD_GRADIENT } from './types'
 import styles from '@/app/home/home.module.css'
 
 // 20 rank tiers in journey order: index 0 = rank-01 = most modern,
@@ -112,8 +111,7 @@ export function StageCard({ playerId, onNavigate }: StageCardProps) {
   return (
     <div className={styles['mode-card']}>
       <div
-        className={styles['card-bg']}
-        style={{ background: MODE_CARD_GRADIENT.stage, cursor: 'pointer' }}
+        className={`${styles['card-bg']} ${styles.cardBgJourney}`}
         role="link"
         tabIndex={0}
         aria-label={t('journey.title')}

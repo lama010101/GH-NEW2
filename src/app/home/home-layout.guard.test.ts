@@ -9,8 +9,9 @@ import { resolve } from "node:path";
  * FEAT-HOME-UI-PROTO-MERGE) to use a HORIZONTAL card layout:
  *   icon-left + text-middle + playPill (non-compete cards)
  *   icon-left + text-middle + CompetePanel (compete card)
- * plus an inline, scrolling RankCard at the top of the page-scroll content
- * (not fixed — scrolls with the rest of the page).
+ * The standalone inline RankCard was removed from the card stack in
+ * HOME-BUILD-PURPLESTAGE-RANKMODAL-003 — rank display now lives in the
+ * TopBar rank pill modal (RankModal), so this guard asserts its absence.
  *
  * This layout has been reverted multiple times in the working tree by
  * AI agent sessions that restored the OLD vertical card layout. This test
@@ -28,8 +29,8 @@ const cssSrc = readFileSync(CSS_PATH, "utf-8");
 
 describe("home page — horizontal card layout guard (FEAT-HOME-UI-PROTO-MERGE)", () => {
   describe("page.tsx", () => {
-    it("imports RankCard (not RankProgressBar)", () => {
-      expect(pageSrc).toContain("import RankCard from '@/components/RankCard'");
+    it("does NOT import RankCard or RankProgressBar (rank moved to TopBar pill modal)", () => {
+      expect(pageSrc).not.toContain("import RankCard");
       expect(pageSrc).not.toContain("import RankProgressBar");
     });
 
@@ -44,10 +45,9 @@ describe("home page — horizontal card layout guard (FEAT-HOME-UI-PROTO-MERGE)"
       expect(pageSrc).not.toContain("MODE_CARD_SUBTITLE");
     });
 
-    it("renders RankCard inline (scrolls with page, not fixed)", () => {
-      expect(pageSrc).toContain("<RankCard");
-      expect(pageSrc).toContain("open");
-      expect(pageSrc).toContain("inline");
+    it("does NOT render the standalone RankCard (removed — rank shows via TopBar pill modal)", () => {
+      expect(pageSrc).not.toContain("<RankCard");
+      expect(pageSrc).not.toContain("rankCardInline");
       expect(pageSrc).not.toContain("open={rankOpen}");
     });
 
@@ -56,8 +56,8 @@ describe("home page — horizontal card layout guard (FEAT-HOME-UI-PROTO-MERGE)"
       expect(pageSrc).not.toContain("onToggleRank");
     });
 
-    it("uses pageScrollRankOpen class (always-open padding)", () => {
-      expect(pageSrc).toContain("pageScrollRankOpen");
+    it("does NOT use pageScrollRankOpen class (rank card removed; plain page-scroll)", () => {
+      expect(pageSrc).not.toContain("pageScrollRankOpen");
     });
 
     it("uses horizontal card layout classes (cardInnerHorizontal, cardIconThumb, cardTextCol, playPill)", () => {
@@ -85,8 +85,8 @@ describe("home page — horizontal card layout guard (FEAT-HOME-UI-PROTO-MERGE)"
       expect(cssSrc).toContain(".playPill");
     });
 
-    it("defines pageScrollRankOpen", () => {
-      expect(cssSrc).toContain(".pageScrollRankOpen");
+    it("does NOT define pageScrollRankOpen (dead with the removed rank card)", () => {
+      expect(cssSrc).not.toContain(".pageScrollRankOpen");
     });
 
     it("header comment references HORIZONTAL CARD LAYOUT (not NEW VERTICAL)", () => {

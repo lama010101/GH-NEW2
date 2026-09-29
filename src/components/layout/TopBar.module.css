@@ -39,6 +39,7 @@
   font-family: inherit;
   font-size: inherit;
   color: inherit;
+  cursor: pointer;
 }
 
 /* Gold "Rank N" badge inside the score pill */
