@@ -232,6 +232,10 @@ a {
   /* --- Secondary accent for gold/amber pills --- */
   --gh-amber-rgb:      251, 191, 36;
 
+  /* --- Historian's Journey stage card gradient (purple; NOT --gh-when-solid
+         #8b5cf6 and NOT the WHERE cyan — HOME-BUILD-PURPLESTAGE-RANKMODAL-003) --- */
+  --gh-journey-stage-gradient: linear-gradient(135deg, #3b0764 0%, #6b21a8 55%, #9333ea 100%);
+
   /* --- Backgrounds --- */
   --gh-bg-base:     #080c14;
   --gh-bg-surface:  rgba(15, 25, 50, 0.60);
