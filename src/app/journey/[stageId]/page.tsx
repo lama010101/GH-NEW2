@@ -221,7 +221,7 @@ export default function JourneyStagePage() {
   // the DB fallback (latest journey_playthroughs row with completed_at NULL —
   // covers sessionStorage loss / a second device).
   useEffect(() => {
-    if (!playerId || !stage || stage.status !== "live" || pendingResolved || recap) return;
+    if (!playerId || !stage || pendingResolved || recap) return;
     if (resolvingRef.current) return;
     resolvingRef.current = true;
     let cancelled = false;
@@ -430,8 +430,8 @@ export default function JourneyStagePage() {
     );
   }
 
-  // Stage missing or not live (all current rows are 'draft' — expected state).
-  if (!stage || stage.status !== "live") {
+  // Stage missing.
+  if (!stage) {
     return (
       <main className={`app-shell ${pageStyles.pageShell}`}>
         <div className={pageStyles.bgImage} />

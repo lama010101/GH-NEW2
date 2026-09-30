@@ -112,7 +112,8 @@ export type StartJourneyPlaythroughResult = {
  * Start a Historian's Journey playthrough for `playerId` on `stageId`.
  *
  * Steps (single transaction):
- *   1. Stage must exist and have status='live'.
+ *   1. Stage must exist. journey_stages.status is not read by gameplay
+ *      (HJ-BUILD-REMOVELIVEGATE-008) — every stage row is playable.
  *   2. Unlock rule (spec §2 linear unlock, no skipping): stage 1 is always
  *      unlocked; stage N>1 requires journey_player_progress.status='completed'
  *      on stage N-1.
@@ -148,13 +149,12 @@ export async function startJourneyPlaythrough(
   try {
     await client.query("BEGIN");
 
-    // Step 1 — stage exists and is live.
+    // Step 1 — stage exists.
     const stageResult = await client.query<{
       id: string;
       stage_number: number;
-      status: string;
     }>(
-      `SELECT id, stage_number, status
+      `SELECT id, stage_number
        FROM public.journey_stages
        WHERE id = $1
        FOR UPDATE`,
@@ -164,9 +164,6 @@ export async function startJourneyPlaythrough(
       throw new Error("Journey stage not found");
     }
     const stage = stageResult.rows[0];
-    if (stage.status !== "live") {
-      throw new Error(`Journey stage ${stage.stage_number} is not live`);
-    }
 
     // Step 2 — linear unlock (spec §2): stage 1 always unlocked; stage N>1
     // requires the prior stage's progress row at status='completed'.

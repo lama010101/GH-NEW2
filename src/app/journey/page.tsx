@@ -1,12 +1,13 @@
 "use client";
 
 // Historian's Journey — stage list (HJ-BUILD-JOURNEYUI-001).
-// Lists live journey_stages joined with this player's journey_player_progress
+// Lists all journey_stages joined with this player's journey_player_progress
 // (client-side supabaseBrowser read — the same direct-read pattern
 // src/app/practice/[gameId]/page.tsx uses for player_global_stats/profiles;
 // journey_stages + journey_player_progress both have authenticated SELECT
-// policies). Zero live stages (current prod state: all 'draft') renders the
-// "coming soon" empty state — an expected state, not an error.
+// policies). journey_stages.status is not a gameplay gate
+// (HJ-BUILD-REMOVELIVEGATE-008) — the "coming soon" empty state renders only
+// when zero stage rows exist.
 //
 // Completion hand-off: this page never calls /api/journey/complete itself —
 // the stage detail page is the single owner of completion+recap. If a pending
@@ -167,10 +168,7 @@ export default function JourneyPage() {
     return set;
   }, [progressRows, stageNumberById]);
 
-  const liveStages = useMemo(
-    () => (stages ?? []).filter((s) => s.status === "live"),
-    [stages]
-  );
+  const allStages = useMemo(() => stages ?? [], [stages]);
 
   // Linear unlock derivation matching startJourneyPlaythrough's server rule:
   // stage 1 always unlocked; stage N>1 requires stage N-1 completed. A progress
@@ -185,7 +183,7 @@ export default function JourneyPage() {
     return "locked";
   }
 
-  const completedCount = liveStages.filter(
+  const completedCount = allStages.filter(
     (s) => progressByStageId.get(s.id)?.status === "completed"
   ).length;
 
@@ -232,11 +230,11 @@ export default function JourneyPage() {
             <h1 className={pageStyles.title}>{t("title")}</h1>
             <p className={pageStyles.subtitle}>{t("subtitle")}</p>
           </div>
-          {liveStages.length > 0 && (
+          {allStages.length > 0 && (
             <span className={pageStyles.progressPill}>
               {t("stages_completed", {
                 completed: completedCount,
-                total: liveStages.length,
+                total: allStages.length,
               })}
             </span>
           )}
@@ -248,7 +246,7 @@ export default function JourneyPage() {
           </div>
         )}
 
-        {!loadError && liveStages.length === 0 && (
+        {!loadError && allStages.length === 0 && (
           <section className={pageStyles.emptyCard}>
             <div className={pageStyles.emptyLock} aria-hidden="true">
               <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -268,9 +266,9 @@ export default function JourneyPage() {
           </section>
         )}
 
-        {liveStages.length > 0 && (
+        {allStages.length > 0 && (
           <ol className={pageStyles.stageList}>
-            {liveStages.map((stage) => {
+            {allStages.map((stage) => {
               const status = derivedStatus(stage);
               const progress = progressByStageId.get(stage.id);
               const locked = status === "locked";
