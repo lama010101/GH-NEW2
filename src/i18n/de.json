@@ -1279,6 +1279,10 @@
     "result_play_stage": "Etappe {number} spielen",
     "result_retry_stage": "Etappe {number} wiederholen",
     "result_stages_button": "Etappen",
+    "result_headline_passed": "Etappe {number} bestanden",
+    "result_headline_failed": "Etappe {number} nicht bestanden",
+    "result_margin_above": "{points} Pkt. über der Bestehensgrenze",
+    "result_margin_below": "{points} Pkt. unter der Bestehensgrenze",
     "result_completion_error": "Dein Reiseergebnis konnte nicht gespeichert werden. Bitte versuch es erneut.",
     "result_retry_completion": "Erneut versuchen"
   },

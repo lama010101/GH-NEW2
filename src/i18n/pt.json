@@ -1279,6 +1279,10 @@
     "result_play_stage": "Jogar a etapa {number}",
     "result_retry_stage": "Tentar a etapa {number} novamente",
     "result_stages_button": "Etapas",
+    "result_headline_passed": "Etapa {number} concluída",
+    "result_headline_failed": "Etapa {number} não concluída",
+    "result_margin_above": "{points} pts acima do mínimo",
+    "result_margin_below": "{points} pts abaixo do mínimo",
     "result_completion_error": "Não conseguimos registrar o seu resultado da jornada. Tente novamente.",
     "result_retry_completion": "Tentar novamente"
   },

@@ -1279,6 +1279,10 @@
     "result_play_stage": "Speel etappe {number}",
     "result_retry_stage": "Probeer etappe {number} opnieuw",
     "result_stages_button": "Etappes",
+    "result_headline_passed": "Etappe {number} gehaald",
+    "result_headline_failed": "Etappe {number} niet gehaald",
+    "result_margin_above": "{points} ptn boven de limiet",
+    "result_margin_below": "{points} ptn onder de limiet",
     "result_completion_error": "Je reisresultaat kon niet worden opgeslagen. Probeer het opnieuw.",
     "result_retry_completion": "Opnieuw proberen"
   },

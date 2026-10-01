@@ -1279,6 +1279,10 @@
     "result_play_stage": "开始第 {number} 关",
     "result_retry_stage": "重试第 {number} 关",
     "result_stages_button": "关卡列表",
+    "result_headline_passed": "第 {number} 关通过",
+    "result_headline_failed": "第 {number} 关未通过",
+    "result_margin_above": "高于及格线 {points} 分",
+    "result_margin_below": "距及格线差 {points} 分",
     "result_completion_error": "无法保存你的旅程结果，请重试。",
     "result_retry_completion": "重试"
   },

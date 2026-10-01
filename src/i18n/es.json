@@ -1279,6 +1279,10 @@
     "result_play_stage": "Jugar la etapa {number}",
     "result_retry_stage": "Reintentar la etapa {number}",
     "result_stages_button": "Etapas",
+    "result_headline_passed": "Etapa {number} superada",
+    "result_headline_failed": "Etapa {number} no superada",
+    "result_margin_above": "{points} pts por encima del mínimo",
+    "result_margin_below": "{points} pts por debajo del mínimo",
     "result_completion_error": "No pudimos registrar tu resultado del viaje. Inténtalo de nuevo.",
     "result_retry_completion": "Reintentar"
   },

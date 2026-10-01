@@ -21,7 +21,6 @@ import { forceClearAuthStorage, updateCachedDisplayName, updateCachedAvatarUrl }
 import { computeTimeRemaining } from "@/core/competeUtils";
 import { PracticeSettingsModal, type PracticeModalSettings } from "@/components/practice/PracticeSettingsModal";
 import { savePracticeSettings } from "@/components/practice/practiceSettings";
-import { JourneyStageResult } from "@/app/journey/_components/JourneyStageResult";
 import {
   completeJourneyAttempt,
   findJourneyAttemptForSession,
@@ -758,7 +757,21 @@ export default function PracticeGamePage() {
 
           {snapshot.status === "SESSION_COMPLETE" ? (
             journeyPhase === "done" && journeyResult ? (
-              <JourneyStageResult result={journeyResult} />
+              <SessionComplete
+                snapshot={snapshot}
+                playerId={playerId}
+                allRoundResults={allRoundResults}
+                onPlayAgain={handlePracticePlayAgain}
+                journeyResult={journeyResult}
+                sendMessage={(msg) => {
+                  const newGameId = (msg as { newGameId?: string }).newGameId;
+                  if (newGameId) {
+                    router.push(`/practice/${newGameId}`);
+                  } else {
+                    router.push('/home');
+                  }
+                }}
+              />
             ) : journeyPhase === "failed" ? (
               <div className={resultStyles.errorCard}>
                 <p className={resultStyles.errorText} role="alert">

@@ -1279,6 +1279,10 @@
     "result_play_stage": "Play stage {number}",
     "result_retry_stage": "Retry stage {number}",
     "result_stages_button": "Stages",
+    "result_headline_passed": "Stage {number} passed",
+    "result_headline_failed": "Stage {number} not passed",
+    "result_margin_above": "{points} pts above the pass mark",
+    "result_margin_below": "{points} pts short of the pass mark",
     "result_completion_error": "We couldn't record your Journey result. Please try again.",
     "result_retry_completion": "Retry"
   },

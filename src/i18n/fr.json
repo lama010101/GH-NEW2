@@ -1279,6 +1279,10 @@
     "result_play_stage": "Jouer l'étape {number}",
     "result_retry_stage": "Réessayer l'étape {number}",
     "result_stages_button": "Étapes",
+    "result_headline_passed": "Étape {number} réussie",
+    "result_headline_failed": "Étape {number} non réussie",
+    "result_margin_above": "{points} pts au-dessus du seuil",
+    "result_margin_below": "{points} pts en dessous du seuil",
     "result_completion_error": "Impossible d'enregistrer ton résultat du voyage. Réessaie.",
     "result_retry_completion": "Réessayer"
   },

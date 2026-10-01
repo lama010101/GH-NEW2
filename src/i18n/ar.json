@@ -1279,6 +1279,10 @@
     "result_play_stage": "العب المرحلة {number}",
     "result_retry_stage": "أعد محاولة المرحلة {number}",
     "result_stages_button": "المراحل",
+    "result_headline_passed": "المرحلة {number} — ناجح",
+    "result_headline_failed": "المرحلة {number} — غير ناجح",
+    "result_margin_above": "{points} نقطة فوق درجة النجاح",
+    "result_margin_below": "{points} نقطة دون درجة النجاح",
     "result_completion_error": "تعذر تسجيل نتيجة رحلتك. حاول مرة أخرى.",
     "result_retry_completion": "إعادة المحاولة"
   },
