@@ -1229,8 +1229,8 @@
     "create_new_game": "Create new game"
   },
   "journey": {
-    "title": "Historian's Journey",
-    "subtitle": "A curated expedition across history — complete each stage to unlock the next.",
+    "title": "Your Journey",
+    "subtitle": "How far can you time travel?",
     "coming_soon_title": "Historian's Journey — coming soon",
     "coming_soon_body": "Curated stages through history are being prepared. Check back soon.",
     "stage_label": "Stage {number}",
