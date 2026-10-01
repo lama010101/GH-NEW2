@@ -1,0 +1,27 @@
+{
+  "publicReadTables": [
+    { "match": "public.avatars", "reason": "avatar catalog read client-side by AvatarPickerModal and account/profile pages (src/app/account/page.tsx, src/app/profile/page.tsx, src/components/AvatarPickerModal.tsx)" },
+    { "match": "public.images", "reason": "game image catalog read client-side on /home (src/app/home/page.tsx)" },
+    { "match": "public.journey_stages", "reason": "stage list read client-side by journey UI (src/app/journey/page.tsx, src/app/journey/[stageId]/page.tsx, src/components/home/StageCard.tsx)" },
+    { "match": "public.leaderboard_daily", "reason": "daily leaderboard read client-side on profile (src/app/profile/page.tsx) and daily API routes" },
+    { "match": "public.leaderboard_daily_alltime", "reason": "all-time leaderboard read client-side on profile (src/app/profile/page.tsx)" },
+    { "match": "public.leaderboard_levelup", "reason": "level-up leaderboard read client-side on profile (src/app/profile/page.tsx)" },
+    { "match": "public.player_global_stats", "reason": "player stats read client-side across account/profile/results pages (src/app/account/page.tsx, src/app/daily/game/[gameId]/results/page.tsx, src/app/compete/[gameId]/page.tsx)" }
+  ],
+  "clientCallableDefinerFunctions": [],
+  "publicDefinerViews": [],
+  "secretLikeColumns": [
+    { "match": "public.ai_players.max_tokens", "reason": "integer usage cap for AI player generation, not a credential" },
+    { "match": "public.eval_facts.prompt_tokens", "reason": "integer LLM usage counter, not a credential" },
+    { "match": "public.eval_facts.completion_tokens", "reason": "integer LLM usage counter, not a credential" },
+    { "match": "public.eval_facts.reasoning_tokens", "reason": "integer LLM usage counter, not a credential" },
+    { "match": "public.eval_facts.total_tokens", "reason": "integer LLM usage counter, not a credential" },
+    { "match": "public.fcm_tokens.token", "reason": "FCM device push token stored by design for push notifications; access is owner-scoped via fcm_tokens_*_own policies" },
+    { "match": "public.player_round_events.verification_token", "reason": "uuid anti-cheat nonce generated per round submission, not an external credential" },
+    { "match": "public.round_commits.verification_token", "reason": "uuid anti-cheat nonce, not an external credential" },
+    { "match": "public.round_events.verification_token", "reason": "uuid anti-cheat nonce, not an external credential" },
+    { "match": "public.round_results.verification_token", "reason": "uuid anti-cheat nonce, not an external credential" },
+    { "match": "public.prompts.key_elements", "reason": "game content field (visual cue list); name collides with the 'key' pattern, not a credential" },
+    { "match": "public.prompts_public.key_elements", "reason": "same game-content field on the prompts_public view, not a credential" }
+  ]
+}

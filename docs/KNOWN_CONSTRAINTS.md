@@ -316,3 +316,36 @@ mismatches.
   bash scripts/dev/check-partykit-secret.sh
   # Must exit 0 before `npm run dev` starts. A non-zero exit means the secret
   # sources are missing, unexpanded, or mismatched.
+
+### [KC-013] Security posture: no secrets in DB, DDL only via migrations, audit gate
+
+**Affected files:** `scripts/dev/security-posture-audit.sql`, `scripts/dev/security-posture-audit.ts`, `scripts/dev/security-posture-allowlist.json`, `package.json`, `supabase/migrations/**`
+
+**Constraint:**
+Introduced after the 2026-10-01 incident where `settings.openrouter_api_key` was
+readable by any anonymous-signup JWT via an out-of-repo `FOR ALL TO authenticated
+USING true` policy, plus client-callable SECURITY DEFINER RPCs
+(SEC-FIX-OPENWRITEPOLICIES-017).
+
+(a) Secrets never live in DB tables — env / Vercel / Supabase Vault only.
+(b) Policies, grants and functions change only through repo migrations — never
+    out-of-band via dashboard/MCP/SQL editor (audit check C7 catches drift).
+(c) Any migration touching policies/grants/functions needs the live anon-JWT
+    PostgREST proof AND a clean `npm run security:audit` before merge.
+(d) New SECURITY DEFINER functions must pin `search_path` and revoke EXECUTE
+    from PUBLIC/anon/authenticated unless allowlisted in
+    `security-posture-allowlist.json` with a written reason.
+
+**Fix when guard fails:**
+Every finding prints `check_id | severity | object | detail`. Justified
+exceptions go into `scripts/dev/security-posture-allowlist.json` with a
+`match` string and a one-line `reason` backed by evidence. Never silence a
+finding you cannot justify — leave it reported and escalate to the CTO.
+
+**Regression guard:**
+  npm run security:audit
+  # Read-only against the DB (SELECT only via SUPABASE_DB_CONNECTION).
+  # Exits 1 while any CRITICAL or HIGH finding is un-allowlisted.
+  # C1 open-write policies / C3 RLS-off tables / C4 client-callable SECURITY
+  # DEFINER functions / C5 definer views / C6 secret-like DB data / C7
+  # migration drift.
