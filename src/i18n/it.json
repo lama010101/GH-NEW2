@@ -1268,7 +1268,19 @@
     "badge_bronze": "Bronzo",
     "badge_completion": "Completamento",
     "badge_none": "Nessun distintivo",
-    "load_error": "Impossibile caricare il tuo viaggio. Riprova."
+    "load_error": "Impossibile caricare il tuo viaggio. Riprova.",
+    "result_pass_mark": "Soglia di superamento {pct}%",
+    "result_gauge_aria": "Punteggio {score}%, soglia di superamento {pct}%",
+    "result_passed_title": "Tappa {number} completata",
+    "result_unlocked_line": "Tappa {number} sbloccata",
+    "result_journey_complete_title": "Viaggio completato",
+    "result_journey_complete_body": "Hai conquistato tutte le 100 tappe del viaggio dello storico.",
+    "result_short_by": "Ti è mancato il {points}% per raggiungere la soglia del {min}%. Riprova!",
+    "result_play_stage": "Gioca la tappa {number}",
+    "result_retry_stage": "Riprova la tappa {number}",
+    "result_stages_button": "Tappe",
+    "result_completion_error": "Non siamo riusciti a registrare il tuo risultato del viaggio. Riprova.",
+    "result_retry_completion": "Riprova"
   },
   "legal": {
     "privacy": {

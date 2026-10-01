@@ -1268,7 +1268,19 @@
     "badge_bronze": "Brons",
     "badge_completion": "Voltooiing",
     "badge_none": "Geen badge",
-    "load_error": "Je reis kon niet worden geladen. Probeer het opnieuw."
+    "load_error": "Je reis kon niet worden geladen. Probeer het opnieuw.",
+    "result_pass_mark": "Slagingsgrens {pct}%",
+    "result_gauge_aria": "Score {score}%, slagingsgrens {pct}%",
+    "result_passed_title": "Etappe {number} voltooid",
+    "result_unlocked_line": "Etappe {number} ontgrendeld",
+    "result_journey_complete_title": "Reis voltooid",
+    "result_journey_complete_body": "Je hebt alle 100 etappes van de reis van de historicus voltooid.",
+    "result_short_by": "{points}% tekort voor de slagingsgrens van {min}%. Probeer het opnieuw!",
+    "result_play_stage": "Speel etappe {number}",
+    "result_retry_stage": "Probeer etappe {number} opnieuw",
+    "result_stages_button": "Etappes",
+    "result_completion_error": "Je reisresultaat kon niet worden opgeslagen. Probeer het opnieuw.",
+    "result_retry_completion": "Opnieuw proberen"
   },
   "legal": {
     "privacy": {

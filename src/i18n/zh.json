@@ -1268,7 +1268,19 @@
     "badge_bronze": "铜牌",
     "badge_completion": "通关",
     "badge_none": "无徽章",
-    "load_error": "无法加载你的旅程，请重试。"
+    "load_error": "无法加载你的旅程，请重试。",
+    "result_pass_mark": "及格线 {pct}%",
+    "result_gauge_aria": "得分 {score}%，及格线 {pct}%",
+    "result_passed_title": "第 {number} 关完成",
+    "result_unlocked_line": "第 {number} 关已解锁",
+    "result_journey_complete_title": "旅程完成",
+    "result_journey_complete_body": "你已征服历史学家之旅的全部 100 关。",
+    "result_short_by": "距离 {min}% 及格线还差 {points}%。再试一次！",
+    "result_play_stage": "开始第 {number} 关",
+    "result_retry_stage": "重试第 {number} 关",
+    "result_stages_button": "关卡列表",
+    "result_completion_error": "无法保存你的旅程结果，请重试。",
+    "result_retry_completion": "重试"
   },
   "legal": {
     "privacy": {
