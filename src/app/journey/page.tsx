@@ -429,12 +429,22 @@ export default function JourneyPage() {
                 progress?.best_accuracy_pct != null
                   ? Number(progress.best_accuracy_pct)
                   : null;
+              // Locked cards are inert for registered users; for anonymous
+              // guests every stage >=2 tap opens the registration modal (the
+              // server-side gate stays authoritative).
+              const CardTag = locked && isAnonymous ? "button" : "div";
               return (
                 <li
                   key={stage.id}
                   ref={isCurrent ? currentCardRef : undefined}
                 >
-                  <div
+                  <CardTag
+                    type={locked && isAnonymous ? "button" : undefined}
+                    onClick={
+                      locked && isAnonymous
+                        ? () => setGateStageNumber(stage.stage_number)
+                        : undefined
+                    }
                     className={`${pageStyles.stageCard} ${
                       locked ? pageStyles.stageLocked : ""
                     } ${completed ? pageStyles.stageDone : ""} ${
@@ -534,7 +544,7 @@ export default function JourneyPage() {
                         </>
                       )}
                     </span>
-                  </div>
+                  </CardTag>
                 </li>
               );
             })}
