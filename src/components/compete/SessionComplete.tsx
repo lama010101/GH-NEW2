@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslations } from 'next-intl';
 import { toProxiedImageUrl } from "@/lib/imageProxy";
-import RainbowRing from "@/components/compete/RainbowRing";
+import RainbowRing, { journeyResultDisplay } from "@/components/compete/RainbowRing";
 import { MiniRing } from "@/components/compete/RoundCompleteSection";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import type { BadgeDimension, BadgeTier, CompeteSessionSnapshot } from "@/core/types";
@@ -342,6 +342,11 @@ export default function SessionComplete({
         }
         const myStats = computePlayerStats(playerId);
         const overallAccuracy = myStats?.avgAccuracy ?? 0;
+        // HJ-FIX-RESULTRING-033 — display-safe journey ring/mark values that
+        // can never contradict the server-side pass/fail verdict.
+        const journeyDisplay = journeyResult
+          ? journeyResultDisplay(journeyResult.accuracyPct, journeyResult.minAccuracyPct, journeyResult.gatePassed)
+          : { accuracyPct: 0, markPct: 0 };
         const overallXP = myStats?.totalScore ?? 0;
         const whereAccuracy = myStats?.avgLocationAccuracy ?? 0;
         const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
@@ -619,32 +624,19 @@ export default function SessionComplete({
                     className={`${styles.journeyPassPanel} ${journeyResult.gatePassed ? styles.journeyPassPanelPassed : styles.journeyPassPanelFailed}`}
                     data-testid="journey-pass-panel"
                   >
-                    <span className={styles.journeyPassValue} data-testid="journey-pass-value">
-                      {journeyResult.accuracyPct.toFixed(1)}%
-                    </span>
-                    <svg
-                      viewBox="0 0 280 30"
-                      className={styles.journeyGauge}
+                    <div
+                      className={styles.heroRingWrap}
                       role="img"
                       aria-label={tJourney('result_gauge_aria', { score: Math.round(journeyResult.accuracyPct), pct: journeyResult.minAccuracyPct })}
                     >
-                      <rect x="0" y="10" width="280" height="10" rx="5" className={styles.journeyGaugeTrack} />
-                      <rect
-                        x="0" y="10"
-                        width={Math.max(0, Math.min(100, journeyResult.accuracyPct)) * 2.8}
-                        height="10" rx="5"
-                        className={journeyResult.gatePassed ? styles.journeyGaugeFillPassed : styles.journeyGaugeFillFailed}
+                      <RainbowRing
+                        value={journeyDisplay.accuracyPct}
+                        valueDecimals={1}
+                        thresholdPct={journeyResult.minAccuracyPct}
                       />
-                      <line
-                        x1={Math.max(0, Math.min(100, journeyResult.minAccuracyPct)) * 2.8}
-                        y1="2"
-                        x2={Math.max(0, Math.min(100, journeyResult.minAccuracyPct)) * 2.8}
-                        y2="28"
-                        className={styles.journeyGaugeMark}
-                      />
-                    </svg>
+                    </div>
                     <span className={styles.journeyPassMark} data-testid="journey-pass-mark">
-                      {tJourney('result_pass_mark', { pct: journeyResult.minAccuracyPct })}
+                      {tJourney('result_pass_mark', { pct: journeyDisplay.markPct })}
                     </span>
                     <span className={styles.journeyPassMargin} data-testid="journey-pass-margin">
                       {journeyResult.gatePassed
