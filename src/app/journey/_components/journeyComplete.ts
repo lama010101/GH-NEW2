@@ -19,14 +19,28 @@ export type JourneyAttemptRef = {
 export async function findJourneyAttemptForSession(
   sessionId: string
 ): Promise<JourneyAttemptRef | null> {
-  const { data } = await supabaseBrowser
-    .from("journey_playthroughs")
-    .select("id,stage_id")
-    .eq("session_id", sessionId)
-    .maybeSingle();
-  const row = data as { id?: string; stage_id?: string } | null;
-  if (!row?.id || !row.stage_id) return null;
-  return { playthroughId: row.id, stageId: row.stage_id };
+  // Query errors were previously swallowed silently — a transient PostgREST
+  // failure returned null → "not-journey" → the plain SessionComplete with no
+  // log and no second chance (HJ-BUILD-LISTREDESIGN-032). Log the error and
+  // retry once before concluding.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data, error } = await supabaseBrowser
+      .from("journey_playthroughs")
+      .select("id,stage_id")
+      .eq("session_id", sessionId)
+      .maybeSingle();
+    if (!error) {
+      const row = data as { id?: string; stage_id?: string } | null;
+      if (!row?.id || !row.stage_id) return null;
+      return { playthroughId: row.id, stageId: row.stage_id };
+    }
+    console.error(
+      `[journey] findJourneyAttemptForSession(${sessionId}) ` +
+        `attempt ${attempt + 1} failed:`,
+      error
+    );
+  }
+  return null;
 }
 
 export async function completeJourneyAttempt(

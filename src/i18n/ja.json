@@ -1284,7 +1284,14 @@
     "result_margin_above": "合格ラインを{points}pt上回りました",
     "result_margin_below": "合格ラインまであと{points}pt",
     "result_completion_error": "ジャーニーの結果を記録できませんでした。もう一度お試しください。",
-    "result_retry_completion": "もう一度試す"
+    "result_retry_completion": "もう一度試す",
+    "list_play": "プレイ",
+    "list_retry": "リトライ",
+    "list_resume": "再開",
+    "list_current": "現在",
+    "list_timer_label": "1ラウンド {time}",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "ベストスコア: {pct}%"
   },
   "legal": {
     "privacy": {

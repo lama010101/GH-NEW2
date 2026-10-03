@@ -1284,7 +1284,14 @@
     "result_margin_above": "{points} pts acima do mínimo",
     "result_margin_below": "{points} pts abaixo do mínimo",
     "result_completion_error": "Não conseguimos registrar o seu resultado da jornada. Tente novamente.",
-    "result_retry_completion": "Tentar novamente"
+    "result_retry_completion": "Tentar novamente",
+    "list_play": "Jogar",
+    "list_retry": "Tentar novamente",
+    "list_resume": "Retomar",
+    "list_current": "Atual",
+    "list_timer_label": "{time} por rodada",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "Melhor pontuação: {pct}%"
   },
   "legal": {
     "privacy": {

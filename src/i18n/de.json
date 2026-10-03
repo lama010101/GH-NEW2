@@ -1284,7 +1284,14 @@
     "result_margin_above": "{points} Pkt. über der Bestehensgrenze",
     "result_margin_below": "{points} Pkt. unter der Bestehensgrenze",
     "result_completion_error": "Dein Reiseergebnis konnte nicht gespeichert werden. Bitte versuch es erneut.",
-    "result_retry_completion": "Erneut versuchen"
+    "result_retry_completion": "Erneut versuchen",
+    "list_play": "Spielen",
+    "list_retry": "Erneut versuchen",
+    "list_resume": "Fortsetzen",
+    "list_current": "Aktuell",
+    "list_timer_label": "{time} pro Runde",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "Bester Score: {pct}%"
   },
   "legal": {
     "privacy": {

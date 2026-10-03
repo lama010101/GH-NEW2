@@ -1284,7 +1284,14 @@
     "result_margin_above": "高于及格线 {points} 分",
     "result_margin_below": "距及格线差 {points} 分",
     "result_completion_error": "无法保存你的旅程结果，请重试。",
-    "result_retry_completion": "重试"
+    "result_retry_completion": "重试",
+    "list_play": "开始游戏",
+    "list_retry": "重试",
+    "list_resume": "继续",
+    "list_current": "当前",
+    "list_timer_label": "每轮 {time}",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "最佳成绩：{pct}%"
   },
   "legal": {
     "privacy": {

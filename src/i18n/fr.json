@@ -1284,7 +1284,14 @@
     "result_margin_above": "{points} pts au-dessus du seuil",
     "result_margin_below": "{points} pts en dessous du seuil",
     "result_completion_error": "Impossible d'enregistrer ton résultat du voyage. Réessaie.",
-    "result_retry_completion": "Réessayer"
+    "result_retry_completion": "Réessayer",
+    "list_play": "Jouer",
+    "list_retry": "Réessayer",
+    "list_resume": "Reprendre",
+    "list_current": "Actuelle",
+    "list_timer_label": "{time} par manche",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "Meilleur score : {pct}%"
   },
   "legal": {
     "privacy": {

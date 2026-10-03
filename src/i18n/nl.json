@@ -1284,7 +1284,14 @@
     "result_margin_above": "{points} ptn boven de limiet",
     "result_margin_below": "{points} ptn onder de limiet",
     "result_completion_error": "Je reisresultaat kon niet worden opgeslagen. Probeer het opnieuw.",
-    "result_retry_completion": "Opnieuw proberen"
+    "result_retry_completion": "Opnieuw proberen",
+    "list_play": "Spelen",
+    "list_retry": "Opnieuw",
+    "list_resume": "Hervatten",
+    "list_current": "Huidige",
+    "list_timer_label": "{time} per ronde",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "Beste score: {pct}%"
   },
   "legal": {
     "privacy": {
