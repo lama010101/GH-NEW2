@@ -1,22 +1,21 @@
 "use client";
 
-// Historian's Journey — stage list (HJ-BUILD-JOURNEYUI-001).
-// Lists all journey_stages joined with this player's journey_player_progress
-// (client-side supabaseBrowser read — the same direct-read pattern
-// src/app/practice/[gameId]/page.tsx uses for player_global_stats/profiles;
-// journey_stages + journey_player_progress both have authenticated SELECT
-// policies). journey_stages.status is not a gameplay gate
-// (HJ-BUILD-REMOVELIVEGATE-008) — the "coming soon" empty state renders only
-// when zero stage rows exist.
+// Historian's Journey — stage list, single screen for all 100 stages
+// (HJ-BUILD-LISTREDESIGN-032). Data = the same two direct supabaseBrowser
+// reads as before (journey_stages + journey_player_progress — both have
+// authenticated SELECT policies, no N+1); every per-stage display value is
+// derived via src/core/journeyRules.ts (timer, recency window, era, tier
+// icon — single source).
 //
-// Completion hand-off: this page never calls /api/journey/complete itself —
-// the stage detail page is the single owner of completion+recap. If a pending
-// playthrough marker exists and its session is SESSION_COMPLETE, we route to
-// that stage's detail page which performs the complete call and recap.
+// Flow (intermediate /journey/[stageId] screen removed — it is now a thin
+// redirect): Play/Retry POST /api/journey/start → sessionStorage marker →
+// /practice/{gameId} directly. /practice/[gameId] is the single owner of
+// journey completion+result — this page never calls /api/journey/complete.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { ArrowLeft } from "lucide-react";
 import { useIdentity } from "@/hooks/useIdentity";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import {
@@ -25,7 +24,20 @@ import {
   forceClearAuthStorage,
   type IdentityState,
 } from "@/core/identity";
+import { getAccuracyColor } from "@/core/accuracyColor";
+import {
+  journeyMinEventYear,
+  journeyRoundTimerSec,
+  journeyStageEraKey,
+  journeyStageIconFile,
+  journeyYearLabel,
+} from "@/core/journeyRules";
+import TopBar from "@/components/layout/TopBar";
+import { NavModal } from "@/components/NavModal";
+import { MiniRing } from "@/components/compete/RoundCompleteSection";
 import { JourneyBadge } from "./_components/JourneyBadge";
+import { GuestConversionModal } from "./_components/GuestConversionModal";
+import { startJourneyStage } from "./_components/journeyStart";
 import {
   findAnyActivePlaythrough,
   type JourneyProgressRow,
@@ -51,9 +63,19 @@ export default function JourneyPage() {
   const [stages, setStages] = useState<JourneyStageRow[] | null>(null);
   const [progressRows, setProgressRows] = useState<JourneyProgressRow[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [inProgressStageId, setInProgressStageId] = useState<string | null>(null);
+  const [pendingStage, setPendingStage] = useState<{
+    stageId: string;
+    gameId: string;
+  } | null>(null);
+  const [startingStageId, setStartingStageId] = useState<string | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
+  const [gateStageNumber, setGateStageNumber] = useState<number | null>(null);
+  const [showNavModal, setShowNavModal] = useState(false);
+  const [accuracy, setAccuracy] = useState("--");
+  const [xp, setXp] = useState("--");
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
   const markerCheckedRef = useRef(false);
+  const currentCardRef = useRef<HTMLLIElement | null>(null);
 
   // Auth gate — mirrors src/app/home/page.tsx: unauthenticated → /login.
   useEffect(() => {
@@ -117,9 +139,11 @@ export default function JourneyPage() {
     };
   }, [playerId, t]);
 
-  // Pending-playthrough hand-off: if a session marker exists and its session
-  // already reached SESSION_COMPLETE, the stage detail page owns completing
-  // it — route there. If it's still playable, flag the slot as in-progress.
+  // Pending-playthrough marker: a still-playable session flags its card with
+  // a Resume CTA; a session already at SESSION_COMPLETE routes straight into
+  // /practice/{gameId} — the practice page is the single owner of journey
+  // completion and renders the journey result screen there. (The old hand-off
+  // that routed to /journey/{stageId} is gone — that route is a redirect.)
   useEffect(() => {
     if (!playerId || markerCheckedRef.current) return;
     const pending = findAnyActivePlaythrough();
@@ -135,15 +159,36 @@ export default function JourneyPage() {
         if (!res.ok) return;
         const snap = (await res.json()) as { status?: string };
         if (snap.status === "SESSION_COMPLETE") {
-          router.replace(`/journey/${pending.stageId}`);
+          router.replace(`/practice/${pending.gameId}`);
         } else {
-          setInProgressStageId(pending.stageId);
+          setPendingStage({ stageId: pending.stageId, gameId: pending.gameId });
         }
       } catch {
         // Snapshot unreachable — leave the list as-is.
       }
     })();
   }, [playerId, router]);
+
+  // TopBar stats — the same player_global_stats read home/page.tsx performs;
+  // displayName/avatarUrl/initials come from identity (already fetched).
+  useEffect(() => {
+    if (!playerId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabaseBrowser
+        .from("player_global_stats")
+        .select("avg_accuracy,total_xp")
+        .eq("player_id", playerId)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const stats = data as { avg_accuracy?: number | string; total_xp?: number };
+      setAccuracy(String(Math.round(Number(stats.avg_accuracy))));
+      setXp(Number(stats.total_xp).toLocaleString("fr-FR"));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [playerId]);
 
   const progressByStageId = useMemo(() => {
     const map = new Map<string, JourneyProgressRow>();
@@ -187,6 +232,48 @@ export default function JourneyPage() {
     (s) => progressByStageId.get(s.id)?.status === "completed"
   ).length;
 
+  // The single unlocked-but-not-completed stage is "current" (linear chain —
+  // at most one exists at a time).
+  const currentStageNumber = useMemo(() => {
+    for (const s of allStages) {
+      if (derivedStatus(s) !== "completed") return s.stage_number;
+    }
+    return null; // all 100 completed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allStages, progressByStageId, completedStageNumbers]);
+
+  // Auto-scroll the current stage into view once the list renders.
+  useEffect(() => {
+    currentCardRef.current?.scrollIntoView({ block: "center" });
+  }, [currentStageNumber, stages]);
+
+  const isAnonymous =
+    identity.status === "ready" && identity.isAnonymous;
+  // Once the guest converted via the modal this session, skip the client-side
+  // gate (the server-side gate in startJourneyPlaythrough stays authoritative
+  // and would still reject an unconverted caller).
+  const [hasConverted, setHasConverted] = useState(false);
+
+  // Play/Retry: guest tapping stage >=2 → registration modal (the server-side
+  // gate in startJourneyPlaythrough stays authoritative); otherwise POST
+  // /api/journey/start → marker → /practice/{gameId} directly.
+  const handleStart = async (stage: JourneyStageRow) => {
+    if (startingStageId) return;
+    setStartError(null);
+    if (stage.stage_number >= 2 && isAnonymous && !hasConverted) {
+      setGateStageNumber(stage.stage_number);
+      return;
+    }
+    setStartingStageId(stage.id);
+    try {
+      const started = await startJourneyStage(stage.id);
+      router.push(`/practice/${started.gameId}`);
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : t("load_error"));
+      setStartingStageId(null);
+    }
+  };
+
   const isLoading =
     identityLoading || identity.status === "loading" || (playerId !== null && stages === null && !loadError);
 
@@ -220,29 +307,78 @@ export default function JourneyPage() {
     );
   }
 
+  const identityDisplayName =
+    identity.status === "ready" ? identity.displayName : "";
+  const identityAvatarUrl =
+    identity.status === "ready" ? identity.avatarUrl : null;
+  const initials = identityDisplayName
+    ? identityDisplayName.slice(0, 2).toUpperCase()
+    : "";
+  const currentYear = new Date().getFullYear();
+
   return (
     <main className={`app-shell ${pageStyles.pageShell}`}>
       <div className={pageStyles.bgImage} />
       <div className={pageStyles.bgScrim} />
+      <TopBar
+        accuracy={accuracy}
+        xp={xp}
+        avatarUrl={identityAvatarUrl}
+        initials={initials}
+        onAvatarClick={() => setShowNavModal(true)}
+      />
+      <NavModal
+        isOpen={showNavModal}
+        onClose={() => setShowNavModal(false)}
+        avatarUrl={identityAvatarUrl}
+        initials={initials}
+        displayName={identityDisplayName || initials}
+      />
       <div className={pageStyles.pageContent}>
+        <button
+          type="button"
+          className={pageStyles.backBtn}
+          onClick={() => router.push("/home")}
+          aria-label={tCommon("back_to_home")}
+        >
+          <ArrowLeft size={18} aria-hidden="true" />
+          <span>{tCommon("back_to_home")}</span>
+        </button>
+
         <header className={pageStyles.header}>
           <div>
             <h1 className={pageStyles.title}>{t("title")}</h1>
             <p className={pageStyles.subtitle}>{t("subtitle")}</p>
           </div>
           {allStages.length > 0 && (
-            <span className={pageStyles.progressPill}>
-              {t("stages_completed", {
-                completed: completedCount,
-                total: allStages.length,
-              })}
-            </span>
+            <div className={pageStyles.progressBlock}>
+              <span className={pageStyles.progressPill}>
+                {t("stages_completed", {
+                  completed: completedCount,
+                  total: allStages.length,
+                })}
+              </span>
+              <progress
+                className={pageStyles.progressBar}
+                value={completedCount}
+                max={allStages.length}
+                aria-label={t("stages_completed", {
+                  completed: completedCount,
+                  total: allStages.length,
+                })}
+              />
+            </div>
           )}
         </header>
 
         {loadError && (
           <div className={pageStyles.errorCard} role="alert">
             {loadError}
+          </div>
+        )}
+        {startError && (
+          <div className={pageStyles.errorCard} role="alert">
+            {startError}
           </div>
         )}
 
@@ -272,70 +408,152 @@ export default function JourneyPage() {
               const status = derivedStatus(stage);
               const progress = progressByStageId.get(stage.id);
               const locked = status === "locked";
-              const clickable = !locked;
-              const inProgress = inProgressStageId === stage.id;
+              const completed = status === "completed";
+              const isCurrent = stage.stage_number === currentStageNumber;
+              const pendingHere =
+                pendingStage?.stageId === stage.id && !completed;
+              const timerSec = journeyRoundTimerSec(stage.stage_number);
+              const timerLabel = `${Math.floor(timerSec / 60)}:${String(
+                timerSec % 60
+              ).padStart(2, "0")}`;
+              const yearFrom = journeyYearLabel(
+                journeyMinEventYear(stage.stage_number, currentYear),
+                tGame("bc_suffix")
+              );
+              const yearTo = journeyYearLabel(currentYear, tGame("bc_suffix"));
+              const stageSubtitle =
+                stage.title ??
+                stage.theme ??
+                tGame(journeyStageEraKey(stage.stage_number, currentYear));
+              const bestPct =
+                progress?.best_accuracy_pct != null
+                  ? Number(progress.best_accuracy_pct)
+                  : null;
               return (
-                <li key={stage.id}>
-                  <button
-                    type="button"
-                    disabled={locked}
-                    onClick={() => clickable && router.push(`/journey/${stage.id}`)}
+                <li
+                  key={stage.id}
+                  ref={isCurrent ? currentCardRef : undefined}
+                >
+                  <div
                     className={`${pageStyles.stageCard} ${
                       locked ? pageStyles.stageLocked : ""
-                    } ${status === "completed" ? pageStyles.stageDone : ""}`}
+                    } ${completed ? pageStyles.stageDone : ""} ${
+                      isCurrent ? pageStyles.stageCurrent : ""
+                    }`}
+                    data-testid={`journey-stage-${stage.stage_number}`}
                   >
-                    <span className={pageStyles.stageNumber}>
-                      {stage.stage_number}
-                    </span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={journeyStageIconFile(stage.stage_number)}
+                      alt=""
+                      className={pageStyles.stageIcon}
+                      draggable={false}
+                    />
                     <span className={pageStyles.stageBody}>
                       <span className={pageStyles.stageTitle}>
-                        {stage.title ?? t("stage_default_title", { number: stage.stage_number })}
+                        {t("stage_label", { number: stage.stage_number })}
                       </span>
-                      {stage.theme && (
-                        <span className={pageStyles.stageTheme}>{stage.theme}</span>
-                      )}
+                      <span className={pageStyles.stageSubtitle}>
+                        {stageSubtitle}
+                      </span>
                       <span className={pageStyles.stageMeta}>
                         {t("min_accuracy", {
-                          pct: Number(stage.min_accuracy_pct),
+                          pct: Number(stage.min_accuracy_pct).toFixed(1),
                         })}
+                        {" · "}
+                        {t("list_timer_label", { time: timerLabel })}
+                        {" · "}
+                        {t("list_years", { from: yearFrom, to: yearTo })}
                         {" · "}
                         {t("rounds", { count: stage.pool_size })}
                       </span>
+                      {locked && (
+                        <span className={pageStyles.lockHint}>
+                          {t("unlock_hint", { number: stage.stage_number - 1 })}
+                        </span>
+                      )}
                     </span>
                     <span className={pageStyles.stageAside}>
-                      {status === "completed" && (
-                        <JourneyBadge
-                          badge={progress?.best_badge ?? "completion"}
-                          accuracyPct={
-                            progress?.best_accuracy_pct != null
-                              ? Number(progress.best_accuracy_pct)
-                              : null
-                          }
-                        />
+                      {completed && (
+                        <>
+                          <span
+                            className={pageStyles.bestRing}
+                            role="img"
+                            aria-label={t("list_best_aria", {
+                              pct: (bestPct ?? 0).toFixed(1),
+                            })}
+                          >
+                            <MiniRing
+                              value={bestPct ?? 0}
+                              color={getAccuracyColor(bestPct ?? 0)}
+                            />
+                          </span>
+                          <JourneyBadge
+                            badge={progress?.best_badge ?? "completion"}
+                            accuracyPct={bestPct}
+                          />
+                          <button
+                            type="button"
+                            className={pageStyles.retryBtn}
+                            disabled={startingStageId !== null}
+                            onClick={() => void handleStart(stage)}
+                          >
+                            {startingStageId === stage.id
+                              ? tCommon("loading")
+                              : t("list_retry")}
+                          </button>
+                        </>
                       )}
-                      {inProgress && status !== "completed" && (
-                        <span className={pageStyles.inProgressPill}>
-                          {t("in_progress")}
-                        </span>
-                      )}
-                      {locked && (
-                        <span className={pageStyles.lockedPill}>
-                          {t("locked")}
-                        </span>
+                      {isCurrent && (
+                        <>
+                          {pendingHere ? (
+                            <button
+                              type="button"
+                              className={pageStyles.playBtn}
+                              onClick={() =>
+                                router.push(`/practice/${pendingStage!.gameId}`)
+                              }
+                            >
+                              {t("list_resume")}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className={pageStyles.playBtn}
+                              disabled={startingStageId !== null}
+                              onClick={() => void handleStart(stage)}
+                            >
+                              {startingStageId === stage.id
+                                ? tCommon("loading")
+                                : t("list_play")}
+                            </button>
+                          )}
+                          <span className={pageStyles.currentPill}>
+                            {t("list_current")}
+                          </span>
+                        </>
                       )}
                     </span>
-                  </button>
-                  {locked && (
-                    <div className={pageStyles.lockHint}>
-                      {t("unlock_hint", { number: stage.stage_number - 1 })}
-                    </div>
-                  )}
+                  </div>
                 </li>
               );
             })}
           </ol>
         )}
       </div>
+
+      <GuestConversionModal
+        isOpen={gateStageNumber !== null}
+        stageNumber={gateStageNumber ?? 2}
+        onClose={() => setGateStageNumber(null)}
+        onConverted={() => {
+          const n = gateStageNumber;
+          setGateStageNumber(null);
+          setHasConverted(true);
+          const s = allStages.find((x) => x.stage_number === n);
+          if (s) void handleStart(s);
+        }}
+      />
     </main>
   );
 }

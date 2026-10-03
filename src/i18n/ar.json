@@ -1284,7 +1284,14 @@
     "result_margin_above": "{points} نقطة فوق درجة النجاح",
     "result_margin_below": "{points} نقطة دون درجة النجاح",
     "result_completion_error": "تعذر تسجيل نتيجة رحلتك. حاول مرة أخرى.",
-    "result_retry_completion": "إعادة المحاولة"
+    "result_retry_completion": "إعادة المحاولة",
+    "list_play": "العب",
+    "list_retry": "إعادة المحاولة",
+    "list_resume": "استئناف",
+    "list_current": "الحالية",
+    "list_timer_label": "{time} لكل جولة",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "أفضل نتيجة: {pct}%"
   },
   "legal": {
     "privacy": {

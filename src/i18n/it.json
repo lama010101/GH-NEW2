@@ -1284,7 +1284,14 @@
     "result_margin_above": "{points} pti sopra la soglia",
     "result_margin_below": "{points} pti sotto la soglia",
     "result_completion_error": "Non siamo riusciti a registrare il tuo risultato del viaggio. Riprova.",
-    "result_retry_completion": "Riprova"
+    "result_retry_completion": "Riprova",
+    "list_play": "Gioca",
+    "list_retry": "Riprova",
+    "list_resume": "Riprendi",
+    "list_current": "Attuale",
+    "list_timer_label": "{time} per round",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "Miglior punteggio: {pct}%"
   },
   "legal": {
     "privacy": {

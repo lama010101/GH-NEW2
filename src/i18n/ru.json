@@ -1284,7 +1284,14 @@
     "result_margin_above": "На {points} п. выше порога",
     "result_margin_below": "До порога не хватает {points} п.",
     "result_completion_error": "Не удалось сохранить результат путешествия. Попробуй ещё раз.",
-    "result_retry_completion": "Попробовать снова"
+    "result_retry_completion": "Попробовать снова",
+    "list_play": "Играть",
+    "list_retry": "Повторить",
+    "list_resume": "Продолжить",
+    "list_current": "Текущий",
+    "list_timer_label": "{time} на раунд",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "Лучший результат: {pct}%"
   },
   "legal": {
     "privacy": {
