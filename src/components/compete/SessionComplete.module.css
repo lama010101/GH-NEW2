@@ -1424,3 +1424,10 @@
   text-align: center;
   width: 100%;
 }
+
+/* F2 (027) — awarded badge inside the journey pass panel. */
+.journeyBadgeWrap {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}

@@ -24,6 +24,7 @@ import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
 import { HelpCircle, Star, Trophy } from "lucide-react";
 import type { JourneyResultOverride } from "@/core/journeyResultTypes";
+import { JourneyBadge } from "@/app/journey/_components/JourneyBadge";
 import { JOURNEY_TOTAL_STAGES } from "@/core/journeyConstants";
 import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from "@/core/identity";
 import { GuestConversionModal } from "@/app/journey/_components/GuestConversionModal";
@@ -650,8 +651,15 @@ export default function SessionComplete({
                         ? tJourney('result_margin_above', { points: (journeyResult.accuracyPct - journeyResult.minAccuracyPct).toFixed(1) })
                         : tJourney('result_margin_below', { points: (journeyResult.minAccuracyPct - journeyResult.accuracyPct).toFixed(1) })}
                     </span>
+                    {journeyResult.badgeAwarded && (
+                      <div className={styles.journeyBadgeWrap} data-testid="journey-badge">
+                        <JourneyBadge badge={journeyResult.badgeAwarded} accuracyPct={journeyResult.accuracyPct} size="lg" />
+                      </div>
+                    )}
                   </div>
                 )}
+                {!journeyResult && (
+                <>
                 <span className={styles.gameAccLabel}>{tGame('game_accuracy_pct')}</span>
                 {myStats ? (
                   <div className={styles.heroRingWrap}>
@@ -659,6 +667,8 @@ export default function SessionComplete({
                   </div>
                 ) : (
                   <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--gh-text-muted)' }}>—</span>
+                )}
+                </>
                 )}
                 <div className={styles.statPair}>
                   <div className={styles.statTile}>
