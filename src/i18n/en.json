@@ -1268,7 +1268,23 @@
     "badge_bronze": "Bronze",
     "badge_completion": "Completion",
     "badge_none": "No badge",
-    "load_error": "Couldn't load your journey. Please try again."
+    "load_error": "Couldn't load your journey. Please try again.",
+    "result_pass_mark": "Pass mark {pct}%",
+    "result_gauge_aria": "Score {score}%, pass mark {pct}%",
+    "result_passed_title": "Stage {number} complete",
+    "result_unlocked_line": "Stage {number} unlocked",
+    "result_journey_complete_title": "Journey complete",
+    "result_journey_complete_body": "You conquered all 100 stages of the Historian's Journey.",
+    "result_short_by": "{points}% short of the {min}% pass mark. Try again!",
+    "result_play_stage": "Play stage {number}",
+    "result_retry_stage": "Retry stage {number}",
+    "result_stages_button": "Stages",
+    "result_headline_passed": "Stage {number} passed",
+    "result_headline_failed": "Stage {number} not passed",
+    "result_margin_above": "{points} pts above the pass mark",
+    "result_margin_below": "{points} pts short of the pass mark",
+    "result_completion_error": "We couldn't record your Journey result. Please try again.",
+    "result_retry_completion": "Retry"
   },
   "legal": {
     "privacy": {

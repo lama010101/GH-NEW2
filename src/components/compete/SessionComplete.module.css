@@ -1327,3 +1327,107 @@
     max-width: 1200px;
   }
 }
+
+/* ── Journey result overrides (HJ-FIX-JOURNEYRESULT-PROTECTEDPROP-023) ──
+   Applied only when the journeyResult prop is present; the default render
+   is unchanged. */
+
+/* Keep the first content element below the fixed TopBar (R4). */
+.sectionJourneyTop {
+  padding-top: calc(76px + env(safe-area-inset-top, 0px));
+}
+
+.bannerTitlePassed {
+  color: var(--gh-success);
+}
+
+.bannerTitleFailed {
+  color: var(--gh-danger);
+}
+
+/* R3 — dedicated pass-mark panel on a solid surface inside the hero card. */
+.journeyPassPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 12px 0 4px;
+  padding: 16px;
+  border-radius: var(--gh-radius-md);
+  background: var(--gh-bg-base);
+  border: 1px solid var(--gh-border-default);
+}
+
+.journeyPassPanelPassed {
+  border-color: var(--gh-success);
+}
+
+.journeyPassPanelFailed {
+  border-color: var(--gh-danger);
+}
+
+.journeyPassValue {
+  font-size: var(--font-3xl);
+  font-weight: 800;
+  color: var(--gh-text-primary);
+  line-height: 1.1;
+}
+
+.journeyGauge {
+  width: 100%;
+  max-width: 300px;
+  height: 30px;
+}
+
+.journeyGaugeTrack {
+  fill: rgba(var(--gh-text-primary-rgb, 255, 255, 255), 0.15);
+}
+
+.journeyGaugeFillPassed {
+  fill: var(--gh-success);
+}
+
+.journeyGaugeFillFailed {
+  fill: var(--gh-danger);
+}
+
+.journeyGaugeMark {
+  stroke: var(--gh-text-primary);
+  stroke-width: 2;
+}
+
+.journeyPassMark {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
+.journeyPassMargin {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--gh-text-secondary);
+}
+
+.journeyPassPanelPassed .journeyPassMargin {
+  color: var(--gh-success);
+}
+
+.journeyPassPanelFailed .journeyPassMargin {
+  color: var(--gh-danger);
+}
+
+.journeyStartError {
+  margin: 8px 0 0;
+  font-size: var(--font-sm);
+  color: var(--gh-danger);
+  text-align: center;
+  width: 100%;
+}
+
+/* F2 (027) — awarded badge inside the journey pass panel. */
+.journeyBadgeWrap {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}

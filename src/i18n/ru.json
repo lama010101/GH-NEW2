@@ -1268,7 +1268,23 @@
     "badge_bronze": "Бронза",
     "badge_completion": "Завершение",
     "badge_none": "Нет значка",
-    "load_error": "Не удалось загрузить твоё путешествие. Попробуй ещё раз."
+    "load_error": "Не удалось загрузить твоё путешествие. Попробуй ещё раз.",
+    "result_pass_mark": "Порог прохождения {pct}%",
+    "result_gauge_aria": "Результат {score}%, порог {pct}%",
+    "result_passed_title": "Этап {number} пройден",
+    "result_unlocked_line": "Этап {number} разблокирован",
+    "result_journey_complete_title": "Путешествие завершено",
+    "result_journey_complete_body": "Ты прошёл все 100 этапов путешествия историка.",
+    "result_short_by": "До порога прохождения {min}% не хватило {points}%. Попробуй ещё раз!",
+    "result_play_stage": "Играть этап {number}",
+    "result_retry_stage": "Повторить этап {number}",
+    "result_stages_button": "Этапы",
+    "result_headline_passed": "Этап {number} пройден",
+    "result_headline_failed": "Этап {number} не пройден",
+    "result_margin_above": "На {points} п. выше порога",
+    "result_margin_below": "До порога не хватает {points} п.",
+    "result_completion_error": "Не удалось сохранить результат путешествия. Попробуй ещё раз.",
+    "result_retry_completion": "Попробовать снова"
   },
   "legal": {
     "privacy": {

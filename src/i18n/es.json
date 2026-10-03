@@ -1268,7 +1268,23 @@
     "badge_bronze": "Bronce",
     "badge_completion": "Finalización",
     "badge_none": "Sin insignia",
-    "load_error": "No se pudo cargar tu viaje. Inténtalo de nuevo."
+    "load_error": "No se pudo cargar tu viaje. Inténtalo de nuevo.",
+    "result_pass_mark": "Marca de aprobado: {pct} %",
+    "result_gauge_aria": "Puntuación {score} %, marca de aprobado {pct} %",
+    "result_passed_title": "Etapa {number} completada",
+    "result_unlocked_line": "Etapa {number} desbloqueada",
+    "result_journey_complete_title": "Viaje completado",
+    "result_journey_complete_body": "Has conquistado las 100 etapas del viaje del historiador.",
+    "result_short_by": "Te faltó un {points} % para alcanzar la marca del {min} %. ¡Inténtalo de nuevo!",
+    "result_play_stage": "Jugar la etapa {number}",
+    "result_retry_stage": "Reintentar la etapa {number}",
+    "result_stages_button": "Etapas",
+    "result_headline_passed": "Etapa {number} superada",
+    "result_headline_failed": "Etapa {number} no superada",
+    "result_margin_above": "{points} pts por encima del mínimo",
+    "result_margin_below": "{points} pts por debajo del mínimo",
+    "result_completion_error": "No pudimos registrar tu resultado del viaje. Inténtalo de nuevo.",
+    "result_retry_completion": "Reintentar"
   },
   "legal": {
     "privacy": {

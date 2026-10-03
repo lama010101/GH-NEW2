@@ -1268,7 +1268,23 @@
     "badge_bronze": "برونزية",
     "badge_completion": "الإنجاز",
     "badge_none": "لا شارة",
-    "load_error": "تعذر تحميل رحلتك. حاول مرة أخرى."
+    "load_error": "تعذر تحميل رحلتك. حاول مرة أخرى.",
+    "result_pass_mark": "علامة النجاح {pct}%",
+    "result_gauge_aria": "النتيجة {score}%، علامة النجاح {pct}%",
+    "result_passed_title": "اكتملت المرحلة {number}",
+    "result_unlocked_line": "المرحلة {number} مفتوحة",
+    "result_journey_complete_title": "اكتملت الرحلة",
+    "result_journey_complete_body": "لقد أنجزت مراحل رحلة المؤرخ الـ100 كلها.",
+    "result_short_by": "ينقصك {points}% للوصول إلى علامة النجاح {min}%. حاول مجددًا!",
+    "result_play_stage": "العب المرحلة {number}",
+    "result_retry_stage": "أعد محاولة المرحلة {number}",
+    "result_stages_button": "المراحل",
+    "result_headline_passed": "المرحلة {number} — ناجح",
+    "result_headline_failed": "المرحلة {number} — غير ناجح",
+    "result_margin_above": "{points} نقطة فوق درجة النجاح",
+    "result_margin_below": "{points} نقطة دون درجة النجاح",
+    "result_completion_error": "تعذر تسجيل نتيجة رحلتك. حاول مرة أخرى.",
+    "result_retry_completion": "إعادة المحاولة"
   },
   "legal": {
     "privacy": {

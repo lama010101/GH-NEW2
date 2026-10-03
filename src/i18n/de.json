@@ -1268,7 +1268,23 @@
     "badge_bronze": "Bronze",
     "badge_completion": "Abschluss",
     "badge_none": "Kein Abzeichen",
-    "load_error": "Deine Reise konnte nicht geladen werden. Bitte versuche es erneut."
+    "load_error": "Deine Reise konnte nicht geladen werden. Bitte versuche es erneut.",
+    "result_pass_mark": "Bestehensgrenze {pct} %",
+    "result_gauge_aria": "Ergebnis {score} %, Bestehensgrenze {pct} %",
+    "result_passed_title": "Etappe {number} geschafft",
+    "result_unlocked_line": "Etappe {number} freigeschaltet",
+    "result_journey_complete_title": "Reise abgeschlossen",
+    "result_journey_complete_body": "Du hast alle 100 Etappen der Reise des Historikers gemeistert.",
+    "result_short_by": "Dir fehlen {points} % zur Bestehensgrenze von {min} %. Versuch es nochmal!",
+    "result_play_stage": "Etappe {number} spielen",
+    "result_retry_stage": "Etappe {number} wiederholen",
+    "result_stages_button": "Etappen",
+    "result_headline_passed": "Etappe {number} bestanden",
+    "result_headline_failed": "Etappe {number} nicht bestanden",
+    "result_margin_above": "{points} Pkt. über der Bestehensgrenze",
+    "result_margin_below": "{points} Pkt. unter der Bestehensgrenze",
+    "result_completion_error": "Dein Reiseergebnis konnte nicht gespeichert werden. Bitte versuch es erneut.",
+    "result_retry_completion": "Erneut versuchen"
   },
   "legal": {
     "privacy": {

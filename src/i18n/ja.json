@@ -1268,7 +1268,23 @@
     "badge_bronze": "ブロンズ",
     "badge_completion": "コンプリート",
     "badge_none": "バッジなし",
-    "load_error": "ジャーニーを読み込めませんでした。もう一度お試しください。"
+    "load_error": "ジャーニーを読み込めませんでした。もう一度お試しください。",
+    "result_pass_mark": "合格ライン {pct}%",
+    "result_gauge_aria": "スコア {score}%、合格ライン {pct}%",
+    "result_passed_title": "ステージ{number}クリア",
+    "result_unlocked_line": "ステージ{number}がアンロックされました",
+    "result_journey_complete_title": "ジャーニー完了",
+    "result_journey_complete_body": "歴史家のジャーニー全100ステージを制覇しました。",
+    "result_short_by": "合格ライン{min}%まであと{points}%です。もう一度挑戦しよう！",
+    "result_play_stage": "ステージ{number}をプレイ",
+    "result_retry_stage": "ステージ{number}をリトライ",
+    "result_stages_button": "ステージ一覧",
+    "result_headline_passed": "ステージ{number}クリア",
+    "result_headline_failed": "ステージ{number}未クリア",
+    "result_margin_above": "合格ラインを{points}pt上回りました",
+    "result_margin_below": "合格ラインまであと{points}pt",
+    "result_completion_error": "ジャーニーの結果を記録できませんでした。もう一度お試しください。",
+    "result_retry_completion": "もう一度試す"
   },
   "legal": {
     "privacy": {

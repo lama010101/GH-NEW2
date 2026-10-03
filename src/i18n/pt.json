@@ -1268,7 +1268,23 @@
     "badge_bronze": "Bronze",
     "badge_completion": "Conclusão",
     "badge_none": "Sem medalha",
-    "load_error": "Não foi possível carregar sua jornada. Tente novamente."
+    "load_error": "Não foi possível carregar sua jornada. Tente novamente.",
+    "result_pass_mark": "Marca de aprovação {pct}%",
+    "result_gauge_aria": "Pontuação {score}%, marca de aprovação {pct}%",
+    "result_passed_title": "Etapa {number} concluída",
+    "result_unlocked_line": "Etapa {number} desbloqueada",
+    "result_journey_complete_title": "Jornada concluída",
+    "result_journey_complete_body": "Você conquistou todas as 100 etapas da jornada do historiador.",
+    "result_short_by": "Faltou {points}% para atingir a marca de aprovação de {min}%. Tente novamente!",
+    "result_play_stage": "Jogar a etapa {number}",
+    "result_retry_stage": "Tentar a etapa {number} novamente",
+    "result_stages_button": "Etapas",
+    "result_headline_passed": "Etapa {number} concluída",
+    "result_headline_failed": "Etapa {number} não concluída",
+    "result_margin_above": "{points} pts acima do mínimo",
+    "result_margin_below": "{points} pts abaixo do mínimo",
+    "result_completion_error": "Não conseguimos registrar o seu resultado da jornada. Tente novamente.",
+    "result_retry_completion": "Tentar novamente"
   },
   "legal": {
     "privacy": {
