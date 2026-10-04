@@ -15,7 +15,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Clock, Layers, Lock, Target } from "lucide-react";
 import { useIdentity } from "@/hooks/useIdentity";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import {
@@ -421,10 +421,13 @@ export default function JourneyPage() {
                 tGame("bc_suffix")
               );
               const yearTo = journeyYearLabel(currentYear, tGame("bc_suffix"));
-              const stageSubtitle =
-                stage.title ??
-                stage.theme ??
-                tGame(journeyStageEraKey(stage.stage_number, currentYear));
+              // HJ-UI-POLISH-035 — title is "Stage N · <era name>"; the
+              // curated stage title/theme (when one exists) drops to the
+              // subtitle line instead of duplicating the era.
+              const stageEra = tGame(
+                journeyStageEraKey(stage.stage_number, currentYear)
+              );
+              const stageSubtitle = stage.title ?? stage.theme ?? null;
               const bestPct =
                 progress?.best_accuracy_pct != null
                   ? Number(progress.best_accuracy_pct)
@@ -452,45 +455,80 @@ export default function JourneyPage() {
                     }`}
                     data-testid={`journey-stage-${stage.stage_number}`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={journeyStageIconFile(stage.stage_number)}
-                      alt=""
-                      className={pageStyles.stageIcon}
-                      draggable={false}
-                    />
+                    <span className={pageStyles.stageIconWrap}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={journeyStageIconFile(stage.stage_number)}
+                        alt=""
+                        className={pageStyles.stageIcon}
+                        draggable={false}
+                      />
+                      {completed && (
+                        <span
+                          className={pageStyles.doneCheck}
+                          role="img"
+                          aria-label={t("list_completed")}
+                        >
+                          <Check size={12} strokeWidth={3.5} aria-hidden="true" />
+                        </span>
+                      )}
+                    </span>
                     <span className={pageStyles.stageBody}>
                       <span className={pageStyles.stageTitle}>
-                        {t("stage_label", { number: stage.stage_number })}
-                      </span>
-                      <span className={pageStyles.stageSubtitle}>
-                        {stageSubtitle}
-                      </span>
-                      <span className={pageStyles.stageMeta}>
-                        {t("min_accuracy", {
-                          pct: Number(stage.min_accuracy_pct).toFixed(1),
+                        {t("list_stage_title", {
+                          number: stage.stage_number,
+                          era: stageEra,
                         })}
-                        {" · "}
-                        {t("list_timer_label", { time: timerLabel })}
-                        {" · "}
-                        {t("list_years", { from: yearFrom, to: yearTo })}
-                        {" · "}
-                        {t("rounds", { count: stage.pool_size })}
+                      </span>
+                      {stageSubtitle && (
+                        <span className={pageStyles.stageSubtitle}>
+                          {stageSubtitle}
+                        </span>
+                      )}
+                      {/* HJ-UI-POLISH-035 — stats as a compact icon-chip row
+                          (pass mark rounded to a whole %), not a sentence. */}
+                      <span className={pageStyles.chipRow}>
+                        <span className={pageStyles.chip}>
+                          <Target size={12} aria-hidden="true" className={pageStyles.chipIcon} />
+                          {t("list_pass_chip", {
+                            pct: Math.round(Number(stage.min_accuracy_pct)),
+                          })}
+                        </span>
+                        <span className={pageStyles.chip}>
+                          <Clock size={12} aria-hidden="true" className={pageStyles.chipIcon} />
+                          {timerLabel}
+                        </span>
+                        <span className={pageStyles.chip}>
+                          <CalendarDays size={12} aria-hidden="true" className={pageStyles.chipIcon} />
+                          {t("list_years", { from: yearFrom, to: yearTo })}
+                        </span>
+                        <span className={pageStyles.chip}>
+                          <Layers size={12} aria-hidden="true" className={pageStyles.chipIcon} />
+                          {t("rounds", { count: stage.pool_size })}
+                        </span>
                       </span>
                       {locked && (
                         <span className={pageStyles.lockHint}>
+                          <Lock size={11} aria-hidden="true" className={pageStyles.lockHintIcon} />
                           {t("unlock_hint", { number: stage.stage_number - 1 })}
                         </span>
                       )}
                     </span>
                     <span className={pageStyles.stageAside}>
+                      {locked && (
+                        <Lock
+                          size={18}
+                          aria-hidden="true"
+                          className={pageStyles.lockIcon}
+                        />
+                      )}
                       {completed && (
                         <>
                           <span
                             className={pageStyles.bestRing}
                             role="img"
                             aria-label={t("list_best_aria", {
-                              pct: (bestPct ?? 0).toFixed(1),
+                              pct: Math.round(bestPct ?? 0),
                             })}
                           >
                             <MiniRing
@@ -538,9 +576,6 @@ export default function JourneyPage() {
                                 : t("list_play")}
                             </button>
                           )}
-                          <span className={pageStyles.currentPill}>
-                            {t("list_current")}
-                          </span>
                         </>
                       )}
                     </span>

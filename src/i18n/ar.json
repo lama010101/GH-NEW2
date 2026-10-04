@@ -567,7 +567,8 @@
     "taking_too_long": "هل يستغرق وقتًا طويلاً؟",
     "retry": "إعادة المحاولة",
     "region_oceania_antarctica": "أوقيانوسيا وأنتاركتيكا",
-    "game_accuracy_pct": "دقة اللعبة (%)"
+    "game_accuracy_pct": "دقة اللعبة (%)",
+    "badge_tally_label": "{dimension} · {tier}"
   },
   "auth": {
     "sign_in": "تسجيل الدخول",
@@ -1291,7 +1292,10 @@
     "list_current": "الحالية",
     "list_timer_label": "{time} لكل جولة",
     "list_years": "{from}–{to}",
-    "list_best_aria": "أفضل نتيجة: {pct}%"
+    "list_best_aria": "أفضل نتيجة: {pct}%",
+    "list_stage_title": "المرحلة {number} · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "مكتملة"
   },
   "legal": {
     "privacy": {

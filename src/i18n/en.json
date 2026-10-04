@@ -567,7 +567,8 @@
     "taking_too_long": "Taking too long?",
     "retry": "Retry",
     "region_oceania_antarctica": "Oceania & Antarctica",
-    "game_accuracy_pct": "Game Accuracy (%)"
+    "game_accuracy_pct": "Game Accuracy (%)",
+    "badge_tally_label": "{dimension} · {tier}"
   },
   "auth": {
     "sign_in": "Sign In",
@@ -1291,7 +1292,10 @@
     "list_current": "Current",
     "list_timer_label": "{time} per round",
     "list_years": "{from}–{to}",
-    "list_best_aria": "Best score: {pct}%"
+    "list_best_aria": "Best score: {pct}%",
+    "list_stage_title": "Stage {number} · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "Completed"
   },
   "legal": {
     "privacy": {

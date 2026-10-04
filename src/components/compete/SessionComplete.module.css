@@ -1367,12 +1367,6 @@
   border-color: var(--gh-danger);
 }
 
-.journeyPassMark {
-  font-size: var(--font-sm);
-  font-weight: 700;
-  color: var(--gh-text-primary);
-}
-
 .journeyPassMargin {
   font-size: var(--font-sm);
   font-weight: 600;
@@ -1400,4 +1394,130 @@
   margin-top: 8px;
   display: flex;
   justify-content: center;
+}
+
+/* HJ-UI-POLISH-STAGELIST-RESULT-035 — journey CTA buttons.
+   The primary reuses LobbySection.module.css .lobbyReadyBtnNotReady
+   (cyan gradient, leading icon). .cta button (specificity 0,1,1) would
+   otherwise clobber its 52px height / 15px radius / --font-base size, so
+   these .cta-scoped overrides (0,2,0) re-assert the lobby metrics. The
+   secondary Home is a quieter ghost variant of the same pill. */
+.cta .journeyPrimaryBtn,
+.cta .journeyHomeBtn {
+  height: 52px;
+  border-radius: 15px;
+  font-size: var(--font-base);
+  letter-spacing: 0.5px;
+}
+
+.journeyHomeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 1px solid var(--gh-glass-border);
+  background: var(--gh-glass-bg);
+  color: var(--gh-text-secondary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.journeyHomeBtn:hover {
+  background: var(--gh-glass-bg-hover);
+  border-color: var(--gh-glass-border-hover);
+  color: var(--gh-text-primary);
+}
+
+/* Badge tally tier accents — distinguishes same-dimension rows by tier. */
+.badgeTallyTier_gold {
+  color: var(--gh-gold);
+}
+
+.badgeTallyTier_silver {
+  color: #c7cede;
+}
+
+.badgeTallyTier_bronze {
+  color: #cd7f32;
+}
+
+/* HJ-FIX-POLISHSCOPE-044 — the HJ-UI-POLISH-035 rank-card and best-scores
+   tile restyle, scoped to journey results via .sectionJourneyTop so
+   Compete / Daily / Practice result screens render the base rules above
+   exactly as origin/main. */
+.sectionJourneyTop .gameStatTile {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  min-width: 0;
+}
+
+.sectionJourneyTop .gameStatVal {
+  white-space: nowrap;
+}
+
+.sectionJourneyTop .gameStatLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sectionJourneyTop .customRankMedallion {
+  width: 72px;
+  height: 72px;
+  gap: 6px;
+  box-shadow: 0 0 22px rgba(251, 146, 60, 0.32);
+  border-radius: 18px;
+}
+
+.sectionJourneyTop .customRankTier {
+  font-size: var(--font-sm);
+}
+
+.sectionJourneyTop .customRankStars {
+  max-width: 60px;
+}
+
+.sectionJourneyTop .customRankHead {
+  align-items: center;
+}
+
+.sectionJourneyTop .customRankTitle {
+  font-size: var(--font-2xl);
+  letter-spacing: 0.02em;
+}
+
+.sectionJourneyTop .customRankXpGroup {
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionJourneyTop .customRankXpChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--gh-radius-pill);
+  border: 1px solid rgba(var(--gh-success-rgb), 0.45);
+  background: rgba(var(--gh-success-rgb), 0.14);
+  font-size: var(--font-sm);
+  font-weight: 800;
+  color: var(--gh-success);
+  white-space: nowrap;
+}
+
+.sectionJourneyTop .customRankTotalXp {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--gh-text-secondary);
+}
+
+.sectionJourneyTop .customRankNext {
+  flex-wrap: nowrap;
+  font-size: var(--font-xs);
+}
+
+.sectionJourneyTop .customRankNextTitle {
+  color: var(--gh-text-secondary);
+  font-weight: 600;
 }

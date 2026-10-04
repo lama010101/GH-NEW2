@@ -567,7 +567,8 @@
     "taking_too_long": "時間がかかりすぎていますか？",
     "retry": "再試行",
     "region_oceania_antarctica": "オセアニア＆南極大陸",
-    "game_accuracy_pct": "ゲームの精度 (%)"
+    "game_accuracy_pct": "ゲームの精度 (%)",
+    "badge_tally_label": "{dimension}・{tier}"
   },
   "auth": {
     "sign_in": "ログイン",
@@ -1291,7 +1292,10 @@
     "list_current": "現在",
     "list_timer_label": "1ラウンド {time}",
     "list_years": "{from}–{to}",
-    "list_best_aria": "ベストスコア: {pct}%"
+    "list_best_aria": "ベストスコア: {pct}%",
+    "list_stage_title": "ステージ{number} · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "クリア済み"
   },
   "legal": {
     "privacy": {
