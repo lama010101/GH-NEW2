@@ -1267,7 +1267,7 @@
     "badge_gold": "Gold",
     "badge_silver": "Silber",
     "badge_bronze": "Bronze",
-    "badge_completion": "Abschluss",
+    "badge_completion": "Abgeschlossen",
     "badge_none": "Kein Abzeichen",
     "load_error": "Deine Reise konnte nicht geladen werden. Bitte versuche es erneut.",
     "result_pass_mark": "Bestehensgrenze {pct} %",

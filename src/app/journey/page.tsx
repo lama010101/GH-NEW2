@@ -27,6 +27,7 @@ import {
 import { getAccuracyColor } from "@/core/accuracyColor";
 import {
   journeyMinEventYear,
+  journeyRoundCount,
   journeyRoundTimerSec,
   journeyStageEraKey,
   journeyStageIconFile,
@@ -504,7 +505,9 @@ export default function JourneyPage() {
                         </span>
                         <span className={pageStyles.chip}>
                           <Layers size={12} aria-hidden="true" className={pageStyles.chipIcon} />
-                          {t("rounds", { count: stage.pool_size })}
+                          {t("rounds", {
+                            count: journeyRoundCount(stage.stage_number),
+                          })}
                         </span>
                       </span>
                       {locked && (
@@ -538,7 +541,6 @@ export default function JourneyPage() {
                           </span>
                           <JourneyBadge
                             badge={progress?.best_badge ?? "completion"}
-                            accuracyPct={bestPct}
                           />
                           <button
                             type="button"

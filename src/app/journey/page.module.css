@@ -45,17 +45,20 @@
   gap: 6px;
   padding: 8px 14px 8px 10px;
   border-radius: var(--gh-radius-pill);
-  border: 1px solid var(--gh-glass-border);
-  background: var(--gh-glass-bg);
-  color: var(--gh-text-secondary);
+  border: 1px solid var(--gh-border-medium);
+  /* HJ-UI-STAGELIST-CONTRAST-ROUNDS-050 — opaque composite surface
+     (translucent elevated tint over the fully opaque --gh-bg-base) so the
+     label stays readable over the photo mosaic in light theme too. */
+  background: linear-gradient(var(--gh-bg-elevated), var(--gh-bg-elevated)),
+    var(--gh-bg-base);
+  color: var(--gh-text-primary);
   font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
 }
 
 .backBtn:hover {
-  background: var(--gh-glass-bg-hover);
-  border-color: var(--gh-glass-border-hover);
+  border-color: var(--gh-border-strong);
   color: var(--gh-text-primary);
 }
 
@@ -65,6 +68,15 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  /* HJ-UI-STAGELIST-CONTRAST-ROUNDS-050 — solid opaque backing behind the
+     title/subtitle/progress block: composite of the theme's elevated tint
+     over the fully opaque --gh-bg-base, readable on any photo crop in both
+     themes. */
+  padding: 14px 18px;
+  border-radius: var(--gh-radius-md);
+  border: 1px solid var(--gh-border-medium);
+  background: linear-gradient(var(--gh-bg-elevated), var(--gh-bg-elevated)),
+    var(--gh-bg-base);
 }
 
 .title {
@@ -92,10 +104,11 @@
 .progressPill {
   padding: 6px 14px;
   border-radius: var(--gh-radius-pill);
-  border: 1px solid var(--gh-border-default);
-  background: var(--gh-bg-surface);
-  color: var(--gh-text-secondary);
+  border: 1px solid var(--gh-border-medium);
+  background: var(--gh-bg-input);
+  color: var(--gh-text-primary);
   font-size: var(--font-xs);
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -127,14 +140,23 @@
   padding: 14px 18px;
   border-radius: var(--gh-radius-md);
   border: 1px solid rgba(var(--gh-danger-rgb), 0.5);
-  background: rgba(var(--gh-danger-rgb), 0.12);
+  /* Danger tint layered over the same opaque composite surface — the alert
+     text must not depend on the photo brightness behind it. */
+  background: linear-gradient(
+      rgba(var(--gh-danger-rgb), 0.12),
+      rgba(var(--gh-danger-rgb), 0.12)
+    ),
+    linear-gradient(var(--gh-bg-elevated), var(--gh-bg-elevated)),
+    var(--gh-bg-base);
   color: var(--gh-text-primary);
   font-size: var(--font-sm);
 }
 
 .emptyCard {
-  background: var(--gh-bg-surface);
-  border: 1px solid var(--gh-border-default);
+  /* Same opaque composite as the stage cards — see .stageCard. */
+  background: linear-gradient(var(--gh-bg-elevated), var(--gh-bg-elevated)),
+    var(--gh-bg-base);
+  border: 1px solid var(--gh-border-medium);
   border-radius: 24px;
   padding: 48px 28px;
   display: flex;
@@ -227,8 +249,12 @@
   gap: 14px;
   padding: 14px 16px;
   border-radius: var(--gh-radius-md);
-  border: 1px solid var(--gh-border-default);
-  background: var(--gh-bg-surface);
+  border: 1px solid var(--gh-border-medium);
+  /* HJ-UI-STAGELIST-CONTRAST-ROUNDS-050 — opaque composite surface: the
+     translucent elevated tint layered over the fully opaque --gh-bg-base.
+     Card text no longer competes with the photo mosaic behind it. */
+  background: linear-gradient(var(--gh-bg-elevated), var(--gh-bg-elevated)),
+    var(--gh-bg-base);
   color: var(--gh-text-primary);
   cursor: pointer;
   text-align: left;
@@ -237,16 +263,16 @@
 }
 
 .stageCard:hover:not(:disabled) {
-  border-color: var(--gh-glass-border-hover);
-  background: var(--gh-bg-elevated);
+  border-color: var(--gh-border-strong);
 }
 
 .stageCard:disabled {
   cursor: default;
 }
 
-/* Locked state (HJ-UI-POLISH-035): desaturated icon + muted title/chips,
-   but the unlock hint stays readable (secondary, not muted). */
+/* Locked state (HJ-UI-POLISH-035): desaturated icon signals the lock; text
+   stays at secondary (muted would fall under the 4.5:1 floor on the card).
+   Chips keep full opacity, only a subtler border dims them. */
 .stageLocked .stageIcon {
   filter: grayscale(0.7);
   opacity: 0.55;
@@ -254,11 +280,11 @@
 
 .stageLocked .stageTitle,
 .stageLocked .stageSubtitle {
-  color: var(--gh-text-muted);
+  color: var(--gh-text-secondary);
 }
 
 .stageLocked .chip {
-  opacity: 0.65;
+  border-color: var(--gh-border-subtle);
 }
 
 .stageDone {
@@ -267,12 +293,14 @@
 
 .stageCurrent {
   border-color: rgba(var(--gh-violet-rgb), 0.55);
+  /* Violet wash over the same opaque composite — still no photo bleed. */
   background: linear-gradient(
       135deg,
       rgba(var(--gh-violet-rgb), 0.10) 0%,
       transparent 60%
     ),
-    var(--gh-bg-surface);
+    linear-gradient(var(--gh-bg-elevated), var(--gh-bg-elevated)),
+    var(--gh-bg-base);
   box-shadow: 0 0 0 1px rgba(var(--gh-violet-rgb), 0.15),
     0 8px 32px rgba(var(--gh-violet-rgb), 0.12);
 }
@@ -289,8 +317,12 @@
   height: 48px;
   border-radius: var(--gh-radius-sm);
   object-fit: cover;
-  border: 1px solid var(--gh-border-default);
-  background: var(--gh-bg-input);
+  border: 1px solid var(--gh-border-medium);
+  /* Opaque tile (HJ-UI-STAGELIST-CONTRAST-ROUNDS-050): elevated tint over
+     the fully opaque --gh-bg-base — the timeline rail visually passes
+     behind the tile instead of showing through transparent PNG pixels. */
+  background: linear-gradient(var(--gh-bg-elevated), var(--gh-bg-elevated)),
+    var(--gh-bg-base);
 }
 
 /* Green check badge on the tier icon for completed stages. */
@@ -358,6 +390,21 @@
   color: var(--gh-text-secondary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* Selected/playable stage (HJ-UI-STAGELIST-CONTRAST-ROUNDS-050): pills get
+   an opaque tinted surface, a medium border, and primary-colour text —
+   clearly stronger than the translucent chips on every other card. */
+.stageCurrent .chip {
+  border-color: var(--gh-border-medium);
+  background: linear-gradient(var(--gh-bg-input), var(--gh-bg-input)),
+    linear-gradient(var(--gh-bg-elevated), var(--gh-bg-elevated)),
+    var(--gh-bg-base);
+  color: var(--gh-text-primary);
+}
+
+.stageCurrent .chipIcon {
+  color: var(--gh-text-secondary);
 }
 
 .chipIcon {

@@ -1267,7 +1267,7 @@
     "badge_gold": "ゴールド",
     "badge_silver": "シルバー",
     "badge_bronze": "ブロンズ",
-    "badge_completion": "コンプリート",
+    "badge_completion": "完了",
     "badge_none": "バッジなし",
     "load_error": "ジャーニーを読み込めませんでした。もう一度お試しください。",
     "result_pass_mark": "合格ライン {pct}%",

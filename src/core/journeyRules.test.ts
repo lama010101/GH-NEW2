@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   journeyMaxEventAgeYears,
   journeyMinEventYear,
+  journeyRoundCount,
   journeyRoundTimerSec,
   journeyStageEraKey,
   journeyStageIconFile,
@@ -75,5 +76,48 @@ describe("journeyStageEraKey", () => {
   });
   it("stage 50 @2026 → ancient (minYear 26 < 476)", () => {
     expect(journeyStageEraKey(50, 2026)).toBe("era_ancient");
+  });
+});
+
+// HJ-UI-STAGELIST-CONTRAST-ROUNDS-050 — rounds stay at the 5-round base
+// through the accuracy-cap stage (40), then grow +1 every 12 stages to a
+// hard cap of 10. Asserted table: 1-40→5, 41-52→6, 53-64→7, 65-76→8,
+// 77-88→9, 89-100→10.
+describe("journeyRoundCount", () => {
+  it.each([
+    [1, 5],
+    [40, 5],
+    [41, 6],
+    [52, 6],
+    [53, 7],
+    [64, 7],
+    [65, 8],
+    [76, 8],
+    [77, 9],
+    [88, 9],
+    [89, 10],
+    [100, 10],
+  ])("stage %i → %i rounds (band boundaries)", (stage, expected) => {
+    expect(journeyRoundCount(stage)).toBe(expected);
+  });
+
+  it("every stage 1-40 is exactly the 5-round base", () => {
+    for (let n = 1; n <= 40; n++) {
+      expect(journeyRoundCount(n)).toBe(5);
+    }
+  });
+
+  it("every stage 89-100 is exactly the 10-round cap", () => {
+    for (let n = 89; n <= 100; n++) {
+      expect(journeyRoundCount(n)).toBe(10);
+    }
+  });
+
+  it("is monotonically non-decreasing across 1-100", () => {
+    for (let n = 2; n <= 100; n++) {
+      expect(journeyRoundCount(n)).toBeGreaterThanOrEqual(
+        journeyRoundCount(n - 1)
+      );
+    }
   });
 });

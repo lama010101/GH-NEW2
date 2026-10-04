@@ -1267,7 +1267,7 @@
     "badge_gold": "Or",
     "badge_silver": "Argent",
     "badge_bronze": "Bronze",
-    "badge_completion": "Complétion",
+    "badge_completion": "Terminé",
     "badge_none": "Aucun badge",
     "load_error": "Impossible de charger ton voyage. Réessaie.",
     "result_pass_mark": "Seuil de réussite : {pct} %",
