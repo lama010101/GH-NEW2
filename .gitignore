@@ -38,3 +38,7 @@ _repro_blank.mjs
 plan-auth.js
 test-sync-run.log
 .vercel
+
+# Secret-bearing local files (SEC-BUILD-SECRETGUARD-042)
+.dev.vars.local
+*.pem
