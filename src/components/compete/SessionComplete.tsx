@@ -903,17 +903,27 @@ export default function SessionComplete({
                     ) : (
                       <div className={styles.badgeTally}>
                         {earnedBadges.map(({ dim, tier, count }) => (
-                          <span key={`${dim}-${tier}`} className={styles.badgeTallyItem} data-tier={tier}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={`/badges/${dim}_${tier}.webp`} alt={tGame('badge_tally_label', { dimension: tGame(BADGE_DIMENSION_LABEL_KEY[dim]), tier: tGame(BADGE_TIER_LABEL_KEY[tier]) })} width={28} height={28} />
-                            <span className={styles.badgeTallyCount}>{count}</span>
-                            {/* HJ-UI-POLISH-035 — dimension + tier so two
-                                "YEAR" rows read differently (e.g. "Year ·
-                                Perfect" vs "Year · Amazing"). */}
-                            <span className={`${styles.badgeTallyTier} ${styles[`badgeTallyTier_${tier}`]}`}>
-                              {tGame('badge_tally_label', { dimension: tGame(BADGE_DIMENSION_LABEL_KEY[dim]), tier: tGame(BADGE_TIER_LABEL_KEY[tier]) })}
+                          /* HJ-FIX-POLISHSCOPE-044 — journey results get the
+                             HJ-UI-POLISH-035 "{dimension} · {tier}" label +
+                             tier accent; every other mode keeps the
+                             origin/main row (dimension label only). */
+                          journeyResult ? (
+                            <span key={`${dim}-${tier}`} className={styles.badgeTallyItem} data-tier={tier}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={`/badges/${dim}_${tier}.webp`} alt={tGame('badge_tally_label', { dimension: tGame(BADGE_DIMENSION_LABEL_KEY[dim]), tier: tGame(BADGE_TIER_LABEL_KEY[tier]) })} width={28} height={28} />
+                              <span className={styles.badgeTallyCount}>{count}</span>
+                              <span className={`${styles.badgeTallyTier} ${styles[`badgeTallyTier_${tier}`]}`}>
+                                {tGame('badge_tally_label', { dimension: tGame(BADGE_DIMENSION_LABEL_KEY[dim]), tier: tGame(BADGE_TIER_LABEL_KEY[tier]) })}
+                              </span>
                             </span>
-                          </span>
+                          ) : (
+                            <span key={`${dim}-${tier}`} className={styles.badgeTallyItem}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={`/badges/${dim}_${tier}.webp`} alt={`${tGame(BADGE_TIER_LABEL_KEY[tier])} ${tGame(BADGE_DIMENSION_LABEL_KEY[dim])}`} width={28} height={28} />
+                              <span className={styles.badgeTallyCount}>{count}</span>
+                              <span className={styles.badgeTallyTier}>{tGame(BADGE_DIMENSION_LABEL_KEY[dim])}</span>
+                            </span>
+                          )
                         ))}
                       </div>
                     )}
@@ -967,7 +977,9 @@ export default function SessionComplete({
                   // larger starred tier emblem, display-typography rank name,
                   // highlighted "+N XP" session chip, single "X XP to Next"
                   // line, progress bar. XP uses thousands separators.
-                  return (
+                  // HJ-FIX-POLISHSCOPE-044 — gated to journey results only;
+                  // non-journey renders the origin/main card verbatim.
+                  return journeyResult ? (
                     <div className={styles.customRankCard}>
                       <div className={styles.customRankMedallion}>
                         <span className={styles.customRankTier}>{tRank('tier_prefix')}{info.tier}</span>
@@ -992,6 +1004,40 @@ export default function SessionComplete({
                             <span className={styles.customRankNextTitle}>
                               {tRank('next_rank', { xp: info.xpToNext?.toLocaleString() ?? '0', title: nextTitle ?? '' })}
                             </span>
+                          )}
+                        </div>
+                        <div className={styles.customRankBar}>
+                          <div className={styles.customRankBarFill} style={{ width: `${info.progressPct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={styles.customRankCard}>
+                      <div className={styles.customRankMedallion}>
+                        <span className={styles.customRankTier}>{tRank('tier_prefix')}{info.tier}</span>
+                        <span className={styles.customRankStars}>
+                          {Array.from({ length: info.tier }, (_, i) => (
+                            <Star key={i} size={8} fill="var(--gh-gold)" color="var(--gh-gold)" />
+                          ))}
+                        </span>
+                      </div>
+                      <div className={styles.customRankBody}>
+                        <div className={styles.customRankHead}>
+                          <span className={styles.customRankTitle}>{title}</span>
+                          <span className={styles.customRankXpGroup}>
+                            <span className={styles.customRankSessionXp}>+{overallXP.toLocaleString()} XP</span>
+                            <span className={styles.customRankTotalXp}>{Math.floor(totalXp ?? 0).toLocaleString()} XP</span>
+                          </span>
+                        </div>
+                        <div className={styles.customRankNext}>
+                          <span className={styles.customRankNextLabel}>{tRank('next_label')}:</span>
+                          {info.isMaxRank ? (
+                            <span className={styles.customRankNextTitle}>{tRank('max_rank')}</span>
+                          ) : (
+                            <>
+                              <span className={styles.customRankNextTitle}>{nextTitle}</span>
+                              <span className={styles.customRankNextXp}>{info.xpToNext?.toLocaleString()} XP</span>
+                            </>
                           )}
                         </div>
                         <div className={styles.customRankBar}>
