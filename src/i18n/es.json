@@ -1267,7 +1267,7 @@
     "badge_gold": "Oro",
     "badge_silver": "Plata",
     "badge_bronze": "Bronce",
-    "badge_completion": "Finalización",
+    "badge_completion": "Completado",
     "badge_none": "Sin insignia",
     "load_error": "No se pudo cargar tu viaje. Inténtalo de nuevo.",
     "result_pass_mark": "Marca de aprobado: {pct} %",

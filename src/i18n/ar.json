@@ -1267,7 +1267,7 @@
     "badge_gold": "ذهبية",
     "badge_silver": "فضية",
     "badge_bronze": "برونزية",
-    "badge_completion": "الإنجاز",
+    "badge_completion": "مُكتمل",
     "badge_none": "لا شارة",
     "load_error": "تعذر تحميل رحلتك. حاول مرة أخرى.",
     "result_pass_mark": "علامة النجاح {pct}%",

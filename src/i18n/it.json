@@ -1267,7 +1267,7 @@
     "badge_gold": "Oro",
     "badge_silver": "Argento",
     "badge_bronze": "Bronzo",
-    "badge_completion": "Completamento",
+    "badge_completion": "Completato",
     "badge_none": "Nessun distintivo",
     "load_error": "Impossibile caricare il tuo viaggio. Riprova.",
     "result_pass_mark": "Soglia di superamento {pct}%",

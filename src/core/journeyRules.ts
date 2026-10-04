@@ -14,12 +14,20 @@
 //   Icons:   100 stages = 20 rank tiers x 5 stages → /icons/ranks/rank-NN.png
 //            with NN = floor((stage-1)/5)+1 zero-padded (same mapping as
 //            src/components/home/StageCard.tsx).
+//   Rounds:  roundCount(N) = 5 for N <= 40, then +1 round every 12 stages,
+//            capped at 10 (HJ-UI-STAGELIST-CONTRAST-ROUNDS-050 / CTO spec —
+//            growth starts once the 75% accuracy cap is reached at stage 40):
+//            1-40→5, 41-52→6, 53-64→7, 65-76→8, 77-88→9, 89-100→10.
 
 export const JOURNEY_RECENCY_YEARS_PER_STAGE = 40;
 export const JOURNEY_TIMER_MAX_SEC = 300;
 export const JOURNEY_TIMER_RAMP_SPAN_SEC = 270;
 export const JOURNEY_TIMER_RAMP_STAGES = 49;
 export const JOURNEY_STAGES_PER_TIER = 5;
+export const JOURNEY_BASE_ROUNDS = 5;
+export const JOURNEY_MAX_ROUNDS_CAP = 10;
+export const JOURNEY_ROUND_GROWTH_START_STAGE = 40;
+export const JOURNEY_STAGES_PER_EXTRA_ROUND = 12;
 
 export function journeyRoundTimerSec(stageNumber: number): number {
   return Math.round(
@@ -27,6 +35,26 @@ export function journeyRoundTimerSec(stageNumber: number): number {
       (JOURNEY_TIMER_RAMP_SPAN_SEC *
         Math.min(stageNumber - 1, JOURNEY_TIMER_RAMP_STAGES)) /
         JOURNEY_TIMER_RAMP_STAGES
+  );
+}
+
+// Rounds per stage playthrough — SINGLE SOURCE for the draw size
+// (journeyCore), the sessions.total_rounds column, and the /journey stage
+// list's rounds label. journeyRoundCount(N) = JOURNEY_BASE_ROUNDS while
+// N <= JOURNEY_ROUND_GROWTH_START_STAGE, else BASE + ceil(
+// (N - GROWTH_START) / STAGES_PER_EXTRA_ROUND ) capped at
+// JOURNEY_MAX_ROUNDS_CAP.
+export function journeyRoundCount(stageNumber: number): number {
+  if (stageNumber <= JOURNEY_ROUND_GROWTH_START_STAGE) {
+    return JOURNEY_BASE_ROUNDS;
+  }
+  return Math.min(
+    JOURNEY_MAX_ROUNDS_CAP,
+    JOURNEY_BASE_ROUNDS +
+      Math.ceil(
+        (stageNumber - JOURNEY_ROUND_GROWTH_START_STAGE) /
+          JOURNEY_STAGES_PER_EXTRA_ROUND
+      )
   );
 }
 

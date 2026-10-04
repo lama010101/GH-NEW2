@@ -1267,7 +1267,7 @@
     "badge_gold": "Gold",
     "badge_silver": "Silver",
     "badge_bronze": "Bronze",
-    "badge_completion": "Completion",
+    "badge_completion": "Completed",
     "badge_none": "No badge",
     "load_error": "Couldn't load your journey. Please try again.",
     "result_pass_mark": "Pass mark {pct}%",

@@ -1267,7 +1267,7 @@
     "badge_gold": "Ouro",
     "badge_silver": "Prata",
     "badge_bronze": "Bronze",
-    "badge_completion": "Conclusão",
+    "badge_completion": "Concluído",
     "badge_none": "Sem medalha",
     "load_error": "Não foi possível carregar sua jornada. Tente novamente.",
     "result_pass_mark": "Marca de aprovação {pct}%",

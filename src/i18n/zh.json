@@ -1267,7 +1267,7 @@
     "badge_gold": "金牌",
     "badge_silver": "银牌",
     "badge_bronze": "铜牌",
-    "badge_completion": "通关",
+    "badge_completion": "已完成",
     "badge_none": "无徽章",
     "load_error": "无法加载你的旅程，请重试。",
     "result_pass_mark": "及格线 {pct}%",

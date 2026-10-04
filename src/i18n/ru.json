@@ -1267,7 +1267,7 @@
     "badge_gold": "Золото",
     "badge_silver": "Серебро",
     "badge_bronze": "Бронза",
-    "badge_completion": "Завершение",
+    "badge_completion": "Завершено",
     "badge_none": "Нет значка",
     "load_error": "Не удалось загрузить твоё путешествие. Попробуй ещё раз.",
     "result_pass_mark": "Порог прохождения {pct}%",
