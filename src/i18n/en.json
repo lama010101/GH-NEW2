@@ -1284,7 +1284,14 @@
     "result_margin_above": "{points} pts above the pass mark",
     "result_margin_below": "{points} pts short of the pass mark",
     "result_completion_error": "We couldn't record your Journey result. Please try again.",
-    "result_retry_completion": "Retry"
+    "result_retry_completion": "Retry",
+    "list_play": "Play",
+    "list_retry": "Retry",
+    "list_resume": "Resume",
+    "list_current": "Current",
+    "list_timer_label": "{time} per round",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "Best score: {pct}%"
   },
   "legal": {
     "privacy": {

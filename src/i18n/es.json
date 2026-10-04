@@ -1284,7 +1284,14 @@
     "result_margin_above": "{points} pts por encima del mínimo",
     "result_margin_below": "{points} pts por debajo del mínimo",
     "result_completion_error": "No pudimos registrar tu resultado del viaje. Inténtalo de nuevo.",
-    "result_retry_completion": "Reintentar"
+    "result_retry_completion": "Reintentar",
+    "list_play": "Jugar",
+    "list_retry": "Reintentar",
+    "list_resume": "Reanudar",
+    "list_current": "Actual",
+    "list_timer_label": "{time} por ronda",
+    "list_years": "{from}–{to}",
+    "list_best_aria": "Mejor puntuación: {pct}%"
   },
   "legal": {
     "privacy": {
