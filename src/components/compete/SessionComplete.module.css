@@ -1367,36 +1367,6 @@
   border-color: var(--gh-danger);
 }
 
-.journeyPassValue {
-  font-size: var(--font-3xl);
-  font-weight: 800;
-  color: var(--gh-text-primary);
-  line-height: 1.1;
-}
-
-.journeyGauge {
-  width: 100%;
-  max-width: 300px;
-  height: 30px;
-}
-
-.journeyGaugeTrack {
-  fill: rgba(var(--gh-text-primary-rgb, 255, 255, 255), 0.15);
-}
-
-.journeyGaugeFillPassed {
-  fill: var(--gh-success);
-}
-
-.journeyGaugeFillFailed {
-  fill: var(--gh-danger);
-}
-
-.journeyGaugeMark {
-  stroke: var(--gh-text-primary);
-  stroke-width: 2;
-}
-
 .journeyPassMark {
   font-size: var(--font-sm);
   font-weight: 700;

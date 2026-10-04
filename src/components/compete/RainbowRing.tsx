@@ -4,9 +4,45 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 interface RainbowRingProps {
   value: number;
   onComplete?: () => void;
+  // HJ-FIX-RESULTRING-033 — optional, additive props. When both are omitted
+  // the component renders byte-for-byte as before for every existing caller
+  // (RoundCompleteSection, SessionComplete practice path, prototype/final-results).
+  // thresholdPct draws a pass-mark notch across the ring stroke at
+  // thresholdPct * 3.6 degrees from the ring's 12-o'clock start.
+  thresholdPct?: number;
+  // valueDecimals renders the centre number with that many decimals instead
+  // of the integer count-up target (journey ring shows exact accuracy, e.g. 50.2).
+  valueDecimals?: number;
 }
 
-export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
+/**
+ * HJ-FIX-RESULTRING-033 — display invariant for the journey result ring.
+ * The pass/fail verdict is computed server-side on the RAW accuracy; the ring
+ * shows the accuracy to ONE decimal and the pass mark to one decimal (when not
+ * an integer). Rounding to one decimal can make the shown number appear to
+ * contradict the verdict (e.g. raw 49.96 failing a 50 mark would render 50.0).
+ * This pure helper is the single rule that keeps the display consistent:
+ *   - passed  → shown accuracy is never below the shown mark
+ *   - failed  → shown accuracy is always strictly below the shown mark
+ * Never uses Math.ceil/floor on the happy path — plain to-tenth rounding only.
+ */
+export function journeyResultDisplay(
+  accuracyPct: number,
+  minAccuracyPct: number,
+  gatePassed: boolean,
+): { accuracyPct: number; markPct: number } {
+  const toTenth = (n: number) => Math.round(n * 10) / 10;
+  const markPct = toTenth(minAccuracyPct);
+  let accuracy = toTenth(accuracyPct);
+  if (gatePassed) {
+    if (accuracy < markPct) accuracy = markPct;
+  } else if (accuracy >= markPct) {
+    accuracy = Math.min(Math.floor(accuracyPct * 10) / 10, toTenth(markPct - 0.1));
+  }
+  return { accuracyPct: accuracy, markPct };
+}
+
+export default function RainbowRing({ value, onComplete, thresholdPct, valueDecimals }: RainbowRingProps) {
   const r = 80;
   const cx = 100;
   const cy = 100;
@@ -54,6 +90,8 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
       setDisplayed(current);
       if (current >= steps) {
         clearInterval(interval);
+        // Snap to the exact value so a decimal display shows it precisely.
+        if (valueDecimals != null) setDisplayed(value);
         // Trigger onComplete exactly once when animation completes
         if (!hasCompletedRef.current) {
           hasCompletedRef.current = true;
@@ -68,11 +106,19 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
         navigator.vibrate(0); // cancel haptic on unmount
       }
     };
-  }, [value]);
+  }, [value, valueDecimals]);
 
   const clamped = Math.max(0, Math.min(100, displayed));
   const offset = circumference * (1 - clamped / 100);
   const color = getAccuracyColor(value);
+
+  // Pass-mark notch geometry: a tick across the stroke at
+  // thresholdPct * 3.6 degrees measured clockwise from the ring's start
+  // (top, -90deg). Only rendered when thresholdPct is provided.
+  const hasThreshold = thresholdPct != null;
+  const thresholdAngle = ((thresholdPct ?? 0) * 3.6 - 90) * (Math.PI / 180);
+  const tickInner = r - strokeWidth / 2 - 3;
+  const tickOuter = r + strokeWidth / 2 + 3;
 
   return (
     <div style={{ position: "relative", width: 170, height: 170, margin: "0 auto" }}>
@@ -84,6 +130,17 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
           strokeDasharray={circumference} strokeDashoffset={offset}
           transform={`rotate(-90 ${cx} ${cy})`}
         />
+        {hasThreshold && (
+          <line
+            x1={cx + tickInner * Math.cos(thresholdAngle)}
+            y1={cy + tickInner * Math.sin(thresholdAngle)}
+            x2={cx + tickOuter * Math.cos(thresholdAngle)}
+            y2={cy + tickOuter * Math.sin(thresholdAngle)}
+            stroke="var(--gh-text-primary)"
+            strokeWidth={4}
+            strokeLinecap="round"
+          />
+        )}
       </svg>
       <span
         style={{
@@ -99,7 +156,7 @@ export default function RainbowRing({ value, onComplete }: RainbowRingProps) {
           pointerEvents: "none",
         }}
       >
-        {clamped}
+        {valueDecimals == null ? clamped : clamped.toFixed(valueDecimals)}
       </span>
     </div>
   );
