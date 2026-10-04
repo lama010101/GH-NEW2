@@ -1,5 +1,23 @@
 # Database Connection Guide
 
+> **⚠ PARTIALLY STALE DOCUMENT (INFRA-BUILD-ENVCHECK-038, 2026-10-04)**
+> This file still references a GENERATOR-era schema, `src/lib/supabaseServer`,
+> `src/infrastructure/env/loadEnvironment`, and a then-nonexistent `env:check`.
+> **Authoritative credential rules:** constraint **KC-014** in
+> `docs/KNOWN_CONSTRAINTS.md` and `src/server/db.ts` for runtime behavior.
+>
+> Real `npm run env:check` usage (offline, no DB connection):
+> ```
+> npm run env:check -- --context=build     # what `next build` needs
+> npm run env:check -- --context=test      # build set + service/anon/partykit
+> npm run env:check -- --context=live-db   # test set + SUPABASE_DB (must MATCH)
+> ```
+>
+> The correct template copy is `cp .env.local.example .env.local`
+> (NOT `.env.example`).
+>
+> The remainder of this document is kept verbatim until a dedicated rewrite task.
+
 This guide helps coders connect to the GENERATOR project database and troubleshoot common connection issues.
 
 ## Quick Start

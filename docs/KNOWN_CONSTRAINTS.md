@@ -349,3 +349,28 @@ finding you cannot justify — leave it reported and escalate to the CTO.
   # C1 open-write policies / C3 RLS-off tables / C4 client-callable SECURITY
   # DEFINER functions / C5 definer views / C6 secret-like DB data / C7
   # migration drift.
+
+### [KC-014] Per-project credential isolation
+
+**Affected files:** `src/core/projectRef.ts`, `scripts/dev/envCheckCore.ts`, `scripts/dev/env-check.ts`, `package.json`, `.env.example`, `.env.local.example`
+
+**Constraint:**
+(a) The Devin Cloud secret store is shared with other products — a present
+    env var is NOT evidence it belongs to this project.
+(b) The `npm run env:check` MATCH/MISMATCH verdict is the only accepted
+    evidence that a credential is ours. A non-zero exit = STOP: paste the
+    table, never conclude "keys are wrong", never try other env var names
+    or other credentials.
+(c) New per-project credentials use the `GH_` prefix. Legacy unprefixed
+    names remain valid fallbacks until runtime code adopts the prefix
+    (follow-up task INFRA-BUILD-DBCONN pending).
+(d) Live-DB tasks, golden-path gates (KC-009) and anything needing
+    `.env.local` run only on Devin Local / Claude Code local. Devin Cloud
+    runs only tasks needing no live credentials (typecheck, lint, unit
+    tests, build-context env:check).
+(e) The expected project ref lives only in `src/core/projectRef.ts`
+    (`EXPECTED_SUPABASE_PROJECT_REF`) — never duplicate the literal.
+
+**Regression guard:**
+  grep -c '"env:check"' package.json            # must be ≥ 1
+  grep -c EXPECTED_SUPABASE_PROJECT_REF src/core/projectRef.ts   # must be ≥ 1
