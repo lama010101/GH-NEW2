@@ -46,6 +46,12 @@ export interface Finding {
   rule: RuleName;
   /** Raw source line — used for allowlist hashing only, NEVER printed. */
   lineText: string;
+  /**
+   * Commit that introduced the line — set by range scans only, so the
+   * report can print `path:line:RULE @<7-char sha>` (a commit id is not a
+   * secret). Undefined in staged/tree scans.
+   */
+  sha?: string;
 }
 
 export interface AllowlistEntry {
@@ -74,6 +80,39 @@ const REGEX_RULES: ReadonlyArray<{ rule: RuleName; re: RegExp }> = [
 
 const RE_HEX64 = /\b[0-9a-fA-F]{64}\b/;
 const RE_HEX_LINE_HINT = /SECRET|TOKEN|KEY|PASSWORD/i;
+
+// SEC-FIX-SECRETGUARD-FALSEPOS-045 — DSN passwords that are documentation
+// stand-ins (exact match, case-insensitive), not credentials.
+const DSN_PLACEHOLDER_PASSWORDS: ReadonlySet<string> = new Set([
+  "password",
+  "pass",
+  "pwd",
+  "secret",
+  "project-ref",
+  "yourpassword",
+]);
+
+// SEC-FIX-SECRETGUARD-FALSEPOS-045 — an UNQUOTED GENERIC_ASSIGNMENT value is
+// either a .env-style literal or a code expression. The three shapes below
+// mark a value as code rather than a literal secret (CTO false-positive
+// review): environment reads (`process.env`, `import.meta.env`, `Deno.env`,
+// `os.environ`, `getenv`, any `.env.` member access), expression syntax
+// (call/bracket/ternary/arrow/semicolon), and bare member/identifier chains
+// (`config.secrets.X`, `this.room.env.Y`). Unquoted values surviving all
+// three keep flagging — that is what catches real .env-style secrets like a
+// bare 64-hex or base64-ish run.
+const RE_UNQUOTED_ENV_ACCESS =
+  /process\.env|import\.meta\.env|Deno\.env|os\.environ|getenv|\.env\./;
+const RE_UNQUOTED_CODE_SYNTAX = /[()\[\]?;]|=>/;
+const RE_MEMBER_CHAIN = /^[A-Za-z_$][\w$]*(\.[\w$]+)+!?$/;
+
+/** True when an unquoted assignment value is code, not a literal secret. */
+export function isEnvOrCodeValue(value: string): boolean {
+  if (RE_UNQUOTED_ENV_ACCESS.test(value)) return true;
+  if (RE_UNQUOTED_CODE_SYNTAX.test(value)) return true;
+  if (!value.includes("://") && RE_MEMBER_CHAIN.test(value)) return true;
+  return false;
+}
 
 // A NAME containing a sensitive keyword, then '=' or ':', then a value that is
 // either double-quoted, single-quoted or a bare non-whitespace run.
@@ -127,7 +166,13 @@ export function scanLine(path: string, line: number, text: string): Finding[] {
   };
 
   for (const m of text.matchAll(RE_DSN)) {
-    if (!isPlaceholderValue(m[1] ?? "")) push("DSN_WITH_PASSWORD");
+    const pw = m[1] ?? "";
+    if (
+      !DSN_PLACEHOLDER_PASSWORDS.has(pw.toLowerCase()) &&
+      !isPlaceholderValue(pw)
+    ) {
+      push("DSN_WITH_PASSWORD");
+    }
   }
 
   for (const m of text.matchAll(RE_JWT)) {
@@ -152,8 +197,23 @@ export function scanLine(path: string, line: number, text: string): Finding[] {
   if (RE_HEX64.test(text) && RE_HEX_LINE_HINT.test(text)) push("HEX64_SECRET");
 
   for (const m of text.matchAll(RE_ASSIGNMENT)) {
-    const value = m[2] ?? m[3] ?? m[4] ?? "";
-    if (value.length >= 20 && !isPlaceholderValue(value)) {
+    // Quoted values (group 2 double-quoted, group 3 single-quoted) keep the
+    // original contract: >=20 chars and not a placeholder.
+    const quoted = m[2] ?? m[3];
+    if (quoted !== undefined) {
+      if (quoted.length >= 20 && !isPlaceholderValue(quoted)) {
+        push("GENERIC_ASSIGNMENT");
+      }
+      continue;
+    }
+    // Unquoted values additionally skip env reads, code expressions and
+    // bare member chains (SEC-FIX-SECRETGUARD-FALSEPOS-045).
+    const unquoted = m[4] ?? "";
+    if (
+      unquoted.length >= 20 &&
+      !isPlaceholderValue(unquoted) &&
+      !isEnvOrCodeValue(unquoted)
+    ) {
       push("GENERIC_ASSIGNMENT");
     }
   }
@@ -226,9 +286,165 @@ export function applyAllowlist(
 
 /** The only allowed rendering of a finding. No secret text, ever. */
 export function formatFinding(f: Finding): string {
-  return `${f.path}:${f.line}:${f.rule}`;
+  const base = `${f.path}:${f.line}:${f.rule}`;
+  return f.sha === undefined ? base : `${base} @${f.sha.slice(0, 7)}`;
 }
 
 export function formatFindings(findings: Finding[]): string {
   return findings.map(formatFinding).join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// SEC-FIX-SECRETGUARD-FALSEPOS-045 — pure diff parsing + per-commit range scan.
+// These helpers consume git OUTPUT as text; the CLI injects the git runner so
+// every code path below stays unit-testable without a repository.
+// ---------------------------------------------------------------------------
+
+/** git porcelain prints weird paths quoted and (in diffs) with a b/ prefix. */
+export function unquoteDiffPath(p: string): string {
+  let s = p;
+  if (s.startsWith('"') && s.endsWith('"')) s = s.slice(1, -1);
+  if (s.startsWith("b/")) s = s.slice(2);
+  return s;
+}
+
+/**
+ * Collect findings from a unified -U0 diff: every '+' line is scanned at its
+ * new-file line number. Binary files emit no '+' content, so they are skipped
+ * by construction.
+ */
+export function findingsFromDiff(diff: string): Finding[] {
+  const findings: Finding[] = [];
+  let curPath = "";
+  let newLine = 0;
+  let inHunk = false;
+  for (const raw of diff.split("\n")) {
+    if (raw.startsWith("diff --git ")) {
+      curPath = "";
+      inHunk = false;
+      continue;
+    }
+    if (raw.startsWith("Binary files ")) {
+      curPath = "";
+      inHunk = false;
+      continue;
+    }
+    if (raw.startsWith("+++ ")) {
+      const target = raw.slice(4).trim();
+      curPath = target === "/dev/null" ? "" : unquoteDiffPath(target);
+      continue;
+    }
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(raw);
+    if (hunk !== null) {
+      newLine = Number.parseInt(hunk[1], 10);
+      inHunk = true;
+      continue;
+    }
+    if (!inHunk || curPath === "") continue;
+    if (raw.startsWith("+")) {
+      findings.push(...scanLine(curPath, newLine, raw.slice(1)));
+      newLine++;
+    } else if (raw.startsWith(" ")) {
+      newLine++;
+    }
+  }
+  return findings;
+}
+
+/** Paths with name-status 'A' in `--name-status` output text. */
+export function addedPathsFromNameStatus(out: string): string[] {
+  const paths: string[] = [];
+  for (const raw of out.split("\n")) {
+    if (raw.length === 0) continue;
+    const parts = raw.split("\t");
+    if (parts[0] === "A" && parts.length > 1) {
+      paths.push(parts[parts.length - 1]);
+    }
+  }
+  return paths;
+}
+
+export function forbiddenFileFindings(paths: string[]): Finding[] {
+  return paths
+    .filter((p) => isForbiddenPath(p))
+    .map((p) => ({ path: p, line: 0, rule: "FORBIDDEN_FILE", lineText: "" }));
+}
+
+/**
+ * A git invocation, injected by the CLI (and by tests): argv only, already
+ * cwd-scoped to the repo toplevel by the caller. Returns stdout text.
+ */
+export type GitRunner = (args: string[]) => string;
+
+/**
+ * Scan a `<base>..<head>` range (`<base>...<head>` also accepted).
+ *
+ * Every non-merge commit in the range is scanned individually — the added
+ * lines of `git show --format= -U0 --no-color <sha>` plus FORBIDDEN_FILE
+ * checks on that commit's newly added paths — so a secret that was added and
+ * then removed inside one PR is still reported even though it never appears
+ * in the net diff. Each finding carries `sha` identifying the introducing
+ * commit (printed as `path:line:RULE @<7-char sha>`).
+ *
+ * A base of all zeros keeps the first-push behavior: the head commit alone
+ * is scanned (via `diff-tree --root`).
+ */
+export function collectRangeFindings(
+  range: string,
+  runGit: GitRunner,
+): Finding[] {
+  const parts = range.split(/\.{2,3}/);
+  if (parts.length !== 2 || parts[0] === "" || parts[1] === "") {
+    throw new Error(`invalid range '${range}' — expected <base>..<head>`);
+  }
+  const [base, head] = parts;
+  if (/^0+$/.test(base)) {
+    const findings = findingsFromDiff(
+      runGit(["diff-tree", "--root", "-r", "-U0", "--no-color", head]),
+    );
+    findings.push(
+      ...forbiddenFileFindings(
+        addedPathsFromNameStatus(
+          runGit([
+            "diff-tree",
+            "--root",
+            "-r",
+            "--no-commit-id",
+            "--name-status",
+            "--no-color",
+            head,
+          ]),
+        ),
+      ),
+    );
+    for (const f of findings) f.sha = head;
+    return findings;
+  }
+  const findings: Finding[] = [];
+  const shas = runGit(["rev-list", "--no-merges", `${base}..${head}`])
+    .split("\n")
+    .filter((s) => s.length > 0);
+  for (const sha of shas) {
+    const commitFindings = findingsFromDiff(
+      runGit(["show", "--format=", "-U0", "--no-color", sha]),
+    );
+    commitFindings.push(
+      ...forbiddenFileFindings(
+        addedPathsFromNameStatus(
+          runGit([
+            "diff-tree",
+            "--root",
+            "-r",
+            "--no-commit-id",
+            "--name-status",
+            "--no-color",
+            sha,
+          ]),
+        ),
+      ),
+    );
+    for (const f of commitFindings) f.sha = sha;
+    findings.push(...commitFindings);
+  }
+  return findings;
 }

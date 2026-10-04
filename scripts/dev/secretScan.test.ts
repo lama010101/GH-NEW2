@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   applyAllowlist,
+  collectRangeFindings,
   formatFinding,
   formatFindings,
   isForbiddenPath,
@@ -100,6 +101,49 @@ describe("rule detection", () => {
   it("does not fire on short values", () => {
     expect(rulesOf(GENERIC_NAME + "=" + "short9")).toEqual([]);
   });
+
+  it("does not fire on env-read code lines (SEC-FIX-SECRETGUARD-FALSEPOS-045)", () => {
+    const cron = "CRON_" + "SECRET";
+    const pk = "PARTYKIT_" + "SECRET";
+    const supa = "SUPABASE_" + "SECRET" + "_KEY";
+    // Every keyword-named variable below is assigned a value that evaluates
+    // an expression or reads an environment — none of them is a literal
+    // secret, so the env/code/member-chain exemption must save each line.
+    const lines = [
+      "const cronSecret = process.env." + cron + ";",
+      "const partykitSecret = this.room.env." + pk + " as string;",
+      "const lobbySecret = lobby.env." + supa + ";",
+      "const envToken = process.env." + cron + ' ?? "";',
+      "const viteSecret = import.meta.env." + cron + ";",
+      "const { " + cron + " } = process.env;",
+      "const denoSecret = Deno.env.get(\"" + cron + "\");",
+      'const osSecret = os.environ["' + cron + '"];',
+      "const " + cron + "_READ = config.secrets." + cron + ";",
+      "const apiTokenVar = config.secrets.current" + "Token" + "!;",
+    ];
+    for (const l of lines) expect(rulesOf(l), `${lines.indexOf(l)}`).toEqual([]);
+  });
+
+  it("still fires on a quoted 20+ char literal", () => {
+    expect(rulesOf(GENERIC_NAME + '="' + GENERIC_VALUE + '"')).toContain(
+      "GENERIC_ASSIGNMENT",
+    );
+    expect(rulesOf(GENERIC_NAME + "='" + GENERIC_VALUE + "'")).toContain(
+      "GENERIC_ASSIGNMENT",
+    );
+  });
+
+  it("still fires on unquoted .env-style values", () => {
+    // bare 64-hex and a 30-char base64-ish run: no dots, no code syntax
+    expect(rulesOf(GENERIC_NAME + "=" + HEX64_VALUE)).toContain(
+      "GENERIC_ASSIGNMENT",
+    );
+    const b64ish30 = GENERIC_VALUE + "Xy7mKw2"; // 30 chars, alphanumeric
+    expect(b64ish30.length).toBe(30);
+    expect(rulesOf(GENERIC_NAME + "=" + b64ish30)).toContain(
+      "GENERIC_ASSIGNMENT",
+    );
+  });
 });
 
 describe("placeholders", () => {
@@ -119,6 +163,26 @@ describe("placeholders", () => {
   it("placeholder DSN passwords are not findings", () => {
     expect(rulesOf("post" + "gresql://u:" + "<pw>" + "@h/db")).toEqual([]);
     expect(rulesOf("post" + "gresql://u:" + "YOUR_PW" + "@h/db")).toEqual([]);
+  });
+
+  it("DSN placeholder words are not findings but a real password is", () => {
+    const scheme = "post" + "gresql" + "://u:";
+    const tail = "@h/db";
+    const words = [
+      "pass" + "word",
+      "pa" + "ss",
+      "p" + "wd",
+      "sec" + "ret",
+      "project" + "-ref",
+      "your" + "password",
+      "PaSs" + "WoRd", // case-insensitive
+    ];
+    for (const w of words) {
+      expect(rulesOf(scheme + w + tail), `${w.length}`).toEqual([]);
+    }
+    expect(rulesOf(scheme + "x9w8v7u6t5" + tail)).toContain(
+      "DSN_WITH_PASSWORD",
+    );
   });
 
   it("placeholder GENERIC values are not findings", () => {
@@ -233,6 +297,78 @@ describe("no-leak output", () => {
         expect(out.includes(window), `window@${i}`).toBe(false);
       }
     }
+  });
+});
+
+describe("per-commit range scan (SEC-FIX-SECRETGUARD-FALSEPOS-045)", () => {
+  it("reports a secret added then removed inside one range", () => {
+    const sha1 = "a".repeat(40);
+    const sha2 = "b".repeat(40);
+    const secretLine = "DB_" + "SECRET" + "=" + HEX64_VALUE;
+    const diffSha1 = [
+      "diff --git a/x.ts b/x.ts",
+      "+++ b/x.ts",
+      "@@ -0,0 +1 @@",
+      "+" + secretLine,
+      "",
+    ].join("\n");
+    const diffSha2 = [
+      "diff --git a/x.ts b/x.ts",
+      "+++ b/x.ts",
+      "@@ -1 +0,0 @@",
+      "-" + secretLine,
+      "",
+    ].join("\n");
+    const runner = (args: string[]): string => {
+      const last = args[args.length - 1];
+      if (args[0] === "rev-list") return sha2 + "\n" + sha1 + "\n";
+      if (args[0] === "show") return last === sha1 ? diffSha1 : diffSha2;
+      if (args[0] === "diff-tree") {
+        return last === sha1 ? "A\tx.ts\n" : "D\tx.ts\n";
+      }
+      throw new Error("unexpected git invocation: " + args[0]);
+    };
+    const findings = collectRangeFindings("base..head", runner);
+    // The net diff base..head is EMPTY for the secret — only per-commit
+    // scanning can still report it, tagged with the introducing commit.
+    const hits = findings.filter((f) => f.sha === sha1);
+    expect(hits.length).toBeGreaterThan(0);
+    for (const h of hits) {
+      expect(formatFinding(h)).toBe(
+        `x.ts:1:${h.rule} @${sha1.slice(0, 7)}`,
+      );
+    }
+    // Nothing may be attributed to the removing commit.
+    expect(findings.filter((f) => f.sha === sha2)).toEqual([]);
+  });
+
+  it("keeps zero-base behavior: head commit only", () => {
+    const head = "c".repeat(40);
+    const diff = [
+      "diff --git a/.env b/.env",
+      "+++ b/.env",
+      "@@ -0,0 +1 @@",
+      "+X=1",
+      "",
+    ].join("\n");
+    const runner = (args: string[]): string => {
+      if (args[0] === "rev-list") {
+        throw new Error("rev-list must not run for a zero base");
+      }
+      if (args[0] === "diff-tree") {
+        return args.includes("-U0") ? diff : "A\t.env\n";
+      }
+      throw new Error("unexpected git invocation: " + args[0]);
+    };
+    const findings = collectRangeFindings(
+      "0".repeat(40) + ".." + head,
+      runner,
+    );
+    expect(
+      findings.find(
+        (f) => f.rule === "FORBIDDEN_FILE" && f.path === ".env" && f.sha === head,
+      ),
+    ).toBeDefined();
   });
 });
 

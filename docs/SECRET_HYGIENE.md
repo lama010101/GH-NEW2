@@ -27,7 +27,9 @@ manual for the automated scanner that now enforces it.
 
 - `--staged` (pre-commit hook): scans **added lines only** in the staged diff,
   plus forbidden new-file names.
-- `--range <base>..<head>` (CI `diff` job): same scan over a commit range.
+- `--range <base>..<head>` (CI `diff` job): the same scan run on **every
+  non-merge commit** in the range, each finding tagged `path:line:RULE
+  @<7-char sha>` with its introducing commit.
 - `--tree` (CI `tree` job, non-blocking): report-only inventory of every
   tracked file; always exits 0.
 
@@ -54,6 +56,31 @@ printed, so output is safe in public CI logs):
 
 Output ends with `SECRET SCAN: PASS|FAIL (mode=<m>, findings=<n>)`.
 A `FAIL` line lists one `path:line:RULE` per finding — fix or allowlist each.
+
+Env-read lines are exempt from `GENERIC_ASSIGNMENT` by design. The rule only
+fires on *literal* values: an unquoted value that reads the environment
+(`process.env`, `import.meta.env`, `Deno.env`, `os.environ`, `getenv`, or any
+`.env.` member access), contains expression syntax (`( ) [ ] ? => ;`), or is
+a bare member/identifier chain (`config.secrets.X`) is code being assigned,
+not a credential — `const s = process.env.X;` carries no secret, so flagging
+it would block ordinary PRs without protecting anything. Quoted literals
+keep the strict >=20-char rule, and unquoted values that survive the
+exemptions (bare 64-hex or base64-ish runs — the `.env`-file shape) still
+flag.
+
+CI scans every commit in a range, not just the net diff. `--range` enumerates
+`git rev-list --no-merges base..head` and scans each commit's own added
+lines, so a secret committed in one commit and removed in a later commit of
+the same PR is still reported — it exists in the branch's public history
+even though it is invisible in the `base..head` diff. A base of all zeros
+keeps the first-push behavior (the head commit alone is scanned).
+
+To allowlist a confirmed false positive, hash the trimmed offending line
+(`printf '%s' 'LINE' | sha256sum`) and append
+`{ "rule", "path", "lineSha256", "reason" }` to
+`scripts/dev/secret-scan-allow.json` — the entry stores the hash, never the
+secret. Suppression holds only while rule + path + line hash all match; the
+full procedure is §3.
 
 ## 3. Allowlist procedure (false positives only)
 

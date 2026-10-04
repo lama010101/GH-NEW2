@@ -5,7 +5,11 @@
 //       Scan ADDED lines of `git diff --cached` plus FORBIDDEN_FILE checks on
 //       newly added paths. Exits 1 on any non-allowlisted finding.
 //   tsx scripts/dev/secret-scan.ts --range <base>..<head>
-//       Same scan over a commit range (`<base>...<head>` also accepted). A base
+//       Same scan, but EVERY non-merge commit in the range is scanned
+//       individually (`git rev-list --no-merges base..head`, then the added
+//       lines of `git show --format= -U0 --no-color <sha>`), so a secret added
+//       and removed inside one PR is still reported. Findings print as
+//       `path:line:RULE @<7-char sha>` (a commit id is not a secret). A base
 //       of all zeros scans the head commit only (first push to a new main).
 //       Exits 1 on any non-allowlisted finding.
 //   tsx scripts/dev/secret-scan.ts --tree
@@ -23,10 +27,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   ALL_RULES,
+  addedPathsFromNameStatus,
   applyAllowlist,
+  collectRangeFindings,
+  findingsFromDiff,
+  forbiddenFileFindings,
   formatFinding,
-  isForbiddenPath,
-  scanLine,
   scanText,
   type AllowlistEntry,
   type Finding,
@@ -47,74 +53,11 @@ const REPO_ROOT = git(["rev-parse", "--show-toplevel"], here).trim();
 
 type Mode = "staged" | "range" | "tree";
 
-function unquoteDiffPath(p: string): string {
-  let s = p;
-  if (s.startsWith('"') && s.endsWith('"')) s = s.slice(1, -1);
-  if (s.startsWith("b/")) s = s.slice(2);
-  return s;
-}
-
 /** Paths with name-status 'A' in the given git diff invocation. */
 function addedPaths(diffArgs: string[]): string[] {
-  const out = git([...diffArgs, "--name-status", "--no-color"], REPO_ROOT);
-  const paths: string[] = [];
-  for (const raw of out.split("\n")) {
-    if (raw.length === 0) continue;
-    const parts = raw.split("\t");
-    if (parts[0] === "A" && parts.length > 1) {
-      paths.push(parts[parts.length - 1]);
-    }
-  }
-  return paths;
-}
-
-/**
- * Collect findings from a unified -U0 diff: every '+' line is scanned at its
- * new-file line number. Binary files emit no '+' content, so they are skipped
- * by construction.
- */
-function findingsFromDiff(diff: string): Finding[] {
-  const findings: Finding[] = [];
-  let curPath = "";
-  let newLine = 0;
-  let inHunk = false;
-  for (const raw of diff.split("\n")) {
-    if (raw.startsWith("diff --git ")) {
-      curPath = "";
-      inHunk = false;
-      continue;
-    }
-    if (raw.startsWith("Binary files ")) {
-      curPath = "";
-      inHunk = false;
-      continue;
-    }
-    if (raw.startsWith("+++ ")) {
-      const target = raw.slice(4).trim();
-      curPath = target === "/dev/null" ? "" : unquoteDiffPath(target);
-      continue;
-    }
-    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(raw);
-    if (hunk !== null) {
-      newLine = Number.parseInt(hunk[1], 10);
-      inHunk = true;
-      continue;
-    }
-    if (!inHunk || curPath === "") continue;
-    if (raw.startsWith("+")) {
-      findings.push(...scanLine(curPath, newLine, raw.slice(1)));
-      newLine++;
-    } else if (raw.startsWith(" ")) {
-      newLine++;
-    }
-  }
-  return findings;
-}
-
-function forbiddenFileFindings(paths: string[]): Finding[] {
-  return paths
-    .filter((p) => isForbiddenPath(p))
-    .map((p) => ({ path: p, line: 0, rule: "FORBIDDEN_FILE", lineText: "" }));
+  return addedPathsFromNameStatus(
+    git([...diffArgs, "--name-status", "--no-color"], REPO_ROOT),
+  );
 }
 
 function isBinaryBuffer(buf: Buffer): boolean {
@@ -136,30 +79,8 @@ function collectStaged(): Finding[] {
 }
 
 function collectRange(range: string): Finding[] {
-  const parts = range.split(/\.{2,3}/);
-  if (parts.length !== 2 || parts[0] === "" || parts[1] === "") {
-    throw new Error(`invalid range '${range}' — expected <base>..<head>`);
-  }
-  const [base, head] = parts;
-  if (/^0+$/.test(base)) {
-    // First push of a branch with no ancestor: scan the head commit alone.
-    const findings = findingsFromDiff(
-      git(["diff-tree", "--root", "-r", "-U0", "--no-color", head], REPO_ROOT),
-    );
-    findings.push(
-      ...forbiddenFileFindings(
-        addedPaths(["diff-tree", "--root", "-r", "--no-commit-id", head]),
-      ),
-    );
-    return findings;
-  }
-  const findings = findingsFromDiff(
-    git(["diff", "-U0", "--no-color", range], REPO_ROOT),
-  );
-  findings.push(
-    ...forbiddenFileFindings(addedPaths(["diff", "--no-color", range])),
-  );
-  return findings;
+  // Per-commit scanning lives in the pure core; the git runner is injected.
+  return collectRangeFindings(range, (args) => git(args, REPO_ROOT));
 }
 
 function collectTree(): Finding[] {
