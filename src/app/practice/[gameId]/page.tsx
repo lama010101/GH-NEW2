@@ -21,6 +21,14 @@ import { forceClearAuthStorage, updateCachedDisplayName, updateCachedAvatarUrl }
 import { computeTimeRemaining } from "@/core/competeUtils";
 import { PracticeSettingsModal, type PracticeModalSettings } from "@/components/practice/PracticeSettingsModal";
 import { savePracticeSettings } from "@/components/practice/practiceSettings";
+import {
+  completeJourneyAttempt,
+  findJourneyAttemptForSession,
+  type JourneyAttemptRef,
+} from "@/app/journey/_components/journeyComplete";
+import { clearActivePlaythrough } from "@/app/journey/_components/journeyStorage";
+import type { CompleteJourneyPlaythroughResult } from "@/server/journeyCore";
+import resultStyles from "@/app/journey/_components/JourneyStageResult.module.css";
 import pageStyles from './page.module.css';
 
 export default function PracticeGamePage() {
@@ -28,6 +36,7 @@ export default function PracticeGamePage() {
   const gameId = typeof params?.gameId === "string" ? params.gameId : "";
 
   const t = useTranslations('game');
+  const tJourney = useTranslations('journey');
 
   const [snapshot, setSnapshot] = useState<CompeteSessionSnapshot | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[] | null>(null);
@@ -68,6 +77,12 @@ export default function PracticeGamePage() {
     whereAccPenalty: 0,
     whenAccPenalty: 0,
   });
+  const [journeyPhase, setJourneyPhase] = useState<"pending" | "not-journey" | "failed" | "done">("pending");
+  const [journeyAttempt, setJourneyAttempt] = useState<JourneyAttemptRef | null>(null);
+  const [journeyResult, setJourneyResult] = useState<CompleteJourneyPlaythroughResult | null>(null);
+  const [journeyError, setJourneyError] = useState<string | null>(null);
+  const journeyLookupFiredRef = useRef(false);
+  const journeyCompletingRef = useRef(false);
 
   const router = useRouter();
 
@@ -224,6 +239,57 @@ export default function PracticeGamePage() {
         });
     }
   }, [snapshot?.status, gameId, playerId, allRoundResults]);
+
+  // Journey attempt resolution (HJ-BUILD-STAGERESULT-THRESHOLDGAUGE-011):
+  // when a practice session completes, journey_playthroughs.session_id decides
+  // whether it was a Journey attempt — the DB is the source of truth, never
+  // sessionStorage. While the lookup/completion is pending a neutral loading
+  // state renders so SessionComplete never flashes for a journey game.
+  const runJourneyCompletion = useCallback(async (attempt: JourneyAttemptRef) => {
+    if (journeyCompletingRef.current) return;
+    journeyCompletingRef.current = true;
+    setJourneyError(null);
+    try {
+      const result = await completeJourneyAttempt(attempt);
+      clearActivePlaythrough(attempt.stageId);
+      setJourneyResult(result);
+      setJourneyPhase("done");
+    } catch (err) {
+      setJourneyError(err instanceof Error ? err.message : null);
+      setJourneyPhase("failed");
+    } finally {
+      journeyCompletingRef.current = false;
+    }
+  }, []);
+
+  const detectJourneyAndComplete = useCallback(async () => {
+    if (!gameId || !playerId) return;
+    setJourneyError(null);
+    let attempt = journeyAttempt;
+    if (!attempt) {
+      try {
+        attempt = await findJourneyAttemptForSession(gameId);
+      } catch (err) {
+        setJourneyError(err instanceof Error ? err.message : null);
+        setJourneyPhase("failed");
+        return;
+      }
+      if (!attempt) {
+        setJourneyPhase("not-journey");
+        return;
+      }
+      setJourneyAttempt(attempt);
+    }
+    await runJourneyCompletion(attempt);
+  }, [gameId, playerId, journeyAttempt, runJourneyCompletion]);
+
+  useEffect(() => {
+    if (snapshot?.status !== "SESSION_COMPLETE") return;
+    if (!gameId || !playerId) return;
+    if (journeyLookupFiredRef.current) return;
+    journeyLookupFiredRef.current = true;
+    void detectJourneyAndComplete();
+  }, [snapshot?.status, gameId, playerId, detectJourneyAndComplete]);
 
   // Fetch round results when entering ROUND_COMPLETE without results (e.g. after refresh).
   // Mirrors useCompeteSocket.ts:127-149 — the GET snapshot does not include results,
@@ -575,11 +641,11 @@ export default function PracticeGamePage() {
           )}
           {showLoadingTimeout && (
             <>
-              <div style={{ marginTop: 8, fontSize: 'var(--font-sm)', opacity: 0.8 }}>{t('taking_too_long')}</div>
+              <div className={resultStyles.loadingHint}>{t('taking_too_long')}</div>
               <button
                 type="button"
                 onClick={() => { forceClearAuthStorage(); window.location.href = '/'; }}
-                style={{ marginTop: '1rem', padding: '0.5rem 1rem', cursor: 'pointer', background: 'var(--color-orange, #f97316)', color: '#fff', border: 'none', borderRadius: '6px' }}
+                className={resultStyles.escapeButton}
               >
                 {t('clear_session_restart')}
               </button>
@@ -690,20 +756,72 @@ export default function PracticeGamePage() {
           ) : null}
 
           {snapshot.status === "SESSION_COMPLETE" ? (
-            <SessionComplete
-              snapshot={snapshot}
-              playerId={playerId}
-              allRoundResults={allRoundResults}
-              onPlayAgain={handlePracticePlayAgain}
-              sendMessage={(msg) => {
-                const newGameId = (msg as { newGameId?: string }).newGameId;
-                if (newGameId) {
-                  router.push(`/practice/${newGameId}`);
-                } else {
-                  router.push('/home');
-                }
-              }}
-            />
+            journeyPhase === "done" && journeyResult ? (
+              <SessionComplete
+                snapshot={snapshot}
+                playerId={playerId}
+                allRoundResults={allRoundResults}
+                onPlayAgain={handlePracticePlayAgain}
+                journeyResult={journeyResult}
+                sendMessage={(msg) => {
+                  const newGameId = (msg as { newGameId?: string }).newGameId;
+                  if (newGameId) {
+                    router.push(`/practice/${newGameId}`);
+                  } else {
+                    router.push('/home');
+                  }
+                }}
+              />
+            ) : journeyPhase === "failed" ? (
+              <div className={resultStyles.errorCard}>
+                <p className={resultStyles.errorText} role="alert">
+                  {tJourney("result_completion_error")}
+                </p>
+                {journeyError && (
+                  <p className={resultStyles.errorDetail}>{journeyError}</p>
+                )}
+                <div className={resultStyles.errorActions}>
+                  <button
+                    type="button"
+                    className={resultStyles.primaryButton}
+                    onClick={() => void detectJourneyAndComplete()}
+                  >
+                    {tJourney("result_retry_completion")}
+                  </button>
+                  <button
+                    type="button"
+                    className={resultStyles.secondaryButton}
+                    onClick={() => router.push("/journey")}
+                  >
+                    {tJourney("result_stages_button")}
+                  </button>
+                </div>
+              </div>
+            ) : journeyPhase === "not-journey" ? (
+              <SessionComplete
+                snapshot={snapshot}
+                playerId={playerId}
+                allRoundResults={allRoundResults}
+                onPlayAgain={handlePracticePlayAgain}
+                sendMessage={(msg) => {
+                  const newGameId = (msg as { newGameId?: string }).newGameId;
+                  if (newGameId) {
+                    router.push(`/practice/${newGameId}`);
+                  } else {
+                    router.push('/home');
+                  }
+                }}
+              />
+            ) : (
+              <div className={pageStyles.loadingScreen}>
+                <div className={pageStyles.loadingBg} aria-hidden="true" />
+                <div className={pageStyles.loadingScrim} aria-hidden="true" />
+                <div className={pageStyles.loadingContent}>
+                  <div className={pageStyles.loadingSpinner} />
+                  <span className={pageStyles.loadingLabel}>{t('loading_game')}</span>
+                </div>
+              </div>
+            )
           ) : null}
         </div>
 

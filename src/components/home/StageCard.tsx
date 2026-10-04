@@ -8,15 +8,13 @@
 // completeJourneyPlaythrough writes on a passed stage, gated by that stage's
 // min_accuracy_pct). Clicking anywhere on the card navigates to /journey.
 //
-// Display model: 100 stages = 20 rank tiers x 5 sub-titles.
-//   rank tier index = floor((stage-1)/5)  -> rank-NN.png icon + rank name
-//   sub-title index = (stage-1) % 5       -> Initiate..Pioneer
-// rank-01 is the most modern tier (Artificial Intelligence), rank-20 the most
-// ancient (Writing). A player with zero completed stages is shown at the
-// stage-1 tier — rank-01 "Artificial Intelligence Initiate" — i.e. the tier
-// they are currently playing in, not rank-20 (the tier of stages 96-100).
-// No placeholder progress is fabricated: zero progress renders the honest
-// "0 of 100" state with the Start-stage CTA.
+// Display model: 100 stages = 20 rank tiers x 5 stages.
+//   rank tier index = floor((stage-1)/5)  -> rank-NN.png icon
+// The icon represents the tier of the NEXT stage to play (completed + 1);
+// the label under it shows only that stage number. rank-01 is the most
+// modern tier, rank-20 the most ancient. Zero progress shows the rank-01
+// icon, "Stage 1" and an empty progress bar — no placeholder progress is
+// fabricated.
 //
 // Data reads reuse the exact shape of src/app/journey/page.tsx: direct
 // supabaseBrowser reads of journey_stages + journey_player_progress (both
@@ -26,34 +24,6 @@ import { useEffect, useState, type KeyboardEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import styles from '@/app/home/home.module.css'
-
-// 20 rank tiers in journey order: index 0 = rank-01 = most modern,
-// index 19 = rank-20 = most ancient.
-const STAGE_RANK_NAMES = [
-  'Artificial Intelligence',
-  'Smartphone',
-  'World Wide Web',
-  'Personal Computer',
-  'Integrated Circuit',
-  'Transistor',
-  'Telephone',
-  'Telegraph',
-  'Steam Engine',
-  'Printing Press',
-  'Mechanical Clock',
-  'Magnetic Compass',
-  'Gunpowder',
-  'Paper',
-  'Waterwheel',
-  'Plow',
-  'Sailboat',
-  'Wheel',
-  'Bronze',
-  'Writing',
-] as const
-
-// Sub-titles in ascending order within each rank tier.
-const STAGE_SUB_TITLES = ['Initiate', 'Apprentice', 'Adept', 'Expert', 'Pioneer'] as const
 
 const JOURNEY_TOTAL_STAGES = 100
 
@@ -100,11 +70,10 @@ export function StageCard({ playerId, onNavigate }: StageCardProps) {
   }, [playerId])
 
   const completed = highestStage ?? 0
-  const displayStage = Math.min(Math.max(completed, 1), JOURNEY_TOTAL_STAGES)
-  const rankIndex = Math.floor((displayStage - 1) / 5)
-  const subIndex = (displayStage - 1) % 5
+  // The stage the player is about to play (1–100).
+  const nextStage = Math.min(completed + 1, JOURNEY_TOTAL_STAGES)
+  const rankIndex = Math.floor((nextStage - 1) / 5)
   const iconSrc = `/icons/ranks/rank-${String(rankIndex + 1).padStart(2, '0')}.png`
-  const tierTitle = `${STAGE_RANK_NAMES[rankIndex]} ${STAGE_SUB_TITLES[subIndex]}`
 
   const go = () => onNavigate('/journey')
 
@@ -124,66 +93,51 @@ export function StageCard({ playerId, onNavigate }: StageCardProps) {
         }}
       >
         <div className={styles.cardInnerHorizontal}>
-          {/* Current stage-tier icon on the LEFT */}
-          <div className={styles.cardIconThumb} aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={iconSrc} alt="" className={styles.cardIconThumbImg} draggable={false} />
+          {/* Tier icon for the stage about to be played, on the LEFT, with
+              that stage's number centered under it. */}
+          <div className={styles.cardIconCol}>
+            <div className={styles.cardIconThumb} aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={iconSrc} alt="" className={styles.cardIconThumbImg} draggable={false} />
+            </div>
+            <span className={styles.cardStageLabel}>
+              {t('journey.stage_label', { number: nextStage })}
+            </span>
           </div>
 
-          {/* Card label + tier title + numeric progress in the MIDDLE.
-              Two separate cardDescLeft blocks: the class clamps each block to
-              2 lines, so a single shared block could push the progress line
-              out of view for long rank names (e.g. "Artificial Intelligence
-              Initiate"). */}
+          {/* One-line title + subtitle + progress bar in the MIDDLE. */}
           <div className={styles.cardTextCol}>
-            <h2 className={styles.cardTitleLeft}>{t('journey.title')}</h2>
-            <p className={styles.cardDescLeft}>
-              <span style={{ fontWeight: 700 }}>{tierTitle}</span>
-            </p>
-            <p className={styles.cardDescLeft}>
-              {t('journey.stages_completed', { completed, total: JOURNEY_TOTAL_STAGES })}
-            </p>
-            {completed === 0 && (
-              <span
-                aria-hidden="true"
-                style={{
-                  display: 'inline-block',
-                  alignSelf: 'flex-start',
-                  marginTop: 2,
-                  padding: '4px 10px',
-                  borderRadius: 999,
-                  background: 'rgba(255,255,255,0.22)',
-                  color: '#ffffff',
-                  fontSize: '10px',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.4px',
-                }}
-              >
-                {t('journey.start_stage')}
-              </span>
-            )}
+            <h2 className={`${styles.cardTitleLeft} ${styles.cardTitleOneline}`}>{t('journey.title')}</h2>
+            <p className={styles.cardDescLeft}>{t('journey.subtitle')}</p>
+            <progress
+              className={styles.cardProgress}
+              value={completed}
+              max={JOURNEY_TOTAL_STAGES}
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={JOURNEY_TOTAL_STAGES}
+              aria-valuenow={completed}
+              aria-label={t('journey.stages_completed', { completed, total: JOURNEY_TOTAL_STAGES })}
+            />
           </div>
 
-          {/* Chevron affordance on the RIGHT (decorative — the whole card is
-              the link). A compact chevron rather than the sibling cards' play
-              pill: it keeps the narrow text column wide enough for the full
-              "{rank} {sub-title}" + progress lines, and signals "navigate to
-              /journey" rather than "start playing". */}
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            style={{ color: '#ffffff', opacity: 0.8, flexShrink: 0 }}
+          {/* Play pill on the RIGHT — identical to the Daily/Practice cards'
+              pill (same class, icon and home.compete_play label). */}
+          <button
+            type="button"
+            className={styles.playPill}
+            onClick={(e) => {
+              e.stopPropagation()
+              go()
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+            aria-label={t('home.play_mode_aria', { mode: t('journey.title') })}
           >
-            <path d="M9 6l6 6-6 6" />
-          </svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M8 5v14l11-7z" fill="currentColor" />
+            </svg>
+            {t('home.compete_play')}
+          </button>
         </div>
       </div>
     </div>

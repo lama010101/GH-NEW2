@@ -20,6 +20,11 @@ import {
 import { appendEvent } from "@/server/eventStore";
 import { fetchRandomEventsForSession } from "@/server/events";
 import { MAX_ROUNDS } from "@/core/types";
+import {
+  journeyMaxEventAgeYears,
+  journeyMinEventYear,
+  journeyRoundTimerSec,
+} from "@/core/journeyRules";
 
 // Identical to the sessionCore-local room-code generator — sessionCore.ts is
 // protected-baseline so it cannot gain an export; the LCG is duplicated here
@@ -61,10 +66,11 @@ const ROOM_CODE_MAX_ATTEMPTS = 5;
 // exactly MAX_ROUNDS events — the same 5-round session shape
 // Compete/Practice/Daily produce — via fetchRandomEventsForSession.
 const JOURNEY_DRAW_SIZE = MAX_ROUNDS;
-// Recency window: stage N is eligible for events from the last N*40 years
-// (stage 1 → 40y, stage 100 → 4000y). Implemented as minYear/maxYear on the
-// shared draw function, current year computed live at draw time.
-const JOURNEY_RECENCY_YEARS_PER_STAGE = 40;
+// Recency window (single source: src/core/journeyRules.ts): stage N is
+// eligible for events from the last N*40 years (stage 1 → 40y, stage 100 →
+// 4000y). Implemented as minYear/maxYear on the shared draw function via
+// journeyMinEventYear(stage, currentYear), current year computed live at draw
+// time.
 // No-repeat horizon (Journey-only — NOT shared with Compete/Practice/Daily):
 // exclude event IDs shown in this player's last 100 Journey rounds. Each
 // journey_playthroughs row stores its drawn set in drawn_event_ids
@@ -74,20 +80,12 @@ const JOURNEY_NO_REPEAT_ROUNDS = 100;
 const JOURNEY_NO_REPEAT_PLAYTHROUGH_LIMIT =
   JOURNEY_NO_REPEAT_ROUNDS / JOURNEY_DRAW_SIZE;
 
-// Per-stage round timer, ramp-then-flat (HJ-BUILD-STAGE100-NOAPPROVAL-001 —
-// replaces the 10-stage linear decay, which reached <=0 past stage 10):
-//   timerSec(N) = 300 - 270 * min(N-1, 49) / 49
-//   → 300s at stage 1, linear decay to 30s at stage 50, flat 30s at 51-100.
-// sessions.round_timer_sec is INT, so mid-ramp values are Math.round'ed to
-// whole seconds. Stored on sessions.round_timer_sec at playthrough start;
-// enforcement is the practice play page's existing auto-submit-on-expiry
-// (journey sessions are mode='practice' and reuse that page unchanged — no
-// client-side code needed). Exported per this repo's single-source rule: any
-// other consumer (e.g. a journey card previewing the timer before a
-// playthrough starts) imports it from this one location, never re-declares.
-export function journeyRoundTimerSec(stageNumber: number): number {
-  return Math.round(300 - (270 * Math.min(stageNumber - 1, 49)) / 49);
-}
+// Per-stage round timer, ramp-then-flat — single source is
+// journeyRoundTimerSec in src/core/journeyRules.ts (imported above; 300s at
+// stage 1 → 30s flat from stage 50). Stored on sessions.round_timer_sec at
+// playthrough start; enforcement is the practice play page's existing
+// auto-submit-on-expiry (journey sessions are mode='practice' and reuse that
+// page unchanged — no client-side code needed).
 
 export type StartJourneyPlaythroughInput = {
   playerId: string;
@@ -112,7 +110,8 @@ export type StartJourneyPlaythroughResult = {
  * Start a Historian's Journey playthrough for `playerId` on `stageId`.
  *
  * Steps (single transaction):
- *   1. Stage must exist and have status='live'.
+ *   1. Stage must exist. journey_stages.status is not read by gameplay
+ *      (HJ-BUILD-REMOVELIVEGATE-008) — every stage row is playable.
  *   2. Unlock rule (spec §2 linear unlock, no skipping): stage 1 is always
  *      unlocked; stage N>1 requires journey_player_progress.status='completed'
  *      on stage N-1.
@@ -148,13 +147,12 @@ export async function startJourneyPlaythrough(
   try {
     await client.query("BEGIN");
 
-    // Step 1 — stage exists and is live.
+    // Step 1 — stage exists.
     const stageResult = await client.query<{
       id: string;
       stage_number: number;
-      status: string;
     }>(
-      `SELECT id, stage_number, status
+      `SELECT id, stage_number
        FROM public.journey_stages
        WHERE id = $1
        FOR UPDATE`,
@@ -164,9 +162,6 @@ export async function startJourneyPlaythrough(
       throw new Error("Journey stage not found");
     }
     const stage = stageResult.rows[0];
-    if (stage.status !== "live") {
-      throw new Error(`Journey stage ${stage.stage_number} is not live`);
-    }
 
     // Step 2 — linear unlock (spec §2): stage 1 always unlocked; stage N>1
     // requires the prior stage's progress row at status='completed'.
@@ -224,8 +219,7 @@ export async function startJourneyPlaythrough(
     // draw retries WITHOUT exclusion — repeats are allowed rather than
     // failing the draw — and the fallback is logged.
     const currentYear = new Date().getFullYear();
-    const minYear =
-      currentYear - stage.stage_number * JOURNEY_RECENCY_YEARS_PER_STAGE;
+    const minYear = journeyMinEventYear(stage.stage_number, currentYear);
     const maxYear = currentYear;
 
     const recentDrawnResult = await client.query<{ event_id: string }>(
@@ -263,7 +257,7 @@ export async function startJourneyPlaythrough(
       throw new Error(
         `Insufficient content within the recency window for journey ` +
         `stage ${stage.stage_number} (events younger than ` +
-        `${stage.stage_number * JOURNEY_RECENCY_YEARS_PER_STAGE} years ` +
+        `${journeyMaxEventAgeYears(stage.stage_number)} years ` +
         `required): ${drawnEvents.length} available, ` +
         `${JOURNEY_DRAW_SIZE} required`
       );
