@@ -90,7 +90,7 @@ Suggested order: **Historian's Journey → Daily Challenge → Practice → Comp
 - Hint-usage caps as a gating dimension.
 - Separate Titles or ranks — Journey contributes to existing global Titles only, no new rank system (this was already correctly scoped as "no" in the original doc; kept).
 
-**Definition of done for v1:** a new player can play stages 1 through 100 in order, get gated on accuracy, see badges, see the recap screen, and replay a completed stage — end to end, on the dev Supabase project, with confirmed event coverage under each stage's recency window. (All 100 stage rows exist as `status='draft'` after HJ-BUILD-STAGE100-NOAPPROVAL-001; `journey_stages.status` is no longer read by gameplay after HJ-BUILD-REMOVELIVEGATE-008 — all 100 stages are playable immediately; content coverage per recency window is the only readiness criterion.)
+**Definition of done for v1:** a new player can play stages 1 through 100 in order, get gated on accuracy, see badges, see the recap screen, and replay a completed stage — end to end, on the PROD Supabase project (gzvixlvkwjsrtmtybtkf), with confirmed event coverage under each stage's recency window. (All 100 stage rows exist as `status='draft'` after HJ-BUILD-STAGE100-NOAPPROVAL-001 — none are `live`; `journey_stages.status` is no longer read by gameplay after HJ-BUILD-REMOVELIVEGATE-008 — all 100 stages are playable immediately; content coverage per recency window is the only readiness criterion; promotion to `live` remains a separate, explicit step per §0.5.)
 
 ---
 
