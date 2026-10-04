@@ -567,7 +567,8 @@
     "taking_too_long": "耗时太长？",
     "retry": "重试",
     "region_oceania_antarctica": "大洋洲与南极洲",
-    "game_accuracy_pct": "游戏准确度 (%)"
+    "game_accuracy_pct": "游戏准确度 (%)",
+    "badge_tally_label": "{dimension} · {tier}"
   },
   "auth": {
     "sign_in": "登录",
@@ -1291,7 +1292,10 @@
     "list_current": "当前",
     "list_timer_label": "每轮 {time}",
     "list_years": "{from}–{to}",
-    "list_best_aria": "最佳成绩：{pct}%"
+    "list_best_aria": "最佳成绩：{pct}%",
+    "list_stage_title": "第 {number} 关 · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "已完成"
   },
   "legal": {
     "privacy": {

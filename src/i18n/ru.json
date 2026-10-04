@@ -567,7 +567,8 @@
     "taking_too_long": "Слишком долго?",
     "retry": "Повторить",
     "region_oceania_antarctica": "Океания и Антарктида",
-    "game_accuracy_pct": "Точность игры (%)"
+    "game_accuracy_pct": "Точность игры (%)",
+    "badge_tally_label": "{dimension} · {tier}"
   },
   "auth": {
     "sign_in": "Войти",
@@ -1291,7 +1292,10 @@
     "list_current": "Текущий",
     "list_timer_label": "{time} на раунд",
     "list_years": "{from}–{to}",
-    "list_best_aria": "Лучший результат: {pct}%"
+    "list_best_aria": "Лучший результат: {pct}%",
+    "list_stage_title": "Этап {number} · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "Завершено"
   },
   "legal": {
     "privacy": {

@@ -35,7 +35,7 @@ export function JourneyBadge({
       <span className={styles.disc} aria-hidden="true" />
       <span className={styles.label}>{badge ? t(`badge_${badge}`) : t("badge_none")}</span>
       {typeof accuracyPct === "number" && (
-        <span className={styles.accuracy}>{accuracyPct.toFixed(1)}%</span>
+        <span className={styles.accuracy}>{Math.round(accuracyPct)}%</span>
       )}
     </span>
   );

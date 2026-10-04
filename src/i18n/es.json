@@ -567,7 +567,8 @@
     "taking_too_long": "¿Tardando demasiado?",
     "retry": "Reintentar",
     "region_oceania_antarctica": "Oceanía y Antártida",
-    "game_accuracy_pct": "Precisión del juego (%)"
+    "game_accuracy_pct": "Precisión del juego (%)",
+    "badge_tally_label": "{dimension} · {tier}"
   },
   "auth": {
     "sign_in": "Iniciar sesión",
@@ -1291,7 +1292,10 @@
     "list_current": "Actual",
     "list_timer_label": "{time} por ronda",
     "list_years": "{from}–{to}",
-    "list_best_aria": "Mejor puntuación: {pct}%"
+    "list_best_aria": "Mejor puntuación: {pct}%",
+    "list_stage_title": "Etapa {number} · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "Completada"
   },
   "legal": {
     "privacy": {

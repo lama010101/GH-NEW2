@@ -567,7 +567,8 @@
     "taking_too_long": "Duurt het te lang?",
     "retry": "Opnieuw proberen",
     "region_oceania_antarctica": "Oceanië & Antarctica",
-    "game_accuracy_pct": "Spel Nauwkeurigheid (%)"
+    "game_accuracy_pct": "Spel Nauwkeurigheid (%)",
+    "badge_tally_label": "{dimension} · {tier}"
   },
   "auth": {
     "sign_in": "Inloggen",
@@ -1291,7 +1292,10 @@
     "list_current": "Huidige",
     "list_timer_label": "{time} per ronde",
     "list_years": "{from}–{to}",
-    "list_best_aria": "Beste score: {pct}%"
+    "list_best_aria": "Beste score: {pct}%",
+    "list_stage_title": "Etappe {number} · {era}",
+    "list_pass_chip": "≥{pct}%",
+    "list_completed": "Voltooid"
   },
   "legal": {
     "privacy": {
