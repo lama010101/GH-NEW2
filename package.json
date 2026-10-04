@@ -26,6 +26,7 @@
     "ai:batch-v2": "tsx scripts/ai-players/run-batch.ts --worker=scripts/ai-players/generate-answers-v2.ts",
     "security:audit": "tsx scripts/dev/security-posture-audit.ts",
     "secret:scan": "tsx scripts/dev/secret-scan.ts --staged",
+    "env:check": "tsx scripts/dev/env-check.ts",
     "prepare": "husky"
   },
   "dependencies": {
