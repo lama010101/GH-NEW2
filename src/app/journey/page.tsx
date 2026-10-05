@@ -15,7 +15,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, CalendarDays, Check, Clock, Layers, Lock, Target } from "lucide-react";
+import { ArrowLeft, ArrowUp, Check, Clock, Layers, Lock, Target } from "lucide-react";
 import { useIdentity } from "@/hooks/useIdentity";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import {
@@ -77,6 +77,8 @@ export default function JourneyPage() {
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
   const markerCheckedRef = useRef(false);
   const currentCardRef = useRef<HTMLLIElement | null>(null);
+  const [jumpFabVisible, setJumpFabVisible] = useState(false);
+  const currentInViewRef = useRef(true);
 
   // Auth gate — mirrors src/app/home/page.tsx: unauthenticated → /login.
   useEffect(() => {
@@ -247,6 +249,50 @@ export default function JourneyPage() {
   useEffect(() => {
     currentCardRef.current?.scrollIntoView({ block: "center" });
   }, [currentStageNumber, stages]);
+
+  // UIX-JOURNEY-20261005-001 — jump-to-current FAB. Visibility rules: shown
+  // only when the user scrolls UP while the current card is off-screen;
+  // hidden on scroll down or as soon as the current card is visible.
+  useEffect(() => {
+    const el = currentCardRef.current;
+    if (!el) {
+      currentInViewRef.current = true;
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries[0]?.isIntersecting ?? true;
+        currentInViewRef.current = visible;
+        if (visible) setJumpFabVisible(false);
+      },
+      { threshold: 0.15 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [currentStageNumber, stages]);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      lastY = y;
+      if (currentInViewRef.current || delta > 2) setJumpFabVisible(false);
+      else if (delta < -2) setJumpFabVisible(true);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollToCurrentStage = () => {
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    currentCardRef.current?.scrollIntoView({
+      behavior: reduced ? "auto" : "smooth",
+      block: "center",
+    });
+  };
 
   const isAnonymous =
     identity.status === "ready" && identity.isAnonymous;
@@ -481,6 +527,9 @@ export default function JourneyPage() {
                           era: stageEra,
                         })}
                       </span>
+                      <span className={pageStyles.yearRange}>
+                        {t("list_years", { from: yearFrom, to: yearTo })}
+                      </span>
                       {stageSubtitle && (
                         <span className={pageStyles.stageSubtitle}>
                           {stageSubtitle}
@@ -498,10 +547,6 @@ export default function JourneyPage() {
                         <span className={pageStyles.chip}>
                           <Clock size={12} aria-hidden="true" className={pageStyles.chipIcon} />
                           {timerLabel}
-                        </span>
-                        <span className={pageStyles.chip}>
-                          <CalendarDays size={12} aria-hidden="true" className={pageStyles.chipIcon} />
-                          {t("list_years", { from: yearFrom, to: yearTo })}
                         </span>
                         <span className={pageStyles.chip}>
                           <Layers size={12} aria-hidden="true" className={pageStyles.chipIcon} />
@@ -539,9 +584,10 @@ export default function JourneyPage() {
                               color={getAccuracyColor(bestPct ?? 0)}
                             />
                           </span>
-                          <JourneyBadge
-                            badge={progress?.best_badge ?? "completion"}
-                          />
+                          {progress?.best_badge != null &&
+                            progress.best_badge !== "completion" && (
+                              <JourneyBadge badge={progress.best_badge} />
+                            )}
                           <button
                             type="button"
                             className={pageStyles.retryBtn}
@@ -588,6 +634,21 @@ export default function JourneyPage() {
           </ol>
         )}
       </div>
+
+      {currentStageNumber !== null && (
+        <button
+          type="button"
+          className={`${pageStyles.jumpFab} ${
+            jumpFabVisible ? pageStyles.jumpFabVisible : ""
+          }`}
+          onClick={scrollToCurrentStage}
+          aria-hidden={!jumpFabVisible}
+          tabIndex={jumpFabVisible ? 0 : -1}
+        >
+          <ArrowUp size={16} aria-hidden="true" />
+          <span>{t("in_progress")}</span>
+        </button>
+      )}
 
       <GuestConversionModal
         isOpen={gateStageNumber !== null}
