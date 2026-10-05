@@ -688,7 +688,16 @@
     "settings": "الإعدادات",
     "sound": "الصوت",
     "vibrate": "الاهتزاز",
-    "distance_unit": "وحدة المسافة"
+    "distance_unit": "وحدة المسافة",
+    "notif_prefs": "الإشعارات",
+    "notif_prefs_lobby_invite": "دعوات الألعاب",
+    "notif_prefs_session_complete": "أنهى لاعبٌ اللعبة",
+    "notif_channel_none": "بدون",
+    "notif_channel_push": "إشعارات فورية فقط",
+    "notif_channel_in_app": "داخل التطبيق فقط",
+    "notif_channel_both": "كلاهما",
+    "notif_push_hint": "الإشعارات الفورية غير مفعّلة في هذا المتصفح — فعّل الإشعارات لاستلامها.",
+    "notif_save_error": "تعذّر الحفظ. حاول مرة أخرى."
   },
   "avatar_picker": {
     "title": "اختر صورة رمزية",
