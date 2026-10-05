@@ -688,7 +688,16 @@
     "settings": "設定",
     "sound": "サウンド",
     "vibrate": "バイブレーション",
-    "distance_unit": "距離の単位"
+    "distance_unit": "距離の単位",
+    "notif_prefs": "通知",
+    "notif_prefs_lobby_invite": "ゲームへの招待",
+    "notif_prefs_session_complete": "プレイヤーがゲームを完了しました",
+    "notif_channel_none": "なし",
+    "notif_channel_push": "プッシュのみ",
+    "notif_channel_in_app": "アプリ内のみ",
+    "notif_channel_both": "両方",
+    "notif_push_hint": "このブラウザではプッシュ通知がオフです。受け取るには通知を有効にしてください。",
+    "notif_save_error": "保存できませんでした。もう一度お試しください。"
   },
   "avatar_picker": {
     "title": "アバターを選択",

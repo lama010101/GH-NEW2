@@ -688,7 +688,16 @@
     "settings": "Настройки",
     "sound": "Звук",
     "vibrate": "Вибрация",
-    "distance_unit": "Единица расстояния"
+    "distance_unit": "Единица расстояния",
+    "notif_prefs": "Уведомления",
+    "notif_prefs_lobby_invite": "Приглашения в игру",
+    "notif_prefs_session_complete": "Игрок завершил игру",
+    "notif_channel_none": "Нет",
+    "notif_channel_push": "Только push",
+    "notif_channel_in_app": "Только в приложении",
+    "notif_channel_both": "Обе",
+    "notif_push_hint": "Push-уведомления отключены в этом браузере — включите уведомления, чтобы получать их.",
+    "notif_save_error": "Не удалось сохранить. Попробуйте ещё раз."
   },
   "avatar_picker": {
     "title": "Выбрать аватар",
