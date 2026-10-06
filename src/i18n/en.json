@@ -688,7 +688,16 @@
     "settings": "Settings",
     "sound": "Sound",
     "vibrate": "Vibrate",
-    "distance_unit": "Distance unit"
+    "distance_unit": "Distance unit",
+    "notif_prefs": "Notifications",
+    "notif_prefs_lobby_invite": "Game invitations",
+    "notif_prefs_session_complete": "A player finished a game",
+    "notif_channel_none": "None",
+    "notif_channel_push": "Push only",
+    "notif_channel_in_app": "In-app only",
+    "notif_channel_both": "Both",
+    "notif_push_hint": "Push is off in this browser — enable notifications to receive pushes.",
+    "notif_save_error": "Couldn't save. Try again."
   },
   "avatar_picker": {
     "title": "Choose Avatar",

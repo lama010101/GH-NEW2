@@ -688,7 +688,16 @@
     "settings": "设置",
     "sound": "声音",
     "vibrate": "振动",
-    "distance_unit": "距离单位"
+    "distance_unit": "距离单位",
+    "notif_prefs": "通知",
+    "notif_prefs_lobby_invite": "游戏邀请",
+    "notif_prefs_session_complete": "有玩家完成了游戏",
+    "notif_channel_none": "无",
+    "notif_channel_push": "仅推送",
+    "notif_channel_in_app": "仅应用内",
+    "notif_channel_both": "两者",
+    "notif_push_hint": "此浏览器已关闭推送通知——请开启通知以接收推送。",
+    "notif_save_error": "保存失败，请重试。"
   },
   "avatar_picker": {
     "title": "选择头像",

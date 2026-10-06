@@ -688,7 +688,16 @@
     "settings": "Einstellungen",
     "sound": "Ton",
     "vibrate": "Vibration",
-    "distance_unit": "Entfernungseinheit"
+    "distance_unit": "Entfernungseinheit",
+    "notif_prefs": "Benachrichtigungen",
+    "notif_prefs_lobby_invite": "Spieleinladungen",
+    "notif_prefs_session_complete": "Ein Spieler hat eine Partie beendet",
+    "notif_channel_none": "Keine",
+    "notif_channel_push": "Nur Push",
+    "notif_channel_in_app": "Nur in der App",
+    "notif_channel_both": "Beide",
+    "notif_push_hint": "Push ist in diesem Browser deaktiviert — aktiviere Benachrichtigungen, um Pushes zu erhalten.",
+    "notif_save_error": "Speichern fehlgeschlagen. Bitte erneut versuchen."
   },
   "avatar_picker": {
     "title": "Avatar wählen",

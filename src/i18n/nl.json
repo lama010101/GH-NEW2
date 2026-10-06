@@ -688,7 +688,16 @@
     "settings": "Instellingen",
     "sound": "Geluid",
     "vibrate": "Trillen",
-    "distance_unit": "Afstandseenheid"
+    "distance_unit": "Afstandseenheid",
+    "notif_prefs": "Meldingen",
+    "notif_prefs_lobby_invite": "Uitnodigingen voor spellen",
+    "notif_prefs_session_complete": "Een speler heeft een spel voltooid",
+    "notif_channel_none": "Geen",
+    "notif_channel_push": "Alleen push",
+    "notif_channel_in_app": "Alleen in-app",
+    "notif_channel_both": "Beide",
+    "notif_push_hint": "Pushmeldingen staan uit in deze browser — zet meldingen aan om ze te ontvangen.",
+    "notif_save_error": "Opslaan mislukt. Probeer opnieuw."
   },
   "avatar_picker": {
     "title": "Kies avatar",
