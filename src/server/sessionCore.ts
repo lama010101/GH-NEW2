@@ -56,7 +56,7 @@ import { TransitionCause } from "@/core/transitionCause";
 import { transition } from "@/server/engine/transition";
 import type { TransitionEvent } from "@/server/engine/transition";
 import { createSupabaseServerClient, createAuthenticatedServerClient } from "@/core/supabaseServer";
-import { sendPushToUser } from "@/server/pushSender";
+import { sendPushToUser, type PushPayload } from "@/server/pushSender";
 import { resolveNotificationChannel, resolveNotificationChannelsBatch } from "@/server/notificationPrefs";
 import { DEFAULT_NOTIFICATION_CHANNEL } from "@/core/notificationTypes";
 
@@ -2873,7 +2873,7 @@ async function startRelaxPlayer(input: { gameId: string; playerId: string; cause
   const { gameId, playerId, cause } = input;
   const client = await getTransactionClient();
   let clientReleased = false;
-  const pendingPushes: Array<{ userId: string; payload: { title: string; body: string; url: string; tag: string } }> = [];
+  const pendingPushes: Array<{ userId: string; payload: PushPayload }> = [];
 
   try {
     await client.query("BEGIN");
@@ -2994,10 +2994,11 @@ async function startRelaxPlayer(input: { gameId: string; playerId: string; cause
           pendingPushes.push({
             userId: invitee.invitee_id,
             payload: {
-              title: "Guess History",
               body: `${starterName} invited you to a game`,
               url: `/compete/${gameId}`,
               tag: `lobby_invite:${gameId}:${invitee.invitee_id}`,
+              ttl: 259200,
+              urgency: 'normal',
             },
           });
         }
@@ -4117,7 +4118,7 @@ export async function advancePlayerRoundAsync(
 
   const client = await getTransactionClient();
   let clientReleased = false;
-  const pendingPushes: Array<{ userId: string; payload: { title: string; body: string; url: string; tag: string } }> = [];
+  const pendingPushes: Array<{ userId: string; payload: PushPayload }> = [];
   try {
     await client.query("BEGIN");
 
@@ -4206,10 +4207,11 @@ export async function advancePlayerRoundAsync(
               pendingPushes.push({
                 userId: other.player_id,
                 payload: {
-                  title: "Guess History",
                   body: `${completerName} completed their session`,
                   url: `/compete/${gameId}`,
                   tag: `session_complete:${gameId}`,
+                  ttl: 86400,
+                  urgency: 'normal',
                 },
               });
             }
