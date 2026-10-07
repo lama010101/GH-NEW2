@@ -29,6 +29,10 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/push-notifications": "^8.1.2",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.101.1",
     "@use-gesture/react": "^10.3.1",

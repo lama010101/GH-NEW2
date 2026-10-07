@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Back to the Past</string>
+    <string name="title_activity_main">Back to the Past</string>
+    <string name="package_name">com.backtothepast.app</string>
+    <string name="custom_url_scheme">com.backtothepast.app</string>
+</resources>
