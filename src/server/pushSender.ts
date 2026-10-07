@@ -1,13 +1,16 @@
 import { sendNotification, setVapidDetails, WebPushError } from 'web-push';
 import { createSupabaseServerClient } from '@/core/supabaseServer';
+import { PUSH_TITLE, PUSH_ICON, PUSH_BADGE } from '@/core/pushBranding';
 
-interface PushPayload {
-  title: string;
+export interface PushPayload {
+  title?: string;
   body: string;
   icon?: string;
   badge?: string;
   url?: string;
   tag?: string;
+  ttl?: number;
+  urgency?: 'very-low' | 'low' | 'normal' | 'high';
 }
 
 function initializeVapid() {
@@ -51,7 +54,14 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
       return;
     }
 
-    const payloadString = JSON.stringify(payload);
+    const payloadString = JSON.stringify({
+      title: payload.title ?? PUSH_TITLE,
+      body: payload.body,
+      icon: payload.icon ?? PUSH_ICON,
+      badge: payload.badge ?? PUSH_BADGE,
+      url: payload.url,
+      tag: payload.tag,
+    });
     const results = await Promise.allSettled(
       subscriptions.map(async (sub) => {
         const pushSubscription = {
@@ -63,7 +73,10 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
         };
 
         try {
-          await sendNotification(pushSubscription, payloadString);
+          await sendNotification(pushSubscription, payloadString, {
+            TTL: payload.ttl ?? 86400,
+            urgency: payload.urgency ?? 'normal',
+          });
         } catch (error) {
           const webPushError = error as WebPushError;
           const statusCode = webPushError?.statusCode;

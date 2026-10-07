@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAuthenticatedServerClient, createSupabaseServerClient } from "@/core/supabaseServer";
 import { sendPushToUser } from "@/server/pushSender";
+import { resolveNotificationChannel } from "@/server/notificationPrefs";
+import { DEFAULT_NOTIFICATION_CHANNEL, type NotificationChannel } from "@/core/notificationTypes";
 
 export const dynamic = "force-dynamic";
 
@@ -87,32 +89,54 @@ export async function POST(request: NextRequest) {
     // session's first round-0 start (see startRelaxPlayer in sessionCore),
     // so nothing is sent here for them.
     if (mode !== "async") {
-      // Step 4: Insert into notifications
-      const { error: notificationError } = await serviceRoleClient
-        .from("notifications")
-        .insert({
-          user_id: invitee_id,
-          type: "lobby_invite",
-          payload: {
-            game_id,
-            inviter_id: user.id,
-            inviter_name: inviterName,
-            invitation_id: invitationId,
-            mode,
-          },
-        });
-
-      if (notificationError) {
-        console.error("[invitations/send] Failed to insert notification:", notificationError);
-        return NextResponse.json({ error: "Failed to create notification" }, { status: 500 });
+      // Step 4: Resolve the invitee's lobby_invite channel preference and gate
+      // delivery on it. The game_invitations row above is always created;
+      // prefs only gate the notification row + push. 'none' skips both,
+      // 'push' push-only, 'in_app' row-only, 'both' keeps current behavior.
+      // A prefs read failure must never block an invite: fall back to 'both'.
+      let channel: NotificationChannel = DEFAULT_NOTIFICATION_CHANNEL;
+      try {
+        channel = await resolveNotificationChannel(invitee_id, "lobby_invite");
+      } catch (prefsError) {
+        console.error(
+          "[invitations/send] notification prefs lookup failed, defaulting to 'both':",
+          prefsError
+        );
       }
 
-      await sendPushToUser(invitee_id, {
-        title: "Guess History",
-        body: `${inviterName} invited you to a game`,
-        url: `/compete/${game_id}`,
-        tag: `lobby_invite:${game_id}:${invitee_id}`,
-      });
+      const insertInApp = channel === "in_app" || channel === "both";
+      const sendPush = channel === "push" || channel === "both";
+
+      if (insertInApp) {
+        const { error: notificationError } = await serviceRoleClient
+          .from("notifications")
+          .insert({
+            user_id: invitee_id,
+            type: "lobby_invite",
+            payload: {
+              game_id,
+              inviter_id: user.id,
+              inviter_name: inviterName,
+              invitation_id: invitationId,
+              mode,
+            },
+          });
+
+        if (notificationError) {
+          console.error("[invitations/send] Failed to insert notification:", notificationError);
+          return NextResponse.json({ error: "Failed to create notification" }, { status: 500 });
+        }
+      }
+
+      if (sendPush) {
+        await sendPushToUser(invitee_id, {
+          body: `${inviterName} invited you to a game`,
+          url: `/compete/${game_id}`,
+          tag: `lobby_invite:${game_id}:${invitee_id}`,
+          ttl: 900,
+          urgency: 'high',
+        });
+      }
     }
 
     return NextResponse.json({ success: true, invitation_id: invitationId });

@@ -1,10 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslations } from 'next-intl';
 import { toProxiedImageUrl } from "@/lib/imageProxy";
-import RainbowRing from "@/components/compete/RainbowRing";
+import RainbowRing, { journeyResultDisplay } from "@/components/compete/RainbowRing";
 import { MiniRing } from "@/components/compete/RoundCompleteSection";
 import FullscreenImageViewer from "@/components/FullscreenImageViewer";
 import type { BadgeDimension, BadgeTier, CompeteSessionSnapshot } from "@/core/types";
@@ -22,8 +22,19 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { HelpCircle, Star, Trophy } from "lucide-react";
+import { HelpCircle, Home, Map as MapIcon, Play, RotateCcw, Star, Trophy } from "lucide-react";
+import type { JourneyResultOverride } from "@/core/journeyResultTypes";
+import { JourneyBadge } from "@/app/journey/_components/JourneyBadge";
+import { JOURNEY_TOTAL_STAGES } from "@/core/journeyConstants";
+import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from "@/core/identity";
+import { GuestConversionModal } from "@/app/journey/_components/GuestConversionModal";
+import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage";
 import styles from "./SessionComplete.module.css";
+// HJ-UI-POLISH-STAGELIST-RESULT-035 — the journey result CTA reuses the
+// exact lobby "Start my game" class (cyan gradient, 52px, leading icon) so
+// the button style stays single-sourced; only the .cta-scoped overrides
+// live in SessionComplete.module.css.
+import lobbyStyles from "./LobbySection.module.css";
 
 const BADGE_DIMENSIONS: BadgeDimension[] = ["location", "year", "combo"];
 const BADGE_TIERS: BadgeTier[] = ["gold", "silver", "bronze"];
@@ -58,6 +69,10 @@ interface SessionCompleteProps {
   onRetryAllResults?: () => void;
   sendMessage: (msg: object) => void;
   onPlayAgain?: () => void;
+  // Optional journey override (HJ-FIX-JOURNEYRESULT-PROTECTEDPROP-023).
+  // Present ⇒ pass/fail headline + pass-mark panel + two-button CTA.
+  // Absent ⇒ renders exactly as before for all existing call sites.
+  journeyResult?: JourneyResultOverride;
 }
 
 export default function SessionComplete({
@@ -68,6 +83,7 @@ export default function SessionComplete({
   onRetryAllResults,
   sendMessage,
   onPlayAgain,
+  journeyResult,
 }: SessionCompleteProps) {
   const router = useRouter();
   const t = useTranslations('compete_page');
@@ -76,6 +92,7 @@ export default function SessionComplete({
   const tLobby = useTranslations('lobby');
   const tHelp = useTranslations('help');
   const tNav = useTranslations('nav');
+  const tJourney = useTranslations('journey');
   const distanceUnit = getDistanceUnitPreference();
   const isPractice = snapshot.config.mode === "practice";
   const isDaily = snapshot.config.mode === "daily";
@@ -292,7 +309,7 @@ export default function SessionComplete({
   };
 
   return (
-    <section className={styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
+    <section className={journeyResult ? `${styles.section} ${styles.sectionJourneyTop}` : styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
         if (!playerId) return null;
         if (effectiveResults.length === 0) {
@@ -330,6 +347,12 @@ export default function SessionComplete({
         }
         const myStats = computePlayerStats(playerId);
         const overallAccuracy = myStats?.avgAccuracy ?? 0;
+        // HJ-UI-POLISH-STAGELIST-RESULT-035 — display-safe journey
+        // ring/mark/margin values (whole integers) that can never contradict
+        // the server-side pass/fail verdict computed on raw accuracy.
+        const journeyDisplay = journeyResult
+          ? journeyResultDisplay(journeyResult.accuracyPct, journeyResult.minAccuracyPct, journeyResult.gatePassed)
+          : { accuracyPct: 0, markPct: 0, marginPts: 0 };
         const overallXP = myStats?.totalScore ?? 0;
         const whereAccuracy = myStats?.avgLocationAccuracy ?? 0;
         const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
@@ -585,13 +608,58 @@ export default function SessionComplete({
                 </div>
                 <div className={styles.banner}>
                   <span className={styles.bannerKicker}>{tGame('game_complete')}</span>
-                  <h1 className={styles.bannerTitle}>
-                    {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
-                  </h1>
-                  <div className={styles.bannerStats}>
-                    {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
-                  </div>
+                  {journeyResult ? (
+                    <h1 className={`${styles.bannerTitle} ${journeyResult.gatePassed ? styles.bannerTitlePassed : styles.bannerTitleFailed}`} data-testid="journey-result-headline">
+                      {journeyResult.gatePassed
+                        ? tJourney('result_headline_passed', { number: journeyResult.stageNumber })
+                        : tJourney('result_headline_failed', { number: journeyResult.stageNumber })}
+                    </h1>
+                  ) : (
+                    <h1 className={styles.bannerTitle}>
+                      {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
+                    </h1>
+                  )}
+                  {!journeyResult && (
+                    <div className={styles.bannerStats}>
+                      {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
+                    </div>
+                  )}
                 </div>
+                {journeyResult && (
+                  <div
+                    className={`${styles.journeyPassPanel} ${journeyResult.gatePassed ? styles.journeyPassPanelPassed : styles.journeyPassPanelFailed}`}
+                    data-testid="journey-pass-panel"
+                  >
+                    <div
+                      className={styles.heroRingWrap}
+                      role="img"
+                      aria-label={tJourney('result_gauge_aria', { score: journeyDisplay.accuracyPct, pct: journeyDisplay.markPct })}
+                    >
+                      <RainbowRing
+                        value={journeyDisplay.accuracyPct}
+                        thresholdPct={journeyResult.minAccuracyPct}
+                        thresholdPassed={journeyResult.gatePassed}
+                      />
+                    </div>
+                    <span className={styles.journeyPassMargin} data-testid="journey-pass-margin">
+                      {journeyResult.gatePassed
+                        ? tJourney('result_margin_above', { points: journeyDisplay.marginPts })
+                        : tJourney('result_margin_below', { points: journeyDisplay.marginPts })}
+                    </span>
+                    {/* HJ-UI-POLISH-035 — the "Completion" pill is gone: the
+                        pass verdict is already in the headline + margin line
+                        and the % duplicated the ring number. Gold/silver/
+                        bronze tiers still render their badge (label only —
+                        no duplicated accuracy figure). */}
+                    {journeyResult.badgeAwarded && journeyResult.badgeAwarded !== "completion" && (
+                      <div className={styles.journeyBadgeWrap} data-testid="journey-badge">
+                        <JourneyBadge badge={journeyResult.badgeAwarded} size="lg" />
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!journeyResult && (
+                <>
                 <span className={styles.gameAccLabel}>{tGame('game_accuracy_pct')}</span>
                 {myStats ? (
                   <div className={styles.heroRingWrap}>
@@ -599,6 +667,8 @@ export default function SessionComplete({
                   </div>
                 ) : (
                   <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--gh-text-muted)' }}>—</span>
+                )}
+                </>
                 )}
                 <div className={styles.statPair}>
                   <div className={styles.statTile}>
@@ -833,12 +903,27 @@ export default function SessionComplete({
                     ) : (
                       <div className={styles.badgeTally}>
                         {earnedBadges.map(({ dim, tier, count }) => (
-                          <span key={`${dim}-${tier}`} className={styles.badgeTallyItem}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={`/badges/${dim}_${tier}.webp`} alt={`${tGame(BADGE_TIER_LABEL_KEY[tier])} ${tGame(BADGE_DIMENSION_LABEL_KEY[dim])}`} width={28} height={28} />
-                            <span className={styles.badgeTallyCount}>{count}</span>
-                            <span className={styles.badgeTallyTier}>{tGame(BADGE_DIMENSION_LABEL_KEY[dim])}</span>
-                          </span>
+                          /* HJ-FIX-POLISHSCOPE-044 — journey results get the
+                             HJ-UI-POLISH-035 "{dimension} · {tier}" label +
+                             tier accent; every other mode keeps the
+                             origin/main row (dimension label only). */
+                          journeyResult ? (
+                            <span key={`${dim}-${tier}`} className={styles.badgeTallyItem} data-tier={tier}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={`/badges/${dim}_${tier}.webp`} alt={tGame('badge_tally_label', { dimension: tGame(BADGE_DIMENSION_LABEL_KEY[dim]), tier: tGame(BADGE_TIER_LABEL_KEY[tier]) })} width={28} height={28} />
+                              <span className={styles.badgeTallyCount}>{count}</span>
+                              <span className={`${styles.badgeTallyTier} ${styles[`badgeTallyTier_${tier}`]}`}>
+                                {tGame('badge_tally_label', { dimension: tGame(BADGE_DIMENSION_LABEL_KEY[dim]), tier: tGame(BADGE_TIER_LABEL_KEY[tier]) })}
+                              </span>
+                            </span>
+                          ) : (
+                            <span key={`${dim}-${tier}`} className={styles.badgeTallyItem}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={`/badges/${dim}_${tier}.webp`} alt={`${tGame(BADGE_TIER_LABEL_KEY[tier])} ${tGame(BADGE_DIMENSION_LABEL_KEY[dim])}`} width={28} height={28} />
+                              <span className={styles.badgeTallyCount}>{count}</span>
+                              <span className={styles.badgeTallyTier}>{tGame(BADGE_DIMENSION_LABEL_KEY[dim])}</span>
+                            </span>
+                          )
                         ))}
                       </div>
                     )}
@@ -888,7 +973,45 @@ export default function SessionComplete({
                   const info = rankForXp(totalXp ?? 0);
                   const title = tRank(info.titleKey);
                   const nextTitle = info.nextTitleKey ? tRank(info.nextTitleKey) : null;
-                  return (
+                  // HJ-UI-POLISH-STAGELIST-RESULT-035 — proper rank card:
+                  // larger starred tier emblem, display-typography rank name,
+                  // highlighted "+N XP" session chip, single "X XP to Next"
+                  // line, progress bar. XP uses thousands separators.
+                  // HJ-FIX-POLISHSCOPE-044 — gated to journey results only;
+                  // non-journey renders the origin/main card verbatim.
+                  return journeyResult ? (
+                    <div className={styles.customRankCard}>
+                      <div className={styles.customRankMedallion}>
+                        <span className={styles.customRankTier}>{tRank('tier_prefix')}{info.tier}</span>
+                        <span className={styles.customRankStars}>
+                          {Array.from({ length: info.tier }, (_, i) => (
+                            <Star key={i} size={10} fill="var(--gh-gold)" color="var(--gh-gold)" />
+                          ))}
+                        </span>
+                      </div>
+                      <div className={styles.customRankBody}>
+                        <div className={styles.customRankHead}>
+                          <span className={`${styles.customRankTitle} font-display`}>{title}</span>
+                          <span className={styles.customRankXpGroup}>
+                            <span className={styles.customRankXpChip}>+{overallXP.toLocaleString()} {tGame('xp_unit')}</span>
+                            <span className={styles.customRankTotalXp}>{Math.floor(totalXp ?? 0).toLocaleString()} {tGame('xp_unit')}</span>
+                          </span>
+                        </div>
+                        <div className={styles.customRankNext}>
+                          {info.isMaxRank ? (
+                            <span className={styles.customRankNextTitle}>{tRank('max_rank')}</span>
+                          ) : (
+                            <span className={styles.customRankNextTitle}>
+                              {tRank('next_rank', { xp: info.xpToNext?.toLocaleString() ?? '0', title: nextTitle ?? '' })}
+                            </span>
+                          )}
+                        </div>
+                        <div className={styles.customRankBar}>
+                          <div className={styles.customRankBarFill} style={{ width: `${info.progressPct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
                     <div className={styles.customRankCard}>
                       <div className={styles.customRankMedallion}>
                         <span className={styles.customRankTier}>{tRank('tier_prefix')}{info.tier}</span>
@@ -1054,11 +1177,16 @@ export default function SessionComplete({
               <div className={styles.cta}>
                 <button
                   type="button"
-                  className={styles.homeBtn}
+                  className={journeyResult ? styles.journeyHomeBtn : styles.homeBtn}
                   onClick={() => router.push("/home")}
                 >
+                  {journeyResult && <Home size={18} aria-hidden="true" />}
                   {tGame('home')}
                 </button>
+                {journeyResult ? (
+                  <JourneyResultActions result={journeyResult} styles={styles} />
+                ) : (
+                  <>
                 {isAsync && (!snapshot.config.sessionDeadline || new Date(snapshot.config.sessionDeadline) > new Date()) && (
                   <button
                     type="button"
@@ -1095,6 +1223,8 @@ export default function SessionComplete({
                 {lobbyError && (
                   <div className={styles.lobbyError}>{lobbyError}</div>
                 )}
+                  </>
+                )}
               </div>
             </div>
           </>
@@ -1129,6 +1259,126 @@ export default function SessionComplete({
         </div>
       )}
     </section>
+  );
+}
+
+// Journey mode CTA (HJ-FIX-JOURNEYRESULT-PROTECTEDPROP-023): exactly one primary
+// button next to Home — "Play stage N+1" (passed, N<100) / "Stages" (passed,
+// N=100) / "Retry stage N" (failed). Start flow + guest gate mirror
+// src/app/journey/_components/JourneyStageResult.tsx (which it replaces) and
+// src/app/journey/[stageId]/page.tsx: POST /api/journey/start →
+// writeActivePlaythrough marker → /practice/<gameId>; anonymous identities may
+// only start stage 1 — higher targets open GuestConversionModal first.
+function JourneyResultActions({ result, styles }: { result: JourneyResultOverride; styles: Record<string, string> }) {
+  const router = useRouter();
+  const tJourney = useTranslations('journey');
+  const tCommon = useTranslations('common');
+  const [identity, setIdentity] = useState<IdentityState>({ status: "loading" });
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+  const [gateStageNumber, setGateStageNumber] = useState<number | null>(null);
+
+  useEffect(() => {
+    bootstrapIdentity().then(setIdentity);
+    return subscribeToIdentityChanges(setIdentity);
+  }, []);
+
+  const lastStage = result.stageNumber >= JOURNEY_TOTAL_STAGES;
+  const nextStageNumber = Math.min(result.stageNumber + 1, JOURNEY_TOTAL_STAGES);
+
+  const startStageByNumber = useCallback(
+    async (target: number) => {
+      setStarting(true);
+      setStartError(null);
+      try {
+        let stageId = result.stageId;
+        if (target !== result.stageNumber) {
+          const { data } = await supabaseBrowser
+            .from("journey_stages")
+            .select("id")
+            .eq("stage_number", target)
+            .maybeSingle();
+          const row = data as { id?: string } | null;
+          if (!row?.id) throw new Error(tJourney("load_error"));
+          stageId = row.id;
+        }
+        const res = await fetch("/api/journey/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stageId }),
+        });
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(data.error ?? tJourney("load_error"));
+        }
+        const started = (await res.json()) as { gameId: string; playthroughId: string };
+        writeActivePlaythrough({
+          stageId,
+          playthroughId: started.playthroughId,
+          gameId: started.gameId,
+        });
+        router.push(`/practice/${started.gameId}`);
+      } catch (err) {
+        setStartError(err instanceof Error ? err.message : tJourney("load_error"));
+        setStarting(false);
+      }
+    },
+    [result.stageId, result.stageNumber, router, tJourney]
+  );
+
+  const handlePrimary = () => {
+    if (starting) return;
+    if (result.gatePassed && lastStage) {
+      router.push("/journey");
+      return;
+    }
+    const target = result.gatePassed ? nextStageNumber : result.stageNumber;
+    if (target >= 2 && identity.status === "ready" && identity.isAnonymous) {
+      setGateStageNumber(target);
+      return;
+    }
+    void startStageByNumber(target);
+  };
+
+  const label = starting
+    ? tCommon("loading")
+    : result.gatePassed
+      ? lastStage
+        ? tJourney("result_stages_button")
+        : tJourney("result_play_stage", { number: nextStageNumber })
+      : tJourney("result_retry_stage", { number: result.stageNumber });
+
+  // HJ-UI-POLISH-035 — leading icon matches the lobby CTA pattern:
+  // RotateCcw on retry, Map on "Stages" (journey complete), Play otherwise.
+  const PrimaryIcon = result.gatePassed ? (lastStage ? MapIcon : Play) : RotateCcw;
+
+  return (
+    <>
+      <button
+        type="button"
+        className={`${lobbyStyles['lobbyReadyBtnNotReady']} ${styles.journeyPrimaryBtn}`}
+        onClick={handlePrimary}
+        disabled={starting}
+        data-testid="journey-result-primary-btn"
+      >
+        <PrimaryIcon size={18} aria-hidden="true" /> {label}
+      </button>
+      {startError && (
+        <p className={styles.journeyStartError} role="alert">
+          {startError}
+        </p>
+      )}
+      <GuestConversionModal
+        isOpen={gateStageNumber !== null}
+        stageNumber={gateStageNumber ?? result.stageNumber}
+        onClose={() => setGateStageNumber(null)}
+        onConverted={() => {
+          const target = gateStageNumber;
+          setGateStageNumber(null);
+          void startStageByNumber(target ?? result.stageNumber);
+        }}
+      />
+    </>
   );
 }
 

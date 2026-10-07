@@ -36,11 +36,6 @@
   color: var(--gh-text-primary);
 }
 
-.accuracy {
-  color: var(--gh-text-secondary);
-  font-variant-numeric: tabular-nums;
-}
-
 .tierGold {
   border-color: rgba(var(--gh-gold-rgb), 0.55);
 }

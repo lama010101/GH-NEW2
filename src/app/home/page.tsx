@@ -21,7 +21,6 @@ import { RelaxPushNudge } from '@/components/RelaxPushNudge'
 import styles from './home.module.css'
 import { NavModal } from '@/components/NavModal'
 import TopBar from '@/components/layout/TopBar'
-import RankCard from '@/components/RankCard'
 import { Trophy } from 'lucide-react'
 
 function HomePageInner() {
@@ -126,7 +125,6 @@ function HomePageInner() {
 
   const [accuracy, setAccuracy] = useState('--')
   const [xp, setXp] = useState('--')
-  const [totalXpNum, setTotalXpNum] = useState<number | null>(null)
 
   const [avatarUrl, setAvatarUrl] = useState<string|null>(null)
   const [initials, setInitials] = useState('')
@@ -138,7 +136,6 @@ function HomePageInner() {
       setInitials('PL')
       setAccuracy('--')
       setXp('--')
-      setTotalXpNum(null)
       setIsNewUserForWelcome(false)
       return
     }
@@ -168,7 +165,6 @@ function HomePageInner() {
         if (stats) {
           setAccuracy(String(Math.round(Number(stats.avg_accuracy))))
           setXp(Number(stats.total_xp).toLocaleString('fr-FR'))
-          setTotalXpNum(Number(stats.total_xp))
         }
       } catch {}
       try {
@@ -380,16 +376,14 @@ function HomePageInner() {
         </div>
       )}
 
-      {/* Scrollable content area — rank card scrolls with the page (inline, not fixed) */}
-      <div className={`${styles['page-scroll']} ${styles.pageScrollRankOpen}`}>
+      {/* Scrollable content area */}
+      <div className={styles['page-scroll']}>
         {/* Tagline */}
         <div className={styles.tagline}>
           {t('home.tagline')}
         </div>
 
-        {/* Vertical card stack — Stage card (Historian's Journey progress) is
-            first; the XP Rank card sits directly beneath it, near the top but
-            visually subordinate to the stage card. */}
+        {/* Vertical card stack — Stage card (Historian's Journey progress) is first */}
         <div className={styles['cards-stack']}>
           {VERTICAL_CARD_ORDER.map(mode => (
             <Fragment key={mode}>
@@ -409,11 +403,6 @@ function HomePageInner() {
                   onPracticeStart={handlePracticeTileClick}
                   practiceLoading={practiceTileLoading}
                 />
-              )}
-              {mode === 'stage' && (
-                <div className={styles.rankCardInline}>
-                  <RankCard totalXp={totalXpNum} open inline />
-                </div>
               )}
             </Fragment>
           ))}

@@ -31,9 +31,33 @@
   z-index: 2;
   max-width: 720px;
   margin: 0 auto;
-  padding: 24px 4px 64px;
+  /* Same TopBar content offset as home.module.css:11 — shared mechanism, no
+     new magic number. */
+  padding: calc(72px + env(safe-area-inset-top, 0px)) 4px 64px;
   display: grid;
   gap: 16px;
+}
+
+.backBtn {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 10px;
+  border-radius: var(--gh-radius-pill);
+  border: 1px solid #2e2e2e;
+  /* UIX-JOURNEY-20261005-001 — neutral dark surface (page-local literals,
+     NOT the navy --gh-bg-* tokens: this page drops the blue tint). */
+  background: #1a1a1a;
+  color: #f5f5f5;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.backBtn:hover {
+  border-color: #4d4d4d;
+  color: #ffffff;
 }
 
 .header {
@@ -42,44 +66,88 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  padding: 14px 18px;
+  border-radius: var(--gh-radius-md);
+  border: 1px solid #2a2a2a;
+  background: #141414;
 }
 
 .title {
   margin: 0;
-  font-size: var(--font-xl, 28px);
+  font-size: var(--font-2xl);
   font-weight: 700;
-  color: var(--gh-text-primary);
+  color: #ffffff;
   letter-spacing: -0.01em;
 }
 
 .subtitle {
   margin: 6px 0 0;
-  color: var(--gh-text-secondary);
-  font-size: var(--font-sm, 14px);
+  color: #a3a3a3;
+  font-size: var(--font-sm);
+}
+
+.progressBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 180px;
 }
 
 .progressPill {
   padding: 6px 14px;
   border-radius: var(--gh-radius-pill);
-  border: 1px solid var(--gh-border-default);
-  background: var(--gh-bg-surface);
-  color: var(--gh-text-secondary);
-  font-size: var(--font-sm, 13px);
+  border: 1px solid #2e2e2e;
+  background: #1a1a1a;
+  color: #f5f5f5;
+  font-size: var(--font-xs);
+  font-weight: 600;
   white-space: nowrap;
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  border: none;
+  border-radius: var(--gh-radius-pill);
+  overflow: hidden;
+  appearance: none;
+}
+
+.progressBar::-webkit-progress-bar {
+  background: #262626;
+  border-radius: var(--gh-radius-pill);
+}
+
+.progressBar::-webkit-progress-value {
+  background: var(--gh-journey-stage-gradient);
+  border-radius: var(--gh-radius-pill);
+}
+
+.progressBar::-moz-progress-bar {
+  background: var(--gh-journey-stage-gradient);
+  border-radius: var(--gh-radius-pill);
 }
 
 .errorCard {
   padding: 14px 18px;
   border-radius: var(--gh-radius-md);
   border: 1px solid rgba(var(--gh-danger-rgb), 0.5);
-  background: rgba(var(--gh-danger-rgb), 0.12);
-  color: var(--gh-text-primary);
-  font-size: var(--font-sm, 14px);
+  /* Danger tint layered over the page's opaque neutral surface — the alert
+     text must not depend on the photo brightness behind it. */
+  background: linear-gradient(
+      rgba(var(--gh-danger-rgb), 0.12),
+      rgba(var(--gh-danger-rgb), 0.12)
+    ),
+    #161616;
+  color: #f5f5f5;
+  font-size: var(--font-sm);
 }
 
 .emptyCard {
-  background: var(--gh-bg-surface);
-  border: 1px solid var(--gh-border-default);
+  /* Same opaque neutral surface as the stage cards — see .stageCard. */
+  background: #141414;
+  border: 1px solid #2a2a2a;
   border-radius: 24px;
   padding: 48px 28px;
   display: flex;
@@ -90,22 +158,22 @@
 }
 
 .emptyLock {
-  color: var(--gh-text-muted);
+  color: #737373;
   opacity: 0.8;
   margin-bottom: 4px;
 }
 
 .emptyTitle {
   margin: 0;
-  font-size: var(--font-lg, 20px);
+  font-size: var(--font-xl);
   font-weight: 700;
-  color: var(--gh-text-primary);
+  color: #ffffff;
 }
 
 .emptyBody {
   margin: 0;
-  color: var(--gh-text-secondary);
-  font-size: var(--font-sm, 14px);
+  color: #a3a3a3;
+  font-size: var(--font-sm);
   max-width: 42ch;
   line-height: 1.5;
 }
@@ -118,16 +186,65 @@
   gap: 10px;
 }
 
+/* HJ-UI-POLISH-035 — progression connector: a rail at the icon column's
+   centre (16px card padding + 24px half icon = 40px) running through every
+   card and across the gaps. It starts at the first stage's icon centre and
+   ends at the last stage's icon centre; the opaque tier icon sits on top of
+   it, giving each stage a "node on a path" feel. inset-inline-start keeps
+   it mirrored under dir="rtl" (ar). */
+.stageList li {
+  position: relative;
+}
+
+.stageList li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 39px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--gh-violet-rgb), 0.55),
+    rgba(var(--gh-teal-rgb), 0.55)
+  );
+}
+
+.stageList li:first-child::before {
+  top: 50%;
+}
+
+.stageList li:last-child::before {
+  bottom: 50%;
+}
+
+.stageList li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 39px;
+  top: 100%;
+  height: 10px;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--gh-violet-rgb), 0.55),
+    rgba(var(--gh-teal-rgb), 0.55)
+  );
+}
+
 .stageCard {
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
   border-radius: var(--gh-radius-md);
-  border: 1px solid var(--gh-border-default);
-  background: var(--gh-bg-surface);
-  color: var(--gh-text-primary);
+  border: 1px solid #2a2a2a;
+  /* UIX-JOURNEY-20261005-001 — neutral dark card: solid opaque grey, no
+     navy/blue tint (page-local literals, global tokens untouched). */
+  background: #161616;
+  color: #f5f5f5;
   cursor: pointer;
   text-align: left;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -135,45 +252,90 @@
 }
 
 .stageCard:hover:not(:disabled) {
-  border-color: var(--gh-glass-border-hover);
-  background: var(--gh-bg-elevated);
+  border-color: #4d4d4d;
 }
 
 .stageCard:disabled {
   cursor: default;
 }
 
+/* Locked state: desaturated icon + the whole card visibly dimmed
+   (UIX-JOURNEY-20261005-001). */
 .stageLocked {
+  opacity: 0.55;
+  background: #101010;
+}
+
+.stageLocked .stageIcon {
+  filter: grayscale(0.7);
   opacity: 0.55;
 }
 
-.stageDone {
-  border-color: rgba(var(--gh-success-rgb), 0.35);
+.stageLocked .stageTitle,
+.stageLocked .stageSubtitle {
+  color: #8a8a8a;
 }
 
-.stageNumber {
+.stageLocked .chip {
+  border-color: #262626;
+}
+
+/* UIX-JOURNEY-20261005-001 — current stage is the focal point: purple-tinted
+   card on the neutral dark base, purple border + glow. */
+.stageCurrent {
+  border-color: rgba(var(--gh-violet-rgb), 0.7);
+  background: linear-gradient(
+      135deg,
+      rgba(var(--gh-violet-rgb), 0.18) 0%,
+      rgba(var(--gh-violet-rgb), 0.05) 65%
+    ),
+    #181818;
+  box-shadow: 0 0 0 1px rgba(var(--gh-violet-rgb), 0.35),
+    0 8px 32px rgba(var(--gh-violet-rgb), 0.28);
+}
+
+.stageIconWrap {
+  position: relative;
+  /* Above the ::before/::after timeline rails (z-index auto) so the line
+     always passes behind the opaque icon tile. */
+  z-index: 2;
   flex: none;
-  width: 40px;
-  height: 40px;
+}
+
+.stageIcon {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--gh-radius-sm);
+  object-fit: cover;
+  border: 1px solid #333333;
+  /* Fully opaque tile — the timeline rail never shows through transparent
+     PNG pixels (UIX-JOURNEY-20261005-001). */
+  background: #1e1e1e;
+}
+
+/* Green check badge on the tier icon for completed stages. */
+.doneCheck {
+  position: absolute;
+  inset-inline-end: -6px;
+  inset-block-end: -6px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: var(--font-base, 16px);
-  background: var(--gh-glass-bg);
-  border: 1px solid var(--gh-border-default);
-  color: var(--gh-text-primary);
-}
-
-.stageDone .stageNumber {
-  border-color: rgba(var(--gh-success-rgb), 0.5);
-  color: var(--gh-success);
+  background: var(--gh-success);
+  color: #ffffff;
+  border: 2px solid #161616;
+  box-shadow: 0 2px 8px rgba(var(--gh-success-rgb), 0.5);
 }
 
 .stageBody {
   flex: 1;
-  min-width: 0;
+  /* min-width (not 0) forces .stageAside onto its own line under ~390px,
+     where the meta text would otherwise be squeezed into a narrow column. */
+  min-width: 200px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -181,74 +343,228 @@
 
 .stageTitle {
   font-weight: 600;
-  font-size: var(--font-base, 16px);
-  color: var(--gh-text-primary);
+  font-size: var(--font-base);
+  color: #ffffff;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.stageTheme {
-  font-size: var(--font-sm, 13px);
-  color: var(--gh-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.stageMeta {
-  font-size: var(--font-xs, 12px);
-  color: var(--gh-text-muted);
+/* UIX-JOURNEY-20261005-001 — year range moved out of the chip row to a
+   small blue line directly under the stage title. */
+.yearRange {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--gh-blue);
   font-variant-numeric: tabular-nums;
+}
+
+.stageSubtitle {
+  font-size: var(--font-xs);
+  color: #9a9a9a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Compact icon-chip stat row (HJ-UI-POLISH-035). */
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--gh-radius-pill);
+  border: 1px solid #333333;
+  background: #202020;
+  font-size: var(--font-2xs);
+  color: #b0b0b0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Current stage chips: slightly lifted neutral surface + brighter text. */
+.stageCurrent .chip {
+  border-color: #444444;
+  background: #262626;
+  color: #eeeeee;
+}
+
+.stageCurrent .chipIcon {
+  color: #a3a3a3;
+}
+
+.chipIcon {
+  color: #777777;
+  flex: none;
+}
+
+.lockHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-2xs);
+  color: #9a9a9a;
+}
+
+.lockHintIcon {
+  flex: none;
+  color: #6e6e6e;
+}
+
+.lockIcon {
+  color: #6e6e6e;
+  flex: none;
 }
 
 .stageAside {
   flex: none;
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* Score ring on completed cards — UIX-JOURNEY-20261005-001: a "%" sits
+   right of the ring so the number unambiguously reads as a percentage. */
+.bestRing {
+  flex: none;
+  display: flex;
   align-items: center;
 }
 
-.inProgressPill {
-  padding: 5px 12px;
-  border-radius: var(--gh-radius-pill);
-  border: 1px solid rgba(var(--gh-teal-rgb), 0.45);
-  color: var(--gh-teal);
-  font-size: var(--font-xs, 12px);
-  font-weight: 600;
-  white-space: nowrap;
+.bestRing::after {
+  content: "%";
+  margin-left: 2px;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: #b0b0b0;
 }
 
-.lockedPill {
-  padding: 5px 12px;
-  border-radius: var(--gh-radius-pill);
-  border: 1px solid var(--gh-border-default);
-  color: var(--gh-text-muted);
-  font-size: var(--font-xs, 12px);
-  font-weight: 600;
-  white-space: nowrap;
+/* UIX-JOURNEY-20261005-001 — the current card's primary action is a large
+   full-row purple button (min 48px touch height) with a strong glow. */
+.stageCurrent .stageAside {
+  flex: 1 1 100%;
+  margin-left: 0;
 }
 
-.lockHint {
-  margin: 4px 0 0 16px;
-  font-size: var(--font-xs, 12px);
-  color: var(--gh-text-muted);
+.playBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 14px 28px;
+  border: none;
+  border-radius: var(--gh-radius-pill);
+  background: var(--gh-journey-stage-gradient);
+  color: #ffffff;
+  font-size: var(--font-base);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(var(--gh-violet-rgb), 0.5);
+}
+
+.playBtn:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.playBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.retryBtn {
+  padding: 7px 18px;
+  border-radius: var(--gh-radius-pill);
+  border: 1px solid #3a3a3a;
+  background: #222222;
+  color: #c9c9c9;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retryBtn:hover:not(:disabled) {
+  background: #2c2c2c;
+  color: #ffffff;
+}
+
+.retryBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .secondaryButton {
   margin-top: 8px;
   padding: 10px 22px;
   border-radius: var(--gh-radius-pill);
-  border: 1px solid var(--gh-glass-border);
-  background: var(--gh-glass-bg);
-  color: var(--gh-text-primary);
-  font-size: var(--font-sm, 14px);
+  border: 1px solid #3a3a3a;
+  background: #222222;
+  color: #f5f5f5;
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
 }
 
 .secondaryButton:hover {
-  background: var(--gh-glass-bg-hover);
-  border-color: var(--gh-glass-border-hover);
+  background: #2c2c2c;
+  border-color: #4d4d4d;
+}
+
+/* UIX-JOURNEY-20261005-001 — floating jump-to-current button, bottom-centre,
+   above the bottom safe area; under TopBar (z 900) and modals (z 1000+). */
+.jumpFab {
+  position: fixed;
+  inset-inline: 0;
+  margin-inline: auto;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  width: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 20px;
+  border-radius: var(--gh-radius-pill);
+  border: 1px solid rgba(var(--gh-violet-rgb), 0.6);
+  background: #1e1e1e;
+  color: #ffffff;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 800;
+  opacity: 0;
+  transform: translateY(12px);
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(var(--gh-violet-rgb), 0.25);
+}
+
+.jumpFabVisible {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jumpFab {
+    transition: none;
+    transform: none;
+  }
 }
 
 /* Loading screen — mirrors src/app/practice/page.module.css convention */
@@ -307,13 +623,13 @@
 
 .loadingLabel {
   color: var(--gh-text-secondary);
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 500;
   letter-spacing: 0.01em;
 }
 
 .loadingHint {
-  font-size: var(--font-sm, 13px);
+  font-size: var(--font-xs);
   opacity: 0.8;
   color: var(--gh-text-secondary);
 }
@@ -324,6 +640,6 @@
   border: none;
   background: rgba(255, 100, 100, 0.3);
   color: var(--gh-text-primary);
-  font-size: var(--font-base, 15px);
+  font-size: var(--font-base);
   cursor: pointer;
 }

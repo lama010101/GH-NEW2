@@ -123,3 +123,29 @@ describe("startJourneyPlaythrough — guest gate (HJ-T19)", () => {
     ).rejects.toThrow(/Insufficient content within the recency window/);
   });
 });
+
+describe("startJourneyPlaythrough — stage status not a gameplay gate (HJ-BUILD-REMOVELIVEGATE-008)", () => {
+  it("starts a stage with status 'draft' (reaches the event draw)", async () => {
+    const client = createMockClient({
+      stage: { id: "stage-1", stage_number: 1, status: "draft" },
+      unlocked: true,
+    });
+    mockFns.getTransactionClient.mockResolvedValue(client);
+    mockFns.fetchRandomEventsForSession.mockResolvedValue([]);
+
+    const { startJourneyPlaythrough } = await import("./journeyCore");
+
+    // Reaching the draw (mocked to return zero events → the insufficient-
+    // content error) proves the 'draft' status did not reject the start —
+    // the old status='live' gate would have thrown "is not live" first.
+    await expect(
+      startJourneyPlaythrough({
+        playerId: "permanent-player-id",
+        stageId: "stage-1",
+        isAnonymous: false,
+      })
+    ).rejects.toThrow(/Insufficient content within the recency window/);
+
+    expect(mockFns.fetchRandomEventsForSession).toHaveBeenCalled();
+  });
+});

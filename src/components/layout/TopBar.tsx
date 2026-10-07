@@ -8,6 +8,7 @@ import { getAccuracyColor } from '@/core/accuracyColor'
 import { useIdentity } from '@/hooks/useIdentity'
 import NotificationBell from '@/components/NotificationBell'
 import PlayerAvatar from '@/components/compete/PlayerAvatar'
+import RankModal from '@/components/RankModal'
 import styles from './TopBar.module.css'
 
 interface TopBarProps {
@@ -24,6 +25,7 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
   const tNav = useTranslations('nav')
   const { playerId } = useIdentity()
   const [imgError, setImgError] = useState(false)
+  const [rankModalOpen, setRankModalOpen] = useState(false)
   useEffect(() => { setImgError(false) }, [avatarUrl])
 
   // Derive rank tier from xp string for the "Rank" badge.
@@ -37,10 +39,15 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
         <Image src="/icons/logo.webp" alt={t('logo_alt')} width={120} height={32} className={styles.logoImg} priority />
       </button>
       <div className={styles.xpPillCol}>
-        <div className={styles.xpPill}>
+        <button
+          type="button"
+          className={styles.xpPill}
+          onClick={() => setRankModalOpen(true)}
+          aria-haspopup="dialog"
+        >
           <span className={styles.xpPillBadge}>{t('rank_label')} {tier}</span>
           <span className={styles.xpPillAccuracy} style={{ color: getAccuracyColor(Number(accuracy)) }}>{accuracy}<span className={styles.xpPillSuffix}>%</span></span>
-        </div>
+        </button>
       </div>
       <div className={styles.topbarRight}>
         <NotificationBell />
@@ -63,6 +70,11 @@ export default function TopBar({ accuracy, xp, avatarUrl, initials, onAvatarClic
           <Menu size={20} />
         </button>
       </div>
+      <RankModal
+        isOpen={rankModalOpen}
+        onClose={() => setRankModalOpen(false)}
+        totalXp={Number.isFinite(xpNum) && xpNum >= 0 ? xpNum : 0}
+      />
     </div>
   )
 }

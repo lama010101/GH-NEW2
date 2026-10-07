@@ -110,6 +110,24 @@ Missing:
 
 ---
 
+STEP ZERO (MANDATORY, before any code read or write):
+  npm run env:check -- --context=<build|test|live-db>
+If it exits non-zero:
+  → STOP. Paste the full output table.
+  → Do NOT conclude "the keys are wrong".
+  → Do NOT try other credentials or other env var names.
+  → Do NOT attempt any DB task, migration, seed, or live-data query.
+  → Report: BLOCKED: ENV MISMATCH (paste table).
+
+---
+
+CREDENTIAL SCOPE RULE:
+  - Live-DB tasks, golden-path gates (KC-009), and anything requiring .env.local run ONLY on Devin Local / Claude Code local.
+  - Devin Cloud may run ONLY tasks needing no live credentials (typecheck, lint, unit tests, build-context env:check).
+  - Devin Cloud secret values are SHARED with other products: a present env var is NOT evidence it belongs to this project. env:check's MATCH/MISMATCH verdict is the only acceptable evidence.
+
+---
+
 ## 2. SCOPE (MANDATORY)
 
 File: <exact path>

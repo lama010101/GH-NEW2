@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 10
     env:
       SUPABASE_PROJECT_REF: gzvixlvkwjsrtmtybtkf
+      SUPABASE_POOLER_HOST: aws-1-us-east-2.pooler.supabase.com
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,5 +29,6 @@ jobs:
         with:
           version: latest
 
+      # session pooler (IPv4); direct host db.<ref>.supabase.co is IPv6-only and unreachable from GitHub runners.
       - name: Apply pending migrations
-        run: supabase db push --db-url "postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
+        run: supabase db push --db-url "postgresql://postgres.${SUPABASE_PROJECT_REF}:${{ secrets.SUPABASE_DB_PASSWORD }}@${SUPABASE_POOLER_HOST}:5432/postgres"

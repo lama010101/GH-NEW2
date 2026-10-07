@@ -56,7 +56,9 @@ import { TransitionCause } from "@/core/transitionCause";
 import { transition } from "@/server/engine/transition";
 import type { TransitionEvent } from "@/server/engine/transition";
 import { createSupabaseServerClient, createAuthenticatedServerClient } from "@/core/supabaseServer";
-import { sendPushToUser } from "@/server/pushSender";
+import { sendPushToUser, type PushPayload } from "@/server/pushSender";
+import { resolveNotificationChannel, resolveNotificationChannelsBatch } from "@/server/notificationPrefs";
+import { DEFAULT_NOTIFICATION_CHANNEL } from "@/core/notificationTypes";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TRANSITION ENGINE VALIDATION (MP-ARCH-PHASE-1)
@@ -2871,7 +2873,7 @@ async function startRelaxPlayer(input: { gameId: string; playerId: string; cause
   const { gameId, playerId, cause } = input;
   const client = await getTransactionClient();
   let clientReleased = false;
-  const pendingPushes: Array<{ userId: string; payload: { title: string; body: string; url: string; tag: string } }> = [];
+  const pendingPushes: Array<{ userId: string; payload: PushPayload }> = [];
 
   try {
     await client.query("BEGIN");
@@ -2966,29 +2968,40 @@ async function startRelaxPlayer(input: { gameId: string; playerId: string; cause
         [gameId, playerId]
       );
       for (const invitee of pendingInviteesResult.rows) {
-        await client.query(
-          `INSERT INTO notifications (user_id, type, payload)
-           VALUES ($1, 'lobby_invite', $2::jsonb)`,
-          [
-            invitee.invitee_id,
-            JSON.stringify({
-              game_id: gameId,
-              inviter_id: playerId,
-              inviter_name: starterName,
-              invitation_id: invitee.id,
-              mode: session.mode,
-            }),
-          ]
-        );
-        pendingPushes.push({
-          userId: invitee.invitee_id,
-          payload: {
-            title: "Guess History",
-            body: `${starterName} invited you to a game`,
-            url: `/compete/${gameId}`,
-            tag: `lobby_invite:${gameId}:${invitee.invitee_id}`,
-          },
-        });
+        // Gate delivery on the invitee's lobby_invite channel preference —
+        // same matrix as /api/invitations/send: 'none' skips both, 'push' is
+        // push-only, 'in_app' is row-only, 'both' keeps prior behavior.
+        // resolveNotificationChannel never throws; a prefs lookup failure
+        // fails open to 'both' inside the resolver.
+        const channel = await resolveNotificationChannel(invitee.invitee_id, "lobby_invite");
+        if (channel === "in_app" || channel === "both") {
+          await client.query(
+            `INSERT INTO notifications (user_id, type, payload)
+             VALUES ($1, 'lobby_invite', $2::jsonb)`,
+            [
+              invitee.invitee_id,
+              JSON.stringify({
+                game_id: gameId,
+                inviter_id: playerId,
+                inviter_name: starterName,
+                invitation_id: invitee.id,
+                mode: session.mode,
+              }),
+            ]
+          );
+        }
+        if (channel === "push" || channel === "both") {
+          pendingPushes.push({
+            userId: invitee.invitee_id,
+            payload: {
+              body: `${starterName} invited you to a game`,
+              url: `/compete/${gameId}`,
+              tag: `lobby_invite:${gameId}:${invitee.invitee_id}`,
+              ttl: 259200,
+              urgency: 'normal',
+            },
+          });
+        }
       }
     }
 
@@ -4105,7 +4118,7 @@ export async function advancePlayerRoundAsync(
 
   const client = await getTransactionClient();
   let clientReleased = false;
-  const pendingPushes: Array<{ userId: string; payload: { title: string; body: string; url: string; tag: string } }> = [];
+  const pendingPushes: Array<{ userId: string; payload: PushPayload }> = [];
   try {
     await client.query("BEGIN");
 
@@ -4172,21 +4185,36 @@ export async function advancePlayerRoundAsync(
             [gameId, playerId]
           );
           const completerName = completerNameResult.rows[0]?.display_name ?? "Unknown";
+          // Gate the fan-out on each recipient's session_complete channel
+          // preference — same matrix as lobby_invite: 'none' skips both,
+          // 'push' push-only, 'in_app' row-only, 'both' keeps prior behavior.
+          // resolveNotificationChannelsBatch never throws; a prefs lookup
+          // failure fails open to 'both' for every recipient.
+          const channelByRecipient = await resolveNotificationChannelsBatch(
+            otherPlayersResult.rows.map((row) => row.player_id),
+            "session_complete"
+          );
           for (const other of otherPlayersResult.rows) {
-            await client.query(
-              `INSERT INTO notifications (user_id, type, payload)
-               VALUES ($1, 'session_complete', $2::jsonb)`,
-              [other.player_id, JSON.stringify({ game_id: gameId, completing_player_id: playerId, completing_player_name: completerName })]
-            );
-            pendingPushes.push({
-              userId: other.player_id,
-              payload: {
-                title: "Guess History",
-                body: `${completerName} completed their session`,
-                url: `/compete/${gameId}`,
-                tag: `session_complete:${gameId}`,
-              },
-            });
+            const channel = channelByRecipient.get(other.player_id) ?? DEFAULT_NOTIFICATION_CHANNEL;
+            if (channel === "in_app" || channel === "both") {
+              await client.query(
+                `INSERT INTO notifications (user_id, type, payload)
+                 VALUES ($1, 'session_complete', $2::jsonb)`,
+                [other.player_id, JSON.stringify({ game_id: gameId, completing_player_id: playerId, completing_player_name: completerName })]
+              );
+            }
+            if (channel === "push" || channel === "both") {
+              pendingPushes.push({
+                userId: other.player_id,
+                payload: {
+                  body: `${completerName} completed their session`,
+                  url: `/compete/${gameId}`,
+                  tag: `session_complete:${gameId}`,
+                  ttl: 86400,
+                  urgency: 'normal',
+                },
+              });
+            }
           }
         }
       }
