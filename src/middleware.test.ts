@@ -21,10 +21,15 @@ vi.mock("@/server/partykitAuth", () => ({
 // require a full Next.js server runtime.
 const redirectCalls: { url: string; status: number }[] = [];
 const nextCalls: { request?: unknown }[] = [];
+// Captures every response.cookies.set() so tests can assert which cookies the
+// poisoned-auth-cookie breaker expires (and which it must preserve).
+const cookieSetCalls: { name: string; value: string; options?: unknown }[] = [];
 
 vi.mock("next/server", () => {
   const mockCookies = {
-    set: vi.fn(),
+    set: vi.fn((name: string, value: string, options?: unknown) => {
+      cookieSetCalls.push({ name, value, options });
+    }),
     getAll: vi.fn(() => []),
   };
   return {
@@ -101,6 +106,7 @@ beforeEach(async () => {
   vi.resetModules();
   redirectCalls.length = 0;
   nextCalls.length = 0;
+  cookieSetCalls.length = 0;
 
   // Set up env vars that middleware reads.
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
@@ -413,6 +419,72 @@ describe("middleware redirect logic — KC-007", () => {
       await middleware(req);
 
       expect(redirectCalls).toHaveLength(0);
+    });
+  });
+
+  describe("PKCE code-verifier cookie preservation — AUTH-FIX-PKCEVERIFIER-PRESERVE-1007-001", () => {
+    const VERIFIER = "sb-testref-auth-token-code-verifier";
+
+    beforeEach(async () => {
+      // The "PartyKit secret bypass" test above leaves the mock returning true;
+      // restore the default so these cases exercise the normal session path.
+      const { verifyPartyKitSecret } = await import("@/server/partykitAuth");
+      (verifyPartyKitSecret as any).mockReturnValue(false);
+    });
+
+    it("(1) verifier-only request on a public path emits no sb- cookie expiry", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/", {
+        cookies: { [VERIFIER]: "pkce-verifier-value" },
+      });
+      await middleware(req);
+
+      expect(redirectCalls).toHaveLength(0);
+      expect(cookieSetCalls.some((c) => c.name.startsWith("sb-"))).toBe(false);
+    });
+
+    it("(2) verifier-only request on a protected path redirects to /login without expiring the verifier", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/home", {
+        cookies: { [VERIFIER]: "pkce-verifier-value" },
+      });
+      await middleware(req);
+
+      expect(redirectCalls).toHaveLength(1);
+      expect(redirectCalls[0].url).toContain("/login");
+      expect(cookieSetCalls.some((c) => c.name === VERIFIER)).toBe(false);
+    });
+
+    it("(3) stale auth-token + verifier: auth-token is expired, verifier is preserved", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/home", {
+        cookies: {
+          "sb-testref-auth-token": "stale-token",
+          [VERIFIER]: "pkce-verifier-value",
+        },
+      });
+      await middleware(req);
+
+      expect(
+        cookieSetCalls.some((c) => c.name === "sb-testref-auth-token" && c.value === "")
+      ).toBe(true);
+      expect(cookieSetCalls.some((c) => c.name === VERIFIER)).toBe(false);
+    });
+
+    it("(4) regression: stale auth-token only is still expired", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/", {
+        cookies: { "sb-testref-auth-token": "stale-token" },
+      });
+      await middleware(req);
+
+      expect(
+        cookieSetCalls.some((c) => c.name === "sb-testref-auth-token" && c.value === "")
+      ).toBe(true);
     });
   });
 });
