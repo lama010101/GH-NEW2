@@ -1,4 +1,4 @@
-package com.guesshistory.app;
+package com.backtothepast.app;
 
 import com.getcapacitor.BridgeActivity;
 
