@@ -38,7 +38,7 @@ const PROVIDER = parsedFlags.provider;
 const AI_PLAYER_NAME = parsedFlags.playerName;
 
 const DEFAULT_WORKER_SCRIPT = resolve(process.cwd(), "scripts/ai-players/generate-answers-v3.ts");
-const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
+const TSX_CLI = resolve(process.cwd(), "node_modules/tsx/dist/cli.mjs");
 
 function getWorkerScript(): string {
   const arg = process.argv.find((a) => a.startsWith("--worker="));
@@ -131,7 +131,7 @@ function isTransientFailure(stderr: string, stdout: string): boolean {
 
 function runWorker(eventId: string): Promise<WorkerResult> {
   return new Promise((resolve) => {
-    const child = spawn(TSX_BIN, [getWorkerScript(), eventId, `--model=${MODEL_ID}`, `--provider=${PROVIDER}`, `--player-name=${AI_PLAYER_NAME}`], {
+    const child = spawn(process.execPath, [TSX_CLI, getWorkerScript(), eventId, `--model=${MODEL_ID}`, `--provider=${PROVIDER}`, `--player-name=${AI_PLAYER_NAME}`], {
       cwd: process.cwd(),
       env: process.env,
       stdio: "pipe",
