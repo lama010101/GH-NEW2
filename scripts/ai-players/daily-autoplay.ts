@@ -4,6 +4,7 @@ import { resolve } from "path";
 import { getDbPool } from "@/server/db";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { getDailyChallengeDate } from "@/core/dailyDate";
+import { AI_PLAYER_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS, AI_WORKER_DB_GRACE_MS } from "@/core/aiPlayers";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -14,6 +15,12 @@ const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
 const PLAYER_CONCURRENCY = 3;
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [1000, 4000];
+
+// AIP-FIX-AITIMERKILL-1011-008: the previous 120s budget (timer + 30s) could
+// SIGKILL a worker that used the full 90s answer timer and was still inside
+// its 30s critique turn or writing rows — silently losing the answer. The
+// budget is now answer timer + critique cap + DB-write grace (= 150s).
+const WORKER_HARD_KILL_MS = AI_PLAYER_TIMER_MS + AI_WORKER_CRITIQUE_CAP_MS + AI_WORKER_DB_GRACE_MS;
 
 type AiPlayer = {
   id: string;
@@ -68,6 +75,11 @@ function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: strin
     let stdout = "";
     let stderr = "";
 
+    const killTimer = setTimeout(() => {
+      stderr += `\nHARD_KILL: worker exceeded ${WORKER_HARD_KILL_MS}ms`;
+      child.kill("SIGKILL");
+    }, WORKER_HARD_KILL_MS);
+
     child.stdout.on("data", (chunk) => {
       stdout += chunk.toString();
     });
@@ -77,11 +89,13 @@ function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: strin
     });
 
     child.on("error", (err) => {
+      clearTimeout(killTimer);
       stderr += `\nSPAWN_ERROR: ${err.message}`;
       resolve({ code: -1, stdout, stderr });
     });
 
     child.on("close", (code) => {
+      clearTimeout(killTimer);
       resolve({ code, stdout, stderr });
     });
   });
@@ -117,6 +131,10 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
     /Socket timeout/i,
     /socket hang up/i,
     /SPAWN_ERROR:/,
+    // AIP-FIX-AITIMERKILL-1011-008: a SIGKILLed worker may have died before
+    // writing its row — treat the kill as transient so the item is retried
+    // instead of silently dropped.
+    /HARD_KILL:/,
   ];
   for (const pattern of transientNetworkPatterns) {
     if (pattern.test(output)) return true;
