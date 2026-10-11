@@ -27,6 +27,10 @@ const DEADLINE_MS = (() => {
 
 const DETAIL_MODE = "auto";
 
+const MAX_TOKENS_FIRST_ATTEMPT = 4096;
+const MAX_TOKENS_RETRY = 8192;
+const MAX_TOKEN_ATTEMPTS = [MAX_TOKENS_FIRST_ATTEMPT, MAX_TOKENS_RETRY] as const;
+
 type HintRequest = { tier: number; type: string };
 type SuppliedHint = { id: string; tier: number; type: string; content: string };
 
@@ -58,6 +62,7 @@ type OpenRouterCallResult = {
   usage: OpenRouterUsage;
   reasoning: string | null;
   reasoningAvailable: boolean;
+  maxTokensUsed: number;
 };
 
 type ManifestRequest = {
@@ -226,14 +231,16 @@ async function main(): Promise<void> {
   }> = [];
 
   const turn1Messages = buildTurn1Messages(row.image_url, hints);
+  const turn1 = await callOpenRouter(apiKey, turn1Messages, 1, calls);
+  // Manifest provenance: record the max_tokens of the attempt that produced
+  // this content (a retry means MAX_TOKENS_RETRY), not a fixed first-attempt budget.
   const turn1ManifestId = await resolveManifest(pool, {
     provider: PROVIDER,
     model_id: MODEL_ID,
     messages: turn1Messages,
     temperature: 0.2,
-    max_tokens: 1024,
+    max_tokens: turn1.maxTokensUsed,
   });
-  const turn1 = await callOpenRouter(apiKey, turn1Messages, 1, calls);
   if (turn1.error) {
     const evaluationId = await writeErrorEvalFact(pool, {
       eventId: row.event_id,
@@ -254,7 +261,12 @@ async function main(): Promise<void> {
       finalGuess: null,
       error: `OpenRouter turn 1 failed: ${turn1.error}`,
     });
-    await writeErrorResult(pool, evaluationId, row.event_id, calls, `OpenRouter turn 1 failed: ${turn1.error}`);
+    // AIP-FIX-TRUNCATION-REASONINGBUDGET-1010-002: still-truncated responses are
+    // recorded in eval_facts (above) but write no ai_answer_bank row.
+    if (!turn1.error.startsWith("TRUNCATED_LENGTH:")) {
+      await writeErrorResult(pool, evaluationId, row.event_id, calls, `OpenRouter turn 1 failed: ${turn1.error}`);
+    }
+    console.error(`OpenRouter turn 1 failed: ${turn1.error}`);
     process.exit(1);
   }
 
@@ -313,14 +325,14 @@ async function main(): Promise<void> {
       }
 
       const turn2Messages = buildTurn2Messages(turn1Messages, turn1.content, supplied);
+      const turn2 = await callOpenRouter(apiKey, turn2Messages, 2, calls);
       const turn2ManifestId = await resolveManifest(pool, {
         provider: PROVIDER,
         model_id: MODEL_ID,
         messages: turn2Messages,
         temperature: 0.2,
-        max_tokens: 1024,
+        max_tokens: turn2.maxTokensUsed,
       });
-      const turn2 = await callOpenRouter(apiKey, turn2Messages, 2, calls);
       finalManifestId = turn2ManifestId;
       finalCall = turn2;
 
@@ -344,7 +356,12 @@ async function main(): Promise<void> {
           finalGuess: null,
           error: `OpenRouter turn 2 failed: ${turn2.error}`,
         });
-        await writeErrorResult(pool, evaluationId, row.event_id, calls, `OpenRouter turn 2 failed: ${turn2.error}`);
+        // AIP-FIX-TRUNCATION-REASONINGBUDGET-1010-002: still-truncated responses are
+        // recorded in eval_facts (above) but write no ai_answer_bank row.
+        if (!turn2.error.startsWith("TRUNCATED_LENGTH:")) {
+          await writeErrorResult(pool, evaluationId, row.event_id, calls, `OpenRouter turn 2 failed: ${turn2.error}`);
+        }
+        console.error(`OpenRouter turn 2 failed: ${turn2.error}`);
         process.exit(1);
       }
 
@@ -414,14 +431,14 @@ async function main(): Promise<void> {
   }
 
   const critiqueMessages = buildCritiqueMessages(row.image_url, trueAnswer, row.title ?? "", row.location_name ?? "");
+  const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls);
   await resolveManifest(pool, {
     provider: PROVIDER,
     model_id: MODEL_ID,
     messages: critiqueMessages,
     temperature: 0.2,
-    max_tokens: 1024,
+    max_tokens: critique.maxTokensUsed,
   });
-  const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls);
   const critiqueParse = critique.error
     ? { imageQualityScore: null as number | null, imageQualityNotes: null as string | null, difficultyScore: null as number | null, difficultyNotes: null as string | null, authenticityScore: null as number | null, authenticityNotes: null as string | null, error: `OpenRouter turn 3 failed: ${critique.error}` }
     : parseCritiqueResponse(critique.content);
@@ -683,102 +700,147 @@ async function callOpenRouter(
     error: string | null;
   }>
 ): Promise<OpenRouterCallResult> {
-  const requestBody = {
-    model: MODEL_ID,
-    messages,
-    temperature: 0.2,
-    max_tokens: 1024,
-  };
-
   const requestStartedAt = new Date();
-  const start = Date.now();
-  let response: Response;
-  try {
-    response = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://guess-history.com",
-        "X-Title": "Guess-History AI Players",
-      },
-      body: JSON.stringify(requestBody),
-    });
-  } catch (networkErr) {
+  // AIP-FIX-TRUNCATION-REASONINGBUDGET-1010-002: reasoning models can consume the
+  // entire max_tokens budget on reasoning, yielding finish_reason=length with
+  // empty content. First attempt at 4096; on truncation/empty content retry once
+  // at 8192. Still-truncated responses surface as a distinct TRUNCATED_LENGTH
+  // error class (no ai_answer_bank row written upstream).
+  for (let attemptIndex = 0; attemptIndex < MAX_TOKEN_ATTEMPTS.length; attemptIndex++) {
+    const maxTokens = MAX_TOKEN_ATTEMPTS[attemptIndex];
+    const isLastAttempt = attemptIndex === MAX_TOKEN_ATTEMPTS.length - 1;
+    const requestBody = {
+      model: MODEL_ID,
+      messages,
+      temperature: 0.2,
+      max_tokens: maxTokens,
+    };
+
+    const start = Date.now();
+    let response: Response;
+    try {
+      response = await fetch(OPENROUTER_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "HTTP-Referer": "https://guess-history.com",
+          "X-Title": "Guess-History AI Players",
+        },
+        body: JSON.stringify(requestBody),
+      });
+    } catch (networkErr) {
+      const responseReceivedAt = new Date();
+      const durationMs = Date.now() - start;
+      const errorMsg = `fetch failed: ${networkErr instanceof Error ? networkErr.message : String(networkErr)}`;
+      calls.push({
+        turn_index: turnIndex,
+        request_payload: requestBody,
+        response_payload: { rawText: "" },
+        duration_ms: durationMs,
+        error: errorMsg,
+      });
+      return {
+        content: "",
+        rawResponse: { rawText: "" },
+        error: errorMsg,
+        requestStartedAt,
+        responseReceivedAt,
+        usage: nullUsage(),
+        reasoning: null,
+        reasoningAvailable: false,
+        maxTokensUsed: maxTokens,
+      };
+    }
+
+    let rawResponse: unknown;
+    let responseText = "";
+    try {
+      rawResponse = await response.json();
+      responseText = JSON.stringify(rawResponse);
+    } catch (parseErr) {
+      responseText = await response.text();
+      rawResponse = { rawText: responseText };
+    }
     const responseReceivedAt = new Date();
     const durationMs = Date.now() - start;
-    const errorMsg = `fetch failed: ${networkErr instanceof Error ? networkErr.message : String(networkErr)}`;
-    calls.push({
-      turn_index: turnIndex,
-      request_payload: requestBody,
-      response_payload: { rawText: "" },
-      duration_ms: durationMs,
-      error: errorMsg,
-    });
-    return {
-      content: "",
-      rawResponse: { rawText: "" },
-      error: errorMsg,
-      requestStartedAt,
-      responseReceivedAt,
-      usage: nullUsage(),
-      reasoning: null,
-      reasoningAvailable: false,
-    };
-  }
 
-  let rawResponse: unknown;
-  let responseText = "";
-  try {
-    rawResponse = await response.json();
-    responseText = JSON.stringify(rawResponse);
-  } catch (parseErr) {
-    responseText = await response.text();
-    rawResponse = { rawText: responseText };
-  }
-  const responseReceivedAt = new Date();
-  const durationMs = Date.now() - start;
+    if (!response.ok) {
+      const errorMsg = `OpenRouter request failed: ${response.status} ${response.statusText} ${responseText}`;
+      calls.push({
+        turn_index: turnIndex,
+        request_payload: requestBody,
+        response_payload: rawResponse,
+        duration_ms: durationMs,
+        error: errorMsg,
+      });
+      return {
+        content: "",
+        rawResponse,
+        error: errorMsg,
+        requestStartedAt,
+        responseReceivedAt,
+        usage: extractUsage(rawResponse),
+        reasoning: null,
+        reasoningAvailable: false,
+        maxTokensUsed: maxTokens,
+      };
+    }
 
-  if (!response.ok) {
-    const errorMsg = `OpenRouter request failed: ${response.status} ${response.statusText} ${responseText}`;
+    const finishReasonRaw =
+      (rawResponse as { choices?: Array<{ finish_reason?: unknown }> } | null)?.choices?.[0]?.finish_reason;
+    const finishReason = typeof finishReasonRaw === "string" ? finishReasonRaw : null;
+    const content = extractAssistantContent(rawResponse);
+    const truncated = finishReason === "length" || content.trim().length === 0;
+    if (truncated) {
+      const errorMsg = `TRUNCATED_LENGTH: finish_reason=${finishReason ?? "null"} content_empty=${
+        content.trim().length === 0
+      } at max_tokens=${maxTokens}${
+        isLastAttempt ? " (retry exhausted)" : ` — retrying at max_tokens=${MAX_TOKEN_ATTEMPTS[attemptIndex + 1]}`
+      }`;
+      calls.push({
+        turn_index: turnIndex,
+        request_payload: requestBody,
+        response_payload: rawResponse,
+        duration_ms: durationMs,
+        error: errorMsg,
+      });
+      if (!isLastAttempt) continue;
+      const { reasoning, reasoningAvailable } = extractReasoning(rawResponse);
+      return {
+        content,
+        rawResponse,
+        error: errorMsg,
+        requestStartedAt,
+        responseReceivedAt,
+        usage: extractUsage(rawResponse),
+        reasoning,
+        reasoningAvailable,
+        maxTokensUsed: maxTokens,
+      };
+    }
+
     calls.push({
       turn_index: turnIndex,
       request_payload: requestBody,
       response_payload: rawResponse,
       duration_ms: durationMs,
-      error: errorMsg,
+      error: null,
     });
+
+    const { reasoning, reasoningAvailable } = extractReasoning(rawResponse);
     return {
-      content: "",
+      content,
       rawResponse,
-      error: errorMsg,
       requestStartedAt,
       responseReceivedAt,
       usage: extractUsage(rawResponse),
-      reasoning: null,
-      reasoningAvailable: false,
+      reasoning,
+      reasoningAvailable,
+      maxTokensUsed: maxTokens,
     };
   }
-
-  calls.push({
-    turn_index: turnIndex,
-    request_payload: requestBody,
-    response_payload: rawResponse,
-    duration_ms: durationMs,
-    error: null,
-  });
-
-  const content = extractAssistantContent(rawResponse);
-  const { reasoning, reasoningAvailable } = extractReasoning(rawResponse);
-  return {
-    content,
-    rawResponse,
-    requestStartedAt,
-    responseReceivedAt,
-    usage: extractUsage(rawResponse),
-    reasoning,
-    reasoningAvailable,
-  };
+  throw new Error("unreachable: max_tokens retry loop exhausted");
 }
 
 function nullUsage(): OpenRouterUsage {
