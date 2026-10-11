@@ -4,7 +4,7 @@ import { getDbPool } from "@/server/db";
 import { evaluateRound } from "@/core/rules";
 import type { EventRecord, EventHint, Location } from "@/core/types";
 import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
-import { AI_PLAYER_TIMER_MS as DAILY_TIMER_MS } from "@/core/aiPlayers";
+import { AI_PLAYER_TIMER_MS as DAILY_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS } from "@/core/aiPlayers";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -34,8 +34,10 @@ const DEADLINE_MS = (() => {
 })();
 
 // Critique turn hard cap — excluded from the answer-timer budget accounting
-// but bounded so it can never hang a worker.
-const CRITIQUE_TIMEOUT_MS = 30_000;
+// but bounded so it can never hang a worker. Single-sourced in
+// src/core/aiPlayers.ts so the supervisor's hard-kill budget shares it
+// (AIP-FIX-AITIMERKILL-1011-008).
+const CRITIQUE_TIMEOUT_MS = AI_WORKER_CRITIQUE_CAP_MS;
 
 const DETAIL_MODE = "auto";
 

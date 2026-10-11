@@ -4,7 +4,7 @@ import { resolve } from "path";
 import { getDbPool } from "@/server/db";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { getDailyChallengeDate } from "@/core/dailyDate";
-import { AI_PLAYER_TIMER_MS } from "@/core/aiPlayers";
+import { AI_PLAYER_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS, AI_WORKER_DB_GRACE_MS } from "@/core/aiPlayers";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -16,9 +16,11 @@ const PLAYER_CONCURRENCY = 3;
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [1000, 4000];
 
-// AIP-BUILD-AITIMERWORKERS-1011-004: a worker must not outlive the event timer
-// plus a 30s grace window (shutdown, critique turn, DB writes). Hard-kill it.
-const WORKER_HARD_KILL_MS = AI_PLAYER_TIMER_MS + 30_000;
+// AIP-FIX-AITIMERKILL-1011-008: the previous 120s budget (timer + 30s) could
+// SIGKILL a worker that used the full 90s answer timer and was still inside
+// its 30s critique turn or writing rows — silently losing the answer. The
+// budget is now answer timer + critique cap + DB-write grace (= 150s).
+const WORKER_HARD_KILL_MS = AI_PLAYER_TIMER_MS + AI_WORKER_CRITIQUE_CAP_MS + AI_WORKER_DB_GRACE_MS;
 
 type AiPlayer = {
   id: string;
@@ -129,6 +131,10 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
     /Socket timeout/i,
     /socket hang up/i,
     /SPAWN_ERROR:/,
+    // AIP-FIX-AITIMERKILL-1011-008: a SIGKILLed worker may have died before
+    // writing its row — treat the kill as transient so the item is retried
+    // instead of silently dropped.
+    /HARD_KILL:/,
   ];
   for (const pattern of transientNetworkPatterns) {
     if (pattern.test(output)) return true;
