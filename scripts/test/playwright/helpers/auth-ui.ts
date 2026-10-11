@@ -1,5 +1,6 @@
 import { Page } from '@playwright/test';
 import { TestUser } from '../fixtures/auth';
+import { AUTH_COOKIE_NAME } from './auth-cookie';
 
 // Timeouts raised from 20s/10s to 60s/30s to accommodate slow dev-server
 // cold compiles and Supabase auth latency when 6 browsers log in sequentially
@@ -8,9 +9,6 @@ import { TestUser } from '../fixtures/auth';
 // the original 20s budget.
 const AUTH_TIMEOUT = 120000;
 const AUTH_MODAL_APPEAR_TIMEOUT = 60000;
-
-/** Supabase auth session cookie name (project ref gzvixlvkwjsrtmtybtkf). */
-const AUTH_COOKIE_NAME = 'sb-gzvixlvkwjsrtmtybtkf-auth-token';
 
 /**
  * Poll the browser context for the Supabase auth-token cookie.
