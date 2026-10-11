@@ -131,7 +131,10 @@ function isTransientFailure(stderr: string, stdout: string): boolean {
 
 function runWorker(eventId: string): Promise<WorkerResult> {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, [TSX_CLI, getWorkerScript(), eventId, `--model=${MODEL_ID}`, `--provider=${PROVIDER}`, `--player-name=${AI_PLAYER_NAME}`], {
+    // AIP-BUILD-AITIMERWORKERS-1011-004: forward --timer-sec=<n> to the worker
+    // (v3 only; the flag feeds its DEADLINE_MS).
+    const timerSecArg = process.argv.find((a) => a.startsWith("--timer-sec="));
+    const child = spawn(process.execPath, [TSX_CLI, getWorkerScript(), eventId, `--model=${MODEL_ID}`, `--provider=${PROVIDER}`, `--player-name=${AI_PLAYER_NAME}`, ...(timerSecArg ? [timerSecArg] : [])], {
       cwd: process.cwd(),
       env: process.env,
       stdio: "pipe",

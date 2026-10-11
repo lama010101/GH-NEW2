@@ -3,6 +3,7 @@ import { getDbPool } from "@/server/db";
 import { evaluateRound } from "@/core/rules";
 import type { EventRecord, EventHint, Location } from "@/core/types";
 import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
+import { AI_PLAYER_TIMER_MS as DAILY_TIMER_MS } from "@/core/aiPlayers";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -12,9 +13,7 @@ const MODEL_ID = "anthropic/claude-sonnet-4.6";
 const PROVIDER = "openrouter";
 const AI_PLAYER_NAME = "Claude Sonnet 4.6";
 
-// Live Daily default timer (seconds). Confirmed in src/server/sessionCore.ts createDailySession.
-const DAILY_TIMER_SECONDS = 90;
-const DAILY_TIMER_MS = DAILY_TIMER_SECONDS * 1000;
+// Live Daily default timer — single-sourced in src/core/aiPlayers.ts.
 
 // Test-only override: if set, use this as the cumulative timer deadline (ms).
 // If unset, behavior is identical to current (90s). Stored timeout rows still
