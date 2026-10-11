@@ -303,14 +303,16 @@ plus `--var`). Both Next.js and PartyKit therefore source `PARTYKIT_SECRET`
 from `.env.local` or the shell, which is the single secret source.
 `.dev.vars` is an optional repo-tooling file: it has been removed from git
 tracking and gitignored (SEC-BUILD-DEVVARSUNTRACK-1011-009); a blank template
-lives at `.dev.vars.example`. When `.dev.vars` is present locally, the predev
-guard still compares it against the Next.js value so a stale local override
-cannot silently desync the two dev servers.
+lives at `.dev.vars.example`. When `.dev.vars` is present locally and
+declares a different `PARTYKIT_SECRET` than `.env.local`, the predev guard
+prints a WARNING naming both file paths (never values) and still exits 0 —
+PartyKit ignores `.dev.vars`, so the file should be deleted or aligned
+(SEC-FIX-DEVVARSUNTRACK-1011-010).
 
 Before `npm run dev` starts, `scripts/dev/check-partykit-secret.sh` (wired via
-`predev`) resolves the Next.js value from `.env.local`/shell and the PartyKit
-value from `.dev.vars` when it declares the key, else `.env.local`/shell. It
-fails loudly if either resolved value is missing, empty, or an unexpanded
+`predev`) resolves a single effective `PARTYKIT_SECRET` from `.env.local`/shell
+— the only sources Next.js and PartyKit read. It
+fails loudly only when that value is missing, empty, or an unexpanded
 `${...}` placeholder (the same failure pattern as the documented
 `SUPABASE_URL` unexpanded-in-`partykit dev` 401). A fresh clone with only
 `.env.local` present must pass.
@@ -324,7 +326,7 @@ mismatches.
 **Regression guard:**
   bash scripts/dev/check-partykit-secret.sh
   # Must exit 0 before `npm run dev` starts. A non-zero exit means the secret
-  # sources are missing, unexpanded, or mismatched.
+  # is missing or unexpanded; a `.dev.vars` mismatch only warns.
 
 ### [KC-013] Security posture: no secrets in DB, DDL only via migrations, audit gate
 

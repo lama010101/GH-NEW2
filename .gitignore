@@ -44,7 +44,7 @@ test-sync-run.log
 .dev.vars
 .dev.vars.*
 !.dev.vars.example
-google-services.json
+/docs/google-services.json
 client_secret*.json
 GH-SECRETS/
 .tmp/
