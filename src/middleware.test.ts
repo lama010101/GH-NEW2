@@ -287,6 +287,55 @@ describe("middleware redirect logic — KC-007", () => {
       expect(nextCalls).toHaveLength(1);
     });
 
+    it("passes through /sitemap.xml without redirect", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/sitemap.xml");
+      await middleware(req);
+
+      expect(redirectCalls).toHaveLength(0);
+      expect(nextCalls).toHaveLength(1);
+    });
+
+    it("passes through /robots.txt without redirect", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/robots.txt");
+      await middleware(req);
+
+      expect(redirectCalls).toHaveLength(0);
+      expect(nextCalls).toHaveLength(1);
+    });
+
+    it("passes through /events without redirect", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/events");
+      await middleware(req);
+
+      expect(redirectCalls).toHaveLength(0);
+      expect(nextCalls).toHaveLength(1);
+    });
+
+    it("passes through /events/:slug without redirect", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/events/some-event-slug-1900");
+      await middleware(req);
+
+      expect(redirectCalls).toHaveLength(0);
+      expect(nextCalls).toHaveLength(1);
+    });
+
+    it("does not pass through /eventsX (prefix must include slash)", async () => {
+      const middleware = await loadMiddleware();
+
+      const req = createMockRequest("/eventsx");
+      await middleware(req);
+
+      expect(redirectCalls).toHaveLength(1);
+    });
+
     it("passes through static assets (.png, .css, etc.)", async () => {
       const middleware = await loadMiddleware();
 

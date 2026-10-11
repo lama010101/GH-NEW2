@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { fetchSeoEventBySlug, fetchRelatedSeoEvents, fetchAllEligibleSlugs } from "@/server/seoEvents";
 import { SITE_URL } from "@/server/seoConfig";
+import { defaultLocale, LOCALE_COOKIE, locales, type Locale } from "@/i18n/config";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { EventCard } from "../EventCard";
 import { EventsMap } from "../EventsMap";
 import { HeroImage } from "../HeroImage";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { EventsThemeToggle } from "../EventsThemeToggle";
 import styles from "../events.module.css";
 
 export const revalidate = 3600;
@@ -37,7 +41,8 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: EventPageProps): Promise<Metadata> {
   const event = await fetchSeoEventBySlug(params.slug);
   if (!event) {
-    return { title: "Event not found | Guess History" };
+    const t = await getTranslations("events");
+    return { title: t("not_found_title") };
   }
 
   const place = event.location.name || event.location.country || "an unknown location";
@@ -78,6 +83,15 @@ export default async function EventDetailPage({ params }: EventPageProps) {
   if (!event) {
     notFound();
   }
+
+  const t = await getTranslations("events");
+  const tNav = await getTranslations("nav");
+  const cookieStore = await cookies();
+  const rawLocale = cookieStore.get(LOCALE_COOKIE)?.value;
+  const locale: Locale =
+    rawLocale && (locales as readonly string[]).includes(rawLocale)
+      ? (rawLocale as Locale)
+      : defaultLocale;
 
   const place = event.location.name || event.location.country || "Unknown location";
   const related = await fetchRelatedSeoEvents(event, 12);
@@ -132,13 +146,14 @@ export default async function EventDetailPage({ params }: EventPageProps) {
         />
 
         <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
-          <Link href="/">Home</Link>
+          <Link href="/">{tNav("home")}</Link>
           <span>/</span>
-          <Link href="/events">Events</Link>
+          <Link href="/events">{t("breadcrumb")}</Link>
           <span>/</span>
           <span className={styles.breadcrumbCurrent}>{event.title}</span>
           <span className={styles.breadcrumbToggle}>
-            <ThemeToggle />
+            <LanguageSwitcher initialLocale={locale} />
+            <EventsThemeToggle />
           </span>
         </nav>
 
@@ -174,20 +189,18 @@ export default async function EventDetailPage({ params }: EventPageProps) {
 
         <div className={styles.cta}>
           <div className={styles.ctaText}>
-            <p className={styles.ctaTitle}>Think you can place it on the map and the timeline?</p>
-            <p className={styles.ctaSubtitle}>
-              Play Guess History and test your knowledge of real events like this one.
-            </p>
+            <p className={styles.ctaTitle}>{t("cta_title")}</p>
+            <p className={styles.ctaSubtitle}>{t("cta_subtitle")}</p>
           </div>
           <Link href="/home" className={styles.ctaButton}>
-            Play Guess History
+            {t("cta_button")}
           </Link>
         </div>
 
         {related.length > 0 ? (
           <section>
             <h2 className={styles.sectionTitle}>
-              Events with same category ({event.category})
+              {t("same_category", { category: event.category ?? "" })}
             </h2>
             <div className={styles.relatedRail}>
               {related.map((r) => (

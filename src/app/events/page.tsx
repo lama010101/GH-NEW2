@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { fetchSeoEventsPage, fetchSeoEventsFilterMeta } from "@/server/seoEvents";
 import { SITE_URL } from "@/server/seoConfig";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { defaultLocale, LOCALE_COOKIE, locales, type Locale } from "@/i18n/config";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { EventCard } from "./EventCard";
-import { EventsMapYearSlider } from "./EventsMapYearSlider";
-import { PerPageSlider } from "./PerPageSlider";
+import { EventsThemeToggle } from "./EventsThemeToggle";
+import { EventsSearchPanel } from "./EventsSearchPanel";
 import styles from "./events.module.css";
 
 export const revalidate = 3600;
@@ -29,13 +32,10 @@ function parseYear(value: string | undefined): number | undefined {
 }
 
 export async function generateMetadata({ searchParams }: EventsIndexProps): Promise<Metadata> {
+  const t = await getTranslations("events");
   const page = Math.max(Number(searchParams.page) || 1, 1);
-  const title =
-    page > 1
-      ? `Historical Events — Page ${page} | Guess History`
-      : "Historical Events Explained | Guess History";
-  const description =
-    "Browse real historical events with dates, locations and context — then test what you've learned in Guess History.";
+  const title = page > 1 ? t("meta_title_page", { page }) : t("meta_title");
+  const description = t("meta_desc");
   const canonical = page > 1 ? `${SITE_URL}/events?page=${page}` : `${SITE_URL}/events`;
 
   return {
@@ -57,6 +57,15 @@ export default async function EventsIndexPage({ searchParams }: EventsIndexProps
   const theme = searchParams.theme || "";
   const perRaw = Number(searchParams.per);
   const per = Number.isFinite(perRaw) && perRaw >= 1 ? Math.min(Math.trunc(perRaw), 2000) : 24;
+
+  const t = await getTranslations("events");
+  const tNav = await getTranslations("nav");
+  const cookieStore = await cookies();
+  const rawLocale = cookieStore.get(LOCALE_COOKIE)?.value;
+  const locale: Locale =
+    rawLocale && (locales as readonly string[]).includes(rawLocale)
+      ? (rawLocale as Locale)
+      : defaultLocale;
 
   const [{ events, total, pageSize }, filterMeta] = await Promise.all([
     fetchSeoEventsPage({
@@ -93,105 +102,35 @@ export default async function EventsIndexPage({ searchParams }: EventsIndexProps
     <main className={styles.page}>
       <div className={styles.container}>
         <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
-          <Link href="/">Home</Link>
+          <Link href="/">{tNav("home")}</Link>
           <span>/</span>
-          <span className={styles.breadcrumbCurrent}>Events</span>
+          <span className={styles.breadcrumbCurrent}>{t("breadcrumb")}</span>
           <span className={styles.breadcrumbToggle}>
-            <ThemeToggle />
+            <LanguageSwitcher initialLocale={locale} />
+            <EventsThemeToggle />
           </span>
         </nav>
 
         <section className={styles.hero}>
-          <p className={styles.heroKicker}>The Guess History archive</p>
-          <h1 className={styles.heroTitle}>Every event has a place and a time.</h1>
-          <p className={styles.heroSubtitle}>
-            Browse real historical events — where they happened, when they happened, and
-            why they mattered. Then guess them yourself in the game.
-          </p>
-
-          <form action="/events" method="get" className={styles.heroSearch}>
-            <input
-              type="search"
-              name="q"
-              defaultValue={q}
-              placeholder="Search events, places, themes…"
-              className={styles.heroSearchInput}
-              aria-label="Search events"
-            />
-            {sort === "oldest" ? <input type="hidden" name="sort" value="oldest" /> : null}
-            {yearFrom !== undefined ? <input type="hidden" name="yf" value={yearFrom} /> : null}
-            {yearTo !== undefined ? <input type="hidden" name="yt" value={yearTo} /> : null}
-            {continent ? <input type="hidden" name="continent" value={continent} /> : null}
-            {theme ? <input type="hidden" name="theme" value={theme} /> : null}
-            {per !== 24 ? <input type="hidden" name="per" value={per} /> : null}
-            <button type="submit" className={styles.heroSearchBtn}>
-              Search
-            </button>
-          </form>
-
-          <div className={styles.heroStats}>
-            <span className={styles.heroStat}>{total.toLocaleString()} events</span>
-            <span className={styles.heroStat}>{filterMeta.continents.length} continents</span>
-            {filterMeta.minYear !== null && filterMeta.maxYear !== null ? (
-              <span className={styles.heroStat}>
-                {filterMeta.minYear < 0 ? `${-filterMeta.minYear} BC` : filterMeta.minYear} –{" "}
-                {filterMeta.maxYear}
-              </span>
-            ) : null}
-          </div>
+          <p className={styles.heroKicker}>{t("kicker")}</p>
+          <h1 className={styles.heroTitle}>{t("hero_title")}</h1>
+          <p className={styles.heroSubtitle}>{t("hero_subtitle")}</p>
         </section>
 
-        <form action="/events" method="get" id="events-filter" className={styles.filterBar}>
-          <span className={styles.filterLabel}>Refine</span>
-          <input
-            type="search"
-            name="q"
-            defaultValue={q}
-            placeholder="Search events…"
-            className={styles.filterInput}
-            aria-label="Search events"
-          />
-          <select name="sort" defaultValue={sort} className={styles.filterSelect} aria-label="Sort order">
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-          </select>
-          <select
-            name="continent"
-            defaultValue={continent}
-            className={styles.filterSelect}
-            aria-label="Filter by continent"
-          >
-            <option value="">All continents</option>
-            {filterMeta.continents.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <select
-            name="theme"
-            defaultValue={theme}
-            className={styles.filterSelect}
-            aria-label="Filter by theme"
-          >
-            <option value="">All themes</option>
-            {filterMeta.themes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-          <PerPageSlider value={per} max={Math.max(total, 1)} />
-          <button type="submit" className={styles.filterApply}>
-            Apply
-          </button>
-          <Link href="/events" className={styles.filterReset}>
-            Reset
-          </Link>
-        </form>
-
-        {events.length > 0 && filterMeta.minYear !== null && filterMeta.maxYear !== null ? (
-          <EventsMapYearSlider
+        {filterMeta.minYear !== null && filterMeta.maxYear !== null ? (
+          <EventsSearchPanel
+            q={q}
+            sort={sort}
+            continent={continent}
+            theme={theme}
+            per={per}
+            yearFrom={yearFrom}
+            yearTo={yearTo}
+            continents={filterMeta.continents}
+            themes={filterMeta.themes}
+            minYear={filterMeta.minYear}
+            maxYear={filterMeta.maxYear}
+            total={total}
             markers={events.map((e) => ({
               slug: e.slug,
               title: e.title,
@@ -199,19 +138,13 @@ export default async function EventsIndexPage({ searchParams }: EventsIndexProps
               lat: e.lat,
               lng: e.lng,
             }))}
-            minYear={filterMeta.minYear}
-            maxYear={filterMeta.maxYear}
-            initialFrom={yearFrom ?? filterMeta.maxYear - 50}
-            initialTo={yearTo ?? filterMeta.maxYear}
           />
         ) : null}
 
-        <p className={styles.resultCount}>
-          {total} event{total === 1 ? "" : "s"} found
-        </p>
+        <p className={styles.resultCount}>{t("results", { total })}</p>
 
         {events.length === 0 ? (
-          <p className={styles.pageSubtitle}>No events match — try widening your search or filters.</p>
+          <p className={styles.pageSubtitle}>{t("empty")}</p>
         ) : (
           <div className={styles.grid}>
             {events.map((event) => (
@@ -223,15 +156,15 @@ export default async function EventsIndexPage({ searchParams }: EventsIndexProps
         <div className={styles.pagination}>
           {page > 1 ? (
             <Link href={pageHref(page - 1)} className={styles.pageLink}>
-              ← Previous
+              {t("prev")}
             </Link>
           ) : null}
           <span className={styles.pageStatus}>
-            Page {page} of {totalPages}
+            {t("page_status", { page, totalPages })}
           </span>
           {page < totalPages ? (
             <Link href={pageHref(page + 1)} className={styles.pageLink}>
-              Next →
+              {t("next")}
             </Link>
           ) : null}
         </div>

@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 import styles from "./events.module.css";
 
 export function HeroImage({ src, alt }: { src: string; alt: string }) {
+  const t = useTranslations("events");
+  const tNav = useTranslations("nav");
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -26,7 +30,7 @@ export function HeroImage({ src, alt }: { src: string; alt: string }) {
         type="button"
         className={styles.heroImageWrap}
         onClick={() => setOpen(true)}
-        aria-label={`View ${alt} fullscreen`}
+        aria-label={t("image_fullscreen_aria", { title: alt })}
       >
         <Image
           src={src}
@@ -36,30 +40,33 @@ export function HeroImage({ src, alt }: { src: string; alt: string }) {
           sizes="(max-width: 960px) 100vw, 960px"
           className={styles.heroImage}
         />
-        <span className={styles.heroZoomHint}>⤢ Fullscreen</span>
+        <span className={styles.heroZoomHint}>⤢ {tNav("enter_fullscreen")}</span>
       </button>
 
-      {open ? (
-        <div
-          className={styles.lightbox}
-          role="dialog"
-          aria-modal="true"
-          aria-label={alt}
-          onClick={() => setOpen(false)}
-        >
-          <button
-            type="button"
-            className={styles.lightboxClose}
-            onClick={() => setOpen(false)}
-            aria-label="Close fullscreen view"
-          >
-            ✕
-          </button>
-          <div className={styles.lightboxImgWrap} onClick={(e) => e.stopPropagation()}>
-            <Image src={src} alt={alt} fill sizes="100vw" className={styles.lightboxImg} />
-          </div>
-        </div>
-      ) : null}
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className={styles.lightbox}
+              role="dialog"
+              aria-modal="true"
+              aria-label={alt}
+              onClick={() => setOpen(false)}
+            >
+              <button
+                type="button"
+                className={styles.lightboxClose}
+                onClick={() => setOpen(false)}
+                aria-label={tNav("close_fullscreen_view")}
+              >
+                ✕
+              </button>
+              <div className={styles.lightboxImgWrap} onClick={(e) => e.stopPropagation()}>
+                <Image src={src} alt={alt} fill sizes="100vw" className={styles.lightboxImg} />
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </>
   );
 }
