@@ -292,24 +292,33 @@ without referencing this constraint.
 
 ---
 
-### [KC-012] PARTYKIT_SECRET must match between Next.js and PartyKit dev servers
-**Affected files:** `scripts/dev/check-partykit-secret.sh`, `package.json`, `.dev.vars`, `.env.local`
+### [KC-012] PARTYKIT_SECRET must match between Next.js and PartyKit dev servers — PartyKit does NOT read `.dev.vars`
+**Affected files:** `scripts/dev/check-partykit-secret.sh`, `package.json`, `.env.local`, `.dev.vars` (optional, untracked)
 
 **Constraint:**
-`partykit dev` does not inherit the shell environment the way `next dev` does.
-Next.js reads `PARTYKIT_SECRET` from `.env.local` (or the shell), while
-`partykit dev` reads it from `.dev.vars`. A mismatch causes all server-to-server
-`x-partykit-secret` checks to fail 401, producing broken or stale game state
-that looks like a code regression.
+`partykit dev` does not read `.dev.vars` — verified on partykit 0.0.115: it
+loads `.env` always and `.env.local` in dev (zero `.dev.vars` references in
+the binary; `partykit.json` `${VAR}` placeholders resolve from `process.env`
+plus `--var`). Both Next.js and PartyKit therefore source `PARTYKIT_SECRET`
+from `.env.local` or the shell, which is the single secret source.
+`.dev.vars` is an optional repo-tooling file: it has been removed from git
+tracking and gitignored (SEC-BUILD-DEVVARSUNTRACK-1011-009); a blank template
+lives at `.dev.vars.example`. When `.dev.vars` is present locally, the predev
+guard still compares it against the Next.js value so a stale local override
+cannot silently desync the two dev servers.
 
 Before `npm run dev` starts, `scripts/dev/check-partykit-secret.sh` (wired via
-`predev`) compares the two values. It fails loudly if either value is missing,
-empty, or an unexpanded `${...}` placeholder (the same failure pattern as the
-documented `SUPABASE_URL` unexpanded-in-`partykit dev` 401).
+`predev`) resolves the Next.js value from `.env.local`/shell and the PartyKit
+value from `.dev.vars` when it declares the key, else `.env.local`/shell. It
+fails loudly if either resolved value is missing, empty, or an unexpanded
+`${...}` placeholder (the same failure pattern as the documented
+`SUPABASE_URL` unexpanded-in-`partykit dev` 401). A fresh clone with only
+`.env.local` present must pass.
 
 **Fix when guard fails:**
-Align `.env.local` (Next.js) and `.dev.vars` (PartyKit) to the same literal
-secret. Do not change the secret in committed files; only detect and report
+Set `PARTYKIT_SECRET` in `.env.local` (the single secret source) or export it
+in the shell; if a local `.dev.vars` exists, keep it aligned to the same
+literal. Do not change the secret in committed files; only detect and report
 mismatches.
 
 **Regression guard:**

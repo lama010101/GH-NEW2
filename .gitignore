@@ -38,3 +38,17 @@ _repro_blank.mjs
 plan-auth.js
 test-sync-run.log
 .vercel
+
+# Secrets / local env overrides (SEC-BUILD-DEVVARSUNTRACK-1011-009)
+# PartyKit reads .env/.env.local only; .dev.vars is repo tooling only.
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+google-services.json
+client_secret*.json
+GH-SECRETS/
+.tmp/
+*.pem
+*.key
+*.log
+.env.local.bak*
