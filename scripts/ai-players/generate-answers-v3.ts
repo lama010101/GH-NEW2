@@ -748,10 +748,11 @@ async function callOpenRouter(
 
     const start = Date.now();
     let response: Response;
+    // AbortSignal.timeout caps one call at the remaining budget; an aborted
+    // call is a TIMEOUT_DEADLINE (timeout row upstream), not a provider error.
+    // Hoisted outside try so the catch can reference it.
+    const remainingMs = Math.max(abortMs - (Date.now() - callStartMs), 1);
     try {
-      // AbortSignal.timeout caps one call at the remaining budget; an aborted
-      // call is a TIMEOUT_DEADLINE (timeout row upstream), not a provider error.
-      const remainingMs = Math.max(abortMs - (Date.now() - callStartMs), 1);
       response = await fetch(OPENROUTER_URL, {
         method: "POST",
         headers: {
