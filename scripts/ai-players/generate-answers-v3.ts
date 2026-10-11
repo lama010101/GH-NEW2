@@ -750,7 +750,10 @@ async function callOpenRouter(
     let response: Response;
     // AbortSignal.timeout caps one call at the remaining budget; an aborted
     // call is a TIMEOUT_DEADLINE (timeout row upstream), not a provider error.
-    // Hoisted outside try so the catch can reference it.
+    // remainingMs/responseText live outside try so the catch / parse branch can
+    // reference them; the body read is inside try because the signal also
+    // covers the streamed body (a mid-body abort must hit the same catch).
+    let responseText = "";
     const remainingMs = Math.max(abortMs - (Date.now() - callStartMs), 1);
     try {
       response = await fetch(OPENROUTER_URL, {
@@ -764,6 +767,7 @@ async function callOpenRouter(
         body: JSON.stringify(requestBody),
         signal: AbortSignal.timeout(remainingMs),
       });
+      responseText = await response.text();
     } catch (networkErr) {
       const responseReceivedAt = new Date();
       const durationMs = Date.now() - start;
@@ -794,7 +798,6 @@ async function callOpenRouter(
 
     // Read the body once: text first, then JSON.parse — a non-JSON error page
     // still produces a calls row instead of an unusable-body exception.
-    const responseText = await response.text();
     let rawResponse: unknown;
     try {
       rawResponse = JSON.parse(responseText);
