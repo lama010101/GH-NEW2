@@ -4,6 +4,7 @@ import { resolve } from "path";
 import { getDbPool } from "@/server/db";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { getDailyChallengeDate } from "@/core/dailyDate";
+import { AI_PLAYER_TIMER_MS } from "@/core/aiPlayers";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -14,6 +15,10 @@ const TSX_BIN = resolve(process.cwd(), "node_modules/.bin/tsx");
 const PLAYER_CONCURRENCY = 3;
 const MAX_RETRIES = 2;
 const RETRY_DELAYS_MS = [1000, 4000];
+
+// AIP-BUILD-AITIMERWORKERS-1011-004: a worker must not outlive the event timer
+// plus a 30s grace window (shutdown, critique turn, DB writes). Hard-kill it.
+const WORKER_HARD_KILL_MS = AI_PLAYER_TIMER_MS + 30_000;
 
 type AiPlayer = {
   id: string;
@@ -68,6 +73,11 @@ function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: strin
     let stdout = "";
     let stderr = "";
 
+    const killTimer = setTimeout(() => {
+      stderr += `\nHARD_KILL: worker exceeded ${WORKER_HARD_KILL_MS}ms`;
+      child.kill("SIGKILL");
+    }, WORKER_HARD_KILL_MS);
+
     child.stdout.on("data", (chunk) => {
       stdout += chunk.toString();
     });
@@ -77,11 +87,13 @@ function runWorker(item: WorkItem): Promise<{ code: number | null; stdout: strin
     });
 
     child.on("error", (err) => {
+      clearTimeout(killTimer);
       stderr += `\nSPAWN_ERROR: ${err.message}`;
       resolve({ code: -1, stdout, stderr });
     });
 
     child.on("close", (code) => {
+      clearTimeout(killTimer);
       resolve({ code, stdout, stderr });
     });
   });

@@ -4,6 +4,7 @@ import { getDbPool } from "@/server/db";
 import { evaluateRound } from "@/core/rules";
 import type { EventRecord, EventHint, Location } from "@/core/types";
 import { TIER_PENALTY_RATE } from "@/core/hintPenalties";
+import { AI_PLAYER_TIMER_MS as DAILY_TIMER_MS } from "@/core/aiPlayers";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -14,16 +15,27 @@ const DEFAULT_MODEL_ID = "anthropic/claude-sonnet-4.6";
 const DEFAULT_PROVIDER = "openrouter";
 const DEFAULT_AI_PLAYER_NAME = "Claude Sonnet 4.6";
 
-const DAILY_TIMER_SECONDS = 90;
-const DAILY_TIMER_MS = DAILY_TIMER_SECONDS * 1000;
+// Live Daily default timer — single-sourced in src/core/aiPlayers.ts.
 
+// AIP-BUILD-AITIMERWORKERS-1011-004: enforced deadline = --timer-sec=<n> flag
+// (seconds), else the test-only AI_V3_TIMER_OVERRIDE_MS (ms), else the core
+// 90s constant.
 const DEADLINE_MS = (() => {
+  const flagArg = process.argv.slice(2).find((a) => a.startsWith("--timer-sec="));
+  if (flagArg) {
+    const parsed = Number(flagArg.slice("--timer-sec=".length));
+    if (Number.isFinite(parsed) && parsed > 0) return Math.round(parsed * 1000);
+  }
   const override = process.env.AI_V3_TIMER_OVERRIDE_MS;
   if (!override) return DAILY_TIMER_MS;
   const parsed = Number(override);
   if (Number.isFinite(parsed) && parsed > 0) return parsed;
   return DAILY_TIMER_MS;
 })();
+
+// Critique turn hard cap — excluded from the answer-timer budget accounting
+// but bounded so it can never hang a worker.
+const CRITIQUE_TIMEOUT_MS = 30_000;
 
 const DETAIL_MODE = "auto";
 
@@ -115,7 +127,7 @@ async function main(): Promise<void> {
   const eventId = parsedArgs.eventId;
   if (!eventId) {
     console.error(
-      "Usage: tsx scripts/ai-players/generate-answers-v3.ts [--model=<slug>] [--provider=<provider>] [--player-name=<name>] <event-id>"
+      "Usage: tsx scripts/ai-players/generate-answers-v3.ts [--model=<slug>] [--provider=<provider>] [--player-name=<name>] [--timer-sec=<seconds>] <event-id>"
     );
     process.exit(1);
   }
@@ -231,7 +243,7 @@ async function main(): Promise<void> {
   }> = [];
 
   const turn1Messages = buildTurn1Messages(row.image_url, hints);
-  const turn1 = await callOpenRouter(apiKey, turn1Messages, 1, calls);
+  const turn1 = await callOpenRouter(apiKey, turn1Messages, 1, calls, Math.max(DEADLINE_MS - (Date.now() - turnStart), 1));
   // Manifest provenance: record the max_tokens of the attempt that produced
   // this content (a retry means MAX_TOKENS_RETRY), not a fixed first-attempt budget.
   const turn1ManifestId = await resolveManifest(pool, {
@@ -241,7 +253,20 @@ async function main(): Promise<void> {
     temperature: 0.2,
     max_tokens: turn1.maxTokensUsed,
   });
+  let finalGuess: FinalGuess | null = null;
+  let finalReasoning: string | null = null;
+  let suppliedHints: SuppliedHint[] = [];
+  let finalCall: OpenRouterCallResult = turn1;
+  let finalManifestId: string = turn1ManifestId;
+  let timedOut = false;
+  let timeToGuessMs: number | null = null;
+
   if (turn1.error) {
+    if (turn1.error.startsWith("TIMEOUT_DEADLINE:")) {
+      // Timer budget exhausted mid-call — record a timeout row, not an error row.
+      timedOut = true;
+      console.log(`Timer deadline hit during turn 1 call: ${turn1.error}`);
+    } else {
     const evaluationId = await writeErrorEvalFact(pool, {
       eventId: row.event_id,
       aiPlayerId: await ensureAiPlayer(pool),
@@ -268,9 +293,12 @@ async function main(): Promise<void> {
     }
     console.error(`OpenRouter turn 1 failed: ${turn1.error}`);
     process.exit(1);
+    }
   }
 
-  const turn1Parse = parseTurn1Response(turn1.content);
+  const turn1Parse = timedOut
+    ? ({ kind: "hints", hintRequests: [] } as TurnResult)
+    : parseTurn1Response(turn1.content);
   if (turn1Parse.kind === "error") {
     const evaluationId = await writeErrorEvalFact(pool, {
       eventId: row.event_id,
@@ -296,14 +324,6 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  let finalGuess: FinalGuess | null = null;
-  let finalReasoning: string | null = null;
-  let suppliedHints: SuppliedHint[] = [];
-  let finalCall: OpenRouterCallResult = turn1;
-  let finalManifestId: string = turn1ManifestId;
-  let timedOut = false;
-  let timeToGuessMs: number | null = null;
-
   if (turn1Parse.kind === "guess") {
     finalGuess = turn1Parse.finalGuess;
     finalReasoning = turn1Parse.reasoning;
@@ -325,7 +345,7 @@ async function main(): Promise<void> {
       }
 
       const turn2Messages = buildTurn2Messages(turn1Messages, turn1.content, supplied);
-      const turn2 = await callOpenRouter(apiKey, turn2Messages, 2, calls);
+      const turn2 = await callOpenRouter(apiKey, turn2Messages, 2, calls, Math.max(DEADLINE_MS - (Date.now() - turnStart), 1));
       const turn2ManifestId = await resolveManifest(pool, {
         provider: PROVIDER,
         model_id: MODEL_ID,
@@ -337,6 +357,11 @@ async function main(): Promise<void> {
       finalCall = turn2;
 
       if (turn2.error) {
+        if (turn2.error.startsWith("TIMEOUT_DEADLINE:")) {
+          // Timer budget exhausted mid-call — record a timeout row, not an error row.
+          timedOut = true;
+          console.log(`Timer deadline hit during turn 2 call: ${turn2.error}`);
+        } else {
         const evaluationId = await writeErrorEvalFact(pool, {
           eventId: row.event_id,
           aiPlayerId: await ensureAiPlayer(pool),
@@ -363,8 +388,10 @@ async function main(): Promise<void> {
         }
         console.error(`OpenRouter turn 2 failed: ${turn2.error}`);
         process.exit(1);
+        }
       }
 
+      if (!timedOut) {
       const turn2Parse = parseFinalGuessResponse(turn2.content);
       if (turn2Parse.kind === "error") {
         const evaluationId = await writeErrorEvalFact(pool, {
@@ -419,6 +446,7 @@ async function main(): Promise<void> {
       finalGuess = turn2Parse.finalGuess;
       finalReasoning = turn2Parse.reasoning;
       timeToGuessMs = Date.now() - turnStart;
+      }
     }
   }
 
@@ -431,7 +459,7 @@ async function main(): Promise<void> {
   }
 
   const critiqueMessages = buildCritiqueMessages(row.image_url, trueAnswer, row.title ?? "", row.location_name ?? "");
-  const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls);
+  const critique = await callOpenRouter(apiKey, critiqueMessages, 3, calls, CRITIQUE_TIMEOUT_MS);
   await resolveManifest(pool, {
     provider: PROVIDER,
     model_id: MODEL_ID,
@@ -469,7 +497,7 @@ async function main(): Promise<void> {
   }
 
   if (timedOut || !finalGuess) {
-    const timeoutMs = DAILY_TIMER_MS;
+    const timeoutMs = DEADLINE_MS;
     const result = evaluateRound(
       eventRecord,
       { year: null, location: null },
@@ -592,7 +620,7 @@ async function main(): Promise<void> {
     reasoning: finalReasoning,
     hintsRequested: hintsRequestedPayload,
     hintPenaltyApplied: hintPenaltyAppliedPayload,
-    timeToGuessMs: timeToGuessMs ?? DAILY_TIMER_MS,
+    timeToGuessMs: timeToGuessMs ?? DEADLINE_MS,
     imageQualityScore,
     imageQualityNotes,
     critiqueError,
@@ -698,9 +726,11 @@ async function callOpenRouter(
     response_payload: unknown;
     duration_ms: number;
     error: string | null;
-  }>
+  }>,
+  abortMs: number
 ): Promise<OpenRouterCallResult> {
   const requestStartedAt = new Date();
+  const callStartMs = Date.now();
   // AIP-FIX-TRUNCATION-REASONINGBUDGET-1010-002: reasoning models can consume the
   // entire max_tokens budget on reasoning, yielding finish_reason=length with
   // empty content. First attempt at 4096; on truncation/empty content retry once
@@ -719,6 +749,9 @@ async function callOpenRouter(
     const start = Date.now();
     let response: Response;
     try {
+      // AbortSignal.timeout caps one call at the remaining budget; an aborted
+      // call is a TIMEOUT_DEADLINE (timeout row upstream), not a provider error.
+      const remainingMs = Math.max(abortMs - (Date.now() - callStartMs), 1);
       response = await fetch(OPENROUTER_URL, {
         method: "POST",
         headers: {
@@ -728,11 +761,16 @@ async function callOpenRouter(
           "X-Title": "Guess-History AI Players",
         },
         body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(remainingMs),
       });
     } catch (networkErr) {
       const responseReceivedAt = new Date();
       const durationMs = Date.now() - start;
-      const errorMsg = `fetch failed: ${networkErr instanceof Error ? networkErr.message : String(networkErr)}`;
+      const errName = networkErr instanceof Error ? networkErr.name : "";
+      const isAbort = errName === "AbortError" || errName === "TimeoutError";
+      const errorMsg = isAbort
+        ? `TIMEOUT_DEADLINE: fetch aborted after ${durationMs}ms (budget ${remainingMs}ms)`
+        : `fetch failed: ${networkErr instanceof Error ? networkErr.message : String(networkErr)}`;
       calls.push({
         turn_index: turnIndex,
         request_payload: requestBody,
@@ -753,13 +791,13 @@ async function callOpenRouter(
       };
     }
 
+    // Read the body once: text first, then JSON.parse — a non-JSON error page
+    // still produces a calls row instead of an unusable-body exception.
+    const responseText = await response.text();
     let rawResponse: unknown;
-    let responseText = "";
     try {
-      rawResponse = await response.json();
-      responseText = JSON.stringify(rawResponse);
-    } catch (parseErr) {
-      responseText = await response.text();
+      rawResponse = JSON.parse(responseText);
+    } catch {
       rawResponse = { rawText: responseText };
     }
     const responseReceivedAt = new Date();
@@ -767,6 +805,39 @@ async function callOpenRouter(
 
     if (!response.ok) {
       const errorMsg = `OpenRouter request failed: ${response.status} ${response.statusText} ${responseText}`;
+      calls.push({
+        turn_index: turnIndex,
+        request_payload: requestBody,
+        response_payload: rawResponse,
+        duration_ms: durationMs,
+        error: errorMsg,
+      });
+      return {
+        content: "",
+        rawResponse,
+        error: errorMsg,
+        requestStartedAt,
+        responseReceivedAt,
+        usage: extractUsage(rawResponse),
+        reasoning: null,
+        reasoningAvailable: false,
+        maxTokensUsed: maxTokens,
+      };
+    }
+
+    // Provider-error classification on HTTP 200: a top-level `error` object is
+    // the real error class (rate limit, model error, upstream failure) — record
+    // it as such instead of collapsing it into TRUNCATED_LENGTH.
+    const topLevelError =
+      typeof rawResponse === "object" && rawResponse !== null
+        ? (rawResponse as { error?: unknown }).error
+        : undefined;
+    if (topLevelError !== undefined && topLevelError !== null) {
+      const errDetail =
+        typeof topLevelError === "object"
+          ? JSON.stringify(topLevelError)
+          : String(topLevelError);
+      const errorMsg = `PROVIDER_ERROR: ${errDetail.slice(0, 500)}`;
       calls.push({
         turn_index: turnIndex,
         request_payload: requestBody,
@@ -1320,7 +1391,7 @@ async function writeEvalFact(
 ): Promise<string> {
   const gameContext = {
     game_mode_type: "bank_generation",
-    time_budget_ms: 90000,
+    time_budget_ms: DEADLINE_MS,
   };
 
   const result = await pool.query<{ evaluation_id: string }>(
