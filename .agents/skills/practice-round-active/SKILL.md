@@ -5,12 +5,12 @@ description: How to reach and exercise the practice round-active UI in GH-NEW2 f
 
 # Devin Secrets Needed
 - `SUPABASE_SERVICE_ROLE_KEY` and `NEXT_PUBLIC_*` keys from the repo secret file at `/run/repo_secrets/lama010101/GH-NEW2/.env.secrets`.
-- `PARTYKIT_SECRET` from `/home/ubuntu/repos/GH-NEW2/.dev.vars`.
+- `PARTYKIT_SECRET` from `/home/ubuntu/repos/GH-NEW2/.env.local`.
 
 # One-time environment
 ```bash
 source /run/repo_secrets/lama010101/GH-NEW2/.env.secrets 2>/dev/null
-export PARTYKIT_SECRET=$(grep '^PARTYKIT_SECRET=' /home/ubuntu/repos/GH-NEW2/.dev.vars | cut -d= -f2-)
+export PARTYKIT_SECRET=$(grep '^PARTYKIT_SECRET=' /home/ubuntu/repos/GH-NEW2/.env.local | cut -d= -f2-)
 export NEXT_PUBLIC_PARTY_KIT_HOST=localhost:1999
 export PLAYWRIGHT_BASE_URL=http://localhost:3000
 export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1
