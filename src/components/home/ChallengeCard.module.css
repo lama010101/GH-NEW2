@@ -1,0 +1,89 @@
+/* Challenge card — port of prototype/home-v2 .hv2-challenge / .hv2c-* rules
+   (MP-UIX-PORT-C-HOME-001). Font sizes use var(--font-*) tokens only. */
+
+.challenge {
+  border-radius: 20px;
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0369a1 0%, #0891b2 40%, #22d3ee 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 40px rgba(8, 145, 178, 0.35);
+  display: flex;
+  flex-direction: column;
+}
+
+.head { display: flex; align-items: center; gap: 12px; }
+.icon { width: 64px; height: 64px; object-fit: contain; border-radius: 12px; display: block; }
+.headTxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.title { margin: 0; font-size: var(--font-xl); font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--gh-text-primary, #fff); }
+.sub { font-size: var(--font-2xs); font-weight: 600; color: rgba(255,255,255,0.6); }
+.create {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  min-height: 40px; padding: 0 16px; border-radius: 999px; border: 0; cursor: pointer;
+  background: #fff; color: #0369a1; font-size: var(--font-xs); font-weight: 900;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+}
+.create:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.tabs { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; }
+.tabHead {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 9px 12px; border-radius: 10px; cursor: pointer;
+  background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.10);
+  color: #fff; font-size: var(--font-2xs); font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
+}
+.tabCount {
+  font-size: var(--font-2xs); font-weight: 900; padding: 1px 7px; border-radius: 999px;
+  background: #ef4444; color: #fff;
+}
+.tabChev { margin-left: auto; transition: transform 0.15s ease; opacity: 0.7; }
+.tabChevOpen { transform: rotate(90deg); }
+.tabBody { display: flex; flex-direction: column; gap: 1px; padding: 6px 2px 2px; }
+.row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 10px;
+  background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.10);
+}
+.info { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.name { font-size: var(--font-2xs); font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rowSub { font-size: var(--font-2xs); font-weight: 600; color: rgba(255,255,255,0.6); }
+.mode {
+  display: inline-block; font-size: var(--font-2xs); font-weight: 700; padding: 1px 6px;
+  border-radius: 999px; background: rgba(255,255,255,0.14); letter-spacing: 0.3px;
+}
+.timeRemaining { color: rgba(255,255,255,0.5); }
+.go {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 28px; border-radius: 999px; border: 0; cursor: pointer;
+  background: #22c55e; color: #fff; flex-shrink: 0;
+}
+.go:disabled { cursor: not-allowed; opacity: 0.6; }
+.del {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 999px; border: 0; cursor: pointer;
+  background: #ef4444; color: #fff; flex-shrink: 0;
+}
+.del:disabled { cursor: not-allowed; opacity: 0.6; }
+.acc { font-size: var(--font-2xs); font-weight: 900; }
+.rank {
+  font-size: var(--font-2xs); font-weight: 800; padding: 2px 7px; border-radius: 999px;
+  background: rgba(45,212,191,0.18); color: #2dd4bf; white-space: nowrap;
+}
+.emptyState {
+  padding: 10px 8px; font-size: var(--font-2xs); font-weight: 600;
+  color: rgba(255,255,255,0.6); text-align: center;
+}
+.seeAll {
+  align-self: center; margin-top: 4px; padding: 6px 12px; border: 0; cursor: pointer;
+  background: transparent; color: #fff; font-size: var(--font-2xs); font-weight: 800;
+  text-decoration: underline;
+}
+.errorRow { margin-top: 8px; font-size: var(--font-2xs); color: #fecaca; }
+
+@media (prefers-reduced-motion: reduce) {
+  .challenge *, .challenge *::before, .challenge *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
