@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { RANKS, rankForXp } from '@/core/rank';
 import styles from './RankLadderCard.module.css';
@@ -336,20 +336,37 @@ export default function RankLadderCard({ totalXp, hint }: RankLadderCardProps) {
   const tGame = useTranslations('game');
   const railRef = useRef<HTMLDivElement | null>(null);
   const centered = useRef(false);
+  const centeredTier = useRef<number | null>(null);
   const drag = useRef({ on: false, x: 0, left: 0 });
   const info = rankForXp(totalXp);
+
+  // Instant-scrolls the rail so the [data-cur='1'] cell sits at its centre.
+  const centerCurrentCell = useCallback((el: HTMLDivElement) => {
+    const cell = el.querySelector<HTMLElement>("[data-cur='1']");
+    if (!cell) return;
+    const rr = el.getBoundingClientRect();
+    const cr = cell.getBoundingClientRect();
+    el.scrollLeft += cr.left + cr.width / 2 - (rr.left + el.clientWidth / 2);
+  }, []);
 
   // Callback ref: runs pre-paint on mount → centre the current cell with no flash.
   const onRail = (el: HTMLDivElement | null) => {
     railRef.current = el;
     if (!el || centered.current) return;
     centered.current = true;
-    const cell = el.querySelector<HTMLElement>("[data-cur='1']");
-    if (!cell) return;
-    const rr = el.getBoundingClientRect();
-    const cr = cell.getBoundingClientRect();
-    el.scrollLeft += cr.left + cr.width / 2 - (rr.left + el.clientWidth / 2);
+    centeredTier.current = info.tier;
+    centerCurrentCell(el);
   };
+
+  // Async XP can move data-cur to a different tier after mount: re-centre
+  // instantly, but only on a real tier change — never on unrelated re-renders
+  // or after the user's own scrolling.
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el || centeredTier.current === info.tier) return;
+    centeredTier.current = info.tier;
+    centerCurrentCell(el);
+  }, [info.tier, centerCurrentCell]);
 
   // Mouse drag-to-scroll (touch swipes use native overflow scrolling).
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
