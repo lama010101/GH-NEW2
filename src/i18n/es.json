@@ -673,7 +673,12 @@
     "countries": "Países",
     "practice": "Práctica",
     "daily_all_time": "Diario (de todos los tiempos)",
-    "level": "Nivel"
+    "level": "Nivel",
+    "era_region": "Era & region",
+    "member_since_full": "Member since",
+    "player_id": "Player ID",
+    "rounds": "Rounds",
+    "stats": "Stats"
   },
   "account": {
     "title": "Cuenta",
@@ -771,7 +776,10 @@
     "rank_9": "Erudito",
     "rank_10": "Cartógrafo Real",
     "next_rank": "{xp} XP hasta {title}",
-    "max_rank": "Rango máximo alcanzado"
+    "max_rank": "Rango máximo alcanzado",
+    "badge_aria": "Rank {tier} badge",
+    "rail_hint_swipe": "swipe",
+    "tier_of_10": "Tier {tier} / 10"
   },
   "grow": {
     "meta_title": "Grow With Us — Guess-History",
