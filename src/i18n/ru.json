@@ -630,7 +630,9 @@
     "rank_suffix_two": "-й",
     "rank_suffix_few": "-й",
     "rank_suffix_many": "-й",
-    "rank_suffix_other": "-й"
+    "rank_suffix_other": "-й",
+    "xp_amount": "{n, number} XP",
+    "no_more_players": "No more ranked players."
   },
   "profile": {
     "accuracy_breakdown": "Разбивка точности",

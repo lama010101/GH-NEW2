@@ -630,7 +630,9 @@
     "rank_suffix_two": "e",
     "rank_suffix_few": "e",
     "rank_suffix_many": "e",
-    "rank_suffix_other": "e"
+    "rank_suffix_other": "e",
+    "xp_amount": "{n, number} XP",
+    "no_more_players": "No more ranked players."
   },
   "profile": {
     "accuracy_breakdown": "Répartition de la précision",
