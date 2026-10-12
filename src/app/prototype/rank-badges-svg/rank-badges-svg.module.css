@@ -1,0 +1,546 @@
+/* ============================================================================
+   PROTOTYPE RANK BADGES · SVG — styles
+   Hand-drawn SVG tier badges for all 10 rank titles. Dark theme matching
+   other prototypes. Responsive grid + scrollable ladder.
+   ============================================================================ */
+
+.screen {
+  min-height: 100vh;
+  background: #080c14;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 60px 16px 40px;
+  box-sizing: border-box;
+}
+
+/* ── Proto bar ── */
+.protoBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(10, 10, 12, 0.6);
+  backdrop-filter: blur(8px);
+  flex-wrap: wrap;
+}
+
+.protoTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  opacity: 0.85;
+}
+
+.protoLinks {
+  display: flex;
+  gap: 8px;
+}
+
+.protoLink {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gh-teal);
+  text-decoration: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.15s;
+}
+
+.protoLink:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ── Header ── */
+.header {
+  max-width: 900px;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+
+.headerTitle {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.headerSub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Monaco', monospace;
+}
+
+/* ── Sections ── */
+.sectionTitle {
+  max-width: 900px;
+  margin: 36px auto 16px;
+  font-size: 18px;
+  font-weight: 800;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gh-teal);
+}
+
+/* ── Gallery grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.rankCard {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.rankCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.badgeWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 0 10px;
+}
+
+.tierBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--gh-teal);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+/* ── Card body ── */
+.cardBody {
+  padding: 8px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardTitle {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1.1;
+  text-align: center;
+}
+
+/* ── XP progress ── */
+.xpBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.xpBar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.xpFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.xpLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── Scale check ── */
+.scaleList {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scaleRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.scaleTier {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gh-teal);
+  width: 26px;
+  flex-shrink: 0;
+}
+
+.scaleBadges {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.playerPill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 4px 12px 4px 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.pillAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #155e75, #22d3ee);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pillName {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pillTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── Ladder (collapsible 2-row strip) ── */
+.ladderCard {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+
+.lcHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lcTitles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lcTitle {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.1;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.lcSub {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.lcHint {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.35);
+  padding-top: 4px;
+}
+
+.lcRail {
+  display: flex;
+  gap: 10px;
+  margin: 14px -18px 4px;
+  padding: 4px 28px 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+}
+
+.lcRail::-webkit-scrollbar {
+  display: none;
+}
+
+.lcCell {
+  flex: 0 0 148px;
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.25s;
+}
+
+.lcCellPast {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lcCellCur {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lcBadge {
+  display: flex;
+}
+
+.lcName {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lcXpBar {
+  display: block;
+  height: 4px;
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.lcXpFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* ── Badge animations ── */
+/* Keyframes are inert without an assignment; all assignments live inside the
+   prefers-reduced-motion: no-preference block at the bottom of this section. */
+
+@keyframes rbCardIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes rbGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes rbFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes rbGlowPulse {
+  0%, 100% { opacity: 0.16; }
+  50% { opacity: 0.38; }
+}
+
+@keyframes rbSheen {
+  0% { transform: translateX(-60px); }
+  45%, 100% { transform: translateX(120px); }
+}
+
+@keyframes rbTwinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes rbStep {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-3px); }
+  60% { transform: translateY(0); }
+}
+
+@keyframes rbNeedle {
+  0%, 100% { transform: rotate(-11deg); }
+  50% { transform: rotate(14deg); }
+}
+
+/* dashoffset travels a multiple of both dash periods (6+6=12, 4+4=8 → 24)
+   so the march loops seamlessly on the trail and map routes. */
+@keyframes rbDash {
+  to { stroke-dashoffset: -24; }
+}
+
+@keyframes rbFlag {
+  0%, 100% { transform: skewY(0deg); }
+  50% { transform: skewY(7deg); }
+}
+
+@keyframes rbSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rbBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes rbSway {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+
+@keyframes rbPulseMark {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.18); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rankCard {
+    animation: rbCardIn 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .badgeWrap {
+    transition: transform 0.25s ease;
+  }
+
+  .rankCard:hover .badgeWrap {
+    transform: scale(1.05);
+  }
+
+  .badgeWrap > svg {
+    animation: rbFloat 5.5s ease-in-out infinite;
+  }
+
+  .xpFill {
+    transform-origin: left;
+    animation: rbGrow 0.9s 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .ladderCard {
+    animation: rbCardIn 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .lcBadge > svg {
+    animation: rbFloat 5.5s ease-in-out infinite;
+  }
+
+  .lcXpFill {
+    transform-origin: left;
+    animation: rbGrow 0.9s 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .animGlow { animation: rbGlowPulse 3.4s ease-in-out infinite; }
+  .animSheen { animation: rbSheen 4.8s ease-in-out infinite; }
+  .animTwinkle { animation: rbTwinkle 2.2s ease-in-out infinite; }
+  .animStep { animation: rbStep 1.8s ease-in-out infinite; }
+  .animDash { animation: rbDash 1.4s linear infinite; }
+  .animBob { animation: rbBob 2.6s ease-in-out infinite; }
+
+  .animNeedle {
+    animation: rbNeedle 3.2s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .animFlag {
+    animation: rbFlag 1.6s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: left center;
+  }
+
+  .animSpin {
+    animation: rbSpin 9s linear infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .animSway {
+    animation: rbSway 2.4s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: 50% 0;
+  }
+
+  .animPulseMark {
+    animation: rbPulseMark 2s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .headerTitle {
+    font-size: 22px;
+  }
+
+  .scaleRow {
+    flex-wrap: wrap;
+  }
+
+  .playerPill {
+    margin-left: 0;
+  }
+}

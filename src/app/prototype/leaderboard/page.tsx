@@ -11,7 +11,8 @@
 
 import { useMemo, useState } from "react";
 
-type Tab = "session" | "alltime" | "friends";
+type Tab = "overall" | "daily" | "journey";
+type DailySubTab = "today" | "alltime";
 
 type Player = {
   id: string;
@@ -21,29 +22,44 @@ type Player = {
   roundsWon: number;
   streak: number;
   isMe: boolean;
+  isAI?: boolean;
+  isFriend?: boolean;
 };
 
-const DATA: Record<Tab, Player[]> = {
-  session: [
-    { id: "p2", name: "Mina Kovač", score: 8150, accuracy: 94, roundsWon: 2, streak: 4, isMe: false },
-    { id: "p4", name: "Sara Bianchi", score: 7300, accuracy: 79, roundsWon: 1, streak: 2, isMe: false },
+const DATA: Record<string, Player[]> = {
+  overall: [
+    { id: "p5", name: "Jamal Wright", score: 45200, accuracy: 91, roundsWon: 12, streak: 6, isMe: false },
+    { id: "a1", name: "Chronos Bot", score: 43600, accuracy: 96, roundsWon: 11, streak: 8, isMe: false, isAI: true },
+    { id: "p2", name: "Mina Kovač", score: 42100, accuracy: 93, roundsWon: 10, streak: 5, isMe: false, isFriend: true },
+    { id: "p1", name: "Alex Rivera", score: 38900, accuracy: 87, roundsWon: 8, streak: 4, isMe: true },
+    { id: "p6", name: "Priya Patel", score: 37100, accuracy: 85, roundsWon: 7, streak: 4, isMe: false, isFriend: true },
+    { id: "p7", name: "Liam O'Connor", score: 34000, accuracy: 82, roundsWon: 6, streak: 3, isMe: false },
+    { id: "p4", name: "Sara Bianchi", score: 31200, accuracy: 80, roundsWon: 5, streak: 2, isMe: false, isFriend: true },
+    { id: "p3", name: "Theo Lambert", score: 29800, accuracy: 70, roundsWon: 4, streak: 2, isMe: false },
+  ],
+  daily_today: [
+    { id: "p2", name: "Mina Kovač", score: 8150, accuracy: 94, roundsWon: 2, streak: 4, isMe: false, isFriend: true },
+    { id: "a2", name: "Quiz Bot", score: 7800, accuracy: 97, roundsWon: 2, streak: 5, isMe: false, isAI: true },
+    { id: "p4", name: "Sara Bianchi", score: 7300, accuracy: 79, roundsWon: 1, streak: 2, isMe: false, isFriend: true },
     { id: "p1", name: "Alex Rivera", score: 7240, accuracy: 89, roundsWon: 2, streak: 3, isMe: true },
     { id: "p3", name: "Theo Lambert", score: 5230, accuracy: 68, roundsWon: 0, streak: 1, isMe: false },
   ],
-  alltime: [
+  daily_alltime: [
     { id: "p5", name: "Jamal Wright", score: 45200, accuracy: 91, roundsWon: 12, streak: 6, isMe: false },
-    { id: "p2", name: "Mina Kovač", score: 42100, accuracy: 93, roundsWon: 10, streak: 5, isMe: false },
+    { id: "a1", name: "Chronos Bot", score: 43600, accuracy: 96, roundsWon: 11, streak: 8, isMe: false, isAI: true },
+    { id: "p2", name: "Mina Kovač", score: 42100, accuracy: 93, roundsWon: 10, streak: 5, isMe: false, isFriend: true },
     { id: "p1", name: "Alex Rivera", score: 38900, accuracy: 87, roundsWon: 8, streak: 4, isMe: true },
-    { id: "p6", name: "Priya Patel", score: 37100, accuracy: 85, roundsWon: 7, streak: 4, isMe: false },
+    { id: "p6", name: "Priya Patel", score: 37100, accuracy: 85, roundsWon: 7, streak: 4, isMe: false, isFriend: true },
     { id: "p7", name: "Liam O'Connor", score: 34000, accuracy: 82, roundsWon: 6, streak: 3, isMe: false },
-    { id: "p4", name: "Sara Bianchi", score: 31200, accuracy: 80, roundsWon: 5, streak: 2, isMe: false },
+    { id: "p4", name: "Sara Bianchi", score: 31200, accuracy: 80, roundsWon: 5, streak: 2, isMe: false, isFriend: true },
     { id: "p3", name: "Theo Lambert", score: 29800, accuracy: 70, roundsWon: 4, streak: 2, isMe: false },
   ],
-  friends: [
+  journey: [
     { id: "p8", name: "Noah Chen", score: 18500, accuracy: 88, roundsWon: 3, streak: 4, isMe: false },
     { id: "p1", name: "Alex Rivera", score: 16200, accuracy: 84, roundsWon: 3, streak: 3, isMe: true },
-    { id: "p9", name: "Emma Dubois", score: 14100, accuracy: 90, roundsWon: 2, streak: 3, isMe: false },
-    { id: "p4", name: "Sara Bianchi", score: 12800, accuracy: 81, roundsWon: 2, streak: 2, isMe: false },
+    { id: "a3", name: "Sage Bot", score: 15000, accuracy: 95, roundsWon: 3, streak: 4, isMe: false, isAI: true },
+    { id: "p9", name: "Emma Dubois", score: 14100, accuracy: 90, roundsWon: 2, streak: 3, isMe: false, isFriend: true },
+    { id: "p4", name: "Sara Bianchi", score: 12800, accuracy: 81, roundsWon: 2, streak: 2, isMe: false, isFriend: true },
   ],
 };
 
@@ -79,13 +95,16 @@ function rankSuffix(n: number): string {
   }
 }
 
-function Avatar({ id, name, size = 32 }: { id: string; name: string; size?: number }) {
+function Avatar({ id, name, size = 32, initials, dot }: { id: string; name: string; size?: number; initials?: string; dot?: boolean }) {
   return (
-    <span
-      className="lb-avatar"
-      style={{ background: gradientFor(id), width: size, height: size, fontSize: size * 0.36 }}
-    >
-      {initialsOf(name)}
+    <span className="lb-avatar-wrap">
+      <span
+        className="lb-avatar"
+        style={{ background: gradientFor(id), width: size, height: size, fontSize: size * 0.36 }}
+      >
+        {initials ?? initialsOf(name)}
+      </span>
+      {dot && <span className="lb-me-dot" />}
     </span>
   );
 }
@@ -104,9 +123,9 @@ function PodiumCard({
   return (
     <div className={`lb-podium-item ${placeClass}`} style={{ height }}>
       <span className={`lb-podium-rank ${placeClass}-rank`}>{rank}</span>
-      <Avatar id={player.id} name={player.name} size={rank === 1 ? 64 : 48} />
+      {rank === 1 && <span className="lb-crown">👑</span>}
+      <Avatar id={player.id} name={player.name} size={rank === 1 ? 64 : 48} initials={player.isAI ? "AI" : undefined} dot={player.isMe} />
       <span className="lb-podium-name">{player.name}</span>
-      {player.isMe && <span className="lb-you-tag">you</span>}
       <span className="lb-podium-score">{player.score.toLocaleString()}</span>
       <span className="lb-podium-acc" style={{ color: accColor(player.accuracy) }}>
         {player.accuracy}%
@@ -122,11 +141,11 @@ function LeaderboardRow({ player, rank }: { player: Player; rank: number }) {
       <span className={`lb-rank ${isTop ? `lb-rank-${rank}` : ""}`}>
         {isTop ? ["🥇", "🥈", "🥉"][rank - 1] : rank}
       </span>
-      <Avatar id={player.id} name={player.name} size={38} />
+      <Avatar id={player.id} name={player.name} size={38} initials={player.isAI ? "AI" : undefined} dot={player.isMe} />
       <div className="lb-name-col">
         <span className="lb-name">
           {player.name}
-          {player.isMe && <span className="lb-you-tag">you</span>}
+          {player.isAI && <span className="lb-ai-tag">AI</span>}
         </span>
         <span className="lb-meta">
           {player.roundsWon} round{player.roundsWon === 1 ? "" : "s"} won · {player.streak} streak
@@ -143,11 +162,19 @@ function LeaderboardRow({ player, rank }: { player: Player; rank: number }) {
 }
 
 export default function LeaderboardPrototypePage() {
-  const [tab, setTab] = useState<Tab>("session");
+  const [tab, setTab] = useState<Tab>("overall");
+  const [subTab, setSubTab] = useState<DailySubTab>("today");
+  const [filters, setFilters] = useState({ humans: false, ai: false, friends: false });
+
+  const viewKey = tab === "daily" ? `daily_${subTab}` : tab;
 
   const ranked = useMemo(() => {
-    return [...DATA[tab]].sort((a, b) => b.score - a.score);
-  }, [tab]);
+    let rows = [...DATA[viewKey]].sort((a, b) => b.score - a.score);
+    if (filters.humans && !filters.ai) rows = rows.filter((p) => !p.isAI);
+    if (filters.ai && !filters.humans) rows = rows.filter((p) => p.isAI);
+    if (filters.friends) rows = rows.filter((p) => p.isFriend);
+    return rows;
+  }, [viewKey, filters]);
 
   const myRank = useMemo(() => ranked.findIndex((p) => p.isMe) + 1, [ranked]);
 
@@ -163,10 +190,12 @@ export default function LeaderboardPrototypePage() {
   const listRows = useMemo(() => ranked.slice(3), [ranked]);
 
   const tabLabels: Record<Tab, string> = {
-    session: "This Session",
-    alltime: "All-Time",
-    friends: "Friends",
+    overall: "Overall",
+    daily: "Daily",
+    journey: "Journey",
   };
+
+  const summaryLabel = tab === "daily" ? `Daily ${subTab === "today" ? "Today" : "All-time"}` : tabLabels[tab];
 
   return (
     <>
@@ -237,7 +266,9 @@ export default function LeaderboardPrototypePage() {
           inset: 0;
           z-index: 2;
           overflow-y: auto;
-          padding: 56px 16px calc(96px + env(safe-area-inset-bottom));
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          padding: 56px 16px calc(24px + env(safe-area-inset-bottom));
           display: flex;
           flex-direction: column;
           gap: 14px;
@@ -245,6 +276,29 @@ export default function LeaderboardPrototypePage() {
           margin: 0 auto;
           box-sizing: border-box;
           width: 100%;
+        }
+
+        .lb-scroll::-webkit-scrollbar {
+          display: none;
+        }
+
+        @media (min-width: 1024px) {
+          .lb-scroll {
+            display: grid;
+            grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+            align-content: start;
+            max-width: 1040px;
+            padding-left: 24px;
+            padding-right: 24px;
+          }
+
+          .lb-header,
+          .lb-seg,
+          .lb-subrow,
+          .lb-filters,
+          .lb-summary {
+            grid-column: 1 / -1;
+          }
         }
 
         .lb-card {
@@ -255,31 +309,46 @@ export default function LeaderboardPrototypePage() {
           box-shadow: var(--gh-general-card-shadow);
         }
 
-        .lb-banner {
-          text-align: center;
-          padding: 14px 8px 4px;
+        .lb-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 4px 0 2px;
         }
 
-        .lb-kicker {
-          font-size: var(--font-2xs);
-          font-weight: 800;
-          letter-spacing: 2.5px;
-          color: var(--gh-orange);
-          text-transform: uppercase;
+        .lb-back {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: var(--gh-glass-bg);
+          border: 1px solid var(--gh-border-default);
+          border-radius: 10px;
+          color: var(--gh-text-primary);
+          font-size: var(--font-sm);
+          font-weight: 600;
+          padding: 8px 12px;
+          cursor: pointer;
+        }
+
+        .lb-back-arrow {
+          font-size: var(--font-lg);
         }
 
         .lb-title {
-          font-size: var(--font-3xl);
-          font-weight: 800;
-          margin: 8px 0 0;
-          letter-spacing: -0.5px;
+          font-family: var(--font-bebas), sans-serif;
+          font-size: var(--font-2xl);
+          font-weight: bold;
+          letter-spacing: 1.5px;
+          margin: 0;
+          text-transform: uppercase;
+          background: linear-gradient(180deg, var(--gh-text-primary), var(--gh-text-secondary));
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
         }
 
-        .lb-rank-line {
-          margin-top: 8px;
-          font-size: var(--font-sm);
-          font-weight: 600;
-          color: var(--gh-text-secondary);
+        .lb-spacer {
+          width: 80px;
         }
 
         .lb-rank-num {
@@ -290,35 +359,90 @@ export default function LeaderboardPrototypePage() {
           font-weight: 800;
         }
 
-        .lb-tabs {
+        .lb-seg {
           display: flex;
-          gap: 8px;
-          padding: 14px;
+          gap: 6px;
+          padding: 5px;
+          border-radius: 14px;
         }
 
-        .lb-tab {
+        .lb-seg-tab {
           flex: 1;
+          font-family: var(--font-bebas), sans-serif;
+          font-size: var(--font-base);
+          font-weight: bold;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
           padding: 10px 12px;
-          border-radius: var(--radius-md);
-          border: 1px solid var(--gh-border-default);
-          background: rgba(255, 255, 255, 0.05);
+          background: transparent;
+          border: none;
+          border-radius: 10px;
           color: var(--gh-text-secondary);
-          font-size: var(--font-sm);
-          font-weight: 700;
           cursor: pointer;
-          transition: all 0.18s ease;
+          transition: color 0.2s ease, background 0.2s ease;
         }
 
-        .lb-tab:hover {
-          background: rgba(255, 255, 255, 0.1);
+        .lb-seg-tab:hover {
           color: var(--gh-text-primary);
         }
 
-        .lb-tab-active {
-          background: var(--gh-orange);
-          border-color: var(--gh-orange);
+        .lb-seg-tab-active,
+        .lb-seg-tab-active:hover {
           color: var(--gh-btn-text);
+          background: linear-gradient(135deg, var(--gh-orange), rgba(var(--gh-orange-rgb), 0.85));
           box-shadow: 0 4px 14px rgba(var(--gh-orange-rgb), 0.35);
+        }
+
+        .lb-subrow,
+        .lb-filters {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .lb-chip {
+          font-size: var(--font-xs);
+          font-weight: 600;
+          padding: 8px 14px;
+          background: var(--gh-glass-bg);
+          border: 1px solid var(--gh-border-default);
+          border-radius: 20px;
+          color: var(--gh-text-secondary);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .lb-chip:hover {
+          color: var(--gh-text-primary);
+        }
+
+        .lb-chip-active,
+        .lb-chip-active:hover {
+          background: rgba(var(--gh-orange-rgb), 0.15);
+          border-color: rgba(var(--gh-orange-rgb), 0.3);
+          color: var(--gh-orange);
+        }
+
+        .lb-friends {
+          margin-left: auto;
+        }
+
+        .lb-summary {
+          text-align: center;
+          padding: 10px 14px;
+          font-size: var(--font-sm);
+          font-weight: 500;
+          color: var(--gh-text-secondary);
+        }
+
+        .lb-ai-tag {
+          font-size: var(--font-2xs);
+          font-weight: 700;
+          color: var(--gh-orange);
+          background: rgba(var(--gh-orange-rgb), 0.15);
+          padding: 1px 6px;
+          border-radius: var(--radius-sm);
+          flex-shrink: 0;
         }
 
         .lb-podium {
@@ -327,7 +451,7 @@ export default function LeaderboardPrototypePage() {
           align-items: flex-end;
           justify-content: center;
           gap: 10px;
-          min-height: 240px;
+          height: 300px;
         }
 
         .lb-podium-item {
@@ -336,7 +460,7 @@ export default function LeaderboardPrototypePage() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: flex-end;
+          justify-content: flex-start;
           gap: 8px;
           padding: 14px 8px;
           border-radius: var(--gh-general-card-radius);
@@ -350,9 +474,36 @@ export default function LeaderboardPrototypePage() {
         }
 
         .lb-gold {
-          background: linear-gradient(180deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.05));
-          border-color: rgba(251, 191, 36, 0.35);
-          box-shadow: 0 8px 28px rgba(251, 191, 36, 0.18);
+          max-width: 150px;
+          background: linear-gradient(180deg, rgba(251, 191, 36, 0.24), rgba(251, 191, 36, 0.07));
+          border-color: rgba(251, 191, 36, 0.6);
+          box-shadow: 0 12px 36px rgba(251, 191, 36, 0.3);
+          animation: lb-gold-glow 2.6s ease-in-out infinite;
+        }
+
+        @keyframes lb-gold-glow {
+          0%,
+          100% {
+            box-shadow: 0 12px 36px rgba(251, 191, 36, 0.3);
+          }
+          50% {
+            box-shadow: 0 12px 44px rgba(251, 191, 36, 0.5);
+          }
+        }
+
+        .lb-crown {
+          font-size: 26px;
+          line-height: 1;
+          margin-bottom: -4px;
+          filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.65));
+        }
+
+        .lb-gold .lb-podium-name {
+          font-size: var(--font-base);
+        }
+
+        .lb-gold .lb-podium-score {
+          font-size: var(--font-lg);
         }
 
         .lb-silver {
@@ -380,6 +531,9 @@ export default function LeaderboardPrototypePage() {
         .lb-gold-rank {
           background: var(--gh-gold);
           color: #1a0a00;
+          width: 34px;
+          height: 34px;
+          font-size: var(--font-base);
         }
 
         .lb-silver-rank {
@@ -456,6 +610,12 @@ export default function LeaderboardPrototypePage() {
           color: #cd7f32;
         }
 
+        .lb-avatar-wrap {
+          position: relative;
+          display: inline-flex;
+          flex-shrink: 0;
+        }
+
         .lb-avatar {
           flex-shrink: 0;
           border-radius: 50%;
@@ -466,6 +626,29 @@ export default function LeaderboardPrototypePage() {
           color: #fff;
           text-transform: uppercase;
           border: 2px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .lb-me-dot {
+          position: absolute;
+          bottom: -1px;
+          right: -1px;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #22d3ee;
+          border: 2px solid rgba(10, 10, 12, 0.85);
+          box-shadow: 0 0 8px rgba(34, 211, 238, 0.7);
+          animation: lb-dot-pulse 1.8s ease-in-out infinite;
+        }
+
+        @keyframes lb-dot-pulse {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.35;
+          }
         }
 
         .lb-name-col {
@@ -485,16 +668,6 @@ export default function LeaderboardPrototypePage() {
           display: flex;
           align-items: center;
           gap: 6px;
-        }
-
-        .lb-you-tag {
-          font-size: var(--font-2xs);
-          font-weight: 700;
-          color: var(--gh-teal);
-          background: rgba(34, 211, 238, 0.12);
-          padding: 1px 7px;
-          border-radius: var(--radius-pill);
-          flex-shrink: 0;
         }
 
         .lb-meta {
@@ -526,53 +699,6 @@ export default function LeaderboardPrototypePage() {
           color: var(--gh-text-muted);
           font-size: var(--font-sm);
         }
-
-        .lb-dock-spacer {
-          height: 4px;
-        }
-
-        .lb-cta {
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 30;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-          background: linear-gradient(180deg, rgba(10, 10, 12, 0), rgba(10, 10, 12, 0.92) 45%);
-        }
-
-        .lb-home-btn,
-        .lb-play-btn {
-          padding: 12px 20px;
-          border-radius: var(--radius-md);
-          font-size: var(--font-sm);
-          font-weight: 700;
-          cursor: pointer;
-          border: none;
-          transition: opacity 0.15s ease;
-        }
-
-        .lb-home-btn {
-          flex-shrink: 0;
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          color: rgba(255, 255, 255, 0.8);
-        }
-
-        .lb-play-btn {
-          flex: 1;
-          background: var(--gh-teal);
-          color: #06181c;
-          box-shadow: 0 6px 22px rgba(34, 211, 238, 0.35);
-        }
-
-        .lb-home-btn:hover,
-        .lb-play-btn:hover {
-          opacity: 0.92;
-        }
       `}</style>
 
       <main className="lb-screen">
@@ -586,32 +712,75 @@ export default function LeaderboardPrototypePage() {
         </div>
 
         <div className="lb-scroll">
-          <div className="lb-banner">
-            <span className="lb-kicker">Compete Rankings</span>
+          <div className="lb-header">
+            <button className="lb-back" onClick={() => window.history.back()}>
+              <span className="lb-back-arrow">←</span>
+              <span>Back</span>
+            </button>
             <h1 className="lb-title">Leaderboard</h1>
-            <div className="lb-rank-line">
+            <span className="lb-spacer" />
+          </div>
+
+          <div className="lb-card lb-seg">
+            {(["overall", "daily", "journey"] as Tab[]).map((key) => (
+              <button
+                key={key}
+                className={`lb-seg-tab ${tab === key ? "lb-seg-tab-active" : ""}`}
+                onClick={() => setTab(key)}
+              >
+                {tabLabels[key]}
+              </button>
+            ))}
+          </div>
+
+          {tab === "daily" && (
+            <div className="lb-subrow">
+              {(["today", "alltime"] as DailySubTab[]).map((key) => (
+                <button
+                  key={key}
+                  className={`lb-chip ${subTab === key ? "lb-chip-active" : ""}`}
+                  onClick={() => setSubTab(key)}
+                >
+                  {key === "today" ? "Today" : "All-time"}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="lb-filters">
+            <button
+              className={`lb-chip ${filters.humans ? "lb-chip-active" : ""}`}
+              aria-pressed={filters.humans}
+              onClick={() => setFilters((f) => ({ ...f, humans: !f.humans }))}
+            >
+              Humans
+            </button>
+            <button
+              className={`lb-chip ${filters.ai ? "lb-chip-active" : ""}`}
+              aria-pressed={filters.ai}
+              onClick={() => setFilters((f) => ({ ...f, ai: !f.ai }))}
+            >
+              AI
+            </button>
+            <button
+              className={`lb-chip lb-friends ${filters.friends ? "lb-chip-active" : ""}`}
+              aria-pressed={filters.friends}
+              onClick={() => setFilters((f) => ({ ...f, friends: !f.friends }))}
+            >
+              Friends
+            </button>
+          </div>
+
+          {myRank > 0 && (
+            <div className="lb-card lb-summary">
               You are{" "}
               <span className="lb-rank-num">
                 {myRank}
                 {rankSuffix(myRank)}
               </span>{" "}
-              in {tabLabels[tab]}
+              in {summaryLabel}
             </div>
-          </div>
-
-          <div className="lb-card">
-            <div className="lb-tabs">
-              {(Object.keys(tabLabels) as Tab[]).map((key) => (
-                <button
-                  key={key}
-                  className={`lb-tab ${tab === key ? "lb-tab-active" : ""}`}
-                  onClick={() => setTab(key)}
-                >
-                  {tabLabels[key]}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           <div className="lb-card">
             <div className="lb-podium">
@@ -637,12 +806,6 @@ export default function LeaderboardPrototypePage() {
             )}
           </div>
 
-          <div className="lb-dock-spacer" />
-        </div>
-
-        <div className="lb-cta">
-          <button className="lb-home-btn">Home</button>
-          <button className="lb-play-btn">Play Again</button>
         </div>
       </main>
     </>
