@@ -8,7 +8,7 @@ description: How to run and validate the full 4-player Relax (async) compete flo
 ## Devin Secrets Needed
 
 - `/run/repo_secrets/lama010101/GH-NEW2/.env.secrets` (Supabase credentials, `SUPABASE_DB_CONNECTION`)
-- `/home/ubuntu/repos/GH-NEW2/.dev.vars` (`PARTYKIT_SECRET`)
+- `/home/ubuntu/repos/GH-NEW2/.env.local` (`PARTYKIT_SECRET`)
 
 ## One-time environment
 
@@ -18,7 +18,7 @@ source /run/repo_secrets/lama010101/GH-NEW2/.env.secrets 2>/dev/null || true
 export NEXT_PUBLIC_PARTY_KIT_HOST=localhost:1999
 export PLAYWRIGHT_BASE_URL=http://localhost:3000
 export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1
-export PARTYKIT_SECRET=$(grep '^PARTYKIT_SECRET=' .dev.vars | cut -d= -f2-)
+export PARTYKIT_SECRET=$(grep '^PARTYKIT_SECRET=' .env.local | cut -d= -f2-)
 ```
 
 ## Starting the dev stack

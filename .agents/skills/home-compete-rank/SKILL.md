@@ -11,7 +11,7 @@ Confirm that `src/app/api/compete/active-games/route.ts` correctly computes and 
 ## Devin Secrets Needed
 
 - `/run/repo_secrets/lama010101/GH-NEW2/.env.secrets` (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_DB_CONNECTION`)
-- `/home/ubuntu/repos/GH-NEW2/.dev.vars` (`PARTYKIT_SECRET`, `NEXTJS_BASE_URL`)
+- `/home/ubuntu/repos/GH-NEW2/.env.local` (`PARTYKIT_SECRET`, `NEXTJS_BASE_URL`)
 
 ## One-time environment
 
@@ -22,7 +22,7 @@ export SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 export NEXT_PUBLIC_PARTY_KIT_HOST=localhost:1999
 export PLAYWRIGHT_BASE_URL=http://localhost:3000
 export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1
-export PARTYKIT_SECRET=$(grep '^PARTYKIT_SECRET=' .dev.vars | cut -d= -f2-)
+export PARTYKIT_SECRET=$(grep '^PARTYKIT_SECRET=' .env.local | cut -d= -f2-)
 ```
 
 `partykit/server.ts` `onBeforeConnect` reads `lobby.env.SUPABASE_URL` and `lobby.env.SUPABASE_SERVICE_ROLE_KEY`, so `SUPABASE_URL` must be exported explicitly even though `.env.secrets` only provides `NEXT_PUBLIC_SUPABASE_URL`.

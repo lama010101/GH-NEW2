@@ -995,130 +995,11 @@
   line-height: 1;
 }
 
-/* ── Custom rank card (Experience slot) ── */
-
-.customRankCard {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.customRankMedallion {
-  width: 56px;
-  height: 56px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  border: 2px solid var(--gh-gold);
-  box-shadow: 0 0 18px rgba(251, 146, 60, 0.27);
-  border-radius: 14px;
-  background: var(--gh-bg-elevated);
-}
-
-.customRankTier {
-  font-size: var(--font-xs);
-  font-weight: 800;
-  color: var(--gh-gold);
-  line-height: 1;
-}
-
-.customRankStars {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2px;
-}
-
-.customRankBody {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.customRankHead {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-}
-
-.customRankTitle {
-  font-size: var(--font-xl);
-  font-weight: 800;
-  color: var(--gh-text-primary);
-  line-height: 1.1;
-  flex: 1 1 auto;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.customRankXpGroup {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-.customRankSessionXp {
-  font-size: var(--font-sm);
-  font-weight: 700;
-  color: var(--gh-success);
-  white-space: nowrap;
-}
-
-.customRankTotalXp {
-  font-size: var(--font-sm);
-  font-weight: 800;
-  color: var(--gh-text-primary);
-  white-space: nowrap;
-}
-
-.customRankNext {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-size: var(--font-2xs);
-}
-
-.customRankNextLabel {
-  color: var(--gh-text-muted);
-  font-weight: 600;
-}
-
-.customRankNextTitle {
-  color: var(--gh-text-primary);
-  font-weight: 700;
-}
-
-.customRankNextXp {
-  margin-left: auto;
-  color: var(--gh-gold);
-  font-weight: 800;
-}
-
-.customRankBar {
-  height: 7px;
-  border-radius: 999px;
-  background: var(--gh-border-default);
-  overflow: hidden;
-}
-
-.customRankBarFill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--gh-orange), #f97316);
-  transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+/* ── Rank ladder skeleton (XP lookup in flight) ──
+   Same shell as .card; fixed min-height matches the rendered
+   RankLadderCard so the layout does not shift when it swaps in. */
+.rankLadderSkeleton {
+  min-height: 273.5px;
 }
 
 
@@ -1220,23 +1101,6 @@
   .content {
     padding-left: 4px;
     padding-right: 4px;
-  }
-
-  .customRankHead {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-
-  .customRankTitle {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    width: 100%;
-  }
-
-  .customRankXpGroup {
-    align-self: flex-end;
   }
 }
 
@@ -1441,10 +1305,10 @@
   color: #cd7f32;
 }
 
-/* HJ-FIX-POLISHSCOPE-044 — the HJ-UI-POLISH-035 rank-card and best-scores
-   tile restyle, scoped to journey results via .sectionJourneyTop so
-   Compete / Daily / Practice result screens render the base rules above
-   exactly as origin/main. */
+/* HJ-FIX-POLISHSCOPE-044 — the HJ-UI-POLISH-035 best-scores tile restyle,
+   scoped to journey results via .sectionJourneyTop so Compete / Daily /
+   Practice result screens render the base rules above exactly as
+   origin/main. */
 .sectionJourneyTop .gameStatTile {
   flex-direction: column;
   align-items: flex-start;
@@ -1461,63 +1325,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.sectionJourneyTop .customRankMedallion {
-  width: 72px;
-  height: 72px;
-  gap: 6px;
-  box-shadow: 0 0 22px rgba(251, 146, 60, 0.32);
-  border-radius: 18px;
-}
-
-.sectionJourneyTop .customRankTier {
-  font-size: var(--font-sm);
-}
-
-.sectionJourneyTop .customRankStars {
-  max-width: 60px;
-}
-
-.sectionJourneyTop .customRankHead {
-  align-items: center;
-}
-
-.sectionJourneyTop .customRankTitle {
-  font-size: var(--font-2xl);
-  letter-spacing: 0.02em;
-}
-
-.sectionJourneyTop .customRankXpGroup {
-  align-items: center;
-  gap: 8px;
-}
-
-.sectionJourneyTop .customRankXpChip {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  border-radius: var(--gh-radius-pill);
-  border: 1px solid rgba(var(--gh-success-rgb), 0.45);
-  background: rgba(var(--gh-success-rgb), 0.14);
-  font-size: var(--font-sm);
-  font-weight: 800;
-  color: var(--gh-success);
-  white-space: nowrap;
-}
-
-.sectionJourneyTop .customRankTotalXp {
-  font-size: var(--font-xs);
-  font-weight: 700;
-  color: var(--gh-text-secondary);
-}
-
-.sectionJourneyTop .customRankNext {
-  flex-wrap: nowrap;
-  font-size: var(--font-xs);
-}
-
-.sectionJourneyTop .customRankNextTitle {
-  color: var(--gh-text-secondary);
-  font-weight: 600;
 }

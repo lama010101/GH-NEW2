@@ -68,6 +68,17 @@ function isStaticOrInfraPath(pathname: string): boolean {
   return false;
 }
 
+// The PKCE code-verifier cookie (sb-<ref>-auth-token-code-verifier) is written
+// by signInWithOAuth() before redirect and read by /auth/callback during
+// exchangeCodeForSession. It shares the "sb-" prefix with auth-token cookies
+// but must NEVER be cleared by the poisoned-cookie breaker — deleting it
+// mid-flow makes the OAuth callback fail with "PKCE code verifier not found"
+// and lands the user back on "/" with error=auth_failed. The suffix matches
+// @supabase/ssr's own check (cookies.js: key.endsWith("-code-verifier")).
+function isPkceVerifierCookie(name: string): boolean {
+  return name.startsWith("sb-") && name.endsWith("-code-verifier");
+}
+
 // Edge-Middleware equivalent of supabaseBrowser.ts forceClearAuthStorage()
 // (MP-FIX-MIDDLEWARE-AUTHCIRCUITBREAKER-001). Module-level in-memory state is
 // NOT reliable across Edge Middleware isolates (see Step 1 findings), so the
@@ -85,7 +96,7 @@ function clearPoisonedAuthCookies(
       ? { domain: ".guess-history.com" }
       : {};
   for (const { name } of requestCookies) {
-    if (name.startsWith("sb-")) {
+    if (name.startsWith("sb-") && !isPkceVerifierCookie(name)) {
       response.cookies.set(name, "", {
         ...cookieDomain,
         path: "/",
@@ -181,7 +192,9 @@ export async function middleware(request: NextRequest) {
   const poisonedAuthCookie =
     !sessionTimedOut &&
     (sessionAuthError || !user) &&
-    requestCookies.some(({ name }) => name.startsWith("sb-"));
+    requestCookies.some(
+      ({ name }) => name.startsWith("sb-") && !isPkceVerifierCookie(name)
+    );
   if (poisonedAuthCookie) {
     clearPoisonedAuthCookies(response, requestCookies);
   }

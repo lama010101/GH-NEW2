@@ -4,17 +4,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
-import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity';
+import { updateCachedDisplayName, updateCachedAvatarUrl, signOut } from '@/core/identity';
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser';
 import styles from './profile.module.css';
 import TopBar from '@/components/layout/TopBar';
 import PlayerAvatar from '@/components/compete/PlayerAvatar';
 import { NavModal } from '@/components/NavModal';
 import { AvatarPickerModal } from '@/components/AvatarPickerModal';
-import ExperienceAccuracy from '@/components/ExperienceAccuracy';
-import AccuracySuffix from '@/components/AccuracySuffix';
 import { getAccuracyColor } from '@/core/accuracyColor';
-import RankCard from '@/components/RankCard';
+import RankLadderCard from '@/components/RankLadderCard';
+import { Loader2, LogOut } from 'lucide-react';
 
 
 type ProfileHistoricalAvatar = {
@@ -24,6 +23,30 @@ type ProfileHistoricalAvatar = {
   diedLabel: string;
   avatarImageUrl: string;
 };
+
+const clampPct = (n: number) => Math.max(0, Math.min(100, n));
+
+// Mini accuracy ring (ported from prototype/profile-v2; streak chip omitted).
+function TinyRing({ pct, color, size = 44 }: { pct: number | null; color: string; size?: number }) {
+  const sw = 4;
+  const r = (size - sw) / 2;
+  const c = 2 * Math.PI * r;
+  const p = pct === null ? 0 : clampPct(pct);
+  const offset = c - (p / 100) * c;
+  return (
+    <div className={styles.tinyRing} style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--gh-border-subtle)" strokeWidth={sw} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw}
+          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+      <span className={styles.tinyRingVal} style={{ color }}>{pct === null ? '—' : Math.round(pct)}</span>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -47,6 +70,9 @@ export default function ProfilePage() {
   const [saveNameResult, setSaveNameResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
+  const [eraDim, setEraDim] = useState<'era' | 'region'>('era');
+  const [eraMetric, setEraMetric] = useState<'acc' | 'rounds'>('acc');
+  const [signingOut, setSigningOut] = useState(false);
   const [progressData, setProgressData] = useState<{
     byCentury: Array<{ century: string; avgAccuracy: number; totalXp: number; roundCount: number }>
     byContinent: Array<{ continent: string; avgAccuracy: number; totalXp: number; roundCount: number }>
@@ -295,6 +321,18 @@ export default function ProfilePage() {
     return date.toLocaleDateString(locale === 'en' ? 'en-US' : locale, { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+      window.location.href = '/';
+    } catch (err) {
+      console.error('[Profile] signOut failed:', err);
+      window.location.href = '/login';
+    }
+  };
+
   const handleAvatarClick = () => {
     setAvatarPickerOpen(true);
   };
@@ -487,155 +525,192 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Rank progress — derived from total_xp (single source of truth) */}
-        <div className={`${styles.rankWrap} w-full max-w-[400px] mb-6`}>
-          <RankCard totalXp={profileData.totalXp} open inline />
+        {/* Rank ladder — derived from total_xp (single source of truth) */}
+        <div className={`${styles.rankWrap} w-full mb-6`}>
+          <RankLadderCard totalXp={profileData.totalXp ?? 0} />
         </div>
       </div>
 
-      {/* 5. STAT STRIP */}
-      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 grid grid-cols-2 sm:grid-cols-4 gap-[10px] mb-6">
-        {[
-          {
-            value: profileData.avgAccuracy === null
-              ? '...'
-              : String(Math.round(Number(profileData.avgAccuracy))),
-            suffix: '%',
-            label: t('avg_accuracy'),
-            color: styles.statColorOrange
-          },
-          {
-            value: profileData.totalXp === null
-              ? '...'
-              : profileData.totalXp !== null
-                ? profileData.totalXp.toLocaleString() + ' XP'
-                : '—',
-            label: t('total_xp'),
-            color: styles.statColorGold
-          },
-          {
-            value: profileData.gamesPlayed === null
-              ? '...'
-              : profileData.gamesPlayed.toLocaleString(),
-            label: t('games_played'),
-            color: styles.statColorViolet
-          },
-          {
-            value: profileData.roundsPlayed === null
-              ? '...'
-              : profileData.roundsPlayed !== null
-                ? profileData.roundsPlayed.toLocaleString()
-                : '—',
-            label: t('rounds_played'),
-            color: styles.statColorTeal
-          }
-        ].map((stat, i) => (
-          <div
-            key={i}
-            className="bg-[var(--gh-bg-elevated)] border border-[var(--gh-border-default)] rounded-xl py-3.5 px-4 text-center"
-          >
-            <div className={`font-bebas text-2xl font-extrabold ${stat.color ?? ''}`}>
-              {stat.value}
-              {stat.suffix && <AccuracySuffix />}
-            </div>
-            <div className="text-xs mt-1 text-[var(--gh-text-muted)]">
-              {stat.label}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 7. PERFORMANCE BY MODE */}
+      {/* 5. STATS — v2 StatsCard, 4 tiles (no sparkline: no prod data) */}
       <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-        <div className="bg-[var(--gh-glass-bg)] border border-[var(--gh-border-default)] rounded-xl p-4">
-          <div className={styles.sectionHead}>
-            <span className={styles.sectionAccentBar} />
-            <h3 className={`font-bebas text-sm font-bold ${styles.sectionTitle}`}>{t('performance_by_mode')}</h3>
+        <section className={styles.card}>
+          <h3 className={styles.cardTitle}>{t('stats')}</h3>
+          <div className={styles.statGrid}>
+            <div className={styles.statTile}>
+              <span
+                className={styles.statVal}
+                style={{ color: profileData.avgAccuracy !== null ? getAccuracyColor(Number(profileData.avgAccuracy)) : undefined }}
+              >
+                {profileData.avgAccuracy === null ? '...' : `${Math.round(Number(profileData.avgAccuracy))}%`}
+              </span>
+              <span className={styles.statLabel}>{t('accuracy')}</span>
+            </div>
+            <div className={styles.statTile}>
+              <span className={styles.statVal} style={{ color: 'var(--gh-gold)' }}>
+                {profileData.totalXp === null ? '...' : profileData.totalXp.toLocaleString()}
+              </span>
+              <span className={styles.statLabel}>{t('total_xp')}</span>
+            </div>
+            <div className={styles.statTile}>
+              <span className={styles.statVal}>
+                {profileData.gamesPlayed === null ? '...' : profileData.gamesPlayed.toLocaleString()}
+              </span>
+              <span className={styles.statLabel}>{t('games')}</span>
+            </div>
+            <div className={styles.statTile}>
+              <span className={styles.statVal}>
+                {profileData.roundsPlayed === null ? '...' : profileData.roundsPlayed.toLocaleString()}
+              </span>
+              <span className={styles.statLabel}>{t('rounds')}</span>
+            </div>
           </div>
-          <div className={styles.modeRow}>
-            {/* Daily */}
-            <div
-              className={styles.modeCard}
-              style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.30)' }}
-            >
-              <span className={styles.modeAccent} style={{ background: 'var(--gh-blue)' }} />
-              <span className={styles.modeName}>{t('daily')}</span>
-              <span
-                className={styles.modeAcc}
-                style={{ color: profileData.dailyAvgAccuracy !== null ? getAccuracyColor(profileData.dailyAvgAccuracy) : 'var(--gh-text-muted)' }}
-              >
-                {profileData.dailyAvgAccuracy !== null ? (
-                  <>
-                    {Math.round(profileData.dailyAvgAccuracy)}
-                    <AccuracySuffix />
-                  </>
-                ) : '—'}
-              </span>
-              <span className={styles.modeGames}>
-                {profileData.dailyGamesPlayed !== null ? `${profileData.dailyGamesPlayed} ${t('games')}` : t('coming_soon')}
-              </span>
-            </div>
-
-            {/* Level Up */}
-            <div
-              className={styles.modeCard}
-              style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.30)' }}
-            >
-              <span className={styles.modeAccent} style={{ background: 'var(--gh-violet, #8b5cf6)' }} />
-              <span className={styles.modeName}>{t('level_up')}</span>
-              <span
-                className={styles.modeAcc}
-                style={{ color: profileData.levelUpBestAccuracy !== null ? getAccuracyColor(profileData.levelUpBestAccuracy) : 'var(--gh-text-muted)' }}
-              >
-                {profileData.levelUpBestAccuracy !== null ? (
-                  <>
-                    {Math.round(profileData.levelUpBestAccuracy)}
-                    <AccuracySuffix />
-                  </>
-                ) : '—'}
-              </span>
-              <span className={styles.modeGames}>
-                {profileData.levelUpCurrentLevel !== null ? `${t('level_up')} ${profileData.levelUpCurrentLevel}` : t('coming_soon')}
-              </span>
-            </div>
-
-            {/* Practice */}
-            <div
-              className={styles.modeCard}
-              style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.30)' }}
-            >
-              <span className={styles.modeAccent} style={{ background: 'var(--gh-orange, #f97316)' }} />
-              <span className={styles.modeName}>{t('practice') ?? 'Practice'}</span>
-              <span
-                className={styles.modeAcc}
-                style={{ color: progressData?.practice?.avgAccuracy != null ? getAccuracyColor(progressData.practice.avgAccuracy) : 'var(--gh-text-muted)' }}
-              >
-                {progressData?.practice?.avgAccuracy != null ? (
-                  <>
-                    {Math.round(progressData.practice.avgAccuracy)}
-                    <AccuracySuffix />
-                  </>
-                ) : '—'}
-              </span>
-              <span className={styles.modeGames}>
-                {progressData?.practice?.gamesPlayed != null ? `${progressData.practice.gamesPlayed} ${t('games')}` : '—'}
-              </span>
-            </div>
-
-          </div>
-        </div>
+        </section>
       </div>
 
-      {/* 9+10. EXPERIENCE & ACCURACY (shared component) */}
-      <ExperienceAccuracy
-        data={{
-          byWhen: progressData?.byCentury.map(c => ({ label: c.century, avgAccuracy: c.avgAccuracy, totalXp: c.totalXp, roundCount: c.roundCount })) ?? [],
-          byWhere: progressData?.byContinent.map(c => ({ label: c.continent, avgAccuracy: c.avgAccuracy, totalXp: c.totalXp, roundCount: c.roundCount })) ?? [],
-          eventsSeenCount: progressData?.eventsSeenCount ?? 0,
-          countriesCount: progressData?.countriesCount ?? 0,
-          roundsPlayed: progressData === null ? null : (profileData.roundsPlayed ?? 0),
-        }}
-      />
+      {/* 7. PERFORMANCE BY MODE — v2 ModesCard with TinyRing per mode (no streak chip) */}
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
+        <section className={styles.card}>
+          <h3 className={styles.cardTitle}>{t('performance_by_mode')}</h3>
+          <div className={styles.mdRow}>
+            {([
+              {
+                name: t('daily'),
+                acc: profileData.dailyAvgAccuracy,
+                sub: profileData.dailyGamesPlayed !== null ? `${profileData.dailyGamesPlayed} ${t('games')}` : t('coming_soon'),
+                rgb: 'var(--gh-blue-rgb)',
+              },
+              {
+                name: t('level_up'),
+                acc: profileData.levelUpBestAccuracy,
+                sub: profileData.levelUpCurrentLevel !== null ? `${t('level')} ${profileData.levelUpCurrentLevel}` : t('coming_soon'),
+                rgb: 'var(--gh-violet-rgb)',
+              },
+              {
+                name: t('practice'),
+                acc: progressData?.practice?.avgAccuracy ?? null,
+                sub: progressData?.practice?.gamesPlayed != null ? `${progressData.practice.gamesPlayed} ${t('games')}` : '—',
+                rgb: 'var(--gh-orange-rgb)',
+              },
+            ]).map((m) => (
+              <div
+                key={m.name}
+                className={styles.mdTile}
+                style={{ background: `rgba(${m.rgb}, 0.08)`, border: `1px solid rgba(${m.rgb}, 0.25)` }}
+              >
+                <TinyRing pct={m.acc} color={`rgb(${m.rgb})`} />
+                <span className={styles.mdName}>{m.name}</span>
+                <span className={styles.mdSub}>{m.sub}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* 9+10. ERA & REGION — v2 merged card: Era|Region × Accuracy|Rounds toggles */}
+      <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
+        <section className={styles.card}>
+          <div className={styles.erHead}>
+            <h3 className={`${styles.cardTitle} ${styles.cardTitleFlush}`}>{t('era_region')}</h3>
+            <div className={styles.erToggles}>
+              <div className={styles.seg}>
+                {(['era', 'region'] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    className={`${styles.segBtn} ${eraDim === d ? styles.segBtnOn : ''}`}
+                    onClick={() => setEraDim(d)}
+                  >
+                    {d === 'era' ? t('era') : t('region')}
+                  </button>
+                ))}
+              </div>
+              <div className={styles.seg}>
+                {(['acc', 'rounds'] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`${styles.segBtn} ${eraMetric === m ? styles.segBtnOn : ''}`}
+                    onClick={() => setEraMetric(m)}
+                  >
+                    {m === 'acc' ? t('accuracy') : t('rounds')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className={styles.erRows}>
+            {(() => {
+              const rows = (eraDim === 'era'
+                ? progressData?.byCentury.map((c) => ({ label: c.century, avgAccuracy: c.avgAccuracy, count: c.roundCount }))
+                : progressData?.byContinent.map((c) => ({ label: c.continent, avgAccuracy: c.avgAccuracy, count: c.roundCount }))) ?? [];
+              const maxCount = Math.max(...rows.map((r) => r.count), 1);
+              if (rows.length === 0) {
+                return <div className={styles.erEmpty}>{tCommon('no_data_yet')}</div>;
+              }
+              return rows.map((r) => (
+                <div className={styles.erRow} key={r.label}>
+                  <div className={styles.erLabelWrap}>
+                    <span className={styles.erLabel}>{r.label}</span>
+                  </div>
+                  <div className={styles.erBar}>
+                    <span
+                      className={styles.erBarFill}
+                      style={eraMetric === 'acc'
+                        ? { width: `${clampPct(r.avgAccuracy)}%`, background: getAccuracyColor(r.avgAccuracy) }
+                        : { width: `${(r.count / maxCount) * 100}%`, background: 'var(--gh-text-dim)' }}
+                    />
+                  </div>
+                  {eraMetric === 'acc' ? (
+                    <span className={styles.erVal} style={{ color: getAccuracyColor(r.avgAccuracy) }}>
+                      {Math.round(r.avgAccuracy)}%<span className={styles.erDim}> ·{r.count}</span>
+                    </span>
+                  ) : (
+                    <span className={styles.erVal}>
+                      {r.count}<span className={styles.erDim}> ·{Math.round(r.avgAccuracy)}%</span>
+                    </span>
+                  )}
+                </div>
+              ));
+            })()}
+          </div>
+        </section>
+      </div>
+
+      {/* 11. ACCOUNT — own profile only */}
+      {isOwnProfile && (
+        <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
+          <section className={styles.card}>
+            <h3 className={styles.cardTitle}>{t('account')}</h3>
+            <div className={styles.acRows}>
+              <div className={styles.acRow}>
+                <span className={styles.acKey}>{t('email')}</span>
+                <span className={styles.acVal}>{profileData.email ?? '—'}</span>
+              </div>
+              <div className={styles.acRow}>
+                <span className={styles.acKey}>{t('member_since_full')}</span>
+                <span className={styles.acVal}>{formatMemberSince(profileData.createdAt)}</span>
+              </div>
+              <div className={styles.acRow}>
+                <span className={styles.acKey}>{t('player_id')}</span>
+                <span className={styles.acVal}>{viewedPlayerId ?? '—'}</span>
+              </div>
+            </div>
+            <div className={styles.acDiv} />
+            <button
+              type="button"
+              className={styles.acOut}
+              onClick={handleSignOut}
+              disabled={signingOut}
+              aria-busy={signingOut}
+            >
+              {signingOut
+                ? <Loader2 size={13} className={styles.acOutSpinner} aria-hidden="true" />
+                : <LogOut size={13} strokeWidth={2.4} aria-hidden="true" />}
+              {t('sign_out')}
+            </button>
+          </section>
+        </div>
+      )}
 
       {/* Avatar Picker Modal */}
       <AvatarPickerModal

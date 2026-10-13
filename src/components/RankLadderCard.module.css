@@ -1,0 +1,195 @@
+/* RankLadderCard — animated SVG tier shields on a swipe rail.
+   Ported from src/app/prototype/profile-v2 (lc* classes), tokenized to
+   globals.css --gh-* / --font-* / --radius-* variables. */
+
+.rankL {
+  padding: 16px;
+  text-align: left;
+  background: var(--gh-glass-bg);
+  border: 1px solid var(--gh-border-default);
+  border-radius: var(--gh-glass-radius);
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-glass-shadow);
+}
+
+.lcHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lcTitles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lcTitle {
+  margin: 0;
+  font-size: var(--font-xl);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.lcSub {
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  color: var(--gh-text-muted);
+}
+
+.lcHint {
+  flex-shrink: 0;
+  padding-top: 4px;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--gh-text-dim);
+}
+
+.lcRail {
+  display: flex;
+  gap: 10px;
+  margin: 14px -16px 4px;
+  padding: 4px 28px 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+}
+
+.lcRail::-webkit-scrollbar {
+  display: none;
+}
+
+.lcCell {
+  flex: 0 0 148px;
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gh-border-subtle);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lcCellPast {
+  background: var(--gh-mini-card-bg);
+}
+
+.lcCellCur {
+  background: var(--gh-border-subtle);
+}
+
+.lcBadge {
+  display: flex;
+}
+
+.lcName {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  color: var(--gh-text-secondary);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lcXpBar {
+  display: block;
+  height: 4px;
+  width: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--gh-mini-card-border);
+  overflow: hidden;
+}
+
+.lcXpFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.lcXpNeed {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--gh-text-dim);
+}
+
+/* ── SVG badge animations (mirrors prototype rank-badges-svg) ── */
+@keyframes rbGlowPulse {
+  0%, 100% { opacity: 0.16; }
+  50% { opacity: 0.38; }
+}
+
+@keyframes rbSheen {
+  0% { transform: translateX(-60px); }
+  45%, 100% { transform: translateX(120px); }
+}
+
+@keyframes rbTwinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes rbStep {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-3px); }
+  60% { transform: translateY(0); }
+}
+
+@keyframes rbNeedle {
+  0%, 100% { transform: rotate(-11deg); }
+  50% { transform: rotate(14deg); }
+}
+
+/* -24 = lcm of both dash periods (6+6 and 4+4) → seamless loop */
+@keyframes rbDash {
+  to { stroke-dashoffset: -24; }
+}
+
+@keyframes rbFlag {
+  0%, 100% { transform: skewY(0deg); }
+  50% { transform: skewY(7deg); }
+}
+
+@keyframes rbSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rbBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes rbSway {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+
+@keyframes rbPulseMark {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.18); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animGlow { animation: rbGlowPulse 3.4s ease-in-out infinite; }
+  .animSheen { animation: rbSheen 4.8s ease-in-out infinite; }
+  .animTwinkle { animation: rbTwinkle 2.2s ease-in-out infinite; }
+  .animStep { animation: rbStep 1.8s ease-in-out infinite; }
+  .animDash { animation: rbDash 1.4s linear infinite; }
+  .animBob { animation: rbBob 2.6s ease-in-out infinite; }
+  .animNeedle { animation: rbNeedle 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  .animFlag { animation: rbFlag 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: left center; }
+  .animSpin { animation: rbSpin 9s linear infinite; transform-box: fill-box; transform-origin: center; }
+  .animSway { animation: rbSway 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0; }
+  .animPulseMark { animation: rbPulseMark 2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+}

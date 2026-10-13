@@ -10,7 +10,7 @@ Use when a PR changes hint tier penalty rates, hint modal sorting, cost-pill col
 ## Devin secrets needed
 
 - `/run/repo_secrets/lama010101/GH-NEW2/.env.secrets`
-- `/home/ubuntu/repos/GH-NEW2/.dev.vars` (for `PARTYKIT_SECRET` if testing compete/multiplayer)
+- `/home/ubuntu/repos/GH-NEW2/.env.local` (for `PARTYKIT_SECRET` if testing compete/multiplayer)
 
 For Practice rounds, only the env secrets file is required.
 

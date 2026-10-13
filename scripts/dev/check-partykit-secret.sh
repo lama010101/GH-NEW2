@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # MP-BUILD-DEVENV-PARTYKIT-SECRET-GUARD-008
+# SEC-BUILD-DEVVARSUNTRACK-1011-009: header corrected — PartyKit does NOT read
+# .dev.vars (partykit dev loads .env always and .env.local in dev; zero
+# .dev.vars references in the partykit binary — see KC-012).
 # Compare Next.js and PartyKit PARTYKIT_SECRET values before dev servers start.
 # Next.js reads process.env.PARTYKIT_SECRET from .env.local or the shell.
-# PartyKit dev reads PARTYKIT_SECRET from .dev.vars.
-# A mismatch causes 401s on all server-to-server x-partykit-secret calls.
+# PartyKit dev reads it from .env/.env.local or --var; a .dev.vars file, when
+# present, is ignored by PartyKit, so this guard only warns when it disagrees.
+# A missing or placeholder secret causes 401s on all server-to-server
+# x-partykit-secret calls.
 
 set -euo pipefail
 
@@ -42,28 +47,25 @@ else
   NEXTJS_SOURCE="shell environment"
 fi
 
-PARTYKIT_SECRET=$(get_env_value "$PARTYKIT_ENV_FILE" "PARTYKIT_SECRET")
-PARTYKIT_SOURCE=".dev.vars"
-
+# FAIL only when the effective secret — the one Next.js and PartyKit actually
+# read, from .env.local or the shell — is missing or an unexpanded placeholder.
 if [ -z "$NEXTJS_SECRET" ]; then
-  fail "Next.js PARTYKIT_SECRET is missing (source: ${NEXTJS_SOURCE}).\n  Next.js reads it in src/server/partykitAuth.ts:17.\n  Set it in .env.local or export PARTYKIT_SECRET before starting dev."
-fi
-
-if [ -z "$PARTYKIT_SECRET" ]; then
-  fail "PartyKit PARTYKIT_SECRET is missing in .dev.vars.\n  PartyKit reads it in partykit/server.ts and partykit.json maps it from .dev.vars during 'partykit dev'.\n  Add PARTYKIT_SECRET=... to .dev.vars."
+  fail "PARTYKIT_SECRET is missing (source: ${NEXTJS_SOURCE}).\n  Next.js reads it in src/server/partykitAuth.ts:17; PartyKit dev reads .env/.env.local.\n  Set it in .env.local or export PARTYKIT_SECRET before starting dev."
 fi
 
 if [[ "$NEXTJS_SECRET" == *'${'*'}'* ]]; then
-  fail "Next.js PARTYKIT_SECRET contains an unexpanded \${...} placeholder (source: ${NEXTJS_SOURCE}).\n  This matches the known SUPABASE_URL unexpanded-in-partykit-dev failure pattern.\n  Replace the placeholder with the actual secret value."
+  fail "PARTYKIT_SECRET contains an unexpanded \${...} placeholder (source: ${NEXTJS_SOURCE}).\n  This matches the known SUPABASE_URL unexpanded-in-partykit-dev failure pattern.\n  Replace the placeholder with the actual secret value."
 fi
 
-if [[ "$PARTYKIT_SECRET" == *'${'*'}'* ]]; then
-  fail "PartyKit PARTYKIT_SECRET contains an unexpanded \${...} placeholder (source: ${PARTYKIT_SOURCE}).\n  This matches the known SUPABASE_URL unexpanded-in-partykit-dev failure pattern.\n  Replace the placeholder with the actual secret value."
+# .dev.vars is optional, untracked, and never read by PartyKit (KC-012), so a
+# stale .dev.vars must not fail npm run dev: a disagreement with the
+# .env.local value only warns (SEC-FIX-DEVVARSUNTRACK-1011-010).
+if [ -f "$PARTYKIT_ENV_FILE" ] && grep -qE '^PARTYKIT_SECRET=' "$PARTYKIT_ENV_FILE" 2>/dev/null; then
+  DEVVARS_VALUE=$(get_env_value "$PARTYKIT_ENV_FILE" "PARTYKIT_SECRET")
+  if [ "$DEVVARS_VALUE" != "$NEXTJS_SECRET" ]; then
+    echo -e "[PARTYKIT SECRET GUARD] WARNING: ${PARTYKIT_ENV_FILE} declares a different PARTYKIT_SECRET than ${NEXTJS_ENV_FILE}.\n  PartyKit ignores .dev.vars (KC-012) — delete ${PARTYKIT_ENV_FILE} or align it with ${NEXTJS_ENV_FILE}." >&2
+  fi
 fi
 
-if [ "$NEXTJS_SECRET" != "$PARTYKIT_SECRET" ]; then
-  fail "PARTYKIT_SECRET values do not match between Next.js and PartyKit.\n  Next.js source: ${NEXTJS_SOURCE}\n  PartyKit source: ${PARTYKIT_SOURCE}\n  Both must be the same literal secret.\n  Align .env.local (or shell export) with .dev.vars before running 'npm run dev'."
-fi
-
-echo "[PARTYKIT SECRET GUARD] OK: Next.js and PartyKit PARTYKIT_SECRET match (Next.js: ${NEXTJS_SOURCE}, PartyKit: ${PARTYKIT_SOURCE})."
+echo "[PARTYKIT SECRET GUARD] OK: PARTYKIT_SECRET is set (source: ${NEXTJS_SOURCE})."
 exit 0

@@ -1,0 +1,7 @@
+# Optional local overrides for repo tooling (secret scan, dev guards).
+# PartyKit reads .env/.env.local only — it never reads this file — so this
+# file is entirely optional. Real values belong in .env.local (gitignored)
+# or the Devin secrets store. Copy to .dev.vars only if a tool needs it.
+NEXT_PUBLIC_APP_URL=
+NEXTJS_BASE_URL=
+PARTYKIT_SECRET=

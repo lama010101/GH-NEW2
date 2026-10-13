@@ -12,7 +12,7 @@ description: How to end-to-end test the /grow investor deck page, including the 
 
 ## Starting the dev server
 - The `/grow` route is public (`src/middleware.ts` `PUBLIC_PATHS`), but Next.js still requires Supabase env vars at startup.
-- `npm run dev` can be blocked by the `scripts/dev/check-partykit-secret.sh` guard because it expects a matching `PARTYKIT_SECRET` between `.env.local`/shell and `.dev.vars`.
+- `npm run dev` can be blocked by the `scripts/dev/check-partykit-secret.sh` guard because it requires `PARTYKIT_SECRET` in `.env.local`/shell (and, when a local `.dev.vars` exists, expects it to match).
 - For `/grow` static testing, run only the Next.js dev server:
   ```bash
   source /run/repo_secrets/lama010101/GH-NEW2/.env.secrets

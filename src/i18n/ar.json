@@ -673,7 +673,12 @@
     "countries": "البلدان",
     "practice": "تدريب",
     "daily_all_time": "يومي (على مر العصور)",
-    "level": "المستوى"
+    "level": "المستوى",
+    "era_region": "Era & region",
+    "member_since_full": "Member since",
+    "player_id": "Player ID",
+    "rounds": "Rounds",
+    "stats": "Stats"
   },
   "account": {
     "title": "الحساب",
@@ -771,7 +776,10 @@
     "rank_9": "العالم",
     "rank_10": "رسام الخرائط الملكي",
     "next_rank": "{xp} XP حتى {title}",
-    "max_rank": "تم الوصول إلى أعلى رتبة"
+    "max_rank": "تم الوصول إلى أعلى رتبة",
+    "badge_aria": "Rank {tier} badge",
+    "rail_hint_swipe": "swipe",
+    "tier_of_10": "Tier {tier} / 10"
   },
   "grow": {
     "meta_title": "Grow With Us — Guess-History",
