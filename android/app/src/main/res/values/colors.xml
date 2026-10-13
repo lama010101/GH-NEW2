@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand accent; mirrors src/core/pushBranding.ts PUSH_COLOR and
+         public/manifest.json theme_color. -->
+    <color name="gh_notification_color">#FB923C</color>
+</resources>
