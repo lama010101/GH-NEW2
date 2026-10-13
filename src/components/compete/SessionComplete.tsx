@@ -12,9 +12,9 @@ import type { AllRoundResult } from "@/core/competeTypes";
 import { getUsernameGradientStyle, playerLabel } from "@/core/competeUtils";
 import { createAsyncCompeteSession } from "@/core/competeCreate";
 import { calculateBadges } from "@/core/rules";
-import { rankForXp } from "@/core/rank";
 import { formatDistance, getDistanceUnitPreference } from "@/lib/distance";
 import ExperienceAccuracy from "@/components/ExperienceAccuracy";
+import RankLadderCard from "@/components/RankLadderCard";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import AccuracySuffix from "@/components/AccuracySuffix";
@@ -22,11 +22,12 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { HelpCircle, Home, Map as MapIcon, Play, RotateCcw, Star, Trophy } from "lucide-react";
+import { HelpCircle, Home, Map as MapIcon, Play, RotateCcw, Trophy } from "lucide-react";
 import type { JourneyResultOverride } from "@/core/journeyResultTypes";
 import { JourneyBadge } from "@/app/journey/_components/JourneyBadge";
 import { JOURNEY_TOTAL_STAGES } from "@/core/journeyConstants";
 import { bootstrapIdentity, subscribeToIdentityChanges, type IdentityState } from "@/core/identity";
+import { useGlobalTotalXp } from "@/hooks/useGlobalTotalXp";
 import { GuestConversionModal } from "@/app/journey/_components/GuestConversionModal";
 import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage";
 import styles from "./SessionComplete.module.css";
@@ -88,7 +89,6 @@ export default function SessionComplete({
   const router = useRouter();
   const t = useTranslations('compete_page');
   const tGame = useTranslations('game');
-  const tRank = useTranslations('rank');
   const tLobby = useTranslations('lobby');
   const tHelp = useTranslations('help');
   const tNav = useTranslations('nav');
@@ -102,7 +102,7 @@ export default function SessionComplete({
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [viewerAlt, setViewerAlt] = useState<string>("");
-  const [totalXp, setTotalXp] = useState<number | null>(null);
+  const { status: totalXpStatus, totalXp } = useGlobalTotalXp(playerId);
   const [linkCopied, setLinkCopied] = useState(false);
   const [dailyResults, setDailyResults] = useState<DailyResultPlayer[] | null>(null);
   const [dailyLoading, setDailyLoading] = useState(false);
@@ -147,25 +147,6 @@ export default function SessionComplete({
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
   }, [snapshot?.status]);
-
-  // Fetch viewer's global total XP for the rank title progress card
-  // (single source of truth: player_global_stats.total_xp → rankForXp → RankCard)
-  useEffect(() => {
-    if (!playerId) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data: stats } = await supabaseBrowser
-          .from('player_global_stats')
-          .select('total_xp')
-          .eq('player_id', playerId)
-          .single();
-        if (cancelled) return;
-        if (stats) setTotalXp(Number(stats.total_xp));
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-  }, [playerId]);
 
   // Fetch the global all-players Daily leaderboard once the session completes.
   useEffect(() => {
@@ -353,7 +334,6 @@ export default function SessionComplete({
         const journeyDisplay = journeyResult
           ? journeyResultDisplay(journeyResult.accuracyPct, journeyResult.minAccuracyPct, journeyResult.gatePassed)
           : { accuracyPct: 0, markPct: 0, marginPts: 0 };
-        const overallXP = myStats?.totalScore ?? 0;
         const whereAccuracy = myStats?.avgLocationAccuracy ?? 0;
         const whenAccuracy = myStats?.avgYearAccuracy ?? 0;
 
@@ -838,6 +818,19 @@ export default function SessionComplete({
               </section>
               )}
 
+              {/* RANK LADDER — global XP tier rail, right after the leaderboard
+                  (or the hero card in practice, where the leaderboard is hidden)
+                  and before the MVP-awards card. Gated on the async total_xp
+                  lookup so it never flashes a fabricated tier-1 with XP 0:
+                  'pending' → skeleton shell, 'ready' → RankLadderCard,
+                  'unavailable' → nothing. */}
+              {totalXpStatus === "pending" && (
+                <section className={`${styles.card} ${styles.rankLadderSkeleton}`} aria-busy="true" />
+              )}
+              {totalXpStatus === "ready" && totalXp !== null && (
+                <RankLadderCard totalXp={totalXp} />
+              )}
+
               {!isPractice && snapshot.players.length > 1 && mvpAwards.length > 0 && (
               <section className={styles.card}>
                 <div className={styles.cardHead}>
@@ -963,90 +956,12 @@ export default function SessionComplete({
                 </section>
               </div>
 
-              {/* EXPERIENCE & ACCURACY (shared component) — rank card rendered inside,
-                  before the when/where tabs */}
+              {/* EXPERIENCE & ACCURACY (shared component) — the rank ladder is a
+                  sibling card above (RankLadderCard), not rendered inside here. */}
               <ExperienceAccuracy
                 hideAccuracy
                 hideStatsRow
                 embedded
-                rankCard={(() => {
-                  const info = rankForXp(totalXp ?? 0);
-                  const title = tRank(info.titleKey);
-                  const nextTitle = info.nextTitleKey ? tRank(info.nextTitleKey) : null;
-                  // HJ-UI-POLISH-STAGELIST-RESULT-035 — proper rank card:
-                  // larger starred tier emblem, display-typography rank name,
-                  // highlighted "+N XP" session chip, single "X XP to Next"
-                  // line, progress bar. XP uses thousands separators.
-                  // HJ-FIX-POLISHSCOPE-044 — gated to journey results only;
-                  // non-journey renders the origin/main card verbatim.
-                  return journeyResult ? (
-                    <div className={styles.customRankCard}>
-                      <div className={styles.customRankMedallion}>
-                        <span className={styles.customRankTier}>{tRank('tier_prefix')}{info.tier}</span>
-                        <span className={styles.customRankStars}>
-                          {Array.from({ length: info.tier }, (_, i) => (
-                            <Star key={i} size={10} fill="var(--gh-gold)" color="var(--gh-gold)" />
-                          ))}
-                        </span>
-                      </div>
-                      <div className={styles.customRankBody}>
-                        <div className={styles.customRankHead}>
-                          <span className={`${styles.customRankTitle} font-display`}>{title}</span>
-                          <span className={styles.customRankXpGroup}>
-                            <span className={styles.customRankXpChip}>+{overallXP.toLocaleString()} {tGame('xp_unit')}</span>
-                            <span className={styles.customRankTotalXp}>{Math.floor(totalXp ?? 0).toLocaleString()} {tGame('xp_unit')}</span>
-                          </span>
-                        </div>
-                        <div className={styles.customRankNext}>
-                          {info.isMaxRank ? (
-                            <span className={styles.customRankNextTitle}>{tRank('max_rank')}</span>
-                          ) : (
-                            <span className={styles.customRankNextTitle}>
-                              {tRank('next_rank', { xp: info.xpToNext?.toLocaleString() ?? '0', title: nextTitle ?? '' })}
-                            </span>
-                          )}
-                        </div>
-                        <div className={styles.customRankBar}>
-                          <div className={styles.customRankBarFill} style={{ width: `${info.progressPct}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className={styles.customRankCard}>
-                      <div className={styles.customRankMedallion}>
-                        <span className={styles.customRankTier}>{tRank('tier_prefix')}{info.tier}</span>
-                        <span className={styles.customRankStars}>
-                          {Array.from({ length: info.tier }, (_, i) => (
-                            <Star key={i} size={8} fill="var(--gh-gold)" color="var(--gh-gold)" />
-                          ))}
-                        </span>
-                      </div>
-                      <div className={styles.customRankBody}>
-                        <div className={styles.customRankHead}>
-                          <span className={styles.customRankTitle}>{title}</span>
-                          <span className={styles.customRankXpGroup}>
-                            <span className={styles.customRankSessionXp}>+{overallXP.toLocaleString()} XP</span>
-                            <span className={styles.customRankTotalXp}>{Math.floor(totalXp ?? 0).toLocaleString()} XP</span>
-                          </span>
-                        </div>
-                        <div className={styles.customRankNext}>
-                          <span className={styles.customRankNextLabel}>{tRank('next_label')}:</span>
-                          {info.isMaxRank ? (
-                            <span className={styles.customRankNextTitle}>{tRank('max_rank')}</span>
-                          ) : (
-                            <>
-                              <span className={styles.customRankNextTitle}>{nextTitle}</span>
-                              <span className={styles.customRankNextXp}>{info.xpToNext?.toLocaleString()} XP</span>
-                            </>
-                          )}
-                        </div>
-                        <div className={styles.customRankBar}>
-                          <div className={styles.customRankBarFill} style={{ width: `${info.progressPct}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
                 data={{
                   byWhen,
                   byWhere,
