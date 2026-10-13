@@ -2,6 +2,7 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient, Session } from "@supabase/supabase-js";
+import { AUTH_COOKIE_DOMAIN, authCookieDeletionStrings } from "./authCookie";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -30,9 +31,7 @@ export const supabaseBrowser: SupabaseClient = createBrowserClient(
       // A leading-dot domain makes the session portable across both hosts.
       // Omitted in dev so localhost keeps working (browsers reject cookies
       // whose domain does not match the actual host).
-      ...(process.env.NODE_ENV === "production"
-        ? { domain: ".guess-history.com" }
-        : {}),
+      ...(AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {}),
     },
   }
 );
@@ -193,7 +192,15 @@ export function forceClearAuthStorage(): void {
     document.cookie.split(';').forEach((cookie) => {
       const name = cookie.split('=')[0].trim();
       if (name.startsWith('sb-')) {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+        // AUTH-FIX-COOKIECLEAR-IDENTITY-1013-004: emit BOTH the host-only and
+        // the Domain-scoped deletion strings per cookie name (chunked
+        // .0/.1 names included — they are enumerated individually from
+        // document.cookie). The production cookie is written with
+        // Domain=.guess-history.com and cannot be removed by the host-only
+        // string; the domain variant is omitted in dev.
+        authCookieDeletionStrings(name).forEach((deletionCookie) => {
+          document.cookie = deletionCookie;
+        });
       }
     });
   }

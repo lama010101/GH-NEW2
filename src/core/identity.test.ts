@@ -45,6 +45,34 @@ async function getMockReadSession() {
   return mod.readSession as any;
 }
 
+// Holds a reference to the mocked supabaseBrowser so each test can control
+// the from()->select()->eq()->maybeSingle() chain result.
+async function getMockBrowser() {
+  const mod = await import("./supabaseBrowser");
+  return mod.supabaseBrowser as any;
+}
+
+// Re-points the mocked from() chain so maybeSingle() returns `impl`.
+function mockProfilesQuery(browser: any, impl: () => Promise<any>) {
+  browser.from.mockImplementation(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({ maybeSingle: impl })),
+    })),
+  }));
+}
+
+function makeSession(userId: string) {
+  return {
+    user: {
+      id: userId,
+      is_anonymous: false,
+      created_at: new Date().toISOString(),
+      last_sign_in_at: new Date().toISOString(),
+    },
+    access_token: "tok",
+  };
+}
+
 // identity.ts has module-level state (cachedState, bootstrapped, etc.).
 // We reset modules before each test to get a fresh instance.
 async function loadIdentity() {
@@ -282,6 +310,204 @@ describe("identity state machine — KC-007", () => {
       
       // State should still be loading
       expect(getCachedIdentityState().status).toBe("loading");
+    });
+  });
+
+  // AUTH-FIX-COOKIECLEAR-IDENTITY-1013-004 — fetchDisplayName outcomes:
+  // real name (remembered), missing/empty row → Player-<id6> resolved,
+  // error/timeout → remembered-or-Player-<id6> with displayNameResolved:false,
+  // single-flight query, 15s background re-resolve, never the literal 'Player'.
+  describe("displayName resolution — AUTH-FIX-COOKIECLEAR-IDENTITY-1013-004", () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it("real display_name → used, remembered in localStorage, displayNameResolved true", async () => {
+      const { bootstrapIdentity } = await loadIdentity();
+      const readSession = await getMockReadSession();
+      const browser = await getMockBrowser();
+      readSession.mockResolvedValue(makeSession("user-abc123def"));
+      mockProfilesQuery(browser, () => Promise.resolve({ data: { display_name: "  Alice  " }, error: null }));
+
+      const state = await bootstrapIdentity();
+
+      expect(state.status).toBe("ready");
+      if (state.status === "ready") {
+        expect(state.displayName).toBe("Alice");
+        expect(state.displayName).not.toBe("Player");
+        expect(state.displayNameResolved).toBe(true);
+      }
+      expect(localStorage.getItem("gh_display_name_user-abc123def")).toBe("Alice");
+    });
+
+    it("missing row → Player-<first 6 of userId> resolved (never literal 'Player')", async () => {
+      const { bootstrapIdentity, getCachedIdentityState } = await loadIdentity();
+      const readSession = await getMockReadSession();
+      const browser = await getMockBrowser();
+      readSession.mockResolvedValue(makeSession("abcdef99-0000-0000-0000-000000000000"));
+      mockProfilesQuery(browser, () => Promise.resolve({ data: null, error: null }));
+
+      const state = await bootstrapIdentity();
+
+      expect(state.status).toBe("ready");
+      if (state.status === "ready") {
+        expect(state.displayName).toBe("Player-abcdef");
+        expect(state.displayName).not.toBe("Player");
+        expect(state.displayNameResolved).toBe(true);
+      }
+      expect(getCachedIdentityState()).toEqual(state);
+    });
+
+    it("lookup failure WITH remembered name → remembered name shown, displayNameResolved false", async () => {
+      const { bootstrapIdentity } = await loadIdentity();
+      const readSession = await getMockReadSession();
+      const browser = await getMockBrowser();
+      localStorage.setItem("gh_display_name_user-fail42", "OldName");
+      readSession.mockResolvedValue(makeSession("user-fail42"));
+      mockProfilesQuery(browser, () =>
+        Promise.resolve({ data: null, error: { code: "XX", message: "boom" } })
+      );
+
+      const state = await bootstrapIdentity();
+
+      expect(state.status).toBe("ready");
+      if (state.status === "ready") {
+        expect(state.displayName).toBe("OldName");
+        expect(state.displayName).not.toBe("Player");
+        expect(state.displayNameResolved).toBe(false);
+      }
+    });
+
+    it("lookup failure WITHOUT remembered name → Player-<id6> shown, displayNameResolved false", async () => {
+      const { bootstrapIdentity } = await loadIdentity();
+      const readSession = await getMockReadSession();
+      const browser = await getMockBrowser();
+      readSession.mockResolvedValue(makeSession("ffffee99-1111-2222-3333-444455556666"));
+      mockProfilesQuery(browser, () =>
+        Promise.resolve({ data: null, error: { code: "XX", message: "boom" } })
+      );
+
+      const state = await bootstrapIdentity();
+
+      expect(state.status).toBe("ready");
+      if (state.status === "ready") {
+        expect(state.displayName).toBe("Player-ffffee");
+        expect(state.displayName).not.toBe("Player");
+        expect(state.displayNameResolved).toBe(false);
+      }
+    });
+
+    it("lookup timeout → unresolved fallback (never literal 'Player')", async () => {
+      vi.useFakeTimers();
+      try {
+        const { bootstrapIdentity } = await loadIdentity();
+        const readSession = await getMockReadSession();
+        const browser = await getMockBrowser();
+        readSession.mockResolvedValue(makeSession("abcdef99-9999"));
+        mockProfilesQuery(browser, () => new Promise(() => {}));
+
+        const p = bootstrapIdentity();
+        await vi.advanceTimersByTimeAsync(5000);
+        const state = await p;
+
+        expect(state.status).toBe("ready");
+        if (state.status === "ready") {
+          expect(state.displayName).toBe("Player-abcdef");
+          expect(state.displayName).not.toBe("Player");
+          expect(state.displayNameResolved).toBe(false);
+        }
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("single flight — bootstrap + auth-state event share ONE in-flight query", async () => {
+      const { bootstrapIdentity, subscribeToIdentityChanges } = await loadIdentity();
+      const readSession = await getMockReadSession();
+      const browser = await getMockBrowser();
+      const auth = await getMockAuth();
+
+      let authListener: any = null;
+      auth.onAuthStateChange.mockImplementation((cb: any) => {
+        authListener = cb;
+        return { data: { subscription: { unsubscribe: vi.fn() } } };
+      });
+      subscribeToIdentityChanges(() => {});
+      expect(authListener).toBeTruthy();
+
+      let queryCalls = 0;
+      const resolvers: Array<(v: any) => void> = [];
+      readSession.mockResolvedValue(makeSession("user-shared1"));
+      mockProfilesQuery(browser, () => {
+        queryCalls += 1;
+        return new Promise((resolve) => resolvers.push(resolve));
+      });
+
+      const p1 = bootstrapIdentity();
+      const p2 = authListener("TOKEN_REFRESHED", makeSession("user-shared1"));
+
+      // Let both callers reach the shared fetch before resolving.
+      await Promise.resolve();
+      expect(resolvers.length).toBe(1);
+      resolvers.forEach((r) => r({ data: { display_name: "Shared" }, error: null }));
+      await Promise.all([p1, p2]);
+
+      expect(queryCalls).toBe(1);
+    });
+
+    it("background re-resolve: 15s after failure, settled attempt, updates cache + notifies", async () => {
+      vi.useFakeTimers();
+      try {
+        const { bootstrapIdentity, getCachedIdentityState, subscribeToIdentityChanges } = await loadIdentity();
+        const readSession = await getMockReadSession();
+        const browser = await getMockBrowser();
+        const states: any[] = [];
+        subscribeToIdentityChanges((s) => states.push(s));
+        states.length = 0;
+
+        let call = 0;
+        readSession.mockResolvedValue(makeSession("user-retry1"));
+        mockProfilesQuery(browser, () => {
+          call += 1;
+          return call === 1
+            ? Promise.resolve({ data: null, error: { code: "XX", message: "boom" } })
+            : Promise.resolve({ data: { display_name: "Recovered" }, error: null });
+        });
+
+        const state = await bootstrapIdentity();
+        expect(state.status).toBe("ready");
+        if (state.status === "ready") {
+          expect(state.displayNameResolved).toBe(false);
+        }
+
+        await vi.advanceTimersByTimeAsync(15_000);
+
+        expect(call).toBe(2);
+        const cached = getCachedIdentityState();
+        expect(cached.status).toBe("ready");
+        if (cached.status === "ready") {
+          expect(cached.displayName).toBe("Recovered");
+          expect(cached.displayNameResolved).toBe(true);
+        }
+        expect(
+          states.some((s) => s.status === "ready" && s.displayName === "Recovered")
+        ).toBe(true);
+        expect(localStorage.getItem("gh_display_name_user-retry1")).toBe("Recovered");
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("no produced displayName is ever the bare literal 'Player'", async () => {
+      const { bootstrapIdentity } = await loadIdentity();
+      const readSession = await getMockReadSession();
+      const browser = await getMockBrowser();
+
+      // missing row
+      readSession.mockResolvedValue(makeSession("aaaaaa00-1"));
+      mockProfilesQuery(browser, () => Promise.resolve({ data: null, error: null }));
+      const s = await bootstrapIdentity();
+      if (s.status === "ready") expect(s.displayName).not.toBe("Player");
     });
   });
 });
