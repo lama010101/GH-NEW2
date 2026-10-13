@@ -52,3 +52,10 @@ GH-SECRETS/
 *.key
 *.log
 .env.local.bak*
+
+# Android signing / local config (MOB-BUILD-FCMPUSH-ENDTOEND-1013-002)
+android/**/*.keystore
+android/**/*.jks
+android/**/*.p12
+android/**/local.properties
+android/**/key.properties
