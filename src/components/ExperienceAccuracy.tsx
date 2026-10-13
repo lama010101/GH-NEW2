@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import AccuracySuffix from '@/components/AccuracySuffix';
 import WhereIcon from '@/components/icons/WhereIcon';
@@ -16,7 +16,7 @@ export interface ExperienceAccuracyData {
   roundsPlayed: number | null;
 }
 
-export default function ExperienceAccuracy({ data, hideAccuracy = false, hideStatsRow = false, embedded = false, rankCard }: { data: ExperienceAccuracyData; hideAccuracy?: boolean; hideStatsRow?: boolean; embedded?: boolean; rankCard?: ReactNode }) {
+export default function ExperienceAccuracy({ data, hideAccuracy = false, hideStatsRow = false, embedded = false }: { data: ExperienceAccuracyData; hideAccuracy?: boolean; hideStatsRow?: boolean; embedded?: boolean }) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
   const tGame = useTranslations('game');
@@ -79,7 +79,6 @@ export default function ExperienceAccuracy({ data, hideAccuracy = false, hideSta
             </div>
           </div>
           )}
-          {rankCard && <div className={styles.rankCardSlot}>{rankCard}</div>}
           <div className={styles.tabBar}>
             <button
               className={`${styles.tabBtn} ${experienceTab === 'when' ? styles.tabActiveWhen : ''}`}
