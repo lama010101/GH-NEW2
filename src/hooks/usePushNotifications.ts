@@ -43,6 +43,9 @@ const nativePushState: NativePushState = { supported: false, permission: 'defaul
 const nativePushStateListeners = new Set<() => void>();
 let nativePlatformPromise: Promise<boolean> | null = null;
 let nativeSetupPromise: Promise<void> | null = null;
+// Debounce for SIGNED_IN-triggered register(): auth-js can emit SIGNED_IN more
+// than once per login, so repeat events inside this window are ignored.
+let lastSignedInRegisterAt = 0;
 
 function emitNativePushState(): void {
   nativePushStateListeners.forEach((listener) => listener());
@@ -140,6 +143,18 @@ async function setupNativePush(): Promise<void> {
   // mutex → deadlock): fire-and-forget the deregistration DELETE, then clear
   // the stored token. The route's bearer-token delete works without a session.
   supabaseBrowser.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_IN') {
+      // Sign-in after app start (first login or account switch): register so
+      // FCM delivers a token without waiting for the next app restart.
+      const now = Date.now();
+      if (nativePushState.permission === 'granted' && now - lastSignedInRegisterAt >= 5000) {
+        lastSignedInRegisterAt = now;
+        void PushNotifications.register().catch((error) =>
+          console.warn('[usePushNotifications] register on sign-in failed:', error)
+        );
+      }
+      return;
+    }
     if (event !== 'SIGNED_OUT') {
       return;
     }
