@@ -51,4 +51,17 @@ describe("RankLadderCard", () => {
     // cell centre 770+50=820 minus rail centre 195 → instant scroll to 625
     expect(scroll).toBe(625);
   });
+
+  it("variant='card' renders the results-grid card shell; default stays glass", () => {
+    const { container, rerender } = render(<RankLadderCard totalXp={0} />);
+    expect(container.querySelector("section")!.className).toContain("rankL");
+    expect(container.querySelector("section")!.className).not.toContain("rankLCard");
+    expect(container.querySelector("[class*='accentBar']")).toBeNull();
+
+    rerender(<RankLadderCard totalXp={0} variant="card" />);
+    const sec = container.querySelector("section")!;
+    expect(sec.className).toContain("rankLCard");
+    expect(sec.querySelector("h3")!.className).toContain("lcTitleCard");
+    expect(sec.querySelector("[class*='accentBar']")).not.toBeNull();
+  });
 });

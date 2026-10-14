@@ -853,7 +853,7 @@ export default function SessionComplete({
                 <section className={`${styles.card} ${styles.rankLadderSkeleton}`} aria-busy="true" />
               )}
               {totalXpStatus === "ready" && totalXp !== null && (
-                <RankLadderCard totalXp={totalXp} />
+                <RankLadderCard totalXp={totalXp} variant="card" />
               )}
 
               {/* HIGHLIGHTS — best-score tiles + per-round chips (MP-UIX-PORT-D2,
@@ -981,29 +981,65 @@ export default function SessionComplete({
                       </span>
                       <span className={styles.mvpLabel}>{award.label}</span>
                       <span className={styles.mvpNames}>
-                        {award.winners.map((w, i) => (
-                          <span key={w.playerId} className={styles.mvpWinner}>
-                            <span className={styles.mvpAvatarWrap}>
-                              <PlayerAvatar
-                                avatarUrl={w.avatarUrl}
-                                displayName={w.displayName}
-                                playerId={w.playerId}
-                                size={24}
-                                isMe={w.isMe}
-                              />
+                        {award.winners.length === 1 ? (
+                          award.winners.map((w, i) => (
+                            <span key={w.playerId} className={styles.mvpWinner}>
+                              <span className={styles.mvpAvatarWrap}>
+                                <PlayerAvatar
+                                  avatarUrl={w.avatarUrl}
+                                  displayName={w.displayName}
+                                  playerId={w.playerId}
+                                  size={24}
+                                  isMe={w.isMe}
+                                />
+                              </span>
+                              <span className={styles.mvpName}>
+                                {w.displayName}
+                              </span>
+                              <span className={styles.mvpValue} style={{ color: getAccuracyColor(Math.ceil(award.getValue(w.stats))) }}>
+                                {Math.ceil(award.getValue(w.stats))}
+                                <AccuracySuffix />
+                              </span>
+                              {i < award.winners.length - 1 && (
+                                <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
+                              )}
                             </span>
-                            <span className={styles.mvpName}>
-                              {w.displayName}
-                            </span>
-                            <span className={styles.mvpValue} style={{ color: getAccuracyColor(Math.ceil(award.getValue(w.stats))) }}>
-                              {Math.ceil(award.getValue(w.stats))}
+                          ))
+                        ) : (
+                          /* Tie (2+ winners): avatars only, value once, no "&".
+                             Names stay in the DOM as visually-hidden text (and in
+                             each avatar's title/aria-label) — relax-4player spec
+                             asserts them in the row textContent. */
+                          <>
+                            {award.winners.map((w) => (
+                              <span key={w.playerId} className={styles.mvpWinner}>
+                                <span
+                                  className={styles.mvpAvatarWrap}
+                                  title={w.displayName}
+                                  aria-label={w.displayName}
+                                >
+                                  <PlayerAvatar
+                                    avatarUrl={w.avatarUrl}
+                                    displayName={w.displayName}
+                                    playerId={w.playerId}
+                                    size={24}
+                                    isMe={w.isMe}
+                                  />
+                                </span>
+                                <span className={styles.mvpHiddenName}>
+                                  {w.isMe ? tGame('mvp_you') : w.displayName}
+                                </span>
+                              </span>
+                            ))}
+                            <span
+                              className={styles.mvpValue}
+                              style={{ color: getAccuracyColor(Math.max(...award.winners.map((w) => Math.ceil(award.getValue(w.stats))))) }}
+                            >
+                              {Math.max(...award.winners.map((w) => Math.ceil(award.getValue(w.stats))))}
                               <AccuracySuffix />
                             </span>
-                            {i < award.winners.length - 1 && (
-                              <span className={styles.mvpAnd}>{tGame('mvp_and')}</span>
-                            )}
-                          </span>
-                        ))}
+                          </>
+                        )}
                       </span>
                     </div>
                   ))}

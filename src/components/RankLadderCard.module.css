@@ -49,6 +49,54 @@
   color: var(--gh-text-dim);
 }
 
+/* ── variant="card" (SessionComplete results grid, MP-UIX-PORT-D2-POLISH-001).
+   Mirrors compete/SessionComplete.module.css .card / .cardHead / .accentBar /
+   .cardTitle with the same --gh-* token references — no new colours. The rail
+   keeps its own padding/mask; the -16px bleed is dropped because this shell
+   has no side padding. */
+.rankLCard {
+  padding: 0;
+  text-align: left;
+  background: var(--gh-general-card-bg);
+  border: 1px solid var(--gh-general-card-border);
+  border-radius: var(--gh-radius-md);
+  backdrop-filter: var(--gh-glass-blur);
+  -webkit-backdrop-filter: var(--gh-glass-blur);
+  box-shadow: var(--gh-general-card-shadow);
+}
+
+.lcHeadCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px 10px;
+}
+
+.accentBar {
+  width: 4px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--gh-teal);
+  flex-shrink: 0;
+}
+
+.lcTitleCard {
+  margin: 0;
+  font-size: var(--font-base); /* = .cardTitle's 16px, tokenized */
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
+.lcHeadCard .lcHint {
+  padding-top: 0;
+  margin-left: auto;
+}
+
+.rankLCard .lcRail {
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .lcRail {
   display: flex;
   gap: 10px;
