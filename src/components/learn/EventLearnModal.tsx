@@ -57,7 +57,20 @@ function HintBlock({
   title: string;
 }) {
   const t = useTranslations("game");
+  const distanceUnit = getDistanceUnitPreference();
   if (hints.length === 0) return null;
+  // Same content + metadata rendering as the in-round hints-used card
+  // (src/components/compete/RoundCompleteSection.tsx usedHints block).
+  const hintText = (h: LearnHint): string => {
+    const meta = h.metadata;
+    if (type === "where" && (h.tier === 2 || h.tier === 4) && meta?.km != null) {
+      return `${h.content} • ${t("km_away_short", { distance: formatDistance(meta.km, distanceUnit) })}`;
+    }
+    if (type === "when" && (h.tier === 2 || h.tier === 4) && meta?.years != null) {
+      return `${h.content} • ${t("years_off_short", { n: meta.years })}`;
+    }
+    return h.content;
+  };
   return (
     <div className={styles.subBlock}>
       <div className={styles.subTitle}>{title}</div>
@@ -67,7 +80,7 @@ function HintBlock({
             <span className={styles.hintTier}>
               {hintTierLabel(type, h.tier, t)}
             </span>
-            <span className={styles.hintContent}>{h.content}</span>
+            <span className={styles.hintContent}>{hintText(h)}</span>
           </li>
         ))}
       </ul>
@@ -83,7 +96,6 @@ export function EventLearnModal({
   mode,
 }: EventLearnModalProps) {
   const t = useTranslations("game");
-  const distanceUnit = getDistanceUnitPreference();
   const closeRef = useRef<HTMLButtonElement>(null);
   const { state, refetch } = useEventLearn(open, eventId, gameId, mode);
 
@@ -111,9 +123,7 @@ export function EventLearnModal({
     y < 0 ? `${Math.abs(y)} ${t("bc_suffix")}` : `${y}`;
 
   const itemText = (item: LearnListItem): string =>
-    item.km != null
-      ? `${item.title} · ${yearLabel(item.year)} · ${formatDistance(item.km, distanceUnit)}`
-      : `${item.title} · ${yearLabel(item.year)}`;
+    `${item.title} · ${yearLabel(item.year)}`;
 
   const data = state.status === "success" ? state.data : null;
 
@@ -211,41 +221,6 @@ export function EventLearnModal({
                 )}
               </section>
 
-              <section className={styles.section}>
-                <div className={styles.sectionTitle}>{t("learn_nearby")}</div>
-                <div className={styles.subBlock}>
-                  <div className={styles.subTitle}>
-                    {t("learn_nearby_in_time")}
-                  </div>
-                  {data.nearbyInTime.length > 0 ? (
-                    <ul className={styles.list}>
-                      {data.nearbyInTime.map((item) => (
-                        <li key={item.id} className={styles.listItem}>
-                          {itemText(item)}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className={styles.empty}>{t("learn_empty")}</div>
-                  )}
-                </div>
-                <div className={styles.subBlock}>
-                  <div className={styles.subTitle}>
-                    {t("learn_nearby_in_place")}
-                  </div>
-                  {data.nearbyInPlace.length > 0 ? (
-                    <ul className={styles.list}>
-                      {data.nearbyInPlace.map((item) => (
-                        <li key={item.id} className={styles.listItem}>
-                          {itemText(item)}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className={styles.empty}>{t("learn_empty")}</div>
-                  )}
-                </div>
-              </section>
             </>
           ) : null}
         </div>

@@ -603,9 +603,6 @@
     "learn_how_to_guess": "How to find the year and location",
     "learn_what_happened": "What happened",
     "learn_related_events": "Related events",
-    "learn_nearby": "Nearby",
-    "learn_nearby_in_time": "Closest in time",
-    "learn_nearby_in_place": "Closest in place",
     "learn_empty": "Nothing to show yet",
     "learn_error": "Couldn't load event details"
   },

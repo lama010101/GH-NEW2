@@ -15,6 +15,12 @@ export const LEARN_MODES: readonly LearnMode[] = [
 export type LearnHint = {
   tier: number;
   content: string;
+  /**
+   * Sanitized subset of hints.metadata (see sanitizeHintMetadata in
+   * src/server/learnEvent.ts): km = landmark distance for where tiers 2/4,
+   * years = year distance for when tiers 2/4. Never raw jsonb.
+   */
+  metadata?: { km?: number; years?: number | string };
 };
 
 export type LearnLocation = {
@@ -38,13 +44,10 @@ export type LearnListItem = {
   title: string;
   year: number;
   slug: string;
-  km?: number;
 };
 
 export type EventLearnResponse = {
   event: LearnEvent;
   howToGuess: { when: LearnHint[]; where: LearnHint[] };
   related: LearnListItem[];
-  nearbyInTime: LearnListItem[];
-  nearbyInPlace: LearnListItem[];
 };

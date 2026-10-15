@@ -1,45 +1,85 @@
-// LEARN-BUILD-EVENTMODAL-API-1015-001
-// Pure-function tests for learnEvent.ts ranking/exclusion helpers.
+// LEARN-BUILD-EVENTMODAL-API-1015-001 / LEARN-FIX-HINTMETA-NONEARBY-1015-003
+// Pure-function tests for learnEvent.ts ranking/exclusion/metadata helpers.
 // No DB access — dbPool is a lazy proxy and is never queried here.
 
 import { describe, expect, it } from "vitest";
 import {
   computeExcludedEventIds,
-  haversineKm,
-  rankNearbyInPlace,
-  rankNearbyInTime,
   rankRelated,
+  sanitizeHintMetadata,
   type LearnCandidate,
 } from "./learnEvent";
 
 const cand = (
   id: string,
   year: number,
-  category: string | null = "war",
-  lat: number | null = null,
-  lng: number | null = null
-): LearnCandidate => ({ id, title: `T-${id}`, year, slug: `s-${id}`, category, lat, lng });
+  category: string | null = "war"
+): LearnCandidate => ({ id, title: `T-${id}`, year, slug: `s-${id}`, category });
 
 const NO_EXCLUDED = new Set<string>();
 
-describe("haversineKm", () => {
-  it("same point → 0", () => {
-    expect(haversineKm({ lat: 10, lng: 20 }, { lat: 10, lng: 20 })).toBe(0);
+describe("sanitizeHintMetadata", () => {
+  it("keeps a finite km number", () => {
+    expect(sanitizeHintMetadata({ km: 12.5 })).toEqual({ km: 12.5 });
   });
 
-  it("Paris→London ≈ 343 km", () => {
-    const d = haversineKm(
-      { lat: 48.8566, lng: 2.3522 },
-      { lat: 51.5074, lng: -0.1278 }
-    );
-    expect(d).toBeGreaterThan(330);
-    expect(d).toBeLessThan(360);
+  it("keeps a valid years number", () => {
+    expect(sanitizeHintMetadata({ years: 12 })).toEqual({ years: 12 });
   });
 
-  it("is symmetric", () => {
-    const a = { lat: 35.6762, lng: 139.6503 };
-    const b = { lat: -33.8688, lng: 151.2093 };
-    expect(haversineKm(a, b)).toBeCloseTo(haversineKm(b, a), 6);
+  it("keeps a numeric-string years value", () => {
+    expect(sanitizeHintMetadata({ years: "8" })).toEqual({ years: "8" });
+  });
+
+  it("keeps km and years together", () => {
+    expect(sanitizeHintMetadata({ km: 3, years: 7 })).toEqual({ km: 3, years: 7 });
+  });
+
+  it("drops NaN and Infinity km", () => {
+    expect(sanitizeHintMetadata({ km: NaN })).toBeUndefined();
+    expect(sanitizeHintMetadata({ km: Infinity })).toBeUndefined();
+    expect(sanitizeHintMetadata({ km: -Infinity })).toBeUndefined();
+  });
+
+  it("drops negative km and negative years (number and string)", () => {
+    expect(sanitizeHintMetadata({ km: -1 })).toBeUndefined();
+    expect(sanitizeHintMetadata({ years: -5 })).toBeUndefined();
+    expect(sanitizeHintMetadata({ years: "-5" })).toBeUndefined();
+  });
+
+  it("drops non-numeric years strings", () => {
+    expect(sanitizeHintMetadata({ years: "abc" })).toBeUndefined();
+    expect(sanitizeHintMetadata({ years: "" })).toBeUndefined();
+    expect(sanitizeHintMetadata({ years: "12bc" })).toBeUndefined();
+  });
+
+  it("drops non-number km (numeric string is not accepted for km)", () => {
+    expect(sanitizeHintMetadata({ km: "12" })).toBeUndefined();
+    expect(sanitizeHintMetadata({ km: null })).toBeUndefined();
+  });
+
+  it("drops years objects/arrays/booleans", () => {
+    expect(sanitizeHintMetadata({ years: { n: 5 } })).toBeUndefined();
+    expect(sanitizeHintMetadata({ years: [5] })).toBeUndefined();
+    expect(sanitizeHintMetadata({ years: true })).toBeUndefined();
+  });
+
+  it("drops unknown extra keys", () => {
+    expect(
+      sanitizeHintMetadata({ km: 4, secret: "x", image: "u", foo: 1 })
+    ).toEqual({ km: 4 });
+  });
+
+  it("returns undefined when nothing valid remains", () => {
+    expect(sanitizeHintMetadata({ foo: "bar" })).toBeUndefined();
+  });
+
+  it("non-object inputs → undefined", () => {
+    expect(sanitizeHintMetadata(null)).toBeUndefined();
+    expect(sanitizeHintMetadata(undefined)).toBeUndefined();
+    expect(sanitizeHintMetadata("str")).toBeUndefined();
+    expect(sanitizeHintMetadata(5)).toBeUndefined();
+    expect(sanitizeHintMetadata([{ km: 1 }])).toBeUndefined();
   });
 });
 
@@ -109,97 +149,8 @@ describe("rankRelated", () => {
     expect(out).toEqual([]);
   });
 
-  it("list items carry id/title/year/slug only (no km)", () => {
+  it("list items carry id/title/year/slug only (no hints, no description)", () => {
     const out = rankRelated([cand("a", 1901)], self, NO_EXCLUDED);
     expect(out[0]).toEqual({ id: "a", title: "T-a", year: 1901, slug: "s-a" });
-  });
-});
-
-describe("rankNearbyInTime", () => {
-  const self = { id: "self", year: 1950 };
-
-  it("orders by |year diff| asc across all categories", () => {
-    const out = rankNearbyInTime(
-      [cand("far", 1800, "art"), cand("near", 1949, "war"), cand("mid", 1960, "sci")],
-      self,
-      NO_EXCLUDED
-    );
-    expect(out.map((i) => i.id)).toEqual(["near", "mid", "far"]);
-  });
-
-  it("excludes self and unfinished same-session events", () => {
-    const out = rankNearbyInTime(
-      [cand("self", 1950), cand("leak", 1951), cand("ok", 1952)],
-      self,
-      new Set(["leak"])
-    );
-    expect(out.map((i) => i.id)).toEqual(["ok"]);
-  });
-
-  it("tie-breaks equal diffs by title", () => {
-    const out = rankNearbyInTime(
-      [
-        { ...cand("z", 1951), title: "Zulu" },
-        { ...cand("a", 1951), title: "Alpha" },
-      ],
-      self,
-      NO_EXCLUDED
-    );
-    expect(out.map((i) => i.id)).toEqual(["a", "z"]);
-  });
-});
-
-describe("rankNearbyInPlace", () => {
-  const self = { id: "self", lat: 48.8566, lng: 2.3522 }; // Paris
-
-  it("orders by great-circle distance asc and attaches km", () => {
-    const out = rankNearbyInPlace(
-      [
-        cand("tokyo", 0, "x", 35.6762, 139.6503),
-        cand("london", 0, "x", 51.5074, -0.1278),
-        cand("berlin", 0, "x", 52.52, 13.405),
-      ],
-      self,
-      NO_EXCLUDED
-    );
-    expect(out.map((i) => i.id)).toEqual(["london", "berlin", "tokyo"]);
-    expect(out[0].km).toBeGreaterThan(330);
-    expect(out[0].km).toBeLessThan(360);
-  });
-
-  it("skips candidates with no location", () => {
-    const out = rankNearbyInPlace(
-      [cand("noloc", 0), cand("london", 0, "x", 51.5074, -0.1278)],
-      self,
-      NO_EXCLUDED
-    );
-    expect(out.map((i) => i.id)).toEqual(["london"]);
-  });
-
-  it("self with no location → empty array (empty-location behavior)", () => {
-    const out = rankNearbyInPlace(
-      [cand("london", 0, "x", 51.5074, -0.1278)],
-      { id: "self", lat: null, lng: null },
-      NO_EXCLUDED
-    );
-    expect(out).toEqual([]);
-  });
-
-  it("no located candidates → empty array", () => {
-    const out = rankNearbyInPlace([cand("a", 0), cand("b", 0)], self, NO_EXCLUDED);
-    expect(out).toEqual([]);
-  });
-
-  it("excludes self and unfinished same-session events", () => {
-    const out = rankNearbyInPlace(
-      [
-        cand("self", 0, "x", 48.8566, 2.3522),
-        cand("leak", 0, "x", 51.5, -0.12),
-        cand("ok", 0, "x", 52.52, 13.405),
-      ],
-      self,
-      new Set(["leak"])
-    );
-    expect(out.map((i) => i.id)).toEqual(["ok"]);
   });
 });

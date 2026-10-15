@@ -29,19 +29,37 @@ import type {
 // PURE HELPERS (unit-tested in learnEvent.test.ts — no DB access)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function haversineKm(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number }
-): number {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const la1 = (a.lat * Math.PI) / 180;
-  const la2 = (b.lat * Math.PI) / 180;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+/**
+ * Pass-through for the two hint.metadata keys the learn UI renders —
+ * km (where tiers 2/4 landmark distance) and years (when tiers 2/4 year
+ * distance). Never ships raw jsonb: anything that is not a finite,
+ * non-negative number — or a numeric string for years — is dropped,
+ * and no other key survives.
+ */
+export function sanitizeHintMetadata(
+  raw: unknown
+): { km?: number; years?: number | string } | undefined {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
+    return undefined;
+  }
+  const src = raw as Record<string, unknown>;
+  const out: { km?: number; years?: number | string } = {};
+  const km = src.km;
+  if (typeof km === "number" && Number.isFinite(km) && km >= 0) {
+    out.km = km;
+  }
+  const years = src.years;
+  if (typeof years === "number" && Number.isFinite(years) && years >= 0) {
+    out.years = years;
+  } else if (
+    typeof years === "string" &&
+    years.trim() !== "" &&
+    Number.isFinite(Number(years)) &&
+    Number(years) >= 0
+  ) {
+    out.years = years;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 /**
@@ -66,8 +84,6 @@ export type LearnCandidate = {
   year: number;
   slug: string;
   category: string | null;
-  lat: number | null;
-  lng: number | null;
 };
 
 function byYearDiffThenTitle(selfYear: number) {
@@ -98,51 +114,6 @@ export function rankRelated(
     .sort(byYearDiffThenTitle(self.year))
     .slice(0, limit)
     .map(toListItem);
-}
-
-/** All validated events, excluding self + excluded ids, |year diff| asc then title. */
-export function rankNearbyInTime(
-  candidates: readonly LearnCandidate[],
-  self: { id: string; year: number },
-  excluded: ReadonlySet<string>,
-  limit = 4
-): LearnListItem[] {
-  return candidates
-    .filter((c) => c.id !== self.id && !excluded.has(c.id))
-    .sort(byYearDiffThenTitle(self.year))
-    .slice(0, limit)
-    .map(toListItem);
-}
-
-/**
- * Great-circle distance asc, each item carrying km. Returns [] when the
- * target event has no location (caller cannot "learn" nearby-in-place).
- */
-export function rankNearbyInPlace(
-  candidates: readonly LearnCandidate[],
-  self: { id: string; lat: number | null; lng: number | null },
-  excluded: ReadonlySet<string>,
-  limit = 4
-): LearnListItem[] {
-  if (self.lat == null || self.lng == null) return [];
-  const origin = { lat: self.lat, lng: self.lng };
-  return candidates
-    .filter(
-      (c) =>
-        c.id !== self.id &&
-        !excluded.has(c.id) &&
-        c.lat != null &&
-        c.lng != null
-    )
-    .map((c) => ({ c, km: haversineKm(origin, { lat: c.lat!, lng: c.lng! }) }))
-    .sort((a, b) =>
-      a.km !== b.km ? a.km - b.km : a.c.title.localeCompare(b.c.title)
-    )
-    .slice(0, limit)
-    .map(({ c, km }) => ({
-      ...toListItem(c),
-      km: Math.round(km * 10) / 10,
-    }));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -287,8 +258,9 @@ export async function loadEventLearn(params: {
     tier: number;
     type: string;
     content: string;
+    metadata: unknown;
   }>(
-    `SELECT tier, type, content
+    `SELECT tier, type, content, metadata
      FROM hints
      WHERE event_id = $1::uuid AND type IN ('when', 'where')
      ORDER BY tier ASC, display_order ASC`,
@@ -297,7 +269,12 @@ export async function loadEventLearn(params: {
   const when: LearnHint[] = [];
   const where: LearnHint[] = [];
   for (const h of hintsRes.rows) {
-    const hint: LearnHint = { tier: h.tier, content: h.content };
+    const metadata = sanitizeHintMetadata(h.metadata);
+    const hint: LearnHint = {
+      tier: h.tier,
+      content: h.content,
+      ...(metadata ? { metadata } : {}),
+    };
     if (h.type === "when") when.push(hint);
     else if (h.type === "where") where.push(hint);
   }
@@ -308,13 +285,9 @@ export async function loadEventLearn(params: {
     event_year: number;
     slug: string;
     category: string | null;
-    latitude: number | null;
-    longitude: number | null;
   }>(
-    `SELECT e.id, e.title, e.event_year, e.slug, e.category,
-            l.latitude, l.longitude
+    `SELECT e.id, e.title, e.event_year, e.slug, e.category
      FROM events e
-     LEFT JOIN locations l ON l.event_id = e.id
      WHERE e.status = 'validated' AND e.id <> $1::uuid`,
     [eventId]
   );
@@ -324,8 +297,6 @@ export async function loadEventLearn(params: {
     year: c.event_year,
     slug: c.slug,
     category: c.category,
-    lat: c.latitude,
-    lng: c.longitude,
   }));
 
   const location =
@@ -354,26 +325,12 @@ export async function loadEventLearn(params: {
       excluded,
       RELATED_LIMIT
     ),
-    nearbyInTime: rankNearbyInTime(
-      candidates,
-      { id: row.id, year: row.event_year },
-      excluded,
-      RELATED_LIMIT
-    ),
-    nearbyInPlace: rankNearbyInPlace(
-      candidates,
-      { id: row.id, lat: row.latitude, lng: row.longitude },
-      excluded,
-      RELATED_LIMIT
-    ),
   };
 
   // Defense in depth: never ship an unfinished same-session event id.
-  for (const list of [data.related, data.nearbyInTime, data.nearbyInPlace]) {
-    for (const item of list) {
-      if (excluded.has(item.id)) {
-        throw new Error("[learnEvent] exclusion invariant violated");
-      }
+  for (const item of data.related) {
+    if (excluded.has(item.id)) {
+      throw new Error("[learnEvent] exclusion invariant violated");
     }
   }
 
