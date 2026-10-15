@@ -10,7 +10,8 @@ import { AUTH_COOKIE_DOMAIN } from "@/core/authCookie";
 // /sw.js is a self-unregistering kill-switch service worker served as a static
 // file from public/. It must be reachable without auth so stale SWs from prior
 // deployments can update/unregister instead of receiving a /login HTML redirect.
-const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/privacy", "/terms", "/sw.js", "/grow"];
+// BRAND-BUILD-PURPLEICONS-1015-003: manifest must be fetchable pre-login (installs from the public landing page).
+const PUBLIC_PATHS = ["/", "/login", "/auth/callback", "/help", "/privacy", "/terms", "/sw.js", "/grow", "/manifest.json"];
 
 // Public API routes that must remain reachable without authentication.
 // All other /api/* routes are required to pass the middleware auth check.
