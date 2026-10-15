@@ -1,40 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser'
 import { getAccuracyColor } from '@/core/accuracyColor'
 import PlayerAvatar from '@/components/compete/PlayerAvatar'
 import { RelaxPwaInterstitialModal } from '@/components/compete/RelaxPwaInterstitialModal'
 import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from '@/core/relaxPwaInterstitial'
+import { useCompeteLists } from './useCompeteLists'
 import cpStyles from "./CompetePanel.module.css";
 
-type ActiveGame = {
-  id: string
-  game_id: string
-  opponent_id: string
-  opponent_name: string
-  opponent_avatar?: string
-  round_current: number
-  round_total: number
-  status: 'your_turn' | 'waiting' | 'completed'
-  mode?: 'sync' | 'async'
-  score_you?: number
-  score_them?: number
-  accuracy_you?: number
-  completed_at?: string
-  leaderboard_rank?: number
-  created_at?: string
-  session_deadline?: string
-  is_host_opponent?: boolean
-  is_host_viewer?: boolean
-  opponent_pending?: boolean
-  viewer_name?: string
-  viewer_avatar?: string
-}
-
-function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) => string): string {
+export function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) => string): string {
   const diff = Date.now() - new Date(iso).getTime()
   if (diff < 60000) return t('notifications.just_now')
   if (diff < 3600000) return t('notifications.m_ago', { n: Math.floor(diff / 60000) })
@@ -42,7 +18,7 @@ function timeAgo(iso: string, t: (key: string, params?: Record<string, number>) 
   return t('notifications.d_ago', { n: Math.floor(diff / 86400000) })
 }
 
-function timeRemaining(deadlineIso: string, t: (key: string, params?: Record<string, number>) => string): string {
+export function timeRemaining(deadlineIso: string, t: (key: string, params?: Record<string, number>) => string): string {
   const diff = new Date(deadlineIso).getTime() - Date.now()
   if (diff <= 0) return t('home.compete_expires_soon')
   if (diff < 3600000) return t('home.compete_expires_soon')
@@ -109,102 +85,13 @@ export function CompetePanel({ onLobby, playerId }: {
 }) {
   const t = useTranslations()
   const router = useRouter()
-  const [invites, setInvites] = useState<Array<{
-    id: string
-    game_id: string
-    inviter_id: string
-    inviter_name: string
-    avatar_url?: string
-    created_at: string
-    expires_at: string
-    mode?: 'sync' | 'async'
-    session_deadline?: string
-  }>>([])
-  const [invitesLoading, setInvitesLoading] = useState(true)
+  // Shared list data (invites + active games, subscription/poll/focus refetch)
+  // lives in useCompeteLists — also consumed by the home ChallengeCard.
+  const { invites, setInvites, invitesLoading, activeGames } = useCompeteLists(playerId)
   const [tab, setTab] = useState<'invitations'|'your_turn'|'completed'>('invitations')
-  const [activeGames, setActiveGames] = useState<ActiveGame[]>([])
   const [pwaInterstitialPending, setPwaInterstitialPending] = useState<null | (() => void)>(null)
   const [invitePending, setInvitePending] = useState<Record<string, boolean>>({})
   const [lobbyPending, setLobbyPending] = useState<Record<string, boolean>>({})
-
-  const fetchInvites = useCallback(async () => {
-    if (!playerId) {
-      setInvites([])
-      setInvitesLoading(false)
-      return
-    }
-    try {
-      const token = await getValidAccessToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const res = await fetch('/api/invitations/pending', { headers })
-      if (!res.ok) {
-        setInvites([])
-        setInvitesLoading(false)
-        return
-      }
-      const { invitations } = await res.json()
-      setInvites(invitations ?? [])
-      setInvitesLoading(false)
-    } catch {
-      setInvites([])
-      setInvitesLoading(false)
-    }
-  }, [playerId])
-
-  const fetchActiveGames = useCallback(async () => {
-    if (!playerId) return
-    try {
-      const res = await fetch('/api/compete/active-games')
-      if (!res.ok) return
-      const { games } = await res.json()
-      setActiveGames(games ?? [])
-    } catch {}
-  }, [playerId])
-
-  useEffect(() => {
-    if (!playerId) {
-      setInvitesLoading(false)
-      return
-    }
-
-    fetchInvites()
-    fetchActiveGames()
-
-    const channel = supabaseBrowser
-      .channel('pending-invites-' + playerId)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'game_invitations',
-          filter: `invitee_id=eq.${playerId}`,
-        },
-        () => { fetchInvites() }
-      )
-      .subscribe()
-
-    const interval = setInterval(() => {
-      fetchInvites()
-      fetchActiveGames()
-    }, 15000)
-
-    const handleFocus = () => {
-      fetchInvites()
-      fetchActiveGames()
-    }
-    window.addEventListener('focus', handleFocus)
-
-    return () => {
-      supabaseBrowser.removeChannel(channel)
-      clearInterval(interval)
-      window.removeEventListener('focus', handleFocus)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playerId, fetchInvites, fetchActiveGames])
 
   const runAccept = async (inviteId: string, gameId: string) => {
     setInvitePending(prev => ({ ...prev, [inviteId]: true }))
