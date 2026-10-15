@@ -39,7 +39,7 @@
 }
 .tabChev { margin-left: auto; transition: transform 0.15s ease; opacity: 0.7; }
 .tabChevOpen { transform: rotate(90deg); }
-.tabBody { display: flex; flex-direction: column; gap: 1px; padding: 6px 2px 2px; }
+.tabBody { display: flex; flex-direction: column; gap: 1px; padding: 6px 2px 2px; position: relative; box-sizing: border-box; overscroll-behavior: contain; }
 .row {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 8px; border-radius: 10px;
