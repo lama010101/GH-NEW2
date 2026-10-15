@@ -20,6 +20,7 @@ import { shouldShowRelaxPwaInterstitial, markRelaxPwaInterstitialSkipped } from 
 import { createAsyncCompeteSession } from '@/core/competeCreate'
 import { useCompeteLists } from './useCompeteLists'
 import { acceptInvitation, declineInvitation, timeAgo, timeRemaining } from './CompetePanel'
+import { CappedRows } from './CappedRows'
 import styles from './ChallengeCard.module.css'
 
 type ChallengeTab = 'invitations' | 'your_turn' | 'completed'
@@ -174,14 +175,14 @@ export function ChallengeCard({ playerId, displayName, onLobby }: ChallengeCardP
               </button>
 
               {openT && tab.key === 'invitations' && (
-                <div className={styles.tabBody}>
+                <CappedRows className={styles.tabBody} maxRows={5}>
                   {invitesLoading ? (
                     <div className={styles.emptyState}>{t('home.compete_loading_invites')}</div>
                   ) : invites.length === 0 ? (
                     <div className={styles.emptyState}>{t('home.compete_no_invitations')}</div>
                   ) : (
                     invites.map((invite) => (
-                      <div className={styles.row} key={invite.id}>
+                      <div className={styles.row} data-cap-row key={invite.id}>
                         <PlayerAvatar
                           avatarUrl={invite.avatar_url ?? null}
                           displayName={invite.inviter_name ?? t('game.unknown_player')}
@@ -229,11 +230,11 @@ export function ChallengeCard({ playerId, displayName, onLobby }: ChallengeCardP
                       {t('home.compete_see_all')}
                     </button>
                   )}
-                </div>
+                </CappedRows>
               )}
 
               {openT && tab.key === 'your_turn' && (
-                <div className={styles.tabBody}>
+                <CappedRows className={styles.tabBody} maxRows={5}>
                   {yourTurnGames.length === 0 ? (
                     <div className={styles.emptyState}>{t('home.compete_no_your_turn')}</div>
                   ) : (
@@ -245,7 +246,7 @@ export function ChallengeCard({ playerId, displayName, onLobby }: ChallengeCardP
                         : (game.opponent_name ?? t('game.unknown_player'))
                       const rowPlayerId = pendingHost ? (playerId ?? game.opponent_id) : game.opponent_id
                       return (
-                        <div className={styles.row} key={game.id}>
+                        <div className={styles.row} data-cap-row key={game.id}>
                           <PlayerAvatar
                             avatarUrl={rowAvatarUrl}
                             displayName={rowDisplayName}
@@ -285,11 +286,11 @@ export function ChallengeCard({ playerId, displayName, onLobby }: ChallengeCardP
                       {t('home.compete_see_all')}
                     </button>
                   )}
-                </div>
+                </CappedRows>
               )}
 
               {openT && tab.key === 'completed' && (
-                <div className={styles.tabBody}>
+                <CappedRows className={styles.tabBody} maxRows={5}>
                   {completedGames.length === 0 ? (
                     <div className={styles.emptyState}>{t('home.compete_no_completed')}</div>
                   ) : (
@@ -303,6 +304,7 @@ export function ChallengeCard({ playerId, displayName, onLobby }: ChallengeCardP
                       return (
                         <div
                           className={styles.row}
+                          data-cap-row
                           key={game.id}
                           onClick={() => { setLobbyPending(prev => ({ ...prev, [game.game_id]: true })); onLobby(game.game_id) }}
                           aria-disabled={!!lobbyPending[game.game_id]}
@@ -348,7 +350,7 @@ export function ChallengeCard({ playerId, displayName, onLobby }: ChallengeCardP
                       {t('home.compete_see_all')}
                     </button>
                   )}
-                </div>
+                </CappedRows>
               )}
             </div>
           )

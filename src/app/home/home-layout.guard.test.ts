@@ -24,9 +24,13 @@ import { resolve } from "node:path";
 
 const PAGE_PATH = resolve(__dirname, "page.tsx");
 const CSS_PATH = resolve(__dirname, "home.module.css");
+const CHALLENGE_TSX_PATH = resolve(__dirname, "../../components/home/ChallengeCard.tsx");
+const CHALLENGE_CSS_PATH = resolve(__dirname, "../../components/home/ChallengeCard.module.css");
 
 const pageSrc = readFileSync(PAGE_PATH, "utf-8");
 const cssSrc = readFileSync(CSS_PATH, "utf-8");
+const challengeTsxSrc = readFileSync(CHALLENGE_TSX_PATH, "utf-8");
+const challengeCssSrc = readFileSync(CHALLENGE_CSS_PATH, "utf-8");
 
 describe("home page — v2 four-card layout guard (MP-UIX-PORT-C-HOME-001)", () => {
   describe("page.tsx", () => {
@@ -148,6 +152,17 @@ describe("home page — v2 four-card layout guard (MP-UIX-PORT-C-HOME-001)", () 
       expect(cssSrc).toMatch(/HOME V2/);
       expect(cssSrc).not.toMatch(/HORIZONTAL CARD LAYOUT/);
       expect(cssSrc).not.toMatch(/NEW VERTICAL CARD LAYOUT/);
+    });
+  });
+
+  describe("ChallengeCard row cap (HOME-FIX-CHALLENGECARD-ROWCAP-1015-001)", () => {
+    it("caps all three open sections at 5 measured rows via CappedRows, no px max-height in .tabBody", () => {
+      expect(challengeTsxSrc).toContain("import { CappedRows } from './CappedRows'");
+      expect(challengeTsxSrc.match(/<CappedRows\b[^>]*maxRows=\{5\}/g) ?? []).toHaveLength(3);
+      expect(challengeTsxSrc.match(/data-cap-row/g) ?? []).toHaveLength(3);
+      const tabBodyRule = challengeCssSrc.match(/\.tabBody\s*\{[^}]*\}/);
+      expect(tabBodyRule).not.toBeNull();
+      expect(tabBodyRule ? tabBodyRule[0] : "").not.toMatch(/max-height\s*:\s*\d+px/);
     });
   });
 });
