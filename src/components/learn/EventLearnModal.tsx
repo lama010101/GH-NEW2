@@ -22,6 +22,11 @@ export type EventLearnModalProps = {
   eventId: string;
   gameId: string;
   mode: LearnMode;
+  // LEARN-FIX-REPLACEHIST-1015-006 — round.description the event card used to
+  // show under the Historical Context toggle. Rendered in "What happened"
+  // while the learn fetch is in flight or if it fails, and as fallback when
+  // the fetched event has no description.
+  description?: string | null;
 };
 
 // Tier labels mirror HintModal's getHintLabel — same i18n keys, same mapping.
@@ -94,6 +99,7 @@ export function EventLearnModal({
   eventId,
   gameId,
   mode,
+  description,
 }: EventLearnModalProps) {
   const t = useTranslations("game");
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -126,6 +132,9 @@ export function EventLearnModal({
     `${item.title} · ${yearLabel(item.year)}`;
 
   const data = state.status === "success" ? state.data : null;
+  // Fetched description wins once loaded; the passed round description fills
+  // in while loading / on error / when the fetched event has none.
+  const whatHappened = data?.event.description || description || null;
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
@@ -192,36 +201,35 @@ export function EventLearnModal({
                   title={t("where_badges")}
                 />
               </section>
-
-              {data.event.description ? (
-                <section className={styles.section}>
-                  <div className={styles.sectionTitle}>
-                    {t("learn_what_happened")}
-                  </div>
-                  <p className={styles.description}>
-                    {data.event.description}
-                  </p>
-                </section>
-              ) : null}
-
-              <section className={styles.section}>
-                <div className={styles.sectionTitle}>
-                  {t("learn_related_events")}
-                </div>
-                {data.related.length > 0 ? (
-                  <ul className={styles.list}>
-                    {data.related.map((item) => (
-                      <li key={item.id} className={styles.listItem}>
-                        {itemText(item)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className={styles.empty}>{t("learn_empty")}</div>
-                )}
-              </section>
-
             </>
+          ) : null}
+
+          {whatHappened ? (
+            <section className={styles.section}>
+              <div className={styles.sectionTitle}>
+                {t("learn_what_happened")}
+              </div>
+              <p className={styles.description}>{whatHappened}</p>
+            </section>
+          ) : null}
+
+          {data ? (
+            <section className={styles.section}>
+              <div className={styles.sectionTitle}>
+                {t("learn_related_events")}
+              </div>
+              {data.related.length > 0 ? (
+                <ul className={styles.list}>
+                  {data.related.map((item) => (
+                    <li key={item.id} className={styles.listItem}>
+                      {itemText(item)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className={styles.empty}>{t("learn_empty")}</div>
+              )}
+            </section>
           ) : null}
         </div>
       </div>

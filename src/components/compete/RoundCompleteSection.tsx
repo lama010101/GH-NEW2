@@ -35,6 +35,7 @@ import { rankForXp } from "@/core/rank";
 import { supabaseBrowser } from "@/core/supabaseBrowser";
 import { EventLearnModal } from "@/components/learn/EventLearnModal";
 import { learnModeForSession } from "@/core/learnTypes";
+import { BookOpen } from "lucide-react";
 
 // Same shape check the learn route applies (src/app/api/learn/event/[eventId]
 // /route.ts UUID_RE) — the CTA renders only when the snapshot carries ids the
@@ -396,7 +397,29 @@ export default function RoundCompleteSection({
                 <div className={styles.eventImagePlaceholder}>{t('no_image')}</div>
               )}
               <div className={styles.eventMeta}>{correctYear} · {correctName}</div>
-              {round.description && (
+              {/* LEARN-FIX-REPLACEHIST-1015-006 — when the learn route can serve
+                  this round (real UUID ids), the Learn CTA takes the Historical
+                  Context slot in the event card; the description moved into the
+                  learn modal (description prop). Mock/prototype snapshots
+                  (non-UUID ids -> !learnEligible) keep the toggle unchanged. */}
+              {learnEligible ? (
+                <>
+                  <button
+                    type="button"
+                    className={styles.learnCta}
+                    onClick={() => setLearnOpen(true)}
+                    data-testid="learn-cta"
+                  >
+                    <BookOpen size={16} aria-hidden="true" />
+                    {t('learn_cta')}
+                  </button>
+                  {round.description && (
+                    <div className={styles.sourceButtonWrap}>
+                      <RatingControl eventId={round.eventId} />
+                    </div>
+                  )}
+                </>
+              ) : round.description && (
                 <>
                   <button
                     className={styles.histContextTrigger}
@@ -780,17 +803,6 @@ export default function RoundCompleteSection({
               );
             })()}
 
-            {learnEligible && (
-              <button
-                type="button"
-                className={styles.learnCta}
-                onClick={() => setLearnOpen(true)}
-                data-testid="learn-cta"
-              >
-                {t('learn_cta')}
-              </button>
-            )}
-
             {/* BOTTOM BAR WRAPPER — countdown (above) + nav row (proto-style) */}
             <div className={styles.bottomBarWrap}>
               {!isAsync && ((resultSecsLeft !== null && resultSecsLeft > 0) || effectiveReadyForNext.length > 0) && (
@@ -862,6 +874,7 @@ export default function RoundCompleteSection({
                 eventId={learnEventId}
                 gameId={snapshot.gameId}
                 mode={learnMode}
+                description={round.description}
               />
             )}
 
