@@ -597,7 +597,14 @@
     "retry": "Opnieuw proberen",
     "region_oceania_antarctica": "Oceanië & Antarctica",
     "game_accuracy_pct": "Spel Nauwkeurigheid (%)",
-    "badge_tally_label": "{dimension} · {tier}"
+    "badge_tally_label": "{dimension} · {tier}",
+    "learn_title": "Leren",
+    "learn_close": "Sluiten",
+    "learn_how_to_guess": "Zo vind je het jaar en de plek",
+    "learn_what_happened": "Wat er gebeurde",
+    "learn_related_events": "Gerelateerde gebeurtenissen",
+    "learn_empty": "Nog niets te tonen",
+    "learn_error": "Details konden niet worden geladen"
   },
   "auth": {
     "sign_in": "Inloggen",

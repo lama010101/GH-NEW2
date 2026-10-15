@@ -597,7 +597,14 @@
     "retry": "Retry",
     "region_oceania_antarctica": "Oceania & Antarctica",
     "game_accuracy_pct": "Game Accuracy (%)",
-    "badge_tally_label": "{dimension} · {tier}"
+    "badge_tally_label": "{dimension} · {tier}",
+    "learn_title": "Learn",
+    "learn_close": "Close",
+    "learn_how_to_guess": "How to find the year and location",
+    "learn_what_happened": "What happened",
+    "learn_related_events": "Related events",
+    "learn_empty": "Nothing to show yet",
+    "learn_error": "Couldn't load event details"
   },
   "auth": {
     "sign_in": "Sign In",
