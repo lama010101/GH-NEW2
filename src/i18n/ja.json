@@ -597,7 +597,17 @@
     "retry": "再試行",
     "region_oceania_antarctica": "オセアニア＆南極大陸",
     "game_accuracy_pct": "ゲームの精度 (%)",
-    "badge_tally_label": "{dimension}・{tier}"
+    "badge_tally_label": "{dimension}・{tier}",
+    "learn_title": "学ぶ",
+    "learn_close": "閉じる",
+    "learn_how_to_guess": "年代と場所の見つけ方",
+    "learn_what_happened": "何が起きたか",
+    "learn_related_events": "関連する出来事",
+    "learn_nearby": "近い出来事",
+    "learn_nearby_in_time": "時代が近い順",
+    "learn_nearby_in_place": "場所が近い順",
+    "learn_empty": "表示するものがありません",
+    "learn_error": "詳細を読み込めませんでした"
   },
   "auth": {
     "sign_in": "ログイン",

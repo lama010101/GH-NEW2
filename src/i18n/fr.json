@@ -597,7 +597,17 @@
     "retry": "Réessayer",
     "region_oceania_antarctica": "Océanie et Antarctique",
     "game_accuracy_pct": "Précision du jeu (%)",
-    "badge_tally_label": "{dimension} · {tier}"
+    "badge_tally_label": "{dimension} · {tier}",
+    "learn_title": "Apprendre",
+    "learn_close": "Fermer",
+    "learn_how_to_guess": "Comment trouver l'année et le lieu",
+    "learn_what_happened": "Ce qui s'est passé",
+    "learn_related_events": "Événements liés",
+    "learn_nearby": "À proximité",
+    "learn_nearby_in_time": "Les plus proches dans le temps",
+    "learn_nearby_in_place": "Les plus proches géographiquement",
+    "learn_empty": "Rien à afficher pour l'instant",
+    "learn_error": "Impossible de charger les détails"
   },
   "auth": {
     "sign_in": "Se connecter",

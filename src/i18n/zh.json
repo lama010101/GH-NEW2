@@ -597,7 +597,17 @@
     "retry": "重试",
     "region_oceania_antarctica": "大洋洲与南极洲",
     "game_accuracy_pct": "游戏准确度 (%)",
-    "badge_tally_label": "{dimension} · {tier}"
+    "badge_tally_label": "{dimension} · {tier}",
+    "learn_title": "学习",
+    "learn_close": "关闭",
+    "learn_how_to_guess": "如何推断年份和地点",
+    "learn_what_happened": "事件经过",
+    "learn_related_events": "相关事件",
+    "learn_nearby": "相近事件",
+    "learn_nearby_in_time": "时间最接近",
+    "learn_nearby_in_place": "地点最接近",
+    "learn_empty": "暂无内容",
+    "learn_error": "无法加载事件详情"
   },
   "auth": {
     "sign_in": "登录",

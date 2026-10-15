@@ -597,7 +597,17 @@
     "retry": "إعادة المحاولة",
     "region_oceania_antarctica": "أوقيانوسيا وأنتاركتيكا",
     "game_accuracy_pct": "دقة اللعبة (%)",
-    "badge_tally_label": "{dimension} · {tier}"
+    "badge_tally_label": "{dimension} · {tier}",
+    "learn_title": "تعلّم",
+    "learn_close": "إغلاق",
+    "learn_how_to_guess": "كيف تجد السنة والموقع",
+    "learn_what_happened": "ماذا حدث",
+    "learn_related_events": "أحداث ذات صلة",
+    "learn_nearby": "بالقرب",
+    "learn_nearby_in_time": "الأقرب زمنًا",
+    "learn_nearby_in_place": "الأقرب مكانًا",
+    "learn_empty": "لا يوجد ما يُعرض بعد",
+    "learn_error": "تعذّر تحميل التفاصيل"
   },
   "auth": {
     "sign_in": "تسجيل الدخول",
