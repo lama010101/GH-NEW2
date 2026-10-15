@@ -604,7 +604,8 @@
     "learn_what_happened": "何が起きたか",
     "learn_related_events": "関連する出来事",
     "learn_empty": "表示するものがありません",
-    "learn_error": "詳細を読み込めませんでした"
+    "learn_error": "詳細を読み込めませんでした",
+    "learn_cta": "この出来事について学ぶ"
   },
   "auth": {
     "sign_in": "ログイン",

@@ -3,6 +3,7 @@
 // No DB access — dbPool is a lazy proxy and is never queried here.
 
 import { describe, expect, it } from "vitest";
+import { learnModeForSession } from "@/core/learnTypes";
 import {
   computeExcludedEventIds,
   rankRelated,
@@ -17,6 +18,23 @@ const cand = (
 ): LearnCandidate => ({ id, title: `T-${id}`, year, slug: `s-${id}`, category });
 
 const NO_EXCLUDED = new Set<string>();
+
+describe("learnModeForSession", () => {
+  it("maps every SessionMode value", () => {
+    expect(learnModeForSession("sync")).toBe("compete");
+    expect(learnModeForSession("async")).toBe("compete");
+    expect(learnModeForSession("daily")).toBe("daily");
+    expect(learnModeForSession("practice")).toBe("practice");
+  });
+
+  it("returns null for unknown/empty values", () => {
+    expect(learnModeForSession("compete")).toBeNull();
+    expect(learnModeForSession("journey")).toBeNull();
+    expect(learnModeForSession("")).toBeNull();
+    expect(learnModeForSession(null)).toBeNull();
+    expect(learnModeForSession(undefined)).toBeNull();
+  });
+});
 
 describe("sanitizeHintMetadata", () => {
   it("keeps a finite km number", () => {

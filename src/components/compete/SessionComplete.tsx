@@ -22,7 +22,7 @@ import { getAccuracyColor } from "@/core/accuracyColor";
 import PlayerAvatar from "@/components/compete/PlayerAvatar";
 import WhereIcon from "@/components/icons/WhereIcon";
 import WhenIcon from "@/components/icons/WhenIcon";
-import { Crosshair, Flame, HelpCircle, Home, Map as MapIcon, Play, RotateCcw, Timer, Trophy } from "lucide-react";
+import { BookOpen, Crosshair, Flame, HelpCircle, Home, Map as MapIcon, Play, RotateCcw, Timer, Trophy } from "lucide-react";
 import type { JourneyResultOverride } from "@/core/journeyResultTypes";
 import { JourneyBadge } from "@/app/journey/_components/JourneyBadge";
 import { JOURNEY_TOTAL_STAGES } from "@/core/journeyConstants";
@@ -31,6 +31,13 @@ import { useGlobalTotalXp } from "@/hooks/useGlobalTotalXp";
 import { GuestConversionModal } from "@/app/journey/_components/GuestConversionModal";
 import { writeActivePlaythrough } from "@/app/journey/_components/journeyStorage";
 import styles from "./SessionComplete.module.css";
+import { EventLearnModal } from "@/components/learn/EventLearnModal";
+import { learnModeForSession } from "@/core/learnTypes";
+
+// Same UUID shape the learn route requires (route.ts UUID_RE) — mock/prototype
+// snapshots carry non-UUID placeholders, so the row buttons never render there.
+const LEARN_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // HJ-UI-POLISH-STAGELIST-RESULT-035 — the journey result CTA reuses the
 // exact lobby "Start my game" class (cyan gradient, 52px, leading icon) so
 // the button style stays single-sourced; only the .cta-scoped overrides
@@ -97,6 +104,9 @@ export default function SessionComplete({
   const isPractice = snapshot.config.mode === "practice";
   const isDaily = snapshot.config.mode === "daily";
   const isAsync = snapshot.config.mode === "async";
+  // LEARN-WIRE-CTA-1015-004 — per-round "Learn" icon buttons (single modal).
+  const [learnEventId, setLearnEventId] = useState<string | null>(null);
+  const learnMode = learnModeForSession(snapshot.config.mode);
   const [openRounds, setOpenRounds] = useState<Set<number>>(new Set([0]));
   const [isCreatingLobby, setIsCreatingLobby] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
@@ -1083,8 +1093,14 @@ export default function SessionComplete({
                     ? ((myRoundResult!.locationScore ?? 0) + (myRoundResult!.timeScore ?? 0)) / 2
                     : null;
                   const open = openRounds.has(i);
+                  const canLearn =
+                    learnMode != null &&
+                    myRoundResult?.didSubmit === true &&
+                    LEARN_UUID_RE.test(round.eventId) &&
+                    LEARN_UUID_RE.test(snapshot.gameId);
                   return (
                     <div key={i} className={`${styles.roundItem} ${open ? styles.roundItemOpen : ""}`}>
+                      <div className={styles.roundTopRow}>
                       <button
                         type="button"
                         className={styles.roundTop}
@@ -1108,6 +1124,18 @@ export default function SessionComplete({
                         )}
                         <span className={styles.chev} style={{ transform: open ? "rotate(90deg)" : "none" }}>›</span>
                       </button>
+                      {canLearn && (
+                        <button
+                          type="button"
+                          className={styles.learnRoundBtn}
+                          aria-label={tGame('learn_cta')}
+                          data-testid={`learn-cta-round-${i}`}
+                          onClick={() => setLearnEventId(round.eventId)}
+                        >
+                          <BookOpen size={18} aria-hidden="true" />
+                        </button>
+                      )}
+                      </div>
 
                       {open && (
                         <div className={styles.roundDetail}>
@@ -1263,6 +1291,16 @@ export default function SessionComplete({
             </div>
           </div>
         </div>
+      )}
+
+      {learnEventId && learnMode && (
+        <EventLearnModal
+          open={learnEventId != null}
+          onClose={() => setLearnEventId(null)}
+          eventId={learnEventId}
+          gameId={snapshot.gameId}
+          mode={learnMode}
+        />
       )}
     </section>
   );

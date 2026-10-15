@@ -604,7 +604,8 @@
     "learn_what_happened": "Qué ocurrió",
     "learn_related_events": "Eventos relacionados",
     "learn_empty": "Nada que mostrar aún",
-    "learn_error": "No se pudieron cargar los detalles"
+    "learn_error": "No se pudieron cargar los detalles",
+    "learn_cta": "Aprende sobre este evento"
   },
   "auth": {
     "sign_in": "Iniciar sesión",
