@@ -580,6 +580,7 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  overflow: hidden; /* contains ellipsized children inside the tile padding box */
 }
 
 .hlVal {
@@ -587,6 +588,9 @@
   font-weight: 400;
   color: var(--gh-text-primary);
   line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hlTileLabel {
@@ -595,6 +599,11 @@
   color: var(--gh-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  /* 3-up tiles get narrow: ellipsize instead of letting the label text
+     overflow its box up to/against the tile border (COMBO clip). */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hlRow {
@@ -1136,11 +1145,26 @@
   line-height: 1;
 }
 
+/* Tied winners keep their names in the DOM for a11y + the relax-4player
+   textContent assertion, without taking visual space (clip pattern). */
+.mvpHiddenName {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── Rank ladder skeleton (XP lookup in flight) ──
    Same shell as .card; fixed min-height matches the rendered
    RankLadderCard so the layout does not shift when it swaps in. */
 .rankLadderSkeleton {
-  min-height: 273.5px;
+  min-height: 269.5px;
 }
 
 
