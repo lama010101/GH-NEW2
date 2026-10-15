@@ -12,6 +12,7 @@ import { NavModal } from '@/components/NavModal';
 import AccuracySuffix from '@/components/AccuracySuffix';
 import PlayerAvatar from '@/components/compete/PlayerAvatar';
 import { getAccuracyColor } from '@/core/accuracyColor';
+import { partitionPodium } from './podium';
 import styles from './leaderboard.module.css';
 
 type LeaderboardTab = 'daily' | 'levelup' | 'overall';
@@ -140,7 +141,12 @@ function LeaderboardPageInner() {
         throw new Error(body.error || 'Failed to load leaderboard');
       }
       const data = (await res.json()) as LeaderboardResponse;
-      setCurrentData(data.rows);
+      setCurrentData(
+        data.rows.map((e, i) => {
+          const rank = Number(e.rank);
+          return { ...e, rank: Number.isNaN(rank) ? i + 1 : rank };
+        })
+      );
       setOwnEntry(data.ownEntry);
     } catch {
       setError(t('err_load_failed'));
@@ -204,21 +210,25 @@ function LeaderboardPageInner() {
   rowRefs.current = useMemo(() => new Map<string, HTMLDivElement>(), [currentData]);
 
   const podiumSlots = useMemo(() => {
-    const data = currentData ?? [];
-    const byRank = (rank: number) => data.find((e) => e.rank === rank);
-    const slots = [
-      { entry: byRank(2), place: 2, className: styles.podiumSilver, rankClassName: styles.podiumRankSilver, height: '88%' },
-      { entry: byRank(1), place: 1, className: styles.podiumGold, rankClassName: styles.podiumRankGold, height: '100%' },
-      { entry: byRank(3), place: 3, className: styles.podiumBronze, rankClassName: styles.podiumRankBronze, height: '78%' },
+    const { podium } = partitionPodium(currentData ?? []);
+    const byPosition = [
+      { position: 1, className: styles.podiumSilver, rankClassName: styles.podiumRankSilver, height: '88%' },
+      { position: 0, className: styles.podiumGold, rankClassName: styles.podiumRankGold, height: '100%' },
+      { position: 2, className: styles.podiumBronze, rankClassName: styles.podiumRankBronze, height: '78%' },
     ];
-    return slots.filter(
-      (slot): slot is { entry: LeaderboardEntry; place: number; className: string; rankClassName: string; height: string } =>
-        slot.entry !== undefined
-    );
+    return byPosition
+      .filter((slot) => slot.position < podium.length)
+      .map((slot) => ({
+        entry: podium[slot.position],
+        place: slot.position + 1,
+        className: slot.className,
+        rankClassName: slot.rankClassName,
+        height: slot.height,
+      }));
   }, [currentData]);
 
   const listRows = useMemo(
-    () => (currentData ?? []).filter((entry) => entry.rank >= 4),
+    () => partitionPodium(currentData ?? []).list,
     [currentData]
   );
 
@@ -375,7 +385,7 @@ function LeaderboardPageInner() {
                       className={`${styles.podiumItem} ${slot.className}`}
                       style={{ height: slot.height }}
                     >
-                      <span className={`${styles.podiumRank} ${slot.rankClassName}`}>{slot.place}</span>
+                      <span className={`${styles.podiumRank} ${slot.rankClassName}`}>{slot.entry.rank}</span>
                       {slot.place === 1 && <span className={styles.crown}>👑</span>}
                       <PlayerAvatar
                         avatarUrl={slot.entry.avatar_url}
