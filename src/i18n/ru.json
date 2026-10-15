@@ -456,6 +456,12 @@
     "when_badges": "Когда",
     "where_badges": "Где",
     "no_badges": "В этой игре значки не получены",
+    "highlights": "Highlights",
+    "hl_closest_guess": "Closest guess",
+    "hl_sharpest_year": "Sharpest year",
+    "hl_toughest_round": "Toughest round",
+    "hl_years_off": "±{n} yr",
+    "badges_count": "{count, plural, one {# badge} other {# badges}}",
     "era_ancient": "Древность",
     "era_medieval": "Средневековье",
     "era_earlymodern": "Раннее Новое время",
@@ -696,7 +702,12 @@
     "countries": "Страны",
     "practice": "Практика",
     "daily_all_time": "Ежедневно (всегда)",
-    "level": "Уровень"
+    "level": "Уровень",
+    "era_region": "Era & region",
+    "member_since_full": "Member since",
+    "player_id": "Player ID",
+    "rounds": "Rounds",
+    "stats": "Stats"
   },
   "account": {
     "title": "Аккаунт",
@@ -794,7 +805,10 @@
     "rank_9": "Учёный",
     "rank_10": "Картограф Роял",
     "next_rank": "{xp} XP до {title}",
-    "max_rank": "Максимальный ранг достигнут"
+    "max_rank": "Максимальный ранг достигнут",
+    "badge_aria": "Rank {tier} badge",
+    "rail_hint_swipe": "swipe",
+    "tier_of_10": "Tier {tier} / 10"
   },
   "grow": {
     "meta_title": "Grow With Us — Guess-History",

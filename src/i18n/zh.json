@@ -456,6 +456,12 @@
     "when_badges": "时间",
     "where_badges": "地点",
     "no_badges": "本局未获得徽章",
+    "highlights": "Highlights",
+    "hl_closest_guess": "Closest guess",
+    "hl_sharpest_year": "Sharpest year",
+    "hl_toughest_round": "Toughest round",
+    "hl_years_off": "±{n} yr",
+    "badges_count": "{count, plural, one {# badge} other {# badges}}",
     "era_ancient": "古代",
     "era_medieval": "中世纪",
     "era_earlymodern": "近代早期",
@@ -696,7 +702,12 @@
     "countries": "国家",
     "practice": "练习",
     "daily_all_time": "每日（所有时间）",
-    "level": "等级"
+    "level": "等级",
+    "era_region": "Era & region",
+    "member_since_full": "Member since",
+    "player_id": "Player ID",
+    "rounds": "Rounds",
+    "stats": "Stats"
   },
   "account": {
     "title": "账户",
@@ -794,7 +805,10 @@
     "rank_9": "学者",
     "rank_10": "皇家制图师",
     "next_rank": "{xp} XP 到 {title}",
-    "max_rank": "已达到最高段位"
+    "max_rank": "已达到最高段位",
+    "badge_aria": "Rank {tier} badge",
+    "rail_hint_swipe": "swipe",
+    "tier_of_10": "Tier {tier} / 10"
   },
   "grow": {
     "meta_title": "Grow With Us — Guess-History",

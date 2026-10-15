@@ -456,6 +456,12 @@
     "when_badges": "時間",
     "where_badges": "場所",
     "no_badges": "このゲームでバッジなし",
+    "highlights": "Highlights",
+    "hl_closest_guess": "Closest guess",
+    "hl_sharpest_year": "Sharpest year",
+    "hl_toughest_round": "Toughest round",
+    "hl_years_off": "±{n} yr",
+    "badges_count": "{count, plural, one {# badge} other {# badges}}",
     "era_ancient": "古代",
     "era_medieval": "中世",
     "era_earlymodern": "近世",
@@ -696,7 +702,12 @@
     "countries": "国",
     "practice": "練習",
     "daily_all_time": "デイリー（全期間）",
-    "level": "レベル"
+    "level": "レベル",
+    "era_region": "Era & region",
+    "member_since_full": "Member since",
+    "player_id": "Player ID",
+    "rounds": "Rounds",
+    "stats": "Stats"
   },
   "account": {
     "title": "アカウント",
@@ -794,7 +805,10 @@
     "rank_9": "学者",
     "rank_10": "ロイヤル地図作成者",
     "next_rank": "{title}まで{xp} XP",
-    "max_rank": "最大ランクに到達"
+    "max_rank": "最大ランクに到達",
+    "badge_aria": "Rank {tier} badge",
+    "rail_hint_swipe": "swipe",
+    "tier_of_10": "Tier {tier} / 10"
   },
   "grow": {
     "meta_title": "Grow With Us — Guess-History",

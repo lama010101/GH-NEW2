@@ -456,6 +456,12 @@
     "when_badges": "Quand",
     "where_badges": "Où",
     "no_badges": "Aucune médaille obtenue",
+    "highlights": "Highlights",
+    "hl_closest_guess": "Closest guess",
+    "hl_sharpest_year": "Sharpest year",
+    "hl_toughest_round": "Toughest round",
+    "hl_years_off": "±{n} yr",
+    "badges_count": "{count, plural, one {# badge} other {# badges}}",
     "era_ancient": "Antiquité",
     "era_medieval": "Moyen Âge",
     "era_earlymodern": "Renaissance",
@@ -696,7 +702,12 @@
     "countries": "Pays",
     "practice": "Entraînement",
     "daily_all_time": "Quotidien (tous les temps)",
-    "level": "Niveau"
+    "level": "Niveau",
+    "era_region": "Era & region",
+    "member_since_full": "Member since",
+    "player_id": "Player ID",
+    "rounds": "Rounds",
+    "stats": "Stats"
   },
   "account": {
     "title": "Compte",
@@ -794,7 +805,10 @@
     "rank_9": "Érudit",
     "rank_10": "Cartographe Royal",
     "next_rank": "{xp} XP jusqu'à {title}",
-    "max_rank": "Rang maximum atteint"
+    "max_rank": "Rang maximum atteint",
+    "badge_aria": "Rank {tier} badge",
+    "rail_hint_swipe": "swipe",
+    "tier_of_10": "Tier {tier} / 10"
   },
   "grow": {
     "meta_title": "Grow With Us — Guess-History",
