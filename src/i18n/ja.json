@@ -659,7 +659,9 @@
     "rank_suffix_two": "",
     "rank_suffix_few": "",
     "rank_suffix_many": "",
-    "rank_suffix_other": ""
+    "rank_suffix_other": "",
+    "xp_amount": "{n, number} XP",
+    "no_more_players": "No more ranked players."
   },
   "profile": {
     "accuracy_breakdown": "精度の内訳",

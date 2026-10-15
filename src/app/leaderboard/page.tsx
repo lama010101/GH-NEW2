@@ -12,6 +12,7 @@ import { NavModal } from '@/components/NavModal';
 import AccuracySuffix from '@/components/AccuracySuffix';
 import PlayerAvatar from '@/components/compete/PlayerAvatar';
 import { getAccuracyColor } from '@/core/accuracyColor';
+import { partitionPodium } from './podium';
 import styles from './leaderboard.module.css';
 
 type LeaderboardTab = 'daily' | 'levelup' | 'overall';
@@ -24,6 +25,7 @@ type LeaderboardEntry = {
   avatar_url: string | null;
   is_ai: boolean;
   avg_accuracy?: number;
+  total_xp?: number;
   games_played?: number;
   rounds_played?: number;
   rounds_won?: number;
@@ -61,7 +63,7 @@ function LeaderboardPageInner() {
   const [xp, setXp] = useState('--');
   const [showNavModal, setShowNavModal] = useState(false);
   const locale = useLocale();
-  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const initials = useMemo(() => {
     if (!displayName) return 'PL';
@@ -139,7 +141,12 @@ function LeaderboardPageInner() {
         throw new Error(body.error || 'Failed to load leaderboard');
       }
       const data = (await res.json()) as LeaderboardResponse;
-      setCurrentData(data.rows);
+      setCurrentData(
+        data.rows.map((e, i) => {
+          const rank = Number(e.rank);
+          return { ...e, rank: Number.isNaN(rank) ? i + 1 : rank };
+        })
+      );
       setOwnEntry(data.ownEntry);
     } catch {
       setError(t('err_load_failed'));
@@ -189,11 +196,6 @@ function LeaderboardPageInner() {
     if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
   };
 
-  const formatNumber = (num: number | undefined): string => {
-    if (num === undefined || num === null) return '—';
-    return num.toLocaleString();
-  };
-
   function AccuracyValue({ acc }: { acc: number | undefined }): ReactNode {
     if (acc === undefined || acc === null) return '—';
     return (
@@ -205,58 +207,48 @@ function LeaderboardPageInner() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  rowRefs.current = useMemo(() => new Map<string, HTMLTableRowElement>(), [currentData]);
+  rowRefs.current = useMemo(() => new Map<string, HTMLDivElement>(), [currentData]);
 
   const podiumSlots = useMemo(() => {
-    const data = currentData ?? [];
-    if (data.length < 3) return [];
-    return [
-      { entry: data[1], place: 2, className: styles.podiumSilver, height: '85%' },
-      { entry: data[0], place: 1, className: styles.podiumGold, height: '100%' },
-      { entry: data[2], place: 3, className: styles.podiumBronze, height: '85%' },
+    const { podium } = partitionPodium(currentData ?? []);
+    const byPosition = [
+      { position: 1, className: styles.podiumSilver, rankClassName: styles.podiumRankSilver, height: '88%' },
+      { position: 0, className: styles.podiumGold, rankClassName: styles.podiumRankGold, height: '100%' },
+      { position: 2, className: styles.podiumBronze, rankClassName: styles.podiumRankBronze, height: '78%' },
     ];
+    return byPosition
+      .filter((slot) => slot.position < podium.length)
+      .map((slot) => ({
+        entry: podium[slot.position],
+        place: slot.position + 1,
+        className: slot.className,
+        rankClassName: slot.rankClassName,
+        height: slot.height,
+      }));
   }, [currentData]);
 
-  const renderRank = (rank: number) => {
-    if (rank === 1) return <span className={styles.medalGold}>🥇</span>;
-    if (rank === 2) return <span className={styles.medalSilver}>🥈</span>;
-    if (rank === 3) return <span className={styles.medalBronze}>🥉</span>;
-    return <span className={styles.rankNumber}>{rank}</span>;
-  };
+  const listRows = useMemo(
+    () => partitionPodium(currentData ?? []).list,
+    [currentData]
+  );
 
-  const renderPlayerCell = (entry: LeaderboardEntry) => {
-    let subtitle: string;
+  const getRowSubtitle = (entry: LeaderboardEntry): string => {
     if (activeTab === 'overall') {
-      const roundsWon = entry.rounds_won ?? 0;
-      const gamesPlayed = entry.games_played ?? 0;
-      subtitle = `${t('rounds_won', { n: roundsWon })} · ${t('games_played_subtitle', { n: gamesPlayed })}`;
-    } else if (activeTab === 'daily') {
-      const gamesPlayed = entry.games_played ?? 1;
-      subtitle = t('games_played_subtitle', { n: gamesPlayed });
-    } else if (activeTab === 'levelup') {
-      subtitle = t('level_subtitle', { n: entry.current_level ?? 0 });
-    } else {
-      subtitle = '';
+      return `${t('rounds_won', { n: entry.rounds_won ?? 0 })} · ${t('games_played_subtitle', { n: entry.games_played ?? 0 })}`;
     }
-
-    const name = entry.display_name ?? t('unknown_player');
-
-    return (
-      <div className={styles.playerCell}>
-        <PlayerAvatar
-          avatarUrl={entry.avatar_url}
-          displayName={name}
-          playerId={entry.player_id}
-          size={32}
-          initials={entry.is_ai ? 'AI' : getInitials(entry.display_name)}
-        />
-        <div className={styles.playerInfo}>
-          <span className={styles.playerName}>{name}{entry.is_ai ? <span className={styles.aiBadge}>{t('filter_ai')}</span> : null}</span>
-          <span className={styles.playerSubtitle}>{subtitle}</span>
-        </div>
-      </div>
-    );
+    if (activeTab === 'daily') {
+      return t('games_played_subtitle', { n: entry.games_played ?? 1 });
+    }
+    return t('level_subtitle', { n: entry.current_level ?? 0 });
   };
+
+  const getScoreText = (entry: LeaderboardEntry): string =>
+    activeTab === 'levelup'
+      ? t('lvl_prefix', { n: entry.current_level ?? 0 })
+      : t('xp_amount', { n: entry.total_xp ?? 0 });
+
+  const getEntryAccuracy = (entry: LeaderboardEntry): number | undefined =>
+    activeTab === 'levelup' ? entry.best_accuracy : entry.avg_accuracy;
 
   return (
     <div className={styles.container} style={{ paddingTop: 64 }}>
@@ -358,34 +350,6 @@ function LeaderboardPageInner() {
         </div>
       )}
 
-      {/* Podium */}
-      {!loading && !error && podiumSlots.length === 3 && (
-        <div className={styles.podium}>
-          {podiumSlots.map((slot) => (
-            <div
-              key={slot.entry.player_id}
-              className={`${styles.podiumItem} ${slot.className}`}
-              style={{ height: slot.height }}
-            >
-              <span className={styles.podiumRank}>{slot.place}</span>
-              <PlayerAvatar
-                avatarUrl={slot.entry.avatar_url}
-                displayName={slot.entry.display_name ?? t('unknown_player')}
-                playerId={slot.entry.player_id}
-                size={40}
-                initials={slot.entry.is_ai ? 'AI' : getInitials(slot.entry.display_name)}
-              />
-              <span className={styles.podiumName}>{slot.entry.display_name ?? t('unknown_player')}</span>
-              <span className={styles.podiumValue}>
-                {activeTab === 'levelup'
-                  ? (slot.entry.current_level ?? '—')
-                  : <AccuracyValue acc={slot.entry.avg_accuracy} />}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Content */}
       <div className={styles.content}>
         {loading && (
@@ -410,98 +374,79 @@ function LeaderboardPageInner() {
         )}
 
         {!loading && !error && currentData && currentData.length > 0 && (
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th className={styles.th}>#</th>
-                  <th className={styles.th}>{t('col_player')}</th>
-                  {activeTab === 'daily' && activeSubTab === 'today' && (
-                    <>
-                      <th className={styles.th}>{t('accuracy_pct')}</th>
-                      <th className={styles.th}>{t('col_games')}</th>
-                    </>
-                  )}
-                  {activeTab === 'daily' && activeSubTab === 'alltime' && (
-                    <>
-                      <th className={styles.th}>{t('accuracy_pct')}</th>
-                      <th className={`${styles.th} ${styles.thGames}`}>{t('col_games')}</th>
-                    </>
-                  )}
-                  {activeTab === 'levelup' && (
-                    <>
-                      <th className={styles.th}>{t('accuracy_pct')}</th>
-                      <th className={styles.th}>{t('col_level')}</th>
-                    </>
-                  )}
-                  {activeTab === 'overall' && (
-                    <>
-                      <th className={styles.th}>{t('accuracy_pct')}</th>
-                      <th className={`${styles.th} ${styles.thGames}`}>{t('col_games')}</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {currentData.map((entry) => {
+          <>
+            {podiumSlots.length > 0 && (
+              <div className={styles.card}>
+                <div className={styles.podium}>
+                  {podiumSlots.map((slot) => (
+                    <div
+                      key={slot.entry.player_id}
+                      ref={(el) => { if (el) rowRefs.current.set(slot.entry.player_id, el); }}
+                      className={`${styles.podiumItem} ${slot.className}`}
+                      style={{ height: slot.height }}
+                    >
+                      <span className={`${styles.podiumRank} ${slot.rankClassName}`}>{slot.entry.rank}</span>
+                      {slot.place === 1 && <span className={styles.crown}>👑</span>}
+                      <PlayerAvatar
+                        avatarUrl={slot.entry.avatar_url}
+                        displayName={slot.entry.display_name ?? t('unknown_player')}
+                        playerId={slot.entry.player_id}
+                        size={slot.place === 1 ? 64 : 48}
+                        initials={slot.entry.is_ai ? 'AI' : getInitials(slot.entry.display_name)}
+                        isMe={playerId === slot.entry.player_id}
+                      />
+                      <span className={styles.podiumName}>{slot.entry.display_name ?? t('unknown_player')}</span>
+                      <span className={styles.podiumScore}>{getScoreText(slot.entry)}</span>
+                      <span className={styles.podiumAcc}>
+                        <AccuracyValue acc={getEntryAccuracy(slot.entry)} />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className={`${styles.card} ${styles.list}`}>
+              {listRows.length === 0 ? (
+                <div className={styles.listEmpty}>{t('no_more_players')}</div>
+              ) : (
+                listRows.map((entry) => {
                   const isCurrentPlayer = playerId === entry.player_id;
+                  const name = entry.display_name ?? t('unknown_player');
                   return (
-                    <tr
+                    <div
                       key={entry.player_id}
                       ref={(el) => { if (el) rowRefs.current.set(entry.player_id, el); }}
-                      className={`${styles.row} ${isCurrentPlayer ? styles.rowHighlight : ''}`}
+                      className={`${styles.listRow} ${isCurrentPlayer ? styles.listRowMe : ''}`}
                     >
-                      <td className={styles.rankCell}>{renderRank(entry.rank)}</td>
-                      <td className={styles.playerCell}>{renderPlayerCell(entry)}</td>
-
-                      {activeTab === 'daily' && activeSubTab === 'today' && (
-                        <>
-                          <td className={styles.accuracyCell}>
-                            <span className={styles.accuracyValue}><AccuracyValue acc={entry.avg_accuracy} /></span>
-                          </td>
-                          <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
-                            {formatNumber(entry.games_played ?? 1)}
-                          </td>
-                        </>
-                      )}
-
-                      {activeTab === 'daily' && activeSubTab === 'alltime' && (
-                        <>
-                          <td className={styles.accuracyCell}>
-                            <span className={styles.accuracyValue}><AccuracyValue acc={entry.avg_accuracy} /></span>
-                          </td>
-                          <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
-                            {formatNumber(entry.games_played)}
-                          </td>
-                        </>
-                      )}
-
-                      {activeTab === 'levelup' && (
-                        <>
-                          <td className={styles.accuracyCell}>
-                            <AccuracyValue acc={entry.best_accuracy} />
-                          </td>
-                          <td className={styles.levelCell}>
-                            <span className={styles.levelValue}>{t('lvl_prefix', { n: entry.current_level ?? 0 })}</span>
-                          </td>
-                        </>
-                      )}
-                      {activeTab === 'overall' && (
-                        <>
-                          <td className={styles.accuracyCell}>
-                            <span className={styles.accuracyValue}><AccuracyValue acc={entry.avg_accuracy} /></span>
-                          </td>
-                          <td className={`${styles.gamesCell} ${styles.gamesCellDesktop}`}>
-                            {formatNumber(entry.games_played)}
-                          </td>
-                        </>
-                      )}
-                    </tr>
+                      <span className={styles.listRank}>{entry.rank}</span>
+                      <PlayerAvatar
+                        avatarUrl={entry.avatar_url}
+                        displayName={name}
+                        playerId={entry.player_id}
+                        size={38}
+                        initials={entry.is_ai ? 'AI' : getInitials(entry.display_name)}
+                        isMe={isCurrentPlayer}
+                      />
+                      <div className={styles.listNameCol}>
+                        <span className={styles.listName}>
+                          {name}
+                          {entry.is_ai ? <span className={styles.aiBadge}>{t('filter_ai')}</span> : null}
+                        </span>
+                        <span className={styles.listMeta}>{getRowSubtitle(entry)}</span>
+                      </div>
+                      <div className={styles.listScoreCol}>
+                        <span className={styles.listScore}>{getScoreText(entry)}</span>
+                        <span className={styles.listAcc}>
+                          <AccuracyValue acc={getEntryAccuracy(entry)} />
+                        </span>
+                      </div>
+                    </div>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
+                })
+              )}
+            </div>
+          </>
         )}
       </div>
 

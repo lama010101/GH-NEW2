@@ -659,7 +659,9 @@
     "rank_suffix_two": "nd",
     "rank_suffix_few": "rd",
     "rank_suffix_many": "th",
-    "rank_suffix_other": "th"
+    "rank_suffix_other": "th",
+    "xp_amount": "{n, number} XP",
+    "no_more_players": "No more ranked players."
   },
   "profile": {
     "accuracy_breakdown": "Accuracy breakdown",
