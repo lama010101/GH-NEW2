@@ -8,6 +8,8 @@
   "scripts": {
     "predev": "bash scripts/dev/check-partykit-secret.sh",
     "dev": "set -a && [ -f ./.env.local ] && . ./.env.local; set +a && npx kill-port 3000 1999 && concurrently -n next,party -c cyan,magenta \"next dev\" \"partykit dev --var SUPABASE_URL=$SUPABASE_URL --var SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY\"",
+    "predev:cf": "bash scripts/dev/check-partykit-secret.sh",
+    "dev:cf": "set -a && [ -f ./.env.local ] && . ./.env.local; set +a && npx kill-port 3000 1999 && concurrently -n next,worker -c cyan,magenta 'next dev' 'wrangler dev --port 1999 --persist-to node_modules/.cache/wrangler-state --var \"PARTYKIT_SECRET:$PARTYKIT_SECRET\" --var \"SUPABASE_SECRET_KEY_PROD:$SUPABASE_SECRET_KEY_PROD\" --var \"SUPABASE_URL:${SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}\"'",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -38,6 +40,7 @@
     "lucide-react": "^1.8.0",
     "next": "^14.2.35",
     "next-intl": "^3.26.3",
+    "partyserver": "^0.5.10",
     "partysocket": "^1.0.2",
     "pg": "^8.20.0",
     "react": "18.3.1",
@@ -74,6 +77,7 @@
     "tailwindcss": "^4.3.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "wrangler": "^4.151.0"
   }
 }

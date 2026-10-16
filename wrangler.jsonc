@@ -1,0 +1,27 @@
+{
+  // PKMIG-BUILD-WORKERDEV-1016-020 — PartyServer worker for the Compete realtime layer.
+  // Worker name is "guess-history-ws" on purpose: an older worker called
+  // "guess-history-multiplayer" already exists in the owner's Cloudflare account
+  // with different Durable Object classes, so reusing that name risks a migration conflict.
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "guess-history-ws",
+  "main": "partykit/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // The binding name decides the URL: binding "Lobby" is served at
+  // /parties/lobby/<roomId>, identical to what src/core/competeWebSocket.ts builds.
+  "durable_objects": {
+    "bindings": [{ "name": "Lobby", "class_name": "Lobby" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Lobby"] }],
+
+  // Non-secret vars only.
+  // Secrets (set by the owner with `wrangler secret put`, names only here):
+  //   PARTYKIT_SECRET, SUPABASE_SECRET_KEY_PROD, SUPABASE_URL
+  // SUPABASE_URL has no tracked non-secret value in this repo (only placeholders),
+  // so it is a secret/env value, not a var.
+  "vars": {
+    "NEXTJS_BASE_URL": "https://guess-history.com"
+  }
+}
