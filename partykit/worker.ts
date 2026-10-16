@@ -14,8 +14,8 @@
 //   onMessage(message, sender)  -> onMessage(connection, message)   (SWAPPED)
 //   static onBeforeConnect      -> routePartykitRequest option (reused below)
 //
-// KC-002: the shim deliberately has NO `broadcast`. GameServer must never call
-// room.broadcast(); with no method present any regression throws loudly.
+// KC-002: the shim deliberately has NO `broadcast` method. GameServer must never
+// use the room-wide broadcast; with the method absent any regression throws loudly.
 // ============================================================================
 
 import { routePartykitRequest, Server } from "partyserver";
