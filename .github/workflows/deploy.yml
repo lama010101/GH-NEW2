@@ -1,21 +1,24 @@
-name: Deploy PartyKit
+# Manual deploy of the Cloudflare Worker "guess-history-ws" (see wrangler.jsonc).
+# Runtime secrets (PARTYKIT_SECRET, SUPABASE_SECRET_KEY_PROD, SUPABASE_URL) are NOT
+# handled by this workflow: the owner sets them once with `wrangler secret put`.
+# Dry run (default) needs no Cloudflare credentials.
+name: Deploy Worker (Cloudflare)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'partykit/**'
-      - 'partykit.json'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run only (bundle, do not deploy)'
+        type: boolean
+        default: true
 
 jobs:
-  deploy-partykit:
-    name: Deploy PartyKit to Cloudflare
+  deploy-worker:
+    name: Deploy Worker to Cloudflare
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -31,18 +34,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify PartyKit credentials
+      - name: Verify Cloudflare credentials
+        if: ${{ !inputs.dry_run }}
         env:
-          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
-          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$PARTYKIT_LOGIN" ] || [ -z "$PARTYKIT_TOKEN" ]; then
-            echo "::error::PARTYKIT_LOGIN and PARTYKIT_TOKEN secrets are required. Run 'npx partykit token generate' locally and add the resulting values to the repository secrets."
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets are required for a real deploy."
             exit 1
           fi
 
-      - name: Deploy PartyKit
-        run: npx partykit deploy
+      - name: Wrangler deploy (dry run)
+        if: ${{ inputs.dry_run }}
+        run: npx wrangler deploy --dry-run
+
+      - name: Wrangler deploy
+        if: ${{ !inputs.dry_run }}
+        run: npx wrangler deploy
         env:
-          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
-          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
