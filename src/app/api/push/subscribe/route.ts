@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     },
     {
-      onConflict: "user_id",
+      onConflict: "endpoint",
       ignoreDuplicates: false,
     }
   );
