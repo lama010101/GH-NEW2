@@ -12,6 +12,28 @@ export const LEARN_MODES: readonly LearnMode[] = [
   "journey",
 ];
 
+/**
+ * Maps the repo's SessionMode ("practice" | "sync" | "async" | "daily",
+ * src/core/types.ts) to the learn route's mode. Journey games carry
+ * sessions.mode='practice' so they map to "practice" (accepted server-side
+ * since LEARN-WIRE-CTA-1015-004). Unknown values -> null: render no CTA.
+ */
+export function learnModeForSession(
+  sessionMode: string | null | undefined
+): LearnMode | null {
+  switch (sessionMode) {
+    case "sync":
+    case "async":
+      return "compete";
+    case "daily":
+      return "daily";
+    case "practice":
+      return "practice";
+    default:
+      return null;
+  }
+}
+
 export type LearnHint = {
   tier: number;
   content: string;

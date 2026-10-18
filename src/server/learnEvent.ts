@@ -123,8 +123,9 @@ export function rankRelated(
 /**
  * Per-mode ownership/consistency evidence, all DB-derived:
  *   compete  → sessions.mode is a multiplayer mode ('sync'|'async'|'compete')
- *   practice → sessions.mode='practice' AND the session is not a journey
- *              playthrough (journey sessions also carry mode='practice')
+ *   practice → sessions.mode='practice' — including journey games, which
+ *              share mode='practice' (LEARN-WIRE-CTA-1015-004; journey's own
+ *              mode string keeps the journey_playthroughs requirement)
  *   daily    → sessions.mode='daily' AND a daily_attempts row exists for
  *              (game_id, player_id)
  *   journey  → a journey_playthroughs row exists for (session_id, player_id)
@@ -146,7 +147,6 @@ async function sessionMatchesMode(
     case "practice": {
       const r = await dbPool.query<{ ok: boolean }>(
         `SELECT EXISTS(SELECT 1 FROM sessions WHERE game_id = $1 AND mode = 'practice')
-              AND NOT EXISTS(SELECT 1 FROM journey_playthroughs WHERE session_id = $1)
               AS ok`,
         [gameId]
       );
