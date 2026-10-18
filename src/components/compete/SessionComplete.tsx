@@ -761,6 +761,9 @@ export default function SessionComplete({
                           >
                             {displayName}
                           </span>
+                          {playerData?.leftAt != null && (
+                            <span className={styles.rankStatus}>{tGame('left')}</span>
+                          )}
                         </div>
                         <div className={styles.bar}>
                           {showAccuracy ? (

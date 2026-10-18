@@ -605,7 +605,8 @@
     "learn_related_events": "関連する出来事",
     "learn_empty": "表示するものがありません",
     "learn_error": "詳細を読み込めませんでした",
-    "learn_cta": "この出来事について学ぶ"
+    "learn_cta": "この出来事について学ぶ",
+    "left": "退出済み"
   },
   "auth": {
     "sign_in": "ログイン",

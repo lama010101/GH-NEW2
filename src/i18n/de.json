@@ -605,7 +605,8 @@
     "learn_related_events": "Verwandte Ereignisse",
     "learn_empty": "Noch nichts zu zeigen",
     "learn_error": "Details konnten nicht geladen werden",
-    "learn_cta": "Mehr über dieses Ereignis"
+    "learn_cta": "Mehr über dieses Ereignis",
+    "left": "Verlassen"
   },
   "auth": {
     "sign_in": "Anmelden",

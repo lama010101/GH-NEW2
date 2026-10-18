@@ -605,7 +605,8 @@
     "learn_related_events": "Eventi correlati",
     "learn_empty": "Niente da mostrare",
     "learn_error": "Impossibile caricare i dettagli",
-    "learn_cta": "Scopri questo evento"
+    "learn_cta": "Scopri questo evento",
+    "left": "Uscito"
   },
   "auth": {
     "sign_in": "Accedi",

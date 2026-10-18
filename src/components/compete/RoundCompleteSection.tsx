@@ -300,12 +300,13 @@ export default function RoundCompleteSection({
         // already used in SessionComplete.tsx for the final leaderboard.
         // Rush (non-async) is untouched: it uses roundResults directly below.
         const asyncBaseRows = isAsync
-          ? (snapshot.players as Array<{ playerId: string; displayName: string; avatarUrl: string | null }>)
+          ? (snapshot.players as Array<{ playerId: string; displayName: string; avatarUrl: string | null; leftAt: string | null }>)
               .concat(
                 (snapshot.pendingInvitees ?? []).map(pi => ({
                   playerId: pi.playerId,
                   displayName: pi.displayName,
                   avatarUrl: pi.avatarUrl,
+                  leftAt: null as string | null,
                 }))
               )
               .map(p => {
@@ -320,6 +321,7 @@ export default function RoundCompleteSection({
                   cumulativeScore: r?.cumulativeScore ?? 0,
                   cumulativeAccuracy: r?.cumulativeAccuracy ?? 0,
                   didSubmit: r ? hasSubmitted(r) : false,
+                  leftAt: p.leftAt ?? null,
                 };
               })
           : [];
@@ -358,6 +360,7 @@ export default function RoundCompleteSection({
                 cumulativeScore: r.cumulativeScore,
                 cumulativeAccuracy: r.cumulativeAccuracy,
                 didSubmit: r.didSubmit,
+                leftAt: snapshot.players.find(p => p.playerId === r.playerId)?.leftAt ?? null,
               }));
 
         const allRoundsLeaderboardRows = isAsync
@@ -378,6 +381,7 @@ export default function RoundCompleteSection({
                 cumulativeScore: r.cumulativeScore,
                 cumulativeAccuracy: r.cumulativeAccuracy,
                 didSubmit: r.didSubmit,
+                leftAt: snapshot.players.find(p => p.playerId === r.playerId)?.leftAt ?? null,
               }));
         return (
           <>
@@ -615,7 +619,8 @@ export default function RoundCompleteSection({
                           {row.displayName}
                         </span>
                       </span>
-                      {isThisRoundNoGuess && <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>}
+                      {isThisRoundNoGuess && row.leftAt == null && <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>}
+                      {row.leftAt != null && <span className={styles.lbNoGuessTag}>{t('left')}</span>}
                     </span>
                     {isThisRoundNoGuess ? (
                       <span className={styles.lbAccEmpty}>—</span>
@@ -643,7 +648,9 @@ export default function RoundCompleteSection({
                             {p.displayName || p.playerId.slice(0, 8)}
                           </span>
                         </span>
-                        <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>
+                        {p.leftAt != null
+                          ? <span className={styles.lbNoGuessTag}>{t('left')}</span>
+                          : <span className={styles.lbNoGuessTag}>{t('no_guess')}</span>}
                       </span>
                       <span className={styles.lbAccEmpty}>—</span>
                     </div>
