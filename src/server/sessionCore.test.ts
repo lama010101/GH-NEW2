@@ -14,6 +14,9 @@ import {
   kickCompetePlayer,
   startCompeteSession,
   advancePlayerRoundAsync,
+  recordPlayerLeft,
+  submitGuess,
+  advanceRound,
   type DbTransactionClient,
   type SessionRow,
 } from "./sessionCore";
@@ -1466,5 +1469,294 @@ describe("notification_preferences enforcement — async fan-out sites", () => {
     const expected = [CH_NONE, CH_PUSH, CH_INAPP, CH_BOTH, CH_NOROW].sort();
     expect(insertedIds.sort()).toEqual(expected);
     expect(pushedIds.sort()).toEqual(expected);
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// MP-FIX-LEFTPLAYER-ROUND-ADVANCE-001 — left-player round advance
+// ═════════════════════════════════════════════════════════════════════════════
+
+const LP_A = "aaaa0000-0000-0000-0000-00000000000a";
+const LP_B = "bbbb0000-0000-0000-0000-00000000000b";
+const LP_C = "cccc0000-0000-0000-0000-00000000000c";
+
+const lpSessionRow = {
+  game_id: GAME_ID,
+  mode: "sync",
+  round_timer_sec: 60,
+  total_rounds: 5,
+  year_min: -400,
+  year_max: 2026,
+  results_auto_advance_sec: 90,
+  session_deadline: null,
+  session_deadline_days: null,
+  created_at: new Date(),
+  seed: BigInt(1),
+  room_code: "ROOM01",
+  selected_eras: [],
+  selected_regions: [],
+  scoring_reference_year: 2025,
+} as unknown as SessionRow;
+
+function lpPlayerRow(playerId: string, leftAt: Date | null) {
+  return {
+    game_id: GAME_ID,
+    player_id: playerId,
+    display_name: `P-${playerId.slice(0, 4)}`,
+    joined_at: new Date(),
+    left_at: leftAt,
+    ready: true,
+    is_host: false,
+    avatar_url: null,
+    kicked: false,
+  };
+}
+
+function lpGameState(players: { id: string; leftAt: Date | null }[]) {
+  return createReconstructedGameState({
+    players: players.map((p) => ({
+      playerId: p.id,
+      displayName: p.id.slice(0, 8),
+      joinedAt: new Date().toISOString(),
+      leftAt: p.leftAt ? p.leftAt.toISOString() : null,
+      ready: true,
+      isHost: false,
+      avatarUrl: null,
+    })),
+  });
+}
+
+function lpSnapshotDerive(phase: string) {
+  vi.mocked(getGameState).mockResolvedValue(
+    lpGameState([
+      { id: LP_A, leftAt: null },
+      { id: LP_B, leftAt: null },
+      { id: LP_C, leftAt: new Date() },
+    ]) as unknown as Awaited<ReturnType<typeof getGameState>>
+  );
+  vi.mocked(deriveStateFromEventStream).mockReturnValue({
+    currentRound: 0,
+    currentPhase: phase,
+  } as unknown as ReturnType<typeof deriveStateFromEventStream>);
+}
+
+describe("MP-FIX-LEFTPLAYER-ROUND-ADVANCE-001 — left-player round advance", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Shared mock client for recordPlayerLeft/submitGuess flows. The leaver is
+  // LP_C; opts.playerRows defines who is still active (left_at IS NULL) and
+  // opts.committedIds defines who already has a round_commit for round 0.
+  function setupLeaveMocks(opts: {
+    leavingPlayerId?: string;
+    playerRows: ReturnType<typeof lpPlayerRow>[];
+    committedIds: string[];
+    openRoundIndex?: number;
+  }) {
+    const insertedEvents: { eventType: string; sql: string }[] = [];
+    const client = {
+      query: vi.fn(async (sql: string, params?: unknown[]) => {
+        if (/^\s*(BEGIN|COMMIT|ROLLBACK)/.test(sql)) return { rows: [] };
+        if (sql.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+        if (sql.includes("UPDATE session_players") && sql.includes("left_at"))
+          return {
+            rows: [{ player_id: opts.leavingPlayerId ?? LP_C, is_host: false }],
+          };
+        if (sql.includes("INSERT INTO round_events")) {
+          insertedEvents.push({ eventType: String(params?.[2]), sql });
+          return { rows: [{ id: "evt-1" }] };
+        }
+        if (sql.includes("FROM round_commits") && sql.includes("ORDER BY score DESC NULLS LAST"))
+          return {
+            rows: opts.committedIds.map((id) => ({
+              player_id: id,
+              score: 50,
+              year_guess: 1900,
+              location_lat: 1,
+              location_lng: 1,
+              acc_penalty: 0,
+              acc_penalty_when: 0,
+              acc_penalty_where: 0,
+              acc_penalty_when_rate: 0,
+              acc_penalty_where_rate: 0,
+            })),
+          };
+        if (sql.includes("event_type = 'SESSION_CREATED'"))
+          return { rows: [{ payload: { eventIds: ["e0", "e1", "e2", "e3", "e4"] } }] };
+        if (sql.includes("scoring_reference_year"))
+          return { rows: [{ scoring_reference_year: 2025 }] };
+        if (sql.includes("FROM events e"))
+          return {
+            rows: [
+              {
+                id: "e0",
+                title: "Test event",
+                description: "",
+                event_year: 1900,
+                latitude: 1,
+                longitude: 1,
+                region: "",
+                category: "",
+                images: [],
+              },
+            ],
+          };
+        if (sql.includes("INSERT INTO round_results")) return { rows: [] };
+        return { rows: [] };
+      }),
+      release: vi.fn(),
+    };
+    mockPoolConnect(client as unknown as DbTransactionClient);
+
+    vi.mocked(dbPool.query).mockImplementation(async (sql: string) => {
+      if (sql.includes("FROM round_events re"))
+        return { rows: [{ round_index: opts.openRoundIndex ?? 0 }] };
+      if (sql.includes("COUNT(*) AS count FROM round_commits"))
+        return { rows: [{ count: String(opts.committedIds.length) }] };
+      if (sql.includes("SELECT player_id FROM round_commits"))
+        return { rows: opts.committedIds.map((id) => ({ player_id: id })) };
+      if (sql.includes("FROM session_players")) return { rows: opts.playerRows };
+      if (sql.includes("FROM sessions")) return { rows: [lpSessionRow] };
+      if (sql.includes("FROM profiles")) return { rows: [] };
+      return { rows: [] };
+    });
+
+    lpSnapshotDerive("ROUND_COMPLETE");
+    return { client, insertedEvents };
+  }
+
+  it("(1) three players — one leaves before submitting, other two submitted → round completes", async () => {
+    const { insertedEvents } = setupLeaveMocks({
+      playerRows: [lpPlayerRow(LP_A, null), lpPlayerRow(LP_B, null), lpPlayerRow(LP_C, new Date())],
+      committedIds: [LP_A, LP_B],
+    });
+
+    await recordPlayerLeft({ gameId: GAME_ID, playerId: LP_C });
+
+    expect(insertedEvents.some((e) => e.eventType === "ROUND_COMPLETE")).toBe(true);
+  });
+
+  it("(2) three players — one leaves after submitting → round completes normally", async () => {
+    const { insertedEvents } = setupLeaveMocks({
+      playerRows: [lpPlayerRow(LP_A, null), lpPlayerRow(LP_B, null), lpPlayerRow(LP_C, new Date())],
+      committedIds: [LP_A, LP_B, LP_C],
+    });
+
+    await recordPlayerLeft({ gameId: GAME_ID, playerId: LP_C });
+
+    expect(insertedEvents.some((e) => e.eventType === "ROUND_COMPLETE")).toBe(true);
+  });
+
+  it("(3) leaving player was the last one awaited → round completes immediately on leave", async () => {
+    // LP_A submitted; LP_C (the only pending player) leaves → completion fires
+    // inside the leave call, not at timer expiry.
+    const { insertedEvents } = setupLeaveMocks({
+      playerRows: [lpPlayerRow(LP_A, null), lpPlayerRow(LP_C, new Date())],
+      committedIds: [LP_A],
+    });
+
+    await recordPlayerLeft({ gameId: GAME_ID, playerId: LP_C });
+
+    expect(insertedEvents.some((e) => e.eventType === "ROUND_COMPLETE")).toBe(true);
+  });
+
+  it("(4) a still-active (not left) unsubmitted player keeps the round open — transient disconnect in grace is not excluded", async () => {
+    // LP_B is disconnected-but-not-left (left_at NULL): the gate must still
+    // wait on them, so leaving LP_C must NOT complete the round.
+    const { insertedEvents } = setupLeaveMocks({
+      playerRows: [lpPlayerRow(LP_A, null), lpPlayerRow(LP_B, null), lpPlayerRow(LP_C, new Date())],
+      committedIds: [LP_A],
+    });
+
+    await recordPlayerLeft({ gameId: GAME_ID, playerId: LP_C });
+
+    expect(insertedEvents.some((e) => e.eventType === "ROUND_COMPLETE")).toBe(false);
+  });
+
+  it("(5) a late guess from a left player is rejected deterministically", async () => {
+    const queries: string[] = [];
+    const client = {
+      query: vi.fn(async (sql: string) => {
+        queries.push(sql);
+        if (/^\s*(BEGIN|COMMIT|ROLLBACK)/.test(sql)) return { rows: [] };
+        if (sql.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+        if (sql.includes("round_started AS"))
+          return {
+            rows: [
+              {
+                round_started: true,
+                round_complete: false,
+                has_existing_commit: false,
+                session_event_ids: ["e0", "e1", "e2", "e3", "e4"],
+                round_started_phase_ends_at: null,
+                scoring_reference_year: 2025,
+                player_left: true,
+              },
+            ],
+          };
+        if (sql.includes("FROM sessions")) return { rows: [lpSessionRow] };
+        return { rows: [] };
+      }),
+      release: vi.fn(),
+    };
+    mockPoolConnect(client as unknown as DbTransactionClient);
+    vi.mocked(dbPool.query).mockResolvedValue({ rows: [] } as never);
+    lpSnapshotDerive("ROUND_ACTIVE");
+
+    await expect(
+      submitGuess({
+        gameId: GAME_ID,
+        playerId: LP_C,
+        roundIndex: 0,
+        yearGuess: 1900,
+        locationGuess: { lat: 1, lng: 1 },
+        hintsUsed: [],
+        _executionContext: "api",
+      })
+    ).rejects.toThrow("Player has left the session");
+
+    // Deterministic rejection: no commit row, no GUESS_SUBMITTED event written.
+    expect(queries.some((q) => q.includes("INSERT INTO round_commits"))).toBe(false);
+    expect(queries.some((q) => q.includes("INSERT INTO round_events"))).toBe(false);
+  });
+
+  it("(6) only one active player remains → next round starts instead of closing the session", async () => {
+    const insertedTypes: string[] = [];
+    const client = {
+      query: vi.fn(async (sql: string, params?: unknown[]) => {
+        if (/^\s*(BEGIN|COMMIT|ROLLBACK)/.test(sql)) return { rows: [] };
+        if (sql.includes("pg_advisory_xact_lock")) return { rows: [{}] };
+        if (sql.includes("FROM round_events") && sql.includes("FOR UPDATE"))
+          return { rows: [{ id: 9, event_type: "ROUND_COMPLETE", round_index: 0 }] };
+        if (sql.includes("FROM sessions")) return { rows: [lpSessionRow] };
+        if (sql.includes("FROM session_players"))
+          return {
+            rows: [lpPlayerRow(LP_A, null), lpPlayerRow(LP_B, new Date()), lpPlayerRow(LP_C, new Date())],
+          };
+        if (sql.includes("event_type = 'SESSION_CREATED'"))
+          return { rows: [{ payload: { eventIds: ["e0", "e1", "e2", "e3", "e4"] } }] };
+        if (sql.includes("INSERT INTO round_events")) {
+          insertedTypes.push(String(params?.[2]));
+          return { rows: [{ id: "evt-1" }] };
+        }
+        return { rows: [] };
+      }),
+      release: vi.fn(),
+    };
+    mockPoolConnect(client as unknown as DbTransactionClient);
+    vi.mocked(dbPool.query).mockResolvedValue({ rows: [] } as never);
+    lpSnapshotDerive("ROUND_ACTIVE");
+
+    await advanceRound({
+      gameId: GAME_ID,
+      cause: TransitionCause.PLAYER,
+      playerId: LP_A,
+      roundIndex: 0,
+      _executionContext: "api",
+    });
+
+    expect(insertedTypes).toContain("ROUND_STARTED");
+    expect(insertedTypes).not.toContain("SESSION_COMPLETE");
   });
 });

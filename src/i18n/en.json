@@ -607,7 +607,8 @@
     "learn_related_location": "Related location",
     "learn_this_event": "This event",
     "learn_error": "Couldn't load event details",
-    "learn_cta": "About this event"
+    "learn_cta": "About this event",
+    "left": "Left"
   },
   "auth": {
     "sign_in": "Sign In",

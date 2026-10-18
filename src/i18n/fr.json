@@ -607,7 +607,8 @@
     "learn_related_location": "Lieu associé",
     "learn_this_event": "Cet événement",
     "learn_error": "Impossible de charger les détails",
-    "learn_cta": "À propos de cet événement"
+    "learn_cta": "À propos de cet événement",
+    "left": "A quitté"
   },
   "auth": {
     "sign_in": "Se connecter",

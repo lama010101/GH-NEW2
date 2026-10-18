@@ -607,7 +607,8 @@
     "learn_related_location": "関連する場所",
     "learn_this_event": "このイベント",
     "learn_error": "詳細を読み込めませんでした",
-    "learn_cta": "この出来事について"
+    "learn_cta": "この出来事について",
+    "left": "退出済み"
   },
   "auth": {
     "sign_in": "ログイン",

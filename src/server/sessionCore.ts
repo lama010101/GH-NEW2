@@ -3171,6 +3171,68 @@ function assertValidExecutionContext(input: { _executionContext?: string }): voi
   }
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// ROUND COMPLETION RULE (single copy — submitGuess + recordPlayerLeft share it)
+// A round completes early when every ACTIVE player (left_at IS NULL) has a
+// round_commit for the round. Left players are excluded immediately, whether
+// they had already submitted or not. Idempotent: ROUND_COMPLETE insert uses
+// the unique partial index via appendEventIfNotExists; concurrent callers
+// commit cleanly. Returns the results verification token when completed.
+// ═════════════════════════════════════════════════════════════════════════════
+async function completeRoundIfAllActiveSubmitted(
+  gameId: string,
+  roundIndex: number
+): Promise<{ completed: boolean; roundResultsToken: string | null }> {
+  const finalCommitCount = await loadRoundCommitCount(gameId, roundIndex, dbPool);
+  const finalPlayerRows = await loadSessionPlayerRows(gameId, dbPool);
+  const finalActivePlayers = finalPlayerRows.filter((p) => p.left_at === null);
+  // H2 FIX: Gate on whether every ACTIVE player has a commit row, not raw commit
+  // count (which includes left players' commits). Prevents premature round
+  // completion when a player submits then leaves — consistent with the
+  // timer-expiry path (insertMissingCommits) which checks active players only.
+  const finalCommittedPlayerIds = new Set(
+    (await dbPool.query<{ player_id: string }>(
+      `SELECT player_id FROM round_commits WHERE game_id = $1 AND round_index = $2`,
+      [gameId, roundIndex]
+    )).rows.map(r => r.player_id)
+  );
+  const finalAllActiveSubmitted = finalActivePlayers.length > 0 &&
+    finalActivePlayers.every(p => finalCommittedPlayerIds.has(p.player_id));
+
+  if (!finalAllActiveSubmitted) {
+    return { completed: false, roundResultsToken: null };
+  }
+
+  verifyLog("INSERT", "round_results", "OK", `round=${roundIndex} all ${finalActivePlayers.length} active players submitted — computing`);
+  let roundResultsToken: string | null = null;
+  const resultsClient = await getTransactionClient();
+  try {
+    await resultsClient.query("BEGIN");
+    await resultsClient.query(
+      `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2::text))`,
+      [gameId, roundIndex]
+    );
+    // Atomic insert with idempotency via unique partial index
+    const roundCompleteInserted = await appendEventIfNotExists(
+      resultsClient, gameId, "ROUND_COMPLETE",
+      { commitCount: finalCommitCount, resultPhaseStartedAt: new Date().toISOString() },
+      roundIndex
+    );
+    if (roundCompleteInserted) {
+      roundResultsToken = await computeAndWriteRoundResults(gameId, roundIndex, resultsClient);
+      verifyLog("INSERT", "round_results", "OK", `${finalCommitCount} rows written for round=${roundIndex} token=${roundResultsToken.slice(0, 8)}...`);
+    }
+    // If !roundCompleteInserted: concurrent caller won, this caller skips compute — both paths commit cleanly
+    await resultsClient.query("COMMIT");
+  } catch (error) {
+    await resultsClient.query("ROLLBACK");
+    throw error;
+  } finally {
+    resultsClient.release();
+  }
+  return { completed: true, roundResultsToken };
+}
+
 export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessionSnapshotWithPlayerSnapshots> {
   assertValidExecutionContext(input);
   const { gameId, playerId, roundIndex, yearGuess, locationGuess, hintsUsed } = input;
@@ -3258,6 +3320,7 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       session_event_ids: string[] | null;
       round_started_phase_ends_at: string | null;
       scoring_reference_year: number;
+      player_left: boolean;
     }>(
       `WITH
         round_started AS (
@@ -3282,6 +3345,9 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         ),
         session_meta AS (
           SELECT scoring_reference_year FROM sessions WHERE game_id = $1
+        ),
+        player_membership AS (
+          SELECT left_at FROM session_players WHERE game_id = $1 AND player_id = $3
         )
       SELECT
         EXISTS(SELECT 1 FROM round_started)     AS round_started,
@@ -3289,7 +3355,8 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
         EXISTS(SELECT 1 FROM existing_commit)   AS has_existing_commit,
         (SELECT payload->'eventIds' FROM session_created)::jsonb AS session_event_ids,
         (SELECT phase_ends_at FROM round_started) AS round_started_phase_ends_at,
-        (SELECT scoring_reference_year FROM session_meta) AS scoring_reference_year`,
+        (SELECT scoring_reference_year FROM session_meta) AS scoring_reference_year,
+        (SELECT left_at FROM player_membership) IS NOT NULL AS player_left`,
       [gameId, roundIndex, playerId]
     );
 
@@ -3338,6 +3405,13 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
       const snapshot = await loadCompeteSessionSnapshot(gameId, playerId);
       if (!snapshot) throw new Error("Session not found");
       return snapshot;
+    }
+
+    // MP-FIX-LEFTPLAYER-ROUND-ADVANCE-001: a guess submitted after leaving is
+    // rejected deterministically — a left player's stale tab can never write a
+    // commit or GUESS_SUBMITTED event (no post-leave round corruption).
+    if (guard.player_left) {
+      throw new Error("Player has left the session");
     }
 
     const eventIds = guard.session_event_ids;
@@ -3510,50 +3584,10 @@ export async function submitGuess(input: SubmitGuessInput): Promise<CompeteSessi
   // ═════════════════════════════════════════════════════════════════════════════
   // Re-check commit count after commit to close race where concurrent
   // submissions each saw < total commits inside their transaction.
-  const finalCommitCount = await loadRoundCommitCount(gameId, roundIndex, dbPool);
-  const finalPlayerRows = await loadSessionPlayerRows(gameId, dbPool);
-  const finalActivePlayers = finalPlayerRows.filter((p) => p.left_at === null);
-  // H2 FIX: Gate on whether every ACTIVE player has a commit row, not raw commit
-  // count (which includes left players' commits). Prevents premature round
-  // completion when a player submits then leaves — consistent with the
-  // timer-expiry path (insertMissingCommits) which checks active players only.
-  const finalCommittedPlayerIds = new Set(
-    (await dbPool.query<{ player_id: string }>(
-      `SELECT player_id FROM round_commits WHERE game_id = $1 AND round_index = $2`,
-      [gameId, roundIndex]
-    )).rows.map(r => r.player_id)
-  );
-  const finalAllActiveSubmitted = finalActivePlayers.length > 0 &&
-    finalActivePlayers.every(p => finalCommittedPlayerIds.has(p.player_id));
-
-  if (finalAllActiveSubmitted) {
-    verifyLog("INSERT", "round_results", "OK", `round=${roundIndex} all ${finalActivePlayers.length} active players submitted — computing`);
-    const resultsClient = await getTransactionClient();
-    try {
-      await resultsClient.query("BEGIN");
-      await resultsClient.query(
-        `SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2::text))`,
-        [gameId, roundIndex]
-      );
-      // Atomic insert with idempotency via unique partial index
-      const roundCompleteInserted = await appendEventIfNotExists(
-        resultsClient, gameId, "ROUND_COMPLETE",
-        { commitCount: finalCommitCount, resultPhaseStartedAt: new Date().toISOString() },
-        roundIndex
-      );
-      if (roundCompleteInserted) {
-        roundResultsToken = await computeAndWriteRoundResults(gameId, roundIndex, resultsClient);
-        shouldVerifyRoundResults = true;
-        verifyLog("INSERT", "round_results", "OK", `${finalCommitCount} rows written for round=${roundIndex} token=${roundResultsToken.slice(0, 8)}...`);
-      }
-      // If !roundCompleteInserted: concurrent caller won, this caller skips compute — both paths commit cleanly
-      await resultsClient.query("COMMIT");
-    } catch (error) {
-      await resultsClient.query("ROLLBACK");
-      throw error;
-    } finally {
-      resultsClient.release();
-    }
+  const completion = await completeRoundIfAllActiveSubmitted(gameId, roundIndex);
+  if (completion.completed) {
+    roundResultsToken = completion.roundResultsToken;
+    shouldVerifyRoundResults = true;
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
@@ -4736,6 +4770,108 @@ export async function completeRound(input: {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// recordPlayerLeft — MP-FIX-LEFTPLAYER-ROUND-ADVANCE-001
+// Membership mutation for a deliberate leave (explicit leave, or disconnect
+// past the DO's LEAVE_GRACE_MS). Mutates MEMBERSHIP ONLY (left_at, is_host
+// reassignment) — then re-evaluates the current open round with the SAME
+// single completion rule submitGuess uses: if every remaining ACTIVE player
+// has a commit, the round completes immediately (no timer wait). This closes
+// the hole where a leave could never trigger completion: the leaver is
+// excluded from "all submitted" as soon as left_at lands.
+// ═════════════════════════════════════════════════════════════════════════════
+export async function recordPlayerLeft(input: {
+  gameId: string;
+  playerId: string;
+}): Promise<CompeteSessionSnapshot | null> {
+  const { gameId, playerId } = input;
+  const client = await getTransactionClient();
+  try {
+    await client.query("BEGIN");
+
+    // 1. Update left_at
+    const result = await client.query<{ player_id: string; is_host: boolean }>(
+      `UPDATE session_players
+       SET left_at = now()
+       WHERE game_id = $1
+         AND player_id = $2
+         AND left_at IS NULL
+         RETURNING player_id, is_host`,
+      [gameId, playerId]
+    );
+
+    if (result.rows.length === 0) {
+      await client.query("COMMIT");
+      return await loadCompeteSessionSnapshot(gameId, playerId);
+    }
+
+    // 2. If leaving player was host, reassign to earliest-joined active player
+    if (result.rows[0].is_host) {
+      const newHost = await client.query<{ player_id: string }>(
+        `SELECT player_id
+         FROM session_players
+         WHERE game_id = $1
+           AND left_at IS NULL
+         ORDER BY joined_at ASC
+         LIMIT 1`,
+        [gameId]
+      );
+
+      if (newHost.rows.length > 0) {
+        // Clear old host (partial unique index ensures at most one)
+        await client.query(
+          `UPDATE session_players
+           SET is_host = false
+           WHERE game_id = $1 AND is_host = true`,
+          [gameId]
+        );
+        // Assign new host
+        await client.query(
+          `UPDATE session_players
+           SET is_host = true
+           WHERE game_id = $1 AND player_id = $2`,
+          [gameId, newHost.rows[0].player_id]
+        );
+      }
+      // else: no active players remain — no host assigned (acceptable)
+    }
+
+    await client.query("COMMIT");
+  } catch (txError) {
+    await client.query("ROLLBACK");
+    throw txError;
+  } finally {
+    client.release();
+  }
+
+  // Re-evaluate the open round after the membership write commits. Async
+  // (Relax) rounds are per-player and never gated on all-submitted, so the
+  // shared-completion check is skipped for them (the DO never calls /leave
+  // for async anyway — see Compete Relax Option B §9).
+  const session = await loadSessionRow(gameId);
+  if (session && session.mode !== "async") {
+    const openRound = await dbPool.query<{ round_index: number }>(
+      `SELECT re.round_index
+       FROM round_events re
+       WHERE re.game_id = $1 AND re.event_type = 'ROUND_STARTED'
+         AND NOT EXISTS (
+           SELECT 1 FROM round_events rc
+           WHERE rc.game_id = re.game_id
+             AND rc.round_index = re.round_index
+             AND rc.event_type = 'ROUND_COMPLETE'
+         )
+       ORDER BY re.round_index DESC
+       LIMIT 1`,
+      [gameId]
+    );
+    if (openRound.rows[0] !== undefined) {
+      await completeRoundIfAllActiveSubmitted(gameId, openRound.rows[0].round_index);
+    }
+  }
+
+  return await loadCompeteSessionSnapshot(gameId, playerId);
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // DAILY MODE — Game-end transaction (DAILY_MODE_SPEC.md §8)
 // Runs inside the caller's transaction (passed DbTransactionClient).
 // All-or-nothing. Uses challengeDate from daily_attempts (fixes C1 — not now()).
@@ -5183,6 +5319,9 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     // rounds/deadline. Mere absence (never submitted) does NOT trigger this —
     // only formal leaving (left_at set) does.
     // See Compete Relax (Option B) §6.
+    // MP-FIX-LEFTPLAYER-ROUND-ADVANCE-001: restricted to async (Relax) — a sync
+    // game continues normally for the last remaining active player instead of
+    // aborting; the end-of-game screen is reached by finishing all rounds.
     const activePlayerRows = await loadSessionPlayerRows(gameId, client);
     const nonLeftCount = activePlayerRows.filter((p) => p.left_at === null).length;
     // Solo modes (practice, daily) have exactly 1 player by design — the
@@ -5190,7 +5329,7 @@ export async function advanceRound(input: AdvanceRoundInput): Promise<CompeteSes
     // apply to them, or solo sessions close after round 0 instead of advancing.
     const isSoloMode = session.mode === "practice" || session.mode === "daily";
     const totalEverJoined = activePlayerRows.length; // includes players who left
-    const shouldCloseEarly = !isSoloMode && totalEverJoined >= 2 && nonLeftCount < 2;
+    const shouldCloseEarly = session.mode === "async" && !isSoloMode && totalEverJoined >= 2 && nonLeftCount < 2;
 
     if (nextRoundIndex < session.total_rounds && !shouldCloseEarly) {
       const sessionCreatedEventForAdvance = await client.query<{ payload: { eventIds: string[] } }>(
@@ -5335,7 +5474,7 @@ export async function recordReadyNext(input: {
 export async function getRoundResults(
   gameId: string,
   roundIndex: number
-): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>; cumulativeScore: number; cumulativeAccuracy: number; hintsUsedCount: number; accPenaltyWhenRate: number; accPenaltyWhereRate: number }>> {
+): Promise<Array<{ playerId: string; score: number; rank: number; accuracy: number; locationScore: number; didSubmit: boolean; guessYear: number | null; guessLat: number | null; guessLng: number | null; timeScore: number; badges: Array<{ dimension: 'year' | 'location' | 'combo'; tier: 'gold' | 'silver' | 'bronze'; accuracy: number }>; nearMisses: Array<{ dimension: 'year' | 'location' | 'combo'; accuracy: number }>; cumulativeScore: number; cumulativeAccuracy: number; hintsUsedCount: number; accPenaltyWhenRate: number; accPenaltyWhereRate: number; leftAt: string | null }>> {
   const result = await dbPool.query<{
     player_id: string;
     score: number;
@@ -5348,6 +5487,7 @@ export async function getRoundResults(
     hints_used: number | null;
     acc_penalty_when_rate: number | null;
     acc_penalty_where_rate: number | null;
+    left_at: Date | null;
   }>(
     `SELECT
       sp.player_id,
@@ -5360,7 +5500,8 @@ export async function getRoundResults(
       rc.location_lng,
       rc.hints_used,
       rc.acc_penalty_when_rate,
-      rc.acc_penalty_where_rate
+      rc.acc_penalty_where_rate,
+      sp.left_at
     FROM session_players sp
     LEFT JOIN round_results rr
       ON rr.game_id = $1
@@ -5370,7 +5511,7 @@ export async function getRoundResults(
       ON rc.game_id = $1
       AND rc.round_index = $2
       AND rc.player_id = sp.player_id
-    WHERE sp.game_id = $1 AND sp.left_at IS NULL
+    WHERE sp.game_id = $1
     ORDER BY COALESCE(rr.rank, 9999) ASC, sp.player_id ASC`,
     [gameId, roundIndex]
   );
@@ -5425,6 +5566,7 @@ export async function getRoundResults(
       hintsUsedCount: row.hints_used ?? 0,
       accPenaltyWhenRate: row.acc_penalty_when_rate ?? 0,
       accPenaltyWhereRate: row.acc_penalty_where_rate ?? 0,
+      leftAt: row.left_at ? new Date(row.left_at).toISOString() : null,
     };
   });
 }

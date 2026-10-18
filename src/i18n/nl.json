@@ -607,7 +607,8 @@
     "learn_related_location": "Gerelateerde locatie",
     "learn_this_event": "Deze gebeurtenis",
     "learn_error": "Details konden niet worden geladen",
-    "learn_cta": "Over deze gebeurtenis"
+    "learn_cta": "Over deze gebeurtenis",
+    "left": "Vertrokken"
   },
   "auth": {
     "sign_in": "Inloggen",
