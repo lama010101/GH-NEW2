@@ -1,6 +1,6 @@
 "use client";
 
-// LEARN-BUILD-EVENTMODAL-API-1015-001
+// LEARN-BUILD-EVENTMODAL-API-1015-001 / LEARN-BUILD-ABOUTEVENT-RESTRUCTURE-1018-011
 // Post-round learn modal. NOT wired into any screen yet — a screen renders
 // <EventLearnModal open onClose eventId gameId mode /> when the time comes.
 // Shell conventions (backdrop, role="dialog", Escape, focus handling) follow
@@ -12,7 +12,8 @@ import {
   formatDistance,
   getDistanceUnitPreference,
 } from "@/lib/distance";
-import type { LearnHint, LearnListItem, LearnMode } from "@/core/learnTypes";
+import type { LearnClueItem, LearnListItem, LearnMode } from "@/core/learnTypes";
+import { splitClueList } from "@/core/learnFormat";
 import { useEventLearn } from "./useEventLearn";
 import styles from "./EventLearnModal.module.css";
 
@@ -28,70 +29,6 @@ export type EventLearnModalProps = {
   // the fetched event has no description.
   description?: string | null;
 };
-
-// Tier labels mirror HintModal's getHintLabel — same i18n keys, same mapping.
-function hintTierLabel(
-  type: "when" | "where",
-  tier: number,
-  t: (key: string) => string
-): string {
-  if (type === "when") {
-    if (tier === 1) return t("hint_century");
-    if (tier === 2) return t("hint_historical_event");
-    if (tier === 3) return t("hint_decade");
-    if (tier === 4) return t("hint_contemporary_event");
-    if (tier === 5) return t("hint_visual_clues");
-  }
-  if (type === "where") {
-    if (tier === 1) return t("hint_continent");
-    if (tier === 2) return t("hint_remote_landmark");
-    if (tier === 3) return t("hint_region");
-    if (tier === 4) return t("hint_nearby_landmark");
-    if (tier === 5) return t("hint_visual_clues");
-  }
-  return t("hint_label_default");
-}
-
-function HintBlock({
-  type,
-  hints,
-  title,
-}: {
-  type: "when" | "where";
-  hints: LearnHint[];
-  title: string;
-}) {
-  const t = useTranslations("game");
-  const distanceUnit = getDistanceUnitPreference();
-  if (hints.length === 0) return null;
-  // Same content + metadata rendering as the in-round hints-used card
-  // (src/components/compete/RoundCompleteSection.tsx usedHints block).
-  const hintText = (h: LearnHint): string => {
-    const meta = h.metadata;
-    if (type === "where" && (h.tier === 2 || h.tier === 4) && meta?.km != null) {
-      return `${h.content} • ${t("km_away_short", { distance: formatDistance(meta.km, distanceUnit) })}`;
-    }
-    if (type === "when" && (h.tier === 2 || h.tier === 4) && meta?.years != null) {
-      return `${h.content} • ${t("years_off_short", { n: meta.years })}`;
-    }
-    return h.content;
-  };
-  return (
-    <div className={styles.subBlock}>
-      <div className={styles.subTitle}>{title}</div>
-      <ul className={styles.hintList}>
-        {hints.map((h, i) => (
-          <li key={i} className={styles.hintItem}>
-            <span className={styles.hintTier}>
-              {hintTierLabel(type, h.tier, t)}
-            </span>
-            <span className={styles.hintContent}>{hintText(h)}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 export function EventLearnModal({
   open,
@@ -129,12 +66,49 @@ export function EventLearnModal({
     y < 0 ? `${Math.abs(y)} ${t("bc_suffix")}` : `${y}`;
 
   const itemText = (item: LearnListItem): string =>
-    `${item.title} · ${yearLabel(item.year)}`;
+    [item.title, item.category, yearLabel(item.year), item.location]
+      .filter((p): p is string => p != null && p !== "")
+      .join(" · ");
 
   const data = state.status === "success" ? state.data : null;
   // Fetched description wins once loaded; the passed round description fills
   // in while loading / on error / when the fetched event has none.
-  const whatHappened = data?.event.description || description || null;
+  const whatHappened = data?.description || description || null;
+
+  const distanceUnit = getDistanceUnitPreference();
+  const yearItems = splitClueList(data?.yearClues);
+  const locationItems = splitClueList(data?.locationClues);
+
+  // Same content + metadata rendering as the in-round hints-used card
+  // (src/components/compete/RoundCompleteSection.tsx usedHints block).
+  const clueText = (item: LearnClueItem, kind: "when" | "where"): string => {
+    const meta = item.metadata;
+    if (kind === "where" && meta?.km != null) {
+      return `${item.content} • ${t("km_away_short", { distance: formatDistance(meta.km, distanceUnit) })}`;
+    }
+    if (kind === "when" && meta?.years != null) {
+      return `${item.content} • ${t("years_off_short", { n: meta.years })}`;
+    }
+    return item.content;
+  };
+
+  const categoryItems: { key: string; label: string; text: string }[] = [];
+  if (data) {
+    const push = (
+      key: string,
+      label: string,
+      item: LearnClueItem | null,
+      kind: "when" | "where"
+    ) => {
+      if (item) categoryItems.push({ key, label, text: clueText(item, kind) });
+    };
+    push("historical", t("hint_historical_event"), data.historicalEvent, "when");
+    push("contemporary", t("hint_contemporary_event"), data.contemporaryEvent, "when");
+    push("remote", t("hint_remote_landmark"), data.remoteLandmark, "where");
+    push("nearby", t("hint_nearby_landmark"), data.nearbyLandmark, "where");
+  }
+  const hasRelated =
+    categoryItems.length > 0 || (data?.related.length ?? 0) > 0;
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
@@ -174,34 +148,6 @@ export function EventLearnModal({
                 {t("retry")}
               </button>
             </div>
-          ) : data ? (
-            <>
-              <div className={styles.eventHead}>
-                <div className={styles.eventTitle}>{data.event.title}</div>
-                <div className={styles.eventMeta}>
-                  {yearLabel(data.event.year)}
-                  {data.event.location?.name
-                    ? ` · ${data.event.location.name}`
-                    : ""}
-                </div>
-              </div>
-
-              <section className={styles.section}>
-                <div className={styles.sectionTitle}>
-                  {t("learn_how_to_guess")}
-                </div>
-                <HintBlock
-                  type="when"
-                  hints={data.howToGuess.when}
-                  title={t("when_badges")}
-                />
-                <HintBlock
-                  type="where"
-                  hints={data.howToGuess.where}
-                  title={t("where_badges")}
-                />
-              </section>
-            </>
           ) : null}
 
           {whatHappened ? (
@@ -214,22 +160,69 @@ export function EventLearnModal({
           ) : null}
 
           {data ? (
-            <section className={styles.section}>
-              <div className={styles.sectionTitle}>
-                {t("learn_related_events")}
-              </div>
-              {data.related.length > 0 ? (
-                <ul className={styles.list}>
-                  {data.related.map((item) => (
-                    <li key={item.id} className={styles.listItem}>
-                      {itemText(item)}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className={styles.empty}>{t("learn_empty")}</div>
-              )}
-            </section>
+            <>
+              {yearItems.length > 0 ? (
+                <section className={styles.section}>
+                  <div className={styles.sectionTitle}>
+                    {t("learn_find_year")}
+                  </div>
+                  <ul className={styles.list}>
+                    {yearItems.map((item, i) => (
+                      <li key={i} className={styles.listItem}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
+              {locationItems.length > 0 ? (
+                <section className={styles.section}>
+                  <div className={styles.sectionTitle}>
+                    {t("learn_find_location")}
+                  </div>
+                  <ul className={styles.list}>
+                    {locationItems.map((item, i) => (
+                      <li key={i} className={styles.listItem}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
+              {hasRelated ? (
+                <section className={styles.section}>
+                  <div className={styles.sectionTitle}>
+                    {t("learn_related_to")}
+                  </div>
+                  {categoryItems.length > 0 ? (
+                    <ul className={styles.hintList}>
+                      {categoryItems.map((c) => (
+                        <li key={c.key} className={styles.hintItem}>
+                          <span className={styles.hintTier}>{c.label}</span>
+                          <span className={styles.hintContent}>{c.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {data.related.length > 0 ? (
+                    <div className={styles.subBlock}>
+                      <div className={styles.subTitle}>
+                        {t("learn_related_events")}
+                      </div>
+                      <ul className={styles.list}>
+                        {data.related.map((item) => (
+                          <li key={item.id} className={styles.listItem}>
+                            {itemText(item)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </section>
+              ) : null}
+            </>
           ) : null}
         </div>
       </div>

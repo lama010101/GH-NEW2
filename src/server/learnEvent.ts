@@ -1,4 +1,4 @@
-// LEARN-BUILD-EVENTMODAL-API-1015-001
+// LEARN-BUILD-EVENTMODAL-API-1015-001 / LEARN-BUILD-ABOUTEVENT-RESTRUCTURE-1018-011
 //
 // Read-only data assembly for GET /api/learn/event/[eventId].
 //
@@ -20,7 +20,7 @@
 import { dbPool } from "./db";
 import type {
   EventLearnResponse,
-  LearnHint,
+  LearnClueItem,
   LearnListItem,
   LearnMode,
 } from "@/core/learnTypes";
@@ -82,8 +82,9 @@ export type LearnCandidate = {
   id: string;
   title: string;
   year: number;
-  slug: string;
   category: string | null;
+  /** locations.display_name via LEFT JOIN locations; null when no row. */
+  location: string | null;
 };
 
 function byYearDiffThenTitle(selfYear: number) {
@@ -96,7 +97,13 @@ function byYearDiffThenTitle(selfYear: number) {
 }
 
 function toListItem(c: LearnCandidate): LearnListItem {
-  return { id: c.id, title: c.title, year: c.year, slug: c.slug };
+  return {
+    id: c.id,
+    title: c.title,
+    year: c.year,
+    category: c.category,
+    location: c.location,
+  };
 }
 
 /** Same category, excluding self + excluded ids, |year diff| asc then title. */
@@ -232,20 +239,12 @@ export async function loadEventLearn(params: {
   const excluded = computeExcludedEventIds(sessionEventIds, completedRoundIndexes);
 
   const eventRes = await dbPool.query<{
-    id: string;
-    title: string;
     description: string | null;
     event_year: number;
     category: string | null;
-    slug: string;
-    latitude: number | null;
-    longitude: number | null;
-    display_name: string | null;
   }>(
-    `SELECT e.id, e.title, e.description, e.event_year, e.category, e.slug,
-            l.latitude, l.longitude, l.display_name
+    `SELECT e.description, e.event_year, e.category
      FROM events e
-     LEFT JOIN locations l ON l.event_id = e.id
      WHERE e.id = $1::uuid AND e.status = 'validated'`,
     [eventId]
   );
@@ -266,28 +265,50 @@ export async function loadEventLearn(params: {
      ORDER BY tier ASC, display_order ASC`,
     [eventId]
   );
-  const when: LearnHint[] = [];
-  const where: LearnHint[] = [];
+  // Tier map: when tier2 = historical event, when tier4 = contemporary event,
+  // where tier2 = remote landmark, where tier4 = nearby landmark (each with
+  // km/years metadata). Tier 5 content is ONE comma-separated clue string per
+  // type (split client side by splitClueList). Tiers 1/3 are not part of the
+  // new contract.
+  let yearClues: string | null = null;
+  let locationClues: string | null = null;
+  let historicalEvent: LearnClueItem | null = null;
+  let contemporaryEvent: LearnClueItem | null = null;
+  let remoteLandmark: LearnClueItem | null = null;
+  let nearbyLandmark: LearnClueItem | null = null;
   for (const h of hintsRes.rows) {
+    if (h.tier === 5) {
+      if (h.type === "when" && yearClues === null) yearClues = h.content;
+      else if (h.type === "where" && locationClues === null) {
+        locationClues = h.content;
+      }
+      continue;
+    }
+    if (h.tier !== 2 && h.tier !== 4) continue;
     const metadata = sanitizeHintMetadata(h.metadata);
-    const hint: LearnHint = {
-      tier: h.tier,
+    const item: LearnClueItem = {
       content: h.content,
       ...(metadata ? { metadata } : {}),
     };
-    if (h.type === "when") when.push(hint);
-    else if (h.type === "where") where.push(hint);
+    if (h.type === "when") {
+      if (h.tier === 2) historicalEvent = historicalEvent ?? item;
+      else contemporaryEvent = contemporaryEvent ?? item;
+    } else {
+      if (h.tier === 2) remoteLandmark = remoteLandmark ?? item;
+      else nearbyLandmark = nearbyLandmark ?? item;
+    }
   }
 
   const candidatesRes = await dbPool.query<{
     id: string;
     title: string;
     event_year: number;
-    slug: string;
     category: string | null;
+    display_name: string | null;
   }>(
-    `SELECT e.id, e.title, e.event_year, e.slug, e.category
+    `SELECT e.id, e.title, e.event_year, e.category, l.display_name
      FROM events e
+     LEFT JOIN locations l ON l.event_id = e.id
      WHERE e.status = 'validated' AND e.id <> $1::uuid`,
     [eventId]
   );
@@ -295,33 +316,21 @@ export async function loadEventLearn(params: {
     id: c.id,
     title: c.title,
     year: c.event_year,
-    slug: c.slug,
     category: c.category,
+    location: c.display_name,
   }));
 
-  const location =
-    row.latitude != null && row.longitude != null
-      ? {
-          lat: row.latitude,
-          lng: row.longitude,
-          ...(row.display_name ? { name: row.display_name } : {}),
-        }
-      : null;
-
   const data: EventLearnResponse = {
-    event: {
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      year: row.event_year,
-      category: row.category,
-      slug: row.slug,
-      location,
-    },
-    howToGuess: { when, where },
+    description: row.description,
+    yearClues,
+    locationClues,
+    historicalEvent,
+    contemporaryEvent,
+    remoteLandmark,
+    nearbyLandmark,
     related: rankRelated(
       candidates,
-      { id: row.id, year: row.event_year, category: row.category },
+      { id: eventId, year: row.event_year, category: row.category },
       excluded,
       RELATED_LIMIT
     ),

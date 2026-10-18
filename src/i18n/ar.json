@@ -598,14 +598,15 @@
     "region_oceania_antarctica": "أوقيانوسيا وأنتاركتيكا",
     "game_accuracy_pct": "دقة اللعبة (%)",
     "badge_tally_label": "{dimension} · {tier}",
-    "learn_title": "تعلّم",
+    "learn_title": "حول هذا الحدث",
     "learn_close": "إغلاق",
-    "learn_how_to_guess": "كيف تجد السنة والموقع",
+    "learn_find_year": "كيف تجد السنة",
+    "learn_find_location": "كيف تجد الموقع",
     "learn_what_happened": "ماذا حدث",
     "learn_related_events": "أحداث ذات صلة",
-    "learn_empty": "لا يوجد ما يُعرض بعد",
+    "learn_related_to": "مرتبط بهذا الحدث:",
     "learn_error": "تعذّر تحميل التفاصيل",
-    "learn_cta": "تعرّف على هذا الحدث"
+    "learn_cta": "حول هذا الحدث"
   },
   "auth": {
     "sign_in": "تسجيل الدخول",
