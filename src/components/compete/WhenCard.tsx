@@ -8,6 +8,7 @@ import type { SessionPlayer } from "@/core/types";
 import InlineImageBadge from './InlineImageBadge';
 import WhenIcon from "@/components/icons/WhenIcon";
 import { getAccuracyColor } from "@/core/accuracyColor";
+import { layoutWhenTimeline } from "./whenTimeline";
 import styles from "./WhenCard.module.css";
 
 interface Hint {
@@ -76,27 +77,17 @@ export default function WhenCard({
       return b.acc - a.acc;
     });
 
-  // Compute timeline variables
-  const allYears = [correctYear, ...whenRows.map(r => r.guessYear).filter((y): y is number => y != null)];
-  const maxDelta = allYears.reduce((max, y) => Math.max(max, Math.abs(y - correctYear)), 0);
-  const minSpread = maxDelta === 0 ? 20 : maxDelta;
-  const padding = Math.max(10, Math.ceil(minSpread / 10) * 10 - minSpread + 10);
-  const timelineMin = Math.floor((Math.min(...allYears) - padding) / 10) * 10;
-  const timelineMax = Math.ceil((Math.max(...allYears) + padding) / 10) * 10;
-  const timelineRange = timelineMax - timelineMin;
-  const correctXPercent = ((correctYear - timelineMin) / timelineRange) * 100;
-  const yearCounts = new Map<number, number>();
-  // Decade tick marks
-  const ticks: { year: number; isMajor: boolean; xPercent: number }[] = [];
-  for (let year = timelineMin; year <= timelineMax; year += 10) {
-    const xPercent = ((year - timelineMin) / timelineRange) * 100;
-    ticks.push({ year, isMajor: year % 50 === 0, xPercent });
-  }
-  whenRows.forEach(row => {
-    if (row.guessYear != null) {
-      yearCounts.set(row.guessYear, (yearCounts.get(row.guessYear) || 0) + 1);
-    }
-  });
+  // Timeline layout — marker stacking and tick-label dedupe live in
+  // ./whenTimeline (unit-tested); labels never draw twice at the same spot.
+  const { correctXPercent, ticks, markers } = layoutWhenTimeline(
+    correctYear,
+    whenRows.map((row) => ({
+      playerId: row.playerId,
+      guessYear: row.guessYear,
+      isMe: row.isMe,
+      submitted: hasSubmitted(row),
+    })),
+  );
 
   return (
     <div className={bare ? styles.cardBare : styles.card}>
@@ -182,53 +173,47 @@ export default function WhenCard({
           <div className={styles.correctYear}>{correctYear}</div>
         </div>
 
-        {/* Decade ticks */}
+        {/* Decade ticks — showLabel false when a marker/correct label dedupes it */}
         {ticks.map((tick) => {
-          const isNearCorrect = Math.abs(tick.xPercent - 50) < 8;
           return (
             <div
               key={tick.year}
               className={styles.tick}
               style={{ left: `${tick.xPercent}%`, height: tick.isMajor ? 14 : 8 }}
             >
-              {tick.isMajor && !isNearCorrect && (
+              {tick.showLabel && (
                 <div className={styles.tickLabel}>{tick.year}</div>
               )}
             </div>
           );
         })}
 
-        {/* Player markers */}
-        {whenRows.map((row) => {
-          if (row.guessYear == null || !hasSubmitted(row)) return null;
-          const xPercent = ((row.guessYear - timelineMin) / timelineRange) * 100;
-          const clampedXPercent = Math.max(4, Math.min(96, xPercent));
-          const sameYearPlayers = whenRows.filter(r => r.guessYear === row.guessYear);
-          const groupIndex = sameYearPlayers.findIndex(r => r.playerId === row.playerId);
-          const verticalOffset = groupIndex * 22;
+        {/* Player markers — same-year groups stack by offsetPx; labels never
+            draw twice at the same spot (near-correct markers are lifted clear) */}
+        {markers.map((marker) => {
           return (
             <div
-              key={row.playerId}
+              key={marker.playerId}
               className={styles.playerMarker}
               style={{
-                left: `${clampedXPercent}%`,
-                transform: `translate(-50%, calc(-50% - ${verticalOffset}px))`,
+                left: `${marker.xPercent}%`,
+                transform: `translate(-50%, calc(-50% - ${marker.offsetPx}px))`,
               }}
             >
               <div className={styles.playerAvatarRing}>
                 <PlayerAvatar
-                  avatarUrl={snapshotPlayers.find(p => p.playerId === row.playerId)?.avatarUrl ?? null}
-                  displayName={snapshotPlayers.find(p => p.playerId === row.playerId)?.displayName ?? row.playerId.slice(0, 2)}
-                  playerId={row.playerId}
+                  avatarUrl={snapshotPlayers.find(p => p.playerId === marker.playerId)?.avatarUrl ?? null}
+                  displayName={snapshotPlayers.find(p => p.playerId === marker.playerId)?.displayName ?? marker.playerId.slice(0, 2)}
+                  playerId={marker.playerId}
                   size={22}
-                  isMe={row.isMe}
+                  isMe={marker.isMe}
                 />
               </div>
               <div
                 className={styles.playerYearLabel}
-                style={{ fontSize: row.isMe ? 15 : 10, fontWeight: row.isMe ? 700 : 400 }}
+                style={{ fontSize: marker.isMe ? 15 : 10, fontWeight: marker.isMe ? 700 : 400 }}
               >
-                {row.guessYear}
+                {marker.guessYear}
               </div>
             </div>
           );
