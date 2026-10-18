@@ -82,7 +82,10 @@ const ToggleReadySchema = z.object({
 
 const StartGameSchema = z.object({
   type: z.literal("START_GAME"),
-  playerId: z.string().uuid()
+  playerId: z.string().uuid(),
+  // Host "Start anyway": bypasses only the pending-invitee gate at /start.
+  // Joined-lobby readiness + host + min-player checks still apply.
+  force: z.boolean().optional()
 });
 
 const StartPlayerSchema = z.object({
@@ -234,7 +237,7 @@ function isRuntimeState(value: unknown): value is RuntimeState {
 export type ServerMessage =
   | { type: "JOIN_ROOM"; playerId: string; displayName: string }
   | { type: "TOGGLE_READY"; playerId: string; ready: boolean }
-  | { type: "START_GAME"; playerId: string }
+  | { type: "START_GAME"; playerId: string; force?: boolean }
   | { type: "START_PLAYER"; playerId: string }
   | { type: "SUBMIT_GUESS"; playerId: string; roundIndex: number; year: number | null; lat: number | null; lng: number | null; hintsUsed: string[]; accPenalty?: number; xpPenalty?: number }
   | { type: "ADVANCE_ROUND"; playerId: string; roundIndex: number; cause?: string }
@@ -737,6 +740,11 @@ export default class GameServer {
     const allReady = activePlayers.length >= this.minPlayersToStart(this.snapshot.config?.mode ?? "sync") &&
       activePlayers.every(p => p.ready === true);
     if (!allReady) return;
+    // MP-FIX-LOBBY-PROD-READYGATE-003: auto-start must also wait for every
+    // invited slot to resolve (join / decline / host-cancel). Pending
+    // invitees block auto-start; the host's explicit "Start anyway"
+    // (START_GAME force) is the only override.
+    if ((this.snapshot.pendingInvitees ?? []).length > 0) return;
     if (this.startInFlight) {
       console.log("[PartyKit] attemptAutoStart skipped — start already in flight");
       return;
@@ -2094,7 +2102,10 @@ export default class GameServer {
                 "x-partykit-secret": (this.room.env.PARTYKIT_SECRET as string) ?? ""
               },
               body: JSON.stringify({
-                playerId: senderPlayerId
+                playerId: senderPlayerId,
+                // force=true is the host "Start anyway" — bypasses only the
+                // pending-invitee gate; /start still enforces all-ready.
+                allowPartialLobby: data.force === true
               })
             });
             if (!response.ok) {

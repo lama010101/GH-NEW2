@@ -318,4 +318,8 @@ export type StartCompeteSessionInput = {
   gameId: string;
   playerId: string;
   cause: TransitionCause;
+  // Host "Start anyway": start with the joined+ready players even while
+  // invited slots are still pending. Bypasses ONLY the pending-invitee
+  // gate — all other start checks still apply.
+  allowPartialLobby?: boolean;
 };
