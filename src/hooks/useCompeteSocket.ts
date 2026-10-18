@@ -180,11 +180,11 @@ export default function useCompeteSocket({
     // busy flag cleared when STATE_UPDATE arrives (snapshot changes)
   };
 
-  const startGame = () => {
+  const startGame = (force?: boolean) => {
     if (!playerId || !wsRef.current) return;
     onSetBusy(true);
     // Client → DO → DB: send action signal via WS
-    wsRef.current.startGame();
+    wsRef.current.startGame(force);
   };
 
   const startPlayer = () => {

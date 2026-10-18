@@ -15,7 +15,7 @@ export async function POST(
   }
   try {
     const gameId = params.gameId.trim();
-    const body = (await request.json().catch(() => ({}))) as { playerId?: unknown };
+    const body = (await request.json().catch(() => ({}))) as { playerId?: unknown; allowPartialLobby?: unknown };
 
     if (gameId.length === 0) {
       return NextResponse.json({ error: "gameId is required" }, { status: 400 });
@@ -28,7 +28,9 @@ export async function POST(
     const snapshot = await startCompeteSession({
       gameId,
       playerId: body.playerId,
-      cause: TransitionCause.PLAYER
+      cause: TransitionCause.PLAYER,
+      // Host "Start anyway": bypasses only the pending-invitee gate.
+      allowPartialLobby: body.allowPartialLobby === true
     });
 
     return NextResponse.json(snapshot);

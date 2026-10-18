@@ -326,7 +326,13 @@
     "help_game_settings": "Choose how this Compete session plays out.\n\nANYTIME (Own Pace) — Asynchronous. Each player plays all 5 rounds independently, at their own speed — no waiting on anyone else. The session stays open for the deadline you set below (1–14 days). You can optionally turn on a per-round timer; if a player runs out of time on a round, only that round auto-submits for them — nobody else is affected.\n\nLIVE (Live Challenge) — Synchronous. Everyone plays the same round at the same time. Each round has an optional countdown timer (15 seconds to 5 minutes). After everyone submits, results are shown to all players together, with an auto-advance timer to the next round.\n\nRound Timer — Optional. How long each player has to submit a guess for a round.\nResults Timer — The maximum time available to view the round results before automatically advancing to the next round.\nGame Timer (Anytime only) — The overall deadline for the whole session, from 1 to 14 days after you start the game.",
     "help_invite_players": "Add 2 to 8 players to this game.\n\nSearch for players by name, or use Share Link to send a join link to anyone — they don't need to already be a friend to join.\n\nAs host, you can click the star on a player's avatar to mark them as a favorite, making them easier to find next time.\n\nPlayers you invite will appear in the lobby once they accept. As host, you can remove a player from the lobby at any time before the game starts.",
     "era_region_presets": "Era & Region Presets",
-    "label": "lobby"
+    "label": "lobby",
+    "start_anyway": "Start anyway",
+    "start_anyway_confirm_title": "Start without everyone?",
+    "start_anyway_confirm_body": "{count} invited player(s) haven't joined yet and won't be in this game:",
+    "start_anyway_cancel": "Cancel",
+    "start_anyway_go": "Start now",
+    "waiting_invitees": " · waiting on {count} invite(s)"
   },
   "compete_page": {
     "title": "Multiplayer Sync Game",

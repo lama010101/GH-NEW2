@@ -10,7 +10,7 @@ import { ImageButton } from "@/components/shared/ImageButton";
 import { ERA_STOCK_IMAGES, REGION_STOCK_IMAGES } from "@/core/useEraRegionImages";
 import styles from './LobbySection.module.css';
 import { supabaseBrowser, getValidAccessToken } from '@/core/supabaseBrowser';
-import { ChevronDown, Timer, HelpCircle, Play } from 'lucide-react';
+import { ChevronDown, Timer, HelpCircle, Play, Link2, Check } from 'lucide-react';
 import { CompeteWebSocket, type ConnectionState } from "@/core/competeWebSocket";
 
 interface LobbySectionProps {
@@ -19,7 +19,7 @@ interface LobbySectionProps {
   busy: boolean;
   connectionState?: ConnectionState;
   onToggleReady: () => void;
-  onStartGame: () => void;
+  onStartGame: (force?: boolean) => void;
   onSetTimer?: (roundTimerSec: number) => void;
   onSetYearRange?: (yearMin: number, yearMax: number) => void;
   onSetResultsTimer?: (resultsAutoAdvanceSec: number) => void;
@@ -35,11 +35,12 @@ type PlayerPoolEntry = { id: string; displayName: string; avatarUrl: string | nu
 
 const LS_KEY = "gh_last_invited_players";
 const LS_MAX = 10;
-const ROUND_TIMER_DEFAULT_SEC = 120;
-const ROUND_TIMER_TICKS = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300];
-const ROUND_TIMER_MAJOR_TICKS = ROUND_TIMER_TICKS.filter((v) => v % 60 === 0);
+const ROUND_TIMER_DEFAULT_SEC = 90;
+// Round timer slider steps by whole minutes (v3 lobby spec).
+const ROUND_TIMER_TICKS = [60, 120, 180, 240, 300];
+const ROUND_TIMER_MAJOR_TICKS = ROUND_TIMER_TICKS;
 const RESULTS_TIMER_TICKS = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180, 195, 210, 225, 240, 255, 270, 285, 300];
-const RESULTS_TIMER_MAJOR_TICKS = RESULTS_TIMER_TICKS.filter((v) => v % 60 === 0);
+const RESULTS_TIMER_MAJOR_TICKS = RESULTS_TIMER_TICKS;
 const DEADLINE_TICKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 const DEADLINE_MAJOR_TICKS = [1, 5, 10, 14];
 
@@ -189,9 +190,14 @@ export default function LobbySection({
   }, [snapshot.config.roundTimerSec]);
 
   // Relax per-round timer defaults OFF: reset to 0 when the host switches into async mode.
+  // LIVE per-round timer defaults ON at 90s: restore the default when the host
+  // switches back to sync with the timer still OFF (v3 lobby spec).
   useEffect(() => {
     if (snapshot.config.mode === 'async' && prevModeRef.current !== 'async' && snapshot.config.roundTimerSec > 0) {
       onSetTimer?.(0);
+    }
+    if (snapshot.config.mode === 'sync' && prevModeRef.current !== 'sync' && snapshot.config.roundTimerSec === 0) {
+      onSetTimer?.(ROUND_TIMER_DEFAULT_SEC);
     }
     prevModeRef.current = snapshot.config.mode;
   }, [snapshot.config.mode, snapshot.config.roundTimerSec, onSetTimer]);
@@ -255,6 +261,8 @@ export default function LobbySection({
     setPresetsExpanded(m.matches);
   }, []);
   const [helpModal, setHelpModal] = useState<'settings' | 'friends' | null>(null);
+  // Host "Start anyway" confirmation modal (lists pending invitees left out).
+  const [startAnywayConfirm, setStartAnywayConfirm] = useState(false);
   const [comingUpId, setComingUpId] = useState<string | null>(null);
   const comingUpTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -749,7 +757,7 @@ export default function LobbySection({
   const isAsync         = snapshot.config.mode === "async";
 
   return (
-    <div className={styles['lobby-shell']} data-testid="lobby-shell">
+    <div className={styles['lobby-shell']} data-testid="lobby-shell" data-lobby-mode={snapshot.config.mode}>
       <header className={styles['lobby-header']}>
         <div className={styles['lobby-header-top']}>
           <button className={styles['lobby-back-btn']} onClick={() => router.push("/home")} aria-label={t('lobby.back')} data-testid="lobby-back-btn">
@@ -780,37 +788,29 @@ export default function LobbySection({
           <div className={styles['lobbyTabRow']}>
             <div className={styles['lobbyTabCell']}>
               <button
-                className={`${styles['lobbyTabBtn']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`}
+                className={`${styles['lobbyTabBtn']} ${styles['lobbyTabBtnAnytime']} ${settingsTab === 'turnturn' ? styles['lobbyTabBtnActive'] : ''}`}
                 onClick={() => isHost && onSetSubMode?.("async", maxTurnDays)}
                 disabled={!isHost || busy}
               >
-                <span className={styles['lobbyTabContent']}>
-                  <span className={styles['lobbyTabTitleRow']}>
-                    <span className={styles['lobbyTabIconBadge']}>
-                      <img src="/icons/anytime_256.png" alt="" width={44} height={44} className={styles['lobbyTabIconImg']} draggable={false} />
-                    </span>
-                    <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
-                  </span>
+                <span className={styles['lobbyTabTitleRow']}>
+                  <img src="/icons/anytime_256.png" alt="" width={34} height={34} className={styles['lobbyTabIconImg']} draggable={false} />
+                  <span className={styles['lobbyTabMain']}>{t('lobby.turn_by_turn')}</span>
                 </span>
+                <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
               </button>
-              <span className={styles['lobbyTabSub']}>{t('lobby.turn_by_turn_sub')}</span>
             </div>
             <div className={styles['lobbyTabCell']}>
               <button
-                className={`${styles['lobbyTabBtn']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
+                className={`${styles['lobbyTabBtn']} ${styles['lobbyTabBtnLive']} ${settingsTab === 'realtime' ? styles['lobbyTabBtnActive'] : ''}`}
                 onClick={() => isHost && onSetSubMode?.("sync", maxTurnDays)}
                 disabled={!isHost || busy}
               >
-                <span className={styles['lobbyTabContent']}>
-                  <span className={styles['lobbyTabTitleRow']}>
-                    <span className={styles['lobbyTabIconBadge']}>
-                      <img src="/icons/live_256.png" alt="" width={44} height={44} className={styles['lobbyTabIconImg']} draggable={false} />
-                    </span>
-                    <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
-                  </span>
+                <span className={styles['lobbyTabTitleRow']}>
+                  <img src="/icons/live_256.png" alt="" width={34} height={34} className={styles['lobbyTabIconImg']} draggable={false} />
+                  <span className={styles['lobbyTabMain']}>{t('lobby.realtime')}</span>
                 </span>
+                <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
               </button>
-              <span className={styles['lobbyTabSub']}>{t('lobby.realtime_sub')}</span>
             </div>
           </div>
           <div className={styles['lobby-settings-grid']}>
@@ -1274,11 +1274,6 @@ export default function LobbySection({
           <div className={styles['lobby-subsection']}>
             <div className={styles['lobby-subsection-header']}>
               <span className={styles['lobby-subsection-title']}><span className={styles['lobby-section-number']}>2</span>{t('lobby.invite_players')}</span>
-              <span className={styles['lobbyShareBtnGroup']}>
-                <button type="button" className={styles['lobbyShareBtn']} onClick={handleShareLink} data-testid="lobby-share-link">
-                  {t('lobby.copy_link')}
-                </button>
-              </span>
               <button type="button" className={styles['lobbyHelpBtn']} onClick={() => setHelpModal('friends')} aria-label={t('nav.help')}><HelpCircle size={16} /></button>
             </div>
             {linkCopied && (
@@ -1346,6 +1341,16 @@ export default function LobbySection({
               )}
             </div>
             <div className={styles['lobbyRail']}>
+              {/* Share-link tile — first rail card (v3 lobby spec). */}
+              <button
+                type="button"
+                className={`${styles['lobbyPlayerCard']} ${styles['lobbyShareTile']}`}
+                onClick={handleShareLink}
+                data-testid="lobby-share-link"
+              >
+                {linkCopied ? <Check size={18} aria-hidden="true" /> : <Link2 size={18} aria-hidden="true" />}
+                <span>{linkCopied ? t('lobby.link_copied') : t('lobby.copy_link')}</span>
+              </button>
               {displayList.length === 0 ? (
                 <div className={`${styles['lobbyPlayerCard']} ${styles['lobbyPlayerCardEmpty']}`}>
                   <span className={styles['lobbyEmptyRailText']}>{filter.friends ? t('lobby.no_favorites_yet') : t('lobby.no_players_found')}</span>
@@ -1603,10 +1608,28 @@ export default function LobbySection({
           {!isAsync && (
             <span className={styles['lobby-ready-count']} data-testid="lobby-ready-count">
               {t('lobby.players_ready', { ready: readyCount ?? 0, total: totalPlayers ?? 0 })}
-              {snapshot.allPlayersReady && totalPlayers > 0 && (
+              {snapshot.allPlayersReady && totalPlayers > 0 && (snapshot.pendingInvitees ?? []).length === 0 && (
                 <span className={styles['lobbyAllReadyTag']}>{t('lobby.starting_soon')}</span>
               )}
+              {snapshot.allPlayersReady && (snapshot.pendingInvitees ?? []).length > 0 && (
+                <span className={styles['lobbyWaitingTag']}>
+                  {t('lobby.waiting_invitees', { count: (snapshot.pendingInvitees ?? []).length })}
+                </span>
+              )}
             </span>
+          )}
+          {/* Host "Start anyway" — visible only while invited slots are pending
+              and every joined player is ready (the only state it can succeed in). */}
+          {!isAsync && isHost && (snapshot.pendingInvitees ?? []).length > 0 && readyCount === totalPlayers && totalPlayers > 0 && (
+            <button
+              type="button"
+              className={styles['lobbyStartAnywayBtn']}
+              onClick={() => setStartAnywayConfirm(true)}
+              disabled={busy || connectionState !== "OPEN"}
+              data-testid="lobby-start-anyway-btn"
+            >
+              <Play size={16} aria-hidden="true" /> {t('lobby.start_anyway')}
+            </button>
           )}
         </div>
       </div>
@@ -1617,6 +1640,36 @@ export default function LobbySection({
             <button type="button" className={styles['lobbyHelpModalClose']} onClick={() => setHelpModal(null)} aria-label={t('nav.help')}>×</button>
             <h4>{helpModal === 'settings' ? t('lobby.game_settings') : t('lobby.invite_players')}</h4>
             <p>{helpModal === 'settings' ? t('lobby.help_game_settings') : t('lobby.help_invite_players')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Host "Start anyway" confirmation — names the pending invitees who
+          will be left out of the game. */}
+      {startAnywayConfirm && (
+        <div className={styles['lobbyHelpModalBackdrop']} onClick={() => setStartAnywayConfirm(false)}>
+          <div className={styles['lobbyHelpModal']} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className={styles['lobbyHelpModalClose']} onClick={() => setStartAnywayConfirm(false)} aria-label={t('nav.close')}>×</button>
+            <h4>{t('lobby.start_anyway_confirm_title')}</h4>
+            <p>{t('lobby.start_anyway_confirm_body', { count: (snapshot.pendingInvitees ?? []).length })}</p>
+            <ul className={styles['lobbyStartAnywayList']}>
+              {(snapshot.pendingInvitees ?? []).map((p) => (
+                <li key={p.playerId}>{p.displayName}</li>
+              ))}
+            </ul>
+            <div className={styles['lobbyStartAnywayActions']}>
+              <button type="button" className={styles['lobbyStartAnywayCancel']} onClick={() => setStartAnywayConfirm(false)}>
+                {t('lobby.start_anyway_cancel')}
+              </button>
+              <button
+                type="button"
+                className={styles['lobbyStartAnywayConfirm']}
+                onClick={() => { setStartAnywayConfirm(false); onStartGame(true); }}
+                data-testid="lobby-start-anyway-confirm"
+              >
+                {t('lobby.start_anyway_go')}
+              </button>
+            </div>
           </div>
         </div>
       )}

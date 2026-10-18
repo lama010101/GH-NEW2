@@ -3105,6 +3105,25 @@ export async function startCompeteSession(input: StartCompeteSessionInput): Prom
       throw new Error(`Not all players are ready (${notReady.length} pending)`);
     }
 
+    // MP-FIX-LOBBY-PROD-READYGATE-003: every invited slot must be resolved
+    // (joined / declined / host-cancelled) before a sync game may start.
+    // The host's "Start anyway" (allowPartialLobby) bypasses ONLY this
+    // gate — readiness, host and min-player checks above still apply.
+    // Source of truth is game_invitations (same rows the lobby renders
+    // as pending invitees), checked inside the txn so the gate cannot
+    // be bypassed by a stale DO snapshot.
+    if (!input.allowPartialLobby) {
+      const pendingInvites = await client.query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count FROM game_invitations
+         WHERE game_id = $1 AND status = 'pending' AND expires_at > NOW()`,
+        [gameId]
+      );
+      const pendingInviteCount = Number(pendingInvites.rows[0]?.count ?? 0);
+      if (pendingInviteCount > 0) {
+        throw new Error(`Waiting on invited players (${pendingInviteCount} pending)`);
+      }
+    }
+
     const sessionCreatedEventForStart = await client.query<{ payload: { eventIds: string[] } }>(
       `SELECT payload FROM round_events
        WHERE game_id = $1 AND event_type = 'SESSION_CREATED'

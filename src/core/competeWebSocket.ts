@@ -379,8 +379,8 @@ export class CompeteWebSocket {
     this.sendAction({ type: "TOGGLE_READY", playerId: this.playerId, ready });
   }
 
-  startGame(): void {
-    this.sendAction({ type: "START_GAME", playerId: this.playerId });
+  startGame(force?: boolean): void {
+    this.sendAction({ type: "START_GAME", playerId: this.playerId, force });
   }
 
   startPlayer(): void {

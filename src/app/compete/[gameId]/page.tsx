@@ -582,14 +582,14 @@ export default function CompeteGamePage() {
     // busy flag cleared when STATE_UPDATE arrives (snapshot changes)
   }, [playerId, toggleReady]);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback((force?: boolean) => {
     if (!playerId) return;
     setBusy(true);
     setError(null);
     if (snapshot?.config?.mode === "async") {
       startPlayer();
     } else {
-      startGame();
+      startGame(force);
     }
   }, [playerId, startGame, startPlayer, snapshot?.config?.mode]);
 
