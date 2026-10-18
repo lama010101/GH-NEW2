@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 30
     env:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      SUPABASE_DB_CONNECTION: ${{ secrets.SUPABASE_DB_CONNECTION }}
+      SUPABASE_DB_CONNECTION: ${{ secrets.GH_SUPABASE_DB_CONNECTION }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
