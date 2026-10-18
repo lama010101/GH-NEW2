@@ -66,7 +66,7 @@ export function EventLearnModal({
     y < 0 ? `${Math.abs(y)} ${t("bc_suffix")}` : `${y}`;
 
   const itemText = (item: LearnListItem): string =>
-    [item.title, item.category, yearLabel(item.year), item.location]
+    [item.title, yearLabel(item.year), item.location]
       .filter((p): p is string => p != null && p !== "")
       .join(" · ");
 
@@ -109,6 +109,7 @@ export function EventLearnModal({
   }
   const hasRelated =
     categoryItems.length > 0 || (data?.related.length ?? 0) > 0;
+  const relatedCategory = data?.related[0]?.category || null;
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
@@ -209,7 +210,9 @@ export function EventLearnModal({
                   {data.related.length > 0 ? (
                     <div className={styles.subBlock}>
                       <div className={styles.subTitle}>
-                        {t("learn_related_events")}
+                        {relatedCategory
+                          ? `${t("learn_related_events")} · ${relatedCategory}`
+                          : t("learn_related_events")}
                       </div>
                       <ul className={styles.list}>
                         {data.related.map((item) => (
