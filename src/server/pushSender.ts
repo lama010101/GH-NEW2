@@ -13,13 +13,30 @@ export interface PushPayload {
   urgency?: 'very-low' | 'low' | 'normal' | 'high';
 }
 
+// web-push requires VAPID subject to be an https: URL or a mailto: address.
+// Production has carried a bare email ("user@example.com") as VAPID_SUBJECT,
+// which makes validateSubject() throw inside every sendNotification() call —
+// i.e. every send fails. Normalizing a bare email to mailto: keeps the send
+// path working without an env change; other values pass through and keep
+// web-push's own validation error visible in the per-attempt log.
+function normalizeVapidSubject(subject: string): string {
+  const trimmed = subject.trim();
+  if (/^(https:|mailto:)/i.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
+    return `mailto:${trimmed}`;
+  }
+  return trimmed;
+}
+
 function initializeVapid() {
   const subject = process.env.VAPID_SUBJECT;
   const publicKey = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
 
   if (subject && publicKey && privateKey) {
-    setVapidDetails(subject, publicKey, privateKey);
+    setVapidDetails(normalizeVapidSubject(subject), publicKey, privateKey);
     return true;
   }
 
@@ -77,9 +94,15 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
             TTL: payload.ttl ?? 86400,
             urgency: payload.urgency ?? 'normal',
           });
+          console.info(`[pushSender] send attempt user=${userId} sub=${sub.id} result=success`);
         } catch (error) {
           const webPushError = error as WebPushError;
           const statusCode = webPushError?.statusCode;
+          console.error(
+            `[pushSender] send attempt user=${userId} sub=${sub.id} result=failed`,
+            `status=${statusCode ?? 'none'}`,
+            webPushError?.message || error
+          );
 
           if (statusCode === 410 || statusCode === 404) {
             const { error: deleteError } = await supabase
@@ -92,8 +115,6 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
             } else {
               console.info('[pushSender] deleted stale subscription', sub.id, statusCode);
             }
-          } else {
-            console.error('[pushSender] sendNotification failed for', sub.id, webPushError?.message || error);
           }
         }
       })

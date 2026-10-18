@@ -162,6 +162,48 @@ describe("sendPushToUser", () => {
     expect(calls.deleteEq).toEqual([["id", SUB.id]]);
   });
 
+  it("normalizes a bare-email VAPID_SUBJECT to mailto: before setVapidDetails", async () => {
+    process.env.VAPID_SUBJECT = "lama010101@gmail.com";
+    const { sendPushToUser } = await loadModule();
+    await sendPushToUser(USER_ID, { body: "hi" });
+    expect(mockFns.setVapidDetails).toHaveBeenCalledWith(
+      "mailto:lama010101@gmail.com",
+      "test-public-key",
+      "test-private-key"
+    );
+    expect(mockFns.sendNotification).toHaveBeenCalled();
+  });
+
+  it("logs one send-attempt line per subscription on success", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const { sendPushToUser } = await loadModule();
+    await sendPushToUser(USER_ID, { body: "hi" });
+    const attempts = info.mock.calls
+      .map((c) => c[0])
+      .filter((m) => typeof m === "string" && m.includes("send attempt"));
+    expect(attempts).toContain(
+      `[pushSender] send attempt user=${USER_ID} sub=${SUB.id} result=success`
+    );
+    info.mockRestore();
+  });
+
+  it("logs a failed send-attempt line with status when sendNotification throws", async () => {
+    const err = Object.assign(new Error("Gone"), { statusCode: 410 });
+    mockFns.sendNotification.mockRejectedValueOnce(err);
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const { sendPushToUser } = await loadModule();
+    await sendPushToUser(USER_ID, { body: "hi" });
+    const attempts = errorSpy.mock.calls
+      .map((c) => c[0])
+      .filter((m) => typeof m === "string" && m.includes("send attempt"));
+    expect(attempts).toContain(
+      `[pushSender] send attempt user=${USER_ID} sub=${SUB.id} result=failed`
+    );
+    errorSpy.mockRestore();
+    info.mockRestore();
+  });
+
   it("sends nothing when VAPID keys are unconfigured", async () => {
     delete process.env.VAPID_SUBJECT;
     delete process.env.VAPID_PUBLIC_KEY;
