@@ -598,14 +598,15 @@
     "region_oceania_antarctica": "Océanie et Antarctique",
     "game_accuracy_pct": "Précision du jeu (%)",
     "badge_tally_label": "{dimension} · {tier}",
-    "learn_title": "Apprendre",
+    "learn_title": "À propos de cet événement",
     "learn_close": "Fermer",
-    "learn_how_to_guess": "Comment trouver l'année et le lieu",
+    "learn_find_year": "Comment trouver l'année",
+    "learn_find_location": "Comment trouver le lieu",
     "learn_what_happened": "Ce qui s'est passé",
     "learn_related_events": "Événements liés",
-    "learn_empty": "Rien à afficher pour l'instant",
+    "learn_related_to": "En lien avec cet événement :",
     "learn_error": "Impossible de charger les détails",
-    "learn_cta": "Découvrir cet événement"
+    "learn_cta": "À propos de cet événement"
   },
   "auth": {
     "sign_in": "Se connecter",

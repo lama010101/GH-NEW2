@@ -34,8 +34,7 @@ export function learnModeForSession(
   }
 }
 
-export type LearnHint = {
-  tier: number;
+export type LearnClueItem = {
   content: string;
   /**
    * Sanitized subset of hints.metadata (see sanitizeHintMetadata in
@@ -45,31 +44,35 @@ export type LearnHint = {
   metadata?: { km?: number; years?: number | string };
 };
 
-export type LearnLocation = {
-  lat: number;
-  lng: number;
-  name?: string;
-};
-
-export type LearnEvent = {
-  id: string;
-  title: string;
-  description: string | null;
-  year: number;
-  category: string | null;
-  slug: string;
-  location: LearnLocation | null;
-};
-
 export type LearnListItem = {
   id: string;
   title: string;
   year: number;
-  slug: string;
+  category: string | null;
+  /** locations.display_name for the event; null when no location row. */
+  location: string | null;
 };
 
+// LEARN-BUILD-ABOUTEVENT-RESTRUCTURE-1018-011 — "About this event" contract:
+// fixed section order What happened / How to find the year / How to find the
+// location / Related to this event. yearClues/locationClues are ONE
+// comma-separated string each (hints.content of the tier-5 row for that
+// type); the modal splits them via splitClueList (src/core/learnFormat.ts).
 export type EventLearnResponse = {
-  event: LearnEvent;
-  howToGuess: { when: LearnHint[]; where: LearnHint[] };
+  /** events.description — "What happened". */
+  description: string | null;
+  /** hints.content of the when/tier-5 row, or null when absent. */
+  yearClues: string | null;
+  /** hints.content of the where/tier-5 row, or null when absent. */
+  locationClues: string | null;
+  /** when/tier-2 hint row. */
+  historicalEvent: LearnClueItem | null;
+  /** when/tier-4 hint row. */
+  contemporaryEvent: LearnClueItem | null;
+  /** where/tier-2 hint row. */
+  remoteLandmark: LearnClueItem | null;
+  /** where/tier-4 hint row. */
+  nearbyLandmark: LearnClueItem | null;
+  /** Same-category events; each entry carries category, year and location. */
   related: LearnListItem[];
 };

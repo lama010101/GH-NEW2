@@ -1,4 +1,5 @@
-// LEARN-BUILD-EVENTMODAL-API-1015-001 / LEARN-FIX-HINTMETA-NONEARBY-1015-003
+// LEARN-BUILD-EVENTMODAL-API-1015-001 / LEARN-FIX-HINTMETA-NONEARBY-1015-003 /
+// LEARN-BUILD-ABOUTEVENT-RESTRUCTURE-1018-011
 // Pure-function tests for learnEvent.ts ranking/exclusion/metadata helpers.
 // No DB access — dbPool is a lazy proxy and is never queried here.
 
@@ -14,8 +15,9 @@ import {
 const cand = (
   id: string,
   year: number,
-  category: string | null = "war"
-): LearnCandidate => ({ id, title: `T-${id}`, year, slug: `s-${id}`, category });
+  category: string | null = "war",
+  location: string | null = `L-${id}`
+): LearnCandidate => ({ id, title: `T-${id}`, year, category, location });
 
 const NO_EXCLUDED = new Set<string>();
 
@@ -167,8 +169,23 @@ describe("rankRelated", () => {
     expect(out).toEqual([]);
   });
 
-  it("list items carry id/title/year/slug only (no hints, no description)", () => {
+  it("list items carry id/title/year/category/location only (no hints, no description, no slug)", () => {
     const out = rankRelated([cand("a", 1901)], self, NO_EXCLUDED);
-    expect(out[0]).toEqual({ id: "a", title: "T-a", year: 1901, slug: "s-a" });
+    expect(out[0]).toEqual({
+      id: "a",
+      title: "T-a",
+      year: 1901,
+      category: "war",
+      location: "L-a",
+    });
+  });
+
+  it("null candidate location passes through as null", () => {
+    const out = rankRelated(
+      [cand("a", 1901, "war", null)],
+      self,
+      NO_EXCLUDED
+    );
+    expect(out[0].location).toBeNull();
   });
 });

@@ -103,24 +103,6 @@
   cursor: pointer;
 }
 
-.eventHead {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.eventTitle {
-  font-size: var(--font-lg);
-  font-weight: 700;
-  color: var(--gh-modal-text-primary);
-  line-height: 1.25;
-}
-
-.eventMeta {
-  font-size: var(--font-xs);
-  color: var(--gh-modal-text-muted);
-}
-
 .section {
   display: flex;
   flex-direction: column;
@@ -193,10 +175,4 @@
   color: var(--gh-modal-text-primary);
   line-height: 1.4;
   padding: 4px 0;
-}
-
-.empty {
-  font-size: var(--font-xs);
-  color: var(--gh-modal-text-muted);
-  font-style: italic;
 }

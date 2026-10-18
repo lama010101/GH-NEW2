@@ -598,14 +598,15 @@
     "region_oceania_antarctica": "大洋洲与南极洲",
     "game_accuracy_pct": "游戏准确度 (%)",
     "badge_tally_label": "{dimension} · {tier}",
-    "learn_title": "学习",
+    "learn_title": "关于此事件",
     "learn_close": "关闭",
-    "learn_how_to_guess": "如何推断年份和地点",
+    "learn_find_year": "如何推断年份",
+    "learn_find_location": "如何推断地点",
     "learn_what_happened": "事件经过",
     "learn_related_events": "相关事件",
-    "learn_empty": "暂无内容",
+    "learn_related_to": "与此事件相关:",
     "learn_error": "无法加载事件详情",
-    "learn_cta": "了解此事件"
+    "learn_cta": "关于此事件"
   },
   "auth": {
     "sign_in": "登录",
