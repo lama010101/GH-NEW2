@@ -605,6 +605,7 @@
     "learn_related_events": "相关事件",
     "learn_empty": "暂无内容",
     "learn_error": "无法加载事件详情",
+    "learn_cta": "了解此事件",
     "left": "已离开"
   },
   "auth": {

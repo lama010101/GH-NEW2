@@ -605,6 +605,7 @@
     "learn_related_events": "Événements liés",
     "learn_empty": "Rien à afficher pour l'instant",
     "learn_error": "Impossible de charger les détails",
+    "learn_cta": "Découvrir cet événement",
     "left": "A quitté"
   },
   "auth": {

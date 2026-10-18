@@ -824,6 +824,38 @@
   border-color: var(--gh-border-default);
 }
 
+.roundTopRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.roundTopRow .roundTop {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.learnRoundBtn {
+  flex-shrink: 0;
+  align-self: center;
+  width: 44px;
+  height: 44px;
+  margin-right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--gh-text-muted);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.learnRoundBtn:hover {
+  color: var(--gh-text-primary);
+  background: var(--gh-bg-elevated);
+}
+
 .roundTop {
   width: 100%;
   display: flex;

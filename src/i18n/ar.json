@@ -605,6 +605,7 @@
     "learn_related_events": "أحداث ذات صلة",
     "learn_empty": "لا يوجد ما يُعرض بعد",
     "learn_error": "تعذّر تحميل التفاصيل",
+    "learn_cta": "تعرّف على هذا الحدث",
     "left": "غادر"
   },
   "auth": {
