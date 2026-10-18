@@ -317,12 +317,6 @@
     "ai_coming_up": "Em breve",
     "timer_off": "DESLIGADO",
     "starting_soon": " · começando em breve",
-    "start_anyway": "Iniciar mesmo assim",
-    "start_anyway_confirm_title": "Iniciar sem todos?",
-    "start_anyway_confirm_body": "{count} jogador(es) convidado(s) ainda não entraram e ficarão de fora:",
-    "start_anyway_cancel": "Cancelar",
-    "start_anyway_go": "Iniciar agora",
-    "waiting_invitees": " · a aguardar {count} convite(s)",
     "start_my_game": "Iniciar meu jogo",
     "back": "Voltar",
     "default_player_name": "Jogador",
@@ -332,7 +326,13 @@
     "help_game_settings": "Escolha como esta sessão Compete será jogada.\n\nANYTIME (No seu ritmo) — Assíncrono. Cada jogador joga as 5 rodadas de forma independente, no seu próprio ritmo — sem esperar por ninguém. A sessão permanece aberta até o prazo que você definir abaixo (1–14 dias). Você pode ativar opcionalmente um timer por rodada; se um jogador ficar sem tempo em uma rodada, apenas essa rodada será enviada automaticamente para ele — ninguém mais é afetado.\n\nLIVE (Desafio ao vivo) — Síncrono. Todos jogam a mesma rodada ao mesmo tempo. Cada rodada tem um timer opcional (15 segundos a 5 minutos). Depois que todos enviarem, os resultados são mostrados a todos os jogadores juntos, com um timer de avanço automático para a próxima rodada.\n\nTimer de rodada — Opcional. Quanto tempo cada jogador tem para enviar um palpite em uma rodada.\nTimer de resultados — O tempo máximo para visualizar os resultados da rodada antes de avançar automaticamente.\nTimer de jogo (apenas Anytime) — O prazo geral para toda a partida, de 1 a 14 dias após iniciar o jogo.",
     "help_invite_players": "Adicione 2 a 8 jogadores a este jogo.\n\nProcure jogadores pelo nome ou use o Link de compartilhamento para enviar um link de entrada para qualquer pessoa — eles não precisam ser amigos para entrar.\n\nComo anfitrião, você pode clicar na estrela no avatar de um jogador para marcá-lo como favorito, tornando-o mais fácil de encontrar na próxima vez.\n\nOs jogadores que você convidar aparecerão no lobby assim que aceitarem. Como anfitrião, você pode remover um jogador do lobby a qualquer momento antes do jogo começar.",
     "era_region_presets": "Predefinições de Era e Região",
-    "label": "sala"
+    "label": "sala",
+    "start_anyway": "Iniciar mesmo assim",
+    "start_anyway_confirm_title": "Iniciar sem todos?",
+    "start_anyway_confirm_body": "{count} jogador(es) convidado(s) ainda não entraram e ficarão de fora:",
+    "start_anyway_cancel": "Cancelar",
+    "start_anyway_go": "Iniciar agora",
+    "waiting_invitees": " · a aguardar {count} convite(s)"
   },
   "compete_page": {
     "title": "Partida síncrona multijogador",
@@ -610,7 +610,8 @@
     "learn_what_happened": "O que aconteceu",
     "learn_related_events": "Eventos relacionados",
     "learn_empty": "Nada para mostrar ainda",
-    "learn_error": "Não foi possível carregar os detalhes"
+    "learn_error": "Não foi possível carregar os detalhes",
+    "learn_cta": "Saiba mais sobre este evento"
   },
   "auth": {
     "sign_in": "Entrar",
