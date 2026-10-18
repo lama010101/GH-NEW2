@@ -604,7 +604,8 @@
     "learn_what_happened": "Wat er gebeurde",
     "learn_related_events": "Gerelateerde gebeurtenissen",
     "learn_empty": "Nog niets te tonen",
-    "learn_error": "Details konden niet worden geladen"
+    "learn_error": "Details konden niet worden geladen",
+    "left": "Vertrokken"
   },
   "auth": {
     "sign_in": "Inloggen",

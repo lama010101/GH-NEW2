@@ -604,7 +604,8 @@
     "learn_what_happened": "Что произошло",
     "learn_related_events": "Похожие события",
     "learn_empty": "Пока нечего показать",
-    "learn_error": "Не удалось загрузить данные"
+    "learn_error": "Не удалось загрузить данные",
+    "left": "Вышел"
   },
   "auth": {
     "sign_in": "Войти",

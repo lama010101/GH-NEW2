@@ -604,7 +604,8 @@
     "learn_what_happened": "Ce qui s'est passé",
     "learn_related_events": "Événements liés",
     "learn_empty": "Rien à afficher pour l'instant",
-    "learn_error": "Impossible de charger les détails"
+    "learn_error": "Impossible de charger les détails",
+    "left": "A quitté"
   },
   "auth": {
     "sign_in": "Se connecter",
