@@ -6,13 +6,23 @@
 // Shell conventions (backdrop, role="dialog", Escape, focus handling) follow
 // src/components/HintModal.tsx and src/components/RankModal.tsx.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import {
+  BookOpen,
+  Calendar,
+  Check,
+  Hourglass,
+  Landmark,
+  MapPin,
+  Sparkles,
+  Link2,
+} from "lucide-react";
 import {
   formatDistance,
   getDistanceUnitPreference,
 } from "@/lib/distance";
-import type { LearnClueItem, LearnListItem, LearnMode } from "@/core/learnTypes";
+import type { LearnClueItem, LearnMode } from "@/core/learnTypes";
 import { splitClueList } from "@/core/learnFormat";
 import { useEventLearn } from "./useEventLearn";
 import styles from "./EventLearnModal.module.css";
@@ -65,11 +75,6 @@ export function EventLearnModal({
   const yearLabel = (y: number): string =>
     y < 0 ? `${Math.abs(y)} ${t("bc_suffix")}` : `${y}`;
 
-  const itemText = (item: LearnListItem): string =>
-    [item.title, yearLabel(item.year), item.location]
-      .filter((p): p is string => p != null && p !== "")
-      .join(" · ");
-
   const data = state.status === "success" ? state.data : null;
   // Fetched description wins once loaded; the passed round description fills
   // in while loading / on error / when the fetched event has none.
@@ -92,20 +97,29 @@ export function EventLearnModal({
     return item.content;
   };
 
-  const categoryItems: { key: string; label: string; text: string }[] = [];
+  // "Remote landmark" is intentionally not shown — only nearby context.
+  const categoryItems: {
+    key: string;
+    label: string;
+    text: string;
+    icon: ReactNode;
+    tone: "when" | "where";
+  }[] = [];
   if (data) {
     const push = (
       key: string,
       label: string,
       item: LearnClueItem | null,
-      kind: "when" | "where"
+      tone: "when" | "where",
+      icon: ReactNode
     ) => {
-      if (item) categoryItems.push({ key, label, text: clueText(item, kind) });
+      if (item) {
+        categoryItems.push({ key, label, text: clueText(item, tone), icon, tone });
+      }
     };
-    push("historical", t("hint_historical_event"), data.historicalEvent, "when");
-    push("contemporary", t("hint_contemporary_event"), data.contemporaryEvent, "when");
-    push("remote", t("hint_remote_landmark"), data.remoteLandmark, "where");
-    push("nearby", t("hint_nearby_landmark"), data.nearbyLandmark, "where");
+    push("historical", t("hint_historical_event"), data.historicalEvent, "when", <Hourglass size={14} />);
+    push("contemporary", t("hint_contemporary_event"), data.contemporaryEvent, "when", <Calendar size={14} />);
+    push("nearby", t("hint_nearby_landmark"), data.nearbyLandmark, "where", <Landmark size={14} />);
   }
   const hasRelated =
     categoryItems.length > 0 || (data?.related.length ?? 0) > 0;
@@ -121,7 +135,10 @@ export function EventLearnModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.header}>
-          <div className={styles.title}>{t("learn_title")}</div>
+          <div className={styles.title}>
+            <BookOpen size={16} />
+            {t("learn_title")}
+          </div>
           <button
             ref={closeRef}
             type="button"
@@ -152,9 +169,12 @@ export function EventLearnModal({
           ) : null}
 
           {whatHappened ? (
-            <section className={styles.section}>
-              <div className={styles.sectionTitle}>
-                {t("learn_what_happened")}
+            <section className={`${styles.card} ${styles.cardStory}`}>
+              <div className={styles.cardHead}>
+                <span className={styles.iconBadge}>
+                  <BookOpen size={16} />
+                </span>
+                <h3 className={styles.cardTitle}>{t("learn_what_happened")}</h3>
               </div>
               <p className={styles.description}>{whatHappened}</p>
             </section>
@@ -163,14 +183,18 @@ export function EventLearnModal({
           {data ? (
             <>
               {yearItems.length > 0 ? (
-                <section className={styles.section}>
-                  <div className={styles.sectionTitle}>
-                    {t("learn_find_year")}
+                <section className={`${styles.card} ${styles.cardWhen}`}>
+                  <div className={styles.cardHead}>
+                    <span className={styles.iconBadge}>
+                      <Calendar size={16} />
+                    </span>
+                    <h3 className={styles.cardTitle}>{t("learn_find_year")}</h3>
                   </div>
-                  <ul className={styles.list}>
+                  <ul className={styles.clueList}>
                     {yearItems.map((item, i) => (
-                      <li key={i} className={styles.listItem}>
-                        {item}
+                      <li key={i} className={styles.clue}>
+                        <Check size={14} className={styles.clueIcon} />
+                        <span>{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -178,14 +202,20 @@ export function EventLearnModal({
               ) : null}
 
               {locationItems.length > 0 ? (
-                <section className={styles.section}>
-                  <div className={styles.sectionTitle}>
-                    {t("learn_find_location")}
+                <section className={`${styles.card} ${styles.cardWhere}`}>
+                  <div className={styles.cardHead}>
+                    <span className={styles.iconBadge}>
+                      <MapPin size={16} />
+                    </span>
+                    <h3 className={styles.cardTitle}>
+                      {t("learn_find_location")}
+                    </h3>
                   </div>
-                  <ul className={styles.list}>
+                  <ul className={styles.clueList}>
                     {locationItems.map((item, i) => (
-                      <li key={i} className={styles.listItem}>
-                        {item}
+                      <li key={i} className={styles.clue}>
+                        <Check size={14} className={styles.clueIcon} />
+                        <span>{item}</span>
                       </li>
                     ))}
                   </ul>
@@ -193,16 +223,27 @@ export function EventLearnModal({
               ) : null}
 
               {hasRelated ? (
-                <section className={styles.section}>
-                  <div className={styles.sectionTitle}>
-                    {t("learn_related_to")}
+                <section className={styles.related}>
+                  <div className={styles.relatedHead}>
+                    <Link2 size={14} />
+                    <h3 className={styles.relatedTitle}>
+                      {t("learn_related_to")}
+                    </h3>
                   </div>
                   {categoryItems.length > 0 ? (
-                    <ul className={styles.hintList}>
+                    <ul className={styles.miniGrid}>
                       {categoryItems.map((c) => (
-                        <li key={c.key} className={styles.hintItem}>
-                          <span className={styles.hintTier}>{c.label}</span>
-                          <span className={styles.hintContent}>{c.text}</span>
+                        <li
+                          key={c.key}
+                          className={`${styles.miniCard} ${
+                            c.tone === "when" ? styles.miniWhen : styles.miniWhere
+                          }`}
+                        >
+                          <span className={styles.miniLabel}>
+                            {c.icon}
+                            {c.label}
+                          </span>
+                          <span className={styles.miniText}>{c.text}</span>
                         </li>
                       ))}
                     </ul>
@@ -210,14 +251,28 @@ export function EventLearnModal({
                   {data.related.length > 0 ? (
                     <div className={styles.subBlock}>
                       <div className={styles.subTitle}>
+                        <Sparkles size={12} />
                         {relatedCategory
                           ? `${t("learn_related_events")} · ${relatedCategory}`
                           : t("learn_related_events")}
                       </div>
-                      <ul className={styles.list}>
+                      <ul className={styles.miniGrid}>
                         {data.related.map((item) => (
-                          <li key={item.id} className={styles.listItem}>
-                            {itemText(item)}
+                          <li key={item.id} className={styles.eventCard}>
+                            <span className={styles.yearChip}>
+                              {yearLabel(item.year)}
+                            </span>
+                            <span className={styles.eventBody}>
+                              <span className={styles.eventTitle}>
+                                {item.title}
+                              </span>
+                              {item.location ? (
+                                <span className={styles.eventLoc}>
+                                  <MapPin size={11} />
+                                  {item.location}
+                                </span>
+                              ) : null}
+                            </span>
                           </li>
                         ))}
                       </ul>

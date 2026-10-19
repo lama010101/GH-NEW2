@@ -39,6 +39,9 @@
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
   font-size: var(--font-sm);
   letter-spacing: 0.06em;
@@ -103,18 +106,110 @@
   cursor: pointer;
 }
 
-.section {
+/* Cards: one per section, tinted by tone (story = neutral, when = gold,
+   where = blue). Tints use the --gh-*-rgb triplets so they follow the theme. */
+.card {
+  --tone-rgb: 255, 255, 255;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(var(--tone-rgb), 0.08);
+  border: 0.5px solid rgba(var(--tone-rgb), 0.28);
+  border-left: 3px solid rgba(var(--tone-rgb), 0.85);
+}
+
+.cardStory {
+  --tone-rgb: 148, 163, 184;
+}
+
+.cardWhen {
+  --tone-rgb: var(--gh-gold-rgb);
+}
+
+.cardWhere {
+  --tone-rgb: var(--gh-blue-rgb);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.sectionTitle {
+.iconBadge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--tone-rgb), 0.18);
+  color: rgb(var(--tone-rgb));
+}
+
+.cardTitle {
+  margin: 0;
   font-size: var(--font-xs);
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  color: var(--gh-modal-text-primary);
+}
+
+.description {
+  margin: 0;
+  font-size: var(--font-sm);
+  line-height: 1.55;
   color: var(--gh-modal-text-secondary);
+}
+
+.clueList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clue {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--font-sm);
+  line-height: 1.4;
+  color: var(--gh-modal-text-primary);
+}
+
+.clueIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: rgb(var(--tone-rgb));
+}
+
+/* Related block: heading + mini cards */
+.related {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.relatedHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gh-modal-text-secondary);
+}
+
+.relatedTitle {
+  margin: 0;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .subBlock {
@@ -124,55 +219,101 @@
 }
 
 .subTitle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--gh-modal-text-muted);
 }
 
-.hintList,
-.list {
+.miniGrid {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
-.hintItem {
-  background: var(--gh-modal-input-bg);
-  border: 0.5px solid var(--gh-modal-divider);
-  border-radius: 10px;
-  padding: 9px 12px;
+.miniCard {
+  --tone-rgb: 255, 255, 255;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--gh-modal-input-bg);
+  border: 0.5px solid var(--gh-modal-divider);
+  border-left: 3px solid rgba(var(--tone-rgb), 0.75);
 }
 
-.hintTier {
+.miniWhen {
+  --tone-rgb: var(--gh-gold-rgb);
+}
+
+.miniWhere {
+  --tone-rgb: var(--gh-blue-rgb);
+}
+
+.miniLabel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: var(--font-2xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--gh-modal-text-secondary);
+  color: rgb(var(--tone-rgb));
 }
 
-.hintContent {
+.miniText {
   font-size: var(--font-sm);
-  color: var(--gh-modal-text-primary);
   line-height: 1.4;
-}
-
-.description {
-  margin: 0;
-  font-size: var(--font-sm);
-  line-height: 1.5;
-  color: var(--gh-modal-text-secondary);
-}
-
-.listItem {
-  font-size: var(--font-sm);
   color: var(--gh-modal-text-primary);
-  line-height: 1.4;
-  padding: 4px 0;
+}
+
+.eventCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--gh-modal-input-bg);
+  border: 0.5px solid var(--gh-modal-divider);
+}
+
+.yearChip {
+  flex-shrink: 0;
+  min-width: 52px;
+  text-align: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--gh-gold);
+  background: var(--gh-gold-chip-bg);
+  border: 0.5px solid var(--gh-gold-chip-border);
+}
+
+.eventBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.eventTitle {
+  font-size: var(--font-sm);
+  line-height: 1.35;
+  color: var(--gh-modal-text-primary);
+}
+
+.eventLoc {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-2xs);
+  color: var(--gh-modal-text-muted);
 }
