@@ -604,7 +604,9 @@
     "learn_find_location": "場所の見つけ方",
     "learn_what_happened": "何が起きたか",
     "learn_related_events": "関連する出来事",
-    "learn_related_to": "この出来事に関連:",
+    "learn_related_to": "近接",
+    "learn_related_location": "関連する場所",
+    "learn_this_event": "このイベント",
     "learn_error": "詳細を読み込めませんでした",
     "learn_cta": "この出来事について"
   },

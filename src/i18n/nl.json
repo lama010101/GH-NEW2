@@ -604,7 +604,9 @@
     "learn_find_location": "Zo vind je de plek",
     "learn_what_happened": "Wat er gebeurde",
     "learn_related_events": "Gerelateerde gebeurtenissen",
-    "learn_related_to": "Gerelateerd aan deze gebeurtenis:",
+    "learn_related_to": "In de buurt",
+    "learn_related_location": "Gerelateerde locatie",
+    "learn_this_event": "Deze gebeurtenis",
     "learn_error": "Details konden niet worden geladen",
     "learn_cta": "Over deze gebeurtenis"
   },

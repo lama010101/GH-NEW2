@@ -604,7 +604,9 @@
     "learn_find_location": "Comment trouver le lieu",
     "learn_what_happened": "Ce qui s'est passé",
     "learn_related_events": "Événements liés",
-    "learn_related_to": "En lien avec cet événement :",
+    "learn_related_to": "À proximité",
+    "learn_related_location": "Lieu associé",
+    "learn_this_event": "Cet événement",
     "learn_error": "Impossible de charger les détails",
     "learn_cta": "À propos de cet événement"
   },

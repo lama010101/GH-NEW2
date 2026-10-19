@@ -7,17 +7,36 @@ import { describe, expect, it } from "vitest";
 import { learnModeForSession } from "@/core/learnTypes";
 import {
   computeExcludedEventIds,
-  rankRelated,
+  haversineKm,
+  rankByLocation,
+  rankTimeline,
   sanitizeHintMetadata,
   type LearnCandidate,
+  type LearnSelf,
 } from "./learnEvent";
 
 const cand = (
   id: string,
   year: number,
-  category: string | null = "war",
-  location: string | null = `L-${id}`
-): LearnCandidate => ({ id, title: `T-${id}`, year, category, location });
+  lat: number | null = null,
+  lng: number | null = null
+): LearnCandidate => ({
+  id,
+  title: `T-${id}`,
+  year,
+  location: `L-${id}`,
+  lat,
+  lng,
+});
+
+const selfAt = (year: number, lat: number | null = 0, lng: number | null = 0): LearnSelf => ({
+  id: "self",
+  title: "T-self",
+  year,
+  location: "L-self",
+  lat,
+  lng,
+});
 
 const NO_EXCLUDED = new Set<string>();
 
@@ -120,72 +139,116 @@ describe("computeExcludedEventIds", () => {
   });
 });
 
-describe("rankRelated", () => {
-  const self = { id: "self", year: 1900, category: "war" };
+describe("rankTimeline", () => {
+  const self = selfAt(1900);
 
-  it("keeps only same-category events, excludes self", () => {
-    const out = rankRelated(
-      [cand("a", 1901, "war"), cand("b", 1899, "art"), cand("self", 1900, "war")],
+  it("places current between 2 newer and 2 older, newest first", () => {
+    const out = rankTimeline(
+      [
+        cand("a", 1850),
+        cand("b", 1890),
+        cand("c", 1910),
+        cand("d", 1950),
+        cand("e", 1700),
+        cand("f", 2000),
+      ],
       self,
       NO_EXCLUDED
     );
-    expect(out.map((i) => i.id)).toEqual(["a"]);
+    expect(out.map((i) => i.id)).toEqual(["d", "c", "self", "b", "a"]);
+    expect(out.filter((i) => i.isCurrent).map((i) => i.id)).toEqual(["self"]);
   });
 
-  it("orders by |year diff| asc then title asc", () => {
-    const out = rankRelated(
-      [cand("b", 1905), cand("a", 1905), cand("c", 1890), cand("d", 1901)],
-      self,
-      NO_EXCLUDED
-    );
-    // |diff|: d=1, a=b=5 (title tie-break), c=10
-    expect(out.map((i) => i.id)).toEqual(["d", "a", "b", "c"]);
+  it("returns fewer items when one side is short", () => {
+    const out = rankTimeline([cand("a", 1890)], self, NO_EXCLUDED);
+    expect(out.map((i) => i.id)).toEqual(["self", "a"]);
   });
 
-  it("drops excluded (unfinished same-session) ids", () => {
-    const out = rankRelated(
-      [cand("x", 1900), cand("y", 1901)],
+  it("only the current event when there are no candidates", () => {
+    expect(rankTimeline([], self, NO_EXCLUDED).map((i) => i.id)).toEqual(["self"]);
+  });
+
+  it("drops excluded ids and the self duplicate, dedupes repeated ids", () => {
+    const out = rankTimeline(
+      [cand("x", 1901), cand("y", 1902), cand("y", 1902), cand("self", 1900)],
       self,
       new Set(["x"])
     );
-    expect(out.map((i) => i.id)).toEqual(["y"]);
+    expect(out.map((i) => i.id)).toEqual(["y", "self"]);
   });
 
-  it("caps at limit (4)", () => {
-    const out = rankRelated(
-      ["a", "b", "c", "d", "e", "f"].map((id, i) => cand(id, 1900 + i)),
+  it("same-year events count as older and tie-break by title", () => {
+    const out = rankTimeline(
+      [cand("b", 1900), cand("a", 1900), cand("c", 1900)],
       self,
       NO_EXCLUDED
     );
-    expect(out).toHaveLength(4);
+    expect(out.map((i) => i.id)).toEqual(["self", "a", "b"]);
   });
 
-  it("null self category → empty", () => {
-    const out = rankRelated(
-      [cand("a", 1900)],
-      { id: "self", year: 1900, category: null },
+  it("items carry id/title/year/location/isCurrent only", () => {
+    const out = rankTimeline([cand("a", 1890)], self, NO_EXCLUDED);
+    expect(out[1]).toEqual({
+      id: "a",
+      title: "T-a",
+      year: 1890,
+      location: "L-a",
+      isCurrent: false,
+    });
+  });
+});
+
+describe("haversineKm", () => {
+  it("is 0 for identical points and ~111km per degree of latitude", () => {
+    expect(haversineKm({ lat: 10, lng: 10 }, { lat: 10, lng: 10 })).toBe(0);
+    const d = haversineKm({ lat: 0, lng: 0 }, { lat: 1, lng: 0 });
+    expect(d).toBeGreaterThan(110);
+    expect(d).toBeLessThan(112);
+  });
+});
+
+describe("rankByLocation", () => {
+  const self = selfAt(1900, 0, 0);
+
+  it("returns current + 4 closest, current first, nearest first", () => {
+    const out = rankByLocation(
+      [
+        cand("far", 1800, 40, 40),
+        cand("n1", 1800, 1, 0),
+        cand("n3", 1800, 3, 0),
+        cand("n2", 1800, 2, 0),
+        cand("n4", 1800, 4, 0),
+        cand("n5", 1800, 5, 0),
+      ],
+      self,
+      NO_EXCLUDED
+    );
+    expect(out.map((p) => p.id)).toEqual(["self", "n1", "n2", "n3", "n4"]);
+    expect(out[0]).toMatchObject({ isCurrent: true, km: 0, lat: 0, lng: 0 });
+    expect(out[1].isCurrent).toBe(false);
+    expect(out[1].km).toBe(111);
+  });
+
+  it("skips candidates without coordinates and excluded ids", () => {
+    const out = rankByLocation(
+      [cand("nocoord", 1800), cand("x", 1800, 1, 0), cand("y", 1800, 2, 0)],
+      self,
+      new Set(["x"])
+    );
+    expect(out.map((p) => p.id)).toEqual(["self", "y"]);
+  });
+
+  it("empty when the current event has no coordinates", () => {
+    const out = rankByLocation(
+      [cand("a", 1800, 1, 1)],
+      selfAt(1900, null, null),
       NO_EXCLUDED
     );
     expect(out).toEqual([]);
   });
 
-  it("list items carry id/title/year/category/location only (no hints, no description, no slug)", () => {
-    const out = rankRelated([cand("a", 1901)], self, NO_EXCLUDED);
-    expect(out[0]).toEqual({
-      id: "a",
-      title: "T-a",
-      year: 1901,
-      category: "war",
-      location: "L-a",
-    });
-  });
-
-  it("null candidate location passes through as null", () => {
-    const out = rankRelated(
-      [cand("a", 1901, "war", null)],
-      self,
-      NO_EXCLUDED
-    );
-    expect(out[0].location).toBeNull();
+  it("current event alone when nothing else has coordinates", () => {
+    const out = rankByLocation([cand("a", 1800)], self, NO_EXCLUDED);
+    expect(out.map((p) => p.id)).toEqual(["self"]);
   });
 });

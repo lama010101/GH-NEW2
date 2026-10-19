@@ -21,8 +21,9 @@ import { dbPool } from "./db";
 import type {
   EventLearnResponse,
   LearnClueItem,
-  LearnListItem,
+  LearnMapPoint,
   LearnMode,
+  LearnTimelineItem,
 } from "@/core/learnTypes";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -82,45 +83,140 @@ export type LearnCandidate = {
   id: string;
   title: string;
   year: number;
-  category: string | null;
   /** locations.display_name via LEFT JOIN locations; null when no row. */
   location: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
-function byYearDiffThenTitle(selfYear: number) {
-  return (a: LearnCandidate, b: LearnCandidate): number => {
-    const da = Math.abs(a.year - selfYear);
-    const db = Math.abs(b.year - selfYear);
-    if (da !== db) return da - db;
-    return a.title.localeCompare(b.title);
-  };
+export type LearnSelf = {
+  id: string;
+  title: string;
+  year: number;
+  location: string | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+/** Great-circle distance in km (haversine). */
+export function haversineKm(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number }
+): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const la1 = (a.lat * Math.PI) / 180;
+  const la2 = (b.lat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-function toListItem(c: LearnCandidate): LearnListItem {
+/** Candidates minus self, excluded ids and duplicate ids (multi-row joins). */
+function eligible(
+  candidates: readonly LearnCandidate[],
+  selfId: string,
+  excluded: ReadonlySet<string>
+): LearnCandidate[] {
+  const seen = new Set<string>();
+  const out: LearnCandidate[] = [];
+  for (const c of candidates) {
+    if (c.id === selfId || excluded.has(c.id) || seen.has(c.id)) continue;
+    seen.add(c.id);
+    out.push(c);
+  }
+  return out;
+}
+
+function toTimelineItem(
+  c: Pick<LearnCandidate, "id" | "title" | "year" | "location">,
+  isCurrent: boolean
+): LearnTimelineItem {
   return {
     id: c.id,
     title: c.title,
     year: c.year,
-    category: c.category,
     location: c.location,
+    isCurrent,
   };
 }
 
-/** Same category, excluding self + excluded ids, |year diff| asc then title. */
-export function rankRelated(
+/**
+ * Timeline around the current event: the `perSide` closest older events
+ * (year <= self year), the current event, and the `perSide` closest newer
+ * events (year > self year), ordered newest -> oldest. Excluded ids never
+ * appear. Ties on year break by title.
+ */
+export function rankTimeline(
   candidates: readonly LearnCandidate[],
-  self: { id: string; year: number; category: string | null },
+  self: LearnSelf,
+  excluded: ReadonlySet<string>,
+  perSide = 2
+): LearnTimelineItem[] {
+  const pool = eligible(candidates, self.id, excluded);
+  const byTitle = (a: LearnCandidate, b: LearnCandidate) =>
+    a.title.localeCompare(b.title);
+  const older = pool
+    .filter((c) => c.year <= self.year)
+    .sort((a, b) => b.year - a.year || byTitle(a, b))
+    .slice(0, perSide);
+  const newer = pool
+    .filter((c) => c.year > self.year)
+    .sort((a, b) => a.year - b.year || byTitle(a, b))
+    .slice(0, perSide);
+  return [
+    ...newer.map((c) => toTimelineItem(c, false)),
+    toTimelineItem(self, true),
+    ...older.map((c) => toTimelineItem(c, false)),
+  ].sort((a, b) => b.year - a.year);
+}
+
+/**
+ * Map pins: the current event (km 0) + the `limit` events closest by
+ * great-circle distance. Only events with coordinates qualify; returns []
+ * when the current event itself has none.
+ */
+export function rankByLocation(
+  candidates: readonly LearnCandidate[],
+  self: LearnSelf,
   excluded: ReadonlySet<string>,
   limit = 4
-): LearnListItem[] {
-  if (self.category == null) return [];
-  return candidates
-    .filter(
-      (c) => c.id !== self.id && !excluded.has(c.id) && c.category === self.category
-    )
-    .sort(byYearDiffThenTitle(self.year))
+): LearnMapPoint[] {
+  if (self.lat == null || self.lng == null) return [];
+  const origin = { lat: self.lat, lng: self.lng };
+  const near = eligible(candidates, self.id, excluded)
+    .filter((c) => c.lat != null && c.lng != null)
+    .map((c) => ({
+      c,
+      km: haversineKm(origin, { lat: c.lat as number, lng: c.lng as number }),
+    }))
+    .sort((a, b) => a.km - b.km || a.c.title.localeCompare(b.c.title))
     .slice(0, limit)
-    .map(toListItem);
+    .map(({ c, km }) => ({
+      id: c.id,
+      title: c.title,
+      year: c.year,
+      location: c.location,
+      lat: c.lat as number,
+      lng: c.lng as number,
+      km: Math.round(km),
+      isCurrent: false,
+    }));
+  return [
+    {
+      id: self.id,
+      title: self.title,
+      year: self.year,
+      location: self.location,
+      lat: self.lat,
+      lng: self.lng,
+      km: 0,
+      isCurrent: true,
+    },
+    ...near,
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -190,8 +286,6 @@ export type EventLearnResult =
   | { status: "forbidden" }
   | { status: "not_found" };
 
-const RELATED_LIMIT = 4;
-
 export async function loadEventLearn(params: {
   eventId: string;
   gameId: string;
@@ -240,12 +334,18 @@ export async function loadEventLearn(params: {
 
   const eventRes = await dbPool.query<{
     description: string | null;
+    title: string;
     event_year: number;
-    category: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    display_name: string | null;
   }>(
-    `SELECT e.description, e.event_year, e.category
+    `SELECT e.description, e.title, e.event_year,
+            l.latitude, l.longitude, l.display_name
      FROM events e
-     WHERE e.id = $1::uuid AND e.status = 'validated'`,
+     LEFT JOIN locations l ON l.event_id = e.id
+     WHERE e.id = $1::uuid AND e.status = 'validated'
+     LIMIT 1`,
     [eventId]
   );
   const row = eventRes.rows[0];
@@ -265,14 +365,13 @@ export async function loadEventLearn(params: {
      ORDER BY tier ASC, display_order ASC`,
     [eventId]
   );
-  // Tier map: when tier2 = historical event, when tier4 = contemporary event,
-  // where tier4 = nearby landmark (each with km/years metadata). where tier2
-  // (remote landmark) is intentionally not shipped. Tier 5 content is ONE
+  // Tier map: when tier4 = contemporary event, where tier4 = nearby landmark
+  // (each with km/years metadata). when tier2 (historical event) and where
+  // tier2 (remote landmark) are intentionally not shipped. Tier 5 content is ONE
   // comma-separated clue string per type (split client side by splitClueList).
   // Tiers 1/3 are not part of the new contract.
   let yearClues: string | null = null;
   let locationClues: string | null = null;
-  let historicalEvent: LearnClueItem | null = null;
   let contemporaryEvent: LearnClueItem | null = null;
   let nearbyLandmark: LearnClueItem | null = null;
   for (const h of hintsRes.rows) {
@@ -289,22 +388,20 @@ export async function loadEventLearn(params: {
       content: h.content,
       ...(metadata ? { metadata } : {}),
     };
-    if (h.type === "when") {
-      if (h.tier === 2) historicalEvent = historicalEvent ?? item;
-      else contemporaryEvent = contemporaryEvent ?? item;
-    } else if (h.tier === 4) {
-      nearbyLandmark = nearbyLandmark ?? item;
-    }
+    if (h.tier !== 4) continue;
+    if (h.type === "when") contemporaryEvent = contemporaryEvent ?? item;
+    else nearbyLandmark = nearbyLandmark ?? item;
   }
 
   const candidatesRes = await dbPool.query<{
     id: string;
     title: string;
     event_year: number;
-    category: string | null;
     display_name: string | null;
+    latitude: number | null;
+    longitude: number | null;
   }>(
-    `SELECT e.id, e.title, e.event_year, e.category, l.display_name
+    `SELECT e.id, e.title, e.event_year, l.display_name, l.latitude, l.longitude
      FROM events e
      LEFT JOIN locations l ON l.event_id = e.id
      WHERE e.status = 'validated' AND e.id <> $1::uuid`,
@@ -314,27 +411,31 @@ export async function loadEventLearn(params: {
     id: c.id,
     title: c.title,
     year: c.event_year,
-    category: c.category,
     location: c.display_name,
+    lat: c.latitude,
+    lng: c.longitude,
   }));
+  const self: LearnSelf = {
+    id: eventId,
+    title: row.title,
+    year: row.event_year,
+    location: row.display_name,
+    lat: row.latitude,
+    lng: row.longitude,
+  };
 
   const data: EventLearnResponse = {
     description: row.description,
     yearClues,
     locationClues,
-    historicalEvent,
     contemporaryEvent,
     nearbyLandmark,
-    related: rankRelated(
-      candidates,
-      { id: eventId, year: row.event_year, category: row.category },
-      excluded,
-      RELATED_LIMIT
-    ),
+    timeline: rankTimeline(candidates, self, excluded),
+    mapPoints: rankByLocation(candidates, self, excluded),
   };
 
   // Defense in depth: never ship an unfinished same-session event id.
-  for (const item of data.related) {
+  for (const item of [...data.timeline, ...data.mapPoints]) {
     if (excluded.has(item.id)) {
       throw new Error("[learnEvent] exclusion invariant violated");
     }

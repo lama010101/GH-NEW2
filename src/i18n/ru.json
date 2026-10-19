@@ -604,7 +604,9 @@
     "learn_find_location": "Как найти место",
     "learn_what_happened": "Что произошло",
     "learn_related_events": "Похожие события",
-    "learn_related_to": "Связано с этим событием:",
+    "learn_related_to": "Поблизости",
+    "learn_related_location": "Связанное место",
+    "learn_this_event": "Это событие",
     "learn_error": "Не удалось загрузить данные",
     "learn_cta": "Об этом событии"
   },

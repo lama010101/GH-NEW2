@@ -604,7 +604,9 @@
     "learn_find_location": "How to find the location",
     "learn_what_happened": "What happened",
     "learn_related_events": "Related events",
-    "learn_related_to": "Related to this event:",
+    "learn_related_to": "Proximate",
+    "learn_related_location": "Related location",
+    "learn_this_event": "This event",
     "learn_error": "Couldn't load event details",
     "learn_cta": "About this event"
   },
