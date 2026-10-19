@@ -266,15 +266,14 @@ export async function loadEventLearn(params: {
     [eventId]
   );
   // Tier map: when tier2 = historical event, when tier4 = contemporary event,
-  // where tier2 = remote landmark, where tier4 = nearby landmark (each with
-  // km/years metadata). Tier 5 content is ONE comma-separated clue string per
-  // type (split client side by splitClueList). Tiers 1/3 are not part of the
-  // new contract.
+  // where tier4 = nearby landmark (each with km/years metadata). where tier2
+  // (remote landmark) is intentionally not shipped. Tier 5 content is ONE
+  // comma-separated clue string per type (split client side by splitClueList).
+  // Tiers 1/3 are not part of the new contract.
   let yearClues: string | null = null;
   let locationClues: string | null = null;
   let historicalEvent: LearnClueItem | null = null;
   let contemporaryEvent: LearnClueItem | null = null;
-  let remoteLandmark: LearnClueItem | null = null;
   let nearbyLandmark: LearnClueItem | null = null;
   for (const h of hintsRes.rows) {
     if (h.tier === 5) {
@@ -293,9 +292,8 @@ export async function loadEventLearn(params: {
     if (h.type === "when") {
       if (h.tier === 2) historicalEvent = historicalEvent ?? item;
       else contemporaryEvent = contemporaryEvent ?? item;
-    } else {
-      if (h.tier === 2) remoteLandmark = remoteLandmark ?? item;
-      else nearbyLandmark = nearbyLandmark ?? item;
+    } else if (h.tier === 4) {
+      nearbyLandmark = nearbyLandmark ?? item;
     }
   }
 
@@ -326,7 +324,6 @@ export async function loadEventLearn(params: {
     locationClues,
     historicalEvent,
     contemporaryEvent,
-    remoteLandmark,
     nearbyLandmark,
     related: rankRelated(
       candidates,

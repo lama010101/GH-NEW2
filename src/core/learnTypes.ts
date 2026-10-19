@@ -53,6 +53,11 @@ export type LearnListItem = {
   location: string | null;
 };
 
+// FUTURE (product owner, 2026-10-19): the AI players will be asked to explain
+// HOW they guessed the year / location of each event. That reasoning must be
+// stored and surfaced in this modal (extend EventLearnResponse + the
+// "How to find the year/location" cards) so users learn to guess better.
+//
 // LEARN-BUILD-ABOUTEVENT-RESTRUCTURE-1018-011 — "About this event" contract:
 // fixed section order What happened / How to find the year / How to find the
 // location / Related to this event. yearClues/locationClues are ONE
@@ -69,8 +74,6 @@ export type EventLearnResponse = {
   historicalEvent: LearnClueItem | null;
   /** when/tier-4 hint row. */
   contemporaryEvent: LearnClueItem | null;
-  /** where/tier-2 hint row. */
-  remoteLandmark: LearnClueItem | null;
   /** where/tier-4 hint row. */
   nearbyLandmark: LearnClueItem | null;
   /** Same-category events; each entry carries category, year and location. */
