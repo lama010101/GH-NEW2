@@ -7,16 +7,17 @@
 // src/components/HintModal.tsx and src/components/RankModal.tsx.
 
 import { useEffect, useRef, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import {
   BookOpen,
   Calendar,
   Check,
-  Hourglass,
   Landmark,
-  MapPin,
-  Sparkles,
   Link2,
+  MapPin,
+  Map as MapIcon,
+  History,
 } from "lucide-react";
 import {
   formatDistance,
@@ -26,6 +27,11 @@ import type { LearnClueItem, LearnMode } from "@/core/learnTypes";
 import { splitClueList } from "@/core/learnFormat";
 import { useEventLearn } from "./useEventLearn";
 import styles from "./EventLearnModal.module.css";
+
+const LearnLocationMap = dynamic(
+  () => import("./LearnLocationMap").then((m) => m.LearnLocationMap),
+  { ssr: false }
+);
 
 export type EventLearnModalProps = {
   open: boolean;
@@ -117,13 +123,12 @@ export function EventLearnModal({
         categoryItems.push({ key, label, text: clueText(item, tone), icon, tone });
       }
     };
-    push("historical", t("hint_historical_event"), data.historicalEvent, "when", <Hourglass size={14} />);
     push("contemporary", t("hint_contemporary_event"), data.contemporaryEvent, "when", <Calendar size={14} />);
     push("nearby", t("hint_nearby_landmark"), data.nearbyLandmark, "where", <Landmark size={14} />);
   }
-  const hasRelated =
-    categoryItems.length > 0 || (data?.related.length ?? 0) > 0;
-  const relatedCategory = data?.related[0]?.category || null;
+  const timeline = data?.timeline ?? [];
+  const mapPoints = data?.mapPoints ?? [];
+  const nearPoints = mapPoints.filter((p) => !p.isCurrent);
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
@@ -222,61 +227,110 @@ export function EventLearnModal({
                 </section>
               ) : null}
 
-              {hasRelated ? (
-                <section className={styles.related}>
-                  <div className={styles.relatedHead}>
-                    <Link2 size={14} />
-                    <h3 className={styles.relatedTitle}>
-                      {t("learn_related_to")}
+              {categoryItems.length > 0 ? (
+                <section className={`${styles.card} ${styles.cardNear}`}>
+                  <div className={styles.cardHead}>
+                    <span className={styles.iconBadge}>
+                      <Link2 size={16} />
+                    </span>
+                    <h3 className={styles.cardTitle}>{t("learn_related_to")}</h3>
+                  </div>
+                  <ul className={styles.miniGrid}>
+                    {categoryItems.map((c) => (
+                      <li
+                        key={c.key}
+                        className={`${styles.miniCard} ${
+                          c.tone === "when" ? styles.miniWhen : styles.miniWhere
+                        }`}
+                      >
+                        <span className={styles.miniLabel}>
+                          {c.icon}
+                          {c.label}
+                        </span>
+                        <span className={styles.miniText}>{c.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
+              {timeline.length > 1 ? (
+                <section className={`${styles.card} ${styles.cardTimeline}`}>
+                  <div className={styles.cardHead}>
+                    <span className={styles.iconBadge}>
+                      <History size={16} />
+                    </span>
+                    <h3 className={styles.cardTitle}>
+                      {t("learn_related_events")}
                     </h3>
                   </div>
-                  {categoryItems.length > 0 ? (
+                  <ol className={styles.timeline}>
+                    {timeline.map((item) => (
+                      <li
+                        key={item.id}
+                        className={`${styles.tlItem} ${
+                          item.isCurrent ? styles.tlCurrent : ""
+                        }`}
+                        aria-current={item.isCurrent ? "true" : undefined}
+                      >
+                        <span className={styles.tlYear}>
+                          {yearLabel(item.year)}
+                        </span>
+                        <span className={styles.tlDot} aria-hidden="true" />
+                        <span className={styles.tlBody}>
+                          {item.isCurrent ? (
+                            <span className={styles.tlBadge}>
+                              {t("learn_this_event")}
+                            </span>
+                          ) : null}
+                          <span className={styles.tlTitle}>{item.title}</span>
+                          {item.location ? (
+                            <span className={styles.eventLoc}>
+                              <MapPin size={11} />
+                              {item.location}
+                            </span>
+                          ) : null}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ) : null}
+
+              {mapPoints.length > 0 ? (
+                <section className={`${styles.card} ${styles.cardMap}`}>
+                  <div className={styles.cardHead}>
+                    <span className={styles.iconBadge}>
+                      <MapIcon size={16} />
+                    </span>
+                    <h3 className={styles.cardTitle}>
+                      {t("learn_related_location")}
+                    </h3>
+                  </div>
+                  <div className={styles.mapWrap}>
+                    <LearnLocationMap points={mapPoints} yearLabel={yearLabel} />
+                  </div>
+                  {nearPoints.length > 0 ? (
                     <ul className={styles.miniGrid}>
-                      {categoryItems.map((c) => (
-                        <li
-                          key={c.key}
-                          className={`${styles.miniCard} ${
-                            c.tone === "when" ? styles.miniWhen : styles.miniWhere
-                          }`}
-                        >
-                          <span className={styles.miniLabel}>
-                            {c.icon}
-                            {c.label}
+                      {nearPoints.map((p) => (
+                        <li key={p.id} className={styles.eventCard}>
+                          <span className={styles.kmChip}>
+                            {formatDistance(p.km, distanceUnit)}
                           </span>
-                          <span className={styles.miniText}>{c.text}</span>
+                          <span className={styles.eventBody}>
+                            <span className={styles.eventTitle}>
+                              {p.title} · {yearLabel(p.year)}
+                            </span>
+                            {p.location ? (
+                              <span className={styles.eventLoc}>
+                                <MapPin size={11} />
+                                {p.location}
+                              </span>
+                            ) : null}
+                          </span>
                         </li>
                       ))}
                     </ul>
-                  ) : null}
-                  {data.related.length > 0 ? (
-                    <div className={styles.subBlock}>
-                      <div className={styles.subTitle}>
-                        <Sparkles size={12} />
-                        {relatedCategory
-                          ? `${t("learn_related_events")} · ${relatedCategory}`
-                          : t("learn_related_events")}
-                      </div>
-                      <ul className={styles.miniGrid}>
-                        {data.related.map((item) => (
-                          <li key={item.id} className={styles.eventCard}>
-                            <span className={styles.yearChip}>
-                              {yearLabel(item.year)}
-                            </span>
-                            <span className={styles.eventBody}>
-                              <span className={styles.eventTitle}>
-                                {item.title}
-                              </span>
-                              {item.location ? (
-                                <span className={styles.eventLoc}>
-                                  <MapPin size={11} />
-                                  {item.location}
-                                </span>
-                              ) : null}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
                   ) : null}
                 </section>
               ) : null}

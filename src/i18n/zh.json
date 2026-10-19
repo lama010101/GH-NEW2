@@ -604,7 +604,9 @@
     "learn_find_location": "如何推断地点",
     "learn_what_happened": "事件经过",
     "learn_related_events": "相关事件",
-    "learn_related_to": "与此事件相关:",
+    "learn_related_to": "邻近",
+    "learn_related_location": "相关地点",
+    "learn_this_event": "此事件",
     "learn_error": "无法加载事件详情",
     "learn_cta": "关于此事件"
   },

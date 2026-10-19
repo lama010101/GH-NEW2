@@ -44,13 +44,28 @@ export type LearnClueItem = {
   metadata?: { km?: number; years?: number | string };
 };
 
-export type LearnListItem = {
+/** One row of the "Related events" timeline (newest first). */
+export type LearnTimelineItem = {
   id: string;
   title: string;
   year: number;
-  category: string | null;
   /** locations.display_name for the event; null when no location row. */
   location: string | null;
+  /** True for the event being learned about (placed between older/newer). */
+  isCurrent: boolean;
+};
+
+/** One pin of the "Related location" map. */
+export type LearnMapPoint = {
+  id: string;
+  title: string;
+  year: number;
+  location: string | null;
+  lat: number;
+  lng: number;
+  /** Great-circle km from the current event; 0 for the current event. */
+  km: number;
+  isCurrent: boolean;
 };
 
 // FUTURE (product owner, 2026-10-19): the AI players will be asked to explain
@@ -70,12 +85,18 @@ export type EventLearnResponse = {
   yearClues: string | null;
   /** hints.content of the where/tier-5 row, or null when absent. */
   locationClues: string | null;
-  /** when/tier-2 hint row. */
-  historicalEvent: LearnClueItem | null;
   /** when/tier-4 hint row. */
   contemporaryEvent: LearnClueItem | null;
   /** where/tier-4 hint row. */
   nearbyLandmark: LearnClueItem | null;
-  /** Same-category events; each entry carries category, year and location. */
-  related: LearnListItem[];
+  /**
+   * Up to 2 nearest older + the current event + up to 2 nearest newer events,
+   * ordered newest -> oldest. Always contains the current event.
+   */
+  timeline: LearnTimelineItem[];
+  /**
+   * Current event + up to 4 nearest events by distance. Empty when the
+   * current event has no coordinates.
+   */
+  mapPoints: LearnMapPoint[];
 };
