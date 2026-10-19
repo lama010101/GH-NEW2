@@ -24,6 +24,12 @@ const pin = (color: string, active: boolean, current: boolean) => {
   });
 };
 
+// Top-left padding clears the zoom control (~44x76px incl. margins); both
+// sides add ~20px for the enlarged active-pin halo. Bottom-right clears the
+// attribution bar.
+const FIT_PAD_TOP_LEFT: [number, number] = [66, 98];
+const FIT_PAD_BOTTOM_RIGHT: [number, number] = [30, 44];
+
 function FitPoints({ points }: { points: LearnMapPoint[] }) {
   const map = useMap();
   useEffect(() => {
@@ -32,7 +38,11 @@ function FitPoints({ points }: { points: LearnMapPoint[] }) {
     if (ll.length === 1) {
       map.setView(ll[0], 5);
     } else {
-      map.fitBounds(L.latLngBounds(ll), { padding: [28, 28], maxZoom: 9 });
+      map.fitBounds(L.latLngBounds(ll), {
+        paddingTopLeft: FIT_PAD_TOP_LEFT,
+        paddingBottomRight: FIT_PAD_BOTTOM_RIGHT,
+        maxZoom: 9,
+      });
     }
   }, [map, points]);
   return null;
@@ -51,7 +61,10 @@ function PanToActive({
     const p = points.find((x) => x.id === activeId);
     if (!p) return;
     const ll = L.latLng(p.lat, p.lng);
-    if (!map.getBounds().pad(-0.1).contains(ll)) map.panTo(ll);
+    map.panInside(ll, {
+      paddingTopLeft: FIT_PAD_TOP_LEFT,
+      paddingBottomRight: FIT_PAD_BOTTOM_RIGHT,
+    });
   }, [map, points, activeId]);
   return null;
 }
