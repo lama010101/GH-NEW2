@@ -425,6 +425,7 @@ export async function loadEventLearn(params: {
   };
 
   const data: EventLearnResponse = {
+    title: row.title,
     description: row.description,
     yearClues,
     locationClues,

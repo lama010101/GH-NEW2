@@ -6,7 +6,7 @@
 // Shell conventions (backdrop, role="dialog", Escape, focus handling) follow
 // src/components/HintModal.tsx and src/components/RankModal.tsx.
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import {
@@ -25,6 +25,7 @@ import {
 } from "@/lib/distance";
 import type { LearnClueItem, LearnMode } from "@/core/learnTypes";
 import { splitClueList } from "@/core/learnFormat";
+import { pointColor } from "@/core/learnMapColors";
 import { useEventLearn } from "./useEventLearn";
 import styles from "./EventLearnModal.module.css";
 
@@ -57,6 +58,8 @@ export function EventLearnModal({
   const t = useTranslations("game");
   const closeRef = useRef<HTMLButtonElement>(null);
   const { state, refetch } = useEventLearn(open, eventId, gameId, mode);
+  // Entry highlighted on the "Related location" map (list click or pin click).
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   // RankModal focus convention: focus close button on open, restore on close.
   useEffect(() => {
@@ -128,7 +131,6 @@ export function EventLearnModal({
   }
   const timeline = data?.timeline ?? [];
   const mapPoints = data?.mapPoints ?? [];
-  const nearPoints = mapPoints.filter((p) => !p.isCurrent);
 
   return (
     <div className={styles.backdrop} onClick={onClose}>
@@ -156,6 +158,10 @@ export function EventLearnModal({
             </svg>
           </button>
         </div>
+
+        {data?.title ? (
+          <h2 className={styles.eventTitleBar}>{data.title}</h2>
+        ) : null}
 
         <div className={styles.body}>
           {state.status === "loading" || state.status === "idle" ? (
@@ -308,15 +314,31 @@ export function EventLearnModal({
                     </h3>
                   </div>
                   <div className={styles.mapWrap}>
-                    <LearnLocationMap points={mapPoints} yearLabel={yearLabel} />
+                    <LearnLocationMap
+                      points={mapPoints}
+                      yearLabel={yearLabel}
+                      activeId={activeId}
+                      onSelect={setActiveId}
+                    />
                   </div>
-                  {nearPoints.length > 0 ? (
-                    <ul className={styles.miniGrid}>
-                      {nearPoints.map((p) => (
-                        <li key={p.id} className={styles.eventCard}>
-                          <span className={styles.kmChip}>
-                            {formatDistance(p.km, distanceUnit)}
-                          </span>
+                  <ul className={styles.miniGrid}>
+                    {mapPoints.map((p, i) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          className={`${styles.eventCard} ${styles.pointBtn} ${
+                            p.id === activeId ? styles.pointActive : ""
+                          }`}
+                          aria-pressed={p.id === activeId}
+                          style={{
+                            ["--point-color" as string]: pointColor(
+                              p.isCurrent,
+                              i - 1
+                            ),
+                          }}
+                          onClick={() => setActiveId(p.id)}
+                        >
+                          <span className={styles.pointDot} aria-hidden="true" />
                           <span className={styles.eventBody}>
                             <span className={styles.eventTitle}>
                               {p.title} · {yearLabel(p.year)}
@@ -328,10 +350,15 @@ export function EventLearnModal({
                               </span>
                             ) : null}
                           </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
+                          <span className={styles.kmChip}>
+                            {p.isCurrent
+                              ? t("learn_this_event")
+                              : formatDistance(p.km, distanceUnit)}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               ) : null}
             </>
