@@ -79,6 +79,8 @@ export type LearnMapPoint = {
 // comma-separated string each (hints.content of the tier-5 row for that
 // type); the modal splits them via splitClueList (src/core/learnFormat.ts).
 export type EventLearnResponse = {
+  /** events.title — shown at the top of the modal. */
+  title: string | null;
   /** events.description — "What happened". */
   description: string | null;
   /** hints.content of the when/tier-5 row, or null when absent. */
@@ -95,7 +97,8 @@ export type EventLearnResponse = {
    */
   timeline: LearnTimelineItem[];
   /**
-   * Current event + up to 4 nearest events by distance. Empty when the
+   * Current event (always index 0) + up to 4 nearest events by distance.
+   * Empty when the
    * current event has no coordinates.
    */
   mapPoints: LearnMapPoint[];

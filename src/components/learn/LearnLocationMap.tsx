@@ -8,18 +8,21 @@ import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Tooltip, useMap } from "react-leaflet";
 import * as L from "leaflet";
 import type { LearnMapPoint } from "@/core/learnTypes";
+import { pointColor } from "@/core/learnMapColors";
 import "leaflet/dist/leaflet.css";
 
-const pin = (color: string, size: number) =>
-  L.divIcon({
+const pin = (color: string, active: boolean, current: boolean) => {
+  const size = active ? 26 : current ? 20 : 14;
+  const ring = active
+    ? "0 0 0 4px rgba(255,255,255,.55),0 0 0 7px " + color + "66,0 2px 6px rgba(0,0,0,.5)"
+    : "0 2px 4px rgba(0,0,0,.4)";
+  return L.divIcon({
     className: "",
-    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.4)"></div>`,
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:${ring}"></div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
-
-const CURRENT_ICON = pin("#22C55E", 20);
-const NEAR_ICON = pin("#3B82F6", 14);
+};
 
 function FitPoints({ points }: { points: LearnMapPoint[] }) {
   const map = useMap();
@@ -35,12 +38,34 @@ function FitPoints({ points }: { points: LearnMapPoint[] }) {
   return null;
 }
 
+/** Keeps the active pin visible when it is selected from the list. */
+function PanToActive({
+  points,
+  activeId,
+}: {
+  points: LearnMapPoint[];
+  activeId: string | null;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    const p = points.find((x) => x.id === activeId);
+    if (!p) return;
+    const ll = L.latLng(p.lat, p.lng);
+    if (!map.getBounds().pad(-0.1).contains(ll)) map.panTo(ll);
+  }, [map, points, activeId]);
+  return null;
+}
+
 export function LearnLocationMap({
   points,
   yearLabel,
+  activeId,
+  onSelect,
 }: {
   points: LearnMapPoint[];
   yearLabel: (y: number) => string;
+  activeId: string | null;
+  onSelect: (id: string) => void;
 }) {
   const start = points[0];
   return (
@@ -57,18 +82,23 @@ export function LearnLocationMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       />
       <FitPoints points={points} />
-      {points.map((p) => (
+      <PanToActive points={points} activeId={activeId} />
+      {points.map((p, i) => {
+        const active = p.id === activeId;
+        return (
         <Marker
-          key={p.id}
+          key={`${p.id}-${active ? "a" : "i"}`}
           position={[p.lat, p.lng]}
-          icon={p.isCurrent ? CURRENT_ICON : NEAR_ICON}
-          zIndexOffset={p.isCurrent ? 1000 : 0}
+          icon={pin(pointColor(p.isCurrent, i - 1), active, p.isCurrent)}
+          zIndexOffset={active ? 2000 : p.isCurrent ? 1000 : 0}
+          eventHandlers={{ click: () => onSelect(p.id) }}
         >
           <Tooltip direction="top" offset={[0, -8]}>
             {p.title} · {yearLabel(p.year)}
           </Tooltip>
         </Marker>
-      ))}
+        );
+      })}
     </MapContainer>
   );
 }
