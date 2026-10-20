@@ -334,11 +334,6 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
           <button type="button" className={styles.cta} onClick={openStage} disabled={starting}>
             {starting ? t('common.loading') : (<><Play size={16} strokeWidth={2.5} /> {cta}</>)}
           </button>
-          {resume !== null && nextStageRow && (
-            <button type="button" className={styles.ctaGhost} onClick={() => void handleStart()} disabled={starting}>
-              {t('journey.start_new_attempt')}
-            </button>
-          )}
         </div>
       )}
 
