@@ -509,3 +509,10 @@
 .podiumGold .podiumScore {
   font-size: var(--font-base);
 }
+
+.listGap {
+  text-align: center;
+  padding: 6px 0;
+  letter-spacing: 4px;
+  opacity: 0.5;
+}

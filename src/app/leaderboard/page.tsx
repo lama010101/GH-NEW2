@@ -40,6 +40,7 @@ type LeaderboardResponse = {
   ai: boolean;
   friends: boolean;
   rows: LeaderboardEntry[];
+  aroundOwn?: LeaderboardEntry[];
   ownEntry: LeaderboardEntry | null;
 };
 
@@ -54,6 +55,7 @@ function LeaderboardPageInner() {
   const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
 
   const [currentData, setCurrentData] = useState<LeaderboardEntry[] | null>(null);
+  const [aroundData, setAroundData] = useState<LeaderboardEntry[]>([]);
   const [ownEntry, setOwnEntry] = useState<LeaderboardEntry | null>(null);
 
   const [loading, setLoading] = useState(false);
@@ -147,6 +149,9 @@ function LeaderboardPageInner() {
           return { ...e, rank: Number.isNaN(rank) ? i + 1 : rank };
         })
       );
+      setAroundData(
+        (data.aroundOwn ?? []).map((e) => ({ ...e, rank: Number(e.rank) }))
+      );
       setOwnEntry(data.ownEntry);
     } catch {
       setError(t('err_load_failed'));
@@ -186,8 +191,13 @@ function LeaderboardPageInner() {
 
   const ownRow = useMemo(() => {
     if (!playerId) return null;
-    return currentData?.find((r) => r.player_id === playerId) ?? ownEntry ?? null;
-  }, [playerId, currentData, ownEntry]);
+    return (
+      currentData?.find((r) => r.player_id === playerId) ??
+      aroundData.find((r) => r.player_id === playerId) ??
+      ownEntry ??
+      null
+    );
+  }, [playerId, currentData, aroundData, ownEntry]);
 
   const ownRank = ownRow?.rank ?? null;
 
@@ -207,7 +217,7 @@ function LeaderboardPageInner() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  rowRefs.current = useMemo(() => new Map<string, HTMLDivElement>(), [currentData]);
+  rowRefs.current = useMemo(() => new Map<string, HTMLDivElement>(), [currentData, aroundData]);
 
   const podiumSlots = useMemo(() => {
     const { podium } = partitionPodium(currentData ?? []);
@@ -231,6 +241,13 @@ function LeaderboardPageInner() {
     () => partitionPodium(currentData ?? []).list,
     [currentData]
   );
+
+  // Centre the list on the current player once their row is rendered.
+  useEffect(() => {
+    if (loading || !playerId || aroundData.length === 0) return;
+    const row = rowRefs.current.get(playerId);
+    if (row) row.scrollIntoView({ block: 'center' });
+  }, [loading, playerId, aroundData]);
 
   const getRowSubtitle = (entry: LeaderboardEntry): string => {
     if (activeTab === 'overall') {
@@ -407,10 +424,13 @@ function LeaderboardPageInner() {
             )}
 
             <div className={`${styles.card} ${styles.list}`}>
-              {listRows.length === 0 ? (
+              {listRows.length === 0 && aroundData.length === 0 ? (
                 <div className={styles.listEmpty}>{t('no_more_players')}</div>
               ) : (
-                listRows.map((entry) => {
+                [...listRows, ...(aroundData.length > 0 ? [null] : []), ...aroundData].map((entry) => {
+                  if (entry === null) {
+                    return <div key="gap" className={styles.listGap} aria-hidden="true">⋮</div>;
+                  }
                   const isCurrentPlayer = playerId === entry.player_id;
                   const name = entry.display_name ?? t('unknown_player');
                   return (
