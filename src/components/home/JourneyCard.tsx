@@ -25,6 +25,9 @@ import {
   type JourneyProgressRow,
   type JourneyStageRow,
 } from '@/app/journey/_components/journeyStorage'
+import { startJourneyStage } from '@/app/journey/_components/journeyStart'
+import { GuestConversionModal } from '@/app/journey/_components/GuestConversionModal'
+import { useIdentity } from '@/hooks/useIdentity'
 import styles from './JourneyCard.module.css'
 
 type Badge = 'gold' | 'silver' | 'bronze' | 'completion'
@@ -47,6 +50,12 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
     roundIndex: number
     totalRounds: number
   } | null>(null)
+  const [starting, setStarting] = useState(false)
+  const [startError, setStartError] = useState<string | null>(null)
+  const [gateStageNumber, setGateStageNumber] = useState<number | null>(null)
+  const [hasConverted, setHasConverted] = useState(false)
+  const { state: identityState } = useIdentity()
+  const isAnonymous = identityState.status === 'ready' && identityState.isAnonymous
 
   useEffect(() => {
     if (!playerId) return
@@ -140,13 +149,6 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
     ? nextStageRow.theme ?? tGame(journeyStageEraKey(nextStageRow.stage_number, currentYear))
     : null
 
-  const tally = { gold: 0, silver: 0, bronze: 0, completion: 0 }
-  for (const row of progressRows) {
-    if (row.status !== 'completed') continue
-    const badge: Badge = row.best_badge ?? 'completion'
-    tally[badge]++
-  }
-
   const cta = isNew
     ? t('home.journey_start')
     : resume
@@ -155,9 +157,38 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
         ? t('journey.result_play_stage', { number: nextStageRow.stage_number })
         : t('home.journey_view')
 
+  // Direct stage start — same flow /journey's handleStart uses:
+  // guest gate (anonymous player on stage >= 2 → conversion modal), then
+  // startJourneyStage (POST /api/journey/start + sessionStorage marker) →
+  // /practice/{gameId}. The server-side gate in startJourneyPlaythrough
+  // stays authoritative.
+  const handleStart = async () => {
+    if (starting || !nextStageRow) return
+    setStartError(null)
+    if (nextStageRow.stage_number >= 2 && isAnonymous && !hasConverted) {
+      setGateStageNumber(nextStageRow.stage_number)
+      return
+    }
+    setStarting(true)
+    try {
+      const started = await startJourneyStage(nextStageRow.id)
+      router.push(`/practice/${started.gameId}`)
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : t('journey.load_error'))
+      setStarting(false)
+    }
+  }
+
   const openStage = () => {
-    if (nextStageRow) router.push(`/journey/${nextStageRow.id}`)
-    else router.push('/journey')
+    if (!nextStageRow) {
+      router.push('/journey')
+      return
+    }
+    if (resume !== null) {
+      router.push(`/practice/${resume.gameId}`)
+      return
+    }
+    void handleStart()
   }
 
   return (
@@ -186,8 +217,8 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
 
       {/* Tier path — 5-node route map with per-stage badges */}
       {!loadFailed && pathStages.length > 0 && nextStageRow && (
-        <div className={styles.path}>
-          <div className={styles.pathRow}>
+        <button type="button" className={styles.path} onClick={() => router.push('/journey')} aria-label={t('home.journey_view')}>
+          <span className={styles.pathRow}>
             {pathStages.map((s, i) => {
               const row = completedByNumber.get(s)
               const isDone = row !== undefined
@@ -243,8 +274,8 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
                 </span>
               </>
             )}
-          </div>
-        </div>
+          </span>
+        </button>
       )}
 
       {/* Up next */}
@@ -300,37 +331,35 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
 
       {!loadFailed && (nextStageRow || allDone) && (
         <div className={styles.ctaRow}>
-          <button type="button" className={styles.cta} onClick={openStage}>
-            <Play size={16} strokeWidth={2.5} /> {cta}
+          <button type="button" className={styles.cta} onClick={openStage} disabled={starting}>
+            {starting ? t('common.loading') : (<><Play size={16} strokeWidth={2.5} /> {cta}</>)}
           </button>
           {resume !== null && nextStageRow && (
-            <button type="button" className={styles.ctaGhost} onClick={openStage}>
+            <button type="button" className={styles.ctaGhost} onClick={() => void handleStart()} disabled={starting}>
               {t('journey.start_new_attempt')}
             </button>
           )}
         </div>
       )}
 
+      {startError && (
+        <p className={styles.loadError} role="alert">{startError}</p>
+      )}
+
       {!loadFailed && isNew && nextStageRow && (
         <p className={styles.explainer}>{t('home.journey_explainer')}</p>
       )}
 
-      {/* Footer */}
-      <div className={styles.foot}>
-        {!isNew && doneCount > 0 && (
-          <span className={styles.tally}>
-            {t('home.journey_badge_tally', {
-              gold: tally.gold,
-              silver: tally.silver,
-              bronze: tally.bronze,
-              cleared: tally.completion,
-            })}
-          </span>
-        )}
-        <button type="button" className={styles.viewAll} onClick={() => router.push('/journey')}>
-          {t('home.journey_view')} →
-        </button>
-      </div>
+      <GuestConversionModal
+        isOpen={gateStageNumber !== null}
+        stageNumber={gateStageNumber ?? 2}
+        onClose={() => setGateStageNumber(null)}
+        onConverted={() => {
+          setGateStageNumber(null)
+          setHasConverted(true)
+          void handleStart()
+        }}
+      />
     </section>
   )
 }
