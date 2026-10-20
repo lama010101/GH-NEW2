@@ -7,15 +7,14 @@ import { resolve, join, relative } from "node:path";
  *
  * Task ref: UNIFY-RANK-DISPLAY-001
  * Updated: MP-UIX-PORT-D1-RANKLADDER-001 — rank surfaces now render
- * RankLadderCard (profile, compete session complete); RankCard remains
- * only inside the TopBar rank modal.
+ * RankLadderCard (profile, compete session complete, TopBar rank modal).
  *
  * Rank display surfaces:
  *   - profile (src/app/profile/page.tsx) → RankLadderCard
  *   - compete session complete (src/components/compete/SessionComplete.tsx) → RankLadderCard
  *   - home (src/app/home/page.tsx) → rank is intentionally shown ONLY
  *     through the TopBar rank pill modal (src/components/RankModal.tsx →
- *     RankCard); the home page itself renders no rank card. That absence
+ *     RankLadderCard); the home page itself renders no rank card. That absence
  *     is owned by src/app/home/home-layout.guard.test.ts, which forbids
  *     <RankCard on home.
  *
@@ -116,7 +115,7 @@ describe("rank display — single source (RankCard only, no RankProgressBar/Rank
     const surfaces: Record<string, string> = {
       "src/app/profile/page.tsx": "<RankLadderCard",
       "src/components/compete/SessionComplete.tsx": "<RankLadderCard",
-      "src/components/RankModal.tsx": "<RankCard",
+      "src/components/RankModal.tsx": "<RankLadderCard",
     };
     const missing: string[] = [];
     for (const [file, marker] of Object.entries(surfaces)) {
