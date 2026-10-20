@@ -34,8 +34,17 @@ jobs:
 
       - name: Setup Android SDK
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          echo "::notice::env ANDROID_HOME=$ANDROID_HOME ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "::notice::PATH sdkmanager=$(command -v sdkmanager || echo MISSING)"
+          echo "::notice::ANDROID_HOME ls=$(ls "$ANDROID_HOME" 2>/dev/null | tr '\n' ' ' || echo EMPTY_OR_MISSING)"
+          echo "::notice::cmdline-tools=$(ls "$ANDROID_HOME/cmdline-tools" 2>/dev/null | tr '\n' ' ' || echo none)"
+          echo "::notice::build-tools=$(ls "$ANDROID_HOME/build-tools" 2>/dev/null | tr '\n' ' ' || echo none)"
+          echo "::notice::platforms=$(ls "$ANDROID_HOME/platforms" 2>/dev/null | tr '\n' ' ' || echo none)"
+          SDKM=$(command -v sdkmanager || find "$ANDROID_HOME" /usr/local/lib/android /opt -name sdkmanager -type f 2>/dev/null | head -1)
+          echo "::notice::resolved sdkmanager=$SDKM"
+          if [ -z "$SDKM" ]; then echo "::error::sdkmanager not found"; exit 1; fi
+          yes | "$SDKM" --licenses >/dev/null || true
+          "$SDKM" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Capacitor sync
         run: npx cap sync android
