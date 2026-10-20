@@ -63,7 +63,7 @@
 .tagline {
   width: 100%;
   max-width: 480px;
-  padding: 4px 24px 16px;
+  padding: 4px 24px 20px;
   box-sizing: border-box;
   text-align: center;
   color: var(--gh-text-primary);
@@ -91,12 +91,17 @@
   box-sizing: border-box;
 }
 
+/* Tagline bottom gap mirrors (hv2-wrap padding-top + tagline padding-top)
+   at each breakpoint so empty space above and below the tagline is equal:
+   16+4=20 / 24+4=28 / 32+4=36. */
 @media (min-width: 640px) {
   .hv2-wrap { padding: 24px; }
+  .tagline { padding-bottom: 28px; }
 }
 
 @media (min-width: 1024px) {
   .hv2-wrap { padding: 32px; }
+  .tagline { padding-bottom: 36px; }
 }
 
 .hv2-grid {
