@@ -3,4 +3,7 @@
     <!-- Brand accent; mirrors src/core/pushBranding.ts PUSH_COLOR and
          public/manifest.json theme_color. -->
     <color name="gh_notification_color">#FB923C</color>
+    <!-- Brand primary; mirrors gh-journey-stage-gradient mid stop /
+         JourneyCard .cta accent (#6B21A8). -->
+    <color name="gh_brand_purple">#6B21A8</color>
 </resources>
