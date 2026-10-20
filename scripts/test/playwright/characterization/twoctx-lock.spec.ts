@@ -7,7 +7,11 @@
 //
 // Hypotheses under test:
 //   H1  a hung/frozen context holds lock:sb-<ref>-auth-token; every getSession
-//       in the other context waits the 5s lockAcquireTimeout and then steals.
+//       in the other context queues behind it. Measured (C/C2): NO 5s steal —
+//       supabase-js 2.106.1 _initSupabaseAuthClient() forwards
+//       `lockAcquireTimeout: undefined` (own key), Object.assign over
+//       GoTrueClient DEFAULT_OPTIONS keeps undefined, navigatorLock() arms no
+//       timer (`undefined > 0` is false) -> the request waits forever.
 //   H2  both contexts refresh the same single-use refresh token concurrently
 //       and the loser wipes the shared cookie (refresh_token_already_used,
 //       SIGNED_OUT broadcast).
@@ -16,7 +20,7 @@
 // fetchDisplayName() -> GET /rest/v1/profiles. The mock's request log
 // timestamps the response; identity-ready ~= profiles response end.
 
-import { test, expect, BrowserContext, Page } from "@playwright/test";
+import { test, expect, Browser, BrowserContext, Page } from "@playwright/test";
 import {
   APP_BASE,
   MOCK_BASE,
@@ -105,6 +109,226 @@ async function newWatchedPage(context: BrowserContext, label: string) {
 
 function printRun(tag: string, run: Record<string, unknown>) {
   console.log(`[RESULT] ${tag} ${JSON.stringify(run)}`);
+}
+
+const C_RUNS = 3;
+const C_WINDOW_MS = 21_000;
+
+interface ConsoleEntry {
+  t: number;
+  type: string;
+  text: string;
+}
+
+function captureConsole(page: Page): ConsoleEntry[] {
+  const out: ConsoleEntry[] = [];
+  page.on("console", (m) =>
+    out.push({ t: Date.now(), type: m.type(), text: m.text().slice(0, 400) })
+  );
+  page.on("pageerror", (e) =>
+    out.push({ t: Date.now(), type: "pageerror", text: String(e).slice(0, 400) })
+  );
+  return out;
+}
+
+// Holds a uniquely named lock forever so navigator.locks.query() reveals
+// which clientId belongs to which page.
+async function tagLockClient(page: Page, label: string): Promise<void> {
+  await page.addInitScript((name: string) => {
+    navigator.locks
+      .request(name, () => new Promise(() => {}))
+      .catch(() => {});
+  }, `diag-client:${label}`);
+}
+
+// Pass-through wrapper on navigator.locks.request for the auth lock only:
+// logs the options each caller passes (signal / ifAvailable / steal) and
+// whether that signal is ever aborted — navigatorLock() aborts it when its
+// acquire timer fires, so "never aborted" means no timer was armed.
+async function traceAuthLockRequests(page: Page): Promise<void> {
+  await page.addInitScript((lockName: string) => {
+    const locks = navigator.locks;
+    const orig = locks.request.bind(locks);
+    const t0 = performance.timeOrigin;
+    (locks as any).request = (name: string, a: any, b?: any) => {
+      if (name === lockName && typeof a === "object" && a !== null) {
+        const sig: AbortSignal | undefined = a.signal;
+        console.log(
+          `[diag-lock] request ${name} mode=${a.mode} signal=${!!sig} ifAvailable=${!!a.ifAvailable} steal=${!!a.steal} at=${Math.round(t0 + performance.now())}`
+        );
+        sig?.addEventListener("abort", () =>
+          console.log(`[diag-lock] signal aborted ${name} at=${Math.round(t0 + performance.now())}`)
+        );
+      }
+      return b === undefined ? orig(name, a) : orig(name, a, b);
+    };
+  }, AUTH_LOCK);
+}
+
+interface LockSnap {
+  ms: number;
+  held: string[];
+  pending: string[];
+  reactMounted: boolean;
+  err?: string;
+}
+
+async function pollLocks(page: Page, navStart: number, durationMs: number): Promise<LockSnap[]> {
+  const snaps: LockSnap[] = [];
+  while (Date.now() - navStart < durationMs) {
+    const tick = Date.now();
+    try {
+      const s = await page.evaluate(async () => {
+        const q = await navigator.locks.query();
+        const fmt = (l: { name?: string; clientId?: string }) => `${l.name}@${l.clientId}`;
+        const reactMounted = [document as object, document.body as object].some(
+          (n) => !!n && Object.keys(n).some((k) => k.startsWith("__react"))
+        );
+        return {
+          held: (q.held ?? []).map(fmt),
+          pending: (q.pending ?? []).map(fmt),
+          reactMounted,
+        };
+      });
+      snaps.push({ ms: tick - navStart, ...s });
+    } catch (e) {
+      snaps.push({
+        ms: tick - navStart,
+        held: [],
+        pending: [],
+        reactMounted: false,
+        err: String(e).slice(0, 80),
+      });
+    }
+    await new Promise((r) => setTimeout(r, Math.max(0, 500 - (Date.now() - tick))));
+  }
+  return snaps;
+}
+
+// Collapses the 500ms snapshots into change events, with clientIds replaced
+// by page labels (from the diag-client:* tag locks) and tag locks dropped.
+function lockTimeline(snaps: LockSnap[]): string[] {
+  const ids = new Map<string, string>();
+  for (const s of snaps) {
+    for (const h of s.held) {
+      const m = /^diag-client:(\w+)@(.+)$/.exec(h);
+      if (m) ids.set(m[2], m[1]);
+    }
+  }
+  const label = (e: string) => {
+    const at = e.lastIndexOf("@");
+    const id = e.slice(at + 1);
+    return `${e.slice(0, at)}@${ids.get(id) ?? id.slice(0, 8)}`;
+  };
+  const out: string[] = [];
+  let prev = "";
+  for (const s of snaps) {
+    const cur = s.err
+      ? `ERR ${s.err}`
+      : `held=[${s.held.filter((h) => !h.startsWith("diag-client:")).map(label).join(",")}] pending=[${s.pending.map(label).join(",")}]`;
+    if (cur !== prev) out.push(`${s.ms}ms ${cur}`);
+    prev = cur;
+  }
+  return out;
+}
+
+async function runLockHolderScenario(
+  browser: Browser,
+  variant: "C" | "C2",
+  i: number
+): Promise<Record<string, unknown>> {
+  await mockConfig({ reuseWindowMs: 10_000, profilesDelayMs: 0 });
+  await mockReset();
+  const context = await browser.newContext();
+  const pageA = await context.newPage();
+  assertNoExternalSupabase(pageA);
+  const consoleA = captureConsole(pageA);
+  await tagLockClient(pageA, "A");
+  await traceAuthLockRequests(pageA);
+  // Take the lock BEFORE any page script runs.
+  await pageA.addInitScript((lockName: string) => {
+    (window as any).__holdLock = true;
+    navigator.locks
+      .request(lockName, () => new Promise(() => {}))
+      .catch(() => {});
+  }, AUTH_LOCK);
+  if (variant === "C") {
+    await pageA.goto(`${APP_BASE}/login`, { waitUntil: "commit" });
+  } else {
+    // Same origin (same lock partition), but no app document or JS at all.
+    await pageA.route(`${APP_BASE}/__diag-blank`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<!doctype html><html><body>diag blank lock holder</body></html>",
+      })
+    );
+    await pageA.goto(`${APP_BASE}/__diag-blank`, { waitUntil: "commit" });
+  }
+  await new Promise((r) => setTimeout(r, 800)); // ensure A owns the lock
+  const pageB = await context.newPage();
+  assertNoExternalSupabase(pageB);
+  await attachBroadcastSpy(pageB);
+  const consoleB = captureConsole(pageB);
+  await tagLockClient(pageB, "B");
+  await traceAuthLockRequests(pageB);
+  const domEvents: Record<string, number> = {};
+  let lastChunkT = 0;
+  pageB.on("domcontentloaded", () => (domEvents.dcl ??= Date.now()));
+  pageB.on("load", () => (domEvents.load ??= Date.now()));
+  pageB.on("requestfinished", (req) => {
+    if (req.url().includes("/_next/static/")) lastChunkT = Date.now();
+  });
+  await seedSessionCookie(context, { expired: false });
+  const navStart = Date.now();
+  console.log(`[DIAG] ${variant} run ${i} navStart=${navStart}`);
+  await pageB.goto(`${APP_BASE}/practice`, { waitUntil: "commit" });
+  const commitMs = Date.now() - navStart;
+  const [outcome, snaps] = await Promise.all([
+    waitForOutcome(navStart, [pageB], C_WINDOW_MS),
+    pollLocks(pageB, navStart, C_WINDOW_MS),
+  ]);
+  const stateB = await pageAuthState(pageB);
+  const rel = (t: number | undefined) => (t ? t - navStart : null);
+  const forceful = (c: ConsoleEntry[]) =>
+    rel(c.find((e) => /Forcefully acquiring/.test(e.text))?.t);
+  const firstMount = snaps.find((s) => s.reactMounted);
+  const log = outcome.log.filter((r) => !r.internal);
+  const run = {
+    run: i,
+    variant,
+    identityReadyMs: outcome.identityReadyMs,
+    forcefulBMs: forceful(consoleB),
+    forcefulAMs: forceful(consoleA),
+    commitMs,
+    dclMs: rel(domEvents.dcl),
+    loadMs: rel(domEvents.load),
+    lastChunkMs: rel(lastChunkT),
+    reactMountedMs: firstMount ? firstMount.ms : null,
+    firstConsoleBMs: rel(consoleB[0]?.t),
+    authLockRequestsB: consoleB
+      .filter((e) => e.text.startsWith("[diag-lock] request"))
+      .map((e) => `${e.t - navStart}ms ${e.text.replace(/ at=\d+$/, "")}`),
+    authLockAbortsB: consoleB.filter((e) => e.text.startsWith("[diag-lock] signal aborted")).length,
+    tokenRequests: log.filter((r) => r.url.startsWith("/auth/v1/token")).length,
+    profilesRequests: log.filter((r) => r.url.startsWith("/rest/v1/profiles")).length,
+    mockRequests: log.map((r) => `${r.t - navStart}ms ${r.method} ${r.url.split("?")[0]} ${r.status}`),
+    hatchSeenMs: outcome.hatchSeenMs,
+    hatchVisible: stateB.hatchVisible,
+    urlB: pageB.url(),
+  };
+  printRun(variant, run);
+  console.log(`[DIAG] ${variant}${i} locks(B view):\n  ${lockTimeline(snaps).join("\n  ")}`);
+  const dump = (tag: string, c: ConsoleEntry[]) =>
+    console.log(
+      `[DIAG] ${variant}${i} console ${tag} (${c.length}):\n  ${c
+        .map((e) => `${e.t - navStart}ms [${e.type}] ${e.text.replace(/\s+/g, " ").slice(0, 220)}`)
+        .join("\n  ")}`
+    );
+  dump("A", consoleA);
+  dump("B", consoleB);
+  await context.close();
+  return run;
 }
 
 // workers:1 in the config serializes scenarios already; no serial-mode skip
@@ -326,85 +550,47 @@ test.describe("AUTH-TEST-TWOCTXLOCK-1013-003 auth-lock characterization", () => 
   // getSession() would otherwise consume the refresh itself, and the point
   // here is the CLIENT-side getSession mutex — every getSession acquires
   // the navigator lock, valid session or not.
-  test("C: page A holds lock forever, page B loads x5", async ({ browser }) => {
-    const runs: Record<string, unknown>[] = [];
-    for (let i = 0; i < RUNS; i++) {
-      await mockConfig({ reuseWindowMs: 10_000, profilesDelayMs: 0 });
-      await mockReset();
-      const context = await browser.newContext();
-      const pageA = await context.newPage();
-      assertNoExternalSupabase(pageA);
-      const consoleA = watchAuthConsole(pageA, `C${i}-A`);
-      // Take the lock BEFORE any page script runs.
-      await pageA.addInitScript((lockName: string) => {
-        (window as any).__holdLock = true;
-        navigator.locks
-          .request(lockName, () => new Promise(() => {}))
-          .catch(() => {});
-      }, AUTH_LOCK);
-      await pageA.goto(`${APP_BASE}/login`, { waitUntil: "commit" });
-      await new Promise((r) => setTimeout(r, 800)); // ensure A owns the lock
-      const { page: pageB, console: consoleB } = await newWatchedPage(
-        context,
-        `C${i}-B`
-      );
-      await seedSessionCookie(context, { expired: false });
-      const navStart = Date.now();
-      await pageB.goto(`${APP_BASE}/practice`, { waitUntil: "commit" });
-      // 21s deadline: comfortably past the 10s escape-hatch threshold (dev-server
-      // compile contention can delay React mount past 10s), and short enough for
-      // 5 runs inside the 150s test timeout. `identityReadyMs: null` is data.
-      const outcome = await waitForOutcome(navStart, [pageB], 21_000);
-      const stateB = await pageAuthState(pageB);
-      const run = {
-        run: i,
-        identityReadyMs: outcome.identityReadyMs,
-        tokenCalls: outcome.tokenCalls,
-        gapTokenEndToProfilesMs: outcome.gapTokenEndToProfilesMs,
-        hatchSeenMs: outcome.hatchSeenMs,
-        hatchVisible: stateB.hatchVisible,
-        stealLines: consoleB.filter((l) =>
-          /stolen|steal|Forcefully|timed out|not released/i.test(l)
-        ),
-        consoleA: consoleA.lines.slice(0, 5),
+  //   C   page A loads the app (/login) with the lock pre-taken by an init
+  //       script, so A's own supabase client is a second lock contender.
+  //   C2  page A is a blank same-origin document (routed, no app JS) — the
+  //       ONLY contender for B is the dead holder.
+  // AUTH-DIAG-SCENARIOC-NOSTEAL-1013-006 instrumentation: every console
+  // message of A and B (no filter), navigator.locks.query() from B every
+  // 500ms for 21s, React-mount and dev-server timing for /practice.
+  for (const variant of ["C", "C2"] as const) {
+    const title =
+      variant === "C"
+        ? `C: page A holds lock forever, page B loads x${C_RUNS}`
+        : `C2: blank page A (no app) holds lock forever, page B loads x${C_RUNS}`;
+    test(title, async ({ browser }) => {
+      test.setTimeout(60_000 + C_RUNS * 45_000);
+      const runs: Record<string, unknown>[] = [];
+      for (let i = 0; i < C_RUNS; i++) {
+        runs.push(await runLockHolderScenario(browser, variant, i));
+      }
+      const ready = runs.map((r) => (r.identityReadyMs as number) ?? C_WINDOW_MS);
+      const summary = {
+        identityReady: stats(ready),
+        neverReady: runs.filter((r) => r.identityReadyMs === null).length,
+        hatchFired: runs.filter((r) => r.hatchSeenMs !== null || r.hatchVisible).length,
+        forcefulB: runs.filter((r) => r.forcefulBMs !== null).length,
+        forcefulA: runs.filter((r) => r.forcefulAMs !== null).length,
       };
-      printRun("C", run);
-      runs.push(run);
-      await context.close();
-    }
-    const ready = runs.map((r) => (r.identityReadyMs as number) ?? 21_000);
-    const gaps = runs
-      .map((r) => r.gapTokenEndToProfilesMs as number | null)
-      .filter((v): v is number => v !== null);
-    const summary = {
-      identityReady: stats(ready),
-      secondGetSessionGapMs: gaps.length ? stats(gaps) : "no profiles call",
-      hatchFired:
-        runs.filter((r) => r.hatchVisible).length ||
-        runs.filter((r) => r.hatchSeenMs !== null).length,
-      hatchSeenMs: stats(
-        runs
-          .map((r) => r.hatchSeenMs as number | null)
-          .filter((v): v is number => v !== null)
-      ),
-      stealPrinted: runs.filter((r) => (r.stealLines as string[]).length > 0)
-        .length,
-    };
-    // Field-bug signature: identity stays loading past the 10s escape-hatch
-    // threshold in a context that merely coexists with a lock holder.
-    const defect =
-      summary.hatchFired > 0 ||
-      runs.some((r) => r.identityReadyMs === null);
-    test.fail(
-      defect,
-      "H1 reproduced: held lock stalls identity past the 10s escape hatch"
-    );
-    printRun("C-summary", { ...summary, defect });
-    expect(
-      defect,
-      "H1 defect signature observed — see [RESULT] lines"
-    ).toBe(false);
-  });
+      // Field-bug signature: identity stays loading past the 10s escape-hatch
+      // threshold in a context that merely coexists with a lock holder.
+      const defect = summary.hatchFired > 0 || summary.neverReady > 0;
+      test.fail(
+        defect,
+        `H1 reproduced (${variant}): held lock stalls identity forever — no steal, ` +
+          "lockAcquireTimeout resolves to undefined via supabase-js, so no acquire timer"
+      );
+      printRun(`${variant}-summary`, { ...summary, defect });
+      expect(
+        defect,
+        "H1 defect signature observed — see [RESULT] lines"
+      ).toBe(false);
+    });
+  }
 
   // H1 variant: page A re-takes the lock for 6s every ~1s — a context that is
   // not dead but pathologically lock-greedy.
