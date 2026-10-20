@@ -328,10 +328,13 @@ interface RankLadderCardProps {
   totalXp: number;
   /** Optional override for the rail hint text (defaults to the 'swipe' i18n string). */
   hint?: string;
+  /** "glass" (default) = profile-page glass shell; "card" = SessionComplete
+      results-grid shell (.card look + accent-bar head). */
+  variant?: "glass" | "card";
 }
 
 // Swipe rail of all 10 tiers, centred on the current badge (hidden scrollbar).
-export default function RankLadderCard({ totalXp, hint }: RankLadderCardProps) {
+export default function RankLadderCard({ totalXp, hint, variant = "glass" }: RankLadderCardProps) {
   const t = useTranslations('rank');
   const tGame = useTranslations('game');
   const railRef = useRef<HTMLDivElement | null>(null);
@@ -386,11 +389,13 @@ export default function RankLadderCard({ totalXp, hint }: RankLadderCardProps) {
     if (railRef.current) railRef.current.style.cursor = "";
   };
 
+  const isCard = variant === "card";
   return (
-    <section className={styles.rankL}>
-      <div className={styles.lcHead}>
+    <section className={isCard ? styles.rankLCard : styles.rankL}>
+      <div className={isCard ? styles.lcHeadCard : styles.lcHead}>
+        {isCard && <span className={styles.accentBar} aria-hidden="true" />}
         <div className={styles.lcTitles}>
-          <h3 className={styles.lcTitle}>{t(info.titleKey)}</h3>
+          <h3 className={isCard ? styles.lcTitleCard : styles.lcTitle}>{t(info.titleKey)}</h3>
           <span className={styles.lcSub}>
             {t('tier_of_10', { tier: info.tier })} · {Math.floor(totalXp).toLocaleString()}{tGame('xp_unit')} · {info.progressPct}%
           </span>

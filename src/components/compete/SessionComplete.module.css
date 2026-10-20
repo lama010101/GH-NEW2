@@ -486,65 +486,11 @@
   gap: 16px;
 }
 
-.achievementsGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-/* Badge summary */
-.badgeSummary {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.badgeSummaryLabel {
-  font-size: 12px; /* layout-constrained — do not tokenize */
-  font-weight: 700;
-  color: var(--gh-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 .noBadges {
   font-size: 13px; /* layout-constrained — do not tokenize */
   color: var(--gh-text-muted);
   font-style: italic;
 }
-
-.badgeTally {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.badgeTallyItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--gh-mini-card-bg);
-  border: 1px solid var(--gh-mini-card-border);
-}
-
-.badgeTallyCount {
-  font-size: 18px; /* layout-constrained — do not tokenize */
-  font-weight: 800;
-  color: var(--gh-text-primary);
-}
-
-.badgeTallyTier {
-  font-size: 11px; /* layout-constrained — do not tokenize */
-  font-weight: 700;
-  color: var(--gh-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-
 
 /* Stat groups (XP per era / region) */
 .statGroup {
@@ -608,50 +554,254 @@
   white-space: nowrap;
 }
 
-/* Game stats grid */
-.gameStatsGrid {
+/* ── Highlights + Badges (MP-UIX-PORT-D2) — tokenized port of the
+     prototype HighlightsCard / BadgesCard (origin/proto/uix-prototypes-1013). */
+
+.hlGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
-@media (min-width: 768px) {
-  .gameStatsGrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.gameStatTile {
+.hlTile {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 12px 10px;
   border-radius: 12px;
+  min-width: 0;
   background: var(--gh-mini-card-bg);
   border: 1px solid var(--gh-mini-card-border);
 }
 
-.gameStatText {
+.hlTileText {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  overflow: hidden; /* contains ellipsized children inside the tile padding box */
 }
 
-.gameStatVal {
+.hlVal {
   font-size: var(--font-xl);
   font-weight: 400;
   color: var(--gh-text-primary);
   line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.gameStatLabel {
-  font-size: 11px; /* layout-constrained — do not tokenize */
+.hlTileLabel {
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--gh-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  /* 3-up tiles get narrow: ellipsize instead of letting the label text
+     overflow its box up to/against the tile border (COMBO clip). */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hlRow {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.hlRow::-webkit-scrollbar {
+  display: none;
+}
+
+.hlChip {
+  min-width: 150px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+  border-radius: var(--gh-radius-sm);
+  background: var(--gh-mini-card-bg);
+  border: 1px solid var(--gh-mini-card-border);
+}
+
+.hlDisk {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.hlDiskClosest {
+  color: var(--gh-teal);
+  background: rgba(var(--gh-teal-rgb), 0.13);
+  border-color: rgba(var(--gh-teal-rgb), 0.40);
+}
+
+.hlDiskSharpest {
+  color: var(--gh-violet);
+  background: rgba(var(--gh-violet-rgb), 0.13);
+  border-color: rgba(var(--gh-violet-rgb), 0.40);
+}
+
+.hlDiskToughest {
+  color: var(--gh-orange);
+  background: rgba(var(--gh-orange-rgb), 0.13);
+  border-color: rgba(var(--gh-orange-rgb), 0.40);
+}
+
+.hlValue {
+  font-size: var(--font-lg);
+  font-weight: 800;
+  color: var(--gh-text-primary);
+  line-height: 1.2;
+}
+
+.hlLabel {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--gh-text-muted);
+}
+
+.hlFoot {
+  font-size: var(--font-2xs);
+  font-weight: 600;
+  color: var(--gh-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.bdCount {
+  margin-left: auto;
+  font-size: var(--font-2xs);
+  font-weight: 800;
+  color: var(--gh-gold);
+}
+
+.bdRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bdTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  min-width: 62px;
+  background: var(--gh-mini-card-bg);
+  border: 1px solid var(--gh-mini-card-border);
+}
+
+.bdImgWrap {
+  position: relative;
+}
+
+.bdImg {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  display: block;
+}
+
+.bdBubble {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  font-size: var(--font-2xs);
+  font-weight: 800;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--gh-bg-base);
+  border: 1px solid var(--gh-border-subtle);
+  color: var(--gh-text-primary);
+  line-height: 1.4;
+}
+
+.bdLabel {
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  color: var(--gh-text-primary);
+}
+
+.bdTier {
+  font-size: var(--font-2xs);
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.bdTier[data-tier="gold"] {
+  color: var(--gh-gold);
+}
+
+.bdTier[data-tier="silver"] {
+  color: #c7cede;
+}
+
+.bdTier[data-tier="bronze"] {
+  color: #cd7f32;
+}
+
+@media (hover: hover) {
+  .hlTile,
+  .hlChip,
+  .bdTile {
+    transition: background 0.15s;
+  }
+
+  .hlTile:hover,
+  .hlChip:hover,
+  .bdTile:hover {
+    background: var(--gh-glass-bg-hover);
+  }
+}
+
+@media (min-width: 1024px) {
+  .hlTile {
+    padding: 12px 14px;
+  }
+
+  .hlVal {
+    font-size: var(--font-2xl);
+  }
+
+  .hlRow {
+    overflow-x: visible;
+  }
+
+  .hlChip {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .bdTile {
+    min-width: 74px;
+    padding: 12px 10px;
+  }
+
+  .bdImg {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 /* ── Round breakdown ── */
@@ -672,6 +822,38 @@
 
 .roundItemOpen {
   border-color: var(--gh-border-default);
+}
+
+.roundTopRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.roundTopRow .roundTop {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.learnRoundBtn {
+  flex-shrink: 0;
+  align-self: center;
+  width: 44px;
+  height: 44px;
+  margin-right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--gh-text-muted);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.learnRoundBtn:hover {
+  color: var(--gh-text-primary);
+  background: var(--gh-bg-elevated);
 }
 
 .roundTop {
@@ -995,11 +1177,26 @@
   line-height: 1;
 }
 
+/* Tied winners keep their names in the DOM for a11y + the relax-4player
+   textContent assertion, without taking visual space (clip pattern). */
+.mvpHiddenName {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── Rank ladder skeleton (XP lookup in flight) ──
    Same shell as .card; fixed min-height matches the rendered
    RankLadderCard so the layout does not shift when it swaps in. */
 .rankLadderSkeleton {
-  min-height: 273.5px;
+  min-height: 269.5px;
 }
 
 
@@ -1142,21 +1339,18 @@
 
   .gridZone {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px;
     align-items: start;
   }
 
   .gridZone > * {
     grid-column: span 1;
+    min-width: 0;
   }
 
   .gridZone > section:last-child {
     grid-column: 1 / -1;
-  }
-
-  .gameStatsGrid {
-    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -1172,7 +1366,7 @@
   }
 
   .gridZone {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 22px;
   }
 
@@ -1292,37 +1486,3 @@
   color: var(--gh-text-primary);
 }
 
-/* Badge tally tier accents — distinguishes same-dimension rows by tier. */
-.badgeTallyTier_gold {
-  color: var(--gh-gold);
-}
-
-.badgeTallyTier_silver {
-  color: #c7cede;
-}
-
-.badgeTallyTier_bronze {
-  color: #cd7f32;
-}
-
-/* HJ-FIX-POLISHSCOPE-044 — the HJ-UI-POLISH-035 best-scores tile restyle,
-   scoped to journey results via .sectionJourneyTop so Compete / Daily /
-   Practice result screens render the base rules above exactly as
-   origin/main. */
-.sectionJourneyTop .gameStatTile {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 12px;
-  min-width: 0;
-}
-
-.sectionJourneyTop .gameStatVal {
-  white-space: nowrap;
-}
-
-.sectionJourneyTop .gameStatLabel {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}

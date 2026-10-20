@@ -33,7 +33,7 @@ const GLOBALS_CSS = "src/app/globals.css"; // excluded — defines the tokens
  */
 const BASELINE: Record<string, number> = {
   "src/app/prototype/round-results/round-results.module.css": 45,
-  "src/components/compete/SessionComplete.module.css": 37,
+  "src/components/compete/SessionComplete.module.css": 33,
   "src/app/prototype/profile/profile.module.css": 33,
   "src/app/prototype/final-results/final-results.module.css": 26,
   "src/components/compete/RoundCompleteSection.module.css": 25,

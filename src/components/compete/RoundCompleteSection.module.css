@@ -657,6 +657,32 @@
   scroll-snap-align: start;
 }
 
+/* ── Learn CTA (post-round, above the fixed bottom bar) ── */
+
+.learnCta {
+  width: calc(100% - 32px);
+  margin: 0 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--gh-border-default);
+  background: var(--gh-mini-card-bg);
+  color: var(--gh-text-primary);
+  font-weight: 700;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.learnCta:hover {
+  background: var(--gh-bg-elevated);
+  border-color: var(--gh-border-medium);
+}
+
 /* ── Bottom bar (nav row) ── */
 
 .bottomBar {

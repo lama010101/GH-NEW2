@@ -66,11 +66,47 @@ describe("100 XP signup bonus — DB trigger, not API route (FIX-SIGNUP-XP-TRIGG
         signupXpMigrations.push(f);
       }
     }
-    // Exactly one migration should award the signup XP via the trigger.
-    expect(signupXpMigrations).toHaveLength(1);
+    // Multiple matching files are NOT automatically a duplicate: later
+    // migrations legitimately CREATE OR REPLACE the same handle_new_user
+    // function (20260819034437 added push_soft_ask_dismissed and carried the
+    // 100-XP insert verbatim) — still one function, one trigger, one grant.
+    // What must still be caught: a differently named function awarding the
+    // bonus, or a second/different trigger binding on auth.users.
+    signupXpMigrations.sort();
+    // (a) the supersession chain still starts at the original migration
     expect(signupXpMigrations[0]).toBe(
       "20260707000000_handle_new_user_award_signup_xp.sql"
     );
+    // (b) every matched file must CREATE OR REPLACE the same function —
+    // a differently named function granting signup XP is a real duplicate
+    for (const f of signupXpMigrations) {
+      expect(readFileSync(join(MIGRATIONS_DIR, f), "utf-8")).toContain(
+        "CREATE OR REPLACE FUNCTION public.handle_new_user()"
+      );
+    }
+    // (c) every trigger binding on auth.users must be the known one —
+    // re-issuing on_auth_user_created is legitimate; a different name or
+    // target function is a real duplicate grant path
+    for (const f of files) {
+      const sql = readFileSync(join(MIGRATIONS_DIR, f), "utf-8");
+      for (const stmt of sql.split(";")) {
+        const t = stmt.match(
+          /CREATE\s+(?:OR\s+REPLACE\s+)?TRIGGER\s+(\w+)[\s\S]*?ON\s+auth\.users/i
+        );
+        if (t) {
+          expect(
+            t[1],
+            `${f}: unexpected trigger name on auth.users`
+          ).toBe("on_auth_user_created");
+          expect(
+            stmt,
+            `${f}: auth.users trigger must execute public.handle_new_user()`
+          ).toMatch(
+            /EXECUTE\s+(?:FUNCTION|PROCEDURE)\s+public\.handle_new_user\s*\(/i
+          );
+        }
+      }
+    }
   });
 
   it("assign-avatar route does NOT write to player_global_stats (XP moved to trigger)", () => {

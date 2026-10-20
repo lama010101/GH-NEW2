@@ -3,16 +3,17 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
-import RankCard from '@/components/RankCard'
+import RankLadderCard from '@/components/RankLadderCard'
 import modalStyles from '@/components/AuthModal.module.css'
+import styles from './RankModal.module.css'
 
 // Rank detail modal opened from the TopBar rank pill
-// (HOME-BUILD-PURPLESTAGE-RANKMODAL-003). Shows the shared RankCard content
-// (rank title, total XP, progress to next tier) — rankForXp stays the single
-// source of truth, no new fetch. Reuses the modal design tokens via
-// AuthModal.module.css (same convention as RelaxPwaInterstitialModal) and
-// portals to document.body: TopBar's container has opacity<1, which would
-// otherwise trap this position:fixed overlay inside the bar.
+// (HOME-BUILD-PURPLESTAGE-RANKMODAL-003). Shows the shared RankLadderCard
+// content (rank title, XP, progress, 10-tier rail) — rankForXp stays the
+// single source of truth, no new fetch. Reuses the modal design tokens via
+// AuthModal.module.css (overlay + close button) and RankModal.module.css
+// (card), and portals to document.body: TopBar's container has opacity<1,
+// which would otherwise trap this position:fixed overlay inside the bar.
 
 interface RankModalProps {
   isOpen: boolean
@@ -48,7 +49,7 @@ export default function RankModal({ isOpen, onClose, totalXp }: RankModalProps) 
       aria-label={tRank('rank_label')}
       onClick={onClose}
     >
-      <div className={modalStyles.card} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.card} onClick={(e) => e.stopPropagation()}>
         <button
           ref={closeRef}
           type="button"
@@ -58,7 +59,7 @@ export default function RankModal({ isOpen, onClose, totalXp }: RankModalProps) 
         >
           ×
         </button>
-        <RankCard totalXp={totalXp} open bare />
+        <RankLadderCard totalXp={totalXp ?? 0} />
       </div>
     </div>,
     document.body

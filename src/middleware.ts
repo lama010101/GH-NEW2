@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyPartyKitSecret } from "@/server/partykitAuth";
+import { AUTH_COOKIE_DOMAIN } from "@/core/authCookie";
 
 /**
  * Routes that do NOT require authentication.
@@ -22,6 +23,7 @@ const PUBLIC_API_ROUTES = [
   "/api/leaderboard",
   "/api/image-proxy",
   "/api/push/subscribe",
+  "/api/push/fcm-token",
 ];
 
 // PartyKit DO routes that carry their own x-partykit-secret validation. They must
@@ -91,10 +93,7 @@ function clearPoisonedAuthCookies(
   response: NextResponse,
   requestCookies: { name: string; value: string }[]
 ): void {
-  const cookieDomain =
-    process.env.NODE_ENV === "production"
-      ? { domain: ".guess-history.com" }
-      : {};
+  const cookieDomain = AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {};
   for (const { name } of requestCookies) {
     if (name.startsWith("sb-") && !isPkceVerifierCookie(name)) {
       response.cookies.set(name, "", {
@@ -135,10 +134,7 @@ export async function middleware(request: NextRequest) {
           // share auth cookies across apex and www in production so the
           // vercel.json apex→www 308 does not drop the session on
           // soft-navigation RSC fetches. Omitted in dev for localhost.
-          const cookieDomain =
-            process.env.NODE_ENV === "production"
-              ? { domain: ".guess-history.com" }
-              : {};
+          const cookieDomain = AUTH_COOKIE_DOMAIN ? { domain: AUTH_COOKIE_DOMAIN } : {};
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, { ...options, ...cookieDomain })
           );
