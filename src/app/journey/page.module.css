@@ -238,7 +238,11 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 14px;
-  padding: 14px 16px;
+  padding: 12px 16px;
+  /* UIX-JOURNEYPAGE-1020-071 — positioned (z-auto, later in DOM order than the
+     li::before/::after rails) so the card's opaque background paints OVER the
+     vertical timeline line, hiding it behind the card body. */
+  position: relative;
   border-radius: var(--gh-radius-md);
   border: 1px solid #2a2a2a;
   /* UIX-JOURNEY-20261005-001 — neutral dark card: solid opaque grey, no
@@ -259,10 +263,11 @@
   cursor: default;
 }
 
-/* Locked state: desaturated icon + the whole card visibly dimmed
-   (UIX-JOURNEY-20261005-001). */
+/* Locked state: desaturated icon + content-level dimming
+   (UIX-JOURNEY-20261005-001). UIX-JOURNEYPAGE-1020-071 — no whole-element
+   opacity: the card must stay opaque so the timeline rail stays hidden
+   behind it. */
 .stageLocked {
-  opacity: 0.55;
   background: #101010;
 }
 
@@ -278,6 +283,8 @@
 
 .stageLocked .chip {
   border-color: #262626;
+  color: #858585;
+  background: #1b1b1b;
 }
 
 /* UIX-JOURNEY-20261005-001 — current stage is the focal point: purple-tinted
@@ -333,8 +340,8 @@
 
 .stageBody {
   flex: 1;
-  /* min-width (not 0) forces .stageAside onto its own line under ~390px,
-     where the meta text would otherwise be squeezed into a narrow column. */
+  /* min-width keeps the body column readable under ~390px instead of
+     being squeezed by the icon. */
   min-width: 200px;
   display: flex;
   flex-direction: column;
@@ -351,11 +358,13 @@
 }
 
 /* UIX-JOURNEY-20261005-001 — year range moved out of the chip row to a
-   small blue line directly under the stage title. */
+   small line directly under the stage title. UIX-JOURNEYPAGE-1020-071 —
+   cyan matching the compete year-range accent (--gh-orange is redefined
+   to #22d3ee = --gh-teal inside .lobby-shell, LobbySection.module.css:9). */
 .yearRange {
   font-size: var(--font-xs);
   font-weight: 600;
-  color: var(--gh-blue);
+  color: var(--gh-teal);
   font-variant-numeric: tabular-nums;
 }
 
@@ -431,16 +440,21 @@
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin-left: auto;
 }
 
 /* Score ring on completed cards — UIX-JOURNEY-20261005-001: a "%" sits
-   right of the ring so the number unambiguously reads as a percentage. */
+   right of the ring so the number unambiguously reads as a percentage.
+   UIX-JOURNEYPAGE-1020-071 — MiniRing is fixed at 56px (protected compete
+   file); scale it to ~45px and pull the layout box in so the chips row
+   stays compact. */
 .bestRing {
   flex: none;
   display: flex;
   align-items: center;
+  transform: scale(0.8);
+  margin: -5px -4px -5px -5px;
 }
 
 .bestRing::after {

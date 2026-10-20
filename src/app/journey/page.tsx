@@ -554,16 +554,8 @@ export default function JourneyPage() {
                             count: journeyRoundCount(stage.stage_number),
                           })}
                         </span>
-                      </span>
-                      {locked && (
-                        <span className={pageStyles.lockHint}>
-                          <Lock size={11} aria-hidden="true" className={pageStyles.lockHintIcon} />
-                          {t("unlock_hint", { number: stage.stage_number - 1 })}
-                        </span>
-                      )}
-                    </span>
-                    <span className={pageStyles.stageAside}>
-                      {locked && (
+                        <span className={pageStyles.stageAside}>
+                          {locked && (
                         <Lock
                           size={18}
                           aria-hidden="true"
@@ -625,6 +617,14 @@ export default function JourneyPage() {
                             </button>
                           )}
                         </>
+                      )}
+                        </span>
+                      </span>
+                      {locked && (
+                        <span className={pageStyles.lockHint}>
+                          <Lock size={11} aria-hidden="true" className={pageStyles.lockHintIcon} />
+                          {t("unlock_hint", { number: stage.stage_number - 1 })}
+                        </span>
                       )}
                     </span>
                   </CardTag>
