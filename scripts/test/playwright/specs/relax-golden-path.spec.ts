@@ -4,6 +4,7 @@ import { TEST_USERS, fetchAccessToken } from '../fixtures/auth';
 import { authenticatePage } from '../helpers/auth-cookie';
 import { ensureLoggedIn } from '../helpers/auth-ui';
 import { CompeteWSClient, type CompeteSnapshot } from '../orchestrator/websocketClient';
+import pg from 'pg';
 
 // ═════════════════════════════════════════════════════════════════════
 // MP-BUILD-RELAX-GOLDEN-PATH-002
@@ -26,6 +27,15 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const SUPABASE_DB_CONNECTION = process.env.SUPABASE_DB_CONNECTION || '';
+const { Pool } = pg;
+
+// MP-BUILD-RELAXSPEC-CLEANUP-1020-070 — every gameId is captured into this
+// Set the moment a create response is parsed; the afterAll teardown deletes
+// those sessions AND any session hosted by this run's test users (a create
+// that times out client-side can still commit server-side, in which case the
+// spec never learns the gameId but the host session_players row exists).
+const createdGameIds = new Set<string>();
 
 const DESKTOP_PRESET = {
   viewport: { width: 1280, height: 800 },
@@ -291,6 +301,7 @@ test('Relax golden path A0–A13', async () => {
     const sessionData = await createRes.json();
     const gameId = sessionData.gameId || sessionData.id;
     expect(gameId, 'Create game returned no gameId').toBeTruthy();
+    createdGameIds.add(gameId);
     console.log(`[RELAX-GOLDEN] Game created: ${gameId}`);
 
     await Promise.all([
@@ -678,6 +689,7 @@ test('Relax final round shows own RoundCompleteSection before explicit SessionCo
     const sessionData = await createRes.json();
     const gameId = sessionData.gameId || sessionData.id;
     expect(gameId, 'Create game returned no gameId').toBeTruthy();
+    createdGameIds.add(gameId);
 
     await Promise.all([
       hostPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
@@ -787,6 +799,7 @@ test('Relax late joiner enters after host started — MP-FIX-RELAXLATEJOINER-101
     const sessionData = await createRes.json();
     const gameId = sessionData.gameId || sessionData.id;
     expect(gameId, 'Create game returned no gameId').toBeTruthy();
+    createdGameIds.add(gameId);
 
     // Host enters the lobby and STARTS ITS OWN RUN before the guest even opens the URL.
     await hostPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
@@ -843,5 +856,76 @@ test('Relax late joiner enters after host started — MP-FIX-RELAXLATEJOINER-101
     console.log('[LATE-JOIN] passed: guest joined after host start, reached ROUND_ACTIVE');
   } finally {
     await browser.close();
+  }
+});
+
+// MP-BUILD-RELAXSPEC-CLEANUP-1020-070 — prod-residue teardown.
+// Runs after every test in this file, pass or fail, BEFORE the global
+// fixtures/auth.ts teardown deletes the auth users. Deletes the sessions this
+// run created (exact game_ids only — never LIKE, never time windows), their
+// child rows first (no FK constraints exist on the child tables, so they
+// orphan otherwise), then the sessions row. Deletion never masks the test
+// result: failures are logged, not rethrown.
+test.afterAll(async () => {
+  const runUserIds = TEST_USERS.map((u) => u.id).filter((id) => id.length > 0);
+  if (!SUPABASE_DB_CONNECTION || runUserIds.length === 0) {
+    console.warn(
+      `[RELAX-TEARDOWN] skipped: SUPABASE_DB_CONNECTION set=${SUPABASE_DB_CONNECTION.length > 0} runUserIds=${runUserIds.length}`,
+    );
+    return;
+  }
+  const pool = new Pool({ connectionString: SUPABASE_DB_CONNECTION });
+  try {
+    // Clause (b): sessions hosted by one of this run's exact test user ids —
+    // catches creates that committed server-side after the client timed out
+    // (createCompeteSession inserts the host session_players row atomically).
+    const hosted = await pool.query<{ game_id: string }>(
+      `SELECT DISTINCT game_id FROM session_players WHERE is_host = true AND player_id = ANY($1::uuid[])`,
+      [runUserIds],
+    );
+    const gameIds = new Set<string>(createdGameIds);
+    for (const row of hosted.rows) gameIds.add(row.game_id);
+    const ids = [...gameIds];
+    if (ids.length === 0) {
+      console.log('[RELAX-TEARDOWN] no sessions found for this run');
+      return;
+    }
+    console.log(`[RELAX-TEARDOWN] sessions to delete: ${ids.join(', ')}`);
+
+    // Safety gate: ABORT if any row to be deleted belongs to a non-run user.
+    for (const table of ['session_players', 'player_round_events', 'round_commits', 'round_results', 'round_hints']) {
+      const foreign = await pool.query<{ player_id: string }>(
+        `SELECT DISTINCT player_id FROM ${table} WHERE game_id = ANY($1::uuid[]) AND NOT (player_id = ANY($2::uuid[]))`,
+        [ids, runUserIds],
+      );
+      if (foreign.rows.length > 0) {
+        console.error(
+          `[RELAX-TEARDOWN] ABORT: ${table} contains rows for non-run users ` +
+            `[${foreign.rows.map((r) => r.player_id).join(', ')}] in game_ids [${ids.join(', ')}] — nothing deleted`,
+        );
+        return;
+      }
+    }
+
+    // Child rows first, sessions last. Counts are SELECTed and logged before
+    // and after every DELETE.
+    for (const table of ['round_hints', 'round_commits', 'round_results', 'player_round_events', 'round_events', 'session_players', 'sessions']) {
+      const before = await pool.query<{ c: number }>(
+        `SELECT count(*)::int AS c FROM ${table} WHERE game_id = ANY($1::uuid[])`,
+        [ids],
+      );
+      const del = await pool.query(`DELETE FROM ${table} WHERE game_id = ANY($1::uuid[])`, [ids]);
+      const after = await pool.query<{ c: number }>(
+        `SELECT count(*)::int AS c FROM ${table} WHERE game_id = ANY($1::uuid[])`,
+        [ids],
+      );
+      console.log(
+        `[RELAX-TEARDOWN] ${table}: before=${before.rows[0].c} deleted=${del.rowCount ?? 0} after=${after.rows[0].c}`,
+      );
+    }
+  } catch (err) {
+    console.error('[RELAX-TEARDOWN] session cleanup failed (does not mask test result):', err);
+  } finally {
+    await pool.end().catch(() => {});
   }
 });
