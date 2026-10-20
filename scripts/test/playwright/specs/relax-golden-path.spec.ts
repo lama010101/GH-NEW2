@@ -132,7 +132,15 @@ async function ensureWelcomeCompleted(userId: string) {
 }
 
 async function openYourTurnTab(page: Page) {
-  await page.getByRole('button', { name: /YOUR TURN/i }).click({ timeout: STATE_TIMEOUT });
+  // Idempotent: ChallengeCard auto-expands your_turn on >=1024px viewports,
+  // so a blind click can toggle it CLOSED. Check aria-expanded first and
+  // only click when collapsed; the mount effect only ever adds the tab.
+  const tab = page.getByRole('button', { name: /YOUR TURN/i });
+  await tab.waitFor({ state: 'visible', timeout: STATE_TIMEOUT });
+  if ((await tab.getAttribute('aria-expanded')) !== 'true') {
+    await tab.click({ timeout: STATE_TIMEOUT });
+  }
+  await expect(tab).toHaveAttribute('aria-expanded', 'true', { timeout: 10000 });
 }
 
 async function openCompletedTab(page: Page) {
@@ -183,7 +191,7 @@ async function expectCompeteCardGame(page: Page, gameId: string, expectedRound: 
   // Wait for the active-games list to render the expected row before asserting text.
   // Some locales/translations omit ` / {total}`, so make the total optional.
   await expect(
-    page.locator('[class*="gameRow"]').filter({
+    page.locator('[data-cap-row]').filter({
       hasText: new RegExp(`Round ${expectedRound}(?: / ${game!.round_total})?`),
     }).first(),
   ).toBeVisible({ timeout: STATE_TIMEOUT });
@@ -196,7 +204,7 @@ async function expectCompletedGame(page: Page, gameId: string) {
   expect(game!.status, 'status is completed').toBe('completed');
   // Wait for the active-games list to render the expected completed row.
   await expect(
-    page.locator('[class*="gameRow"]').filter({ hasText: new RegExp(game!.opponent_name) }).first(),
+    page.locator('[data-cap-row]').filter({ hasText: new RegExp(game!.opponent_name) }).first(),
   ).toBeVisible({ timeout: STATE_TIMEOUT });
 }
 
@@ -743,6 +751,96 @@ test('Relax final round shows own RoundCompleteSection before explicit SessionCo
       'host should be finished after explicit final tap',
     ).toBe('finished');
     await expectRosterStatus(guestPage, HOST_USER.id, 'finished');
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Relax late joiner enters after host started — MP-FIX-RELAXLATEJOINER-1019-065 regression', async () => {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const hostCtx = await browser.newContext(DESKTOP_PRESET);
+    const guestCtx = await browser.newContext(DESKTOP_PRESET);
+    const hostPage = await hostCtx.newPage();
+    const guestPage = await guestCtx.newPage();
+
+    await Promise.all([
+      hostPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+      guestPage.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT }),
+    ]);
+    await Promise.all([
+      ensureLoggedIn(hostPage, HOST_USER),
+      ensureLoggedIn(guestPage, GUEST_B_USER),
+    ]);
+
+    const createRes = await hostPage.request.post(`${BASE_URL}/api/compete/create`, {
+      data: {
+        displayName: HOST_USER.displayName,
+        playerId: HOST_USER.id,
+        mode: 'async',
+        roundTimerSec: 0,
+        resultsAutoAdvanceSec: 0,
+      },
+      timeout: NAV_TIMEOUT,
+    });
+    expect(createRes.ok(), 'Create late-join test game failed').toBeTruthy();
+    const sessionData = await createRes.json();
+    const gameId = sessionData.gameId || sessionData.id;
+    expect(gameId, 'Create game returned no gameId').toBeTruthy();
+
+    // Host enters the lobby and STARTS ITS OWN RUN before the guest even opens the URL.
+    await hostPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
+    await waitForSection(hostPage, 'lobby-shell');
+    const hostToken = await fetchAccessToken(HOST_USER);
+    const hostErrors: string[] = [];
+    const hostWS = createWS(gameId, HOST_USER, hostToken, hostErrors, []);
+    await hostWS.connect();
+    await hostWS.waitForState((s) => s.status === 'LOBBY' && s.players.length === 1, STATE_TIMEOUT);
+    await hostPage.getByTestId('lobby-ready-btn').first().click();
+    await hostWS.waitForState((s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === 0, STATE_TIMEOUT, true);
+    await waitForSection(hostPage, 'round-active-section', { roundIndex: 0 });
+    console.log('[LATE-JOIN] host ROUND_ACTIVE; guest joining now');
+
+    // The guest opens the game URL AFTER the host started its run (the 065 lockout case).
+    const guestErrors: string[] = [];
+    const guestToken = await fetchAccessToken(GUEST_B_USER);
+    const guestWS = createWS(gameId, GUEST_B_USER, guestToken, guestErrors, []);
+    const wsConnectPromise = guestWS.connect();
+    await guestPage.goto(`${BASE_URL}/compete/${gameId}`, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT });
+    await wsConnectPromise;
+
+    // (1) No lockout screen / error frame for the late joiner.
+    await guestPage.waitForTimeout(3000);
+    const guestBody = (await guestPage.locator('body').innerText({ timeout: 5000 }).catch(() => '')).toLowerCase();
+    expect(guestBody, 'late joiner must not see "already started" screen').not.toContain('already started');
+    expect(guestBody, 'late joiner must not see "already in progress"').not.toContain('already in progress');
+    expect(
+      guestErrors.some((e) => /already (started|in progress)/i.test(e)),
+      `late joiner got banned ERROR frame: ${JSON.stringify(guestErrors)}`,
+    ).toBe(false);
+
+    // (2) Guest reaches the lobby and sees itself in the roster.
+    await waitForSection(guestPage, 'lobby-shell');
+    await expect(
+      guestPage.locator('[data-testid^="lobby-player-"]').filter({ hasText: GUEST_B_USER.displayName }).first(),
+      'late joiner sees own roster row',
+    ).toBeVisible({ timeout: STATE_TIMEOUT });
+    await guestWS.waitForState(
+      (s) => s.status === 'LOBBY' && s.players.some((p) => p.playerId === GUEST_B_USER.id),
+      STATE_TIMEOUT,
+      true,
+    );
+    await assertNoBannedLobbyText(guestPage, 'LATE-JOIN-guest');
+
+    // (3) Guest can start its own run and reaches an active round.
+    await guestPage.getByTestId('lobby-ready-btn').first().click();
+    await guestWS.waitForState(
+      (s) => s.status === 'ROUND_ACTIVE' && s.currentRoundIndex === 0,
+      STATE_TIMEOUT,
+      true,
+    );
+    await waitForSection(guestPage, 'round-active-section', { roundIndex: 0 });
+    console.log('[LATE-JOIN] passed: guest joined after host start, reached ROUND_ACTIVE');
   } finally {
     await browser.close();
   }
