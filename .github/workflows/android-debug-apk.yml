@@ -1,0 +1,120 @@
+name: Android debug APK
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'build/android-debug-apk-**'
+    paths:
+      - 'android/**'
+      - 'capacitor.config.ts'
+      - '.github/workflows/android-debug-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-debug-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        run: |
+          echo "::notice::env ANDROID_HOME=$ANDROID_HOME ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "::notice::PATH sdkmanager=$(command -v sdkmanager || echo MISSING)"
+          echo "::notice::ANDROID_HOME ls=$(ls "$ANDROID_HOME" 2>/dev/null | tr '\n' ' ' || echo EMPTY_OR_MISSING)"
+          echo "::notice::cmdline-tools=$(ls "$ANDROID_HOME/cmdline-tools" 2>/dev/null | tr '\n' ' ' || echo none)"
+          echo "::notice::build-tools=$(ls "$ANDROID_HOME/build-tools" 2>/dev/null | tr '\n' ' ' || echo none)"
+          echo "::notice::platforms=$(ls "$ANDROID_HOME/platforms" 2>/dev/null | tr '\n' ' ' || echo none)"
+          SDKM=$(command -v sdkmanager || find "$ANDROID_HOME" /usr/local/lib/android /opt -name sdkmanager -type f 2>/dev/null | head -1)
+          echo "::notice::resolved sdkmanager=$SDKM"
+          if [ -z "$SDKM" ]; then echo "::error::sdkmanager not found"; exit 1; fi
+          yes | "$SDKM" --licenses >/dev/null || true
+          "$SDKM" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Capacitor sync
+        run: npx cap sync android
+
+      - name: Build debug APK
+        run: |
+          chmod +x android/gradlew
+          set -o pipefail
+          cd android && ./gradlew --no-daemon --console=plain assembleDebug 2>&1 | tee ../gradle.log
+
+      - name: Verify APK
+        run: |
+          set -u
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          fail=0
+          err() { echo "::error::$1"; fail=1; }
+          note() { echo "::notice::$1"; }
+
+          if [ -f "$APK" ]; then
+            note "APK exists: $APK"
+            note "sha256: $(sha256sum "$APK" | awk '{print $1}')"
+            note "size bytes: $(stat -c%s "$APK")"
+          else
+            err "APK missing at $APK"
+          fi
+
+          if grep -q ":app:processDebugGoogleServices" gradle.log; then
+            note "processDebugGoogleServices ran: yes"
+          else
+            note "processDebugGoogleServices ran: no"
+            err "gradle.log missing :app:processDebugGoogleServices"
+          fi
+
+          if [ -f "$APK" ]; then
+            CAPJSON=$(unzip -p "$APK" assets/capacitor.config.json || true)
+            note "assets/capacitor.config.json: $CAPJSON"
+            echo "$CAPJSON" | grep -q "https://www.guess-history.com" || err "capacitor.config.json missing https://www.guess-history.com"
+
+            AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 | sort -V | tail -1)
+            PKG=$("$AAPT2" dump badging "$APK" | grep '^package:')
+            note "badging package line: $PKG"
+            echo "$PKG" | grep -q "name='com.backtothepast.app'" || err "badging package name is not com.backtothepast.app"
+          fi
+
+          [ "$fail" -eq 0 ] || exit 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: back-to-the-past-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Publish download link
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then TAG="android-latest"; else TAG="android-preview"; fi
+          cp android/app/build/outputs/apk/debug/app-debug.apk ./back-to-the-past.apk
+          gh release delete "$TAG" --cleanup-tag --yes || true
+          gh release create "$TAG" ./back-to-the-past.apk --prerelease --target "$GITHUB_SHA" --title "Android debug build ($TAG)" --notes "Debug APK built from $GITHUB_SHA. Debug-signed: uninstall the previous build before installing a new one."
+          echo "::notice::Download: https://github.com/lama010101/GH-NEW2/releases/download/$TAG/back-to-the-past.apk"
