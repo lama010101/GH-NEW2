@@ -23,6 +23,7 @@ const PUBLIC_API_ROUTES = [
   "/api/leaderboard",
   "/api/image-proxy",
   "/api/push/subscribe",
+  "/api/push/fcm-token",
 ];
 
 // PartyKit DO routes that carry their own x-partykit-secret validation. They must
