@@ -346,10 +346,6 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
         <p className={styles.loadError} role="alert">{startError}</p>
       )}
 
-      {!loadFailed && isNew && nextStageRow && (
-        <p className={styles.explainer}>{t('home.journey_explainer')}</p>
-      )}
-
       <GuestConversionModal
         isOpen={gateStageNumber !== null}
         stageNumber={gateStageNumber ?? 2}
