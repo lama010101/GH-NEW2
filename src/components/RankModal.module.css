@@ -1,0 +1,14 @@
+.card {
+  position: relative;
+  background: var(--gh-modal-bg);
+  border: var(--gh-modal-border);
+  border-radius: var(--gh-modal-radius);
+  box-shadow: var(--gh-modal-shadow);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 48px 12px 12px;
+}
