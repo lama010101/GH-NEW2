@@ -378,4 +378,14 @@ describe("sendPushToUser FCM channel", () => {
     expect(mockFns.fcmSend).toHaveBeenCalledTimes(1);
     expect(calls.fcmDeleteEq).toEqual([]);
   });
+
+  it("never rejects out of sendPushToUser even if both channels throw", async () => {
+    setFcmEnv();
+    mockBothTables();
+    mockFns.sendNotification.mockRejectedValue(new Error("web boom"));
+    mockFns.fcmSend.mockRejectedValue(new Error("fcm boom"));
+    const { sendPushToUser } = await loadModule();
+
+    await expect(sendPushToUser(USER_ID, { body: "b" })).resolves.toBeUndefined();
+  });
 });
