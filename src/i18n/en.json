@@ -202,7 +202,6 @@
     "journey_difficulty_chip": "Difficulty {rating}/10",
     "journey_start": "Start your journey",
     "journey_explainer": "Each stage is 5 rounds. Hit the accuracy gate to unlock the next one.",
-    "journey_badge_tally": "{gold} gold · {silver} silver · {bronze} bronze · {cleared} cleared",
     "journey_view": "View journey",
     "round_of": "Round {current} of {total}",
     "daily_tagline": "same difficulty for everyone",

@@ -12,7 +12,7 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.3);
   box-sizing: border-box;
 }
-.tile img { width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35)); }
+.tile img { width: 64px; height: 64px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35)); box-sizing: border-box; padding: 6px; border-radius: 16px; background: rgba(255,255,255,0.15); }
 .txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .name { font-size: var(--font-xl); font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
 .desc { font-size: var(--font-2xs); font-weight: 600; color: rgba(255,255,255,0.6); }

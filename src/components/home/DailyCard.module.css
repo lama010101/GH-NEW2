@@ -16,7 +16,7 @@
 
 .inner { padding: 18px; display: flex; flex-direction: column; flex: 1; }
 .head { display: flex; align-items: center; gap: 12px; }
-.icon { width: 64px; height: 64px; object-fit: contain; border-radius: 12px; display: block; }
+.icon { width: 64px; height: 64px; object-fit: contain; display: block; box-sizing: border-box; padding: 6px; border-radius: 16px; background: rgba(255,255,255,0.15); }
 .headTxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
 .title { margin: 0; font-size: var(--font-xl); font-weight: 900; letter-spacing: 1px; color: var(--gh-text-primary, #fff); }
 .date { font-size: var(--font-2xs); font-weight: 600; color: rgba(255,255,255,0.6); }
