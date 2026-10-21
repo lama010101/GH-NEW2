@@ -607,7 +607,8 @@
     "learn_related_location": "Verwandter Ort",
     "learn_this_event": "Dieses Ereignis",
     "learn_error": "Details konnten nicht geladen werden",
-    "learn_cta": "Über dieses Ereignis"
+    "learn_cta": "Über dieses Ereignis",
+    "left": "Verlassen"
   },
   "auth": {
     "sign_in": "Anmelden",

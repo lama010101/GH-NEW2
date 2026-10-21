@@ -2447,9 +2447,16 @@ export default class GameServer {
           // full resultsAutoAdvanceSec, or forever when it is 0). READY_NEXT
           // events remain human-written; nothing is fabricated for the AI.
           const readyRequiredCount = activePlayers.filter(p => p.isAi !== true).length;
+          // MP-FIX-LEFTPLAYER-ROUND-ADVANCE-001: count READY_NEXT only from
+          // players still ACTIVE — a left player's stale READY_NEXT (sent
+          // before leaving, or replayed from DB events on cold load) must not
+          // satisfy the sync quorum.
+          const readyActiveCount = activePlayers
+            .filter(p => p.isAi !== true && this.readyForNext.has(p.playerId))
+            .length;
           const shouldAdvance = isAsyncReadyNext
             ? this.readyForNext.size >= 1
-            : readyRequiredCount > 0 && this.readyForNext.size >= readyRequiredCount;
+            : readyRequiredCount > 0 && readyActiveCount >= readyRequiredCount;
           if (shouldAdvance) {
             console.log(`[PartyKit] ${isAsyncReadyNext ? "Async" : "Sync"} advance triggered — ready: ${this.readyForNext.size}/${activePlayers.length}`);
             // Clear any existing result timer

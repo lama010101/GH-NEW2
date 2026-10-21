@@ -607,7 +607,8 @@
     "learn_related_location": "Связанное место",
     "learn_this_event": "Это событие",
     "learn_error": "Не удалось загрузить данные",
-    "learn_cta": "Об этом событии"
+    "learn_cta": "Об этом событии",
+    "left": "Вышел"
   },
   "auth": {
     "sign_in": "Войти",

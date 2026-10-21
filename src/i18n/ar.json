@@ -607,7 +607,8 @@
     "learn_related_location": "موقع ذو صلة",
     "learn_this_event": "هذا الحدث",
     "learn_error": "تعذّر تحميل التفاصيل",
-    "learn_cta": "حول هذا الحدث"
+    "learn_cta": "حول هذا الحدث",
+    "left": "غادر"
   },
   "auth": {
     "sign_in": "تسجيل الدخول",

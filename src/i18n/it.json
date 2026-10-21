@@ -607,7 +607,8 @@
     "learn_related_location": "Luogo correlato",
     "learn_this_event": "Questo evento",
     "learn_error": "Impossibile caricare i dettagli",
-    "learn_cta": "Informazioni su questo evento"
+    "learn_cta": "Informazioni su questo evento",
+    "left": "Uscito"
   },
   "auth": {
     "sign_in": "Accedi",

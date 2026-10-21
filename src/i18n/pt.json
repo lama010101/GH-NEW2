@@ -607,7 +607,8 @@
     "learn_related_location": "Local relacionado",
     "learn_this_event": "Este evento",
     "learn_error": "Não foi possível carregar os detalhes",
-    "learn_cta": "Sobre este evento"
+    "learn_cta": "Sobre este evento",
+    "left": "Saiu"
   },
   "auth": {
     "sign_in": "Entrar",

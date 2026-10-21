@@ -607,7 +607,8 @@
     "learn_related_location": "相关地点",
     "learn_this_event": "此事件",
     "learn_error": "无法加载事件详情",
-    "learn_cta": "关于此事件"
+    "learn_cta": "关于此事件",
+    "left": "已离开"
   },
   "auth": {
     "sign_in": "登录",
