@@ -242,11 +242,6 @@ function JourneyCard({ state, onOpen }: { state: JourneyState; onOpen: (p: strin
   const gate = Math.round(gateFor(m.nextStage));
   const doneCount = Object.keys(m.completed).length;
 
-  const tally = { gold: 0, silver: 0, bronze: 0, completion: 0 };
-  for (const [s, acc] of Object.entries(m.completed)) {
-    const b = badgeFor(acc, gateFor(Number(s)));
-    if (b) tally[b]++;
-  }
   const cta = state === "new" ? "Start your journey" : m.resume ? "Resume attempt" : `Play stage ${m.nextStage}`;
 
   return (
@@ -266,8 +261,8 @@ function JourneyCard({ state, onOpen }: { state: JourneyState; onOpen: (p: strin
       </div>
 
       {/* Tier path — route-map style ported from prototype/home-v3 */}
-      <div className="hv2j-path">
-        <div className="hv2j-pathRow">
+      <button type="button" className="hv2j-path" onClick={() => onOpen("/journey")} aria-label="View journey">
+        <span className="hv2j-pathRow">
           {m.pathStages.map((s, i) => {
             const acc = m.completed[s];
             const isDone = acc !== undefined;
@@ -316,8 +311,8 @@ function JourneyCard({ state, onOpen }: { state: JourneyState; onOpen: (p: strin
             </span>
             <span className="hv2j-nodeCap hv2j-ghostCap">Stage {m.pathStages[4] + 1}</span>
           </span>
-        </div>
-      </div>
+        </span>
+      </button>
 
       {/* Up next */}
       <div className="hv2j-up">
@@ -367,17 +362,6 @@ function JourneyCard({ state, onOpen }: { state: JourneyState; onOpen: (p: strin
         <p className="hv2j-explainer">Each stage is 5 rounds. Hit the accuracy gate to unlock the next one.</p>
       )}
 
-      {/* Footer */}
-      <div className="hv2j-foot">
-        {state !== "new" && (
-          <span className="hv2j-tally">
-            {tally.gold} gold · {tally.silver} silver · {tally.bronze} bronze · {tally.completion} cleared
-          </span>
-        )}
-        <button type="button" className="hv2j-viewAll" onClick={() => onOpen("/journey")}>
-          View journey →
-        </button>
-      </div>
     </section>
   );
 }
@@ -815,7 +799,10 @@ const CSS = `
   }
   .hv2j-explainer { margin: 10px 0 0; font-size: 11.5px; color: rgba(255,255,255,0.6); }
 
-  .hv2j-path { margin-top: 20px; }
+  .hv2j-path {
+    display: block; width: 100%; margin-top: 20px; padding: 0;
+    border: 0; background: transparent; cursor: pointer; color: inherit; font: inherit;
+  }
   .hv2j-pathRow { display: flex; align-items: flex-start; }
   .hv2j-seg { flex: 1; min-width: 6px; height: 56px; display: flex; align-items: center; }
   .hv2j-seg::before {
@@ -862,14 +849,6 @@ const CSS = `
   .hv2j-ghostIcon { filter: grayscale(1); opacity: 0.4; width: 40px; height: 40px; }
   .hv2j-ghostCap { color: rgba(255,255,255,0.4); }
 
-  .hv2j-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; }
-  .hv2j-tally { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7); }
-  .hv2j-viewAll {
-    min-height: 44px; padding: 0 8px; border: 0; background: transparent; cursor: pointer;
-    font-size: 12px; font-weight: 800; color: #fff; margin-left: auto;
-  }
-  .hv2j-tally + .hv2j-viewAll { margin-left: 0; }
-
   @container hv2journey (min-width: 560px) {
     .hv2j-icon { width: 96px; height: 96px; }
     .hv2j-iconWrap { width: 112px; height: 112px; }
@@ -892,7 +871,7 @@ const CSS = `
   }
   .hv2d-inner { padding: 18px; display: flex; flex-direction: column; flex: 1; }
   .hv2d-head { display: flex; align-items: center; gap: 12px; }
-  .hv2d-icon { width: 64px; height: 64px; object-fit: contain; border-radius: 12px; display: block; }
+  .hv2d-icon { width: 64px; height: 64px; object-fit: contain; display: block; }
   .hv2d-headTxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
   .hv2d-title { margin: 0; font-size: 18px; font-weight: 900; letter-spacing: 1px; }
   .hv2d-date { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.6); }
@@ -979,7 +958,7 @@ const CSS = `
     display: flex; flex-direction: column;
   }
   .hv2c-head { display: flex; align-items: center; gap: 12px; }
-  .hv2c-icon { width: 64px; height: 64px; object-fit: contain; border-radius: 12px; display: block; }
+  .hv2c-icon { width: 64px; height: 64px; object-fit: contain; display: block; }
   .hv2c-headTxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
   .hv2c-title { margin: 0; font-size: 18px; font-weight: 900; letter-spacing: 1px; }
   .hv2c-sub { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.6); }
@@ -1070,6 +1049,12 @@ const CSS = `
     min-height: 40px; padding: 0 16px; border-radius: 999px; border: 0; cursor: pointer;
     background: #fff; color: #c05010; font-size: 13px; font-weight: 900;
     box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+
+  /* Card-head icons sit on a semi-transparent tile (prod .cardIconThumb port) */
+  .hv2j-headIcon, .hv2d-icon, .hv2c-icon, .hv2m-tile img {
+    box-sizing: border-box; padding: 6px; border-radius: 16px;
+    background: rgba(255,255,255,0.15);
   }
 
   /* ── Toast ── */
