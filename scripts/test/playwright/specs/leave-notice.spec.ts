@@ -65,6 +65,16 @@ async function readyAll(pages: Page[]) {
   await Promise.all(pages.map((p) => p.getByTestId('lobby-ready-btn').first().click()));
 }
 
+/** Mobile viewports show a "Fullscreen & install" dialog over the lobby — close it or clicks are intercepted. */
+async function dismissInstallPrompt(page: Page) {
+  try {
+    await page.getByRole('dialog').filter({ hasText: 'Fullscreen' })
+      .getByRole('button', { name: 'Close' }).click({ timeout: 3000 });
+  } catch {
+    // dialog not shown — fine
+  }
+}
+
 async function observeWS(gameId: string, user: (typeof TEST_USERS)[0]): Promise<CompeteWSClient> {
   const { accessToken } = await getSession(user);
   const client = new CompeteWSClient({
@@ -90,7 +100,9 @@ async function expectLeaveToast(page: Page, name: string, who: string) {
 
 async function boxes(page: Page, label: string) {
   const grab = async (sel: string) => {
-    const b = await page.locator(sel).first().boundingBox().catch(() => null);
+    const b = await page.locator(sel).first()
+      .boundingBox({ timeout: 1500 }) // absent selectors must not burn the action timeout
+      .catch(() => null);
     console.log(`[S6] ${label} ${sel} box=${JSON.stringify(b)}`);
     return b;
   };
@@ -99,7 +111,18 @@ async function boxes(page: Page, label: string) {
   const out: { toast: any; banner: any; violations: string[] } = { toast: null, banner: null, violations: [] };
   out.toast = await grab(TOAST);
   out.banner = await grab(BANNER);
-  for (const sel of ['[data-testid="round-bottom-panel"]', '[class*="bottomBarWrap"]', '[class*="timerWrapper"]', '[class*="roundPill"]', '[class*="opponentList"]']) {
+  for (const sel of [
+    '[data-testid="round-when-btn"]',
+    '[data-testid="round-where-btn"]',
+    '[data-testid="round-submit-btn"]',
+    '[data-testid="round-hints-btn"]',
+    '[data-testid="round-next-btn"]',
+    '[class*="bottomBarWrap"]',
+    '[class*="timerWrapper"]',
+    '[class*="roundPill"]',
+    '[class*="settingsBellWrap"]',
+    '[class*="opponentList"]',
+  ]) {
     const el = await grab(sel);
     if (intersect(out.toast, el)) out.violations.push(`toast∩${sel}`);
     if (intersect(out.banner, el)) out.violations.push(`banner∩${sel}`);
@@ -179,6 +202,9 @@ test.describe('Leave notices (sync)', () => {
       await pageA.getByTestId('solo-exit-btn').click();
       await pageA.waitForURL('**/home**', { timeout: NAV_TIMEOUT });
       console.log(`[LEAVENOTICE] S4 navigated to ${pageA.url()}`);
+      // The node-side observer shares A's playerId — the DO only schedules
+      // /leave when the player has NO live connections, so it must close first.
+      wsA.close();
       // DO marks A left after grace — poll prod DB
       const t0 = Date.now();
       let leftAt: string | null = null;
@@ -223,7 +249,7 @@ test.describe('Leave notices (sync)', () => {
     }
   });
 
-  test('S6: mobile 390x844 — toast/banner clear fixed UI in both phases', async () => {
+  test('S6a: mobile 390x844 — toast/banner clear fixed UI in ROUND_ACTIVE', async () => {
     const browser = await chromium.launch({ headless: true });
     try {
       // Phase 1 — ROUND_ACTIVE: 3 players, C leaves then B leaves → toast+banner on A.
@@ -234,6 +260,7 @@ test.describe('Leave notices (sync)', () => {
       await Promise.all([authenticatePage(pageA, A), authenticatePage(pageB, B), authenticatePage(pageC, C)]);
       const gameId = await makeGame(pageA, A);
       await joinLobby([pageA, pageB, pageC], gameId);
+      await Promise.all([pageA, pageB, pageC].map(dismissInstallPrompt));
       await readyAll([pageA, pageB, pageC]);
       const wsA = await observeWS(gameId, A);
       await wsA.waitForState((s) => s.status === 'ROUND_ACTIVE', STATE_TIMEOUT);
@@ -242,39 +269,50 @@ test.describe('Leave notices (sync)', () => {
       await pageB.close();
       await expectLeaveToast(pageA, B.displayName, 'A-mobile');
       await expect(pageA.locator(BANNER)).toBeVisible({ timeout: LEAVE_PROPAGATE_MS });
+      await dismissInstallPrompt(pageA);
       const r1 = await boxes(pageA, 'ROUND_ACTIVE');
       expect(r1.banner, 'banner must be visible in ROUND_ACTIVE').toBeTruthy();
       expect(r1.violations, `ROUND_ACTIVE overlaps: ${r1.violations}`).toEqual([]);
       console.log('[LEAVENOTICE] S6 ROUND_ACTIVE PASS: boxes clear of fixed UI');
       await ctxA.close(); await ctxB.close(); await ctxC.close();
+    } finally {
+      await browser.close();
+    }
+  });
 
-      // Phase 2 — ROUND_COMPLETE: 4 players, C+D leave in round, A+B submit,
-      // then B leaves during results → toast+banner on A in ROUND_COMPLETE.
-      const [ctxA2, ctxB2, ctxC2, ctxD2] = await Promise.all([
-        browser.newContext(MOBILE), browser.newContext(MOBILE), browser.newContext(MOBILE), browser.newContext(MOBILE)]);
-      const [pageA2, pageB2, pageC2, pageD2] = await Promise.all([ctxA2.newPage(), ctxB2.newPage(), ctxC2.newPage(), ctxD2.newPage()]);
-      const D = TEST_USERS[3];
-      await Promise.all([authenticatePage(pageA2, A), authenticatePage(pageB2, B), authenticatePage(pageC2, C), authenticatePage(pageD2, D)]);
+  test('S6b: mobile 390x844 — toast/banner clear fixed UI in ROUND_COMPLETE', async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      // 2 players: both submit → ROUND_COMPLETE, then B leaves during results
+      // → B's toast + solo banner on A while status is ROUND_COMPLETE.
+      const [ctxA2, ctxB2] = await Promise.all([
+        browser.newContext(MOBILE), browser.newContext(MOBILE)]);
+      const [pageA2, pageB2] = await Promise.all([ctxA2.newPage(), ctxB2.newPage()]);
+      const [A, B] = TEST_USERS;
+      await Promise.all([authenticatePage(pageA2, A), authenticatePage(pageB2, B)]);
       const gameId2 = await makeGame(pageA2, A);
-      await joinLobby([pageA2, pageB2, pageC2, pageD2], gameId2);
-      await readyAll([pageA2, pageB2, pageC2, pageD2]);
+      await joinLobby([pageA2, pageB2], gameId2);
+      await Promise.all([pageA2, pageB2].map(dismissInstallPrompt));
+      await readyAll([pageA2, pageB2]);
       const wsA2 = await observeWS(gameId2, A);
       await wsA2.waitForState((s) => s.status === 'ROUND_ACTIVE', STATE_TIMEOUT);
-      await pageC2.close();
-      await pageD2.close();
-      await expectLeaveToast(pageA2, C.displayName, 'A-mobile-2');
-      // A and B submit → ROUND_COMPLETE while B still active
-      await submitGuessViaUI(pageA2, { year: 1980, lat: 40, lng: 10 });
-      await submitGuessViaUI(pageB2, { year: 1990, lat: 41, lng: 11 });
+      // A and B submit via WS — the layout assertion doesn't depend on the
+      // guess UI, and mobile sheet interactions are too slow for the cap.
+      const roundIndex = wsA2.getLastSnapshot()?.currentRoundIndex ?? 0;
+      const wsB2 = await observeWS(gameId2, B);
+      wsA2.submitGuess(roundIndex, 1980, 40, 10);
+      wsB2.submitGuess(roundIndex, 1990, 41, 11);
       await wsA2.waitForState((s) => s.status === 'ROUND_COMPLETE', STATE_TIMEOUT);
       await pageB2.close(); // B leaves during ROUND_COMPLETE → toast + banner
+      wsB2.close(); // observer shares B's playerId — must die too
       await expectLeaveToast(pageA2, B.displayName, 'A-mobile-2');
       await expect(pageA2.locator(BANNER)).toBeVisible({ timeout: LEAVE_PROPAGATE_MS });
+      await dismissInstallPrompt(pageA2);
       const r2 = await boxes(pageA2, 'ROUND_COMPLETE');
       expect(r2.banner, 'banner must be visible in ROUND_COMPLETE').toBeTruthy();
       expect(r2.violations, `ROUND_COMPLETE overlaps: ${r2.violations}`).toEqual([]);
       console.log('[LEAVENOTICE] S6 ROUND_COMPLETE PASS: boxes clear of fixed UI');
-      await ctxA2.close(); await ctxB2.close(); await ctxC2.close(); await ctxD2.close();
+      await ctxA2.close(); await ctxB2.close();
     } finally {
       await browser.close();
     }

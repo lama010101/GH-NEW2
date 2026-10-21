@@ -17,6 +17,29 @@
   pointer-events: none; /* non-blocking: only the banner re-enables events */
 }
 
+/* Mobile: the opponent column (status pill + avatar ≈140px wide) occupies the
+   top-right from y16, so a centered stack always overlaps it at 390px. Anchor
+   left instead — below roundPill (bottom≈44) and settingsBell (bottom≈94),
+   and bounded left of the opponent column's worst-case left edge. */
+@media (max-width: 640px) {
+  .stack {
+    top: calc(104px + env(safe-area-inset-top));
+    left: 16px;
+    transform: none;
+    align-items: flex-start;
+    max-width: calc(100vw - 176px);
+  }
+
+  .toast {
+    max-width: 100%;
+  }
+
+  .soloBannerActions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
 .soloBanner {
   pointer-events: auto;
   display: flex;
