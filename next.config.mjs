@@ -34,6 +34,12 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'im.runware.ai',
       },
+      {
+        // Event photos referenced by events.slug SEO pages (src/app/events/**)
+        // are stored here — see SEO-BUILD-EVENTSPAGES-001.
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+      },
     ],
   },
   async headers() {
