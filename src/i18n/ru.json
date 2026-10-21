@@ -608,7 +608,11 @@
     "learn_this_event": "Это событие",
     "learn_error": "Не удалось загрузить данные",
     "learn_cta": "Об этом событии",
-    "left": "Вышел"
+    "left": "Вышел",
+    "player_left_toast": "{name} вышел из игры",
+    "solo_banner_title": "Вы остались единственным игроком",
+    "solo_continue": "Продолжить одному",
+    "solo_exit": "Выйти из игры"
   },
   "auth": {
     "sign_in": "Войти",

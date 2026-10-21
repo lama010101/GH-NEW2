@@ -608,7 +608,11 @@
     "learn_this_event": "Este evento",
     "learn_error": "No se pudieron cargar los detalles",
     "learn_cta": "Acerca de este evento",
-    "left": "Salió"
+    "left": "Salió",
+    "player_left_toast": "{name} abandonó la partida",
+    "solo_banner_title": "Eres el único jugador que queda",
+    "solo_continue": "Continuar en solitario",
+    "solo_exit": "Salir del juego"
   },
   "auth": {
     "sign_in": "Iniciar sesión",

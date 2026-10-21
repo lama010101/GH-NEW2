@@ -608,7 +608,11 @@
     "learn_this_event": "This event",
     "learn_error": "Couldn't load event details",
     "learn_cta": "About this event",
-    "left": "Left"
+    "left": "Left",
+    "player_left_toast": "{name} left the game",
+    "solo_banner_title": "You're the only player left",
+    "solo_continue": "Continue solo",
+    "solo_exit": "Exit game"
   },
   "auth": {
     "sign_in": "Sign In",

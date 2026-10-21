@@ -608,7 +608,11 @@
     "learn_this_event": "Dieses Ereignis",
     "learn_error": "Details konnten nicht geladen werden",
     "learn_cta": "Über dieses Ereignis",
-    "left": "Verlassen"
+    "left": "Verlassen",
+    "player_left_toast": "{name} hat das Spiel verlassen",
+    "solo_banner_title": "Du bist der einzige verbleibende Spieler",
+    "solo_continue": "Alleine weiterspielen",
+    "solo_exit": "Spiel verlassen"
   },
   "auth": {
     "sign_in": "Anmelden",
