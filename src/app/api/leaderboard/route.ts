@@ -48,6 +48,9 @@ type LevelupRow = BaseRow & {
 
 type LeaderboardRow = OverallRow | DailyTodayRow | DailyAlltimeRow | LevelupRow;
 
+const TOP_LIMIT = 50;
+const AROUND_RADIUS = 12;
+
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 function formatError(message: string, status: number) {
@@ -340,14 +343,9 @@ export async function GET(request: Request) {
     const identityMap = await resolvePlayerIdentities(dbPool, allPlayerIds);
 
     const ownRow = rankedRows.find((r) => r.player_id === userId);
-    const visibleRows: LeaderboardRow[] = [];
 
-    for (const row of rankedRows) {
+    const buildRow = (row: RawRankedRow): LeaderboardRow => {
       const identity = identityMap.get(row.player_id);
-      if (!rowMatchesFilter(row, identity, { includeHumans, includeAi }, friendsOnly, followedIds, userId)) {
-        continue;
-      }
-
       const base: BaseRow = {
         player_id: row.player_id,
         rank: row.rank,
@@ -357,61 +355,52 @@ export async function GET(request: Request) {
       };
 
       if (tab === "levelup") {
-        visibleRows.push({
+        return {
           ...base,
           current_level: row.current_level ?? 0,
           best_accuracy: row.best_accuracy ?? 0,
-        } as LevelupRow);
-      } else if (tab === "daily_today") {
-        visibleRows.push({
+        } as LevelupRow;
+      }
+      if (tab === "daily_today") {
+        return {
           ...base,
           avg_accuracy: row.avg_accuracy ?? 0,
           total_xp: row.total_xp ?? 0,
           completed_at: row.completed_at ? row.completed_at.toISOString() : '',
-        } as DailyTodayRow);
-      } else if (tab === "daily_alltime") {
-        visibleRows.push({
+        } as DailyTodayRow;
+      }
+      if (tab === "daily_alltime") {
+        return {
           ...base,
           avg_accuracy: row.avg_accuracy ?? 0,
           total_xp: row.total_xp ?? 0,
           games_played: row.games_played ?? 0,
-        } as DailyAlltimeRow);
-      } else {
-        visibleRows.push({
-          ...base,
-          avg_accuracy: row.avg_accuracy ?? 0,
-          total_xp: row.total_xp ?? 0,
-          games_played: row.games_played ?? 0,
-          rounds_played: row.rounds_played ?? 0,
-          rounds_won: row.rounds_won ?? 0,
-        } as OverallRow);
+        } as DailyAlltimeRow;
       }
+      return {
+        ...base,
+        avg_accuracy: row.avg_accuracy ?? 0,
+        total_xp: row.total_xp ?? 0,
+        games_played: row.games_played ?? 0,
+        rounds_played: row.rounds_played ?? 0,
+        rounds_won: row.rounds_won ?? 0,
+      } as OverallRow;
+    };
 
-      if (visibleRows.length >= 50) break;
-    }
+    const matched = rankedRows.filter((row) =>
+      rowMatchesFilter(row, identityMap.get(row.player_id), { includeHumans, includeAi }, friendsOnly, followedIds, userId)
+    );
+    const visibleRows = matched.slice(0, TOP_LIMIT).map(buildRow);
 
-    let ownEntry: LeaderboardRow | null = null;
-    if (ownRow) {
-      const identity = identityMap.get(ownRow.player_id);
-      const base: BaseRow = {
-        player_id: ownRow.player_id,
-        rank: ownRow.rank,
-        display_name: identity?.display_name ?? null,
-        avatar_url: identity?.avatar_url ?? null,
-        is_ai: identity?.is_ai ?? false,
-      };
+    // When the caller sits below the top slice, also return their neighbours so
+    // the page can show (and centre on) their position.
+    const ownIdx = matched.findIndex((r) => r.player_id === userId);
+    const aroundOwn =
+      ownIdx >= TOP_LIMIT
+        ? matched.slice(Math.max(TOP_LIMIT, ownIdx - AROUND_RADIUS), ownIdx + AROUND_RADIUS + 1).map(buildRow)
+        : [];
 
-      if (tab === "levelup") {
-        ownEntry = { ...base, current_level: ownRow.current_level ?? 0, best_accuracy: ownRow.best_accuracy ?? 0 } as LevelupRow;
-      } else if (tab === "daily_today") {
-        ownEntry = { ...base, avg_accuracy: ownRow.avg_accuracy ?? 0, total_xp: ownRow.total_xp ?? 0, completed_at: ownRow.completed_at ? ownRow.completed_at.toISOString() : '' } as DailyTodayRow;
-      } else if (tab === "daily_alltime") {
-        ownEntry = { ...base, avg_accuracy: ownRow.avg_accuracy ?? 0, total_xp: ownRow.total_xp ?? 0, games_played: ownRow.games_played ?? 0 } as DailyAlltimeRow;
-      } else {
-        ownEntry = { ...base, avg_accuracy: ownRow.avg_accuracy ?? 0, total_xp: ownRow.total_xp ?? 0, games_played: ownRow.games_played ?? 0, rounds_played: ownRow.rounds_played ?? 0, rounds_won: ownRow.rounds_won ?? 0 } as OverallRow;
-      }
-
-    }
+    const ownEntry: LeaderboardRow | null = ownRow ? buildRow(ownRow) : null;
 
     return NextResponse.json({
       tab,
@@ -420,6 +409,7 @@ export async function GET(request: Request) {
       ai: includeAi,
       friends: friendsOnly,
       rows: visibleRows,
+      aroundOwn,
       ownEntry,
     });
   } catch (error) {

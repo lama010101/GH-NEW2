@@ -6,7 +6,7 @@ import { useEffect } from 'react';
  * Global haptic feedback for button clicks.
  *
  * Attaches a single capture-phase `click` listener on `document`. When a click
- * lands on (or inside) a `<button>`, fires `navigator.vibrate(10)`.
+ * lands on (or inside) a button-like element (`<button>`, `[role=button]`, button/submit inputs, `<summary>`), fires `navigator.vibrate(10)`.
  *
  * Gated by the existing `gh_vibrate` localStorage flag (default `true`) so the
  * user's vibration preference stays the single source of truth. Silently no-ops
@@ -14,6 +14,9 @@ import { useEffect } from 'react';
  *
  * Renders nothing.
  */
+const CLICKABLE_SELECTOR =
+  'button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"], summary';
+
 export function HapticFeedback() {
   useEffect(() => {
     const handleClick = (event: Event) => {
@@ -33,8 +36,8 @@ export function HapticFeedback() {
       if (!(target instanceof Element)) {
         return;
       }
-      const button = target.closest('button');
-      if (!button) {
+      const button = target.closest(CLICKABLE_SELECTOR);
+      if (!button || button.matches(':disabled, [aria-disabled="true"]')) {
         return;
       }
       navigator.vibrate(10);
