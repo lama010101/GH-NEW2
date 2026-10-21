@@ -59,3 +59,8 @@ android/**/*.jks
 android/**/*.p12
 android/**/local.properties
 android/**/key.properties
+
+# local scratch (INFRA-HOUSEKEEP-1021-011)
+tmp/
+.tmp-screens/
+supabase/.temp/
