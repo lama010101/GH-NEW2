@@ -608,7 +608,11 @@
     "learn_this_event": "Questo evento",
     "learn_error": "Impossibile caricare i dettagli",
     "learn_cta": "Informazioni su questo evento",
-    "left": "Uscito"
+    "left": "Uscito",
+    "player_left_toast": "{name} ha lasciato la partita",
+    "solo_banner_title": "Sei l'unico giocatore rimasto",
+    "solo_continue": "Continua da solo",
+    "solo_exit": "Esci dalla partita"
   },
   "auth": {
     "sign_in": "Accedi",

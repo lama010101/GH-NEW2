@@ -608,7 +608,11 @@
     "learn_this_event": "هذا الحدث",
     "learn_error": "تعذّر تحميل التفاصيل",
     "learn_cta": "حول هذا الحدث",
-    "left": "غادر"
+    "left": "غادر",
+    "player_left_toast": "{name} غادر اللعبة",
+    "solo_banner_title": "أنت اللاعب الوحيد المتبقي",
+    "solo_continue": "متابعة منفردًا",
+    "solo_exit": "الخروج من اللعبة"
   },
   "auth": {
     "sign_in": "تسجيل الدخول",

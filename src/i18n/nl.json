@@ -608,7 +608,11 @@
     "learn_this_event": "Deze gebeurtenis",
     "learn_error": "Details konden niet worden geladen",
     "learn_cta": "Over deze gebeurtenis",
-    "left": "Vertrokken"
+    "left": "Vertrokken",
+    "player_left_toast": "{name} heeft het spel verlaten",
+    "solo_banner_title": "Jij bent de enige overgebleven speler",
+    "solo_continue": "Alleen doorgaan",
+    "solo_exit": "Spel verlaten"
   },
   "auth": {
     "sign_in": "Inloggen",

@@ -608,7 +608,11 @@
     "learn_this_event": "このイベント",
     "learn_error": "詳細を読み込めませんでした",
     "learn_cta": "この出来事について",
-    "left": "退出済み"
+    "left": "退出済み",
+    "player_left_toast": "{name} がゲームを退出しました",
+    "solo_banner_title": "残っているのはあなただけです",
+    "solo_continue": "一人で続ける",
+    "solo_exit": "ゲームを退出"
   },
   "auth": {
     "sign_in": "ログイン",

@@ -608,7 +608,11 @@
     "learn_this_event": "此事件",
     "learn_error": "无法加载事件详情",
     "learn_cta": "关于此事件",
-    "left": "已离开"
+    "left": "已离开",
+    "player_left_toast": "{name} 离开了游戏",
+    "solo_banner_title": "只剩下你一名玩家了",
+    "solo_continue": "独自继续",
+    "solo_exit": "退出游戏"
   },
   "auth": {
     "sign_in": "登录",

@@ -608,7 +608,11 @@
     "learn_this_event": "Este evento",
     "learn_error": "Não foi possível carregar os detalhes",
     "learn_cta": "Sobre este evento",
-    "left": "Saiu"
+    "left": "Saiu",
+    "player_left_toast": "{name} saiu do jogo",
+    "solo_banner_title": "Você é o único jogador restante",
+    "solo_continue": "Continuar sozinho",
+    "solo_exit": "Sair do jogo"
   },
   "auth": {
     "sign_in": "Entrar",
