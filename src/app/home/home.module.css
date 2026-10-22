@@ -11,7 +11,7 @@
   width: 100%;
   min-height: 100vh;
   overflow-y: auto;
-  padding-top: calc(72px + env(safe-area-inset-top, 0px));
+  padding-top: calc(56px + env(safe-area-inset-top, 0px));
   padding-bottom: 24px;
   transition: padding-top 0.4s cubic-bezier(0.16,1,0.3,1);
 }
