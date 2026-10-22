@@ -809,6 +809,7 @@
   },
   "rank": {
     "rank_label": "Rango",
+    "your_rank": "Tu rango",
     "tier_prefix": "T",
     "next_label": "Siguiente",
     "rank_1": "Vagabundo",

@@ -809,6 +809,7 @@
   },
   "rank": {
     "rank_label": "Ранг",
+    "your_rank": "Ваш ранг",
     "tier_prefix": "T",
     "next_label": "Далее",
     "rank_1": "Странник",

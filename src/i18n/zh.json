@@ -809,6 +809,7 @@
   },
   "rank": {
     "rank_label": "段位",
+    "your_rank": "你的段位",
     "tier_prefix": "T",
     "next_label": "下一个",
     "rank_1": "漫游者",

@@ -809,6 +809,7 @@
   },
   "rank": {
     "rank_label": "ランク",
+    "your_rank": "あなたのランク",
     "tier_prefix": "T",
     "next_label": "次",
     "rank_1": "放浪者",

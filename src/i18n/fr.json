@@ -809,6 +809,7 @@
   },
   "rank": {
     "rank_label": "Rang",
+    "your_rank": "Votre rang",
     "tier_prefix": "T",
     "next_label": "Suivant",
     "rank_1": "Vagabond",

@@ -809,6 +809,7 @@
   },
   "rank": {
     "rank_label": "الرتبة",
+    "your_rank": "رتبتك",
     "tier_prefix": "T",
     "next_label": "التالي",
     "rank_1": "الهائم",

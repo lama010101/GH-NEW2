@@ -809,6 +809,7 @@
   },
   "rank": {
     "rank_label": "Rank",
+    "your_rank": "Your rank",
     "tier_prefix": "T",
     "next_label": "Next",
     "rank_1": "Wanderer",

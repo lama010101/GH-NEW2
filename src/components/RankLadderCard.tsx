@@ -64,11 +64,6 @@ const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
 const clampPct = (n: number) => Math.max(0, Math.min(100, n));
 
-const xpShort = (n: number) =>
-  n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
-    : n >= 1_000 ? `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`
-    : `${n}`;
-
 // Per-tier emblems (drawn centred around 80,85, ~60px wide)
 function Emblem({ tier, accent }: { tier: number; accent: string }) {
   const stroke = IVORY_DARK;
@@ -337,6 +332,7 @@ interface RankLadderCardProps {
 export default function RankLadderCard({ totalXp, hint, variant = "glass" }: RankLadderCardProps) {
   const t = useTranslations('rank');
   const tGame = useTranslations('game');
+  const tLb = useTranslations('leaderboard');
   const railRef = useRef<HTMLDivElement | null>(null);
   const centered = useRef(false);
   const centeredTier = useRef<number | null>(null);
@@ -395,6 +391,7 @@ export default function RankLadderCard({ totalXp, hint, variant = "glass" }: Ran
       <div className={isCard ? styles.lcHeadCard : styles.lcHead}>
         {isCard && <span className={styles.accentBar} aria-hidden="true" />}
         <div className={styles.lcTitles}>
+          <span className={styles.lcYourRank}>{t('your_rank')}</span>
           <h3 className={isCard ? styles.lcTitleCard : styles.lcTitle}>{t(info.titleKey)}</h3>
           <span className={styles.lcSub}>
             {t('tier_of_10', { tier: info.tier })} · {Math.floor(totalXp).toLocaleString()}{tGame('xp_unit')} · {info.progressPct}%
@@ -443,7 +440,7 @@ export default function RankLadderCard({ totalXp, hint, variant = "glass" }: Ran
                   }}
                 />
               </span>
-              <span className={styles.lcXpNeed}>{xpShort(r.threshold)}{tGame('xp_unit')}</span>
+              <span className={styles.lcXpNeed}>{tLb('xp_amount', { n: r.threshold })}</span>
             </div>
           );
         })}

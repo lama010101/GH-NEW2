@@ -809,6 +809,7 @@
   },
   "rank": {
     "rank_label": "Classificação",
+    "your_rank": "Sua classificação",
     "tier_prefix": "T",
     "next_label": "Próximo",
     "rank_1": "Andarilho",
