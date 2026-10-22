@@ -235,6 +235,8 @@ a {
   /* --- Historian's Journey stage card gradient (purple; NOT --gh-when-solid
          #8b5cf6 and NOT the WHERE cyan — HOME-BUILD-PURPLESTAGE-RANKMODAL-003) --- */
   --gh-journey-stage-gradient: linear-gradient(135deg, #3b0764 0%, #6b21a8 55%, #9333ea 100%);
+  /* BRAND-BUILD-PURPLEICONS-1015-003: brand primary = mid-stop of the Journey gradient. Mirrors src/core/brand.ts (guard-tested). No component uses it yet. */
+  --gh-primary: #6b21a8;
 
   /* --- Backgrounds --- */
   --gh-bg-base:     #080c14;
