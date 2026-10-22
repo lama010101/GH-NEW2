@@ -8,7 +8,7 @@
 // icon — single source).
 //
 // Flow (intermediate /journey/[stageId] screen removed — it is now a thin
-// redirect): Play/Retry POST /api/journey/start → sessionStorage marker →
+// redirect): Play POST /api/journey/start → sessionStorage marker →
 // /practice/{gameId} directly. /practice/[gameId] is the single owner of
 // journey completion+result — this page never calls /api/journey/complete.
 
@@ -302,7 +302,7 @@ export default function JourneyPage() {
   // and would still reject an unconverted caller).
   const [hasConverted, setHasConverted] = useState(false);
 
-  // Play/Retry: guest tapping stage >=2 → registration modal (the server-side
+  // Play: guest tapping stage >=2 → registration modal (the server-side
   // gate in startJourneyPlaythrough stays authoritative); otherwise POST
   // /api/journey/start → marker → /practice/{gameId} directly.
   const handleStart = async (stage: JourneyStageRow) => {
@@ -476,10 +476,9 @@ export default function JourneyPage() {
                 timerSec % 60
               ).padStart(2, "0")}`;
               const yearFrom = journeyYearLabel(
-                journeyMinEventYear(stage.stage_number, currentYear),
-                tGame("bc_suffix")
+                journeyMinEventYear(stage.stage_number, currentYear)
               );
-              const yearTo = journeyYearLabel(currentYear, tGame("bc_suffix"));
+              const yearTo = journeyYearLabel(currentYear);
               // HJ-UI-POLISH-035 — title is "Stage N · <era name>"; the
               // curated stage title/theme (when one exists) drops to the
               // subtitle line instead of duplicating the era.
@@ -600,16 +599,6 @@ export default function JourneyPage() {
                             progress.best_badge !== "completion" && (
                               <JourneyBadge badge={progress.best_badge} />
                             )}
-                          <button
-                            type="button"
-                            className={pageStyles.retryBtn}
-                            disabled={startingStageId !== null}
-                            onClick={() => void handleStart(stage)}
-                          >
-                            {startingStageId === stage.id
-                              ? tCommon("loading")
-                              : t("list_retry")}
-                          </button>
                         </>
                       )}
                       {isCurrent && (

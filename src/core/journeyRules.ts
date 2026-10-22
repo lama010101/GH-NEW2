@@ -80,14 +80,15 @@ export function journeyStageIconFile(stageNumber: number): string {
   return `/icons/ranks/rank-${String(journeyStageTierIndex(stageNumber) + 1).padStart(2, "0")}.png`;
 }
 
-// BC-aware year label — semantics mirrored verbatim from the repo's existing
-// formatter yearLabel() in src/components/YearPicker.tsx:72-75, which is
-// private to that file (not exported) and outside this task's file allowlist,
-// so it cannot be imported directly. Same rule: y > 0 → the bare year;
-// y <= 0 → |y| (0 counts as 1) + the localized BC suffix (game.bc_suffix).
-export function journeyYearLabel(year: number, bcSuffix: string): string {
+// Signed year label — same absolute-year semantics as the repo's existing
+// formatter yearLabel() in src/components/YearPicker.tsx:72-75 (private to
+// that file, so not importable), but without the localized BC suffix:
+// y > 0 → the bare year; y <= 0 → U+2212 minus + |y| (0 counts as 1),
+// emitted as the JS unicode escape so the literal stays ASCII-only
+// (UIX-BUILD-JOURNEYPAGE-REDO-1022-B05).
+export function journeyYearLabel(year: number): string {
   if (year > 0) return String(year);
-  return `${Math.abs(year) === 0 ? 1 : Math.abs(year)} ${bcSuffix}`;
+  return `\u2212${Math.abs(year) === 0 ? 1 : Math.abs(year)}`;
 }
 
 // Era key for a stage's recency window — used as the card's subtitle name when
