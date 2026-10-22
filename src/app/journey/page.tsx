@@ -37,6 +37,7 @@ import TopBar from "@/components/layout/TopBar";
 import { NavModal } from "@/components/NavModal";
 import { MiniRing } from "@/components/compete/RoundCompleteSection";
 import { JourneyBadge } from "./_components/JourneyBadge";
+import { TierPath } from "./_components/TierPath";
 import { GuestConversionModal } from "./_components/GuestConversionModal";
 import { startJourneyStage } from "./_components/journeyStart";
 import {
@@ -417,6 +418,17 @@ export default function JourneyPage() {
             </div>
           )}
         </header>
+
+        {/* Tier path — moved from the home JourneyCard
+            (UIX-JC-TIERPATH-MOVE-1022-001); currentStageNumber is identical to
+            the card's nextStageRow.stage_number (lowest non-completed stage). */}
+        {allStages.length > 0 && (
+          <TierPath
+            stages={allStages}
+            progressRows={progressRows}
+            currentStageNumber={currentStageNumber}
+          />
+        )}
 
         {loadError && (
           <div className={pageStyles.errorCard} role="alert">
