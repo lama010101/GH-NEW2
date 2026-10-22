@@ -140,4 +140,19 @@ describe("preflightRoster", () => {
     expect(result.skipped).toEqual([]);
     expect(result.warnings.some((w) => w.includes("not probed"))).toBe(true);
   });
+
+  it("(h) keeps models whose catalog entry lacks input_modalities (unknown capability)", async () => {
+    const result = await preflightRoster([player("x/nomod"), player("x/emptyarch")], {
+      fetchImpl: mockFetch({
+        catalog: () =>
+          jsonResponse({
+            data: [{ id: "x/nomod" }, { id: "x/emptyarch", architecture: {} }],
+          }),
+        endpoints: () => jsonResponse(endpointsResponse([{}])),
+      }),
+    });
+    expect(result.keep).toHaveLength(2);
+    expect(result.skipped).toEqual([]);
+    expect(result.warnings).toHaveLength(2);
+  });
 });

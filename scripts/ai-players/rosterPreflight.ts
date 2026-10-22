@@ -46,11 +46,10 @@ export async function preflightRoster<T extends PreflightPlayer>(
           const modalities = (entry as { architecture?: { input_modalities?: unknown } })
             .architecture?.input_modalities;
           if (typeof id !== "string") continue;
+          if (!Array.isArray(modalities)) continue;
           catalog.set(
             id,
-            Array.isArray(modalities)
-              ? modalities.filter((m): m is string => typeof m === "string")
-              : []
+            modalities.filter((m): m is string => typeof m === "string")
           );
         }
       } else {
@@ -123,7 +122,7 @@ export async function preflightRoster<T extends PreflightPlayer>(
         }
       } else {
         warnings.push(
-          `${player.name} (${player.model_id}): absent from models catalog but has live endpoints; kept`
+          `${player.name} (${player.model_id}): input capability unknown (absent from models catalog or no input_modalities listed) but has live endpoints; kept`
         );
       }
     }
