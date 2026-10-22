@@ -57,13 +57,13 @@ describe("journeyStageIconFile", () => {
   });
 });
 
-describe("journeyYearLabel (mirrors YearPicker yearLabel semantics)", () => {
+describe("journeyYearLabel (YearPicker absolute-year semantics, minus sign)", () => {
   it("positive years render bare", () => {
-    expect(journeyYearLabel(1986, "BC")).toBe("1986");
+    expect(journeyYearLabel(1986)).toBe("1986");
   });
-  it("non-positive years render |y| BC (0 → 1 BC)", () => {
-    expect(journeyYearLabel(-1974, "BC")).toBe("1974 BC");
-    expect(journeyYearLabel(0, "BC")).toBe("1 BC");
+  it("non-positive years render U+2212 minus + |y| (0 → 1)", () => {
+    expect(journeyYearLabel(-1974)).toBe("\u22121974");
+    expect(journeyYearLabel(0)).toBe("\u22121");
   });
 });
 
