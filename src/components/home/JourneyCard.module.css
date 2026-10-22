@@ -84,7 +84,7 @@
 }
 .explainer { margin: 10px 0 0; font-size: var(--font-2xs); color: rgba(255,255,255,0.6); }
 
-/* Tier-path rules (.path/.seg/.node*/.ghost*) moved verbatim to
+/* Tier-path rules (path, seg, node and ghost classes) moved verbatim to
    src/app/journey/_components/TierPath.module.css (UIX-JC-TIERPATH-MOVE-1022-001). */
 
 @container hv2journey (min-width: 560px) {
