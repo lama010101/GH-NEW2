@@ -686,8 +686,6 @@
     "score_distribution": "Distribuição de pontuação",
     "history_collection": "Coleção de histórico",
     "accuracy_by_century": "Precisão por século",
-    "account": "Conta",
-    "email": "E-mail",
     "member_since": "Membro desde",
     "events_seen": "Eventos vistos",
     "by_century": "Por século",
@@ -705,7 +703,6 @@
     "games_played": "Partidas jogadas",
     "rounds_played": "Rodadas jogadas",
     "no_games_yet": "Sem partidas ainda",
-    "sign_out": "Sair",
     "experience": "Experiência",
     "accuracy": "Precisão",
     "era": "Era",
@@ -721,8 +718,6 @@
     "daily_all_time": "Diário (todos os tempos)",
     "level": "Nível",
     "era_region": "Era & region",
-    "member_since_full": "Member since",
-    "player_id": "Player ID",
     "rounds": "Rounds",
     "stats": "Stats"
   },
@@ -809,6 +804,7 @@
   },
   "rank": {
     "rank_label": "Classificação",
+    "your_rank": "Sua classificação",
     "tier_prefix": "T",
     "next_label": "Próximo",
     "rank_1": "Andarilho",

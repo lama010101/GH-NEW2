@@ -10,15 +10,15 @@
 // findAnyActivePlaythrough() + GET /api/compete/{gameId}.
 
 import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Play, Lock, Medal } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { supabaseBrowser } from '@/core/supabaseBrowser'
 import {
   journeyRoundCount,
   journeyStageEraKey,
   journeyStageIconFile,
-  journeyStageTierIndex,
 } from '@/core/journeyRules'
 import {
   findAnyActivePlaythrough,
@@ -29,8 +29,6 @@ import { startJourneyStage } from '@/app/journey/_components/journeyStart'
 import { GuestConversionModal } from '@/app/journey/_components/GuestConversionModal'
 import { useIdentity } from '@/hooks/useIdentity'
 import styles from './JourneyCard.module.css'
-
-type Badge = 'gold' | 'silver' | 'bronze' | 'completion'
 
 interface JourneyCardProps {
   playerId: string | undefined
@@ -129,11 +127,6 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
   const isNew = doneCount === 0
   const allDone = stageList.length > 0 && nextStageRow === null
 
-  const tierIdx = nextStageRow ? journeyStageTierIndex(nextStageRow.stage_number) : 0
-  const pathStages = nextStageRow
-    ? stageList.filter((s) => journeyStageTierIndex(s.stage_number) === tierIdx).map((s) => s.stage_number)
-    : []
-
   const gate = nextStageRow ? Math.round(Number(nextStageRow.min_accuracy_pct)) : null
   const rounds = nextStageRow ? journeyRoundCount(nextStageRow.stage_number) : null
   const difficulty =
@@ -215,72 +208,9 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
         <p className={styles.loading}>{t('common.loading')}</p>
       )}
 
-      {/* Tier path — 5-node route map with per-stage badges */}
-      {!loadFailed && pathStages.length > 0 && nextStageRow && (
-        <button type="button" className={styles.path} onClick={() => router.push('/journey')} aria-label={t('home.journey_view')}>
-          <span className={styles.pathRow}>
-            {pathStages.map((s, i) => {
-              const row = completedByNumber.get(s)
-              const isDone = row !== undefined
-              const isCur = s === nextStageRow.stage_number
-              const badge: Badge | null = isDone ? row.best_badge ?? 'completion' : null
-              const bestAcc = isDone && row.best_accuracy_pct != null ? Math.round(Number(row.best_accuracy_pct)) : null
-              return (
-                <React.Fragment key={s}>
-                  {i > 0 && <span className={`${styles.seg} ${pathStages[i - 1] < nextStageRow.stage_number ? styles.segFill : ''}`} />}
-                  <span className={styles.node}>
-                    <span className={styles.nodeTop}>
-                      {isDone ? (
-                        <span className={styles.nodeIcon} data-badge={badge ?? 'completion'}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={journeyStageIconFile(s)} alt="" width={40} height={40} decoding="async" className={styles.nodeIconImg} />
-                          <span className={styles.nodeNum}>{s}</span>
-                          {badge && badge !== 'completion' && (
-                            <Medal size={10} className={styles.nodeMedal} />
-                          )}
-                        </span>
-                      ) : isCur ? (
-                        <span className={styles.nodeCur}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={journeyStageIconFile(s)} alt="" width={46} height={46} decoding="async" className={styles.nodeCurIcon} />
-                          <span className={styles.nodeNum}>{s}</span>
-                        </span>
-                      ) : (
-                        <span className={`${styles.nodeIcon} ${styles.nodeIconLock}`}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={journeyStageIconFile(s)} alt="" width={40} height={40} decoding="async" className={styles.nodeIconImg} />
-                          <span className={styles.nodeLockOver}><Lock size={14} /></span>
-                        </span>
-                      )}
-                    </span>
-                    <span className={`${styles.nodeCap} ${isDone ? styles.nodeAcc : isCur ? styles.nodeCapCur : ''}`}>
-                      {isDone ? `${bestAcc ?? 0}%` : isCur ? t('journey.stage_label', { number: s }) : s}
-                    </span>
-                  </span>
-                </React.Fragment>
-              )
-            })}
-            {pathStages[pathStages.length - 1] < 100 && (
-              <>
-                <span className={styles.seg} />
-                <span className={styles.node}>
-                  <span className={styles.nodeTop}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={journeyStageIconFile(pathStages[pathStages.length - 1] + 1)} alt="" width={40} height={40} decoding="async" className={styles.ghostIcon} />
-                  </span>
-                  <span className={`${styles.nodeCap} ${styles.ghostCap}`}>
-                    {t('journey.stage_label', { number: pathStages[pathStages.length - 1] + 1 })}
-                  </span>
-                </span>
-              </>
-            )}
-          </span>
-        </button>
-      )}
-
-      {/* Up next */}
+      {/* Up next — links to /journey (UIX-JC-TIERPATH-MOVE-1022-001) */}
       {!loadFailed && nextStageRow && (
-        <div className={styles.up}>
+        <Link href="/journey" className={`${styles.up} ${styles.upLink}`}>
           <div className={styles.iconWrap}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={journeyStageIconFile(nextStageRow.stage_number)} alt="" width={96} height={96} decoding="async" className={styles.icon} />
@@ -304,7 +234,7 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
               )}
             </div>
           </div>
-        </div>
+        </Link>
       )}
 
       {!loadFailed && allDone && (

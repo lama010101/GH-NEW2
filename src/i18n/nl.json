@@ -686,8 +686,6 @@
     "score_distribution": "Score-verdeling",
     "history_collection": "Geschiedenis-collectie",
     "accuracy_by_century": "Nauwkeurigheid per eeuw",
-    "account": "Rekening",
-    "email": "E-mail",
     "member_since": "Lid sinds",
     "events_seen": "Events gezien",
     "by_century": "Per eeuw",
@@ -705,7 +703,6 @@
     "games_played": "Spellen gespeeld",
     "rounds_played": "Rondes gespeeld",
     "no_games_yet": "Nog geen spellen",
-    "sign_out": "Uitloggen",
     "experience": "Ervaring",
     "accuracy": "Nauwkeurigheid",
     "era": "Tijdperk",
@@ -721,8 +718,6 @@
     "daily_all_time": "Dagelijks (alle tijden)",
     "level": "Niveau",
     "era_region": "Era & region",
-    "member_since_full": "Member since",
-    "player_id": "Player ID",
     "rounds": "Rounds",
     "stats": "Stats"
   },
@@ -809,6 +804,7 @@
   },
   "rank": {
     "rank_label": "Rang",
+    "your_rank": "Jouw rang",
     "tier_prefix": "T",
     "next_label": "Volgende",
     "rank_1": "Zwerver",

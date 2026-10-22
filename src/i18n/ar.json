@@ -686,8 +686,6 @@
     "score_distribution": "توزيع النتائج",
     "history_collection": "مجموعة التاريخ",
     "accuracy_by_century": "الدقة حسب القرن",
-    "account": "الحساب",
-    "email": "البريد الإلكتروني",
     "member_since": "عضو منذ",
     "events_seen": "الأحداث المشاهدة",
     "by_century": "حسب القرن",
@@ -705,7 +703,6 @@
     "games_played": "الألعاب الملعوبة",
     "rounds_played": "الجولات الملعوبة",
     "no_games_yet": "لا ألعاب بعد",
-    "sign_out": "تسجيل الخروج",
     "experience": "الخبرة",
     "accuracy": "الدقة",
     "era": "العصر",
@@ -721,8 +718,6 @@
     "daily_all_time": "يومي (على مر العصور)",
     "level": "المستوى",
     "era_region": "Era & region",
-    "member_since_full": "Member since",
-    "player_id": "Player ID",
     "rounds": "Rounds",
     "stats": "Stats"
   },
@@ -809,6 +804,7 @@
   },
   "rank": {
     "rank_label": "الرتبة",
+    "your_rank": "رتبتك",
     "tier_prefix": "T",
     "next_label": "التالي",
     "rank_1": "الهائم",

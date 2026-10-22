@@ -686,8 +686,6 @@
     "score_distribution": "Распределение очков",
     "history_collection": "Коллекция истории",
     "accuracy_by_century": "Точность по векам",
-    "account": "Аккаунт",
-    "email": "электронная почта",
     "member_since": "Участник с",
     "events_seen": "Просмотрено событий",
     "by_century": "По векам",
@@ -705,7 +703,6 @@
     "games_played": "Сыграно игр",
     "rounds_played": "Сыграно раундов",
     "no_games_yet": "Игр пока нет",
-    "sign_out": "Выйти",
     "experience": "Опыт",
     "accuracy": "Точность",
     "era": "Эпоха",
@@ -721,8 +718,6 @@
     "daily_all_time": "Ежедневно (всегда)",
     "level": "Уровень",
     "era_region": "Era & region",
-    "member_since_full": "Member since",
-    "player_id": "Player ID",
     "rounds": "Rounds",
     "stats": "Stats"
   },
@@ -809,6 +804,7 @@
   },
   "rank": {
     "rank_label": "Ранг",
+    "your_rank": "Ваш ранг",
     "tier_prefix": "T",
     "next_label": "Далее",
     "rank_1": "Странник",

@@ -686,8 +686,6 @@
     "score_distribution": "Distribuzione punteggi",
     "history_collection": "Collezione storica",
     "accuracy_by_century": "Precisione per secolo",
-    "account": "Conto",
-    "email": "E-mail",
     "member_since": "Iscritto dal",
     "events_seen": "Eventi visti",
     "by_century": "Per secolo",
@@ -705,7 +703,6 @@
     "games_played": "Partite giocate",
     "rounds_played": "Round giocati",
     "no_games_yet": "Nessuna partita",
-    "sign_out": "Esci",
     "experience": "Esperienza",
     "accuracy": "Precisione",
     "era": "Epoca",
@@ -721,8 +718,6 @@
     "daily_all_time": "Giornaliero (di sempre)",
     "level": "Livello",
     "era_region": "Era & region",
-    "member_since_full": "Member since",
-    "player_id": "Player ID",
     "rounds": "Rounds",
     "stats": "Stats"
   },
@@ -809,6 +804,7 @@
   },
   "rank": {
     "rank_label": "Rango",
+    "your_rank": "Il tuo rango",
     "tier_prefix": "T",
     "next_label": "Prossimo",
     "rank_1": "Vagabondo",

@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useIdentity } from '@/hooks/useIdentity';
-import { updateCachedDisplayName, updateCachedAvatarUrl, signOut } from '@/core/identity';
+import { updateCachedDisplayName, updateCachedAvatarUrl } from '@/core/identity';
 import { supabaseBrowser, readSession } from '@/core/supabaseBrowser';
 import styles from './profile.module.css';
 import TopBar from '@/components/layout/TopBar';
@@ -13,7 +13,6 @@ import { NavModal } from '@/components/NavModal';
 import { AvatarPickerModal } from '@/components/AvatarPickerModal';
 import { getAccuracyColor } from '@/core/accuracyColor';
 import RankLadderCard from '@/components/RankLadderCard';
-import { Loader2, LogOut } from 'lucide-react';
 
 
 type ProfileHistoricalAvatar = {
@@ -72,7 +71,6 @@ export default function ProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [eraDim, setEraDim] = useState<'era' | 'region'>('era');
   const [eraMetric, setEraMetric] = useState<'acc' | 'rounds'>('acc');
-  const [signingOut, setSigningOut] = useState(false);
   const [progressData, setProgressData] = useState<{
     byCentury: Array<{ century: string; avgAccuracy: number; totalXp: number; roundCount: number }>
     byContinent: Array<{ continent: string; avgAccuracy: number; totalXp: number; roundCount: number }>
@@ -84,7 +82,6 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<{
     displayName: string | null;
     avatarUrl: string | null;
-    email: string | null;
     createdAt: string | null;
     avgAccuracy: number | null;
     totalXp: number | null;
@@ -98,7 +95,6 @@ export default function ProfilePage() {
   }>({
     displayName: null,
     avatarUrl: null,
-    email: null,
     createdAt: null,
     avgAccuracy: null,
     totalXp: null,
@@ -176,7 +172,6 @@ export default function ProfilePage() {
         ]);
 
         const authUser = session?.user;
-        const email = isOwnProfile ? (authUser?.email ?? null) : null;
         const createdAt = isOwnProfile ? (authUser?.created_at ?? null) : null;
 
         if (statsResult) {
@@ -238,7 +233,6 @@ export default function ProfilePage() {
         setProfileData({
           displayName: profileResult?.display_name ?? null,
           avatarUrl: profileResult?.avatar_url ?? null,
-          email,
           createdAt,
           avgAccuracy: statsResult?.avg_accuracy ?? null,
           totalXp: statsResult?.total_xp ?? null,
@@ -319,18 +313,6 @@ export default function ProfilePage() {
     if (!dateStr) return '—';
     const date = new Date(dateStr);
     return date.toLocaleDateString(locale === 'en' ? 'en-US' : locale, { year: 'numeric', month: 'long', day: 'numeric' });
-  };
-
-  const handleSignOut = async () => {
-    if (signingOut) return;
-    setSigningOut(true);
-    try {
-      await signOut();
-      window.location.href = '/';
-    } catch (err) {
-      console.error('[Profile] signOut failed:', err);
-      window.location.href = '/login';
-    }
   };
 
   const handleAvatarClick = () => {
@@ -414,7 +396,7 @@ export default function ProfilePage() {
       )}
 
       {/* 4. HERO SECTION */}
-      <div className="relative z-10 max-w-[820px] mx-auto pt-16 px-6 flex flex-col items-center text-center">
+      <div className="relative z-10 max-w-[820px] mx-auto pt-4 px-6 flex flex-col items-center text-center">
         {/* Avatar with standardized gradient ring */}
         <div className="relative mb-4">
           <PlayerAvatar
@@ -675,42 +657,6 @@ export default function ProfilePage() {
           </div>
         </section>
       </div>
-
-      {/* 11. ACCOUNT — own profile only */}
-      {isOwnProfile && (
-        <div className="relative z-10 max-w-[820px] mx-auto px-6 mt-6 mb-6">
-          <section className={styles.card}>
-            <h3 className={styles.cardTitle}>{t('account')}</h3>
-            <div className={styles.acRows}>
-              <div className={styles.acRow}>
-                <span className={styles.acKey}>{t('email')}</span>
-                <span className={styles.acVal}>{profileData.email ?? '—'}</span>
-              </div>
-              <div className={styles.acRow}>
-                <span className={styles.acKey}>{t('member_since_full')}</span>
-                <span className={styles.acVal}>{formatMemberSince(profileData.createdAt)}</span>
-              </div>
-              <div className={styles.acRow}>
-                <span className={styles.acKey}>{t('player_id')}</span>
-                <span className={styles.acVal}>{viewedPlayerId ?? '—'}</span>
-              </div>
-            </div>
-            <div className={styles.acDiv} />
-            <button
-              type="button"
-              className={styles.acOut}
-              onClick={handleSignOut}
-              disabled={signingOut}
-              aria-busy={signingOut}
-            >
-              {signingOut
-                ? <Loader2 size={13} className={styles.acOutSpinner} aria-hidden="true" />
-                : <LogOut size={13} strokeWidth={2.4} aria-hidden="true" />}
-              {t('sign_out')}
-            </button>
-          </section>
-        </div>
-      )}
 
       {/* Avatar Picker Modal */}
       <AvatarPickerModal

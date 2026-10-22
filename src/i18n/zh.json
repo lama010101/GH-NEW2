@@ -686,8 +686,6 @@
     "score_distribution": "得分分布",
     "history_collection": "历史收藏",
     "accuracy_by_century": "各世纪准确度",
-    "account": "账户",
-    "email": "邮箱",
     "member_since": "注册于",
     "events_seen": "已看事件",
     "by_century": "按世纪",
@@ -705,7 +703,6 @@
     "games_played": "已玩游戏",
     "rounds_played": "已玩回合",
     "no_games_yet": "暂无游戏",
-    "sign_out": "退出登录",
     "experience": "经验值",
     "accuracy": "准确度",
     "era": "时代",
@@ -721,8 +718,6 @@
     "daily_all_time": "每日（所有时间）",
     "level": "等级",
     "era_region": "Era & region",
-    "member_since_full": "Member since",
-    "player_id": "Player ID",
     "rounds": "Rounds",
     "stats": "Stats"
   },
@@ -809,6 +804,7 @@
   },
   "rank": {
     "rank_label": "段位",
+    "your_rank": "你的段位",
     "tier_prefix": "T",
     "next_label": "下一个",
     "rank_1": "漫游者",
