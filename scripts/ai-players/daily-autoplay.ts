@@ -5,6 +5,7 @@ import { getDbPool } from "@/server/db";
 import { getOrCreateDailyChallenge } from "@/server/dailyChallenge";
 import { getDailyChallengeDate } from "@/core/dailyDate";
 import { AI_PLAYER_TIMER_MS, AI_WORKER_CRITIQUE_CAP_MS, AI_WORKER_DB_GRACE_MS } from "@/core/aiPlayers";
+import { preflightRoster } from "./rosterPreflight";
 
 // Load .env.local if present, but do not fail if it is missing.
 config({ path: ".env.local" });
@@ -135,6 +136,7 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
     // writing its row — treat the kill as transient so the item is retried
     // instead of silently dropped.
     /HARD_KILL:/,
+    /PROVIDER_ERROR:/,
   ];
   for (const pattern of transientNetworkPatterns) {
     if (pattern.test(output)) return true;
@@ -199,10 +201,25 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
+  const preflight = await preflightRoster(players);
+  for (const skipped of preflight.skipped) {
+    console.log(`[PREFLIGHT] SKIP ${skipped.player.name} (${skipped.player.model_id}): ${skipped.reason}`);
+  }
+  for (const warning of preflight.warnings) {
+    console.log(`[PREFLIGHT] WARN ${warning}`);
+  }
+  console.log(`[PREFLIGHT] keep=${preflight.keep.length} skipped=${preflight.skipped.length}`);
+  if (players.length > 0 && preflight.keep.length === 0) {
+    console.log("[PREFLIGHT] every roster player was skipped");
+    await pool.end();
+    process.exit(1);
+  }
+  const keptPlayers = preflight.keep;
+
   const playerQueue: PlayerWork[] = [];
   let totalWorkItems = 0;
 
-  for (const player of players) {
+  for (const player of keptPlayers) {
     const doneResult = await pool.query<{ event_id: string }>(
       `SELECT event_id
        FROM ai_answer_bank
@@ -267,6 +284,7 @@ async function main(): Promise<void> {
   console.log(`Work items: ${totalWorkItems}`);
   console.log(`Succeeded: ${succeeded}`);
   console.log(`Failed: ${failed}`);
+  console.log(`Skipped (preflight): ${preflight.skipped.length}`);
 
   if (failed > 0) {
     process.exit(1);

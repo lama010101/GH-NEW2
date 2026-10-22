@@ -870,6 +870,32 @@ async function callOpenRouter(
     const content = extractAssistantContent(rawResponse);
     const truncated = finishReason === "length" || content.trim().length === 0;
     if (truncated) {
+      if (finishReason === "error") {
+        const choice0 =
+          (rawResponse as { choices?: Array<{ native_finish_reason?: unknown; error?: unknown }> } | null)?.choices?.[0];
+        const nativeFinishReason =
+          choice0 && typeof choice0.native_finish_reason === "string" ? choice0.native_finish_reason : null;
+        const choiceErrorJson = JSON.stringify(choice0?.error ?? null).slice(0, 500);
+        const errorMsg = `PROVIDER_ERROR: finish_reason=error native_finish_reason=${nativeFinishReason ?? "null"} error=${choiceErrorJson}`;
+        calls.push({
+          turn_index: turnIndex,
+          request_payload: requestBody,
+          response_payload: rawResponse,
+          duration_ms: durationMs,
+          error: errorMsg,
+        });
+        return {
+          content: "",
+          rawResponse,
+          error: errorMsg,
+          requestStartedAt,
+          responseReceivedAt,
+          usage: extractUsage(rawResponse),
+          reasoning: null,
+          reasoningAvailable: false,
+          maxTokensUsed: maxTokens,
+        };
+      }
       const errorMsg = `TRUNCATED_LENGTH: finish_reason=${finishReason ?? "null"} content_empty=${
         content.trim().length === 0
       } at max_tokens=${maxTokens}${
