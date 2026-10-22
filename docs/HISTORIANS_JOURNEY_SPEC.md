@@ -16,15 +16,15 @@ Lolo ruled on the five open questions from the prior revision. Four were delegat
 
 2. **Content review mechanism → Admin UI.** You're already building `/admin/openrouter` for AI-model administration — Journey's stage-content review becomes a second panel in that same admin surface rather than a bespoke tool. Concretely: `/admin/journey` (or a tab within the existing admin shell), listing candidate pools per stage with approve/reject/reorder actions writing directly to `journey_stage_events`. This is now a v1 build item, not deferred — the pipeline in §3 doesn't function without it. **(Superseded for the draw path by HJ-BUILD-STAGE100-NOAPPROVAL-001 — see §3 note: `journey_stage_events` is no longer read at play time; the admin panel itself still exists pending a separately-scoped teardown.)**
 
-3. **Accuracy threshold curve → calculated, not guessed.** Requirement: monotonically increasing, generous early (per original doc's "generous scoring" principle for stage 1), converging toward a stricter-but-still-passable ceiling (not 100%, since a hard ceiling produces a wall rather than a curve). A non-linear (e.g. logistic) curve would need a product-chosen inflection point with no principled default — that's inventing precision, not calculating it. The defensible version: a **linear ramp between two product-judgment anchors** (floor and ceiling), stated plainly as a judgment call rather than dressed up as more rigorous than it is. Formula (re-derived for 100 stages by HJ-BUILD-STAGE100-NOAPPROVAL-001): `min_accuracy_pct(n) = 50 + 25 × min(n-1, 39)/39` for n = 1..100 — linear ramp from 50% to 75% across stages 1–40, then flat 75% for stages 41–100. Stored rounded to 1 decimal place; milestone values below.
+3. **Accuracy threshold curve → calculated, not guessed.** Requirement: monotonically increasing, generous early (per original doc's "generous scoring" principle for stage 1), converging toward a stricter-but-still-passable ceiling (not 100%, since a hard ceiling produces a wall rather than a curve). A non-linear (e.g. logistic) curve would need a product-chosen inflection point with no principled default — that's inventing precision, not calculating it. The defensible version: a **linear ramp between two product-judgment anchors** (floor and ceiling), stated plainly as a judgment call rather than dressed up as more rigorous than it is. Formula (re-locked by HJ-BUILD-GATECURVE-40-90-1022-B06): `min_accuracy_pct(n) = ROUND(40 + 50 × (n−1)/99, 1)` for n = 1..100 — linear ramp from 40% at stage 1 to 90% at stage 100, rising across all 100 stages. Stored rounded to 1 decimal place; milestone values below.
 
-   | Stage | 1 | 10 | 20 | 30 | 40 | 41–100 |
+   | Stage | 1 | 10 | 20 | 30 | 40 | 100 |
    |---|---|---|---|---|---|---|
-   | min_accuracy_pct | 50% | 55.8% | 62.2% | 68.6% | 75% | 75% |
+   | min_accuracy_pct | 40% | 44.5% | 49.6% | 54.6% | 59.7% | 90% |
 
-   The 40-stage ramp length is deliberate, not an accident of the formula: content difficulty via the per-stage recency window (§5.1) already scales all the way to stage 100, so the skill gate holds flat past stage 40 rather than compounding indefinitely. (Note the round timer uses a different ramp length — 50 stages — intentionally; see §5.1.)
+   The ramp spans the full 100 stages: content difficulty via the per-stage recency window (§5.1) scales all the way to stage 100, and the skill gate now rises in step with it rather than holding flat. (Note the round timer uses a different ramp length — 50 stages — intentionally; see §5.1.)
 
-   Floor (50%) and ceiling (75%) are product judgment, not derived — flagging this honestly rather than presenting them as more rigorous than they are. If these anchors feel wrong once stage 1 is actually played, they're a one-column data change, not a re-architecture (thresholds live in `journey_stages.min_accuracy_pct`, not code).
+   Floor (40%) and ceiling (90%) are product judgment, not derived — flagging this honestly rather than presenting them as more rigorous than they are. If these anchors feel wrong once stage 1 is actually played, they're a one-column data change, not a re-architecture (thresholds live in `journey_stages.min_accuracy_pct`, not code).
 
 4. **Player identity pattern → standard FK, NOT the AIP UNION pattern.** Checked the AIP precedent directly: UNION-at-read-time exists *specifically* because AI players have no `auth.users` row and `profiles.id` has a live FK to `auth.users(id)` that can't be faked with synthetic rows — so AI identity has to be assembled at read time instead. Journey players are real authenticated humans with real `profiles` rows. Applying the AIP pattern here would be solving a problem that doesn't exist and adding an unnecessary indirection layer. **Decision: `journey_player_progress.player_id` is a standard FK to `auth.users(id)` (or whatever the existing Practice-mode session player FK target is — must match exactly, confirmed at build time), same as every other single-player mode.** §4 data model updated accordingly.
 
@@ -167,7 +167,7 @@ The original doc's dimensions apply across the full 100-stage range:
 - **Content recency:** the dominant difficulty axis — each stage's draw window is the last N×40 years (§5.1), so later stages reach progressively deeper into history.
 - **Image ambiguity:** early stages favor iconic, unambiguous photos; later stages can include less globally famous but still well-attributed events.
 - **Time pressure:** per-stage ramp-then-flat round timer — locked formula in §5.1 below (300s at stage 1 → 30s at stage 50, flat thereafter). This supersedes this bullet's earlier "reuse existing Practice timer constants, do not introduce a new timer constant" guidance; the per-stage decay is the v1 timer design.
-- **Accuracy threshold:** `min_accuracy_pct` increases stage-over-stage per the locked curve in §0 item 3 (linear 50% → 75% across stages 1–40, flat 75% at 41–100).
+- **Accuracy threshold:** `min_accuracy_pct` increases stage-over-stage per the locked curve in §0 item 3 (linear 40% → 90% across all 100 stages).
 - Geography and cultural-similarity dimensions are **not separately tuned** — the recency window is the only content-selection axis for v1; these remain potential Phase 2 difficulty levers.
 
 ## 5.1 Draw filter, no-repeat, accuracy gate & round timer — locked formulas (updated by HJ-BUILD-STAGE100-NOAPPROVAL-001)
@@ -184,17 +184,17 @@ implemented by passing `minYear = current_year − N*40`, `maxYear = current_yea
 
 **No-repeat exclusion — Journey-only, new behavior.** Events this player was shown in their last 100 Journey rounds are excluded from the draw (`excludeEventIds` param). Source of "shown" history: `journey_playthroughs.drawn_event_ids` — each playthrough row stores its own drawn set of 5, so the last 100 rounds = the last 20 playthroughs. This does NOT mirror Compete/Practice/Daily — those modes never exclude previously-shown events (verified: none of the existing `fetchRandomEventsForSession` call sites pass `excludeEventIds`). If exclusion leaves fewer than 5 eligible events, the draw retries without exclusion — repeats are allowed rather than failing the draw — and the fallback is logged.
 
-**Accuracy gate — stored column, ramp-then-flat.** `journey_stages.min_accuracy_pct`, read at completion time (a data shape, not a code formula):
+**Accuracy gate — stored column, linear across all 100 stages.** `journey_stages.min_accuracy_pct`, read at completion time (a data shape, not a code formula):
 
-    min_accuracy_pct(N) = 50 + 25 × min(N−1, 39)/39   →   50% at stage 1, linear to 75% at stage 40, flat 75% at 41–100
+    min_accuracy_pct(N) = ROUND(40 + 50 × (N−1)/99, 1)   →   40% at stage 1, linear to 90% at stage 100
 
-Rounded to 1 decimal place in the column. The 40-stage ramp length is deliberate: content difficulty via the recency window already scales past stage ~40, so the skill gate holds flat rather than compounding indefinitely.
+Rounded to 1 decimal place in the column. The ramp spans the full 100-stage range — no flat segment; the gate keeps rising alongside the recency-window difficulty scale.
 
 **Round timer — per-stage ramp-then-flat, hard-enforced.**
 
     timerSec(N) = 300 − 270 × min(N−1, 49)/49   →   300s (5:00) at stage 1, linear to 30s at stage 50, flat 30s at 51–100
 
-The timer's 50-stage ramp intentionally differs from the accuracy gate's 40-stage ramp — not a mismatch to fix. Stored on `sessions.round_timer_sec` (INT — mid-ramp values are rounded to whole seconds) when the playthrough's session is created; enforcement is the existing practice-page auto-submit-on-expiry (journey sessions are `mode='practice'` per §4), which submits whatever the player has — including a null guess — the moment the timer reaches zero.
+The timer's 50-stage ramp intentionally differs from the accuracy gate's full-100-stage ramp — not a mismatch to fix. Stored on `sessions.round_timer_sec` (INT — mid-ramp values are rounded to whole seconds) when the playthrough's session is created; enforcement is the existing practice-page auto-submit-on-expiry (journey sessions are `mode='practice'` per §4), which submits whatever the player has — including a null guess — the moment the timer reaches zero.
 
 **Flagged, not decided:** all three curve shapes (recency window per stage, accuracy-gate ramp length/endpoints, timer ramp length/endpoints) are product-judgment anchors, not precisely-derived optima — same honesty convention as the original accuracy-threshold curve in §0 item 3. They are adjustable with real completion-rate data once enough playthroughs exist; each is a single-column data change or a one-function code change, not a re-architecture.
 
