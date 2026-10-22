@@ -137,6 +137,9 @@ async function isTransientFailure(stderr: string, stdout: string): Promise<boole
     // instead of silently dropped.
     /HARD_KILL:/,
     /PROVIDER_ERROR:/,
+    // AIP-FIX-DAILY-RETRY-PARSEERRORS-1022-A04: nondeterministic model-output failures; a retry usually succeeds.
+    /Failed to parse AI final guess response/,
+    /Final guess response missing finalGuess/,
   ];
   for (const pattern of transientNetworkPatterns) {
     if (pattern.test(output)) return true;
