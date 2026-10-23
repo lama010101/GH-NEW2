@@ -1101,13 +1101,22 @@ export default function SessionComplete({
                   const bestPlayerData = roundStats.bestPlayerId ? snapshot.players.find(p => p.playerId === roundStats.bestPlayerId) : null;
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
                   const myRoundResult = effectiveResults.find(r => r.roundIndex === i && r.playerId === playerId);
-                  const myRoundAcc = hasResult(myRoundResult)
-                    ? ((myRoundResult!.locationScore ?? 0) + (myRoundResult!.timeScore ?? 0)) / 2
+                  // A round_results row exists for every round the player played, even
+                  // when no guess was committed (didSubmit false) — show its score and
+                  // the About icon (the learn API gates on the same row).
+                  const myRawResult = myRoundResult ?? (isAsyncResults
+                    ? (() => {
+                        const r = playerId ? round.playerRoundResults?.[playerId] : undefined;
+                        return r ? { locationScore: r.locationScore, timeScore: r.timeScore } : undefined;
+                      })()
+                    : (allRoundResults ?? []).find(r => r.roundIndex === i && r.playerId === playerId));
+                  const myRoundAcc = myRawResult
+                    ? ((myRawResult.locationScore ?? 0) + (myRawResult.timeScore ?? 0)) / 2
                     : null;
                   const open = openRounds.has(i);
                   const canLearn =
                     learnMode != null &&
-                    myRoundResult?.didSubmit === true &&
+                    myRawResult != null &&
                     LEARN_UUID_RE.test(round.eventId) &&
                     LEARN_UUID_RE.test(snapshot.gameId);
                   return (
