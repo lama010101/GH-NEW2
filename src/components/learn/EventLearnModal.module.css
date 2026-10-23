@@ -50,8 +50,10 @@
 }
 
 .closeBtn {
-  width: 26px;
-  height: 26px;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border-radius: 50%;
   background: var(--gh-modal-close-bg);
   border: 0.5px solid var(--gh-modal-close-border);
@@ -59,12 +61,14 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--gh-modal-close-color);
+  color: var(--gh-modal-text-primary);
 }
 
 .closeBtn svg {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.6;
+  stroke-linecap: round;
 }
 
 .body {
