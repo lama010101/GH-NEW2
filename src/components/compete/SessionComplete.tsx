@@ -69,6 +69,14 @@ type DailyResultPlayer = {
   best_round_accuracy: number | null;
 };
 
+export function resolveDailyRank(
+  rows: Pick<DailyResultPlayer, "player_id" | "rank">[] | null,
+  playerId: string | null,
+): number | null {
+  if (!rows || !playerId) return null;
+  return rows.find((row) => row.player_id === playerId)?.rank ?? null;
+}
+
 interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
   playerId: string | null;
@@ -300,7 +308,7 @@ export default function SessionComplete({
   };
 
   return (
-    <section className={journeyResult ? `${styles.section} ${styles.sectionJourneyTop}` : styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
+    <section className={journeyResult || isDaily ? `${styles.section} ${styles.sectionJourneyTop}` : styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
         if (!playerId) return null;
         if (effectiveResults.length === 0) {
@@ -395,6 +403,7 @@ export default function SessionComplete({
           });
 
         const myRank = leaderboard.findIndex(p => p.playerId === playerId) + 1;
+        const bannerRank = isDaily ? resolveDailyRank(dailyResults, playerId) : myRank;
         const wonRoundsByMe = leaderboard.find(p => p.playerId === playerId)?.wonRounds.length ?? 0;
         const rankSuffix = (n: number) => n === 1 ? tGame('rank_st') : n === 2 ? tGame('rank_nd') : n === 3 ? tGame('rank_rd') : tGame('rank_th');
 
@@ -631,10 +640,10 @@ export default function SessionComplete({
                     </h1>
                   ) : (
                     <h1 className={styles.bannerTitle}>
-                      {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
+                      {tGame('you_finished')} {bannerRank != null && <span className={styles.bannerRank}>{bannerRank}{rankSuffix(bannerRank)}</span>}
                     </h1>
                   )}
-                  {!journeyResult && (
+                  {!journeyResult && !isDaily && (
                     <div className={styles.bannerStats}>
                       {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
                     </div>
@@ -1179,7 +1188,7 @@ export default function SessionComplete({
                             </div>
                           </div>
 
-                          {bestPlayerName && (
+                          {!isDaily && bestPlayerName && (
                             <div className={`${styles.bestRow} ${isCurrentBestPlayer ? styles.bestRowMe : ""}`}>
                               <span className={styles.bestLabel}>🏆 {tGame('best_player')}</span>
                               <span className={styles.bestPlayerRight}>
