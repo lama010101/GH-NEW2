@@ -1,3 +1,8 @@
+# RETIRED as an auto-apply pipeline (INFRA-FIX-MIGRATIONSWORKFLOW-RETIRE-1023-B12).
+# Prod migration history diverges from supabase/migrations (21 files unmatched by
+# version, ~57 remote versions without files), so `supabase db push` cannot run
+# safely. Migrations are applied by the CTO via the Supabase connector after merge.
+# Do not re-enable the push trigger before the history is reconciled.
 name: Apply Supabase Migrations
 
 concurrency:
@@ -5,11 +10,6 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'supabase/migrations/**'
   workflow_dispatch:
 
 jobs:
