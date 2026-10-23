@@ -1078,7 +1078,7 @@ export default function RoundActiveSection({
             </p>
             <button
               type="button"
-              onClick={() => { setHomeNavigating(true); window.location.href = '/home'; }}
+              onClick={() => { setHomeNavigating(true); window.location.href = '/home'; window.setTimeout(() => setHomeNavigating(false), 3000); }}
               disabled={homeNavigating}
               className={styles.settingsHomeBtn}
             >
