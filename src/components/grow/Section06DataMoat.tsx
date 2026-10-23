@@ -1,10 +1,11 @@
 'use client'
 
 import Image from 'next/image'
-import { investorContent } from '@/lib/investorContent'
+import { useGrowSection } from './GrowSectionContext'
 
 export default function Section06DataMoat() {
-  const section = investorContent.sections[5]
+  const { content } = useGrowSection()
+  const section = content.sections[5]
 
   return (
     <section

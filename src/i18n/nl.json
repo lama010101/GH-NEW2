@@ -174,7 +174,7 @@
     "compete_round_label": "Ronde {current}",
     "compete_play": "SPEEL",
     "compete_mode_rush": "Live",
-    "compete_mode_relax": "Anytime",
+    "compete_mode_relax": "Altijd",
     "compete_completed": "Voltooid",
     "compete_win": "W",
     "compete_loss": "V",
@@ -184,10 +184,10 @@
     "compete_create_game": "MAAK",
     "tagline": "Waar en wanneer gebeurde het?",
     "daily_new_challenge": "Volgende:",
-    "daily_ends_in": "Ends in:",
-    "daily_next_in": "Next in:",
-    "daily_finished": "Finished",
-    "daily_view": "View",
+    "daily_ends_in": "Eindigt:",
+    "daily_next_in": "Volgende:",
+    "daily_finished": "Klaar",
+    "daily_view": "Bekijk",
     "compete_desc": "Speel met je vrienden.\nReal-time of beurt-gebaseerd.",
     "daily_desc": "Dezelfde events.\nWereldwijd ranken",
     "levelup_desc": "Klim in levels.\nVerdien XP.",
@@ -197,28 +197,28 @@
     "compete_delete_aria": "Verwijderen",
     "coming_up_soon": "Binnenkort beschikbaar",
     "daily_view_results": "Bekijk resultaten",
-    "journey_up_next": "Up next",
-    "journey_pass_chip": "Pass ≥ {pct}%",
-    "journey_difficulty_chip": "Difficulty {rating}/10",
-    "journey_start": "Start your journey",
-    "journey_explainer": "Each stage is 5 rounds. Hit the accuracy gate to unlock the next one.",
-    "journey_view": "View journey",
-    "round_of": "Round {current} of {total}",
-    "daily_tagline": "same difficulty for everyone",
-    "daily_status_new": "NEW",
-    "daily_status_in_progress": "IN PROGRESS",
-    "daily_status_done": "DONE",
-    "daily_play_today": "Play today's Daily",
-    "daily_resume": "Resume Daily",
-    "daily_streak": "streak",
-    "daily_playing_today": "{count} playing today",
-    "daily_rank_line": "#{rank} worldwide · Top {pct}%",
+    "journey_up_next": "Hierna",
+    "journey_pass_chip": "Doel ≥ {pct}%",
+    "journey_difficulty_chip": "Niveau {rating}/10",
+    "journey_start": "Begin je reis",
+    "journey_explainer": "Elke fase = 5 rondes. Haal de nauwkeurigheidsgrens om door te gaan.",
+    "journey_view": "Bekijk reis",
+    "round_of": "Ronde {current}/{total}",
+    "daily_tagline": "voor iedereen even moeilijk",
+    "daily_status_new": "NIEUW",
+    "daily_status_in_progress": "BEZIG",
+    "daily_status_done": "KLAAR",
+    "daily_play_today": "Speel vandaag's uitdaging",
+    "daily_resume": "Hervatten",
+    "daily_streak": "reeks",
+    "daily_playing_today": "{count} spelen vandaag",
+    "daily_rank_line": "#{rank} wereldwijd · Top {pct}%",
     "daily_xp_gained": "+{xp} XP",
-    "daily_load_error": "Couldn't load today's status",
-    "challenge_sub": "Play with friends",
-    "practice_tagline": "Play solo · Unlimited",
-    "practice_eras_chip": "{selected}/{total} eras",
-    "practice_regions_chip": "{selected}/{total} regions"
+    "daily_load_error": "Laden van status mislukt",
+    "challenge_sub": "Speel met vrienden",
+    "practice_tagline": "Solo · Onbeperkt",
+    "practice_eras_chip": "{selected}/{total} era's",
+    "practice_regions_chip": "{selected}/{total} regio's"
   },
   "common": {
     "next_round": "Volgende ronde",
@@ -293,10 +293,10 @@
     "n_days": "{n} dagen",
     "ready_waiting": "Klaar — wachten op anderen",
     "im_ready": "Ik ben klaar",
-    "relax_start_my_game": "Start my game",
-    "relax_playing": "Playing",
-    "relax_finished": "Finished",
-    "relax_joined": "Joined",
+    "relax_start_my_game": "Spel starten",
+    "relax_playing": "Speelt",
+    "relax_finished": "Klaar",
+    "relax_joined": "Lid",
     "pwa_install_title": "Installeer de app voor beurtmeldingen",
     "pwa_install_desc": "Relax-spellen zijn beurtgebaseerd. Op de iPhone werken beurtmeldingen alleen als deze site aan je beginscherm wordt toegevoegd.",
     "pwa_step_share": "Tik op het <strong>Deel</strong>-pictogram in de werkbalk van Safari.",
@@ -358,7 +358,7 @@
     "vibrate": "Trillen",
     "distance_unit": "Afstandseenheid",
     "settings": "Instellingen",
-    "settings_resume_hint": "You can leave and resume this game later.",
+    "settings_resume_hint": "Je kunt weggaan en later verder spelen.",
     "submit": "Indienen",
     "hint_select_both": "Selecteer eerst {where} en {when}",
     "and": "en",
@@ -395,7 +395,7 @@
     "round_label": "Ronde {current}",
     "round_label_compact": "Ronde {current}/{total}",
     "source_link": "Bron ↗",
-    "rate": "Rate Image Realism",
+    "rate": "Beoordeel realisme",
     "rate_saved": "Opgeslagen",
     "this_round": "Deze ronde",
     "total_penalty": "Totale straf",
@@ -455,11 +455,11 @@
     "when_badges": "Wanneer",
     "where_badges": "Waar",
     "no_badges": "Geen badges verdiend dit spel",
-    "highlights": "Highlights",
-    "hl_closest_guess": "Closest guess",
-    "hl_sharpest_year": "Sharpest year",
-    "hl_toughest_round": "Toughest round",
-    "hl_years_off": "±{n} yr",
+    "highlights": "Hoogtepunten",
+    "hl_closest_guess": "Beste gok",
+    "hl_sharpest_year": "Scherpste jaar",
+    "hl_toughest_round": "Zwaarste ronde",
+    "hl_years_off": "±{n} jr",
     "badges_count": "{count, plural, one {# badge} other {# badges}}",
     "era_ancient": "Oudheid",
     "era_medieval": "Middeleeuwen",
@@ -676,7 +676,7 @@
     "rank_suffix_many": "e",
     "rank_suffix_other": "e",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "No more ranked players."
+    "no_more_players": "Geen spelers meer."
   },
   "profile": {
     "accuracy_breakdown": "Nauwkeurigheid-overzicht",
@@ -717,8 +717,8 @@
     "practice": "Oefenen",
     "daily_all_time": "Dagelijks (alle tijden)",
     "level": "Niveau",
-    "era_region": "Era & region",
-    "rounds": "Rounds",
+    "era_region": "Era & regio",
+    "rounds": "Rondes",
     "stats": "Stats"
   },
   "account": {
@@ -772,7 +772,14 @@
     "turn_desc": "Ontvang een melding wanneer jij aan de beurt bent in Relax-spellen. Je kunt dit op elk moment wijzigen in de instellingen.",
     "not_now": "Nu niet",
     "enable": "Inschakelen",
-    "someone": "Iemand"
+    "someone": "Iemand",
+    "push_enable": "Pushmeldingen aanzetten",
+    "push_disable": "Pushmeldingen uitzetten",
+    "push_enabled_msg": "Pushmeldingen aan.",
+    "push_disabled_msg": "Pushmeldingen uit.",
+    "push_failed_enable": "Inschakelen mislukt.",
+    "push_failed_disable": "Uitschakelen mislukt.",
+    "push_unexpected": "Er ging iets onverwachts mis."
   },
   "welcome": {
     "title": "Welkom bij Guess-History!",
@@ -781,9 +788,9 @@
     "your_username": "Jouw gebruikersnaam",
     "lets_play": "Laten we spelen!",
     "skip_for_now": "Nu overslaan",
-    "username_label_1": "ENTER YOUR USERNAME",
-    "username_label_2": "PICK A UNIQUE NAME",
-    "username_label_3": "OTHERS WILL SEE THIS NAME"
+    "username_label_1": "VOER GEBRUIKERSNAAM IN",
+    "username_label_2": "KIES EEN UNIEKE NAAM",
+    "username_label_3": "ANDEREN ZIEN DEZE NAAM"
   },
   "landing": {
     "meta_title": "Guess-History — Test je kennis van wanneer en waar",
@@ -819,16 +826,16 @@
     "rank_10": "Koninklijke Cartograaf",
     "next_rank": "{xp} XP tot {title}",
     "max_rank": "Maximale rang bereikt",
-    "badge_aria": "Rank {tier} badge",
-    "rail_hint_swipe": "swipe",
-    "tier_of_10": "Tier {tier} / 10"
+    "badge_aria": "Rang {tier} badge",
+    "rail_hint_swipe": "veeg",
+    "tier_of_10": "Niveau {tier}/10"
   },
   "grow": {
-    "meta_title": "Grow With Us — Guess-History",
-    "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
+    "meta_title": "Groei met ons — Guess-History",
+    "meta_description": "Ontdek de missie, visie en toekomst van Guess-History en hoe je meedoet.",
     "hero": {
       "tagline": "Nader te bepalen",
-      "primary_cta": "Play Guess-History",
+      "primary_cta": "Speel Guess-History",
       "secondary_cta": "Ontdek het project"
     },
     "mission": {
@@ -1111,7 +1118,9 @@
         "principle_1": "Maximale compensatieratio.",
         "principle_2": "Retourlimiet voor beleggers.",
         "principle_3": "Herinvesteringsbeleid.",
-        "principle_4": "Missie-eerst bestuur."
+        "principle_4": "Missie-eerst bestuur.",
+        "purpose_title": "Doel",
+        "principles_title": "Principes"
       }
     },
     "partnerships": {
@@ -1278,9 +1287,26 @@
       "sources": "Bronnen",
       "references": "Referenties",
       "legal": "Juridische disclaimer",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "nav_aria": "Investeerdersvoettekst"
     },
-    "nav_aria_label": "Groei pagina secties"
+    "nav_aria_label": "Groei pagina secties",
+    "nav": {
+      "slides_aria": "Hoofdstukken",
+      "toc_expand": "Inhoud uitklappen",
+      "toc_collapse": "Inhoud inklappen",
+      "toc_aria": "Inhoud",
+      "chapters": "Hoofdstukken",
+      "toc_close": "Inhoud sluiten",
+      "go_beginning": "Naar begin",
+      "go_end": "Naar einde",
+      "prev": "Vorige",
+      "prev_disabled": "Vorige (niet beschikbaar)",
+      "next": "Volgende",
+      "next_disabled": "Volgende (niet beschikbaar)",
+      "beginning_disabled": "Begin (eerste slide)",
+      "end_disabled": "Einde (laatste slide)"
+    }
   },
   "practice": {
     "title": "Oefenspel bezig",
@@ -1439,5 +1465,293 @@
       "section10_title": "10. Neem Contact Met Ons Op",
       "contact_text": "Voor vragen over deze Voorwaarden, neem contact met ons op via: appymanya@gmail.com"
     }
+  },
+  "pwa": {
+    "title": "Scherm & installatie",
+    "tagline": "Kies hoe Guess-History hier opent.",
+    "install_app": "App installeren",
+    "ios_intro": "<strong>Zet op beginscherm</strong> om te installeren:",
+    "install_unavailable": "Installatie niet beschikbaar in deze browser.",
+    "remember_choice": "Onthoud mijn keuze"
+  },
+  "grow_deck": {
+    "meta_title": "Guess History — Investeerdersdeck",
+    "meta_description": "Cinematisch investeerdersdeck: van geschiedenisspel naar mens-verankerde AI-benchmark.",
+    "meta_image_alt": "Guess History investeerdersdeck",
+    "title": "Guess History",
+    "progress_label": "GUESS HISTORY",
+    "cta_register": "Registreer je interesse",
+    "cta_play": "Speel Guess History",
+    "cta_test": "Registreer interesse",
+    "status_verified": "GEVERIFIEERD",
+    "status_illustrative": "ILLUSTRATIEF",
+    "status_roadmap": "ROADMAP",
+    "status_conceptual": "CONCEPTUEEL",
+    "model_tag": "MODEL",
+    "s01": {
+      "headline": "Wat als een spel een AI-benchmark werd?",
+      "body": [
+        "Guess History: spelers raden waar en wanneer events gebeurden.",
+        "Maar het spel kan veel meer: een mens-verankerde visuele AI-benchmark."
+      ],
+      "statements": [
+        "Het spel is het begin."
+      ],
+      "alt": "Cinematische historische scène met diepte, figuren en ambigue hints"
+    },
+    "s02": {
+      "headline": "Een simpel spel met een bijzondere data-engine.",
+      "body": [
+        "De bezoeker moet het spel begrijpen zonder instructies te lezen."
+      ],
+      "alt": "Historische scène voor de waar-en-wanneer mini-demo",
+      "steps": [
+        "Historische scène",
+        "Waar?",
+        "Wanneer?",
+        "Onthulling"
+      ]
+    },
+    "s03": {
+      "headline": "Spelers zijn niet alleen spelers.",
+      "subheadline": "Ze creëren een menselijke benchmark.",
+      "body": [
+        "Elk antwoord maakt de benchmark informatiever."
+      ],
+      "final": "Elk antwoord maakt de benchmark informatiever.",
+      "alt": "Dezelfde historische afbeelding als anker voor de groeiende menselijke observaties",
+      "items": [
+        {
+          "label": "Menselijke pogingen",
+          "value": "10.281"
+        },
+        {
+          "label": "Mediaan jaar-fout",
+          "value": "8 jaar"
+        },
+        {
+          "label": "Mediaan plek-fout",
+          "value": "74 km"
+        },
+        {
+          "label": "Moeilijkheid",
+          "value": "MOEILIJK"
+        }
+      ]
+    },
+    "s04": {
+      "headline": "Geef nu dezelfde challenge aan AI.",
+      "body": [
+        "Mens en AI krijgen dezelfde afbeelding en dezelfde vragen. Resultaten direct vergelijkbaar."
+      ],
+      "final": "Nu kunnen we ze vergelijken.",
+      "alt": "Splitscreen: zelfde afbeelding getest op mens en AI-model",
+      "status_label": "Geplande evaluatiecapaciteit",
+      "columns": [
+        {
+          "title": "MENS",
+          "items": [
+            "Waar?",
+            "Wanneer?",
+            "Resultaat"
+          ]
+        },
+        {
+          "title": "AI-MODEL",
+          "items": [
+            "Waar?",
+            "Wanneer?",
+            "Resultaat"
+          ]
+        }
+      ]
+    },
+    "s05": {
+      "headline": "Een nieuwe laag van AI-evaluatie.",
+      "body": [
+        "Een clean evaluatierapport. Niet alleen 'goed of fout.'"
+      ],
+      "final": "Niet alleen 'goed of fout.'",
+      "metrics": [
+        {
+          "label": "TIJDELIJK REASONEREN",
+          "value": "Mediaan fout: 8 jaar"
+        },
+        {
+          "label": "RUIMTELIJK REASONEREN",
+          "value": "Mediaan afstand: 182 km"
+        },
+        {
+          "label": "KALIBRATIE",
+          "value": "Fout hoge confidence: 9%"
+        },
+        {
+          "label": "LATENTIE",
+          "value": "P95: 3,1 s"
+        },
+        {
+          "label": "KOSTEN",
+          "value": "$0,014 / evaluatie"
+        }
+      ],
+      "flow": [
+        "MODEL",
+        "BENCHMARK",
+        "MENS-BASELINE",
+        "PRESTATIE"
+      ]
+    },
+    "s06": {
+      "headline": "De waarde zit niet in het beeld.",
+      "body": [
+        "De moat groeit door gebruik.",
+        "Meer menselijke data → sterkere benchmark.",
+        "Meer model-evals → rijkere vergelijking.",
+        "Meer historie → sterkere longitudinale dataset."
+      ],
+      "final": "Het is de dataset rondom het beeld.",
+      "alt": "Historisch beeld met steeds dichtere datalagen",
+      "stack": [
+        "Geverifieerde ground truth",
+        "Menselijke observaties",
+        "Menselijke moeilijkheid",
+        "Confidence",
+        "AI-antwoorden",
+        "Modelversies",
+        "Evaluatiemethodiek"
+      ]
+    },
+    "s07": {
+      "headline": "Test je model.",
+      "body": [
+        "Providers leveren een vision-model in, draaien de benchmark en krijgen een reproduceerbare mens-evaluatie."
+      ],
+      "final": "Onafhankelijk. Mens-verankerd. Reproduceerbaar.",
+      "status_label": "Geplande evaluatiecapaciteit",
+      "steps": [
+        "Vision-model v4.2",
+        "DRAAI BENCHMARK"
+      ],
+      "metrics": [
+        {
+          "label": "TEMPORAAL",
+          "value": "72%"
+        },
+        {
+          "label": "LOCATIE",
+          "value": "81%"
+        },
+        {
+          "label": "KALIBRATIE",
+          "value": "0,11"
+        },
+        {
+          "label": "MENS WINT",
+          "value": "64%"
+        },
+        {
+          "label": "P95-LATENTIE",
+          "value": "2,4 s"
+        }
+      ]
+    },
+    "s08": {
+      "headline": "Test een model niet eenmalig.",
+      "subheadline": "Track elke versie.",
+      "body": [
+        "Drie versies doorlopen dezelfde benchmark. De lijn evolueert: beter of slechter."
+      ],
+      "final": "Is je model echt beter geworden?",
+      "steps": [
+        "MODEL v1 → BENCHMARK",
+        "MODEL v2 → BENCHMARK",
+        "MODEL v3 → BENCHMARK"
+      ]
+    },
+    "s09": {
+      "headline": "Vier manieren om de benchmark te monetizen.",
+      "body": [
+        "Geen hypothetische omzetcijfers. De vier hoofdproducten en nevenkansen worden beschreven."
+      ],
+      "nodes": [
+        {
+          "label": "01 — Benchmark-API",
+          "description": "Geautomatiseerde model-evals"
+        },
+        {
+          "label": "02 — Enterprise-monitoring",
+          "description": "Continue versietests"
+        },
+        {
+          "label": "03 — Custom benchmarks",
+          "description": "Klantspecifieke evaluaties"
+        },
+        {
+          "label": "04 — Data & research",
+          "description": "Gecontroleerde datatoegang"
+        }
+      ],
+      "branches_root": "Secundaire kansen",
+      "branches_children": [
+        "Educatie",
+        "Modelselectie",
+        "Benchmark-sponsoring"
+      ]
+    },
+    "s10": {
+      "headline": "Het spel voedt de benchmark.",
+      "body": [
+        "De loop versnelt. Consumer-gameplay en B2B-evaluatie versterken elkaar."
+      ],
+      "final": "Twee producten. Eén versterkend systeem.",
+      "flow": [
+        "MEER SPELERS",
+        "MEER MENS-DATA",
+        "BETERE BASELINES",
+        "BETERE BENCHMARK",
+        "MEER AI-INTERESSE",
+        "B2B-OMZET",
+        "MEER CONTENT",
+        "MEER SPELERS"
+      ]
+    },
+    "s11": {
+      "headline": "Historie is het startpunt.",
+      "body": [
+        "Het platform kan groeien van historische beelden naar bredere visual-reasoning-categorieën."
+      ],
+      "final": "Mens-verankerde visuele AI-evaluatie.",
+      "status_label": "Langetermijn-platformkans",
+      "branches_root": "HISTORIE",
+      "branches_children": [
+        "Geografie",
+        "Architectuur",
+        "Cultuur",
+        "Visuele chronologie",
+        "Kaarten",
+        "Documenten",
+        "Algemeen visual reasoning"
+      ]
+    },
+    "s12": {
+      "headline": "We bouwen twee businesses die elkaar versterken.",
+      "body": [
+        "GUESS HISTORY: Een spel dat spelers trekt en menselijke intelligentie genereert.",
+        "GUESS HISTORY EVALUATION: Een platform dat AI meet tegen die intelligentie."
+      ],
+      "statements": [
+        "Spel → Data → Benchmark",
+        "Benchmark → Evaluatie → Omzet",
+        "Omzet → Meer data → Sterker platform"
+      ],
+      "final": "Kan AI historie zo goed begrijpen als mensen?"
+    },
+    "footer_link_home": "Guess History",
+    "footer_link_contact": "Contact",
+    "footer_link_privacy": "Privacy",
+    "footer_link_terms": "Voorwaarden",
+    "footer_link_sources": "Bronnen",
+    "footer_link_disclaimer": "Juridische disclaimer",
+    "footer_disclaimer": "Deze pagina is louter informatief en geen aanbod van effecten. Toekomstverklaringen zijn doelen, geen garanties."
   }
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { DM_Sans } from 'next/font/google'
-import { investorContent } from '@/lib/investorContent'
+import { getTranslations } from 'next-intl/server'
 import InvestorFooter from '@/components/grow/InvestorFooter'
 import InvestorProgress from '@/components/grow/InvestorProgress'
 import GrowNavRail from '@/components/grow/GrowNavRail'
@@ -23,18 +23,20 @@ const dmSans = DM_Sans({
   weight: ['300', '400', '500', '700'],
 })
 
-export const metadata: Metadata = {
-  title: `${investorContent.title} — Investor Deck`,
-  description:
-    'A cinematic investor presentation: from a history game to a human-grounded visual AI benchmark.',
-  openGraph: {
-    images: [
-      {
-        url: '/home_background.webp',
-        alt: 'Guess History investor deck',
-      },
-    ],
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('grow_deck')
+  return {
+    title: t('meta_title'),
+    description: t('meta_description'),
+    openGraph: {
+      images: [
+        {
+          url: '/home_background.webp',
+          alt: t('meta_image_alt'),
+        },
+      ],
+    },
+  }
 }
 
 export default function GrowPage() {

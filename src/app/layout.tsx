@@ -93,11 +93,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           {children}
+          <FullscreenPwaModal />
         </NextIntlClientProvider>
         <HapticFeedback />
         <ServiceWorkerRegistration />
         <Analytics />
-        <FullscreenPwaModal />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </body>
     </html>

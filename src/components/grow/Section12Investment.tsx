@@ -1,9 +1,10 @@
 'use client'
 
-import { investorContent } from '@/lib/investorContent'
+import { useGrowSection } from './GrowSectionContext'
 
 export default function Section12Investment() {
-  const section = investorContent.sections[11]
+  const { content } = useGrowSection()
+  const section = content.sections[11]
 
   return (
     <section

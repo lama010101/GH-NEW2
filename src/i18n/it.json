@@ -174,7 +174,7 @@
     "compete_round_label": "Rotondo {current}",
     "compete_play": "GIOCA",
     "compete_mode_rush": "Live",
-    "compete_mode_relax": "Anytime",
+    "compete_mode_relax": "Libero",
     "compete_completed": "Completata",
     "compete_win": "V",
     "compete_loss": "P",
@@ -184,10 +184,10 @@
     "compete_create_game": "CREA",
     "tagline": "Dove e quando è successo?",
     "daily_new_challenge": "Prossima:",
-    "daily_ends_in": "Ends in:",
-    "daily_next_in": "Next in:",
-    "daily_finished": "Finished",
-    "daily_view": "View",
+    "daily_ends_in": "Termina:",
+    "daily_next_in": "Prossimo:",
+    "daily_finished": "Finito",
+    "daily_view": "Vedi",
     "compete_desc": "Gioca con i tuoi amici.\nTempo reale o a turni.",
     "daily_desc": "Stessi eventi.\nClassifica mondiale",
     "levelup_desc": "Sali di livello.\nGuadagna XP.",
@@ -197,28 +197,28 @@
     "compete_delete_aria": "Elimina",
     "coming_up_soon": "In arrivo",
     "daily_view_results": "Visualizza risultati",
-    "journey_up_next": "Up next",
-    "journey_pass_chip": "Pass ≥ {pct}%",
-    "journey_difficulty_chip": "Difficulty {rating}/10",
-    "journey_start": "Start your journey",
-    "journey_explainer": "Each stage is 5 rounds. Hit the accuracy gate to unlock the next one.",
-    "journey_view": "View journey",
-    "round_of": "Round {current} of {total}",
-    "daily_tagline": "same difficulty for everyone",
-    "daily_status_new": "NEW",
-    "daily_status_in_progress": "IN PROGRESS",
-    "daily_status_done": "DONE",
-    "daily_play_today": "Play today's Daily",
-    "daily_resume": "Resume Daily",
-    "daily_streak": "streak",
-    "daily_playing_today": "{count} playing today",
-    "daily_rank_line": "#{rank} worldwide · Top {pct}%",
+    "journey_up_next": "Prossimo",
+    "journey_pass_chip": "Supera ≥ {pct}%",
+    "journey_difficulty_chip": "Difficoltà {rating}/10",
+    "journey_start": "Inizia il viaggio",
+    "journey_explainer": "5 round a tappa. Supera la soglia per sbloccare la prossima.",
+    "journey_view": "Vedi viaggio",
+    "round_of": "Round {current} di {total}",
+    "daily_tagline": "stessa difficoltà per tutti",
+    "daily_status_new": "NUOVO",
+    "daily_status_in_progress": "IN CORSO",
+    "daily_status_done": "FATTO",
+    "daily_play_today": "Gioca la sfida di oggi",
+    "daily_resume": "Riprendi",
+    "daily_streak": "serie",
+    "daily_playing_today": "{count} giocano oggi",
+    "daily_rank_line": "#{rank} globale · Top {pct}%",
     "daily_xp_gained": "+{xp} XP",
-    "daily_load_error": "Couldn't load today's status",
-    "challenge_sub": "Play with friends",
-    "practice_tagline": "Play solo · Unlimited",
-    "practice_eras_chip": "{selected}/{total} eras",
-    "practice_regions_chip": "{selected}/{total} regions"
+    "daily_load_error": "Stato di oggi non caricato",
+    "challenge_sub": "Gioca con amici",
+    "practice_tagline": "Solo · Illimitato",
+    "practice_eras_chip": "{selected}/{total} ere",
+    "practice_regions_chip": "{selected}/{total} regioni"
   },
   "common": {
     "next_round": "Round successivo",
@@ -293,10 +293,10 @@
     "n_days": "{n} giorni",
     "ready_waiting": "Pronto — in attesa degli altri",
     "im_ready": "Sono pronto",
-    "relax_start_my_game": "Start my game",
-    "relax_playing": "Playing",
-    "relax_finished": "Finished",
-    "relax_joined": "Joined",
+    "relax_start_my_game": "Avvia partita",
+    "relax_playing": "In gioco",
+    "relax_finished": "Finito",
+    "relax_joined": "Unito",
     "pwa_install_title": "Installa l'app per le notifiche dei turni",
     "pwa_install_desc": "I giochi Relax sono a turni. Su iPhone, le notifiche dei turni funzionano solo se questo sito viene aggiunto alla schermata Home.",
     "pwa_step_share": "Tocca l'icona <strong>Condividi</strong> nella barra degli strumenti di Safari.",
@@ -358,7 +358,7 @@
     "vibrate": "Vibrazione",
     "distance_unit": "Unità di distanza",
     "settings": "Impostazioni",
-    "settings_resume_hint": "You can leave and resume this game later.",
+    "settings_resume_hint": "Puoi uscire e riprendere dopo.",
     "submit": "Invia",
     "hint_select_both": "Seleziona prima {where} e {when}",
     "and": "e",
@@ -395,7 +395,7 @@
     "round_label": "Rotondo {current}",
     "round_label_compact": "Giro {current}/{total}",
     "source_link": "Fonte ↗",
-    "rate": "Rate Image Realism",
+    "rate": "Valuta il realismo",
     "rate_saved": "Salvato",
     "this_round": "Questo round",
     "total_penalty": "Penale totale",
@@ -455,12 +455,12 @@
     "when_badges": "Quando",
     "where_badges": "Dove",
     "no_badges": "Nessuna medaglia ottenuta in questa partita",
-    "highlights": "Highlights",
-    "hl_closest_guess": "Closest guess",
-    "hl_sharpest_year": "Sharpest year",
-    "hl_toughest_round": "Toughest round",
-    "hl_years_off": "±{n} yr",
-    "badges_count": "{count, plural, one {# badge} other {# badges}}",
+    "highlights": "In evidenza",
+    "hl_closest_guess": "Più vicino",
+    "hl_sharpest_year": "Anno + preciso",
+    "hl_toughest_round": "Round più duro",
+    "hl_years_off": "±{n} anni",
+    "badges_count": "{count, plural, one {# medaglia} other {# medaglie}}",
     "era_ancient": "Antico",
     "era_medieval": "Medievale",
     "era_earlymodern": "Età Moderna",
@@ -676,7 +676,7 @@
     "rank_suffix_many": "º",
     "rank_suffix_other": "º",
     "xp_amount": "{n, number} XP",
-    "no_more_players": "No more ranked players."
+    "no_more_players": "Nessun altro giocatore."
   },
   "profile": {
     "accuracy_breakdown": "Dettaglio precisione",
@@ -717,8 +717,8 @@
     "practice": "Allenamento",
     "daily_all_time": "Giornaliero (di sempre)",
     "level": "Livello",
-    "era_region": "Era & region",
-    "rounds": "Rounds",
+    "era_region": "Era e regione",
+    "rounds": "Round",
     "stats": "Stats"
   },
   "account": {
@@ -772,7 +772,14 @@
     "turn_desc": "Ricevi una notifica quando è il tuo turno nelle partite Relax. Puoi modificarlo in qualsiasi momento nelle impostazioni.",
     "not_now": "Non ora",
     "enable": "Attiva",
-    "someone": "Qualcuno"
+    "someone": "Qualcuno",
+    "push_enable": "Attiva notifiche",
+    "push_disable": "Disattiva notifiche",
+    "push_enabled_msg": "Notifiche attivate.",
+    "push_disabled_msg": "Notifiche disattivate.",
+    "push_failed_enable": "Attivazione non riuscita.",
+    "push_failed_disable": "Disattivazione non riuscita.",
+    "push_unexpected": "Si è verificato un errore imprevisto."
   },
   "welcome": {
     "title": "Benvenuto su Guess-History!",
@@ -781,9 +788,9 @@
     "your_username": "Il tuo nome utente",
     "lets_play": "Iniziamo!",
     "skip_for_now": "Salta per ora",
-    "username_label_1": "ENTER YOUR USERNAME",
-    "username_label_2": "PICK A UNIQUE NAME",
-    "username_label_3": "OTHERS WILL SEE THIS NAME"
+    "username_label_1": "INSERISCI NOME UTENTE",
+    "username_label_2": "SCEGLI UN NOME UNICO",
+    "username_label_3": "VISIBILE AGLI ALTRI"
   },
   "landing": {
     "meta_title": "Guess-History — Metti alla prova le tue conoscenze su quando e dove",
@@ -819,16 +826,16 @@
     "rank_10": "Cartografo Reale",
     "next_rank": "{xp} XP fino a {title}",
     "max_rank": "Rango massimo raggiunto",
-    "badge_aria": "Rank {tier} badge",
-    "rail_hint_swipe": "swipe",
-    "tier_of_10": "Tier {tier} / 10"
+    "badge_aria": "Medaglia rango {tier}",
+    "rail_hint_swipe": "scorri",
+    "tier_of_10": "Liv. {tier}/10"
   },
   "grow": {
-    "meta_title": "Grow With Us — Guess-History",
-    "meta_description": "Discover the mission, vision, and future of Guess-History and how you can participate.",
+    "meta_title": "Cresci con noi — Guess-History",
+    "meta_description": "Scopri missione, visione e futuro di Guess-History e come partecipare.",
     "hero": {
       "tagline": "Da definire",
-      "primary_cta": "Play Guess-History",
+      "primary_cta": "Gioca a Guess-History",
       "secondary_cta": "Scopri il Progetto"
     },
     "mission": {
@@ -1111,7 +1118,9 @@
         "principle_1": "Rapporto massimo di compensazione.",
         "principle_2": "Limite di rendimento dell'investitore.",
         "principle_3": "Politica di reinvestimento.",
-        "principle_4": "Governance incentrata sulla missione."
+        "principle_4": "Governance incentrata sulla missione.",
+        "purpose_title": "Scopo",
+        "principles_title": "Principi"
       }
     },
     "partnerships": {
@@ -1278,9 +1287,26 @@
       "sources": "Fonti",
       "references": "Riferimenti",
       "legal": "Disclaimer legale",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "nav_aria": "Footer investitori"
     },
-    "nav_aria_label": "Sezioni della pagina di crescita"
+    "nav_aria_label": "Sezioni della pagina di crescita",
+    "nav": {
+      "slides_aria": "Capitoli",
+      "toc_expand": "Apri indice",
+      "toc_collapse": "Chiudi indice",
+      "toc_aria": "Indice",
+      "chapters": "Capitoli",
+      "toc_close": "Chiudi indice",
+      "go_beginning": "Vai all'inizio",
+      "go_end": "Vai alla fine",
+      "prev": "Indietro",
+      "prev_disabled": "Indietro (non disponibile)",
+      "next": "Avanti",
+      "next_disabled": "Avanti (non disponibile)",
+      "beginning_disabled": "Inizio (prima diapositiva)",
+      "end_disabled": "Fine (ultima diapositiva)"
+    }
   },
   "practice": {
     "title": "Gioco di pratica in corso",
@@ -1439,5 +1465,293 @@
       "section10_title": "10. Contáctenos",
       "contact_text": "Para preguntas sobre estos Términos, contáctenos en: appymanya@gmail.com"
     }
+  },
+  "pwa": {
+    "title": "Schermo intero e installa",
+    "tagline": "Scegli come si apre Guess-History qui.",
+    "install_app": "Installa app",
+    "ios_intro": "<strong>Aggiungi a Home</strong> per installare:",
+    "install_unavailable": "Installazione non disponibile in questo browser.",
+    "remember_choice": "Ricorda la scelta"
+  },
+  "grow_deck": {
+    "meta_title": "Guess History — Deck investitori",
+    "meta_description": "Presentazione per investitori: da gioco di storia a benchmark visuale di IA ancorato all'umano.",
+    "meta_image_alt": "Deck investitori di Guess History",
+    "title": "Guess History",
+    "progress_label": "GUESS HISTORY",
+    "cta_register": "Manifesta interesse",
+    "cta_play": "Gioca a Guess History",
+    "cta_test": "Manifesta interesse",
+    "status_verified": "VERIFICATO",
+    "status_illustrative": "ILLUSTRATIVO",
+    "status_roadmap": "ROADMAP",
+    "status_conceptual": "CONCETTUALE",
+    "model_tag": "MODELLO",
+    "s01": {
+      "headline": "E se un gioco diventasse un benchmark IA?",
+      "body": [
+        "Guess History: i giocatori ricostruiscono dove e quando accaddero gli eventi.",
+        "Ma il gioco può creare molto più: un benchmark visuale di IA ancorato all'umano."
+      ],
+      "statements": [
+        "Il gioco è l'inizio."
+      ],
+      "alt": "Scena storica cinematografica con profondità, figure e indizi ambigui"
+    },
+    "s02": {
+      "headline": "Un gioco semplice con un motore dati insolito.",
+      "body": [
+        "Il visitatore deve capire il gioco senza leggere istruzioni."
+      ],
+      "alt": "Scena storica per la mini-demo dove-e-quando",
+      "steps": [
+        "Scena storica",
+        "Dove?",
+        "Quando?",
+        "Rivelazione"
+      ]
+    },
+    "s03": {
+      "headline": "I giocatori non sono solo giocatori.",
+      "subheadline": "Creano un benchmark umano.",
+      "body": [
+        "Ogni risposta rende il benchmark più informativo."
+      ],
+      "final": "Ogni risposta rende il benchmark più informativo.",
+      "alt": "La stessa immagine storica che ancora le osservazioni umane accumulate",
+      "items": [
+        {
+          "label": "Tentativi umani",
+          "value": "10.281"
+        },
+        {
+          "label": "Errore mediano di anno",
+          "value": "8 anni"
+        },
+        {
+          "label": "Errore mediano di luogo",
+          "value": "74 km"
+        },
+        {
+          "label": "Difficoltà",
+          "value": "DIFFICILE"
+        }
+      ]
+    },
+    "s04": {
+      "headline": "Ora dai la stessa sfida all'IA.",
+      "body": [
+        "Umano e IA ricevono la stessa immagine e le stesse domande. Risultati direttamente confrontabili."
+      ],
+      "final": "Ora possiamo confrontarli.",
+      "alt": "Split-screen: stessa immagine testata su umano e modello IA",
+      "status_label": "Capacità di valutazione pianificata",
+      "columns": [
+        {
+          "title": "UMANO",
+          "items": [
+            "Dove?",
+            "Quando?",
+            "Risultato"
+          ]
+        },
+        {
+          "title": "MODELLO IA",
+          "items": [
+            "Dove?",
+            "Quando?",
+            "Risultato"
+          ]
+        }
+      ]
+    },
+    "s05": {
+      "headline": "Nuovo livello di valutazione IA.",
+      "body": [
+        "Un report pulito. Non solo «giusto o sbagliato»."
+      ],
+      "final": "Non solo «giusto o sbagliato».",
+      "metrics": [
+        {
+          "label": "RAGIONAMENTO TEMPORALE",
+          "value": "Errore mediano: 8 anni"
+        },
+        {
+          "label": "RAGIONAMENTO SPAZIALE",
+          "value": "Distanza mediana: 182 km"
+        },
+        {
+          "label": "CALIBRAZIONE",
+          "value": "Errore alta confidenza: 9 %"
+        },
+        {
+          "label": "LATENZA",
+          "value": "P95: 3,1 s"
+        },
+        {
+          "label": "COSTO",
+          "value": "0,014 $ / valutazione"
+        }
+      ],
+      "flow": [
+        "MODELLO",
+        "BENCHMARK",
+        "BASE UMANA",
+        "PERFORMANCE"
+      ]
+    },
+    "s06": {
+      "headline": "L'asset prezioso non è l'immagine.",
+      "body": [
+        "Il fossato cresce con l'uso.",
+        "Più osservazioni umane → benchmark più forte.",
+        "Più valutazioni → confronto più ricco.",
+        "Più storia → dataset più forte."
+      ],
+      "final": "È il dataset attorno all'immagine.",
+      "alt": "Immagine storica con layer di dati sempre più densi",
+      "stack": [
+        "Verità di base verificata",
+        "Osservazioni umane",
+        "Difficoltà umana",
+        "Confidenza",
+        "Risposte IA",
+        "Versioni modello",
+        "Metodologia di valutazione"
+      ]
+    },
+    "s07": {
+      "headline": "Testa il tuo modello.",
+      "body": [
+        "Un provider invia un modello, esegue il benchmark e riceve una valutazione riproducibile ancorata all'umano."
+      ],
+      "final": "Indipendente. Ancorato all'umano. Riproducibile.",
+      "status_label": "Capacità di valutazione pianificata",
+      "steps": [
+        "Modello vision v4.2",
+        "ESEGUI BENCHMARK"
+      ],
+      "metrics": [
+        {
+          "label": "TEMPORALE",
+          "value": "72%"
+        },
+        {
+          "label": "POSIZIONE",
+          "value": "81%"
+        },
+        {
+          "label": "CALIBRAZIONE",
+          "value": "0,11"
+        },
+        {
+          "label": "VINCE UMANO",
+          "value": "64%"
+        },
+        {
+          "label": "LATENZA P95",
+          "value": "2,4 s"
+        }
+      ]
+    },
+    "s08": {
+      "headline": "Non basta un solo test.",
+      "subheadline": "Traccia ogni versione.",
+      "body": [
+        "Tre versioni passano lo stesso benchmark. La curva evolve: miglioramenti o regressioni."
+      ],
+      "final": "Il tuo modello è davvero migliorato?",
+      "steps": [
+        "MODELLO v1 → BENCHMARK",
+        "MODELLO v2 → BENCHMARK",
+        "MODELLO v3 → BENCHMARK"
+      ]
+    },
+    "s09": {
+      "headline": "Quattro modi per monetizzare il benchmark.",
+      "body": [
+        "Nessuna cifra di ricavo ipotetica. Quattro prodotti primari e opportunità secondarie descritte."
+      ],
+      "nodes": [
+        {
+          "label": "01 — API benchmark",
+          "description": "Valutazioni modello automatiche"
+        },
+        {
+          "label": "02 — Monitoraggio enterprise",
+          "description": "Test continui di versione"
+        },
+        {
+          "label": "03 — Benchmark su misura",
+          "description": "Programmi di valutazione dedicati"
+        },
+        {
+          "label": "04 — Dati e ricerca",
+          "description": "Accesso controllato ai dati"
+        }
+      ],
+      "branches_root": "Opportunità secondarie",
+      "branches_children": [
+        "Educazione",
+        "Selezione modello",
+        "Sponsorizzazione benchmark"
+      ]
+    },
+    "s10": {
+      "headline": "Il gioco alimenta il benchmark.",
+      "body": [
+        "Il loop accelera. Gioco consumer e valutazione B2B si rinforzano."
+      ],
+      "final": "Due prodotti. Un sistema che si rinforza.",
+      "flow": [
+        "PIÙ GIOCATORI",
+        "PIÙ DATI UMANI",
+        "BASI MIGLIORI",
+        "BENCHMARK MIGLIORE",
+        "PIÙ INTERESSE IA",
+        "RICAVI B2B",
+        "PIÙ CONTENUTI",
+        "PIÙ GIOCATORI"
+      ]
+    },
+    "s11": {
+      "headline": "La storia è il punto di partenza.",
+      "body": [
+        "La piattaforma può espandersi dalle immagini storiche ad altre categorie di ragionamento visuale."
+      ],
+      "final": "Valutazione visuale IA ancorata all’umano.",
+      "status_label": "Opportunità piattaforma lungo termine",
+      "branches_root": "STORIA",
+      "branches_children": [
+        "Geografia",
+        "Architettura",
+        "Cultura",
+        "Cronologia visuale",
+        "Mappe",
+        "Documenti",
+        "Ragionamento visuale generale"
+      ]
+    },
+    "s12": {
+      "headline": "Costruiamo due attività che si rafforzano.",
+      "body": [
+        "GUESS HISTORY: Un gioco che attira giocatori e genera intelligenza umana proprietaria.",
+        "GUESS HISTORY EVALUATION: Una piattaforma che misura l'IA su quell'intelligenza."
+      ],
+      "statements": [
+        "Gioco → Dati → Benchmark",
+        "Benchmark → Valutazione → Ricavi",
+        "Ricavi → Più dati → Piattaforma più forte"
+      ],
+      "final": "L'IA può capire la storia come gli umani?"
+    },
+    "footer_link_home": "Guess History",
+    "footer_link_contact": "Contatti",
+    "footer_link_privacy": "Privacy",
+    "footer_link_terms": "Termini",
+    "footer_link_sources": "Fonti",
+    "footer_link_disclaimer": "Disclaimer legale",
+    "footer_disclaimer": "Pagina solo informativa; non è un'offerta di titoli. Le affermazioni prospettiche sono obiettivi, non garanzie."
   }
 }

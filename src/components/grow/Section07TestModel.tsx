@@ -1,10 +1,13 @@
 'use client'
 
-import { investorContent } from '@/lib/investorContent'
+import { useTranslations } from 'next-intl'
+import { useGrowSection } from './GrowSectionContext'
 import StatusBadge from './StatusBadge'
 
 export default function Section07TestModel() {
-  const section = investorContent.sections[6]
+  const { content } = useGrowSection()
+  const tDeck = useTranslations('grow_deck')
+  const section = content.sections[6]
 
   return (
     <section
@@ -30,7 +33,7 @@ export default function Section07TestModel() {
 
         <div className="w-full max-w-2xl rounded-[var(--gh-radius-md)] border border-[var(--gh-border-default)] bg-[var(--gh-bg-surface)] p-6 text-left">
           <div className="mb-4">
-            <StatusBadge status="illustrative" label="ILLUSTRATIVE" />
+            <StatusBadge status="illustrative" />
           </div>
 
           {section.visual.steps?.map((step, index) => (
@@ -43,7 +46,7 @@ export default function Section07TestModel() {
               <span className="text-[var(--gh-text-secondary)]">{step}</span>
               {index === 0 && (
                 <span className="rounded bg-[var(--gh-bg-elevated)] px-2 py-1 text-xs text-[var(--gh-text-muted)]">
-                  MODEL
+                  {tDeck('model_tag')}
                 </span>
               )}
             </div>
