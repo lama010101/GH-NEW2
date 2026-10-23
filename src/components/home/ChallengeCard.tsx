@@ -29,9 +29,10 @@ interface ChallengeCardProps {
   playerId: string | undefined
   displayName: string
   onLobby: (gameId: string) => void
+  onOrderSignal?: (s: { settled: boolean; actionable: boolean }) => void
 }
 
-export function ChallengeCard({ playerId, displayName, onLobby }: ChallengeCardProps) {
+export function ChallengeCard({ playerId, displayName, onLobby, onOrderSignal }: ChallengeCardProps) {
   const t = useTranslations()
   const router = useRouter()
 
@@ -129,6 +130,18 @@ export function ChallengeCard({ playerId, displayName, onLobby }: ChallengeCardP
 
   const yourTurnGames = activeGames.filter(g => g.status === 'your_turn')
   const completedGames = activeGames.filter(g => g.status === 'completed')
+
+  // Order signal for useHomeCardOrder: actionable = a fresh (<72h) pending
+  // invite exists OR an active game where it is the player's turn. Stale
+  // invites are ignored so they can't pin the card to the top. settled once
+  // the invites fetch finished.
+  const challengeActionable =
+    invites.some((i) => Date.now() - new Date(i.created_at).getTime() < 72 * 60 * 60 * 1000) ||
+    yourTurnGames.length > 0
+
+  useEffect(() => {
+    onOrderSignal?.({ settled: !invitesLoading, actionable: challengeActionable })
+  }, [onOrderSignal, invitesLoading, challengeActionable])
 
   const tabs: { key: ChallengeTab; title: string; count: number }[] = [
     { key: 'invitations', title: t('home.compete_tab_invitations'), count: invites.length },
