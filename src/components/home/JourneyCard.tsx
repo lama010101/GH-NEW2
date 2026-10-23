@@ -32,9 +32,10 @@ import styles from './JourneyCard.module.css'
 
 interface JourneyCardProps {
   playerId: string | undefined
+  onOrderSignal?: (s: { settled: boolean; resume: boolean }) => void
 }
 
-export function JourneyCard({ playerId }: JourneyCardProps) {
+export function JourneyCard({ playerId, onOrderSignal }: JourneyCardProps) {
   const t = useTranslations()
   const tGame = useTranslations('game')
   const router = useRouter()
@@ -48,6 +49,7 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
     roundIndex: number
     totalRounds: number
   } | null>(null)
+  const [resumeChecked, setResumeChecked] = useState(false)
   const [starting, setStarting] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
   const [gateStageNumber, setGateStageNumber] = useState<number | null>(null)
@@ -86,27 +88,47 @@ export function JourneyCard({ playerId }: JourneyCardProps) {
   useEffect(() => {
     if (!playerId) return
     const pending = findAnyActivePlaythrough()
-    if (!pending) return
+    if (!pending) {
+      setResumeChecked(true)
+      return
+    }
     let cancelled = false
     ;(async () => {
       try {
         const res = await fetch(`/api/compete/${pending.gameId}?playerId=${playerId}`, { cache: 'no-store' })
-        if (!res.ok) return
+        if (!res.ok) {
+          if (!cancelled) setResumeChecked(true)
+          return
+        }
         const snap = (await res.json()) as {
           status?: string
           currentRoundIndex?: number
           config?: { totalRounds?: number }
         }
-        if (cancelled || snap.status === 'SESSION_COMPLETE') return
-        const roundIndex = typeof snap.currentRoundIndex === 'number' ? snap.currentRoundIndex : 0
-        const totalRounds = typeof snap.config?.totalRounds === 'number' ? snap.config.totalRounds : 0
-        setResume({ stageId: pending.stageId, gameId: pending.gameId, roundIndex, totalRounds })
+        if (cancelled) return
+        if (snap.status !== 'SESSION_COMPLETE') {
+          const roundIndex = typeof snap.currentRoundIndex === 'number' ? snap.currentRoundIndex : 0
+          const totalRounds = typeof snap.config?.totalRounds === 'number' ? snap.config.totalRounds : 0
+          setResume({ stageId: pending.stageId, gameId: pending.gameId, roundIndex, totalRounds })
+        }
+        setResumeChecked(true)
       } catch {
         // Snapshot unreachable — the card renders without the resume block.
+        if (!cancelled) setResumeChecked(true)
       }
     })()
     return () => { cancelled = true }
   }, [playerId])
+
+  // Order signal for useHomeCardOrder: settled once the stages fetch finished
+  // (loaded or failed) AND the resume verification finished (including the
+  // no-playthrough and failure paths). resume = a resumable playthrough exists.
+  useEffect(() => {
+    onOrderSignal?.({
+      settled: (stages !== null || loadFailed) && resumeChecked,
+      resume: resume !== null,
+    })
+  }, [onOrderSignal, stages, loadFailed, resumeChecked, resume])
 
   const stageList = stages ?? []
   const progressByStageId = new Map<string, JourneyProgressRow>()

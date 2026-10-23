@@ -15,6 +15,7 @@ import { supabaseBrowser } from '@/core/supabaseBrowser'
 import { getAccuracyColor } from '@/core/accuracyColor'
 import { getDailyChallengeDate, getNextDailyRollover } from '@/core/dailyDate'
 import { MAX_ROUNDS } from '@/core/types'
+import type { DailySignal } from '@/core/homeCardOrder'
 import styles from './DailyCard.module.css'
 
 type DailyStatus = 'not_started' | 'in_progress' | 'completed' | 'expired'
@@ -28,6 +29,7 @@ interface DailyPayload {
 
 interface DailyCardProps {
   playerId: string | undefined
+  onOrderSignal?: (s: { settled: boolean; status: DailySignal }) => void
 }
 
 const STATUS_META: Record<'new' | 'playing' | 'done', { key: string; color: string }> = {
@@ -76,7 +78,7 @@ function useChallengeWeek(playedDates: Set<string>): { iso: string; initial: str
   return week
 }
 
-export function DailyCard({ playerId }: DailyCardProps) {
+export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
   const t = useTranslations()
   const router = useRouter()
 
@@ -148,6 +150,15 @@ export function DailyCard({ playerId }: DailyCardProps) {
     })()
     return () => { cancelled = true }
   }, [playerId])
+
+  // Order signal for useHomeCardOrder: settled once the /api/daily/status fetch
+  // finished (success or failure); a failed load reports status 'unknown'.
+  useEffect(() => {
+    onOrderSignal?.({
+      settled: daily !== null || loadFailed,
+      status: loadFailed ? 'unknown' : (daily?.status ?? 'unknown'),
+    })
+  }, [onOrderSignal, daily, loadFailed])
 
   const status: DailyStatus | null = loadFailed ? null : (daily?.status ?? null)
   const uiState: 'new' | 'playing' | 'done' =

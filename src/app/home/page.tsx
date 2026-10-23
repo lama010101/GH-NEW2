@@ -11,6 +11,8 @@ import { JourneyCard } from '@/components/home/JourneyCard'
 import { DailyCard } from '@/components/home/DailyCard'
 import { ChallengeCard } from '@/components/home/ChallengeCard'
 import { PracticeCard } from '@/components/home/PracticeCard'
+import { useHomeCardOrder, useIsMobileViewport } from '@/components/home/useHomeCardOrder'
+import { HOME_CARD_DESKTOP_ORDER } from '@/core/homeCardOrder'
 import { PracticeSettingsModal, type PracticeModalSettings } from '@/components/practice/PracticeSettingsModal'
 import { PracticeResumeModal } from '@/components/practice/PracticeResumeModal'
 import { loadPracticeSettings, savePracticeSettings } from '@/components/practice/practiceSettings'
@@ -26,6 +28,13 @@ function HomePageInner() {
   const [identity, setIdentity] = useState<IdentityState>({ status: 'loading' })
   const [kickedMessage, setKickedMessage] = useState<string | null>(null)
   const currentPlayerId = (identity as { status: string; playerId?: string }).playerId
+
+  // State-aware card order on single-column viewports (UIX-HOME-DYNORDER-
+  // 1022-001). Must stay above the early returns below (rules of hooks); the
+  // settle clock starts on the first card signal, not at hook mount.
+  const { order: homeCardOrder, reportDaily, reportJourney, reportChallenge } =
+    useHomeCardOrder(currentPlayerId)
+  const isMobileViewport = useIsMobileViewport()
 
   useEffect(() => {
     if (searchParams.get('kicked') === '1') {
@@ -333,6 +342,32 @@ function HomePageInner() {
   const playerId = identity.playerId
   const displayName = identity.displayName
 
+  // Keyed lookup so React MOVES the card DOM nodes when the order changes
+  // (no remount → no state loss, no refetch). Desktop (>= 1024px) keeps the
+  // fixed order; single-column uses the settled signal-based order.
+  const homeCards = {
+    journey: <JourneyCard key="journey" playerId={playerId} onOrderSignal={reportJourney} />,
+    challenge: (
+      <ChallengeCard
+        key="challenge"
+        playerId={playerId}
+        displayName={displayName}
+        onLobby={(gameId) => router.push(`/compete/${gameId}`)}
+        onOrderSignal={reportChallenge}
+      />
+    ),
+    daily: <DailyCard key="daily" playerId={playerId} onOrderSignal={reportDaily} />,
+    practice: (
+      <PracticeCard
+        key="practice"
+        playerId={playerId}
+        onCtaClick={handlePracticeTileClick}
+        ctaLoading={practiceTileLoading}
+      />
+    ),
+  }
+  const visibleHomeOrder = isMobileViewport ? homeCardOrder : HOME_CARD_DESKTOP_ORDER
+
   return (
     <div className={styles.pageRoot}>
 
@@ -379,18 +414,7 @@ function HomePageInner() {
               (port of prototype/home-v2; flex column on mobile, 7fr/5fr grid
               at >= 1024px) */}
           <div className={styles['hv2-grid']}>
-            <JourneyCard playerId={playerId} />
-            <ChallengeCard
-              playerId={playerId}
-              displayName={displayName}
-              onLobby={(gameId) => router.push(`/compete/${gameId}`)}
-            />
-            <DailyCard playerId={playerId} />
-            <PracticeCard
-              playerId={playerId}
-              onCtaClick={handlePracticeTileClick}
-              ctaLoading={practiceTileLoading}
-            />
+            {visibleHomeOrder.map((id) => homeCards[id])}
           </div>
         </div>
       </div>
