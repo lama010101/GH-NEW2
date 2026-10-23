@@ -385,17 +385,19 @@
 
 /* Podium */
 .podium {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1fr;
+  align-items: end;
   gap: 10px;
   height: 300px;
   padding: 18px 14px 14px;
 }
 
 .podiumItem {
-  flex: 1;
-  max-width: 130px;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -413,7 +415,6 @@
 }
 
 .podiumGold {
-  max-width: 150px;
   background: linear-gradient(180deg, rgba(251, 191, 36, 0.24), rgba(251, 191, 36, 0.07));
   border-color: rgba(251, 191, 36, 0.6);
   box-shadow: 0 12px 36px rgba(251, 191, 36, 0.3);
@@ -488,14 +489,22 @@
 }
 
 .podiumScore {
-  font-size: var(--font-base);
+  font-size: clamp(0.62rem, 2.6vw, var(--font-base));
   font-weight: 800;
   color: var(--gh-gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .podiumAcc {
-  font-size: var(--font-xs);
+  font-size: clamp(0.58rem, 2.4vw, var(--font-xs));
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .podiumGold .podiumName {
@@ -503,5 +512,5 @@
 }
 
 .podiumGold .podiumScore {
-  font-size: var(--font-lg);
+  font-size: clamp(0.68rem, 3vw, var(--font-lg));
 }

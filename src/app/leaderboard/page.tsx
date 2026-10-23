@@ -15,8 +15,34 @@ import { getAccuracyColor } from '@/core/accuracyColor';
 import { partitionPodium } from './podium';
 import styles from './leaderboard.module.css';
 
-type LeaderboardTab = 'daily' | 'levelup' | 'overall';
+type LeaderboardTab = 'daily' | 'journey' | 'overall';
 type DailySubTab = 'today' | 'alltime';
+type SortOption = 'accuracy' | 'xp' | 'stage';
+type MetricKind = 'accuracy' | 'xp' | 'stage';
+
+const TAB_SORT_OPTIONS: Record<LeaderboardTab, readonly SortOption[]> = {
+  overall: ['accuracy', 'xp'],
+  daily: ['accuracy', 'xp'],
+  journey: ['stage', 'accuracy'],
+};
+const TAB_DEFAULT_SORT: Record<LeaderboardTab, SortOption> = {
+  overall: 'accuracy',
+  daily: 'accuracy',
+  journey: 'stage',
+};
+
+// `levelup` is kept as an accepted URL alias for `journey`.
+const resolveTabParam = (raw: string | null): LeaderboardTab => {
+  if (raw === 'daily' || raw === 'journey' || raw === 'overall') return raw;
+  if (raw === 'levelup') return 'journey';
+  return 'overall';
+};
+const resolveSubTabParam = (raw: string | null): DailySubTab =>
+  raw === 'alltime' ? 'alltime' : 'today';
+const resolveSortParam = (raw: string | null, tab: LeaderboardTab): SortOption =>
+  raw && TAB_SORT_OPTIONS[tab].includes(raw as SortOption)
+    ? (raw as SortOption)
+    : TAB_DEFAULT_SORT[tab];
 
 type LeaderboardEntry = {
   rank: number;
@@ -29,12 +55,13 @@ type LeaderboardEntry = {
   games_played?: number;
   rounds_played?: number;
   rounds_won?: number;
-  current_level?: number;
-  best_accuracy?: number;
+  highest_stage?: number;
+  stages_completed?: number;
 };
 
 type LeaderboardResponse = {
   tab: string;
+  sort: string;
   filter: string;
   humans: boolean;
   ai: boolean;
@@ -50,8 +77,9 @@ function LeaderboardPageInner() {
   const { filter, toggleHumans, toggleAi, toggleFriends } = usePlayerFilter();
   const t = useTranslations('leaderboard');
 
-  const [activeTab, setActiveTab] = useState<LeaderboardTab>('overall');
-  const [activeSubTab, setActiveSubTab] = useState<DailySubTab>('today');
+  const [activeTab, setActiveTab] = useState<LeaderboardTab>(() => resolveTabParam(searchParams.get('tab')));
+  const [activeSubTab, setActiveSubTab] = useState<DailySubTab>(() => resolveSubTabParam(searchParams.get('subtab')));
+  const [activeSort, setActiveSort] = useState<SortOption>(() => resolveSortParam(searchParams.get('sort'), resolveTabParam(searchParams.get('tab'))));
 
   const [currentData, setCurrentData] = useState<LeaderboardEntry[] | null>(null);
   const [ownEntry, setOwnEntry] = useState<LeaderboardEntry | null>(null);
@@ -91,35 +119,33 @@ function LeaderboardPageInner() {
     })();
   }, [playerId]);
 
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab === 'overall' || tab === 'daily' || tab === 'levelup') {
-      setActiveTab(tab as LeaderboardTab);
-    }
-    const subtab = searchParams.get('subtab');
-    if (subtab === 'today' || subtab === 'alltime') {
-      setActiveSubTab(subtab as DailySubTab);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Sync activeTab + activeSubTab to URL so refresh restores the same view.
-  // Preserves any existing query params (e.g. filter chips).
+  // Sync activeTab + activeSubTab + activeSort to URL so refresh restores the
+  // same view. `sort` is omitted when it equals the tab's default. Preserves
+  // any existing query params (e.g. filter chips).
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     if (activeTab !== 'overall') params.set('tab', activeTab);
     else params.delete('tab');
     if (activeTab === 'daily' && activeSubTab === 'alltime') params.set('subtab', activeSubTab);
     else params.delete('subtab');
+    if (activeSort !== TAB_DEFAULT_SORT[activeTab]) params.set('sort', activeSort);
+    else params.delete('sort');
     const qs = params.toString();
     router.replace(qs ? `/leaderboard?${qs}` : '/leaderboard', { scroll: false });
-  }, [activeTab, activeSubTab, router, searchParams]);
+  }, [activeTab, activeSubTab, activeSort, router, searchParams]);
+
+  const selectTab = (tab: LeaderboardTab) => {
+    setActiveTab(tab);
+    if (!TAB_SORT_OPTIONS[tab].includes(activeSort)) {
+      setActiveSort(TAB_DEFAULT_SORT[tab]);
+    }
+  };
 
   const getApiTab = useCallback((): string => {
     if (activeTab === 'daily') {
       return activeSubTab === 'today' ? 'daily_today' : 'daily_alltime';
     }
-    if (activeTab === 'levelup') return 'levelup';
+    if (activeTab === 'journey') return 'journey';
     return 'overall';
   }, [activeTab, activeSubTab]);
 
@@ -131,6 +157,7 @@ function LeaderboardPageInner() {
       const params = new URLSearchParams();
       const apiTab = getApiTab();
       if (apiTab !== 'overall') params.set('tab', apiTab);
+      params.set('sort', activeSort);
       if (filter.humans) params.set('humans', 'true');
       if (filter.ai) params.set('ai', 'true');
       if (filter.friends) params.set('friends', 'true');
@@ -153,11 +180,22 @@ function LeaderboardPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [getApiTab, filter, t]);
+  }, [getApiTab, activeSort, filter, t]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Centre the signed-in user's own row (podium card or list row) after every
+  // dataset change. Runs only when the user actually has a rendered row.
+  useEffect(() => {
+    if (!playerId || loading || error || !currentData || currentData.length === 0) return;
+    const raf = requestAnimationFrame(() => {
+      const row = rowRefs.current.get(playerId);
+      if (row) row.scrollIntoView({ block: 'center', behavior: 'auto' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [playerId, currentData, loading, error]);
 
   const handleRetry = () => {
     fetchData();
@@ -180,7 +218,7 @@ function LeaderboardPageInner() {
     if (activeTab === 'daily') {
       return `${t('daily')} ${t(activeSubTab === 'today' ? 'today' : 'all_time')}`;
     }
-    if (activeTab === 'levelup') return t('level_up');
+    if (activeTab === 'journey') return t('journey');
     return t('overall');
   };
 
@@ -212,15 +250,16 @@ function LeaderboardPageInner() {
   const podiumSlots = useMemo(() => {
     const { podium } = partitionPodium(currentData ?? []);
     const byPosition = [
-      { position: 1, className: styles.podiumSilver, rankClassName: styles.podiumRankSilver, height: '88%' },
-      { position: 0, className: styles.podiumGold, rankClassName: styles.podiumRankGold, height: '100%' },
-      { position: 2, className: styles.podiumBronze, rankClassName: styles.podiumRankBronze, height: '78%' },
+      { position: 1, column: 1, className: styles.podiumSilver, rankClassName: styles.podiumRankSilver, height: '88%' },
+      { position: 0, column: 2, className: styles.podiumGold, rankClassName: styles.podiumRankGold, height: '100%' },
+      { position: 2, column: 3, className: styles.podiumBronze, rankClassName: styles.podiumRankBronze, height: '78%' },
     ];
     return byPosition
       .filter((slot) => slot.position < podium.length)
       .map((slot) => ({
         entry: podium[slot.position],
         place: slot.position + 1,
+        column: slot.column,
         className: slot.className,
         rankClassName: slot.rankClassName,
         height: slot.height,
@@ -239,16 +278,25 @@ function LeaderboardPageInner() {
     if (activeTab === 'daily') {
       return t('games_played_subtitle', { n: entry.games_played ?? 1 });
     }
-    return t('level_subtitle', { n: entry.current_level ?? 0 });
+    return t('journey_stages_completed', { n: entry.stages_completed ?? 0 });
   };
 
-  const getScoreText = (entry: LeaderboardEntry): string =>
-    activeTab === 'levelup'
-      ? t('lvl_prefix', { n: entry.current_level ?? 0 })
-      : t('xp_amount', { n: entry.total_xp ?? 0 });
+  const primaryMetric: MetricKind =
+    activeTab === 'journey'
+      ? activeSort === 'stage' ? 'stage' : 'accuracy'
+      : activeSort === 'xp' ? 'xp' : 'accuracy';
+  const secondaryMetric: MetricKind =
+    activeTab === 'journey'
+      ? primaryMetric === 'stage' ? 'accuracy' : 'stage'
+      : primaryMetric === 'xp' ? 'accuracy' : 'xp';
 
-  const getEntryAccuracy = (entry: LeaderboardEntry): number | undefined =>
-    activeTab === 'levelup' ? entry.best_accuracy : entry.avg_accuracy;
+  const renderMetric = (entry: LeaderboardEntry, metric: MetricKind): ReactNode => {
+    if (metric === 'accuracy') return <AccuracyValue acc={entry.avg_accuracy} />;
+    if (metric === 'xp') return t('xp_amount', { n: entry.total_xp ?? 0 });
+    return (entry.highest_stage ?? 0) > 0
+      ? t('journey_stage', { n: entry.highest_stage })
+      : t('journey_no_stage');
+  };
 
   return (
     <div className={styles.container} style={{ paddingTop: 64 }}>
@@ -273,22 +321,22 @@ function LeaderboardPageInner() {
       {/* Main Tabs */}
       <div className={styles.tabRow}>
         <button
-          onClick={() => setActiveTab('overall')}
+          onClick={() => selectTab('overall')}
           className={`${styles.tab} ${activeTab === 'overall' ? styles.tabActive : ''}`}
         >
           {t('overall')}
         </button>
         <button
-          onClick={() => setActiveTab('daily')}
+          onClick={() => selectTab('daily')}
           className={`${styles.tab} ${activeTab === 'daily' ? styles.tabActive : ''}`}
         >
           {t('daily')}
         </button>
         <button
-          onClick={() => setActiveTab('levelup')}
-          className={`${styles.tab} ${activeTab === 'levelup' ? styles.tabActive : ''}`}
+          onClick={() => selectTab('journey')}
+          className={`${styles.tab} ${activeTab === 'journey' ? styles.tabActive : ''}`}
         >
-          {t('level_up')}
+          {t('journey')}
         </button>
       </div>
 
@@ -338,6 +386,20 @@ function LeaderboardPageInner() {
         </button>
       </div>
 
+      {/* Sort control */}
+      <div className={styles.subTabRow}>
+        {TAB_SORT_OPTIONS[activeTab].map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => setActiveSort(opt)}
+            className={`${styles.subTab} ${activeSort === opt ? styles.subTabActive : ''}`}
+          >
+            {t(`sort_${opt}`)}
+          </button>
+        ))}
+      </div>
+
       {/* Summary */}
       {!loading && !error && ownRank !== null && ownRank > 0 && (
         <div
@@ -369,7 +431,7 @@ function LeaderboardPageInner() {
 
         {!loading && !error && currentData && currentData.length === 0 && (
           <div className={styles.emptyState}>
-            <p>{t('no_results_today')}</p>
+            <p>{t(activeTab === 'journey' ? 'no_results_journey' : 'no_results_today')}</p>
           </div>
         )}
 
@@ -383,7 +445,7 @@ function LeaderboardPageInner() {
                       key={slot.entry.player_id}
                       ref={(el) => { if (el) rowRefs.current.set(slot.entry.player_id, el); }}
                       className={`${styles.podiumItem} ${slot.className}`}
-                      style={{ height: slot.height }}
+                      style={{ height: slot.height, gridColumn: slot.column }}
                     >
                       <span className={`${styles.podiumRank} ${slot.rankClassName}`}>{slot.entry.rank}</span>
                       {slot.place === 1 && <span className={styles.crown}>👑</span>}
@@ -396,10 +458,8 @@ function LeaderboardPageInner() {
                         isMe={playerId === slot.entry.player_id}
                       />
                       <span className={styles.podiumName}>{slot.entry.display_name ?? t('unknown_player')}</span>
-                      <span className={styles.podiumScore}>{getScoreText(slot.entry)}</span>
-                      <span className={styles.podiumAcc}>
-                        <AccuracyValue acc={getEntryAccuracy(slot.entry)} />
-                      </span>
+                      <span className={styles.podiumScore}>{renderMetric(slot.entry, primaryMetric)}</span>
+                      <span className={styles.podiumAcc}>{renderMetric(slot.entry, secondaryMetric)}</span>
                     </div>
                   ))}
                 </div>
@@ -436,10 +496,8 @@ function LeaderboardPageInner() {
                         <span className={styles.listMeta}>{getRowSubtitle(entry)}</span>
                       </div>
                       <div className={styles.listScoreCol}>
-                        <span className={styles.listScore}>{getScoreText(entry)}</span>
-                        <span className={styles.listAcc}>
-                          <AccuracyValue acc={getEntryAccuracy(entry)} />
-                        </span>
+                        <span className={styles.listScore}>{renderMetric(entry, primaryMetric)}</span>
+                        <span className={styles.listAcc}>{renderMetric(entry, secondaryMetric)}</span>
                       </div>
                     </div>
                   );

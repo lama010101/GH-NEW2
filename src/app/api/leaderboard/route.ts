@@ -7,8 +7,31 @@ import { resolvePlayerIdentities, type PlayerIdentity } from "@/core/playerIdent
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const VALID_TABS = ["overall", "daily_today", "daily_alltime", "levelup"] as const;
+const VALID_TABS = ["overall", "daily_today", "daily_alltime", "journey"] as const;
 type TabName = (typeof VALID_TABS)[number];
+
+// `levelup` is kept as an accepted alias for `journey`.
+const TAB_ALIASES: Record<string, TabName> = { levelup: "journey" };
+
+const VALID_SORTS: Record<TabName, readonly string[]> = {
+  overall: ["accuracy", "xp"],
+  daily_today: ["accuracy", "xp"],
+  daily_alltime: ["accuracy", "xp"],
+  journey: ["stage", "accuracy"],
+};
+const DEFAULT_SORT: Record<TabName, string> = {
+  overall: "accuracy",
+  daily_today: "accuracy",
+  daily_alltime: "accuracy",
+  journey: "stage",
+};
+
+// Test accounts all use one of these email domains; excluded from every
+// HUMAN CTE. Anonymous guests (no auth.users email) are NOT excluded.
+const TEST_ACCOUNT_EMAIL_DOMAINS = ["example.com", "example.local", "devin.local"] as const;
+const TEST_ACCOUNT_DOMAIN_LIST = TEST_ACCOUNT_EMAIL_DOMAINS.map((d) => `'${d}'`).join(", ");
+const testAccountFilterSql = (playerIdExpr: string): string =>
+  `NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = ${playerIdExpr} AND split_part(lower(u.email),'@',2) IN (${TEST_ACCOUNT_DOMAIN_LIST}))`;
 
 const VALID_FILTERS = ["all", "favorites"] as const;
 type LegacyFilterName = (typeof VALID_FILTERS)[number];
@@ -41,12 +64,14 @@ type DailyAlltimeRow = BaseRow & {
   games_played: number;
 };
 
-type LevelupRow = BaseRow & {
-  current_level: number;
-  best_accuracy: number;
+type JourneyRow = BaseRow & {
+  avg_accuracy: number;
+  total_xp: number;
+  highest_stage: number;
+  stages_completed: number;
 };
 
-type LeaderboardRow = OverallRow | DailyTodayRow | DailyAlltimeRow | LevelupRow;
+type LeaderboardRow = OverallRow | DailyTodayRow | DailyAlltimeRow | JourneyRow;
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -101,15 +126,22 @@ type RawRankedRow = {
   rounds_played: number | null;
   rounds_won: number | null;
   completed_at: Date | null;
-  current_level: number | null;
   best_accuracy: number | null;
+  highest_stage: number | null;
+  stages_completed: number | null;
 };
 
-async function loadOverallRanked(): Promise<RawRankedRow[]> {
+async function loadOverallRanked(sort: string): Promise<RawRankedRow[]> {
+  const orderBy = sort === "xp"
+    ? "total_xp DESC, avg_accuracy DESC"
+    : "avg_accuracy DESC, total_xp DESC";
   const result = await dbPool.query<RawRankedRow>(
     `WITH human_stats AS (
-      SELECT player_id, avg_accuracy, total_xp, games_played, rounds_played, rounds_won
-      FROM player_global_stats
+      SELECT pgs.player_id, pgs.avg_accuracy, pgs.total_xp, pgs.games_played, pgs.rounds_played, pgs.rounds_won
+      FROM player_global_stats pgs
+      JOIN profiles pr ON pr.id = pgs.player_id
+      WHERE pgs.games_played > 0
+        AND ${testAccountFilterSql("pgs.player_id")}
     ),
     ai_stats AS (
       SELECT
@@ -138,25 +170,31 @@ async function loadOverallRanked(): Promise<RawRankedRow[]> {
         rounds_played,
         rounds_won,
         NULL::timestamptz AS completed_at,
-        NULL::int AS current_level,
         NULL::numeric(5,2) AS best_accuracy,
-        RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
+        NULL::int AS highest_stage,
+        NULL::int AS stages_completed,
+        RANK() OVER (ORDER BY ${orderBy}) AS rank
       FROM combined
     )
     SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
-           completed_at, current_level, best_accuracy
+           completed_at, best_accuracy, highest_stage, stages_completed
     FROM ranked
     ORDER BY rank`
   );
   return result.rows;
 }
 
-async function loadDailyTodayRanked(date: string): Promise<RawRankedRow[]> {
+async function loadDailyTodayRanked(date: string, sort: string): Promise<RawRankedRow[]> {
+  const orderBy = sort === "xp"
+    ? "total_xp DESC, avg_accuracy DESC"
+    : "avg_accuracy DESC, best_accuracy DESC NULLS LAST";
   const result = await dbPool.query<RawRankedRow>(
     `WITH human_daily AS (
-      SELECT player_id, avg_accuracy, total_xp, completed_at, best_round_accuracy AS best_accuracy
-      FROM leaderboard_daily
-      WHERE date = $1
+      SELECT ld.player_id, ld.avg_accuracy, ld.total_xp, ld.completed_at, ld.best_round_accuracy AS best_accuracy
+      FROM leaderboard_daily ld
+      JOIN profiles pr ON pr.id = ld.player_id
+      WHERE ld.date = $1
+        AND ${testAccountFilterSql("ld.player_id")}
     ),
     ai_daily AS (
       SELECT
@@ -185,13 +223,14 @@ async function loadDailyTodayRanked(date: string): Promise<RawRankedRow[]> {
         NULL::int AS rounds_played,
         NULL::int AS rounds_won,
         completed_at,
-        NULL::int AS current_level,
         best_accuracy,
-        RANK() OVER (ORDER BY avg_accuracy DESC, best_accuracy DESC NULLS LAST) AS rank
+        NULL::int AS highest_stage,
+        NULL::int AS stages_completed,
+        RANK() OVER (ORDER BY ${orderBy}) AS rank
       FROM combined
     )
     SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
-           completed_at, current_level, best_accuracy
+           completed_at, best_accuracy, highest_stage, stages_completed
     FROM ranked
     ORDER BY rank`,
     [date]
@@ -199,11 +238,16 @@ async function loadDailyTodayRanked(date: string): Promise<RawRankedRow[]> {
   return result.rows;
 }
 
-async function loadDailyAlltimeRanked(): Promise<RawRankedRow[]> {
+async function loadDailyAlltimeRanked(sort: string): Promise<RawRankedRow[]> {
+  const orderBy = sort === "xp"
+    ? "total_xp DESC, avg_accuracy DESC"
+    : "avg_accuracy DESC, total_xp DESC";
   const result = await dbPool.query<RawRankedRow>(
     `WITH human_alltime AS (
-      SELECT player_id, games_played, avg_accuracy, total_xp
-      FROM leaderboard_daily_alltime
+      SELECT lda.player_id, lda.games_played, lda.avg_accuracy, lda.total_xp
+      FROM leaderboard_daily_alltime lda
+      JOIN profiles pr ON pr.id = lda.player_id
+      WHERE ${testAccountFilterSql("lda.player_id")}
     ),
     ai_alltime AS (
       SELECT
@@ -230,34 +274,72 @@ async function loadDailyAlltimeRanked(): Promise<RawRankedRow[]> {
         NULL::int AS rounds_played,
         NULL::int AS rounds_won,
         NULL::timestamptz AS completed_at,
-        NULL::int AS current_level,
         NULL::numeric(5,2) AS best_accuracy,
-        RANK() OVER (ORDER BY avg_accuracy DESC, total_xp DESC) AS rank
+        NULL::int AS highest_stage,
+        NULL::int AS stages_completed,
+        RANK() OVER (ORDER BY ${orderBy}) AS rank
       FROM combined
     )
     SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
-           completed_at, current_level, best_accuracy
+           completed_at, best_accuracy, highest_stage, stages_completed
     FROM ranked
     ORDER BY rank`
   );
   return result.rows;
 }
 
-async function loadLevelupRanked(): Promise<RawRankedRow[]> {
+async function loadJourneyRanked(sort: string): Promise<RawRankedRow[]> {
+  const orderBy = sort === "accuracy"
+    ? "avg_accuracy DESC, highest_stage DESC, total_xp DESC"
+    : "highest_stage DESC, avg_accuracy DESC, total_xp DESC";
   const result = await dbPool.query<RawRankedRow>(
-    `SELECT
-       player_id,
-       current_level,
-       best_accuracy,
-       NULL::int AS games_played,
-       NULL::int AS rounds_played,
-       NULL::int AS rounds_won,
-       NULL::timestamptz AS completed_at,
-       NULL::numeric(5,2) AS avg_accuracy,
-       NULL::int AS total_xp,
-       RANK() OVER (ORDER BY current_level DESC, best_accuracy DESC) AS rank
-     FROM leaderboard_levelup
-     ORDER BY rank`
+    `WITH att AS (
+      SELECT
+        p.player_id,
+        COALESCE(MAX(s.stage_number) FILTER (WHERE p.status = 'completed'), 0)::int AS highest_stage,
+        COUNT(*) FILTER (WHERE p.status = 'completed')::int AS stages_completed,
+        ROUND(AVG(p.best_accuracy_pct)::numeric, 2) AS avg_accuracy
+      FROM journey_player_progress p
+      JOIN journey_stages s ON s.id = p.stage_id
+      WHERE p.attempts_count > 0
+      GROUP BY p.player_id
+    ),
+    xp AS (
+      SELECT player_id, COALESCE(SUM(xp_awarded), 0)::int AS total_xp
+      FROM journey_playthroughs
+      GROUP BY player_id
+    ),
+    human_journey AS (
+      SELECT
+        att.player_id,
+        att.highest_stage,
+        att.stages_completed,
+        att.avg_accuracy,
+        COALESCE(x.total_xp, 0)::int AS total_xp
+      FROM att
+      JOIN profiles pr ON pr.id = att.player_id
+      LEFT JOIN xp x ON x.player_id = att.player_id
+      WHERE ${testAccountFilterSql("att.player_id")}
+    ),
+    ranked AS (
+      SELECT
+        player_id,
+        avg_accuracy,
+        total_xp,
+        NULL::int AS games_played,
+        NULL::int AS rounds_played,
+        NULL::int AS rounds_won,
+        NULL::timestamptz AS completed_at,
+        NULL::numeric(5,2) AS best_accuracy,
+        highest_stage,
+        stages_completed,
+        RANK() OVER (ORDER BY ${orderBy}) AS rank
+      FROM human_journey
+    )
+    SELECT player_id, rank, avg_accuracy, total_xp, games_played, rounds_played, rounds_won,
+           completed_at, best_accuracy, highest_stage, stages_completed
+    FROM ranked
+    ORDER BY rank`
   );
   return result.rows;
 }
@@ -288,18 +370,33 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const rawTab = searchParams.get("tab") ?? "overall";
+    const normalizedTab = TAB_ALIASES[rawTab] ?? rawTab;
     const legacyFilter = searchParams.get("filter") ?? "all";
     const rawHumans = searchParams.get("humans");
     const rawAi = searchParams.get("ai");
     const rawFriends = searchParams.get("friends");
 
-    if (!VALID_TABS.includes(rawTab as TabName)) {
+    if (!VALID_TABS.includes(normalizedTab as TabName)) {
       return formatError(
         `Invalid tab. Must be one of: ${VALID_TABS.join(", ")}`,
         400
       );
     }
-    const tab = rawTab as TabName;
+    const tab = normalizedTab as TabName;
+
+    const rawSort = searchParams.get("sort");
+    const validSorts = VALID_SORTS[tab];
+    let sort: string;
+    if (rawSort === null) {
+      sort = DEFAULT_SORT[tab];
+    } else if (!validSorts.includes(rawSort)) {
+      return formatError(
+        `Invalid sort for tab ${tab}. Must be one of: ${validSorts.join(", ")}`,
+        400
+      );
+    } else {
+      sort = rawSort;
+    }
 
     if (!VALID_FILTERS.includes(legacyFilter as LegacyFilterName)) {
       return formatError(
@@ -321,17 +418,17 @@ export async function GET(request: Request) {
       loadFollowedIds(userId),
       (async () => {
         switch (tab) {
-          case "overall": return loadOverallRanked();
+          case "overall": return loadOverallRanked(sort);
           case "daily_today": {
             const rawDate = searchParams.get("date");
             const targetDate = rawDate ?? getDailyChallengeDate();
             if (!DATE_REGEX.test(targetDate)) {
               throw new Error("Invalid date format. Use YYYY-MM-DD.");
             }
-            return loadDailyTodayRanked(targetDate);
+            return loadDailyTodayRanked(targetDate, sort);
           }
-          case "daily_alltime": return loadDailyAlltimeRanked();
-          case "levelup": return loadLevelupRanked();
+          case "daily_alltime": return loadDailyAlltimeRanked(sort);
+          case "journey": return loadJourneyRanked(sort);
         }
       })(),
     ]);
@@ -356,12 +453,14 @@ export async function GET(request: Request) {
         is_ai: identity?.is_ai ?? false,
       };
 
-      if (tab === "levelup") {
+      if (tab === "journey") {
         visibleRows.push({
           ...base,
-          current_level: row.current_level ?? 0,
-          best_accuracy: row.best_accuracy ?? 0,
-        } as LevelupRow);
+          avg_accuracy: row.avg_accuracy ?? 0,
+          total_xp: row.total_xp ?? 0,
+          highest_stage: row.highest_stage ?? 0,
+          stages_completed: row.stages_completed ?? 0,
+        } as JourneyRow);
       } else if (tab === "daily_today") {
         visibleRows.push({
           ...base,
@@ -386,8 +485,6 @@ export async function GET(request: Request) {
           rounds_won: row.rounds_won ?? 0,
         } as OverallRow);
       }
-
-      if (visibleRows.length >= 50) break;
     }
 
     let ownEntry: LeaderboardRow | null = null;
@@ -401,8 +498,8 @@ export async function GET(request: Request) {
         is_ai: identity?.is_ai ?? false,
       };
 
-      if (tab === "levelup") {
-        ownEntry = { ...base, current_level: ownRow.current_level ?? 0, best_accuracy: ownRow.best_accuracy ?? 0 } as LevelupRow;
+      if (tab === "journey") {
+        ownEntry = { ...base, avg_accuracy: ownRow.avg_accuracy ?? 0, total_xp: ownRow.total_xp ?? 0, highest_stage: ownRow.highest_stage ?? 0, stages_completed: ownRow.stages_completed ?? 0 } as JourneyRow;
       } else if (tab === "daily_today") {
         ownEntry = { ...base, avg_accuracy: ownRow.avg_accuracy ?? 0, total_xp: ownRow.total_xp ?? 0, completed_at: ownRow.completed_at ? ownRow.completed_at.toISOString() : '' } as DailyTodayRow;
       } else if (tab === "daily_alltime") {
@@ -415,6 +512,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       tab,
+      sort,
       filter: legacyFilter,
       humans: includeHumans,
       ai: includeAi,
