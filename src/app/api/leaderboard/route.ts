@@ -28,7 +28,7 @@ const DEFAULT_SORT: Record<TabName, string> = {
 
 // Test accounts all use one of these email domains; excluded from every
 // HUMAN CTE. Anonymous guests (no auth.users email) are NOT excluded.
-const TEST_ACCOUNT_EMAIL_DOMAINS = ["example.com", "example.local", "devin.local"] as const;
+const TEST_ACCOUNT_EMAIL_DOMAINS = ["example.com", "example.local", "devin.local", "test.guess-history.com"] as const;
 const TEST_ACCOUNT_DOMAIN_LIST = TEST_ACCOUNT_EMAIL_DOMAINS.map((d) => `'${d}'`).join(", ");
 const testAccountFilterSql = (playerIdExpr: string): string =>
   `NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = ${playerIdExpr} AND split_part(lower(u.email),'@',2) IN (${TEST_ACCOUNT_DOMAIN_LIST}))`;
@@ -133,8 +133,8 @@ type RawRankedRow = {
 
 async function loadOverallRanked(sort: string): Promise<RawRankedRow[]> {
   const orderBy = sort === "xp"
-    ? "total_xp DESC, avg_accuracy DESC"
-    : "avg_accuracy DESC, total_xp DESC";
+    ? "total_xp DESC NULLS LAST, avg_accuracy DESC NULLS LAST"
+    : "avg_accuracy DESC NULLS LAST, total_xp DESC NULLS LAST";
   const result = await dbPool.query<RawRankedRow>(
     `WITH human_stats AS (
       SELECT pgs.player_id, pgs.avg_accuracy, pgs.total_xp, pgs.games_played, pgs.rounds_played, pgs.rounds_won
@@ -186,8 +186,8 @@ async function loadOverallRanked(sort: string): Promise<RawRankedRow[]> {
 
 async function loadDailyTodayRanked(date: string, sort: string): Promise<RawRankedRow[]> {
   const orderBy = sort === "xp"
-    ? "total_xp DESC, avg_accuracy DESC"
-    : "avg_accuracy DESC, best_accuracy DESC NULLS LAST";
+    ? "total_xp DESC NULLS LAST, avg_accuracy DESC NULLS LAST"
+    : "avg_accuracy DESC NULLS LAST, best_accuracy DESC NULLS LAST";
   const result = await dbPool.query<RawRankedRow>(
     `WITH human_daily AS (
       SELECT ld.player_id, ld.avg_accuracy, ld.total_xp, ld.completed_at, ld.best_round_accuracy AS best_accuracy
@@ -240,8 +240,8 @@ async function loadDailyTodayRanked(date: string, sort: string): Promise<RawRank
 
 async function loadDailyAlltimeRanked(sort: string): Promise<RawRankedRow[]> {
   const orderBy = sort === "xp"
-    ? "total_xp DESC, avg_accuracy DESC"
-    : "avg_accuracy DESC, total_xp DESC";
+    ? "total_xp DESC NULLS LAST, avg_accuracy DESC NULLS LAST"
+    : "avg_accuracy DESC NULLS LAST, total_xp DESC NULLS LAST";
   const result = await dbPool.query<RawRankedRow>(
     `WITH human_alltime AS (
       SELECT lda.player_id, lda.games_played, lda.avg_accuracy, lda.total_xp
@@ -290,8 +290,8 @@ async function loadDailyAlltimeRanked(sort: string): Promise<RawRankedRow[]> {
 
 async function loadJourneyRanked(sort: string): Promise<RawRankedRow[]> {
   const orderBy = sort === "accuracy"
-    ? "avg_accuracy DESC, highest_stage DESC, total_xp DESC"
-    : "highest_stage DESC, avg_accuracy DESC, total_xp DESC";
+    ? "avg_accuracy DESC NULLS LAST, highest_stage DESC NULLS LAST, total_xp DESC NULLS LAST"
+    : "highest_stage DESC NULLS LAST, avg_accuracy DESC NULLS LAST, total_xp DESC NULLS LAST";
   const result = await dbPool.query<RawRankedRow>(
     `WITH att AS (
       SELECT
