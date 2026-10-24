@@ -308,7 +308,7 @@ export default function SessionComplete({
   };
 
   return (
-    <section className={journeyResult || isDaily ? `${styles.section} ${styles.sectionJourneyTop}` : styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
+    <section className={journeyResult || isDaily || isPractice ? `${styles.section} ${styles.sectionJourneyTop}` : styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
         if (!playerId) return null;
         if (effectiveResults.length === 0) {
@@ -638,12 +638,12 @@ export default function SessionComplete({
                         ? tJourney('result_headline_passed', { number: journeyResult.stageNumber })
                         : tJourney('result_headline_failed', { number: journeyResult.stageNumber })}
                     </h1>
-                  ) : (
+                  ) : !isPractice && (
                     <h1 className={styles.bannerTitle}>
                       {tGame('you_finished')} {bannerRank != null && <span className={styles.bannerRank}>{bannerRank}{rankSuffix(bannerRank)}</span>}
                     </h1>
                   )}
-                  {!journeyResult && !isDaily && (
+                  {!journeyResult && !isDaily && !isPractice && (
                     <div className={styles.bannerStats}>
                       {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
                     </div>
@@ -1197,7 +1197,7 @@ export default function SessionComplete({
                             </div>
                           </div>
 
-                          {!isDaily && bestPlayerName && (
+                          {!isDaily && !isPractice && bestPlayerName && (
                             <div className={`${styles.bestRow} ${isCurrentBestPlayer ? styles.bestRowMe : ""}`}>
                               <span className={styles.bestLabel}>🏆 {tGame('best_player')}</span>
                               <span className={styles.bestPlayerRight}>
