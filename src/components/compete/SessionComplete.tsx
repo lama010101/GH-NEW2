@@ -69,6 +69,14 @@ type DailyResultPlayer = {
   best_round_accuracy: number | null;
 };
 
+export function resolveDailyRank(
+  rows: Pick<DailyResultPlayer, "player_id" | "rank">[] | null,
+  playerId: string | null,
+): number | null {
+  if (!rows || !playerId) return null;
+  return rows.find((row) => row.player_id === playerId)?.rank ?? null;
+}
+
 interface SessionCompleteProps {
   snapshot: CompeteSessionSnapshot;
   playerId: string | null;
@@ -300,7 +308,7 @@ export default function SessionComplete({
   };
 
   return (
-    <section className={journeyResult ? `${styles.section} ${styles.sectionJourneyTop}` : styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
+    <section className={journeyResult || isDaily || isPractice ? `${styles.section} ${styles.sectionJourneyTop}` : styles.section} data-testid="session-complete-section" data-status={snapshot.status}>
       {(() => {
         if (!playerId) return null;
         if (effectiveResults.length === 0) {
@@ -395,6 +403,7 @@ export default function SessionComplete({
           });
 
         const myRank = leaderboard.findIndex(p => p.playerId === playerId) + 1;
+        const bannerRank = isDaily ? resolveDailyRank(dailyResults, playerId) : myRank;
         const wonRoundsByMe = leaderboard.find(p => p.playerId === playerId)?.wonRounds.length ?? 0;
         const rankSuffix = (n: number) => n === 1 ? tGame('rank_st') : n === 2 ? tGame('rank_nd') : n === 3 ? tGame('rank_rd') : tGame('rank_th');
 
@@ -629,12 +638,12 @@ export default function SessionComplete({
                         ? tJourney('result_headline_passed', { number: journeyResult.stageNumber })
                         : tJourney('result_headline_failed', { number: journeyResult.stageNumber })}
                     </h1>
-                  ) : (
+                  ) : !isPractice && (
                     <h1 className={styles.bannerTitle}>
-                      {tGame('you_finished')} <span className={styles.bannerRank}>{myRank}{rankSuffix(myRank)}</span>
+                      {tGame('you_finished')} {bannerRank != null && <span className={styles.bannerRank}>{bannerRank}{rankSuffix(bannerRank)}</span>}
                     </h1>
                   )}
-                  {!journeyResult && (
+                  {!journeyResult && !isDaily && !isPractice && (
                     <div className={styles.bannerStats}>
                       {tGame('rounds_won', { n: wonRoundsByMe, s: wonRoundsByMe === 1 ? "" : "s" })}
                     </div>
@@ -1092,13 +1101,22 @@ export default function SessionComplete({
                   const bestPlayerData = roundStats.bestPlayerId ? snapshot.players.find(p => p.playerId === roundStats.bestPlayerId) : null;
                   const isCurrentBestPlayer = roundStats.bestPlayerId !== null && roundStats.bestPlayerId === playerId;
                   const myRoundResult = effectiveResults.find(r => r.roundIndex === i && r.playerId === playerId);
-                  const myRoundAcc = hasResult(myRoundResult)
-                    ? ((myRoundResult!.locationScore ?? 0) + (myRoundResult!.timeScore ?? 0)) / 2
+                  // A round_results row exists for every round the player played, even
+                  // when no guess was committed (didSubmit false) — show its score and
+                  // the About icon (the learn API gates on the same row).
+                  const myRawResult = myRoundResult ?? (isAsyncResults
+                    ? (() => {
+                        const r = playerId ? round.playerRoundResults?.[playerId] : undefined;
+                        return r ? { locationScore: r.locationScore, timeScore: r.timeScore } : undefined;
+                      })()
+                    : (allRoundResults ?? []).find(r => r.roundIndex === i && r.playerId === playerId));
+                  const myRoundAcc = myRawResult
+                    ? ((myRawResult.locationScore ?? 0) + (myRawResult.timeScore ?? 0)) / 2
                     : null;
                   const open = openRounds.has(i);
                   const canLearn =
                     learnMode != null &&
-                    myRoundResult?.didSubmit === true &&
+                    myRawResult != null &&
                     LEARN_UUID_RE.test(round.eventId) &&
                     LEARN_UUID_RE.test(snapshot.gameId);
                   return (
@@ -1179,7 +1197,7 @@ export default function SessionComplete({
                             </div>
                           </div>
 
-                          {bestPlayerName && (
+                          {!isDaily && !isPractice && bestPlayerName && (
                             <div className={`${styles.bestRow} ${isCurrentBestPlayer ? styles.bestRowMe : ""}`}>
                               <span className={styles.bestLabel}>🏆 {tGame('best_player')}</span>
                               <span className={styles.bestPlayerRight}>

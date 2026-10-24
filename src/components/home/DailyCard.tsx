@@ -78,6 +78,26 @@ function useChallengeWeek(playedDates: Set<string>): { iso: string; initial: str
   return week
 }
 
+// Proportional progress arc (same technique as JourneyCard's MiniRing44).
+function ResultRing({ pct: pctPercent, color }: { pct: number; color: string }) {
+  const size = 44
+  const sw = 5
+  const r = (size - sw) / 2
+  const c = 2 * Math.PI * r
+  const pct = Math.min(1, Math.max(0, pctPercent / 100))
+  return (
+    <span className={styles.pctRingWrap} style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw}
+          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - pct * c}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+      </svg>
+      <span className={styles.pctRingVal} style={{ color }}>{pctPercent}%</span>
+    </span>
+  )
+}
+
 export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
   const t = useTranslations()
   const router = useRouter()
@@ -181,7 +201,7 @@ export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
         {/* Header */}
         <div className={styles.head}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/daily_large.webp" alt="" width={64} height={64} decoding="async" className={styles.icon} />
+          <img src="/icons/daily_large.webp" alt="" width={48} height={48} decoding="async" className={styles.icon} />
           <div className={styles.headTxt}>
             <h2 id="hv2d-title" className={styles.title}>{t('home.daily_name')}</h2>
             <span className={styles.date}>{t('home.daily_tagline')}</span>
@@ -231,9 +251,7 @@ export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
               <>
                 <div className={styles.result}>
                   {avgAccuracy !== null && (
-                    <span className={styles.resRing} style={{ borderColor: getAccuracyColor(avgAccuracy), color: getAccuracyColor(avgAccuracy) }}>
-                      {avgAccuracy}%
-                    </span>
+                    <ResultRing pct={avgAccuracy} color={getAccuracyColor(avgAccuracy)} />
                   )}
                   <div className={styles.resTxt}>
                     {totalXp !== null && (
@@ -275,11 +293,10 @@ export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
                       </span>
                     ))}
               </div>
+              {playingToday !== null && playingToday > 0 && (
+                <span className={styles.playingToday}>{t('home.daily_playing_today', { count: playingToday })}</span>
+              )}
             </div>
-
-            {playingToday !== null && playingToday > 0 && (
-              <span className={styles.playingToday}>{t('home.daily_playing_today', { count: playingToday })}</span>
-            )}
           </div>
         </div>
       </div>

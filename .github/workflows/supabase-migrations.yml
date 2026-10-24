@@ -4,12 +4,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# AUTOMATIC TRIGGER REMOVED (INFRA-FIX-MIGRATIONSWORKFLOW-MANUALONLY-1023-C03).
+# Prod migration history is out of sync with this directory; `supabase db push` would re-apply migrations that are already live.
+# Do NOT run this against prod until the history is reconciled. Prod migrations are applied via the Supabase connector (apply_migration); name the repo file with the version prod recorded.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'supabase/migrations/**'
   workflow_dispatch:
 
 jobs:

@@ -154,7 +154,7 @@ export function EventLearnModal({
             aria-label={t("learn_close")}
           >
             <svg viewBox="0 0 10 10" fill="none">
-              <path d="M2 2l6 6M8 2L2 8" stroke="currentColor" />
+              <path d="M2 2l6 6M8 2L2 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           </button>
         </div>
