@@ -201,7 +201,7 @@ export function DailyCard({ playerId, onOrderSignal }: DailyCardProps) {
         {/* Header */}
         <div className={styles.head}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/daily_large.webp" alt="" width={48} height={48} decoding="async" className={styles.icon} />
+          <img src="/icons/daily_large.webp" alt="" width={64} height={64} decoding="async" className={styles.icon} />
           <div className={styles.headTxt}>
             <h2 id="hv2d-title" className={styles.title}>{t('home.daily_name')}</h2>
             <span className={styles.date}>{t('home.daily_tagline')}</span>
