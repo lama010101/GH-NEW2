@@ -108,7 +108,7 @@ export function PracticeCard({ playerId, onCtaClick, ctaLoading }: PracticeCardP
               <span className={styles.roundTxt}>{t('home.round_of', { current: Math.min(roundIndex + 1, totalRounds), total: totalRounds })}</span>
             </span>
           )}
-          {/* Desktop only — timer / eras / regions of the saved settings */}
+          {/* Timer / eras / regions of the saved settings (all viewports) */}
           <span className={styles.settingsRow}>
             <span className={styles.chip}>⏱ {timerLabel}</span>
             <span className={styles.chip}>{t('home.practice_eras_chip', { selected: erasSelected, total: TOTAL_ERAS })}</span>
