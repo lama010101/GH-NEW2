@@ -129,9 +129,10 @@ async function globalSetup() {
 
     if (existingUser) {
       console.log(`[PLAYWRIGHT SETUP] User ${user.email} already exists, deleting...`);
-      await supabase.auth.admin.deleteUser(existingUser.id);
+      await purgeTestUserData(supabase, [existingUser.id]);
       // Also clean up profile
       await supabase.from('profiles').delete().eq('id', existingUser.id);
+      await supabase.auth.admin.deleteUser(existingUser.id);
     }
 
     // Create new user
@@ -223,15 +224,66 @@ async function globalSetup() {
 }
 
 /**
+ * Purge all game/leaderboard data for the given test user ids BEFORE their
+ * profiles and auth users are deleted — rows left behind become orphans
+ * (player_id with no matching auth.users row).
+ *
+ * A session is "test-only" when every session_players member is in userIds;
+ * test-only sessions are deleted together with all rows keyed to them
+ * (including AI-player rows). A session containing any player_id outside
+ * userIds (non-test human or AI) is kept — only the test users' own rows are
+ * removed from it. Leaf tables are deleted first, `sessions` last; profiles
+ * and auth users are deleted by the caller afterwards.
+ *
+ * Failures are logged loudly but never thrown: a DB hiccup must not fail the
+ * gate run.
+ */
+async function purgeTestUserData(client: typeof supabase, userIds: string[]): Promise<void> {
+  const counts: Record<string, number> = {};
+  const bump = (t: string, n: number) => { counts[t] = (counts[t] ?? 0) + n; };
+  const fail = (t: string, e: { message?: string } | null) =>
+    console.error(`[PLAYWRIGHT TEARDOWN] PURGE FAILED table=${t}: ${e?.message ?? JSON.stringify(e)}`);
+  try {
+    const { data: sp, error: spErr } = await client.from('session_players').select('game_id').in('player_id', userIds);
+    if (spErr) fail('session_players', spErr);
+    const gameIds = [...new Set((sp ?? []).map(r => r.game_id as string))];
+    const testOnly: string[] = [];
+    for (const g of gameIds) {
+      const { data: members, error: mErr } = await client.from('session_players').select('player_id').eq('game_id', g);
+      if (mErr) { fail('session_players', mErr); continue; }
+      if ((members ?? []).every(m => m.player_id === null || userIds.includes(m.player_id as string))) {
+        testOnly.push(g);
+      }
+    }
+    const orFilter = [`player_id.in.(${userIds.join(',')})`];
+    if (testOnly.length) orFilter.push(`game_id.in.(${testOnly.join(',')})`);
+    for (const t of ['round_hints', 'player_round_events', 'round_commits', 'round_results', 'daily_attempts', 'session_players'] as const) {
+      const { error, count } = await client.from(t).delete({ count: 'exact' }).or(orFilter.join(','));
+      if (error) fail(t, error); else bump(t, count ?? 0);
+    }
+    for (const t of ['journey_player_progress', 'journey_playthroughs', 'leaderboard_daily', 'leaderboard_daily_alltime', 'leaderboard_levelup', 'player_daily_streak', 'player_global_stats'] as const) {
+      const { error, count } = await client.from(t).delete({ count: 'exact' }).in('player_id', userIds);
+      if (error) fail(t, error); else bump(t, count ?? 0);
+    }
+    if (testOnly.length) {
+      const { error, count } = await client.from('sessions').delete({ count: 'exact' }).in('game_id', testOnly);
+      if (error) fail('sessions', error); else bump('sessions', count ?? 0);
+    }
+  } catch (e) {
+    fail('purgeTestUserData', e as { message?: string });
+  }
+  console.log(`[PLAYWRIGHT TEARDOWN] purged rows: ${Object.entries(counts).filter(([, n]) => n > 0).map(([t, n]) => `${t}=${n}`).join(' ') || 'none'}`);
+}
+
+/**
  * Global teardown: Delete all test users and their data
  */
 async function globalTeardown() {
   console.log('[PLAYWRIGHT TEARDOWN] Cleaning up test users...');
 
   for (const userId of createdUserIds) {
-    // Clean up game sessions where this user was a player
-    await supabase.from('game_players').delete().eq('player_id', userId);
-    await supabase.from('guesses').delete().eq('player_id', userId);
+    // Purge all game/leaderboard rows for this user before profile+auth deletion
+    await purgeTestUserData(supabase, [userId]);
     await supabase.from('profiles').delete().eq('id', userId);
 
     // Delete auth user
@@ -254,8 +306,7 @@ async function globalTeardown() {
 
   for (const orphaned of orphanedUsers) {
     if (!createdUserIds.includes(orphaned.id)) {
-      await supabase.from('game_players').delete().eq('player_id', orphaned.id);
-      await supabase.from('guesses').delete().eq('player_id', orphaned.id);
+      await purgeTestUserData(supabase, [orphaned.id]);
       await supabase.from('profiles').delete().eq('id', orphaned.id);
       await supabase.auth.admin.deleteUser(orphaned.id);
       console.log(`[PLAYWRIGHT TEARDOWN] Cleaned up orphaned user ${orphaned.email}`);
