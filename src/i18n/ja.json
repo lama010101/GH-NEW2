@@ -24,7 +24,7 @@
   "help": {
     "title": "ヘルプセンター",
     "hero_title": "何かお手伝いできることはありますか？",
-    "hero_subtitle": "答えを見つけ、ルールを学び、Guess-Historyを最大限に活用しましょう。",
+    "hero_subtitle": "答えを見つけ、ルールを学び、Back to the Pastを最大限に活用しましょう。",
     "search_placeholder": "ヘルプセンターを検索…",
     "search_label": "ヘルプセンターを検索",
     "clear_search": "検索をクリア",
@@ -301,7 +301,7 @@
     "pwa_install_desc": "Relax ゲームはターン制です。iPhone では、このサイトをホーム画面に追加しないとターン通知が機能しません。",
     "pwa_step_share": "Safari のツールバーにある <strong>共有</strong> アイコンをタップします。",
     "pwa_step_home": "<strong>ホーム画面に追加</strong> を選択します。",
-    "pwa_step_open": "<strong>追加</strong> をタップし、ホーム画面から Guess-History を開きます。",
+    "pwa_step_open": "<strong>追加</strong> をタップし、ホーム画面から Back to the Past を開きます。",
     "pwa_got_it": "了解",
     "players_ready": "（{ready}/{total} プレイヤー準備完了）",
     "select_all": "全選択",
@@ -790,7 +790,7 @@
     "push_unexpected": "予期しないエラーが発生"
   },
   "welcome": {
-    "title": "Guess-Historyへようこそ！",
+    "title": "Back to the Pastへようこそ！",
     "your_historical_avatar": "あなたの歴史アバター",
     "choose_different_avatar": "別のアバターを選ぶ",
     "your_username": "あなたのユーザー名",
@@ -801,9 +801,9 @@
     "username_label_3": "この名前は他者に表示"
   },
   "landing": {
-    "meta_title": "Guess-History — 歴史の知識を試そう",
+    "meta_title": "Back to the Past — 歴史の知識を試そう",
     "meta_description": "歴史推測ゲーム。実際の歴史イベントを見て、正確な年と場所を当てよう。フレンドに挑戦し、ランキングを登り、歴史の知識を証明。",
-    "logo_alt": "Guess-History",
+    "logo_alt": "Back to the Past",
     "rank_label": "ランク",
     "tagline": "どこで、いつ起きた？",
     "hero_description": "歴史の知識を試しましょう。実際のイベントを見て、正確な年と場所を当てよう。フレンドに挑戦し、ランキングを登りましょう。",
@@ -839,11 +839,11 @@
     "tier_of_10": "レベル {tier}/10"
   },
   "grow": {
-    "meta_title": "共に成長 — Guess-History",
-    "meta_description": "Guess-Historyのミッション・ビジョン・将来性と参加方法を紹介。",
+    "meta_title": "共に成長 — Back to the Past",
+    "meta_description": "Back to the Pastのミッション・ビジョン・将来性と参加方法を紹介。",
     "hero": {
       "tagline": "未定",
-      "primary_cta": "Guess-Historyをプレイ",
+      "primary_cta": "Back to the Pastをプレイ",
       "secondary_cta": "プロジェクトを発見する"
     },
     "mission": {
@@ -1022,7 +1022,7 @@
         "name": "企業学習",
         "description": "未定"
       },
-      "center_label": "Guess-History"
+      "center_label": "Back to the Past"
     },
     "business_model": {
       "title": "ビジネスモデル",
@@ -1069,7 +1069,7 @@
       "title": "長期的に使用できるように構築",
       "subtitle": "未定",
       "left_header": "従来のスタートアップ企業が最適化するのは、",
-      "right_header": "Guess-History の最適化",
+      "right_header": "Back to the Past の最適化",
       "left_1": "評価",
       "right_1": "持続可能性",
       "left_2": "資金調達",
@@ -1112,7 +1112,7 @@
         "detail": "未定"
       },
       "future_projects_title": "今後のプロジェクト",
-      "future_project_1": "Guess-History",
+      "future_project_1": "Back to the Past",
       "future_project_2": "VR History",
       "future_project_3": "科学を推測する",
       "future_project_4": "アートを推測する",
@@ -1392,11 +1392,11 @@
   },
   "legal": {
     "privacy": {
-      "meta_title": "プライバシーポリシー — Guess-History",
-      "meta_description": "Guess-Historyのプライバシーポリシー",
+      "meta_title": "プライバシーポリシー — Back to the Past",
+      "meta_description": "Back to the Pastのプライバシーポリシー",
       "title": "プライバシーポリシー",
       "last_updated": "最終更新日：2026年8月4日",
-      "intro": "Guess-History（\"私たち\"、\"我々\"、\"私たちの\"）は、ウェブサイトwww.guess-history.com（\"サービス\"）を運営しており、マルチプレイヤーの歴史地理および年を推測するゲームです。このプライバシーポリシーでは、私たちが収集する情報、使用方法、その情報に関するあなたの権利について説明します。",
+      "intro": "Back to the Past（\"私たち\"、\"我々\"、\"私たちの\"）は、ウェブサイトwww.guess-history.com（\"サービス\"）を運営しており、マルチプレイヤーの歴史地理および年を推測するゲームです。このプライバシーポリシーでは、私たちが収集する情報、使用方法、その情報に関するあなたの権利について説明します。",
       "section1_title": "1. 収集する情報",
       "account_info_label": "アカウント情報：",
       "account_info_text": "Googleまたはメール/パスワードでサインインする際に、私たちはあなたのメールアドレス、表示名、およびプロファイル写真（Googleが提供している場合）を受け取ります。認証はSupabaseによって処理されます。",
@@ -1415,7 +1415,7 @@
       "use_communicate": "必要に応じて、アカウントやサービスについてコミュニケーションをとる",
       "no_sell": "私たちはあなたの個人情報を販売しません。第三者の広告のためにあなたのデータを使用することはありません。",
       "section3_title": "3. 第三者サービス",
-      "providers_intro": "Guess-Historyを運営するために、以下の第三者サービスプロバイダーを使用しています：",
+      "providers_intro": "Back to the Pastを運営するために、以下の第三者サービスプロバイダーを使用しています：",
       "supabase_name": "Supabase",
       "supabase_desc": "— 認証およびデータベースホスティング",
       "google_name": "Google OAuth",
@@ -1441,13 +1441,13 @@
       "changes_text": "このプライバシーポリシーは、時折更新される場合があります。重要な変更は、このページの「最終更新日」を更新することで反映されます。"
     },
     "terms": {
-      "meta_title": "サービス利用規約 — Guess-History",
-      "meta_description": "Guess-Historyのサービス利用規約",
+      "meta_title": "サービス利用規約 — Back to the Past",
+      "meta_description": "Back to the Pastのサービス利用規約",
       "title": "サービス利用規約",
       "last_updated": "最終更新日：2026年8月4日",
-      "intro": "Guess-History（\"サービス\"）にようこそ。www.guess-history.comで運営されています。サービスにアクセスまたは使用することで、あなたはこれらのサービス利用規約（\"規約\"）に拘束されることに同意します。もし同意しない場合は、サービスを使用しないでください。",
+      "intro": "Back to the Past（\"サービス\"）にようこそ。www.guess-history.comで運営されています。サービスにアクセスまたは使用することで、あなたはこれらのサービス利用規約（\"規約\"）に拘束されることに同意します。もし同意しない場合は、サービスを使用しないでください。",
       "section1_title": "1. サービスの説明",
-      "section1_text": "Guess-Historyは、マルチプレイヤーおよびシングルプレイヤーのゲームであり、プレイヤーは画像に描かれた歴史的イベントの年と場所を推測し、リーダーボードで競い、友人やコミュニティと対戦します。",
+      "section1_text": "Back to the Pastは、マルチプレイヤーおよびシングルプレイヤーのゲームであり、プレイヤーは画像に描かれた歴史的イベントの年と場所を推測し、リーダーボードで競い、友人やコミュニティと対戦します。",
       "section2_title": "2. アカウント",
       "section2_text": "ほとんどの機能にアクセスするには、アカウントを作成する必要があります（Googleまたはメール/パスワード経由）。アカウントの機密性を維持し、その下でのすべての活動に責任を持つ必要があります。正確な情報を提供し、常に最新の状態に保つ責任があります。",
       "section3_title": "3. 利用の適正",
@@ -1461,11 +1461,11 @@
       "section4_title": "4. ユーザーコンテンツ",
       "section4_text": "あなたが提出した任意の表示名、アバター、またはその他のコンテンツは、攻撃的、侵害的、または違法であってはなりません。私たちは、そのようなコンテンツを削除または適切に管理する権利を留保します。",
       "section5_title": "5. 知的財産",
-      "section5_text": "サービス、ゲームデザイン、ソフトウェア、ブランドは、Guess-Historyおよびその創作者に所有されています。ゲームプレイに使用される歴史的イベント画像は、教育/情報提供の目的で使用されており、元のソース画像の権利は、該当する所有者に留まります。",
+      "section5_text": "サービス、ゲームデザイン、ソフトウェア、ブランドは、Back to the Pastおよびその創作者に所有されています。ゲームプレイに使用される歴史的イベント画像は、教育/情報提供の目的で使用されており、元のソース画像の権利は、該当する所有者に留まります。",
       "section6_title": "6. 保証の否認",
       "section6_text": "サービスは「現状のまま」、「利用可能な限り」で提供され、いかなる種類の保証もありません。サービスが常に中断されず、エラーがなく、安全であることを保証するものではありません。",
       "section7_title": "7. 責任の制限",
-      "section7_text": "法律で認められる最大限の範囲で、Guess-Historyおよびその運営者は、サービスの使用から生じる間接的、偶発的、特別、または結果的な損害について責任を負いません。",
+      "section7_text": "法律で認められる最大限の範囲で、Back to the Pastおよびその運営者は、サービスの使用から生じる間接的、偶発的、特別、または結果的な損害について責任を負いません。",
       "section8_title": "8. サービスの変更",
       "section8_text": "サービスのいかなる部分も、事前の通知なしに、ゲームモード、機能、またはスコアリングシステムを含めて、随時変更、停止、または中止することがあります。",
       "section9_title": "9. この規約の変更",
@@ -1483,13 +1483,13 @@
     "remember_choice": "選択を記憶"
   },
   "grow_deck": {
-    "meta_title": "Guess History — 投資家デッキ",
+    "meta_title": "Back to the Past — 投資家デッキ",
     "meta_description": "歴史ゲームから人間基準のビジュアルAIベンチマークへ — 映画のような投資家向けプレゼン。",
-    "meta_image_alt": "Guess History 投資家デッキ",
-    "title": "Guess History",
-    "progress_label": "GUESS HISTORY",
+    "meta_image_alt": "Back to the Past 投資家デッキ",
+    "title": "Back to the Past",
+    "progress_label": "BACK TO THE PAST",
     "cta_register": "関心を登録",
-    "cta_play": "Guess Historyをプレイ",
+    "cta_play": "Back to the Pastをプレイ",
     "cta_test": "関心を登録",
     "status_verified": "検証済",
     "status_illustrative": "例示",
@@ -1499,7 +1499,7 @@
     "s01": {
       "headline": "ゲームがAIベンチマークになったら?",
       "body": [
-        "Guess Historyはプレイヤーが歴史上の出来事の場所と時代を推測するゲーム。",
+        "Back to the Pastはプレイヤーが歴史上の出来事の場所と時代を推測するゲーム。",
         "しかしこのゲームはもっと大きなものを生み出せる:人間基準のビジュアルAIベンチマーク。"
       ],
       "statements": [
@@ -1744,8 +1744,8 @@
     "s12": {
       "headline": "相互に強化する2つの事業を構築中。",
       "body": [
-        "GUESS HISTORY: プレイヤーを引きつけ独自の人間知能を生成するゲーム。",
-        "GUESS HISTORY EVALUATION: その知能に対するAI性能を測定するプラットフォーム。"
+        "BACK TO THE PAST: プレイヤーを引きつけ独自の人間知能を生成するゲーム。",
+        "BACK TO THE PAST EVALUATION: その知能に対するAI性能を測定するプラットフォーム。"
       ],
       "statements": [
         "ゲーム → データ → ベンチマーク",
@@ -1754,7 +1754,7 @@
       ],
       "final": "AIは人間と同じく歴史を理解できるか?"
     },
-    "footer_link_home": "Guess History",
+    "footer_link_home": "Back to the Past",
     "footer_link_contact": "連絡先",
     "footer_link_privacy": "プライバシー",
     "footer_link_terms": "利用規約",

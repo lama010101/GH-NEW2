@@ -63,7 +63,7 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: '/manifest.json',
     icons: { apple: '/icons/apple-touch-icon.png' },
     openGraph: {
-      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Guess History — Find clues. Become a historian.' }],
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Back to the Past — Find clues. Become a historian.' }],
     },
     twitter: {
       card: 'summary_large_image',

@@ -24,7 +24,7 @@
   "help": {
     "title": "Centro de Ayuda",
     "hero_title": "¿Cómo podemos ayudarte?",
-    "hero_subtitle": "Encuentra respuestas, aprende las reglas y saca el máximo provecho de Guess-History.",
+    "hero_subtitle": "Encuentra respuestas, aprende las reglas y saca el máximo provecho de Back to the Past.",
     "search_placeholder": "Buscar en el centro de ayuda…",
     "search_label": "Buscar en el centro de ayuda",
     "clear_search": "Borrar búsqueda",
@@ -301,7 +301,7 @@
     "pwa_install_desc": "Los juegos Relax son por turnos. En iPhone, las notificaciones de turno solo funcionan cuando este sitio se añade a la pantalla de inicio.",
     "pwa_step_share": "Toca el icono <strong>Compartir</strong> en la barra de herramientas de Safari.",
     "pwa_step_home": "Elige <strong>Añadir a la pantalla de inicio</strong>.",
-    "pwa_step_open": "Toca <strong>Añadir</strong> y luego abre Guess-History desde tu pantalla de inicio.",
+    "pwa_step_open": "Toca <strong>Añadir</strong> y luego abre Back to the Past desde tu pantalla de inicio.",
     "pwa_got_it": "Entendido",
     "players_ready": "({ready}/{total} jugadores listos)",
     "select_all": "Seleccionar todo",
@@ -790,7 +790,7 @@
     "push_unexpected": "Ocurrió un error inesperado."
   },
   "welcome": {
-    "title": "¡Bienvenido a Guess-History!",
+    "title": "¡Bienvenido a Back to the Past!",
     "your_historical_avatar": "Tu avatar histórico",
     "choose_different_avatar": "Elegir otro avatar",
     "your_username": "Tu nombre de usuario",
@@ -801,9 +801,9 @@
     "username_label_3": "OTROS VERÁN ESTE NOMBRE"
   },
   "landing": {
-    "meta_title": "Guess-History — Pon a prueba tu conocimiento de cuándo y dónde",
+    "meta_title": "Back to the Past — Pon a prueba tu conocimiento de cuándo y dónde",
     "meta_description": "Un juego de adivinanza histórica. Ve eventos reales y adivina el año y la ubicación exactos. Desafía amigos, sube en la clasificación y demuestra tus conocimientos.",
-    "logo_alt": "Guess-History",
+    "logo_alt": "Back to the Past",
     "rank_label": "Rango",
     "tagline": "¿Dónde y cuándo ocurrió?",
     "hero_description": "Pon a prueba tu conocimiento de la historia. Ve eventos reales y adivina el año y la ubicación exactos. Desafía amigos, sube en la clasificación y demuestra que conoces la historia.",
@@ -839,11 +839,11 @@
     "tier_of_10": "Nivel {tier}/10"
   },
   "grow": {
-    "meta_title": "Crecemos juntos — Guess-History",
-    "meta_description": "Descubre la misión, la visión y el futuro de Guess-History y cómo participar.",
+    "meta_title": "Crecemos juntos — Back to the Past",
+    "meta_description": "Descubre la misión, la visión y el futuro de Back to the Past y cómo participar.",
     "hero": {
       "tagline": "Por determinar",
-      "primary_cta": "Juega a Guess-History",
+      "primary_cta": "Juega a Back to the Past",
       "secondary_cta": "Descubre el proyecto"
     },
     "mission": {
@@ -1022,7 +1022,7 @@
         "name": "Aprendizaje Corporativo",
         "description": "Por determinar"
       },
-      "center_label": "Guess-History"
+      "center_label": "Back to the Past"
     },
     "business_model": {
       "title": "Modelo de negocio",
@@ -1069,7 +1069,7 @@
       "title": "Construido para el largo plazo",
       "subtitle": "Por determinar",
       "left_header": "Las startups tradicionales se optimizan para",
-      "right_header": "Guess-History optimiza para",
+      "right_header": "Back to the Past optimiza para",
       "left_1": "Valoración",
       "right_1": "Sostenibilidad",
       "left_2": "Financiamiento",
@@ -1112,7 +1112,7 @@
         "detail": "Por determinar"
       },
       "future_projects_title": "Proyectos futuros",
-      "future_project_1": "Guess-History",
+      "future_project_1": "Back to the Past",
       "future_project_2": "VR History",
       "future_project_3": "Adivina la ciencia",
       "future_project_4": "Adivina el arte",
@@ -1392,11 +1392,11 @@
   },
   "legal": {
     "privacy": {
-      "meta_title": "Política de Privacidad — Guess-History",
-      "meta_description": "Política de Privacidad para Guess-History",
+      "meta_title": "Política de Privacidad — Back to the Past",
+      "meta_description": "Política de Privacidad para Back to the Past",
       "title": "Política de Privacidad",
       "last_updated": "Última actualización: 4 de agosto de 2026",
-      "intro": "Guess-History (\"nosotros,\" \"nos,\" \"nuestro\") opera el sitio web www.guess-history.com (el \"Servicio\"), un juego multijugador de geografía histórica y adivinanza de años. Esta Política de Privacidad explica qué información recopilamos, cómo la usamos y sus derechos con respecto a esa información.",
+      "intro": "Back to the Past (\"nosotros,\" \"nos,\" \"nuestro\") opera el sitio web www.guess-history.com (el \"Servicio\"), un juego multijugador de geografía histórica y adivinanza de años. Esta Política de Privacidad explica qué información recopilamos, cómo la usamos y sus derechos con respecto a esa información.",
       "section1_title": "1. Información Que Recopilamos",
       "account_info_label": "Información de la cuenta:",
       "account_info_text": "Cuando inicias sesión a través de Google o correo electrónico/contraseña, recibimos tu dirección de correo electrónico, nombre para mostrar e imagen de perfil (si es proporcionada por Google). La autenticación es manejada por Supabase.",
@@ -1415,7 +1415,7 @@
       "use_communicate": "Comunicarnos contigo sobre tu cuenta o el Servicio, si es necesario",
       "no_sell": "No vendemos tu información personal. No utilizamos tus datos para publicidad de terceros.",
       "section3_title": "3. Servicios de Terceros",
-      "providers_intro": "Utilizamos los siguientes proveedores de servicios de terceros para operar Guess-History:",
+      "providers_intro": "Utilizamos los siguientes proveedores de servicios de terceros para operar Back to the Past:",
       "supabase_name": "Supabase",
       "supabase_desc": "— autenticación y hospedaje de bases de datos",
       "google_name": "Google OAuth",
@@ -1441,13 +1441,13 @@
       "changes_text": "Podemos actualizar esta Política de Privacidad de vez en cuando. Los cambios materiales se reflejarán en una fecha de \"Última actualización\" actualizada en esta página."
     },
     "terms": {
-      "meta_title": "Términos de Servicio — Guess-History",
-      "meta_description": "Términos de Servicio para Guess-History",
+      "meta_title": "Términos de Servicio — Back to the Past",
+      "meta_description": "Términos de Servicio para Back to the Past",
       "title": "Términos de Servicio",
       "last_updated": "Última actualización: 4 de agosto de 2026",
-      "intro": "Bienvenido a Guess-History (\"Servicio\"), operado en www.guess-history.com. Al acceder o utilizar el Servicio, aceptas estar sujeto a estos Términos de Servicio (\"Términos\"). Si no estás de acuerdo, no utilices el Servicio.",
+      "intro": "Bienvenido a Back to the Past (\"Servicio\"), operado en www.guess-history.com. Al acceder o utilizar el Servicio, aceptas estar sujeto a estos Términos de Servicio (\"Términos\"). Si no estás de acuerdo, no utilices el Servicio.",
       "section1_title": "1. Descripción del Servicio",
-      "section1_text": "Guess-History es un juego multijugador y unipersonal donde los jugadores adivinan el año y la ubicación de eventos históricos representados en imágenes, compiten en tablas de líderes y juegan contra amigos o la comunidad.",
+      "section1_text": "Back to the Past es un juego multijugador y unipersonal donde los jugadores adivinan el año y la ubicación de eventos históricos representados en imágenes, compiten en tablas de líderes y juegan contra amigos o la comunidad.",
       "section2_title": "2. Cuentas",
       "section2_text": "Debes crear una cuenta (a través de Google o correo electrónico/contraseña) para acceder a la mayoría de las funciones. Eres responsable de mantener la confidencialidad de tu cuenta y de toda la actividad bajo ella. Debes proporcionar información precisa y eres responsable de mantenerla actualizada.",
       "section3_title": "3. Uso Aceptable",
@@ -1461,11 +1461,11 @@
       "section4_title": "4. Contenido de Usuario",
       "section4_text": "Cualquier nombre para mostrar, avatar u otro contenido que envíes no debe ser ofensivo, infractor o ilegal. Nos reservamos el derecho de eliminar o moderar dicho contenido a nuestra discreción.",
       "section5_title": "5. Propiedad Intelectual",
-      "section5_text": "El Servicio, incluyendo su diseño de juego, software y marca, es propiedad de Guess-History y sus creadores. Las imágenes de eventos históricos utilizadas en el juego se utilizan con fines educativos/informativos; los derechos sobre las imágenes fuente subyacentes permanecen con sus respectivos propietarios cuando sea aplicable.",
+      "section5_text": "El Servicio, incluyendo su diseño de juego, software y marca, es propiedad de Back to the Past y sus creadores. Las imágenes de eventos históricos utilizadas en el juego se utilizan con fines educativos/informativos; los derechos sobre las imágenes fuente subyacentes permanecen con sus respectivos propietarios cuando sea aplicable.",
       "section6_title": "6. Renuncia de Garantías",
       "section6_text": "El Servicio se proporciona \"tal como está\" y \"según disponibilidad\" sin garantías de ningún tipo, expresas o implícitas. No garantizamos que el Servicio se interrumpa, esté libre de errores o sea seguro en todo momento.",
       "section7_title": "7. Limitación de Responsabilidad",
-      "section7_text": "En la máxima medida permitida por la ley, Guess-History y sus operadores no serán responsables por ningún daño indirecto, incidental, especial o consecuencia de tu uso del Servicio.",
+      "section7_text": "En la máxima medida permitida por la ley, Back to the Past y sus operadores no serán responsables por ningún daño indirecto, incidental, especial o consecuencia de tu uso del Servicio.",
       "section8_title": "8. Cambios al Servicio",
       "section8_text": "Podemos modificar, suspender o descontinuar cualquier parte del Servicio en cualquier momento, incluidos modos de juego, características o sistemas de puntuación, sin previo aviso.",
       "section9_title": "9. Cambios a Estos Términos",
@@ -1476,20 +1476,20 @@
   },
   "pwa": {
     "title": "Pantalla completa e instalar",
-    "tagline": "Elige cómo se abre Guess-History aquí.",
+    "tagline": "Elige cómo se abre Back to the Past aquí.",
     "install_app": "Instalar app",
     "ios_intro": "<strong>Añadir a pantalla de inicio</strong> para instalar:",
     "install_unavailable": "Instalación no disponible en este navegador.",
     "remember_choice": "Recordar mi elección"
   },
   "grow_deck": {
-    "meta_title": "Guess History — Deck inversores",
+    "meta_title": "Back to the Past — Deck inversores",
     "meta_description": "Presentación inversores: de juego de historia a benchmark visual de IA anclado en humanos.",
-    "meta_image_alt": "Deck para inversores de Guess History",
-    "title": "Guess History",
-    "progress_label": "GUESS HISTORY",
+    "meta_image_alt": "Deck para inversores de Back to the Past",
+    "title": "Back to the Past",
+    "progress_label": "BACK TO THE PAST",
     "cta_register": "Registra tu interés",
-    "cta_play": "Juega Guess History",
+    "cta_play": "Juega Back to the Past",
     "cta_test": "Registra interés",
     "status_verified": "VERIFICADO",
     "status_illustrative": "ILUSTRATIVO",
@@ -1499,7 +1499,7 @@
     "s01": {
       "headline": "¿Y si un juego se volviera un benchmark de IA?",
       "body": [
-        "Guess History: los jugadores reconstruyen dónde y cuándo ocurrieron eventos.",
+        "Back to the Past: los jugadores reconstruyen dónde y cuándo ocurrieron eventos.",
         "Pero el juego puede crear algo mayor: un benchmark visual de IA anclado en humanos."
       ],
       "statements": [
@@ -1744,8 +1744,8 @@
     "s12": {
       "headline": "Construimos dos negocios que se refuerzan.",
       "body": [
-        "GUESS HISTORY: Un juego que atrae jugadores y genera inteligencia humana propia.",
-        "GUESS HISTORY EVALUATION: Una plataforma que mide la IA contra esa inteligencia."
+        "BACK TO THE PAST: Un juego que atrae jugadores y genera inteligencia humana propia.",
+        "BACK TO THE PAST EVALUATION: Una plataforma que mide la IA contra esa inteligencia."
       ],
       "statements": [
         "Juego → Datos → Benchmark",
@@ -1754,7 +1754,7 @@
       ],
       "final": "¿Puede la IA entender la historia como los humanos?"
     },
-    "footer_link_home": "Guess History",
+    "footer_link_home": "Back to the Past",
     "footer_link_contact": "Contacto",
     "footer_link_privacy": "Privacidad",
     "footer_link_terms": "Términos",
