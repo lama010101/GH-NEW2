@@ -24,7 +24,7 @@
   "help": {
     "title": "Helpcentrum",
     "hero_title": "Hoe kunnen we helpen?",
-    "hero_subtitle": "Vind antwoorden, leer de regels en haal het meeste uit Guess-History.",
+    "hero_subtitle": "Vind antwoorden, leer de regels en haal het meeste uit Back to the Past.",
     "search_placeholder": "Zoek in het helpcentrum…",
     "search_label": "Zoek in het helpcentrum",
     "clear_search": "Wis zoekopdracht",
@@ -301,7 +301,7 @@
     "pwa_install_desc": "Relax-spellen zijn beurtgebaseerd. Op de iPhone werken beurtmeldingen alleen als deze site aan je beginscherm wordt toegevoegd.",
     "pwa_step_share": "Tik op het <strong>Deel</strong>-pictogram in de werkbalk van Safari.",
     "pwa_step_home": "Kies <strong>Voeg toe aan beginscherm</strong>.",
-    "pwa_step_open": "Tik op <strong>Voeg toe</strong> en open Guess-History vanaf je beginscherm.",
+    "pwa_step_open": "Tik op <strong>Voeg toe</strong> en open Back to the Past vanaf je beginscherm.",
     "pwa_got_it": "Begrepen",
     "players_ready": "({ready}/{total} spelers klaar)",
     "select_all": "Alles selecteren",
@@ -790,7 +790,7 @@
     "push_unexpected": "Er ging iets onverwachts mis."
   },
   "welcome": {
-    "title": "Welkom bij Guess-History!",
+    "title": "Welkom bij Back to the Past!",
     "your_historical_avatar": "Jouw historische avatar",
     "choose_different_avatar": "Kies een andere avatar",
     "your_username": "Jouw gebruikersnaam",
@@ -801,9 +801,9 @@
     "username_label_3": "ANDEREN ZIEN DEZE NAAM"
   },
   "landing": {
-    "meta_title": "Guess-History — Test je kennis van wanneer en waar",
+    "meta_title": "Back to the Past — Test je kennis van wanneer en waar",
     "meta_description": "Een historisch raadspel. Bekijk echte events uit de geschiedenis en raad het exacte jaar en de locatie. Daag vrienden uit, beklim de ranglijst en bewijs je geschiedeniskennis.",
-    "logo_alt": "Guess-History",
+    "logo_alt": "Back to the Past",
     "rank_label": "Rang",
     "tagline": "Waar en wanneer gebeurde het?",
     "hero_description": "Test je kennis van geschiedenis. Bekijk echte events en raad het exacte jaar en de locatie. Daag je vrienden uit, beklim de ranglijst en bewijs dat je de geschiedenis kent.",
@@ -839,11 +839,11 @@
     "tier_of_10": "Niveau {tier}/10"
   },
   "grow": {
-    "meta_title": "Groei met ons — Guess-History",
-    "meta_description": "Ontdek de missie, visie en toekomst van Guess-History en hoe je meedoet.",
+    "meta_title": "Groei met ons — Back to the Past",
+    "meta_description": "Ontdek de missie, visie en toekomst van Back to the Past en hoe je meedoet.",
     "hero": {
       "tagline": "Nader te bepalen",
-      "primary_cta": "Speel Guess-History",
+      "primary_cta": "Speel Back to the Past",
       "secondary_cta": "Ontdek het project"
     },
     "mission": {
@@ -1022,7 +1022,7 @@
         "name": "Bedrijfsmatig leren",
         "description": "Nader te bepalen"
       },
-      "center_label": "Guess-History"
+      "center_label": "Back to the Past"
     },
     "business_model": {
       "title": "Bedrijfsmodel",
@@ -1069,7 +1069,7 @@
       "title": "Gebouwd voor de lange termijn",
       "subtitle": "Nader te bepalen",
       "left_header": "Traditionele startups optimaliseren voor",
-      "right_header": "Guess-History optimaliseert voor",
+      "right_header": "Back to the Past optimaliseert voor",
       "left_1": "Waardering",
       "right_1": "Duurzaamheid",
       "left_2": "Financiering",
@@ -1112,7 +1112,7 @@
         "detail": "Nader te bepalen"
       },
       "future_projects_title": "Toekomstige projecten",
-      "future_project_1": "Guess-History",
+      "future_project_1": "Back to the Past",
       "future_project_2": "VR History",
       "future_project_3": "Raad de wetenschap",
       "future_project_4": "Raad eens kunst",
@@ -1392,11 +1392,11 @@
   },
   "legal": {
     "privacy": {
-      "meta_title": "Privacybeleid — Guess-History",
-      "meta_description": "Privacybeleid voor Guess-History",
+      "meta_title": "Privacybeleid — Back to the Past",
+      "meta_description": "Privacybeleid voor Back to the Past",
       "title": "Privacybeleid",
       "last_updated": "Laatste update: 4 augustus 2026",
-      "intro": "Guess-History (\"wij,\" \"ons,\" \"onze\") beheert de website www.guess-history.com (de \"Dienst\"), een multiplayer spel voor historische geografie en het raden van jaren. Dit Privacybeleid legt uit welke informatie wij verzamelen, hoe wij die gebruiken, en uw rechten met betrekking tot die informatie.",
+      "intro": "Back to the Past (\"wij,\" \"ons,\" \"onze\") beheert de website www.guess-history.com (de \"Dienst\"), een multiplayer spel voor historische geografie en het raden van jaren. Dit Privacybeleid legt uit welke informatie wij verzamelen, hoe wij die gebruiken, en uw rechten met betrekking tot die informatie.",
       "section1_title": "1. Informatie die wij Verzamelen",
       "account_info_label": "Accountinformatie:",
       "account_info_text": "Wanneer u zich aanmeldt via Google of e-mail/wachtwoord, ontvangen wij uw e-mailadres, weergavenaam en profielfoto (indien verstrekt door Google). Authenticatie wordt afgehandeld door Supabase.",
@@ -1415,7 +1415,7 @@
       "use_communicate": "Met u te communiceren over uw account of de Dienst, indien nodig",
       "no_sell": "Wij verkopen uw persoonlijke informatie niet. Wij gebruiken uw gegevens niet voor advertenties van derden.",
       "section3_title": "3. Derde partij Diensten",
-      "providers_intro": "Wij gebruiken de volgende derde partij dienstverleners om Guess-History te beheren:",
+      "providers_intro": "Wij gebruiken de volgende derde partij dienstverleners om Back to the Past te beheren:",
       "supabase_name": "Supabase",
       "supabase_desc": "— authenticatie en databasehosting",
       "google_name": "Google OAuth",
@@ -1441,13 +1441,13 @@
       "changes_text": "Wij kunnen dit Privacybeleid van tijd tot tijd bijwerken. Materiële wijzigingen zullen worden weerspiegeld door een bijgewerkte \"Laatste update\" datum op deze pagina."
     },
     "terms": {
-      "meta_title": "Servicevoorwaarden — Guess-History",
-      "meta_description": "Servicevoorwaarden voor Guess-History",
+      "meta_title": "Servicevoorwaarden — Back to the Past",
+      "meta_description": "Servicevoorwaarden voor Back to the Past",
       "title": "Servicevoorwaarden",
       "last_updated": "Laatste update: 4 augustus 2026",
-      "intro": "Welkom bij Guess-History (\"Dienst\"), beheerd op www.guess-history.com. Door toegang te krijgen tot of de Dienst te gebruiken, gaat u akkoord met deze Servicevoorwaarden (\"Voorwaarden\"). Als u het niet eens bent, gebruik dan de Dienst niet.",
+      "intro": "Welkom bij Back to the Past (\"Dienst\"), beheerd op www.guess-history.com. Door toegang te krijgen tot of de Dienst te gebruiken, gaat u akkoord met deze Servicevoorwaarden (\"Voorwaarden\"). Als u het niet eens bent, gebruik dan de Dienst niet.",
       "section1_title": "1. Omschrijving van de Dienst",
-      "section1_text": "Guess-History is een multiplayer en singleplayer spel waarbij spelers het jaar en de locatie van historische evenementen afgebeeld in afbeeldingen raden, concurreren op ranglijsten, en spelen tegen vrienden of de gemeenschap.",
+      "section1_text": "Back to the Past is een multiplayer en singleplayer spel waarbij spelers het jaar en de locatie van historische evenementen afgebeeld in afbeeldingen raden, concurreren op ranglijsten, en spelen tegen vrienden of de gemeenschap.",
       "section2_title": "2. Accounts",
       "section2_text": "U moet een account aanmaken (via Google of e-mail/wachtwoord) om toegang te krijgen tot de meeste functies. U bent verantwoordelijk voor het handhaven van de vertrouwelijkheid van uw account en voor alle activiteiten onder uw account. U moet nauwkeurige informatie verstrekken en bent verantwoordelijk voor het actueel houden ervan.",
       "section3_title": "3. Acceptabel Gebruik",
@@ -1461,11 +1461,11 @@
       "section4_title": "4. Gebruikersinhoud",
       "section4_text": "Alle weergavennamen, avatars of andere inhoud die u indient, mogen niet aanstootgevend, inbreukmakend of onwettig zijn. Wij behouden ons het recht voor om dergelijke inhoud naar eigen goeddunken te verwijderen of te modereren.",
       "section5_title": "5. Intellectuele Eigendom",
-      "section5_text": "De Dienst, inclusief het ontwerp van het spel, software, en merk, is eigendom van Guess-History en zijn makers. Afbeeldingen van historische evenementen die in het spel worden gebruikt, worden gebruikt voor educatieve/informatieve doeleinden; rechten op de onderliggende bronafbeeldingen blijven bij hun respectieve eigenaren waar van toepassing.",
+      "section5_text": "De Dienst, inclusief het ontwerp van het spel, software, en merk, is eigendom van Back to the Past en zijn makers. Afbeeldingen van historische evenementen die in het spel worden gebruikt, worden gebruikt voor educatieve/informatieve doeleinden; rechten op de onderliggende bronafbeeldingen blijven bij hun respectieve eigenaren waar van toepassing.",
       "section6_title": "6. Vrijwaring van Garanties",
       "section6_text": "De Dienst wordt geleverd \"zoals deze is\" en \"zoals beschikbaar\" zonder garanties van welke aard dan ook, expliciet of impliciet. Wij garanderen niet dat de Dienst te allen tijde ononderbroken, foutloos of veilig zal zijn.",
       "section7_title": "7. Beperking van Aansprakelijkheid",
-      "section7_text": "Voor zover toegestaan door de wet, zijn Guess-History en zijn exploitanten niet aansprakelijk voor enige indirecte, incidentele, speciale of gevolgschade die voortvloeit uit uw gebruik van de Dienst.",
+      "section7_text": "Voor zover toegestaan door de wet, zijn Back to the Past en zijn exploitanten niet aansprakelijk voor enige indirecte, incidentele, speciale of gevolgschade die voortvloeit uit uw gebruik van de Dienst.",
       "section8_title": "8. Wijzigingen aan de Dienst",
       "section8_text": "Wij kunnen op elk moment een deel van de Dienst wijzigen, opschorten of stopzetten, inclusief spelmodi, functies of scoresystemen, zonder voorafgaande kennisgeving.",
       "section9_title": "9. Wijzigingen aan Deze Voorwaarden",
@@ -1476,20 +1476,20 @@
   },
   "pwa": {
     "title": "Scherm & installatie",
-    "tagline": "Kies hoe Guess-History hier opent.",
+    "tagline": "Kies hoe Back to the Past hier opent.",
     "install_app": "App installeren",
     "ios_intro": "<strong>Zet op beginscherm</strong> om te installeren:",
     "install_unavailable": "Installatie niet beschikbaar in deze browser.",
     "remember_choice": "Onthoud mijn keuze"
   },
   "grow_deck": {
-    "meta_title": "Guess History — Investeerdersdeck",
+    "meta_title": "Back to the Past — Investeerdersdeck",
     "meta_description": "Cinematisch investeerdersdeck: van geschiedenisspel naar mens-verankerde AI-benchmark.",
-    "meta_image_alt": "Guess History investeerdersdeck",
-    "title": "Guess History",
-    "progress_label": "GUESS HISTORY",
+    "meta_image_alt": "Back to the Past investeerdersdeck",
+    "title": "Back to the Past",
+    "progress_label": "BACK TO THE PAST",
     "cta_register": "Registreer je interesse",
-    "cta_play": "Speel Guess History",
+    "cta_play": "Speel Back to the Past",
     "cta_test": "Registreer interesse",
     "status_verified": "GEVERIFIEERD",
     "status_illustrative": "ILLUSTRATIEF",
@@ -1499,7 +1499,7 @@
     "s01": {
       "headline": "Wat als een spel een AI-benchmark werd?",
       "body": [
-        "Guess History: spelers raden waar en wanneer events gebeurden.",
+        "Back to the Past: spelers raden waar en wanneer events gebeurden.",
         "Maar het spel kan veel meer: een mens-verankerde visuele AI-benchmark."
       ],
       "statements": [
@@ -1744,8 +1744,8 @@
     "s12": {
       "headline": "We bouwen twee businesses die elkaar versterken.",
       "body": [
-        "GUESS HISTORY: Een spel dat spelers trekt en menselijke intelligentie genereert.",
-        "GUESS HISTORY EVALUATION: Een platform dat AI meet tegen die intelligentie."
+        "BACK TO THE PAST: Een spel dat spelers trekt en menselijke intelligentie genereert.",
+        "BACK TO THE PAST EVALUATION: Een platform dat AI meet tegen die intelligentie."
       ],
       "statements": [
         "Spel → Data → Benchmark",
@@ -1754,7 +1754,7 @@
       ],
       "final": "Kan AI historie zo goed begrijpen als mensen?"
     },
-    "footer_link_home": "Guess History",
+    "footer_link_home": "Back to the Past",
     "footer_link_contact": "Contact",
     "footer_link_privacy": "Privacy",
     "footer_link_terms": "Voorwaarden",

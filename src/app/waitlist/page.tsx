@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       type: 'website',
-      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Guess History — Find clues. Become a historian.' }],
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Back to the Past — Find clues. Become a historian.' }],
     },
   }
 }

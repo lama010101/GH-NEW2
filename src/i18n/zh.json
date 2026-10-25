@@ -24,7 +24,7 @@
   "help": {
     "title": "帮助中心",
     "hero_title": "我们能帮你什么？",
-    "hero_subtitle": "查找答案、了解规则，充分利用 Guess-History。",
+    "hero_subtitle": "查找答案、了解规则，充分利用 Back to the Past。",
     "search_placeholder": "搜索帮助中心…",
     "search_label": "搜索帮助中心",
     "clear_search": "清除搜索",
@@ -301,7 +301,7 @@
     "pwa_install_desc": "Relax 游戏是回合制的。在 iPhone 上，只有将此网站添加到主屏幕后，回合通知才会生效。",
     "pwa_step_share": "点按 Safari 工具栏中的<strong>分享</strong>图标。",
     "pwa_step_home": "选择<strong>添加到主屏幕</strong>。",
-    "pwa_step_open": "点按<strong>添加</strong>，然后从主屏幕打开 Guess-History。",
+    "pwa_step_open": "点按<strong>添加</strong>，然后从主屏幕打开 Back to the Past。",
     "pwa_got_it": "知道了",
     "players_ready": "（{ready}/{total} 玩家已准备）",
     "select_all": "全选",
@@ -790,7 +790,7 @@
     "push_unexpected": "发生意外错误"
   },
   "welcome": {
-    "title": "欢迎来到 Guess-History！",
+    "title": "欢迎来到 Back to the Past！",
     "your_historical_avatar": "你的历史头像",
     "choose_different_avatar": "选择其他头像",
     "your_username": "你的用户名",
@@ -801,9 +801,9 @@
     "username_label_3": "其他人会看到此名字"
   },
   "landing": {
-    "meta_title": "Guess-History — 测试你的历史知识",
+    "meta_title": "Back to the Past — 测试你的历史知识",
     "meta_description": "一款历史猜谜游戏。观看真实历史事件，猜出确切的年份和地点。挑战好友，攀登排行榜，证明你的历史实力。",
-    "logo_alt": "Guess-History",
+    "logo_alt": "Back to the Past",
     "rank_label": "段位",
     "tagline": "它发生在哪里，何时？",
     "hero_description": "测试你的历史知识。观看真实事件，猜出确切的年份和地点。挑战好友，攀登排行榜，证明你了解历史。",
@@ -839,11 +839,11 @@
     "tier_of_10": "等级 {tier}/10"
   },
   "grow": {
-    "meta_title": "一起成长 — Guess-History",
-    "meta_description": "了解 Guess-History 的使命、愿景与未来,以及如何参与。",
+    "meta_title": "一起成长 — Back to the Past",
+    "meta_description": "了解 Back to the Past 的使命、愿景与未来,以及如何参与。",
     "hero": {
       "tagline": "待定",
-      "primary_cta": "玩 Guess-History",
+      "primary_cta": "玩 Back to the Past",
       "secondary_cta": "探索该项目"
     },
     "mission": {
@@ -1022,7 +1022,7 @@
         "name": "企业学习",
         "description": "待定"
       },
-      "center_label": "Guess-History"
+      "center_label": "Back to the Past"
     },
     "business_model": {
       "title": "商业模式",
@@ -1069,7 +1069,7 @@
       "title": "专为长期发展而打造",
       "subtitle": "待定",
       "left_header": "传统初创公司优化",
-      "right_header": "猜测历史优化",
+      "right_header": "Back to the Past 优化",
       "left_1": "估值",
       "right_1": "可持续发展",
       "left_2": "资金",
@@ -1112,7 +1112,7 @@
         "detail": "待定"
       },
       "future_projects_title": "未来的项目",
-      "future_project_1": "Guess-History",
+      "future_project_1": "Back to the Past",
       "future_project_2": "VR History",
       "future_project_3": "猜猜科学",
       "future_project_4": "猜猜艺术",
@@ -1392,11 +1392,11 @@
   },
   "legal": {
     "privacy": {
-      "meta_title": "隐私政策 — Guess-History",
-      "meta_description": "Guess-History 的隐私政策",
+      "meta_title": "隐私政策 — Back to the Past",
+      "meta_description": "Back to the Past 的隐私政策",
       "title": "隐私政策",
       "last_updated": "最后更新：2026年8月4日",
-      "intro": "Guess-History（\"我们\"、\"我们\"、\"我们的\"）运营网站 www.guess-history.com（\"服务\"），这是一款多人历史地理和年份猜测游戏。本隐私政策解释了我们收集的信息、我们如何使用这些信息，以及您对这些信息的权利。",
+      "intro": "Back to the Past（\"我们\"、\"我们\"、\"我们的\"）运营网站 www.guess-history.com（\"服务\"），这是一款多人历史地理和年份猜测游戏。本隐私政策解释了我们收集的信息、我们如何使用这些信息，以及您对这些信息的权利。",
       "section1_title": "1. 我们收集的信息",
       "account_info_label": "账户信息：",
       "account_info_text": "当您通过 Google 或电子邮件/密码登录时，我们会收到您的电子邮件地址、显示名称和个人资料图片（如果由 Google 提供）。身份验证由 Supabase 处理。",
@@ -1415,7 +1415,7 @@
       "use_communicate": "必要时与您沟通有关您的账户或服务的事宜",
       "no_sell": "我们不出售您的个人信息。我们不将您的数据用于第三方广告。",
       "section3_title": "3. 第三方服务",
-      "providers_intro": "我们使用以下第三方服务提供商来运营 Guess-History：",
+      "providers_intro": "我们使用以下第三方服务提供商来运营 Back to the Past：",
       "supabase_name": "Supabase",
       "supabase_desc": "— 身份验证和数据库托管",
       "google_name": "Google OAuth",
@@ -1441,13 +1441,13 @@
       "changes_text": "我们可能会不时更新本隐私政策。重大变化将在本页面上更新的“最后更新”日期中反映。"
     },
     "terms": {
-      "meta_title": "服务条款 — Guess-History",
-      "meta_description": "Guess-History 的服务条款",
+      "meta_title": "服务条款 — Back to the Past",
+      "meta_description": "Back to the Past 的服务条款",
       "title": "服务条款",
       "last_updated": "最后更新：2026年8月4日",
-      "intro": "欢迎使用 Guess-History（\"服务\"），网址为 www.guess-history.com。访问或使用该服务即表示您同意受这些服务条款（\"条款\"）的约束。如果您不同意，请勿使用该服务。",
+      "intro": "欢迎使用 Back to the Past（\"服务\"），网址为 www.guess-history.com。访问或使用该服务即表示您同意受这些服务条款（\"条款\"）的约束。如果您不同意，请勿使用该服务。",
       "section1_title": "1. 服务描述",
-      "section1_text": "Guess-History 是一款多人和单人游戏，玩家猜测图像中描绘的历史事件的年份和地点，竞争排行榜，并与朋友或社区进行对战。",
+      "section1_text": "Back to the Past 是一款多人和单人游戏，玩家猜测图像中描绘的历史事件的年份和地点，竞争排行榜，并与朋友或社区进行对战。",
       "section2_title": "2. 账户",
       "section2_text": "您必须创建一个账户（通过 Google 或电子邮件/密码）才能访问大多数功能。您有责任保管账户的机密性，并对所有在其下的活动负责。您必须提供准确的信息，并负责保持信息的最新状态。",
       "section3_title": "3. 可接受的使用",
@@ -1461,11 +1461,11 @@
       "section4_title": "4. 用户内容",
       "section4_text": "您提交的任何显示名称、头像或其他内容不得具有攻击性、侵权或违法。我们保留随时从我们平台删除或管理此类内容的权利。",
       "section5_title": "5. 知识产权",
-      "section5_text": "本服务，包括其游戏设计、软件和品牌，归 Guess-History 及其创作者所有。游戏中使用的历史事件图像用于教育/信息目的；相关源图像的权利保持在其相应的所有者手中（如适用）。",
+      "section5_text": "本服务，包括其游戏设计、软件和品牌，归 Back to the Past 及其创作者所有。游戏中使用的历史事件图像用于教育/信息目的；相关源图像的权利保持在其相应的所有者手中（如适用）。",
       "section6_title": "6. 免责声明",
       "section6_text": "本服务按“原样”和“可用”提供，不提供任何形式的明示或暗示的保证。我们不能保证该服务在任何时候都不会中断、没有错误或是安全的。",
       "section7_title": "7. 责任限制",
-      "section7_text": "在法律允许的最大范围内，Guess-History及其运营方对您使用该服务所导致的任何间接、偶然、特殊或后果性损害不承担责任。",
+      "section7_text": "在法律允许的最大范围内，Back to the Past及其运营方对您使用该服务所导致的任何间接、偶然、特殊或后果性损害不承担责任。",
       "section8_title": "8. 服务变更",
       "section8_text": "我们可能随时修改、暂停或停止服务的任何部分，包括游戏模式、功能或得分系统，而无需事先通知。",
       "section9_title": "9. 本条款的变更",
@@ -1483,13 +1483,13 @@
     "remember_choice": "记住我的选择"
   },
   "grow_deck": {
-    "meta_title": "Guess History — 投资人甲板",
+    "meta_title": "Back to the Past — 投资人甲板",
     "meta_description": "一场电影化的投资人演示:从历史游戏到以人类为基准的视觉AI评测。",
-    "meta_image_alt": "Guess History 投资人甲板",
-    "title": "Guess History",
-    "progress_label": "GUESS HISTORY",
+    "meta_image_alt": "Back to the Past 投资人甲板",
+    "title": "Back to the Past",
+    "progress_label": "BACK TO THE PAST",
     "cta_register": "登记意向",
-    "cta_play": "玩 Guess History",
+    "cta_play": "玩 Back to the Past",
     "cta_test": "登记意向",
     "status_verified": "已验证",
     "status_illustrative": "示意",
@@ -1499,7 +1499,7 @@
     "s01": {
       "headline": "如果一款游戏能成为AI基准呢?",
       "body": [
-        "Guess History 让玩家重建历史事件发生的地点与年代。",
+        "Back to the Past 让玩家重建历史事件发生的地点与年代。",
         "但这款游戏能创造更大的东西:以人类为基准的视觉AI基准。"
       ],
       "statements": [
@@ -1744,8 +1744,8 @@
     "s12": {
       "headline": "我们在打造两个相互强化的业务。",
       "body": [
-        "GUESS HISTORY: 一款吸引玩家并产生人类专有智能的游戏。",
-        "GUESS HISTORY EVALUATION: 一个以该智能衡量AI表现的平台。"
+        "BACK TO THE PAST: 一款吸引玩家并产生人类专有智能的游戏。",
+        "BACK TO THE PAST EVALUATION: 一个以该智能衡量AI表现的平台。"
       ],
       "statements": [
         "游戏 → 数据 → 基准",
@@ -1754,7 +1754,7 @@
       ],
       "final": "AI能像人类一样理解历史吗?"
     },
-    "footer_link_home": "Guess History",
+    "footer_link_home": "Back to the Past",
     "footer_link_contact": "联系",
     "footer_link_privacy": "隐私",
     "footer_link_terms": "条款",
