@@ -54,8 +54,9 @@
 }
 
 .logoImg {
-  height: auto;
-  width: 100%;
+  height: 96px;
+  width: auto;
+  max-width: 100%;
 }
 
 .tagline {

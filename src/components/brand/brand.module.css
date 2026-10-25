@@ -1,0 +1,92 @@
+/* BRAND-BUILD-NEWLOGO-1024-004 — shared styles for BrandLoader + BrandSplash.
+   All animation lives inside @media (prefers-reduced-motion: no-preference);
+   with reduced motion every element renders its final (static) frame. */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+
+.splashHide {
+  opacity: 0;
+}
+
+.splashSymbol {
+  width: min(40vw, 200px);
+  height: auto;
+  display: block;
+}
+
+/* Ripple rests at opacity 0 — its final frame is invisible. */
+.rippleC {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* BrandLoader: only the clock-hand group spins, forever. */
+  .hand {
+    transform-origin: 256px 256px;
+    transform-box: view-box;
+    animation: spin 1.6s linear infinite;
+  }
+
+  /* BrandSplash timeline (~1.5s total). */
+  .ringDraw {
+    animation: draw .36s ease-out both;
+  }
+
+  .popG {
+    transform-origin: 256px 256px;
+    transform-box: view-box;
+    animation: pop .27s cubic-bezier(.34,1.56,.64,1) both;
+  }
+
+  .popHub {
+    transform-origin: 256px 256px;
+    transform-box: view-box;
+    animation: pop .21s ease-out .30s both;
+  }
+
+  .swingG {
+    transform-origin: 256px 256px;
+    transform-box: view-box;
+    animation: swing .69s cubic-bezier(.22,1.2,.36,1) .39s both;
+  }
+
+  .rippleC {
+    transform-origin: 256px 256px;
+    transform-box: view-box;
+    animation: ripple .42s ease-out 1.05s both;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0) }
+    to { transform: rotate(360deg) }
+  }
+
+  @keyframes draw {
+    from { stroke-dashoffset: 703.7 }
+    to { stroke-dashoffset: 0 }
+  }
+
+  @keyframes pop {
+    from { opacity: 0; transform: scale(.55) }
+    to { opacity: 1; transform: scale(1) }
+  }
+
+  @keyframes swing {
+    from { transform: rotate(-430deg) }
+    to { transform: rotate(0) }
+  }
+
+  @keyframes ripple {
+    from { opacity: .55; transform: scale(.9) }
+    to { opacity: 0; transform: scale(1.45) }
+  }
+}

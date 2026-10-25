@@ -11,6 +11,7 @@ import { HapticFeedback } from '@/components/HapticFeedback';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import { Analytics } from '@/components/Analytics';
 import FullscreenPwaModal from '@/components/FullscreenPwaModal';
+import BrandSplash from '@/components/brand/BrandSplash';
 import "./globals.css";
 
 /**
@@ -92,6 +93,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     >
       <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
+          <BrandSplash />
           {children}
           <FullscreenPwaModal />
         </NextIntlClientProvider>

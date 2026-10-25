@@ -5,16 +5,17 @@
 // then run from the repo root:
 //   node scripts/dev/generate-brand-icons.mjs
 //
-// Symbol normalization: the source symbol-white.png has gray-white shading and a
-// translucent fringe. We set R=G=B=255 on every pixel while keeping the alpha
-// channel byte-for-byte unchanged, giving a clean white symbol that preserves
-// the design's translucency when composited over the brand purple.
+// Symbol source: the flat vector marks docs/ui/assets/gh-symbol.svg (FULL) and
+// gh-symbol-micro.svg (MICRO), rendered with sharp. Colours are preserved (the
+// orange hand tip must survive); only the monochrome notification badge forces
+// R=G=B=255 so the badge is pure white on transparent.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import sharp from 'sharp';
 
 const BRAND_TS = 'src/core/brand.ts';
-const SYMBOL_SRC = 'docs/ui/assets/symbol-white.png';
+const SYMBOL_FULL_SVG = 'docs/ui/assets/gh-symbol.svg';
+const SYMBOL_MICRO_SVG = 'docs/ui/assets/gh-symbol-micro.svg';
 
 const fail = (msg) => { console.error(`FAIL: ${msg}`); process.exit(1); };
 
@@ -28,43 +29,54 @@ const BRAND = {
   b: parseInt(HEX.slice(5, 7), 16),
 };
 
-// --- Load symbol, find alpha-bbox (alpha > 8), crop, normalize to white ---
-const { data: raw, info } = await sharp(SYMBOL_SRC)
-  .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-let minX = info.width, minY = info.height, maxX = -1, maxY = -1;
-for (let y = 0; y < info.height; y++) {
-  for (let x = 0; x < info.width; x++) {
-    if (raw[(y * info.width + x) * 4 + 3] > 8) {
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-      if (y < minY) minY = y;
-      if (y > maxY) maxY = y;
+// --- Load a symbol variant from SVG, find alpha-bbox (alpha > 8), crop ---
+// mono=true forces R=G=B=255 (notification badge must be monochrome white).
+async function loadSymbol(svgPath, { mono = false } = {}) {
+  const { data: raw, info } = await sharp(readFileSync(svgPath), { density: 384 })
+    .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  let minX = info.width, minY = info.height, maxX = -1, maxY = -1;
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      if (raw[(y * info.width + x) * 4 + 3] > 8) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
     }
   }
-}
-if (maxX < 0) fail('symbol has no pixels with alpha > 8');
-const cropW = maxX - minX + 1, cropH = maxY - minY + 1;
+  if (maxX < 0) fail('symbol has no pixels with alpha > 8');
+  const cropW = maxX - minX + 1, cropH = maxY - minY + 1;
 
-const { data: cropRaw, info: cinfo } = await sharp(SYMBOL_SRC)
-  .extract({ left: minX, top: minY, width: cropW, height: cropH })
-  .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-for (let i = 0; i < cropRaw.length; i += 4) {
-  cropRaw[i] = 255; cropRaw[i + 1] = 255; cropRaw[i + 2] = 255;
+  const { data: cropRaw, info: cinfo } = await sharp(readFileSync(svgPath), { density: 384 })
+    .extract({ left: minX, top: minY, width: cropW, height: cropH })
+    .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  if (mono) {
+    for (let i = 0; i < cropRaw.length; i += 4) {
+      cropRaw[i] = 255; cropRaw[i + 1] = 255; cropRaw[i + 2] = 255;
+    }
+  }
+  const buf = await sharp(cropRaw, {
+    raw: { width: cinfo.width, height: cinfo.height, channels: 4 },
+  }).png().toBuffer();
+  return { buf, cropW, cropH };
 }
-const symBuf = await sharp(cropRaw, {
-  raw: { width: cinfo.width, height: cinfo.height, channels: 4 },
-}).png().toBuffer();
 
-async function resizedSymbol(target) {
-  const { data, info: rinfo } = await sharp(symBuf)
+const symFull = await loadSymbol(SYMBOL_FULL_SVG);
+const symMicro = await loadSymbol(SYMBOL_MICRO_SVG);
+const symMicroMono = await loadSymbol(SYMBOL_MICRO_SVG, { mono: true });
+const cropW = symFull.cropW, cropH = symFull.cropH;
+
+async function resizedSymbol(sym, target) {
+  const { data, info: rinfo } = await sharp(sym.buf)
     .resize(target, target, { fit: 'inside', kernel: 'lanczos3' })
     .png().toBuffer({ resolveWithObject: true });
   return { data, w: rinfo.width, h: rinfo.height };
 }
 
-async function tile(size, fillRatio, { flatten = false } = {}) {
+async function tile(size, fillRatio, sym, { flatten = false } = {}) {
   const target = Math.round(size * fillRatio);
-  const { data, w, h } = await resizedSymbol(target);
+  const { data, w, h } = await resizedSymbol(sym, target);
   let img = sharp({
     create: { width: size, height: size, channels: 4, background: { ...BRAND, alpha: 255 } },
   }).composite([{
@@ -76,9 +88,9 @@ async function tile(size, fillRatio, { flatten = false } = {}) {
   return img.png().toBuffer();
 }
 
-async function badge(size, fillRatio) {
+async function badge(size, fillRatio, sym) {
   const target = Math.round(size * fillRatio);
-  const { data, w, h } = await resizedSymbol(target);
+  const { data, w, h } = await resizedSymbol(sym, target);
   return sharp({
     create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   }).composite([{
@@ -114,15 +126,15 @@ function buildIco(entries) { // entries: [{ size, buf }] PNG-compressed
 
 // --- Generate ---
 const out = {};
-out['public/icons/icon-192.png'] = await tile(192, 0.60);
-out['public/icons/icon-512.png'] = await tile(512, 0.60);
-out['public/icons/icon-maskable-512.png'] = await tile(512, 0.52);
-out['public/icons/apple-touch-icon.png'] = await tile(180, 0.60, { flatten: true });
-out['public/icons/badge-96.png'] = await badge(96, 0.80);
+out['public/icons/icon-192.png'] = await tile(192, 0.88, symFull);
+out['public/icons/icon-512.png'] = await tile(512, 0.88, symFull);
+out['public/icons/icon-maskable-512.png'] = await tile(512, 0.78, symFull);
+out['public/icons/apple-touch-icon.png'] = await tile(180, 0.60, symFull, { flatten: true });
+out['public/icons/badge-96.png'] = await badge(96, 0.80, symMicroMono);
 
-const ico16 = await tile(16, 0.78);
-const ico32 = await tile(32, 0.72);
-const ico48 = await tile(48, 0.72);
+const ico16 = await tile(16, 0.78, symMicro);
+const ico32 = await tile(32, 0.72, symMicro);
+const ico48 = await tile(48, 0.72, symFull);
 out['src/app/favicon.ico'] = buildIco([
   { size: 16, buf: ico16 },
   { size: 32, buf: ico32 },
@@ -201,9 +213,21 @@ for (const p of tilePaths) {
     `diff>0 bbox ${b0.x0},${b0.y0}-${b0.x1},${b0.y1} center ${c0x.toFixed(1)},${c0y.toFixed(1)} off ${off0x.toFixed(1)},${off0y.toFixed(1)}`);
   if (p.includes('maskable')) {
     const R = 0.40 * di.width;
-    const corners = [[b0.x0, b0.y0], [b0.x1, b0.y0], [b0.x0, b0.y1], [b0.x1, b0.y1]];
-    const worst = Math.max(...corners.map(([x, y]) => Math.hypot(x - c, y - c)));
-    check(`(iii-b) ${p} safe-zone`, worst <= R, `worst-corner r=${worst.toFixed(1)} <= ${R}`);
+    let worst = 0;
+    for (let y = 0; y < di.height; y++) {
+      for (let x = 0; x < di.width; x++) {
+        const i = (y * di.width + x) * ch;
+        const d = Math.max(
+          Math.abs(data[i] - BRAND.r),
+          Math.abs(data[i + 1] - BRAND.g),
+          Math.abs(data[i + 2] - BRAND.b));
+        if (d > 0) {
+          const r = Math.hypot(x - c, y - c);
+          if (r > worst) worst = r;
+        }
+      }
+    }
+    check(`(iii-b) ${p} safe-zone`, worst <= R, `worst-pixel r=${worst.toFixed(1)} <= ${R}`);
   }
   if (b60) {
     const c60x = (b60.x0 + b60.x1) / 2, c60y = (b60.y0 + b60.y1) / 2;
