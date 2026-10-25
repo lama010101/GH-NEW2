@@ -1,10 +1,11 @@
 'use client'
 
 import Image from 'next/image'
-import { investorContent } from '@/lib/investorContent'
+import { useGrowSection } from './GrowSectionContext'
 
 export default function Section02Game() {
-  const section = investorContent.sections[1]
+  const { content } = useGrowSection()
+  const section = content.sections[1]
 
   return (
     <section
